@@ -1,7 +1,7 @@
 ---
 wave: measure-the-finish
 date_open: 2026-05-14
-status: active
+status: closed
 source: Rocket Richard Wave 1 closeout and the Phase Rocket Richard roadmap
 ---
 
@@ -38,7 +38,7 @@ who is due for regression, and who is carrying the best finishing run?"
 | 02 - Shot-quality proxy implementation | done | `InsideShotProxy`; `InsideShotBucket`; L0 known-value tests; `plans/pulse-02.md` |
 | 03 - Player scoring trend rows | done | `PlayerScoringTrendRow`; fixed window rows; L0 window/conversion/location tests; `plans/pulse-03.md` |
 | 04 - Streak leaderboards | done | `PlayerShotLineInput`; shot-on-goal/attempt streak rows; fetch aggregation tests; `plans/pulse-04.md` |
-| 05 - Surface parity and wave closeout | planned | `plans/pulse-05.md`; depends on Pulses 02-04 |
+| 05 - Surface parity and wave closeout | done | Web/API JSON parity tests cover scoring trend fields, shot streak rows, and play-by-play source state; `plans/pulse-05.md` |
 
 ## Role Notes
 
@@ -57,8 +57,11 @@ pure core proxy buckets and projection helpers with exact-threshold L0 tests.
 Pulse 03 added ViewModel-owned player scoring trend rows for fixed recent
 windows and season-loaded coverage. Pulse 04 added shot-on-goal and shot-attempt
 streak rows from cached play-by-play aggregation, with loaded zero-attempt games
-breaking streaks.
+breaking streaks. Pulse 05 added focused web/API parity tests for scoring trend
+JSON, player/team shot streak rows, and explicit play-by-play source state.
 
 ## Next
 
-Execute Pulse 05: surface parity and closeout for Measure the Finish.
+Measure the Finish is closed. Continue Rocket Richard with the next planned wave:
+lightweight scoring projections and outlooks, keeping language descriptive and
+non-betting.

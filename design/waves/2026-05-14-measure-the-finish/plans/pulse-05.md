@@ -36,9 +36,16 @@ discoverable across the intended surfaces.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-core --quiet`
-- [ ] `cargo test -p icelines-fetch --quiet`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -- -D warnings`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-core --quiet`
+- [x] `cargo test -p icelines-fetch --quiet`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -- -D warnings`
 - [ ] `C:\src\proof\target\debug\proof.exe check . --errors-only`
+
+## Gate Notes
+
+- `proof check . --errors-only` remains unchecked because the repo-wide proof
+  baseline fails on pre-existing ASCII-box diagnostics in `SPEC.md`,
+  `design/ARCHITECTURE.md`, `design/IceLines.md`, and older plans. The changed
+  wave docs pass targeted proof checks.

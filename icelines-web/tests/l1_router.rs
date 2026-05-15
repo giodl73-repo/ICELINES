@@ -5024,6 +5024,92 @@ async fn l1_rocket_player_scoring_json_filters_player_events() {
             .len(),
         2
     );
+    let trends = json["data"]["trends"].as_array().expect("trends array");
+    let season = trends
+        .iter()
+        .find(|row| row["window"] == "season-loaded")
+        .expect("season trend");
+    assert_eq!(season["summary"]["shot_attempts"], serde_json::json!(2));
+    assert_eq!(season["summary"]["shots_on_goal"], serde_json::json!(2));
+    assert_eq!(season["shot_pct"], serde_json::json!(0.5));
+    assert_eq!(season["bucket_counts"]["inside"], serde_json::json!(1));
+    assert_eq!(season["bucket_counts"]["slot"], serde_json::json!(1));
+    assert_eq!(season["source_loaded"], serde_json::json!(true));
+}
+
+#[tokio::test]
+async fn l1_rocket_player_streaks_json_exposes_shot_metrics_and_source_state() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    seed_streak_boxscore_and_play_by_play(home.path(), 8478402, "Connor McDavid", "EDM");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/player/8478402/streaks")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "player-streaks");
+    assert_eq!(json["meta"]["player_id"], serde_json::json!(8478402_u64));
+    assert!(json["meta"]["source_state"]
+        .as_array()
+        .expect("source state")
+        .iter()
+        .any(|state| state["source"] == "play_by_play" && state["state"] == "complete"));
+    let rows = json["data"]["rows"].as_array().expect("rows array");
+    let shots = rows
+        .iter()
+        .find(|row| row["metric"] == "shots-on-goal")
+        .expect("shots-on-goal row");
+    assert_eq!(shots["longest"], serde_json::json!(1));
+    assert_eq!(shots["current"], serde_json::json!(0));
+    let attempts = rows
+        .iter()
+        .find(|row| row["metric"] == "shot-attempts")
+        .expect("shot-attempts row");
+    assert_eq!(attempts["longest"], serde_json::json!(1));
+}
+
+#[tokio::test]
+async fn l1_rocket_team_streaks_json_exposes_shot_metrics() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    seed_streak_boxscore_and_play_by_play(home.path(), 8478402, "Connor McDavid", "EDM");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/team/EDM/streaks")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "team-streaks");
+    assert_eq!(json["meta"]["team_abbrev"], serde_json::json!("EDM"));
+    let rows = json["data"]["rows"].as_array().expect("rows array");
+    let shots = rows
+        .iter()
+        .find(|row| row["metric"] == "shots-on-goal")
+        .expect("shots-on-goal row");
+    assert_eq!(shots["player_id"], serde_json::json!(8478402_u64));
+    assert_eq!(shots["longest"], serde_json::json!(1));
+    assert!(json["meta"]["source_state"]
+        .as_array()
+        .expect("source state")
+        .iter()
+        .any(|state| state["source"] == "play_by_play" && state["state"] == "complete"));
 }
 
 #[tokio::test]
@@ -5237,6 +5323,125 @@ fn seed_scoring_play_by_play(data_root: &std::path::Path, game_id: u64, date: &s
             ManifestEntry {
                 key: DataKey::Game(GameId(game_id)),
                 path: play_path,
+                freshness: Freshness {
+                    fetched_at: chrono::Utc::now(),
+                    source: FetchSource::Manual,
+                    ttl: Ttl::Static,
+                },
+            },
+        )
+        .expect("seed manifest");
+}
+
+fn seed_streak_boxscore_and_play_by_play(
+    home: &std::path::Path,
+    player_id: u32,
+    player_name: &str,
+    team: &str,
+) {
+    let data_root = home.join(".icelines").join("data");
+    let store = DataStore::open(&data_root).expect("open data store");
+    let boxscore_dir = data_root.join("boxscore").join("2025-10");
+    let play_dir = data_root.join("play_by_play").join("2025-10");
+    std::fs::create_dir_all(&boxscore_dir).expect("mkdir boxscore");
+    std::fs::create_dir_all(&play_dir).expect("mkdir play-by-play");
+
+    let game_one_boxscore = boxscore_dir.join("2025020001.json");
+    std::fs::write(
+        &game_one_boxscore,
+        serde_json::to_vec(&serde_json::json!({
+            "gameDate": "2025-10-01",
+            "awayTeam": {"abbrev": "SEA", "score": 1},
+            "homeTeam": {"abbrev": team, "score": 2},
+            "playerByGameStats": {
+                "awayTeam": {"forwards": [], "defense": []},
+                "homeTeam": {
+                    "forwards": [{
+                        "playerId": player_id,
+                        "name": {"default": player_name},
+                        "position": "C",
+                        "goals": 0,
+                        "assists": 0
+                    }],
+                    "defense": []
+                }
+            }
+        }))
+        .expect("serialize game one boxscore"),
+    )
+    .expect("write game one boxscore");
+    let game_two_boxscore = boxscore_dir.join("2025020002.json");
+    std::fs::write(
+        &game_two_boxscore,
+        serde_json::to_vec(&serde_json::json!({
+            "gameDate": "2025-10-02",
+            "awayTeam": {"abbrev": team, "score": 1},
+            "homeTeam": {"abbrev": "SEA", "score": 2},
+            "playerByGameStats": {
+                "awayTeam": {
+                    "forwards": [{
+                        "playerId": player_id,
+                        "name": {"default": player_name},
+                        "position": "C",
+                        "goals": 0,
+                        "assists": 0
+                    }],
+                    "defense": []
+                },
+                "homeTeam": {"forwards": [], "defense": []}
+            }
+        }))
+        .expect("serialize game two boxscore"),
+    )
+    .expect("write game two boxscore");
+
+    let game_one_play = play_dir.join("2025020001.json");
+    std::fs::write(
+        &game_one_play,
+        serde_json::to_vec(&serde_json::json!({
+            "id": 2025020001_u64,
+            "gameDate": "2025-10-01",
+            "awayTeam": {"id": 55, "abbrev": "SEA"},
+            "homeTeam": {"id": 22, "abbrev": team},
+            "plays": [{
+                "eventId": 1,
+                "periodDescriptor": {"number": 1, "periodType": "REG"},
+                "timeInPeriod": "01:00",
+                "typeDescKey": "shot-on-goal",
+                "details": {"eventOwnerTeamId": 22, "shootingPlayerId": player_id}
+            }]
+        }))
+        .expect("serialize game one play-by-play"),
+    )
+    .expect("write game one play-by-play");
+    let game_two_play = play_dir.join("2025020002.json");
+    std::fs::write(
+        &game_two_play,
+        serde_json::to_vec(&serde_json::json!({
+            "id": 2025020002_u64,
+            "gameDate": "2025-10-02",
+            "awayTeam": {"id": 22, "abbrev": team},
+            "homeTeam": {"id": 55, "abbrev": "SEA"},
+            "plays": []
+        }))
+        .expect("serialize game two play-by-play"),
+    )
+    .expect("write game two play-by-play");
+
+    upsert_game_manifest(&store, DataKind::Boxscore, 2025020001, game_one_boxscore);
+    upsert_game_manifest(&store, DataKind::Boxscore, 2025020002, game_two_boxscore);
+    upsert_game_manifest(&store, DataKind::PlayByPlay, 2025020001, game_one_play);
+    upsert_game_manifest(&store, DataKind::PlayByPlay, 2025020002, game_two_play);
+}
+
+fn upsert_game_manifest(store: &DataStore, kind: DataKind, game_id: u64, path: std::path::PathBuf) {
+    store
+        .manifest()
+        .upsert(
+            kind,
+            ManifestEntry {
+                key: DataKey::Game(GameId(game_id)),
+                path,
                 freshness: Freshness {
                     fetched_at: chrono::Utc::now(),
                     source: FetchSource::Manual,
