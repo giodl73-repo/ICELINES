@@ -38,6 +38,7 @@ pub mod error;
 pub mod state;
 pub mod static_assets;
 pub mod templates;
+pub mod workbench;
 
 use axum::{
     routing::{get, post},

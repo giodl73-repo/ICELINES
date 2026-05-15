@@ -35,6 +35,7 @@ pub mod teams;
 pub mod timeframe;
 pub mod transactions;
 pub mod view_model;
+pub mod workbench;
 
 pub use career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev, LeagueTier};
 pub use cross_team::{
@@ -117,4 +118,13 @@ pub use view_model::{
     WatchNoteInput, WatchRuleMutationIntent, WatchRuleMutationOperation, WatchlistMemberRow,
     WatchlistView, ALL_SEMANTIC_TOKENS, CAREER_HISTORY_FETCH_COMMAND,
     CAREER_HISTORY_MISSING_STORE_MESSAGE, CAREER_HISTORY_STORE_PATH,
+};
+pub use workbench::{
+    workbench_entry, workbench_experience, workbench_field, workbench_pane_model,
+    WorkbenchDocumentKind, WorkbenchEntry, WorkbenchExperience, WorkbenchExperienceId,
+    WorkbenchField, WorkbenchFieldId, WorkbenchFieldOperator, WorkbenchFieldScope,
+    WorkbenchFieldSource, WorkbenchFieldSummary, WorkbenchGroup, WorkbenchId, WorkbenchPaneKind,
+    WorkbenchPaneModel, WorkbenchPaneModelId, WorkbenchRibbonScope, WorkbenchValueKind,
+    WorkbenchZone, WORKBENCH_CATALOG, WORKBENCH_EXPERIENCES, WORKBENCH_FIELDS,
+    WORKBENCH_PANE_MODELS,
 };

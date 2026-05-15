@@ -86,8 +86,8 @@ or route summaries; no pane gets its own hockey math.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - MDI workbench inventory and zone contract | complete | `MDI-WORKBENCH-INVENTORY.md`; `plans/pulse-01.md`; `panels/pulse-01-workbench-contract/` |
-| 02 - Shared workbench catalog, fields, and pane models | planned | `plans/pulse-02.md` |
-| 03 - TUI full-MDI workbench shell | planned | depends on Pulse 02 |
+| 02 - Shared workbench catalog, fields, and pane models | complete | `icelines-core/src/workbench.rs`; `icelines-cli/src/tui/workbench.rs`; `icelines-web/src/workbench.rs`; `plans/pulse-02.md` |
+| 03 - TUI full-MDI workbench shell | planned | `plans/pulse-03.md` |
 | 04 - Web dashboard workbench catalog | planned | depends on Pulse 02 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 03-04 |
 
@@ -111,14 +111,13 @@ or route summaries; no pane gets its own hockey math.
 
 ## Current Result
 
-Pulse 01 produced `MDI-WORKBENCH-INVENTORY.md`, expanded the wave from a screen
-picker into a true workbench contract, and defined shared catalog identity,
-zone placement, ViewModel-backed fields, and flexible pane models for
-navigators, inspectors, filters, summaries, timelines, comparisons, queues,
-source-state panes, and action/status panes. It also clarified that tabs may
-remain as bound workbench experiences that swap composed center/pane/field
-bindings, not as the old screen-cycling navigation model.
+Pulse 02 added the shared workbench foundation in `icelines-core`: catalog
+entries, field metadata, pane models, and bound experience tabs. TUI and web now
+have adapter modules that lower shared workbench IDs to no-argument screens or
+dashboard routes without changing visible layout yet. The bound experiences
+(`Tonight bench`, `Scoring room`, `Team room`, `Fantasy room`, `Admin room`)
+force the expected center/pane/field systems top-down for Pulse 03/04.
 
 ## Next
 
-Execute Pulse 02: shared workbench catalog, fields, and pane models.
+Execute Pulse 03: TUI full-MDI workbench shell.
