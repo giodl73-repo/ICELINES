@@ -49,7 +49,7 @@ Schedule-right forever.
 
 | Pulse | Status | Evidence |
 |---|---|---|
-| 01 - Pane composition inventory and contract | planned | depends on this wave open |
+| 01 - Pane composition inventory and contract | complete | `PANE-COMPOSITION-INVENTORY.md`; `plans/pulse-01.md` |
 | 02 - Shared pane binding contract | planned | depends on Pulse 01 |
 | 03 - TUI pane composition controls | planned | depends on Pulse 02 |
 | 04 - Web pane composition controls | planned | depends on Pulse 02 |
@@ -72,8 +72,12 @@ Schedule-right forever.
 
 ## Current Result
 
-Wave opened with executable pulse plans and role-reviewed planning notes.
+Pulse 01 produced the pane composition inventory. The current split remains
+valid: Pulse 02 should evolve the existing core workbench metadata into explicit
+pane bindings and surface support; Pulse 03 should wire TUI pane controls only
+for real/stubbed pane bodies; Pulse 04 should wire safe no-JS web pane controls;
+Pulse 05 closes with docs and broad gates.
 
 ## Next
 
-Execute Pulse 01: Pane composition inventory and contract.
+Execute Pulse 02: Shared pane binding contract.

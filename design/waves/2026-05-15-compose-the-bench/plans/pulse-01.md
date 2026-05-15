@@ -44,5 +44,5 @@ surface-local versus shared, and what later pulses must implement.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-compose-the-bench design\waves\PHASES.md --errors-only`
+- [x] `cargo fmt --check`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-compose-the-bench design\waves\PHASES.md --errors-only`
