@@ -114,6 +114,10 @@ pub fn router(state: WebState) -> Router {
             get(handlers::team::get_team_streaks),
         )
         .route(
+            "/team/:abbrev/scoring",
+            get(handlers::scoring::get_team_scoring),
+        )
+        .route(
             "/records/player/:id",
             get(handlers::records::get_player_records),
         )
@@ -130,6 +134,10 @@ pub fn router(state: WebState) -> Router {
         .route(
             "/api/v1/team/:abbrev/streaks",
             get(handlers::team::get_team_streaks_json),
+        )
+        .route(
+            "/api/v1/team/:abbrev/scoring",
+            get(handlers::scoring::get_team_scoring_json),
         )
         .route(
             "/api/v1/records/player/:id",
@@ -210,6 +218,14 @@ pub fn router(state: WebState) -> Router {
         // Phase Conn Smythe C.3 — per-game live detail
         .route("/game/:id", get(handlers::game::get_game))
         .route("/api/v1/game/:id", get(handlers::game::get_game_json))
+        .route(
+            "/game/:id/scoring",
+            get(handlers::scoring::get_game_scoring),
+        )
+        .route(
+            "/api/v1/game/:id/scoring",
+            get(handlers::scoring::get_game_scoring_json),
+        )
         // Foster +18 — POST mutators (kept as POST so they can't be
         // CSRF'd via image tags / link prefetch).
         .route("/favorites/add", post(handlers::favorites::post_add))
@@ -365,6 +381,7 @@ mod handlers {
     /// `/player/:id` — King.3.1 + King.3.2. Player card + career table.
     pub mod player;
     pub mod records;
+    pub mod scoring;
     pub mod scouting;
     pub mod streaks;
 

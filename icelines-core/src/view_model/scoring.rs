@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 use crate::view_model::{SourceKind, SourceState, ViewContext};
 
@@ -98,11 +99,27 @@ impl ScoringEventSummary {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScoringSplitSummary {
+    pub label: String,
+    pub summary: ScoringEventSummary,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScoringShooterSummary {
+    pub player_id: u32,
+    pub summary: ScoringEventSummary,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GameScoringReportView {
     pub context: ViewContext,
     pub game_id: u64,
     pub events: Vec<ScoringEventInput>,
     pub summary: ScoringEventSummary,
+    pub team_summaries: Vec<ScoringSplitSummary>,
+    pub period_summaries: Vec<ScoringSplitSummary>,
+    pub situation_summaries: Vec<ScoringSplitSummary>,
+    pub top_shooters: Vec<ScoringShooterSummary>,
 }
 
 impl GameScoringReportView {
@@ -120,11 +137,19 @@ impl GameScoringReportView {
             .source_state
             .push(play_by_play_source_state(source_loaded));
         let summary = ScoringEventSummary::from_events(&events);
+        let team_summaries = split_summaries(&events, team_label);
+        let period_summaries = split_summaries(&events, period_label);
+        let situation_summaries = split_summaries(&events, situation_label);
+        let top_shooters = top_shooter_summaries(&events);
         Self {
             context,
             game_id,
             events,
             summary,
+            team_summaries,
+            period_summaries,
+            situation_summaries,
+            top_shooters,
         }
     }
 }
@@ -135,6 +160,9 @@ pub struct TeamScoringProfileView {
     pub team: String,
     pub events: Vec<ScoringEventInput>,
     pub summary: ScoringEventSummary,
+    pub period_summaries: Vec<ScoringSplitSummary>,
+    pub situation_summaries: Vec<ScoringSplitSummary>,
+    pub top_shooters: Vec<ScoringShooterSummary>,
 }
 
 impl TeamScoringProfileView {
@@ -156,11 +184,17 @@ impl TeamScoringProfileView {
             .source_state
             .push(play_by_play_source_state(source_loaded));
         let summary = ScoringEventSummary::from_events(&events);
+        let period_summaries = split_summaries(&events, period_label);
+        let situation_summaries = split_summaries(&events, situation_label);
+        let top_shooters = top_shooter_summaries(&events);
         Self {
             context,
             team: team.into().to_ascii_uppercase(),
             events,
             summary,
+            period_summaries,
+            situation_summaries,
+            top_shooters,
         }
     }
 }
@@ -172,6 +206,8 @@ pub struct PlayerScoringProfileView {
     pub player_name: String,
     pub events: Vec<ScoringEventInput>,
     pub summary: ScoringEventSummary,
+    pub period_summaries: Vec<ScoringSplitSummary>,
+    pub situation_summaries: Vec<ScoringSplitSummary>,
 }
 
 impl PlayerScoringProfileView {
@@ -195,12 +231,16 @@ impl PlayerScoringProfileView {
             .source_state
             .push(play_by_play_source_state(source_loaded));
         let summary = ScoringEventSummary::from_events(&events);
+        let period_summaries = split_summaries(&events, period_label);
+        let situation_summaries = split_summaries(&events, situation_label);
         Self {
             context,
             player_id,
             player_name: player_name.into(),
             events,
             summary,
+            period_summaries,
+            situation_summaries,
         }
     }
 }
@@ -250,6 +290,74 @@ fn play_by_play_source_state(source_loaded: bool) -> SourceState {
     } else {
         SourceState::missing(SourceKind::PlayByPlay)
     }
+}
+
+fn split_summaries(
+    events: &[ScoringEventInput],
+    label_fn: fn(&ScoringEventInput) -> String,
+) -> Vec<ScoringSplitSummary> {
+    let mut groups: BTreeMap<String, Vec<ScoringEventInput>> = BTreeMap::new();
+    for event in events {
+        groups
+            .entry(label_fn(event))
+            .or_default()
+            .push(event.clone());
+    }
+    groups
+        .into_iter()
+        .map(|(label, events)| ScoringSplitSummary {
+            label,
+            summary: ScoringEventSummary::from_events(&events),
+        })
+        .collect()
+}
+
+fn top_shooter_summaries(events: &[ScoringEventInput]) -> Vec<ScoringShooterSummary> {
+    let mut groups: BTreeMap<u32, Vec<ScoringEventInput>> = BTreeMap::new();
+    for event in events {
+        if let Some(player_id) = event.shooting_player_id.or(event.scoring_player_id) {
+            groups.entry(player_id).or_default().push(event.clone());
+        }
+    }
+    let mut rows: Vec<_> = groups
+        .into_iter()
+        .map(|(player_id, events)| ScoringShooterSummary {
+            player_id,
+            summary: ScoringEventSummary::from_events(&events),
+        })
+        .collect();
+    rows.sort_by(|a, b| {
+        b.summary
+            .shot_attempts
+            .cmp(&a.summary.shot_attempts)
+            .then(b.summary.shots_on_goal.cmp(&a.summary.shots_on_goal))
+            .then(b.summary.goals.cmp(&a.summary.goals))
+            .then(a.player_id.cmp(&b.player_id))
+    });
+    rows
+}
+
+fn team_label(event: &ScoringEventInput) -> String {
+    event
+        .event_owner_team_abbrev
+        .clone()
+        .or_else(|| event.event_owner_team_id.map(|id| id.to_string()))
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
+fn period_label(event: &ScoringEventInput) -> String {
+    if event.period_type == "REG" {
+        format!("P{}", event.period)
+    } else {
+        format!("{}{}", event.period_type, event.period)
+    }
+}
+
+fn situation_label(event: &ScoringEventInput) -> String {
+    event
+        .situation_code
+        .clone()
+        .unwrap_or_else(|| "unknown".to_string())
 }
 
 #[cfg(test)]
@@ -311,6 +419,27 @@ mod tests {
         assert_eq!(summary.blocked_shots, 1);
         assert_eq!(summary.unblocked_attempts, 3);
         assert_eq!(summary.shot_attempts, 4);
+    }
+
+    #[test]
+    fn l0_game_scoring_view_projects_split_summaries() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let mut goal = event(ShotEventKind::Goal);
+        goal.event_owner_team_abbrev = Some("EDM".to_string());
+        goal.period = 1;
+        goal.situation_code = Some("1551".to_string());
+        let mut shot = event(ShotEventKind::ShotOnGoal);
+        shot.event_owner_team_abbrev = Some("LAK".to_string());
+        shot.period = 2;
+        shot.situation_code = Some("1451".to_string());
+        let view =
+            GameScoringReportView::from_source_events(context, 2025020001, true, vec![goal, shot]);
+
+        assert_eq!(view.team_summaries.len(), 2);
+        assert_eq!(view.team_summaries[0].label, "EDM");
+        assert_eq!(view.period_summaries[0].label, "P1");
+        assert_eq!(view.situation_summaries[0].label, "1451");
+        assert_eq!(view.top_shooters[0].summary.shot_attempts, 2);
     }
 
     #[test]

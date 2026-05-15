@@ -36,7 +36,7 @@ tonight's games.
 | 01 - Scoring data inventory | done | `SCORING-DATA-INVENTORY.md`; `plans/pulse-01.md`; `panels/rocket-01-review/` |
 | 02 - Scoring ViewModel contracts | done | `plans/pulse-02.md`; `icelines-core/src/view_model/scoring.rs`; `icelines-fetch/src/scoring_provider.rs` |
 | 03 - Shot-event cache loader | done | `plans/pulse-03.md`; scoring cache aliases; source-state-aware `load_game_scoring_report` |
-| 04 - Game/team scoring reports | planned | Depends on shot-event cache loader |
+| 04 - Game/team scoring reports | done | `plans/pulse-04.md`; `/game/:id/scoring`; `/team/:abbrev/scoring`; scoring JSON twins |
 | 05 - Tonight scoring intelligence | planned | Depends on scoring reports and favorites cache path |
 | 06 - Player scoring profiles and projections | planned | Depends on game/team scoring report primitives |
 
@@ -58,10 +58,11 @@ IceLines-owned shot/chance reporting. Pulse 02 added typed scoring-event
 contracts and parsing for goals, shots on goal, missed shots, and blocked
 shots. Pulse 03 made that data path explicitly cacheable as scoring/shot events
 while still using `DataKind::PlayByPlay`, and added source-state-aware scoring
-report providers so future routes can distinguish missing play-by-play from
-loaded play-by-play with zero matching scoring events.
+report providers. Pulse 04 shipped the first report surfaces:
+`/game/:id/scoring`, `/api/v1/game/:id/scoring`, `/team/:abbrev/scoring`, and
+`/api/v1/team/:abbrev/scoring`.
 
 ## Next
 
-Validate Pulse 03, then generate Pulse 04 for game/team scoring report routes
-and renderers on top of the source-state-aware provider.
+Validate Pulse 04, then generate Pulse 05 for favorites-first tonight scoring
+intelligence on top of the game/team scoring report primitives.

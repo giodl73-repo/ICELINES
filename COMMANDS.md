@@ -508,6 +508,16 @@ with teams scored against, goalies scored against, and fight opponents. In the
 MDI command bar, `:records player <name>` opens the same TUI records screen;
 `:records team <ABBR>` still flashes the canonical CLI/web target.
 
+## Web scoring reports
+
+Rocket Richard scoring reports use cached official NHL play-by-play scoring
+events: goals, shots on goal, missed shots, and blocked shots. Populate inputs
+with `icelines fetch play-by-play --date YYYY-MM-DD` or use the web Admin game
+cache loader's "Scoring events / play-by-play" artifact.
+
+Web routes: `/game/:id/scoring`, `/team/:abbrev/scoring`,
+`/api/v1/game/:id/scoring`, and `/api/v1/team/:abbrev/scoring`.
+
 ## `x` — quick CSV/JSON export
 
 One-shot export of any report shape to stdout (default CSV) or a file. Excel-friendly.

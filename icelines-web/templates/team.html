@@ -23,6 +23,7 @@
         · {{ goalies.len() }} goalie{% if goalies.len() != 1 %}s{% endif %}
         · <a href="/team/{{ team_abbrev }}/season">season performance</a>
         · <a href="/team/{{ team_abbrev }}/streaks">streak leaders</a>
+        · <a href="/team/{{ team_abbrev }}/scoring">scoring profile</a>
         · <a href="/records/team/{{ team_abbrev }}">records</a>
     </p>
     {# Foster +18 — one-click favorite. POST so it's not CSRF'd via prefetch. #}

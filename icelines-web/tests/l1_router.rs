@@ -13,7 +13,7 @@ use axum::http::{Request, StatusCode};
 use axum::response::Response;
 use icelines_core::career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev};
 use icelines_core::freshness::{FetchSource, Freshness, Ttl};
-use icelines_core::identity::PlayerId;
+use icelines_core::identity::{GameId, PlayerId};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot};
 use icelines_core::{
@@ -796,7 +796,9 @@ async fn l1_html_each_route_has_active_season_header() {
         "/schedule?date=2014-10-08",
         "/playoffs?season=19931994",
         "/game/2025020342",
+        "/game/2025020342/scoring",
         "/transactions",
+        "/team/EDM/scoring",
         "/docs",
         "/fantasy",
     ];
@@ -4915,6 +4917,196 @@ async fn l1_conn_smythe_c3_game_json_envelope_shape() {
         .as_object()
         .is_some_and(|meta| meta.contains_key("source_error")));
     assert!(json["data"].is_object() || json["data"].is_null());
+}
+
+#[tokio::test]
+async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    seed_scoring_play_by_play(2025020001, "2025-10-07");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/game/2025020001/scoring")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "game-scoring");
+    assert_eq!(json["meta"]["game_id"], 2025020001_u64);
+    assert_eq!(
+        json["data"]["summary"]["shots_on_goal"],
+        serde_json::Value::from(3_u64)
+    );
+    assert_eq!(
+        json["data"]["team_summaries"][0]["label"],
+        serde_json::Value::from("CHI")
+    );
+}
+
+#[tokio::test]
+async fn l1_rocket_team_scoring_html_offers_cache_load_when_missing() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/team/CHI/scoring")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let html = String::from_utf8(bytes.to_vec()).expect("utf8 html");
+    assert!(html.contains("CHI Scoring Profile"), "body was:\n{html}");
+    assert!(
+        html.contains("Load scoring-event cache"),
+        "body was:\n{html}"
+    );
+    assert!(
+        html.contains("value=\"scoring-events\""),
+        "body was:\n{html}"
+    );
+}
+
+#[tokio::test]
+async fn l1_rocket_team_scoring_json_filters_team_events() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    seed_scoring_play_by_play(2025020001, "2025-10-07");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/team/CHI/scoring")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "team-scoring");
+    assert_eq!(json["meta"]["team_abbrev"], serde_json::Value::from("CHI"));
+    assert_eq!(json["data"]["team"], serde_json::Value::from("CHI"));
+    assert_eq!(
+        json["data"]["summary"]["shots_on_goal"],
+        serde_json::Value::from(2_u64)
+    );
+    assert_eq!(
+        json["data"]["events"]
+            .as_array()
+            .expect("events array")
+            .len(),
+        2
+    );
+}
+
+fn seed_scoring_play_by_play(game_id: u64, date: &str) {
+    let data_root = std::env::var("USERPROFILE")
+        .map(std::path::PathBuf::from)
+        .expect("temp home")
+        .join(".icelines")
+        .join("data");
+    let play_path = data_root
+        .join("play_by_play")
+        .join(date)
+        .join(format!("{game_id}.json"));
+    std::fs::create_dir_all(play_path.parent().expect("parent")).expect("mkdir");
+    std::fs::write(
+        &play_path,
+        serde_json::to_vec(&serde_json::json!({
+            "id": game_id,
+            "gameDate": date,
+            "awayTeam": {"id": 16, "abbrev": "CHI"},
+            "homeTeam": {"id": 24, "abbrev": "LAK"},
+            "plays": [
+                {
+                    "eventId": 21,
+                    "periodDescriptor": {"number": 1, "periodType": "REG"},
+                    "timeInPeriod": "03:10",
+                    "situationCode": "1551",
+                    "typeDescKey": "goal",
+                    "details": {
+                        "eventOwnerTeamId": 16,
+                        "scoringPlayerId": 8483493,
+                        "goalieInNetId": 8475683,
+                        "xCoord": 66,
+                        "yCoord": -1,
+                        "zoneCode": "O",
+                        "shotType": "snap",
+                        "awayScore": 1,
+                        "homeScore": 0
+                    }
+                },
+                {
+                    "eventId": 22,
+                    "periodDescriptor": {"number": 1, "periodType": "REG"},
+                    "timeInPeriod": "04:10",
+                    "situationCode": "1551",
+                    "typeDescKey": "shot-on-goal",
+                    "details": {
+                        "eventOwnerTeamId": 16,
+                        "shootingPlayerId": 8483493,
+                        "goalieInNetId": 8475683,
+                        "xCoord": 64,
+                        "yCoord": 2,
+                        "zoneCode": "O",
+                        "shotType": "wrist"
+                    }
+                },
+                {
+                    "eventId": 23,
+                    "periodDescriptor": {"number": 1, "periodType": "REG"},
+                    "timeInPeriod": "05:10",
+                    "situationCode": "1551",
+                    "typeDescKey": "shot-on-goal",
+                    "details": {
+                        "eventOwnerTeamId": 24,
+                        "shootingPlayerId": 8471685,
+                        "goalieInNetId": 8477424,
+                        "xCoord": -64,
+                        "yCoord": -2,
+                        "zoneCode": "O",
+                        "shotType": "wrist"
+                    }
+                }
+            ]
+        }))
+        .expect("serialize"),
+    )
+    .expect("write play-by-play");
+    let store = DataStore::open(&data_root).expect("open data store");
+    store
+        .manifest()
+        .upsert(
+            DataKind::PlayByPlay,
+            ManifestEntry {
+                key: DataKey::Game(GameId(game_id)),
+                path: play_path,
+                freshness: Freshness {
+                    fetched_at: chrono::Utc::now(),
+                    source: FetchSource::Manual,
+                    ttl: Ttl::Static,
+                },
+            },
+        )
+        .expect("seed manifest");
 }
 
 #[tokio::test]

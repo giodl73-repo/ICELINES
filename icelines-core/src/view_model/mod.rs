@@ -117,7 +117,8 @@ pub use schedule::{
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
 pub use scoring::{
     GameScoringReportView, PlayerScoringProfileView, ScoringEventInput, ScoringEventSummary,
-    ShotEventKind, ShotLocation, TeamScoringProfileView, TonightScoringIntelView,
+    ScoringShooterSummary, ScoringSplitSummary, ShotEventKind, ShotLocation,
+    TeamScoringProfileView, TonightScoringIntelView,
 };
 pub use snapshot::{
     SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,

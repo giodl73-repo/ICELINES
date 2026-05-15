@@ -289,6 +289,31 @@ code {
     color: var(--ice-fg);
 }
 
+.stat-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.stat-card {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-divider);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+.stat-card strong {
+    display: block;
+    font-size: 1.5rem;
+    line-height: 1.2;
+}
+
+.stat-card span {
+    color: var(--ice-muted);
+    font-size: 0.85rem;
+}
+
 .page-section {
     margin-top: 1.5rem;
 }

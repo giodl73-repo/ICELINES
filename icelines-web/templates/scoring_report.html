@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block content %}
+<p class="back-link-row">
+    <a href="{{ page.back_href }}">← {{ page.back_label }}</a>
+    <span class="inline-separator">·</span>
+    <a href="{{ page.api_href }}">JSON</a>
+</p>
+
+<header class="team-banner">
+    <h1>{{ page.title }}</h1>
+    <p class="team-banner-meta">{{ page.subtitle }} · {{ page.source_label }}</p>
+</header>
+
+<section>
+    <h2>Summary</h2>
+    <div class="stat-card-grid">
+        <div class="stat-card"><strong>{{ page.summary.goals }}</strong><span>Goals</span></div>
+        <div class="stat-card"><strong>{{ page.summary.shots_on_goal }}</strong><span>Shots on goal</span></div>
+        <div class="stat-card"><strong>{{ page.summary.shot_attempts }}</strong><span>Attempts</span></div>
+        <div class="stat-card"><strong>{{ page.summary.unblocked_attempts }}</strong><span>Unblocked</span></div>
+        <div class="stat-card"><strong>{{ page.summary.missed_shots }}</strong><span>Missed</span></div>
+        <div class="stat-card"><strong>{{ page.summary.blocked_shots }}</strong><span>Blocked</span></div>
+        <div class="stat-card"><strong>{{ page.summary.shot_pct }}</strong><span>Shot %</span></div>
+    </div>
+</section>
+
+{% if !page.source_loaded %}
+<section class="empty-state">
+    <p>Scoring-event play-by-play is not loaded for this report yet.</p>
+    {% match page.load_form %}
+        {% when Some with (form) %}
+        <form method="post" action="/admin/game-cache/load" class="inline-form">
+            <input type="hidden" name="season" value="{{ form.season }}">
+            <input type="hidden" name="season_type" value="{{ form.season_type }}">
+            <input type="hidden" name="teams" value="{{ form.teams }}">
+            <input type="hidden" name="artifacts" value="scoring-events">
+            <input type="hidden" name="return_to" value="{{ form.return_to }}">
+            <button type="submit">Load scoring-event cache</button>
+        </form>
+        {% when None %}
+        <p><a href="/admin">Open Admin</a> to load scoring-event play-by-play for this game’s teams.</p>
+    {% endmatch %}
+</section>
+{% endif %}
+
+{% if !page.team_summaries.is_empty() %}
+<section>
+    <h2>By team</h2>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Split</th><th class="numeric">G</th><th class="numeric">SOG</th><th class="numeric">Attempts</th><th class="numeric">Unblocked</th><th class="numeric">Missed</th><th class="numeric">Blocked</th><th class="numeric">Shot %</th></tr>
+        </thead>
+        <tbody>
+            {% for row in page.team_summaries %}
+            <tr><td>{{ row.label }}</td><td class="numeric">{{ row.summary.goals }}</td><td class="numeric">{{ row.summary.shots_on_goal }}</td><td class="numeric">{{ row.summary.shot_attempts }}</td><td class="numeric">{{ row.summary.unblocked_attempts }}</td><td class="numeric">{{ row.summary.missed_shots }}</td><td class="numeric">{{ row.summary.blocked_shots }}</td><td class="numeric">{{ row.summary.shot_pct }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endif %}
+
+{% if !page.period_summaries.is_empty() %}
+<section>
+    <h2>By period</h2>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Split</th><th class="numeric">G</th><th class="numeric">SOG</th><th class="numeric">Attempts</th><th class="numeric">Unblocked</th><th class="numeric">Missed</th><th class="numeric">Blocked</th><th class="numeric">Shot %</th></tr>
+        </thead>
+        <tbody>
+            {% for row in page.period_summaries %}
+            <tr><td>{{ row.label }}</td><td class="numeric">{{ row.summary.goals }}</td><td class="numeric">{{ row.summary.shots_on_goal }}</td><td class="numeric">{{ row.summary.shot_attempts }}</td><td class="numeric">{{ row.summary.unblocked_attempts }}</td><td class="numeric">{{ row.summary.missed_shots }}</td><td class="numeric">{{ row.summary.blocked_shots }}</td><td class="numeric">{{ row.summary.shot_pct }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endif %}
+
+{% if !page.situation_summaries.is_empty() %}
+<section>
+    <h2>By situation</h2>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Split</th><th class="numeric">G</th><th class="numeric">SOG</th><th class="numeric">Attempts</th><th class="numeric">Unblocked</th><th class="numeric">Missed</th><th class="numeric">Blocked</th><th class="numeric">Shot %</th></tr>
+        </thead>
+        <tbody>
+            {% for row in page.situation_summaries %}
+            <tr><td>{{ row.label }}</td><td class="numeric">{{ row.summary.goals }}</td><td class="numeric">{{ row.summary.shots_on_goal }}</td><td class="numeric">{{ row.summary.shot_attempts }}</td><td class="numeric">{{ row.summary.unblocked_attempts }}</td><td class="numeric">{{ row.summary.missed_shots }}</td><td class="numeric">{{ row.summary.blocked_shots }}</td><td class="numeric">{{ row.summary.shot_pct }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endif %}
+
+{% if !page.top_shooters.is_empty() %}
+<section>
+    <h2>Top shooters</h2>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>Player ID</th>
+                <th class="numeric">G</th>
+                <th class="numeric">SOG</th>
+                <th class="numeric">Attempts</th>
+                <th class="numeric">Missed</th>
+                <th class="numeric">Blocked</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in page.top_shooters %}
+            <tr>
+                <td><a href="/player/{{ row.player_id }}">{{ row.player_id }}</a></td>
+                <td class="numeric">{{ row.summary.goals }}</td>
+                <td class="numeric">{{ row.summary.shots_on_goal }}</td>
+                <td class="numeric">{{ row.summary.shot_attempts }}</td>
+                <td class="numeric">{{ row.summary.missed_shots }}</td>
+                <td class="numeric">{{ row.summary.blocked_shots }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endif %}
+
+{% if !page.events.is_empty() %}
+<section>
+    <h2>Event detail</h2>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>Period</th>
+                <th>Time</th>
+                <th>Event</th>
+                <th>Team</th>
+                <th>Shooter</th>
+                <th>Goalie</th>
+                <th>Shot type</th>
+                <th>Location</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in page.events %}
+            <tr>
+                <td>{{ event.period }}</td>
+                <td>{{ event.time }}</td>
+                <td>{{ event.kind }}</td>
+                <td>{{ event.team }}</td>
+                <td>{{ event.shooter }}</td>
+                <td>{{ event.goalie }}</td>
+                <td>{{ event.shot_type }}</td>
+                <td>{{ event.location }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endif %}
+
+{% if page.source_loaded && page.events.is_empty() %}
+<section class="empty-state">
+    <p>Play-by-play is loaded, but no scoring-event rows matched this report.</p>
+</section>
+{% endif %}
+{% endblock %}
