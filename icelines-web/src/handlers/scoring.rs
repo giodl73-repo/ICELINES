@@ -1,8 +1,9 @@
 use crate::state::WebState;
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
+use chrono::{NaiveDate, Utc};
 use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
@@ -42,6 +43,46 @@ struct ScoringLoadForm {
     season_type: String,
     teams: String,
     return_to: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct TonightIntelQuery {
+    #[serde(default)]
+    date: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "tonight_intel.html")]
+struct TonightIntelTemplate {
+    active_label: String,
+    page: TonightIntelPage,
+}
+
+#[derive(Debug, Clone)]
+struct TonightIntelPage {
+    date: String,
+    api_href: String,
+    source_loaded: bool,
+    source_label: String,
+    games_loaded: usize,
+    events_loaded: usize,
+    summary: ScoringSummaryTemplateRow,
+    favorite_teams: Vec<TonightTeamIntelRow>,
+    favorite_players: Vec<TonightPlayerIntelRow>,
+    load_form: ScoringLoadForm,
+}
+
+#[derive(Debug, Clone)]
+struct TonightTeamIntelRow {
+    team: String,
+    summary: ScoringSummaryTemplateRow,
+}
+
+#[derive(Debug, Clone)]
+struct TonightPlayerIntelRow {
+    label: String,
+    player_id: String,
+    summary: ScoringSummaryTemplateRow,
 }
 
 #[derive(Debug, Clone)]
@@ -133,6 +174,44 @@ pub async fn get_team_scoring_json(
     }
 }
 
+pub async fn get_tonight_intel(
+    State(state): State<WebState>,
+    Query(q): Query<TonightIntelQuery>,
+) -> Response {
+    match build_tonight_intel_view(&state, &q).await {
+        Ok((active_label, view)) => {
+            let page = tonight_intel_page(&view);
+            match (TonightIntelTemplate { active_label, page }).render() {
+                Ok(html) => Html(html).into_response(),
+                Err(e) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Html(format!("template render failed: {e}")),
+                )
+                    .into_response(),
+            }
+        }
+        Err(response) => *response,
+    }
+}
+
+pub async fn get_tonight_intel_json(
+    State(state): State<WebState>,
+    Query(q): Query<TonightIntelQuery>,
+) -> Response {
+    match build_tonight_intel_view(&state, &q).await {
+        Ok((_active_label, view)) => {
+            let meta = serde_json::json!({
+                "date": view.date,
+                "source_state": view.context.source_state,
+                "favorite_team_count": view.favorite_teams.len(),
+                "favorite_player_count": view.favorite_players.len(),
+            });
+            crate::api::json_data_meta("tonight-intel", view, meta)
+        }
+        Err(response) => *response,
+    }
+}
+
 fn render_scoring_template(active_label: String, page: ScoringReportPage) -> Response {
     match (ScoringReportTemplate { active_label, page }).render() {
         Ok(html) => Html(html).into_response(),
@@ -166,6 +245,41 @@ async fn build_team_scoring_view(
     let view =
         icelines_fetch::scoring_provider::load_team_scoring_profile(&store, context, &team.0);
     Ok((active_label, season, season_type, view))
+}
+
+async fn build_tonight_intel_view(
+    state: &WebState,
+    q: &TonightIntelQuery,
+) -> Result<(String, icelines_core::TonightScoringIntelView), Box<Response>> {
+    let (active_label, season, season_type) = active_window(state).await?;
+    let date = q
+        .date
+        .as_deref()
+        .and_then(|d| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+        .unwrap_or_else(|| Utc::now().date_naive())
+        .format("%Y-%m-%d")
+        .to_string();
+    let favorites = crate::handlers::favorites_data::read_group_members("Favorites");
+    let favorite_teams: Vec<String> = favorites
+        .iter()
+        .filter(|(kind, _key)| kind == "team")
+        .map(|(_kind, key)| key.to_ascii_uppercase())
+        .collect();
+    let favorite_players: Vec<(String, Option<u32>)> = favorites
+        .iter()
+        .filter(|(kind, _key)| kind == "player")
+        .map(|(_kind, key)| (key.clone(), resolve_favorite_player_id(key)))
+        .collect();
+    let store = open_data_store("tonight-intel")?;
+    let context = ViewContext::new(ViewWindow::new(season, season_type));
+    let view = icelines_fetch::scoring_provider::load_tonight_scoring_intel(
+        &store,
+        context,
+        &date,
+        &favorite_teams,
+        &favorite_players,
+    );
+    Ok((active_label, view))
 }
 
 async fn active_window(state: &WebState) -> Result<(String, Season, SeasonType), Box<Response>> {
@@ -259,6 +373,50 @@ fn team_scoring_page(
             teams: view.team.clone(),
             return_to: format!("/team/{}/scoring", view.team),
         }),
+    }
+}
+
+fn tonight_intel_page(view: &icelines_core::TonightScoringIntelView) -> TonightIntelPage {
+    let source_loaded = source_loaded(&view.context.source_state);
+    TonightIntelPage {
+        date: view.date.clone(),
+        api_href: format!("/api/v1/tonight/intel?date={}", view.date),
+        source_loaded,
+        source_label: source_label(source_loaded),
+        games_loaded: view.games_loaded,
+        events_loaded: view.events_loaded,
+        summary: summary_row(view.summary),
+        favorite_teams: view
+            .favorite_teams
+            .iter()
+            .map(|row| TonightTeamIntelRow {
+                team: row.team.clone(),
+                summary: summary_row(row.summary),
+            })
+            .collect(),
+        favorite_players: view
+            .favorite_players
+            .iter()
+            .map(|row| TonightPlayerIntelRow {
+                label: row.player_key.clone(),
+                player_id: row
+                    .player_id
+                    .map(|pid| pid.to_string())
+                    .unwrap_or_else(|| "unresolved".to_string()),
+                summary: summary_row(row.summary),
+            })
+            .collect(),
+        load_form: ScoringLoadForm {
+            season: view.context.window.season.0.to_string(),
+            season_type: view.context.window.season_type.label().to_string(),
+            teams: view
+                .favorite_teams
+                .iter()
+                .map(|row| row.team.as_str())
+                .collect::<Vec<_>>()
+                .join(","),
+            return_to: format!("/tonight/intel?date={}", view.date),
+        },
     }
 }
 
@@ -394,4 +552,12 @@ fn data_root() -> Option<std::path::PathBuf> {
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(std::path::PathBuf::from)
         .map(|home| home.join(".icelines").join("data"))
+}
+
+fn resolve_favorite_player_id(key: &str) -> Option<u32> {
+    let key = key.trim();
+    if let Ok(pid) = key.parse::<u32>() {
+        return Some(pid);
+    }
+    icelines_fetch::stats_loader::resolve_player_id_by_name(key)
 }

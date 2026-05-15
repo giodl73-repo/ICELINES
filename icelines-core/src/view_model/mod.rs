@@ -118,7 +118,8 @@ pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView
 pub use scoring::{
     GameScoringReportView, PlayerScoringProfileView, ScoringEventInput, ScoringEventSummary,
     ScoringShooterSummary, ScoringSplitSummary, ShotEventKind, ShotLocation,
-    TeamScoringProfileView, TonightScoringIntelView,
+    TeamScoringProfileView, TonightFavoritePlayerScoringRow, TonightFavoriteTeamScoringRow,
+    TonightScoringIntelView,
 };
 pub use snapshot::{
     SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,

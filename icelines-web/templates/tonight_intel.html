@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Tonight Scoring Intel{% endblock %}
+
+{% block content %}
+<p class="back-link-row">
+    <a href="/scores?date={{ page.date }}">← scores</a>
+    <span class="inline-separator">·</span>
+    <a href="{{ page.api_href }}">JSON</a>
+</p>
+
+<header class="team-banner">
+    <h1>Tonight Scoring Intel</h1>
+    <p class="team-banner-meta">{{ page.date }} · {{ page.source_label }}</p>
+</header>
+
+<section>
+    <h2>Loaded scoring pressure</h2>
+    <div class="stat-card-grid">
+        <div class="stat-card"><strong>{{ page.games_loaded }}</strong><span>Games loaded</span></div>
+        <div class="stat-card"><strong>{{ page.events_loaded }}</strong><span>Scoring events</span></div>
+        <div class="stat-card"><strong>{{ page.summary.goals }}</strong><span>Goals</span></div>
+        <div class="stat-card"><strong>{{ page.summary.shots_on_goal }}</strong><span>Shots on goal</span></div>
+        <div class="stat-card"><strong>{{ page.summary.shot_attempts }}</strong><span>Attempts</span></div>
+        <div class="stat-card"><strong>{{ page.summary.shot_pct }}</strong><span>Shot %</span></div>
+    </div>
+</section>
+
+{% if !page.source_loaded %}
+<section class="empty-state">
+    <p>Scoring-event play-by-play is not loaded for this date yet.</p>
+    <form method="post" action="/admin/game-cache/load" class="inline-form">
+        <input type="hidden" name="season" value="{{ page.load_form.season }}">
+        <input type="hidden" name="season_type" value="{{ page.load_form.season_type }}">
+        <input type="hidden" name="teams" value="{{ page.load_form.teams }}">
+        <input type="hidden" name="artifacts" value="scoring-events">
+        <input type="hidden" name="return_to" value="{{ page.load_form.return_to }}">
+        <button type="submit">Load Favorites scoring cache</button>
+    </form>
+</section>
+{% endif %}
+
+<section>
+    <h2>Favorite teams</h2>
+    {% if page.favorite_teams.is_empty() %}
+    <p class="muted">No favorite teams are configured.</p>
+    {% else %}
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Team</th><th class="numeric">G</th><th class="numeric">SOG</th><th class="numeric">Attempts</th><th class="numeric">Unblocked</th><th class="numeric">Shot %</th></tr>
+        </thead>
+        <tbody>
+            {% for row in page.favorite_teams %}
+            <tr>
+                <td><a href="/team/{{ row.team }}/scoring">{{ row.team }}</a></td>
+                <td class="numeric">{{ row.summary.goals }}</td>
+                <td class="numeric">{{ row.summary.shots_on_goal }}</td>
+                <td class="numeric">{{ row.summary.shot_attempts }}</td>
+                <td class="numeric">{{ row.summary.unblocked_attempts }}</td>
+                <td class="numeric">{{ row.summary.shot_pct }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Favorite players</h2>
+    {% if page.favorite_players.is_empty() %}
+    <p class="muted">No favorite players are configured.</p>
+    {% else %}
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Player</th><th>Resolved ID</th><th class="numeric">G</th><th class="numeric">SOG</th><th class="numeric">Attempts</th><th class="numeric">Shot %</th></tr>
+        </thead>
+        <tbody>
+            {% for row in page.favorite_players %}
+            <tr>
+                <td>{{ row.label }}</td>
+                <td>{{ row.player_id }}</td>
+                <td class="numeric">{{ row.summary.goals }}</td>
+                <td class="numeric">{{ row.summary.shots_on_goal }}</td>
+                <td class="numeric">{{ row.summary.shot_attempts }}</td>
+                <td class="numeric">{{ row.summary.shot_pct }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -37,7 +37,7 @@ tonight's games.
 | 02 - Scoring ViewModel contracts | done | `plans/pulse-02.md`; `icelines-core/src/view_model/scoring.rs`; `icelines-fetch/src/scoring_provider.rs` |
 | 03 - Shot-event cache loader | done | `plans/pulse-03.md`; scoring cache aliases; source-state-aware `load_game_scoring_report` |
 | 04 - Game/team scoring reports | done | `plans/pulse-04.md`; `/game/:id/scoring`; `/team/:abbrev/scoring`; scoring JSON twins |
-| 05 - Tonight scoring intelligence | planned | Depends on scoring reports and favorites cache path |
+| 05 - Tonight scoring intelligence | done | `plans/pulse-05.md`; `/tonight/intel`; `/api/v1/tonight/intel`; favorites-first `TonightScoringIntelView` |
 | 06 - Player scoring profiles and projections | planned | Depends on game/team scoring report primitives |
 
 ## Role Notes
@@ -60,9 +60,10 @@ shots. Pulse 03 made that data path explicitly cacheable as scoring/shot events
 while still using `DataKind::PlayByPlay`, and added source-state-aware scoring
 report providers. Pulse 04 shipped the first report surfaces:
 `/game/:id/scoring`, `/api/v1/game/:id/scoring`, `/team/:abbrev/scoring`, and
-`/api/v1/team/:abbrev/scoring`.
+`/api/v1/team/:abbrev/scoring`. Pulse 05 added favorites-first tonight scoring
+intel at `/tonight/intel` and `/api/v1/tonight/intel`.
 
 ## Next
 
-Validate Pulse 04, then generate Pulse 05 for favorites-first tonight scoring
-intelligence on top of the game/team scoring report primitives.
+Generate Pulse 06 for player scoring profiles and lightweight projections on
+top of the scoring report primitives.

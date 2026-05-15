@@ -60,6 +60,10 @@ impl HomeEnvFixture {
             prev_home,
         }
     }
+
+    fn path(&self) -> &std::path::Path {
+        self._dir.path()
+    }
 }
 
 impl Drop for HomeEnvFixture {
@@ -5048,6 +5052,73 @@ async fn l1_rocket_team_scoring_json_filters_team_events() {
     );
 }
 
+#[tokio::test]
+async fn l1_rocket_tonight_intel_json_filters_favorites() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    let data_root = DataRootEnvFixture::new();
+    seed_favorites_for_tonight(home.path());
+    seed_scoring_play_by_play(&data_root.data_root(), 2025020001, "2025-10-07");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/tonight/intel?date=2025-10-07")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "tonight-intel");
+    assert_eq!(json["meta"]["date"], serde_json::Value::from("2025-10-07"));
+    assert_eq!(
+        json["data"]["favorite_teams"][0]["summary"]["shots_on_goal"],
+        serde_json::Value::from(2_u64)
+    );
+    assert_eq!(
+        json["data"]["favorite_players"][0]["summary"]["goals"],
+        serde_json::Value::from(1_u64)
+    );
+}
+
+#[tokio::test]
+async fn l1_rocket_tonight_intel_html_offers_cache_load_when_missing() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    let _data_root = DataRootEnvFixture::new();
+    seed_favorites_for_tonight(home.path());
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/tonight/intel?date=2025-10-07")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let html = String::from_utf8(bytes.to_vec()).expect("utf8 html");
+    assert!(html.contains("Tonight Scoring Intel"), "body was:\n{html}");
+    assert!(
+        html.contains("Load Favorites scoring cache"),
+        "body was:\n{html}"
+    );
+    assert!(
+        html.contains("value=\"scoring-events\""),
+        "body was:\n{html}"
+    );
+}
+
 fn seed_scoring_play_by_play(data_root: &std::path::Path, game_id: u64, date: &str) {
     let play_path = data_root
         .join("play_by_play")
@@ -5133,6 +5204,29 @@ fn seed_scoring_play_by_play(data_root: &std::path::Path, game_id: u64, date: &s
             },
         )
         .expect("seed manifest");
+}
+
+fn seed_favorites_for_tonight(home: &std::path::Path) {
+    let db_dir = home.join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE groups (
+            name TEXT PRIMARY KEY,
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+         );
+         CREATE TABLE group_members (
+            group_name TEXT NOT NULL,
+            entity_ref TEXT NOT NULL,
+            added_at TEXT NOT NULL,
+            PRIMARY KEY (group_name, entity_ref)
+         );
+         INSERT INTO groups VALUES ('Favorites', '', datetime('now'));
+         INSERT INTO group_members VALUES ('Favorites', 'team:CHI', datetime('now'));
+         INSERT INTO group_members VALUES ('Favorites', 'player:8483493', datetime('now'));",
+    )
+    .expect("seed favorites db");
 }
 
 #[tokio::test]

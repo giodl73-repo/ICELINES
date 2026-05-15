@@ -252,6 +252,23 @@ pub struct TonightScoringIntelView {
     pub games_loaded: usize,
     pub events_loaded: usize,
     pub summary: ScoringEventSummary,
+    pub favorite_teams: Vec<TonightFavoriteTeamScoringRow>,
+    pub favorite_players: Vec<TonightFavoritePlayerScoringRow>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TonightFavoriteTeamScoringRow {
+    pub team: String,
+    pub events_loaded: usize,
+    pub summary: ScoringEventSummary,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TonightFavoritePlayerScoringRow {
+    pub player_key: String,
+    pub player_id: Option<u32>,
+    pub events_loaded: usize,
+    pub summary: ScoringEventSummary,
 }
 
 impl TonightScoringIntelView {
@@ -265,11 +282,31 @@ impl TonightScoringIntelView {
     }
 
     pub fn from_source_events(
+        context: ViewContext,
+        date: impl Into<String>,
+        games_loaded: usize,
+        source_loaded: bool,
+        events: &[ScoringEventInput],
+    ) -> Self {
+        Self::from_favorites(
+            context,
+            date,
+            games_loaded,
+            source_loaded,
+            events,
+            Vec::new(),
+            Vec::new(),
+        )
+    }
+
+    pub fn from_favorites(
         mut context: ViewContext,
         date: impl Into<String>,
         games_loaded: usize,
         source_loaded: bool,
         events: &[ScoringEventInput],
+        favorite_teams: Vec<TonightFavoriteTeamScoringRow>,
+        favorite_players: Vec<TonightFavoritePlayerScoringRow>,
     ) -> Self {
         context
             .source_state
@@ -280,6 +317,8 @@ impl TonightScoringIntelView {
             games_loaded,
             events_loaded: events.len(),
             summary: ScoringEventSummary::from_events(events),
+            favorite_teams,
+            favorite_players,
         }
     }
 }

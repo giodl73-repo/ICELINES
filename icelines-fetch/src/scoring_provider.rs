@@ -2,7 +2,9 @@ use anyhow::Result;
 use icelines_core::identity::GameId;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
-    GameScoringReportView, ScoringEventInput, TeamScoringProfileView, ViewContext,
+    GameScoringReportView, ScoringEventInput, ScoringEventSummary, TeamScoringProfileView,
+    TonightFavoritePlayerScoringRow, TonightFavoriteTeamScoringRow, TonightScoringIntelView,
+    ViewContext,
 };
 
 use crate::datastore::DataStore;
@@ -122,6 +124,100 @@ pub fn load_team_scoring_profile(
             .then(a.event_id.cmp(&b.event_id))
     });
     TeamScoringProfileView::from_source_events(context, team, source_loaded, events)
+}
+
+pub fn load_tonight_scoring_intel(
+    store: &DataStore,
+    context: ViewContext,
+    date: &str,
+    favorite_teams: &[String],
+    favorite_players: &[(String, Option<u32>)],
+) -> TonightScoringIntelView {
+    let mut source_loaded = false;
+    let mut games_loaded = 0usize;
+    let mut events = Vec::new();
+    for entry in store.manifest().list(DataKind::PlayByPlay) {
+        let entry_date = entry
+            .path
+            .parent()
+            .and_then(|p| p.file_name())
+            .and_then(|n| n.to_str());
+        if entry_date != Some(date) {
+            continue;
+        }
+        let DataKey::Game(game_id) = entry.key else {
+            continue;
+        };
+        let Some(raw) = store.load_play_by_play_raw(DataKey::Game(game_id)) else {
+            continue;
+        };
+        source_loaded = true;
+        games_loaded += 1;
+        let parsed = parse_play_by_play(&raw, game_id.0);
+        events.extend(parsed.scoring_events.into_iter().map(|mut event| {
+            event.date = event.date.take().or_else(|| Some(date.to_string()));
+            event
+        }));
+    }
+    events.sort_by(|a, b| {
+        a.game_id
+            .cmp(&b.game_id)
+            .then(a.period.cmp(&b.period))
+            .then(a.event_id.cmp(&b.event_id))
+    });
+
+    let team_rows = favorite_teams
+        .iter()
+        .map(|team| {
+            let team_events: Vec<_> = events
+                .iter()
+                .filter(|event| {
+                    event
+                        .event_owner_team_abbrev
+                        .as_deref()
+                        .is_some_and(|event_team| event_team.eq_ignore_ascii_case(team))
+                })
+                .cloned()
+                .collect();
+            TonightFavoriteTeamScoringRow {
+                team: team.to_ascii_uppercase(),
+                events_loaded: team_events.len(),
+                summary: ScoringEventSummary::from_events(&team_events),
+            }
+        })
+        .collect();
+
+    let player_rows = favorite_players
+        .iter()
+        .map(|(key, player_id)| {
+            let player_events: Vec<_> = events
+                .iter()
+                .filter(|event| {
+                    player_id.is_some_and(|pid| {
+                        event.shooting_player_id == Some(pid)
+                            || event.scoring_player_id == Some(pid)
+                    })
+                })
+                .cloned()
+                .collect();
+            TonightFavoritePlayerScoringRow {
+                player_key: key.clone(),
+                player_id: *player_id,
+                events_loaded: player_events.len(),
+                summary: ScoringEventSummary::from_events(&player_events),
+            }
+        })
+        .collect();
+
+    TonightScoringIntelView::from_favorites(
+        context,
+        date.to_string(),
+        games_loaded,
+        source_loaded,
+        &events,
+        team_rows,
+        player_rows,
+    )
 }
 
 fn game_matches_window(game_id: u64, season: u32, season_type: SeasonType) -> bool {
@@ -367,6 +463,71 @@ mod tests {
         assert_eq!(view.team, "CHI");
         assert_eq!(view.events.len(), 1);
         assert_eq!(view.summary.shots_on_goal, 1);
+        assert_eq!(view.context.source_state[0].state, Completeness::Complete);
+    }
+
+    #[test]
+    fn l1_tonight_scoring_intel_filters_favorites_by_date() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let root = temp.path().join("data");
+        let play_path = root
+            .join("play_by_play")
+            .join("2025-10-07")
+            .join("2025020001.json");
+        fs::create_dir_all(play_path.parent().expect("parent")).expect("mkdir");
+        fs::write(
+            &play_path,
+            serde_json::to_vec(&json!({
+                "id": 2025020001u64,
+                "gameDate": "2025-10-07",
+                "awayTeam": {"id": 16, "abbrev": "CHI"},
+                "homeTeam": {"id": 24, "abbrev": "LAK"},
+                "plays": [{
+                    "eventId": 21,
+                    "periodDescriptor": {"number": 1, "periodType": "REG"},
+                    "timeInPeriod": "03:10",
+                    "typeDescKey": "goal",
+                    "details": {
+                        "eventOwnerTeamId": 16,
+                        "scoringPlayerId": 8483493,
+                        "xCoord": 66,
+                        "yCoord": -1
+                    }
+                }]
+            }))
+            .expect("serialize"),
+        )
+        .expect("write play-by-play");
+        let store = DataStore::open(&root).expect("open store");
+        store
+            .manifest()
+            .upsert(
+                DataKind::PlayByPlay,
+                ManifestEntry {
+                    key: DataKey::Game(GameId(2025020001)),
+                    path: play_path,
+                    freshness: Freshness {
+                        fetched_at: Utc::now(),
+                        source: FetchSource::Manual,
+                        ttl: Ttl::Static,
+                    },
+                },
+            )
+            .expect("upsert manifest");
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+
+        let view = load_tonight_scoring_intel(
+            &store,
+            context,
+            "2025-10-07",
+            &["CHI".to_string()],
+            &[("8483493".to_string(), Some(8483493))],
+        );
+
+        assert_eq!(view.games_loaded, 1);
+        assert_eq!(view.summary.goals, 1);
+        assert_eq!(view.favorite_teams[0].summary.goals, 1);
+        assert_eq!(view.favorite_players[0].summary.goals, 1);
         assert_eq!(view.context.source_state[0].state, Completeness::Complete);
     }
 }

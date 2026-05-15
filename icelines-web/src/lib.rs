@@ -210,6 +210,11 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/favorites",
             get(handlers::favorites::get_favorites_json),
         )
+        .route("/tonight/intel", get(handlers::scoring::get_tonight_intel))
+        .route(
+            "/api/v1/tonight/intel",
+            get(handlers::scoring::get_tonight_intel_json),
+        )
         .route("/watchlist", get(handlers::favorites::get_watchlist))
         .route(
             "/api/v1/watchlist",
