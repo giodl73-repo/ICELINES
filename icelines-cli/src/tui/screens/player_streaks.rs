@@ -55,12 +55,22 @@ impl PlayerStreaksScreenState {
             .join("data");
         let store = icelines_fetch::datastore::DataStore::open(&data_root)?;
         let lines = icelines_fetch::streaks_provider::load_player_game_lines(&store, pid.0);
+        let (shot_lines, play_by_play_source_loaded) =
+            icelines_fetch::streaks_provider::load_player_shot_lines(&store, pid.0);
         let player_name = lines
             .first()
             .map(|line| line.player_name.clone())
+            .or_else(|| shot_lines.first().map(|line| line.player_name.clone()))
             .unwrap_or_else(|| player_name.to_string());
         let context = ViewContext::new(ViewWindow::new(season, season_type));
-        let view = PlayerStreaksView::from_game_lines(context, pid.0, player_name, &lines);
+        let view = PlayerStreaksView::from_game_and_shot_lines(
+            context,
+            pid.0,
+            player_name,
+            &lines,
+            &shot_lines,
+            play_by_play_source_loaded,
+        );
 
         if let Ok(mut cache) = self.cache.lock() {
             *cache = Some(PlayerStreaksCache {
@@ -125,7 +135,7 @@ pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
             view.games_loaded
         ))),
         ListItem::new(Line::styled(
-            " Source: cached boxscore skater rows; no streaks are inferred from season totals.",
+            " Source: cached boxscore + play-by-play rows; no streaks are inferred from season totals.",
             dim,
         )),
         ListItem::new(Line::from("")),
@@ -133,7 +143,7 @@ pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
 
     if view.games_loaded == 0 {
         items.push(ListItem::new(Line::styled(
-            " No cached boxscore game lines yet. Run `icelines fetch boxscore --date YYYY-MM-DD`.",
+            " No cached boxscore/play-by-play game lines yet. Run `icelines fetch boxscore --date YYYY-MM-DD` and `icelines fetch play-by-play --date YYYY-MM-DD`.",
             dim,
         )));
     } else {

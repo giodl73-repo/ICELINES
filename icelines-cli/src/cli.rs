@@ -237,12 +237,14 @@ Examples:
         out: Option<std::path::PathBuf>,
     },
 
-    /// Show a player's goal, assist, and point streaks from cached game lines.
+    /// Show a player's scoring and shot streaks from cached game lines.
     #[command(long_about = r#"
-Show a player's goal, assist, and point streaks from cached boxscore game lines.
+Show a player's goal, assist, point, shot-on-goal, and shot-attempt streaks from cached game lines.
 
-Streaks are computed from persisted per-game skater rows, not season totals. Run
-`icelines fetch boxscore --date YYYY-MM-DD` to populate the local inputs.
+Goal/assist/point streaks are computed from persisted boxscore skater rows.
+Shot-on-goal and shot-attempt streaks are computed from official play-by-play
+rows. Run `icelines fetch boxscore --date YYYY-MM-DD` and
+`icelines fetch play-by-play --date YYYY-MM-DD` to populate the local inputs.
 
 Examples:
   icelines streaks "Andre Burakovsky"

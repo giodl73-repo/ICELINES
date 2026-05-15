@@ -460,11 +460,13 @@ Web routes: `/player/:id/awards` and `/api/v1/player/:id/awards`. In the TUI,
 press `a` from a player card to open the cached Trophy Case; run the CLI command
 once to populate `~/.icelines/player_awards.json`.
 
-## `streaks` - player goal/assist/point streaks
+## `streaks` - player scoring and shot streaks
 
-Streaks are computed from cached per-game boxscore skater rows, not from season
-totals. Populate local inputs with `icelines fetch boxscore --date YYYY-MM-DD`,
-then run:
+Goal/assist/point streaks are computed from cached per-game boxscore skater
+rows. Shot-on-goal and shot-attempt streaks are computed from cached official
+play-by-play rows, with loaded zero-attempt games breaking the streak. Populate
+local inputs with `icelines fetch boxscore --date YYYY-MM-DD` and
+`icelines fetch play-by-play --date YYYY-MM-DD`, then run:
 
 ```bash
 icelines streaks "Connor McDavid"

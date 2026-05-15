@@ -367,8 +367,21 @@ async fn build_team_streaks_view(
         season,
         season_type,
     );
+    let (shot_lines, play_by_play_source_loaded) =
+        icelines_fetch::streaks_provider::load_team_shot_lines(
+            &store,
+            &team.0,
+            season,
+            season_type,
+        );
     let context = ViewContext::new(ViewWindow::new(season, season_type));
-    let view = TeamPlayerStreaksView::from_game_lines(context, team.0.to_string(), &lines);
+    let view = TeamPlayerStreaksView::from_game_and_shot_lines(
+        context,
+        team.0.to_string(),
+        &lines,
+        &shot_lines,
+        play_by_play_source_loaded,
+    );
     Ok((active_label, view))
 }
 

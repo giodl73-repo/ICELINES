@@ -94,11 +94,21 @@ async fn build_streaks_view(
         )
     })?;
     let lines = icelines_fetch::streaks_provider::load_player_game_lines(&store, id);
+    let (shot_lines, play_by_play_source_loaded) =
+        icelines_fetch::streaks_provider::load_player_shot_lines(&store, id);
     let player_name = lines
         .first()
         .map(|line| line.player_name.clone())
+        .or_else(|| shot_lines.first().map(|line| line.player_name.clone()))
         .unwrap_or(player_name);
-    let view = PlayerStreaksView::from_game_lines(context, id, player_name, &lines);
+    let view = PlayerStreaksView::from_game_and_shot_lines(
+        context,
+        id,
+        player_name,
+        &lines,
+        &shot_lines,
+        play_by_play_source_loaded,
+    );
     Ok((active_label, view, cache_teams))
 }
 
@@ -140,7 +150,7 @@ fn render_streaks_html(
         rows.push_str("<tr><td colspan=\"5\">No per-game rows are loaded yet for this player. Streaks need game order, so they read the local game cache instead of season totals.");
         if !cache_teams.is_empty() {
             rows.push_str(&format!(
-                "<form method=\"post\" action=\"/admin/game-cache/load\" class=\"inline-form\"><input type=\"hidden\" name=\"season\" value=\"{}\"><input type=\"hidden\" name=\"season_type\" value=\"{}\"><input type=\"hidden\" name=\"teams\" value=\"{}\"><input type=\"hidden\" name=\"artifacts\" value=\"boxscore\"><input type=\"hidden\" name=\"return_to\" value=\"/player/{}/streaks\"><button type=\"submit\">Load game cache for this player</button></form>",
+                "<form method=\"post\" action=\"/admin/game-cache/load\" class=\"inline-form\"><input type=\"hidden\" name=\"season\" value=\"{}\"><input type=\"hidden\" name=\"season_type\" value=\"{}\"><input type=\"hidden\" name=\"teams\" value=\"{}\"><input type=\"hidden\" name=\"artifacts\" value=\"boxscore,play-by-play\"><input type=\"hidden\" name=\"return_to\" value=\"/player/{}/streaks\"><button type=\"submit\">Load game cache for this player</button></form>",
                 view.context.window.season.0,
                 html_escape(view.context.window.season_type.label()).as_str(),
                 html_escape(&cache_teams.join(",")),
@@ -150,7 +160,7 @@ fn render_streaks_html(
         rows.push_str("</td></tr>");
     }
     format!(
-        "<!doctype html><html><head><meta charset=\"utf-8\"><title>{name} Streaks</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><header><a href=\"/\">IceLines</a> <span>{active}</span></header><main id=\"main\"><p><a href=\"/player/{pid}\">Back to player card</a> | <a href=\"/api/v1/player/{pid}/streaks\">JSON</a></p><h1>{name} Streaks</h1><p>{games} loaded game lines. Source: per-game skater rows; no streaks are inferred from season totals.</p><table><thead><tr><th>Metric</th><th>Current</th><th>Longest</th><th>Start</th><th>End</th></tr></thead><tbody>{rows}</tbody></table></main></body></html>",
+        "<!doctype html><html><head><meta charset=\"utf-8\"><title>{name} Streaks</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><header><a href=\"/\">IceLines</a> <span>{active}</span></header><main id=\"main\"><p><a href=\"/player/{pid}\">Back to player card</a> | <a href=\"/api/v1/player/{pid}/streaks\">JSON</a></p><h1>{name} Streaks</h1><p>{games} loaded game lines. Source: per-game boxscore and play-by-play rows; no streaks are inferred from season totals.</p><table><thead><tr><th>Metric</th><th>Current</th><th>Longest</th><th>Start</th><th>End</th></tr></thead><tbody>{rows}</tbody></table></main></body></html>",
         name = html_escape(&view.player_name),
         active = html_escape(active_label),
         pid = view.player_id,

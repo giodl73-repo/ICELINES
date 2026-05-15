@@ -127,8 +127,8 @@ pub use snapshot::{
     SnapshotView,
 };
 pub use streaks::{
-    PlayerGameLineInput, PlayerStreakRow, PlayerStreaksView, TeamPlayerStreakLeaderRow,
-    TeamPlayerStreaksView,
+    PlayerGameLineInput, PlayerShotLineInput, PlayerStreakRow, PlayerStreaksView,
+    TeamPlayerStreakLeaderRow, TeamPlayerStreaksView,
 };
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,

@@ -37,8 +37,8 @@ who is due for regression, and who is carrying the best finishing run?"
 | 01 - Finish inventory and proxy contract | done | `FINISH-INVENTORY.md`; `plans/pulse-01.md` |
 | 02 - Shot-quality proxy implementation | done | `InsideShotProxy`; `InsideShotBucket`; L0 known-value tests; `plans/pulse-02.md` |
 | 03 - Player scoring trend rows | done | `PlayerScoringTrendRow`; fixed window rows; L0 window/conversion/location tests; `plans/pulse-03.md` |
-| 04 - Streak leaderboards | planned | `plans/pulse-04.md`; depends on cached game-line/streak primitives and Pulse 02 event aggregation |
-| 05 - Surface parity and wave closeout | planned | depends on Pulses 02-04 |
+| 04 - Streak leaderboards | done | `PlayerShotLineInput`; shot-on-goal/attempt streak rows; fetch aggregation tests; `plans/pulse-04.md` |
+| 05 - Surface parity and wave closeout | planned | `plans/pulse-05.md`; depends on Pulses 02-04 |
 
 ## Role Notes
 
@@ -55,9 +55,10 @@ Pulse 01 inventoried current scoring-event, game-line, and cache inputs and
 defined the first owned IceLines inside-shot proxy contract. Pulse 02 added the
 pure core proxy buckets and projection helpers with exact-threshold L0 tests.
 Pulse 03 added ViewModel-owned player scoring trend rows for fixed recent
-windows and season-loaded coverage.
+windows and season-loaded coverage. Pulse 04 added shot-on-goal and shot-attempt
+streak rows from cached play-by-play aggregation, with loaded zero-attempt games
+breaking streaks.
 
 ## Next
 
-Execute Pulse 04: extend streak leaderboards with shot/attempt streak rows from
-play-by-play event aggregation.
+Execute Pulse 05: surface parity and closeout for Measure the Finish.
