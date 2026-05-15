@@ -2863,6 +2863,7 @@ async fn l1_admin_html_renders_operational_viewmodels() {
     assert!(html.contains("Runtime Config"));
     assert!(html.contains("action=\"/admin/game-cache/load-favorites\""));
     assert!(html.contains("Load Favorites cache"));
+    assert!(html.contains("Scoring events / play-by-play"));
     assert!(html.contains("web.active_season"));
     assert!(html.contains("action=\"/admin/config/set\""));
     assert!(html.contains("action=\"/admin/config/reset\""));

@@ -1612,7 +1612,7 @@ pub enum FetchSubcommand {
         dry_run: bool,
     },
     /// Fetch play-by-play event JSON for one date. Needed for event-backed
-    /// records such as goalies scored against and fight opponents.
+    /// records and Rocket Richard scoring-event reports.
     #[command(name = "play-by-play", alias = "pbp")]
     PlayByPlay {
         /// Date in `YYYY-MM-DD` form. Defaults to today.

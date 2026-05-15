@@ -215,8 +215,9 @@ async fn do_play_by_play(
                 } else {
                     persisted += 1;
                     println!(
-                        "  · game {} persisted ({} goals, {} penalties)",
+                        "  · game {} persisted ({} scoring events, {} goals, {} penalties)",
                         parsed.game_id,
+                        parsed.scoring_events.len(),
                         parsed.goals.len(),
                         parsed.penalties.len()
                     );

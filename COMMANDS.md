@@ -1078,7 +1078,7 @@ icelines fetch boxscore --for-favorites
 icelines fetch boxscore --date 2026-01-15 --dry-run
 ```
 
-### `icelines fetch play-by-play` — event participants for records
+### `icelines fetch play-by-play` — event participants and scoring events
 
 ```bash
 # Today's slate — persist raw play-by-play JSON under the data manifest
@@ -1094,9 +1094,10 @@ icelines fetch play-by-play --for-favorites
 icelines fetch play-by-play --date 2026-01-15 --dry-run
 ```
 
-This is the source for future event-backed records such as goalies a player has
-scored against and fight opponents. Empty-net goals remain no-goalie rows; the
-records layer must not infer a goalie from the boxscore.
+This is the source for event-backed records such as goalies a player has scored
+against and fight opponents, and for Rocket Richard scoring reports built from
+goal, shot-on-goal, missed-shot, and blocked-shot events. Empty-net goals remain
+no-goalie rows; the records layer must not infer a goalie from the boxscore.
 
 ### `icelines fetch sync` — refresh stale entries
 

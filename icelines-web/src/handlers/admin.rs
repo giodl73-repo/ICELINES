@@ -760,7 +760,7 @@ fn render_admin_html(
 
 fn render_game_cache_section(html: &mut String, active_season: &str, active_season_type: &str) {
     html.push_str("<section><h2>Game Cache</h2>");
-    html.push_str("<p>Load per-game rows from the NHL API into the local cache for records, streaks, and matchup pages.</p>");
+    html.push_str("<p>Load per-game rows from the NHL API into the local cache for records, streaks, scoring events, and matchup pages.</p>");
     html.push_str("<form method=\"post\" action=\"/admin/game-cache/load-favorites\">");
     html.push_str(&format!(
         "<input type=\"hidden\" name=\"season\" value=\"{}\">",
@@ -785,7 +785,7 @@ fn render_game_cache_section(html: &mut String, active_season: &str, active_seas
         html_escape(active_season_type)
     ));
     html.push_str("<label>Teams <input name=\"teams\" placeholder=\"EDM,BOS\" required aria-label=\"Teams to load, comma-separated\"></label> ");
-    html.push_str("<label>Artifacts <select name=\"artifacts\"><option value=\"boxscore\">Game lines</option><option value=\"play-by-play\">Play-by-play</option><option value=\"boxscore,play-by-play\">Both</option></select></label> ");
+    html.push_str("<label>Artifacts <select name=\"artifacts\"><option value=\"boxscore\">Game lines</option><option value=\"scoring-events\">Scoring events / play-by-play</option><option value=\"boxscore,scoring-events\">Both</option></select></label> ");
     html.push_str("<input type=\"hidden\" name=\"return_to\" value=\"/admin\">");
     html.push_str("<button type=\"submit\">Load active-season game cache</button>");
     html.push_str("</form></section>");

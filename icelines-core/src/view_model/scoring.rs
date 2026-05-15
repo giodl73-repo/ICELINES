@@ -106,16 +106,19 @@ pub struct GameScoringReportView {
 }
 
 impl GameScoringReportView {
-    pub fn from_events(
+    pub fn from_events(context: ViewContext, game_id: u64, events: Vec<ScoringEventInput>) -> Self {
+        Self::from_source_events(context, game_id, !events.is_empty(), events)
+    }
+
+    pub fn from_source_events(
         mut context: ViewContext,
         game_id: u64,
+        source_loaded: bool,
         events: Vec<ScoringEventInput>,
     ) -> Self {
-        context.source_state.push(if events.is_empty() {
-            SourceState::missing(SourceKind::PlayByPlay)
-        } else {
-            SourceState::complete(SourceKind::PlayByPlay)
-        });
+        context
+            .source_state
+            .push(play_by_play_source_state(source_loaded));
         let summary = ScoringEventSummary::from_events(&events);
         Self {
             context,
@@ -136,15 +139,22 @@ pub struct TeamScoringProfileView {
 
 impl TeamScoringProfileView {
     pub fn from_events(
-        mut context: ViewContext,
+        context: ViewContext,
         team: impl Into<String>,
         events: Vec<ScoringEventInput>,
     ) -> Self {
-        context.source_state.push(if events.is_empty() {
-            SourceState::missing(SourceKind::PlayByPlay)
-        } else {
-            SourceState::complete(SourceKind::PlayByPlay)
-        });
+        Self::from_source_events(context, team, !events.is_empty(), events)
+    }
+
+    pub fn from_source_events(
+        mut context: ViewContext,
+        team: impl Into<String>,
+        source_loaded: bool,
+        events: Vec<ScoringEventInput>,
+    ) -> Self {
+        context
+            .source_state
+            .push(play_by_play_source_state(source_loaded));
         let summary = ScoringEventSummary::from_events(&events);
         Self {
             context,
@@ -166,16 +176,24 @@ pub struct PlayerScoringProfileView {
 
 impl PlayerScoringProfileView {
     pub fn from_events(
-        mut context: ViewContext,
+        context: ViewContext,
         player_id: u32,
         player_name: impl Into<String>,
         events: Vec<ScoringEventInput>,
     ) -> Self {
-        context.source_state.push(if events.is_empty() {
-            SourceState::missing(SourceKind::PlayByPlay)
-        } else {
-            SourceState::complete(SourceKind::PlayByPlay)
-        });
+        Self::from_source_events(context, player_id, player_name, !events.is_empty(), events)
+    }
+
+    pub fn from_source_events(
+        mut context: ViewContext,
+        player_id: u32,
+        player_name: impl Into<String>,
+        source_loaded: bool,
+        events: Vec<ScoringEventInput>,
+    ) -> Self {
+        context
+            .source_state
+            .push(play_by_play_source_state(source_loaded));
         let summary = ScoringEventSummary::from_events(&events);
         Self {
             context,
@@ -198,16 +216,24 @@ pub struct TonightScoringIntelView {
 
 impl TonightScoringIntelView {
     pub fn from_events(
-        mut context: ViewContext,
+        context: ViewContext,
         date: impl Into<String>,
         games_loaded: usize,
         events: &[ScoringEventInput],
     ) -> Self {
-        context.source_state.push(if events.is_empty() {
-            SourceState::missing(SourceKind::PlayByPlay)
-        } else {
-            SourceState::complete(SourceKind::PlayByPlay)
-        });
+        Self::from_source_events(context, date, games_loaded, !events.is_empty(), events)
+    }
+
+    pub fn from_source_events(
+        mut context: ViewContext,
+        date: impl Into<String>,
+        games_loaded: usize,
+        source_loaded: bool,
+        events: &[ScoringEventInput],
+    ) -> Self {
+        context
+            .source_state
+            .push(play_by_play_source_state(source_loaded));
         Self {
             context,
             date: date.into(),
@@ -215,6 +241,14 @@ impl TonightScoringIntelView {
             events_loaded: events.len(),
             summary: ScoringEventSummary::from_events(events),
         }
+    }
+}
+
+fn play_by_play_source_state(source_loaded: bool) -> SourceState {
+    if source_loaded {
+        SourceState::complete(SourceKind::PlayByPlay)
+    } else {
+        SourceState::missing(SourceKind::PlayByPlay)
     }
 }
 
@@ -289,6 +323,19 @@ mod tests {
         assert_eq!(
             view.context.source_state[0].state,
             crate::view_model::Completeness::Unavailable
+        );
+    }
+
+    #[test]
+    fn l0_game_scoring_view_distinguishes_loaded_zero_event_source() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let view = GameScoringReportView::from_source_events(context, 2025020001, true, Vec::new());
+
+        assert_eq!(view.summary.shot_attempts, 0);
+        assert_eq!(view.context.source_state[0].source, SourceKind::PlayByPlay);
+        assert_eq!(
+            view.context.source_state[0].state,
+            crate::view_model::Completeness::Complete
         );
     }
 }

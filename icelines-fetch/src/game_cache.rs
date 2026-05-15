@@ -28,10 +28,11 @@ impl GameCacheArtifact {
             let artifact = match token.as_str() {
                 "" => continue,
                 "boxscore" | "boxscores" | "game-lines" => Self::Boxscore,
-                "play-by-play" | "play_by_play" | "pbp" => Self::PlayByPlay,
+                "play-by-play" | "play_by_play" | "pbp" | "scoring" | "scoring-events"
+                | "shot-events" | "shots" => Self::PlayByPlay,
                 other => {
                     return Err(format!(
-                        "unknown game-cache artifact '{other}' - valid: boxscore, play-by-play"
+                        "unknown game-cache artifact '{other}' - valid: boxscore, play-by-play, scoring-events"
                     ));
                 }
             };
@@ -421,7 +422,8 @@ mod tests {
 
     #[test]
     fn l0_game_cache_artifacts_parse_aliases_and_deduplicate() {
-        let artifacts = GameCacheArtifact::parse_list("boxscores,pbp,boxscore").unwrap();
+        let artifacts =
+            GameCacheArtifact::parse_list("boxscores,pbp,boxscore,scoring-events,shots").unwrap();
         assert_eq!(
             artifacts,
             vec![GameCacheArtifact::Boxscore, GameCacheArtifact::PlayByPlay]
