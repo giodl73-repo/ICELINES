@@ -2904,13 +2904,20 @@ async fn l1_admin_html_renders_operational_viewmodels() {
     assert!(html.contains("<h1>Admin</h1>"));
     assert!(html.contains("Data Status"));
     assert!(html.contains("Snapshots"));
-    assert!(html.contains("Runtime Config"));
+    assert!(html.contains("Runtime Web Config"));
+    assert!(html.contains("These controls change only the running web server"));
+    assert!(html.contains("Persistent Report Toggles"));
+    assert!(html.contains("TUI Reports overlay"));
     assert!(html.contains("action=\"/admin/game-cache/load-favorites\""));
     assert!(html.contains("Load Favorites cache"));
     assert!(html.contains("Scoring events / play-by-play"));
     assert!(html.contains("web.active_season"));
     assert!(html.contains("action=\"/admin/config/set\""));
     assert!(html.contains("action=\"/admin/config/reset\""));
+    assert!(
+        !html.contains("/admin/reports"),
+        "persistent report-toggle writes must not appear as an unfenced web admin mutation"
+    );
 }
 
 #[tokio::test]
@@ -3103,6 +3110,40 @@ async fn l1_admin_config_json_returns_runtime_config_viewmodel() {
     assert_eq!(json["rows"][1]["key"], "web.active_season_type");
     assert_eq!(json["rows"][1]["value"], "playoff");
     assert_eq!(json["rows"][1]["selected"], true);
+    assert!(
+        json["warnings"][0]["message"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("Persistent report toggles are deferred"),
+        "json was {json}"
+    );
+}
+
+#[tokio::test]
+async fn l1_admin_report_toggle_json_write_is_rejected_as_deferred() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/config/set")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"key":"reports.realtime","value":"false"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let json = response_json(response, 64 * 1024).await;
+    assert!(
+        json["error"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("unknown web config key"),
+        "json was {json}"
+    );
 }
 
 #[tokio::test]

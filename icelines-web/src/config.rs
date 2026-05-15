@@ -7,8 +7,12 @@
 //! defining a tiny independent slice here that the askama base
 //! template can render.
 //!
-//! Long-term plumbing options (deferred to King.6 — Reports overlay
-//! sub-phase, where the cross-surface config-mutation contract lives):
+//! Persistent report toggles still live with the CLI/TUI `Config`
+//! type. The web crate cannot import that type without inverting the
+//! dependency chain, so `/admin` labels report-toggle writes as deferred
+//! instead of pretending runtime web state is durable.
+//!
+//! Long-term plumbing options:
 //!
 //! 1. **Move `Config` to `icelines-core`** — proper fix. Inverts the
 //!    today's "config-is-cli-concern" assumption. Touches every
@@ -20,17 +24,16 @@
 //! 3. **Define `Config` trait in `icelines-core`, impl in `cli`** —
 //!    most flexible, most boilerplate.
 //!
-//! For King.1.x patch we ship (2) in skeleton form: this `WebConfig`
-//! struct holds the read-side; King.6 wires the write-side via a
-//! callback when it lands the Reports overlay.
+//! Today this `WebConfig` struct is intentionally only the runtime
+//! active-season slice.
 
 use serde::{Deserialize, Serialize};
 
 /// Active-season slice the web layer needs at render time.
 ///
-/// Today this is constructed by `commands::serve` (King.1.5) from the
-/// CLI's `Config::load()` result. King.6 will extend the type with
-/// the full `ReportToggleSet` so the Reports overlay can render.
+/// Today this is constructed by `commands::serve` from the CLI's
+/// `Config::load()` result. Do not add persistent report toggles here
+/// without first moving the durable config contract to a shared crate.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WebConfig {
     /// Active season in `YYYYZZZZ` form (e.g. `"20252026"`).

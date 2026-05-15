@@ -2,7 +2,7 @@
 wave: guard-the-operations
 pulse: 02
 date: 2026-05-15
-status: planned
+status: done
 governing_roles:
   - keel
   - wire
@@ -38,7 +38,15 @@ runtime-only.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -p icelines-web --no-deps -- -D warnings`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-guard-the-operations design\specs\surface-parity.md README.md COMMANDS.md --errors-only`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -p icelines-web --no-deps -- -D warnings`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-guard-the-operations design\specs\surface-parity.md README.md COMMANDS.md --errors-only`
+
+## Result
+
+Persistent report-toggle writes remain deliberately deferred on web because the
+durable report config contract still lives in the CLI/TUI `Config` type. The web
+admin surface now labels active-season controls as runtime-only, renders an
+explicit persistent-report-toggle deferral with the TUI recovery path, and emits
+a `ConfigView.warnings` entry for JSON clients.

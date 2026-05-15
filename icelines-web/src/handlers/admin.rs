@@ -6,7 +6,8 @@ use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::{
     ConfigEntryInput, ConfigMutationIntent, ConfigView, DataMutationIntent, DataMutationOperation,
     DataStatusEntryInput, DataStatusView, Season, SnapshotEntryInput, SnapshotMutationIntent,
-    SnapshotMutationOperation, SnapshotView, ViewContext, ViewWindow, CURRENT_SEASON,
+    SnapshotMutationOperation, SnapshotView, ViewContext, ViewWarning, ViewWindow, WarningKind,
+    CURRENT_SEASON,
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::game_cache::{
@@ -504,7 +505,7 @@ fn build_snapshot_view(q: AdminSnapshotQuery) -> Result<SnapshotView, String> {
 }
 
 fn build_config_view(config: &crate::WebConfig, q: AdminConfigQuery) -> ConfigView {
-    ConfigView::from_entries(
+    let mut view = ConfigView::from_entries(
         default_context(),
         vec![
             ConfigEntryInput {
@@ -521,7 +522,9 @@ fn build_config_view(config: &crate::WebConfig, q: AdminConfigQuery) -> ConfigVi
             },
         ],
         q.selected,
-    )
+    );
+    view.warnings.push(persistent_report_toggle_warning());
+    view
 }
 
 fn apply_web_config_set(
@@ -870,7 +873,14 @@ fn render_snapshot_section(html: &mut String, view: &SnapshotView) {
 }
 
 fn render_config_section(html: &mut String, view: &ConfigView) {
-    html.push_str("<section><h2>Runtime Config</h2>");
+    html.push_str("<section><h2>Runtime Web Config</h2>");
+    html.push_str("<p class=\"muted\">These controls change only the running web server's active season context. They do not write <code>~/.icelines/config.toml</code>.</p>");
+    for warning in &view.warnings {
+        html.push_str(&format!(
+            "<p class=\"muted\">{}</p>",
+            html_escape(&warning.message)
+        ));
+    }
     html.push_str(
         "<table><thead><tr><th>Key</th><th>Value</th><th>Action</th></tr></thead><tbody>",
     );
@@ -899,6 +909,23 @@ fn render_config_section(html: &mut String, view: &ConfigView) {
         html.push_str("</td></tr>");
     }
     html.push_str("</tbody></table></section>");
+    render_report_toggle_deferral(html);
+}
+
+fn render_report_toggle_deferral(html: &mut String) {
+    html.push_str("<section><h2>Persistent Report Toggles</h2>");
+    html.push_str("<p class=\"muted\">Persistent Tier-1 report toggles are managed by the TUI Reports overlay (<kbd>R</kbd>) and saved to <code>~/.icelines/config.toml</code>. Web admin does not expose report-toggle writes yet because the durable config contract currently lives outside the web crate.</p>");
+    html.push_str("<p class=\"muted\">Use <code>icelines tui</code> then press <kbd>R</kbd> to change which realtime, time-on-ice, goals-for/against, goalie advanced, and goalie saves-by-strength columns are visible.</p>");
+    html.push_str("</section>");
+}
+
+fn persistent_report_toggle_warning() -> ViewWarning {
+    ViewWarning {
+        kind: WarningKind::RendererProjection,
+        source: None,
+        message: "Persistent report toggles are deferred on web admin; use the TUI Reports overlay (R) to write ~/.icelines/config.toml.".to_string(),
+        recovery: Vec::new(),
+    }
 }
 
 fn render_empty_state(html: &mut String, state: Option<(&String, &Option<String>)>) {

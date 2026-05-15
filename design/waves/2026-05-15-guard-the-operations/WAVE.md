@@ -50,7 +50,7 @@ operate.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Operations parity inventory and pulse map | complete | `OPERATIONS-PARITY-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
-| 02 - Persistent config/report toggle contract | planned | depends on Pulse 01 |
+| 02 - Persistent config/report toggle contract | complete | `icelines-web/src/handlers/admin.rs`; `icelines-web/src/config.rs`; `icelines-web/tests/l1_router.rs`; `plans/pulse-02.md` |
 | 03 - Admin data operation safety | planned | depends on Pulse 01 |
 | 04 - Watch-rule editor parity | planned | depends on Pulse 01 |
 | 05 - Favorites/groups parity | planned | depends on Pulse 01 |
@@ -70,9 +70,11 @@ operate.
 
 ## Current Result
 
-Pulse 01 opened the wave, inventoried remaining operational/product-UX partials,
-mapped Pulses 02-06, and wrote the governing role review panel.
+Pulse 02 fenced the config/report-toggle partial without inventing duplicate web
+persistence. `/admin` now labels active-season controls as runtime-only, renders
+an explicit persistent-report-toggle deferral with the TUI Reports overlay
+recovery path, and `ConfigView` JSON carries the same warning.
 
 ## Next
 
-Execute Pulse 02: persistent config/report toggle contract.
+Execute Pulse 03: admin data operation safety.
