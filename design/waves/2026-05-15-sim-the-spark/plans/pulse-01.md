@@ -57,5 +57,5 @@ assumptions/tests must exist before player or team surfaces ship.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-sim-the-spark design\waves\PHASES.md --errors-only`
+- [x] `cargo fmt --check`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-sim-the-spark design\waves\PHASES.md --errors-only`

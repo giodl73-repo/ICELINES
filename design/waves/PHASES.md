@@ -2,7 +2,7 @@
 
 | Wave | Status | Mission | Active Evidence |
 |---|---|---|---|
-| [Sim the Spark](2026-05-15-sim-the-spark/WAVE.md) | active | Add descriptive Rocket Richard scoring pace and outlook contracts without betting or proprietary projection claims. | `plans/pulse-01.md` |
+| [Sim the Spark](2026-05-15-sim-the-spark/WAVE.md) | active | Add descriptive Rocket Richard scoring pace and outlook contracts without betting or proprietary projection claims. | `SPARK-INVENTORY.md`; `plans/pulse-01.md`; `plans/pulse-02.md` |
 | [Measure the Finish](2026-05-14-measure-the-finish/WAVE.md) | closed | Deepen Rocket Richard into player scoring trends, streak leaderboards, and owned shot-quality proxy contracts. | `FINISH-INVENTORY.md`; `plans/pulse-01.md`; `plans/pulse-02.md`; `plans/pulse-03.md`; `plans/pulse-04.md`; `plans/pulse-05.md` |
 | [Aim the Rocket](2026-05-14-aim-the-rocket/WAVE.md) | closed | Open Phase Rocket Richard by proving official scoring-event data contracts before building shot maps, scoring reports, tonight intel, or projections. | `SCORING-DATA-INVENTORY.md`; `plans/pulse-01.md`; `plans/pulse-02.md`; `plans/pulse-03.md`; `plans/pulse-04.md`; `plans/pulse-05.md`; `plans/pulse-06.md` |
 | [Audit the Stack](2026-05-14-audit-the-stack/WAVE.md) | closed | Run a whole-codebase bug-detection and architecture review focused on cross-surface mismatches, stale state, and missing regression coverage. | `panels/whole-codebase-bug-pass/`; `plans/pulse-01.md`; `plans/pulse-02.md`; `plans/pulse-03.md`; `plans/pulse-04.md`; `plans/pulse-05.md` |

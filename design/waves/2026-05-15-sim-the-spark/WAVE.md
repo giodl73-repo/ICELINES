@@ -36,8 +36,8 @@ finish look like, and how much should I trust that read?"
 
 | Pulse | Status | Evidence |
 |---|---|---|
-| 01 - Projection inventory and assumptions contract | planned | `plans/pulse-01.md` |
-| 02 - Player scoring pace ViewModel | planned | depends on Pulse 01 |
+| 01 - Projection inventory and assumptions contract | done | `SPARK-INVENTORY.md`; `plans/pulse-01.md` |
+| 02 - Player scoring pace ViewModel | planned | `plans/pulse-02.md`; depends on Pulse 01 |
 | 03 - Team scoring outlook ViewModel | planned | depends on Pulse 01 |
 | 04 - Surface parity and docs | planned | depends on Pulses 02-03 |
 | 05 - Wave closeout | planned | depends on Pulse 04 |
@@ -56,9 +56,9 @@ finish look like, and how much should I trust that read?"
 ## Current Result
 
 Wave opened after Measure the Finish closed and CI passed for Pulse 05. Pulse 01
-will inventory existing pace/projection code, scoring trend inputs, team season
-inputs, and surface parity gaps before implementation.
+inventoried existing pace/projection code, scoring trend inputs, team season
+inputs, cache/source-state constraints, and required tests before implementation.
 
 ## Next
 
-Execute Pulse 01: projection inventory and assumptions contract.
+Execute Pulse 02: player scoring pace ViewModel.
