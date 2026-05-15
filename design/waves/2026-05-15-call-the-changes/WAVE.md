@@ -32,6 +32,7 @@ forcing tab cycling.
 | Workbench zone contract | Define which experiences belong in the activity/catalog rail, center workspace, left pane, right pane, top ribbon, bottom command/status area, and overlays. | Let each surface invent its own placement rules. |
 | Screen catalog contract | Shared list of main screen entries, labels, aliases, help text, zone defaults, and surface route targets. | New analytics or data loading behavior. |
 | Pane model contract | Treat pane content as typed models over shared fields: navigators, inspectors, filters/dimensions, summaries, timelines, comparisons, queues, source-state panels, and action/status panels. | Limit panes to one-off side filters or surface-local widgets. |
+| Bound experience tabs | Allow tabs as named compositions of center workspace, pane bindings, ribbon scope, and active fields that can be swapped together. | Recreate the old screen-cycling tab strip as the primary navigation model. |
 | TUI navigation | Replace default MDI tab strip/cycling with a workbench shell: activity/catalog selection, center active screen, context panes, top live ribbon, and bottom command/status surface. | Delete `--classic` before compatibility is reviewed. |
 | Web navigation | Add the same workbench catalog/zone model to `/dashboard` so users can open workspace panels without command syntax. | Convert the server-rendered dashboard into a SPA. |
 | Docs and accessibility | Update keybinds, dashboard docs, and keyboard/ARIA expectations for direct screen selection. | Hide command bars; commands remain power-user shortcuts. |
@@ -42,6 +43,7 @@ forcing tab cycling.
 |---|---|---|---|
 | Activity/catalog rail | Primary navigation and mode discovery. | Stats, Goalies, Scores, Schedule, Transactions, Playoffs, Favorites, Fantasy, Poach, Records, Reports, Docs. | Data tables, mutable forms, or hidden command-only actions. |
 | Center workspace | The active document/screen. This is the only zone that should feel like the main task. | Leaders, player card, team depth, scoring reports, fantasy gaps, poach board, schedule detail, game detail. | Persistent global chrome or background live feeds. |
+| Experience tabs | Optional bound layouts/presets above or near the center workspace. | Tonight bench, scoring room, team room, fantasy room, admin room. | The complete screen catalog or a hidden replacement for the activity rail. |
 | Left context pane | User-owned context and shortcuts. | Favorites, watchlist, saved queries, groups, recent players/teams, pinned reports, queues. | League-wide data that changes the task focus unexpectedly. |
 | Right context pane | Active-screen secondary context. | Upcoming schedule, selected team/player context, related routes, source warnings, drilldown links, summaries, comparisons, timelines. | Primary workflows that need full keyboard focus. |
 | Top live ribbon | Always-glanceable live state. | Tonight scores, active season/type, selected date, sync/source status. | Deep analysis tables or long scrolling content. |
@@ -83,7 +85,7 @@ or route summaries; no pane gets its own hockey math.
 
 | Pulse | Status | Evidence |
 |---|---|---|
-| 01 - MDI workbench inventory and zone contract | complete | `MDI-WORKBENCH-INVENTORY.md`; `plans/pulse-01.md` |
+| 01 - MDI workbench inventory and zone contract | complete | `MDI-WORKBENCH-INVENTORY.md`; `plans/pulse-01.md`; `panels/pulse-01-workbench-contract/` |
 | 02 - Shared workbench catalog, fields, and pane models | planned | `plans/pulse-02.md` |
 | 03 - TUI full-MDI workbench shell | planned | depends on Pulse 02 |
 | 04 - Web dashboard workbench catalog | planned | depends on Pulse 02 |
@@ -113,7 +115,9 @@ Pulse 01 produced `MDI-WORKBENCH-INVENTORY.md`, expanded the wave from a screen
 picker into a true workbench contract, and defined shared catalog identity,
 zone placement, ViewModel-backed fields, and flexible pane models for
 navigators, inspectors, filters, summaries, timelines, comparisons, queues,
-source-state panes, and action/status panes.
+source-state panes, and action/status panes. It also clarified that tabs may
+remain as bound workbench experiences that swap composed center/pane/field
+bindings, not as the old screen-cycling navigation model.
 
 ## Next
 

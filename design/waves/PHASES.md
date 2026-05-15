@@ -2,7 +2,7 @@
 
 | Wave | Status | Mission | Active Evidence |
 |---|---|---|---|
-| [Call the Changes](2026-05-15-call-the-changes/WAVE.md) | active | Finish MDI as a true workbench with shared catalog identity, zone rules, and flexible ViewModel-backed pane models across TUI and web. | `MDI-WORKBENCH-INVENTORY.md`; `plans/pulse-01.md`; `plans/pulse-02.md` |
+| [Call the Changes](2026-05-15-call-the-changes/WAVE.md) | active | Finish MDI as a true workbench with shared catalog identity, zone rules, and flexible ViewModel-backed pane models across TUI and web. | `MDI-WORKBENCH-INVENTORY.md`; `panels/pulse-01-workbench-contract/`; `plans/pulse-01.md`; `plans/pulse-02.md` |
 | [Sim the Spark](2026-05-15-sim-the-spark/WAVE.md) | closed | Add descriptive Rocket Richard scoring pace and outlook contracts without betting or proprietary projection claims. | `SPARK-INVENTORY.md`; `PlayerScoringPaceView`; `TeamScoringOutlookView`; `/player/:id/outlook`; `/team/:abbrev/outlook`; `plans/pulse-01.md`; `plans/pulse-02.md`; `plans/pulse-03.md`; `plans/pulse-04.md`; `plans/pulse-05.md` |
 | [Measure the Finish](2026-05-14-measure-the-finish/WAVE.md) | closed | Deepen Rocket Richard into player scoring trends, streak leaderboards, and owned shot-quality proxy contracts. | `FINISH-INVENTORY.md`; `plans/pulse-01.md`; `plans/pulse-02.md`; `plans/pulse-03.md`; `plans/pulse-04.md`; `plans/pulse-05.md` |
 | [Aim the Rocket](2026-05-14-aim-the-rocket/WAVE.md) | closed | Open Phase Rocket Richard by proving official scoring-event data contracts before building shot maps, scoring reports, tonight intel, or projections. | `SCORING-DATA-INVENTORY.md`; `plans/pulse-01.md`; `plans/pulse-02.md`; `plans/pulse-03.md`; `plans/pulse-04.md`; `plans/pulse-05.md`; `plans/pulse-06.md` |

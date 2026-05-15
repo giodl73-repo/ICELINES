@@ -65,7 +65,7 @@ temporary overlays.
 
 | Pulse | Scope |
 |---|---|
-| 02 - Shared workbench catalog and zone model | Add typed catalog entries and tests for labels, aliases, default zone, TUI targets, web targets, ViewModel-backed fields, and pane model capabilities. |
+| 02 - Shared workbench catalog, fields, and pane models | Add typed catalog entries and tests for labels, aliases, default zone, TUI targets, web targets, ViewModel-backed fields, pane model capabilities, and bound experience tabs. |
 | 03 - TUI full-MDI workbench shell | Replace default TUI MDI tab-first navigation with activity/catalog selection, center workspace, context panes, live ribbon, and command/status surface while preserving `--classic`. |
 | 04 - Web dashboard workbench catalog | Add visible catalog/zone navigation to `/dashboard` that opens canonical workspace panels and keeps side-pane semantics aligned with TUI. |
 | 05 - Docs, regression gates, and closeout | Update README/COMMANDS/surface parity, run gates, and close the wave. |

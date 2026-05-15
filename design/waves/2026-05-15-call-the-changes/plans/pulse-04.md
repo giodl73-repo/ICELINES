@@ -25,9 +25,12 @@ canonical and keep the dashboard server-rendered/no-JS useful.
    dashboard nav links.
 2. Add visible left/right pane selectors or field affordances for the first safe
    ViewModel-backed pane models, not only filter/dimension panes.
-3. Preserve `/dashboard?workspace=...` and `?partial=workspace` behavior.
-4. Preserve local-only side-pane state.
-5. Update web route/static tests for catalog and pane semantics.
+3. If web tabs are rendered, treat them as bound experience tabs that swap
+   dashboard workspace/pane/field bindings while preserving canonical full
+   routes.
+4. Preserve `/dashboard?workspace=...` and `?partial=workspace` behavior.
+5. Preserve local-only side-pane state.
+6. Update web route/static tests for catalog and pane semantics.
 
 ## Non-goals
 

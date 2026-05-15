@@ -4,14 +4,14 @@
 
 Add the typed foundation for the Call the Changes workbench. The catalog should
 describe stable workbench IDs, labels, groups, aliases, zone defaults, pane
-model capabilities, and shared fields. TUI and web adapters may map those IDs to
-surface-specific targets, but they must not invent independent screen lists or
-pane-only field vocabularies.
+model capabilities, shared fields, and optional bound experience tabs. TUI and
+web adapters may map those IDs to surface-specific targets, but they must not
+invent independent screen lists or pane-only field vocabularies.
 
 ## Governing roles
 
 - **keel**: one catalog identity and one field vocabulary must map to TUI
-  screens, web workspaces, command aliases, and pane models.
+  screens, web workspaces, command aliases, pane models, and bound experiences.
 - **glass**: labels, grouping, zones, pane kinds, and field summaries must be
   readable enough for a user to choose a workspace or pane without memorizing
   command verbs.
@@ -32,13 +32,15 @@ pane-only field vocabularies.
 3. Add shared pane model metadata for navigators, inspectors, filters/dimensions,
    summaries/KPIs, timelines/activity, comparisons, queues/checklists,
    source/data-state panes, action/status panes, and help/docs panes.
-4. Add TUI adapter mapping catalog IDs to resolvable `Screen` targets where a
+4. Add shared bound experience metadata for optional tabs that compose center
+   workspace, left/right pane model bindings, ribbon scope, and active fields.
+5. Add TUI adapter mapping catalog IDs to resolvable `Screen` targets where a
    no-argument target exists.
-5. Add web adapter mapping catalog IDs to safe canonical dashboard workspace
+6. Add web adapter mapping catalog IDs to safe canonical dashboard workspace
    routes where a no-argument route exists.
-6. Fence aliases, field IDs, pane models, source ownership, and zone
-   compatibility with tests.
-7. Do not change visible TUI/web layout yet.
+7. Fence aliases, field IDs, pane models, bound experiences, source ownership,
+   and zone compatibility with tests.
+8. Do not change visible TUI/web layout yet.
 
 ## Non-goals
 

@@ -50,6 +50,44 @@ This pulse is documentation only. No code changes are authorized here.
 | Bottom command/status | Power-user command bar, status, errors, and transient hints. | Existing TUI/web command bar. | Commands remain shortcuts. This zone must never be the only way to open a main screen. |
 | Overlays | Temporary pickers/config/docs/admin panels. | Screen picker, help/docs, season/date picker, reports overlay, admin. | No long-lived pane state. Close returns focus to the prior zone. |
 
+## Tabs as bound experiences
+
+Tabs are allowed in the final web and TUI workbench, but they should no longer
+mean "cycle through every screen." A tab should represent a bound experience: a
+named composition of center workspace, left pane model, right pane model, top
+ribbon scope, bottom command/status scope, and active fields.
+
+Candidate shape:
+
+```text
+WorkbenchExperience {
+  id: WorkbenchExperienceId,
+  label: &'static str,
+  center: WorkbenchId,
+  left_pane: Option<WorkbenchPaneModelId>,
+  right_pane: Option<WorkbenchPaneModelId>,
+  ribbon_scope: WorkbenchRibbonScope,
+  fields: &'static [WorkbenchFieldId],
+}
+```
+
+Examples:
+
+| Experience tab | Center | Left pane | Right pane | Active fields |
+|---|---|---|---|---|
+| Tonight bench | Scores | Favorites navigator | Schedule inspector | date, favorite group, game state, source state |
+| Scoring room | Stats | Saved queries | Stat/filter inspector | stat key, report source, team, position |
+| Team room | Depth or Team | Recent teams | Team inspector | team, position, line/pair, opponent |
+| Fantasy room | Fantasy gaps | Fantasy roster | Poach filters | league, category, availability, position |
+| Admin room | Admin | Queue/checklist | Source/data state | data kind, stale/missing, mutation result |
+
+Swapping tabs should swap these bindings together. Users can still change the
+center workspace or panes inside a tab, but the tab is a recomposable workbench
+layout/preset, not the screen catalog itself. In default TUI MDI, the `Tab` key
+can remain zone focus movement; experience-tab cycling should use an explicit
+binding if implemented. `--classic` remains the compatibility mode where
+Tab/Shift+Tab cycle screens.
+
 ## Default workbench layout decision
 
 ### TUI default MDI
@@ -233,16 +271,18 @@ fields.
 
 1. Default `icelines tui` stays MDI, but becomes workbench-first instead of
    command-first.
-2. `--classic` is the only mode where Tab/Shift+Tab mean screen cycling.
-3. `--standalone` remains one-screen focus mode and should not grow side panes.
-4. Existing command grammar remains supported and should lower through catalog
+2. Tabs, when present, are bound workbench experiences/presets. They are not the
+   primary screen list.
+3. `--classic` is the only mode where Tab/Shift+Tab mean screen cycling.
+4. `--standalone` remains one-screen focus mode and should not grow side panes.
+5. Existing command grammar remains supported and should lower through catalog
    IDs where possible.
-5. Web `/dashboard` remains server-rendered and no-JS useful.
-6. Full web routes remain canonical; dashboard workspace panels are wrappers.
-7. Pane models can only expose fields already present in ViewModels, route
+6. Web `/dashboard` remains server-rendered and no-JS useful.
+7. Full web routes remain canonical; dashboard workspace panels are wrappers.
+8. Pane models can only expose fields already present in ViewModels, route
    summaries, catalog metadata, or command/mutation results. No pane-local hockey
    math.
-8. GET navigation must not mutate favorites, watch rules, caches, snapshots, or
+9. GET navigation must not mutate favorites, watch rules, caches, snapshots, or
    config.
 
 ## Pulse split after inventory
@@ -267,6 +307,8 @@ fields.
   command-result source.
 - Pane models include at least navigator, inspector, filter, summary, timeline,
   source-state, and action/status variants, with zone compatibility tests.
+- Bound experience tabs compose center workspace, pane models, ribbon scope, and
+  active fields without replacing the shared screen catalog.
 - TUI and web command examples resolve through catalog IDs or parity fixtures.
 
 ### Pulse 03
@@ -274,6 +316,8 @@ fields.
 - Default MDI renders the activity/catalog rail at wide widths.
 - Selecting a catalog entry changes `App::screen` and resets selection safely.
 - Tab/Shift+Tab move focus across workbench zones in MDI.
+- If experience tabs are rendered, swapping them updates the center/pane/field
+  bindings together and does not revert to legacy screen cycling.
 - `--classic` still cycles screens with Tab/Shift+Tab.
 - `--standalone` remains locked to one screen.
 - Left/right pane toggles preserve existing `Ctrl+H` and `Ctrl+L` behavior.

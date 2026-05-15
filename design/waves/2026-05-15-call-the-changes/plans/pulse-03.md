@@ -28,8 +28,10 @@ ribbon, bottom command/status surface, and explicit focus movement. Preserve
    existing Favorites/Watchlist and Schedule behavior but using the shared pane
    model vocabulary so future navigator, inspector, summary, timeline, compare,
    queue, source-state, and action/status panes fit the same rail.
-4. Route catalog activation to `App::screen` using the shared TUI adapter.
-5. Update TUI help/chrome strings touched by the new MDI behavior.
+4. If tabs are rendered, treat them as bound experience tabs that swap composed
+   center/pane/field bindings, not as the old screen list.
+5. Route catalog activation to `App::screen` using the shared TUI adapter.
+6. Update TUI help/chrome strings touched by the new MDI behavior.
 
 ## Non-goals
 
@@ -37,6 +39,7 @@ ribbon, bottom command/status surface, and explicit focus movement. Preserve
 - No removal of `--classic`.
 - No standalone behavior changes except tests proving it remains locked.
 - No implementation of every context-pane option from the inventory.
+- No return to legacy tab-strip-as-primary-screen-list behavior.
 
 ## Gates
 
