@@ -1,7 +1,7 @@
 ---
 wave: guard-the-operations
 date_open: 2026-05-15
-status: active
+status: closed
 source: post-Compose surface-parity partials and operational UX/admin gaps
 ---
 
@@ -54,7 +54,7 @@ operate.
 | 03 - Admin data operation safety | complete | `ADMIN-DATA-SAFETY.md`; `icelines-web/src/handlers/admin.rs`; `icelines-web/tests/l1_router.rs`; `plans/pulse-03.md` |
 | 04 - Watch-rule editor parity | complete | `WATCH-RULE-EDITOR-SAFETY.md`; `icelines-cli/src/tui/command.rs`; `icelines-web/src/dashboard_command.rs`; `icelines-web/src/handlers/dashboard.rs`; `icelines-web/src/handlers/poach.rs`; `icelines-web/templates/watchlist.html`; `icelines-web/tests/l1_router.rs`; `plans/pulse-04.md` |
 | 05 - Favorites/groups parity | complete | `FAVORITES-GROUPS-SAFETY.md`; `icelines-cli/src/tui/command.rs`; `icelines-web/src/handlers/favorites.rs`; `icelines-web/src/dashboard_command.rs`; `icelines-web/tests/l1_router.rs`; `plans/pulse-05.md` |
-| 06 - Docs, regression gates, and closeout | planned | depends on Pulses 02-05 |
+| 06 - Docs, regression gates, and closeout | complete | `README.md`; `COMMANDS.md`; `design/specs/surface-parity.md`; `plans/pulse-06.md` |
 
 ## Role Notes
 
@@ -70,12 +70,13 @@ operate.
 
 ## Current Result
 
-Pulse 05 fenced favorites/groups parity. Web favorites can inspect any SQLite
-group in read-only mode through `?group=<name>`, while POST-backed web add/remove
-controls remain scoped to the canonical `Favorites` group. Dashboard group
-commands open read-only group views or reject create/delete/rename/member edits;
-TUI `/fav add/remove` now accepts team abbreviations as team members.
+Guard the Operations is closed. Config/report persistence, admin data-operation
+safety, watch-rule editing, and favorites/groups management now have truthful
+shared-surface behavior or durable deferral notes. Runtime-only web config,
+deferred web report toggles, deferred data install/remove, deferred arbitrary
+watch-rule dimensions, and deferred web group mutations are all documented
+without implying unsupported persistence or GET-backed writes.
 
 ## Next
 
-Execute Pulse 06: docs, regression gates, and closeout.
+Choose the next wave from the phase inventory.

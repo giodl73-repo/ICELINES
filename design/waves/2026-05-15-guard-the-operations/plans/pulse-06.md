@@ -2,7 +2,7 @@
 wave: guard-the-operations
 pulse: 06
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - tape
   - broadcast
@@ -33,10 +33,17 @@ deferred with durable rationale, and documented.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-core --quiet`
-- [ ] `cargo test -p icelines-cli --quiet`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -- -D warnings`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-guard-the-operations README.md COMMANDS.md design\specs\surface-parity.md --errors-only`
-- [ ] `powershell -ExecutionPolicy Bypass -File scripts\release-smoke.ps1`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-core --quiet`
+- [x] `cargo test -p icelines-cli --quiet`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -- -D warnings`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-guard-the-operations README.md COMMANDS.md design\specs\surface-parity.md --errors-only`
+- [x] `powershell -ExecutionPolicy Bypass -File scripts\release-smoke.ps1`
+
+## Result
+
+Closed Guard the Operations after documenting every moved or intentionally
+deferred operational partial. The closeout gates passed, including full clippy,
+proof on the wave/docs/parity surface, and release smoke against the release CLI
+binary.
