@@ -1,4 +1,7 @@
-use icelines_core::{WorkbenchId, WORKBENCH_CATALOG};
+use icelines_core::{
+    WorkbenchExperience, WorkbenchId, WorkbenchPaneBinding, WorkbenchSurface, WorkbenchZone,
+    WORKBENCH_CATALOG, WORKBENCH_EXPERIENCES, WORKBENCH_PANE_BINDINGS,
+};
 
 pub fn route_for_workbench(id: WorkbenchId) -> Option<&'static str> {
     match id {
@@ -29,9 +32,27 @@ pub fn dashboard_ready_workbenches() -> impl Iterator<Item = (WorkbenchId, &'sta
         .filter_map(|entry| route_for_workbench(entry.id).map(|route| (entry.id, route)))
 }
 
+pub fn web_pane_bindings_for_zone(
+    zone: WorkbenchZone,
+) -> impl Iterator<Item = &'static WorkbenchPaneBinding> {
+    WORKBENCH_PANE_BINDINGS.iter().filter(move |binding| {
+        binding.zone == zone && binding.supported_surfaces.contains(&WorkbenchSurface::Web)
+    })
+}
+
+pub fn web_bound_experiences() -> impl Iterator<Item = &'static WorkbenchExperience> {
+    WORKBENCH_EXPERIENCES.iter().filter(|experience| {
+        experience
+            .supported_surfaces
+            .contains(&WorkbenchSurface::Web)
+            && route_for_workbench(experience.center).is_some()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use icelines_core::{WorkbenchExperienceId, WorkbenchPaneBindingId};
     use std::collections::HashSet;
 
     #[test]
@@ -86,6 +107,44 @@ mod tests {
                 !route.contains("/command"),
                 "{route} must not target mutation command endpoints"
             );
+        }
+    }
+
+    #[test]
+    fn l0_web_workbench_adapter_exposes_pane_bindings_for_both_side_zones() {
+        let left: HashSet<_> = web_pane_bindings_for_zone(WorkbenchZone::LeftPane)
+            .map(|binding| binding.id)
+            .collect();
+        let right: HashSet<_> = web_pane_bindings_for_zone(WorkbenchZone::RightPane)
+            .map(|binding| binding.id)
+            .collect();
+
+        assert!(left.contains(&WorkbenchPaneBindingId::FavoritesLeft));
+        assert!(left.contains(&WorkbenchPaneBindingId::WatchlistLeft));
+        assert!(right.contains(&WorkbenchPaneBindingId::ScheduleRight));
+        assert!(right.contains(&WorkbenchPaneBindingId::DataSourceRight));
+    }
+
+    #[test]
+    fn l0_web_workbench_adapter_experience_centers_are_dashboard_ready() {
+        let experiences: HashSet<_> = web_bound_experiences()
+            .map(|experience| experience.id)
+            .collect();
+
+        for id in [
+            WorkbenchExperienceId::TonightBench,
+            WorkbenchExperienceId::ScoringRoom,
+            WorkbenchExperienceId::TeamRoom,
+            WorkbenchExperienceId::FantasyRoom,
+            WorkbenchExperienceId::AdminRoom,
+        ] {
+            assert!(experiences.contains(&id), "missing web experience {id:?}");
+        }
+
+        for experience in web_bound_experiences() {
+            let route = route_for_workbench(experience.center)
+                .expect("web experience center must have dashboard route");
+            assert!(!route.contains("/command"));
         }
     }
 }

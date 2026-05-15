@@ -120,11 +120,12 @@ pub use view_model::{
     CAREER_HISTORY_MISSING_STORE_MESSAGE, CAREER_HISTORY_STORE_PATH,
 };
 pub use workbench::{
-    workbench_entry, workbench_experience, workbench_field, workbench_pane_model,
-    WorkbenchDocumentKind, WorkbenchEntry, WorkbenchExperience, WorkbenchExperienceId,
-    WorkbenchField, WorkbenchFieldId, WorkbenchFieldOperator, WorkbenchFieldScope,
-    WorkbenchFieldSource, WorkbenchFieldSummary, WorkbenchGroup, WorkbenchId, WorkbenchPaneKind,
-    WorkbenchPaneModel, WorkbenchPaneModelId, WorkbenchRibbonScope, WorkbenchValueKind,
-    WorkbenchZone, WORKBENCH_CATALOG, WORKBENCH_EXPERIENCES, WORKBENCH_FIELDS,
-    WORKBENCH_PANE_MODELS,
+    workbench_entry, workbench_experience, workbench_field, workbench_pane_binding,
+    workbench_pane_model, WorkbenchDocumentKind, WorkbenchEntry, WorkbenchExperience,
+    WorkbenchExperienceId, WorkbenchField, WorkbenchFieldId, WorkbenchFieldOperator,
+    WorkbenchFieldScope, WorkbenchFieldSource, WorkbenchFieldSummary, WorkbenchGroup, WorkbenchId,
+    WorkbenchPaneBinding, WorkbenchPaneBindingId, WorkbenchPaneInteraction, WorkbenchPaneKind,
+    WorkbenchPaneModel, WorkbenchPaneModelId, WorkbenchRibbonScope, WorkbenchStatusScope,
+    WorkbenchSurface, WorkbenchValueKind, WorkbenchZone, WORKBENCH_CATALOG, WORKBENCH_EXPERIENCES,
+    WORKBENCH_FIELDS, WORKBENCH_PANE_BINDINGS, WORKBENCH_PANE_MODELS,
 };

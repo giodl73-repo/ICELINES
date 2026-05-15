@@ -17,12 +17,13 @@ use icelines_core::view_model::{
     FantasyRosterGapView, FantasySimulationView, PoachBoardView, PoachReportView, WatchNoteInput,
 };
 use icelines_core::{
-    workbench_entry, workbench_field, workbench_pane_model, CareerView, DepthLeagueView,
-    DepthTeamStrengthRow, FavoriteMemberInput, FavoritesView, HomeView, MetricCell, MetricValue,
-    PlayerCardView, PlayerSeasonSummary, ScheduleRecord, TeamAbbr, TeamDepthView, TeamSeasonView,
-    ViewContext, ViewWindow, WatchlistView, WorkbenchEntry, WorkbenchExperience, WorkbenchFieldId,
-    WorkbenchFieldSource, WorkbenchFieldSummary, WorkbenchGroup, WorkbenchId, WorkbenchPaneKind,
-    WorkbenchPaneModelId, WorkbenchValueKind, WORKBENCH_EXPERIENCES,
+    workbench_entry, workbench_field, workbench_pane_binding, workbench_pane_model, CareerView,
+    DepthLeagueView, DepthTeamStrengthRow, FavoriteMemberInput, FavoritesView, HomeView,
+    MetricCell, MetricValue, PlayerCardView, PlayerSeasonSummary, ScheduleRecord, TeamAbbr,
+    TeamDepthView, TeamSeasonView, ViewContext, ViewWindow, WatchlistView, WorkbenchEntry,
+    WorkbenchExperience, WorkbenchFieldId, WorkbenchFieldSource, WorkbenchFieldSummary,
+    WorkbenchGroup, WorkbenchId, WorkbenchPaneBindingId, WorkbenchPaneKind, WorkbenchPaneModelId,
+    WorkbenchValueKind, WORKBENCH_EXPERIENCES,
 };
 use serde::Deserialize;
 
@@ -1683,11 +1684,11 @@ fn dashboard_experience_tab(
     let route = crate::workbench::route_for_workbench(experience.center)?;
     let left = experience
         .left_pane
-        .map(workbench_pane_label)
+        .map(workbench_pane_binding_label)
         .unwrap_or("no left pane");
     let right = experience
         .right_pane
-        .map(workbench_pane_label)
+        .map(workbench_pane_binding_label)
         .unwrap_or("no right pane");
     Some(DashboardExperienceTab {
         label: experience.label.to_owned(),
@@ -1779,9 +1780,9 @@ fn workbench_id_for_workspace(path: &str) -> Option<WorkbenchId> {
     })
 }
 
-fn workbench_pane_label(id: WorkbenchPaneModelId) -> &'static str {
-    workbench_pane_model(id)
-        .map(|pane| pane.label)
+fn workbench_pane_binding_label(id: WorkbenchPaneBindingId) -> &'static str {
+    workbench_pane_binding(id)
+        .map(|binding| binding.label)
         .unwrap_or_else(|| id.slug())
 }
 
@@ -2096,8 +2097,8 @@ mod tests {
 
         assert!(tonight.is_active);
         assert_eq!(tonight.href, "/dashboard?workspace=%2Fscores");
-        assert!(tonight.detail.contains("Favorites navigator"));
-        assert!(tonight.detail.contains("Schedule inspector"));
+        assert!(tonight.detail.contains("Favorites"));
+        assert!(tonight.detail.contains("Schedule"));
     }
 
     #[test]

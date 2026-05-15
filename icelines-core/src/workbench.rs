@@ -281,6 +281,82 @@ pub struct WorkbenchPaneModel {
     pub fields: &'static [WorkbenchFieldId],
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum WorkbenchSurface {
+    Tui,
+    Web,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum WorkbenchPaneBindingId {
+    FavoritesLeft,
+    WatchlistLeft,
+    GroupsLeft,
+    SavedQueriesLeft,
+    RecentEntitiesLeft,
+    FantasyRosterLeft,
+    ScheduleRight,
+    PlayerRight,
+    TeamRight,
+    StatFilterRight,
+    GoalieRight,
+    GameRight,
+    ScoringTrendRight,
+    OutlookSummaryRight,
+    PoachFiltersRight,
+    FantasySimulationRight,
+    RecordsRight,
+    CareerRight,
+    DataSourceRight,
+    DocsHelpRight,
+}
+
+impl WorkbenchPaneBindingId {
+    pub const fn slug(self) -> &'static str {
+        match self {
+            Self::FavoritesLeft => "favorites-left",
+            Self::WatchlistLeft => "watchlist-left",
+            Self::GroupsLeft => "groups-left",
+            Self::SavedQueriesLeft => "saved-queries-left",
+            Self::RecentEntitiesLeft => "recent-entities-left",
+            Self::FantasyRosterLeft => "fantasy-roster-left",
+            Self::ScheduleRight => "schedule-right",
+            Self::PlayerRight => "player-right",
+            Self::TeamRight => "team-right",
+            Self::StatFilterRight => "stat-filter-right",
+            Self::GoalieRight => "goalie-right",
+            Self::GameRight => "game-right",
+            Self::ScoringTrendRight => "scoring-trend-right",
+            Self::OutlookSummaryRight => "outlook-summary-right",
+            Self::PoachFiltersRight => "poach-filters-right",
+            Self::FantasySimulationRight => "fantasy-simulation-right",
+            Self::RecordsRight => "records-right",
+            Self::CareerRight => "career-right",
+            Self::DataSourceRight => "data-source-right",
+            Self::DocsHelpRight => "docs-help-right",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum WorkbenchPaneInteraction {
+    ReadOnly,
+    LocalState,
+    PostBackedActionStatus,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct WorkbenchPaneBinding {
+    pub id: WorkbenchPaneBindingId,
+    pub label: &'static str,
+    pub pane_model: WorkbenchPaneModelId,
+    pub zone: WorkbenchZone,
+    pub supported_surfaces: &'static [WorkbenchSurface],
+    pub fields: &'static [WorkbenchFieldId],
+    pub priority: u8,
+    pub interaction: WorkbenchPaneInteraction,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WorkbenchEntry {
     pub id: WorkbenchId,
@@ -298,6 +374,14 @@ pub enum WorkbenchRibbonScope {
     Live,
     ActiveDate,
     Workspace,
+    System,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum WorkbenchStatusScope {
+    Command,
+    Selection,
+    MutationResult,
     System,
 }
 
@@ -326,10 +410,12 @@ impl WorkbenchExperienceId {
 pub struct WorkbenchExperience {
     pub id: WorkbenchExperienceId,
     pub label: &'static str,
+    pub supported_surfaces: &'static [WorkbenchSurface],
     pub center: WorkbenchId,
-    pub left_pane: Option<WorkbenchPaneModelId>,
-    pub right_pane: Option<WorkbenchPaneModelId>,
+    pub left_pane: Option<WorkbenchPaneBindingId>,
+    pub right_pane: Option<WorkbenchPaneBindingId>,
     pub ribbon_scope: WorkbenchRibbonScope,
+    pub status_scope: WorkbenchStatusScope,
     pub fields: &'static [WorkbenchFieldId],
 }
 
@@ -846,6 +932,298 @@ pub const WORKBENCH_PANE_MODELS: &[WorkbenchPaneModel] = &[
     ),
 ];
 
+pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
+    pane_binding(
+        WorkbenchPaneBindingId::FavoritesLeft,
+        "Favorites",
+        WorkbenchPaneModelId::FavoritesNavigator,
+        WorkbenchZone::LeftPane,
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::FavoriteGroup,
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::SourceState,
+        ],
+        10,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::WatchlistLeft,
+        "Watchlist queue",
+        WorkbenchPaneModelId::WatchlistQueue,
+        WorkbenchZone::LeftPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::WatchStatus,
+            WorkbenchFieldId::AlertType,
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Team,
+        ],
+        20,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::GroupsLeft,
+        "Groups",
+        WorkbenchPaneModelId::GroupsNavigator,
+        WorkbenchZone::LeftPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::FavoriteGroup,
+            WorkbenchFieldId::EntityKind,
+        ],
+        30,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::SavedQueriesLeft,
+        "Saved queries",
+        WorkbenchPaneModelId::SavedQueries,
+        WorkbenchZone::LeftPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Workspace,
+            WorkbenchFieldId::StatKey,
+            WorkbenchFieldId::Route,
+        ],
+        40,
+        WorkbenchPaneInteraction::LocalState,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::RecentEntitiesLeft,
+        "Recent entities",
+        WorkbenchPaneModelId::RecentEntities,
+        WorkbenchZone::LeftPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::Game,
+            WorkbenchFieldId::Route,
+        ],
+        50,
+        WorkbenchPaneInteraction::LocalState,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::FantasyRosterLeft,
+        "Fantasy roster",
+        WorkbenchPaneModelId::FantasyRoster,
+        WorkbenchZone::LeftPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Category,
+            WorkbenchFieldId::Position,
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Team,
+        ],
+        60,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::ScheduleRight,
+        "Schedule",
+        WorkbenchPaneModelId::ScheduleInspector,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Date,
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::Opponent,
+            WorkbenchFieldId::GameState,
+        ],
+        10,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::PlayerRight,
+        "Player inspector",
+        WorkbenchPaneModelId::PlayerInspector,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::Position,
+            WorkbenchFieldId::SourceState,
+        ],
+        20,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::TeamRight,
+        "Team inspector",
+        WorkbenchPaneModelId::TeamInspector,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::Position,
+            WorkbenchFieldId::Opponent,
+            WorkbenchFieldId::SourceState,
+        ],
+        30,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::StatFilterRight,
+        "Stat/filter inspector",
+        WorkbenchPaneModelId::StatFilterInspector,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::StatKey,
+            WorkbenchFieldId::ReportType,
+            WorkbenchFieldId::Sort,
+            WorkbenchFieldId::SourceState,
+        ],
+        40,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::GoalieRight,
+        "Goalie inspector",
+        WorkbenchPaneModelId::GoalieInspector,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::StatKey,
+            WorkbenchFieldId::SourceState,
+        ],
+        50,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::GameRight,
+        "Game inspector",
+        WorkbenchPaneModelId::GameInspector,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Game,
+            WorkbenchFieldId::GameState,
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::SourceState,
+        ],
+        60,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::ScoringTrendRight,
+        "Scoring trend",
+        WorkbenchPaneModelId::ScoringTrend,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::StatKey,
+            WorkbenchFieldId::SourceState,
+        ],
+        70,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::OutlookSummaryRight,
+        "Outlook summary",
+        WorkbenchPaneModelId::OutlookSummary,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::SourceState,
+        ],
+        80,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::PoachFiltersRight,
+        "Poach filters",
+        WorkbenchPaneModelId::PoachFilters,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Availability,
+            WorkbenchFieldId::Position,
+            WorkbenchFieldId::Category,
+            WorkbenchFieldId::WatchStatus,
+        ],
+        90,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::FantasySimulationRight,
+        "Fantasy simulation",
+        WorkbenchPaneModelId::FantasySimulation,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Category,
+            WorkbenchFieldId::MutationResult,
+        ],
+        100,
+        WorkbenchPaneInteraction::PostBackedActionStatus,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::RecordsRight,
+        "Records inspector",
+        WorkbenchPaneModelId::RecordsInspector,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::Player,
+            WorkbenchFieldId::Team,
+            WorkbenchFieldId::Opponent,
+            WorkbenchFieldId::StatKey,
+        ],
+        110,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::CareerRight,
+        "Career cohort",
+        WorkbenchPaneModelId::CareerCohort,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::League,
+            WorkbenchFieldId::Date,
+            WorkbenchFieldId::Sort,
+            WorkbenchFieldId::Player,
+        ],
+        120,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::DataSourceRight,
+        "Data/source",
+        WorkbenchPaneModelId::DataSourceInspector,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[
+            WorkbenchFieldId::DataKind,
+            WorkbenchFieldId::SourceState,
+            WorkbenchFieldId::MutationResult,
+        ],
+        130,
+        WorkbenchPaneInteraction::PostBackedActionStatus,
+    ),
+    pane_binding(
+        WorkbenchPaneBindingId::DocsHelpRight,
+        "Docs/help",
+        WorkbenchPaneModelId::DocsHelp,
+        WorkbenchZone::RightPane,
+        &[WorkbenchSurface::Web],
+        &[WorkbenchFieldId::Workspace, WorkbenchFieldId::Route],
+        140,
+        WorkbenchPaneInteraction::ReadOnly,
+    ),
+];
+
 pub const WORKBENCH_CATALOG: &[WorkbenchEntry] = &[
     entry(
         WorkbenchId::League,
@@ -1157,10 +1535,12 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     experience(
         WorkbenchExperienceId::TonightBench,
         "Tonight bench",
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         WorkbenchId::Scores,
-        Some(WorkbenchPaneModelId::FavoritesNavigator),
-        Some(WorkbenchPaneModelId::ScheduleInspector),
+        Some(WorkbenchPaneBindingId::FavoritesLeft),
+        Some(WorkbenchPaneBindingId::ScheduleRight),
         WorkbenchRibbonScope::Live,
+        WorkbenchStatusScope::Command,
         &[
             WorkbenchFieldId::Date,
             WorkbenchFieldId::FavoriteGroup,
@@ -1171,10 +1551,12 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     experience(
         WorkbenchExperienceId::ScoringRoom,
         "Scoring room",
+        &[WorkbenchSurface::Web],
         WorkbenchId::Stats,
-        Some(WorkbenchPaneModelId::SavedQueries),
-        Some(WorkbenchPaneModelId::StatFilterInspector),
+        Some(WorkbenchPaneBindingId::SavedQueriesLeft),
+        Some(WorkbenchPaneBindingId::StatFilterRight),
         WorkbenchRibbonScope::Workspace,
+        WorkbenchStatusScope::Selection,
         &[
             WorkbenchFieldId::StatKey,
             WorkbenchFieldId::ReportType,
@@ -1185,10 +1567,12 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     experience(
         WorkbenchExperienceId::TeamRoom,
         "Team room",
+        &[WorkbenchSurface::Web],
         WorkbenchId::Depth,
-        Some(WorkbenchPaneModelId::RecentEntities),
-        Some(WorkbenchPaneModelId::TeamInspector),
+        Some(WorkbenchPaneBindingId::RecentEntitiesLeft),
+        Some(WorkbenchPaneBindingId::TeamRight),
         WorkbenchRibbonScope::ActiveDate,
+        WorkbenchStatusScope::Selection,
         &[
             WorkbenchFieldId::Team,
             WorkbenchFieldId::Position,
@@ -1198,10 +1582,12 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     experience(
         WorkbenchExperienceId::FantasyRoom,
         "Fantasy room",
+        &[WorkbenchSurface::Web],
         WorkbenchId::Fantasy,
-        Some(WorkbenchPaneModelId::FantasyRoster),
-        Some(WorkbenchPaneModelId::PoachFilters),
+        Some(WorkbenchPaneBindingId::FantasyRosterLeft),
+        Some(WorkbenchPaneBindingId::PoachFiltersRight),
         WorkbenchRibbonScope::Workspace,
+        WorkbenchStatusScope::MutationResult,
         &[
             WorkbenchFieldId::Category,
             WorkbenchFieldId::Availability,
@@ -1211,10 +1597,12 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     experience(
         WorkbenchExperienceId::AdminRoom,
         "Admin room",
+        &[WorkbenchSurface::Web],
         WorkbenchId::Admin,
-        Some(WorkbenchPaneModelId::WatchlistQueue),
-        Some(WorkbenchPaneModelId::DataSourceInspector),
+        Some(WorkbenchPaneBindingId::WatchlistLeft),
+        Some(WorkbenchPaneBindingId::DataSourceRight),
         WorkbenchRibbonScope::System,
+        WorkbenchStatusScope::System,
         &[
             WorkbenchFieldId::DataKind,
             WorkbenchFieldId::SourceState,
@@ -1233,6 +1621,12 @@ pub fn workbench_field(id: WorkbenchFieldId) -> Option<&'static WorkbenchField> 
 
 pub fn workbench_pane_model(id: WorkbenchPaneModelId) -> Option<&'static WorkbenchPaneModel> {
     WORKBENCH_PANE_MODELS.iter().find(|pane| pane.id == id)
+}
+
+pub fn workbench_pane_binding(id: WorkbenchPaneBindingId) -> Option<&'static WorkbenchPaneBinding> {
+    WORKBENCH_PANE_BINDINGS
+        .iter()
+        .find(|binding| binding.id == id)
 }
 
 pub fn workbench_experience(id: WorkbenchExperienceId) -> Option<&'static WorkbenchExperience> {
@@ -1277,6 +1671,29 @@ const fn pane_model(
     }
 }
 
+#[allow(clippy::too_many_arguments)] // static binding row constructor; keeps table rows compact.
+const fn pane_binding(
+    id: WorkbenchPaneBindingId,
+    label: &'static str,
+    pane_model: WorkbenchPaneModelId,
+    zone: WorkbenchZone,
+    supported_surfaces: &'static [WorkbenchSurface],
+    fields: &'static [WorkbenchFieldId],
+    priority: u8,
+    interaction: WorkbenchPaneInteraction,
+) -> WorkbenchPaneBinding {
+    WorkbenchPaneBinding {
+        id,
+        label,
+        pane_model,
+        zone,
+        supported_surfaces,
+        fields,
+        priority,
+        interaction,
+    }
+}
+
 #[allow(clippy::too_many_arguments)] // static catalog row constructor; struct literals are noisier.
 const fn entry(
     id: WorkbenchId,
@@ -1300,22 +1717,27 @@ const fn entry(
     }
 }
 
+#[allow(clippy::too_many_arguments)] // static experience row constructor; keeps table rows readable.
 const fn experience(
     id: WorkbenchExperienceId,
     label: &'static str,
+    supported_surfaces: &'static [WorkbenchSurface],
     center: WorkbenchId,
-    left_pane: Option<WorkbenchPaneModelId>,
-    right_pane: Option<WorkbenchPaneModelId>,
+    left_pane: Option<WorkbenchPaneBindingId>,
+    right_pane: Option<WorkbenchPaneBindingId>,
     ribbon_scope: WorkbenchRibbonScope,
+    status_scope: WorkbenchStatusScope,
     fields: &'static [WorkbenchFieldId],
 ) -> WorkbenchExperience {
     WorkbenchExperience {
         id,
         label,
+        supported_surfaces,
         center,
         left_pane,
         right_pane,
         ribbon_scope,
+        status_scope,
         fields,
     }
 }
@@ -1407,6 +1829,79 @@ mod tests {
     }
 
     #[test]
+    fn l0_workbench_pane_bindings_reference_known_models_fields_and_zones() {
+        let pane_ids: HashSet<_> = WORKBENCH_PANE_MODELS.iter().map(|pane| pane.id).collect();
+        let field_ids: HashSet<_> = WORKBENCH_FIELDS.iter().map(|field| field.id).collect();
+        let mut binding_ids = HashSet::new();
+
+        for binding in WORKBENCH_PANE_BINDINGS {
+            assert!(
+                binding_ids.insert(binding.id.slug()),
+                "duplicate pane binding {}",
+                binding.id.slug()
+            );
+            assert!(!binding.label.is_empty());
+            assert!(
+                binding.priority > 0,
+                "binding {:?} has no priority",
+                binding.id
+            );
+            assert!(
+                !binding.supported_surfaces.is_empty(),
+                "binding {} must declare supported surfaces",
+                binding.id.slug()
+            );
+            assert!(
+                pane_ids.contains(&binding.pane_model),
+                "binding {} references unknown pane model {}",
+                binding.id.slug(),
+                binding.pane_model.slug()
+            );
+            let pane = workbench_pane_model(binding.pane_model)
+                .expect("binding pane model already checked as present");
+            assert!(
+                pane.supported_zones.contains(&binding.zone),
+                "binding {} places pane {} in unsupported zone {:?}",
+                binding.id.slug(),
+                binding.pane_model.slug(),
+                binding.zone
+            );
+            assert!(!binding.fields.is_empty());
+            for field in binding.fields {
+                assert!(
+                    field_ids.contains(field),
+                    "binding {} references unknown field {}",
+                    binding.id.slug(),
+                    field.slug()
+                );
+                assert!(
+                    pane.fields.contains(field),
+                    "binding {} uses field {} not declared by pane model {}",
+                    binding.id.slug(),
+                    field.slug(),
+                    pane.id.slug()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn l0_workbench_pane_bindings_do_not_model_get_mutations() {
+        for binding in WORKBENCH_PANE_BINDINGS {
+            let pane = workbench_pane_model(binding.pane_model)
+                .expect("binding pane model must be present");
+            if pane.kind == WorkbenchPaneKind::ActionStatus {
+                assert_eq!(
+                    binding.interaction,
+                    WorkbenchPaneInteraction::PostBackedActionStatus,
+                    "action/status binding {} must document POST-backed status semantics",
+                    binding.id.slug()
+                );
+            }
+        }
+    }
+
+    #[test]
     fn l0_workbench_catalog_references_known_panes_and_fields() {
         let pane_ids: HashSet<_> = WORKBENCH_PANE_MODELS.iter().map(|pane| pane.id).collect();
         let field_ids: HashSet<_> = WORKBENCH_FIELDS.iter().map(|field| field.id).collect();
@@ -1437,7 +1932,10 @@ mod tests {
     #[test]
     fn l0_workbench_bound_experiences_are_valid_compositions() {
         let entry_ids: HashSet<_> = WORKBENCH_CATALOG.iter().map(|entry| entry.id).collect();
-        let pane_ids: HashSet<_> = WORKBENCH_PANE_MODELS.iter().map(|pane| pane.id).collect();
+        let binding_ids: HashSet<_> = WORKBENCH_PANE_BINDINGS
+            .iter()
+            .map(|binding| binding.id)
+            .collect();
         let field_ids: HashSet<_> = WORKBENCH_FIELDS.iter().map(|field| field.id).collect();
         let mut experience_ids = HashSet::new();
 
@@ -1447,14 +1945,19 @@ mod tests {
                 "duplicate experience {}",
                 experience.id.slug()
             );
+            assert!(
+                !experience.supported_surfaces.is_empty(),
+                "experience {} must declare supported surfaces",
+                experience.id.slug()
+            );
             assert!(entry_ids.contains(&experience.center));
             for pane in [experience.left_pane, experience.right_pane]
                 .into_iter()
                 .flatten()
             {
                 assert!(
-                    pane_ids.contains(&pane),
-                    "experience {} references unknown pane {}",
+                    binding_ids.contains(&pane),
+                    "experience {} references unknown pane binding {}",
                     experience.id.slug(),
                     pane.slug()
                 );

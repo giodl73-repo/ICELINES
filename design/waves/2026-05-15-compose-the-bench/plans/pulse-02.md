@@ -38,8 +38,8 @@ TUI/web adapters lowering those bindings to surface-specific targets.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-core --quiet`
-- [ ] `cargo test -p icelines-cli --quiet`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -p icelines-core --no-deps -- -D warnings`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-core --quiet`
+- [x] `cargo test -p icelines-cli --quiet`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -p icelines-core --no-deps -- -D warnings`

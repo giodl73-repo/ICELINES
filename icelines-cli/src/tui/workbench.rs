@@ -1,4 +1,7 @@
-use icelines_core::{WorkbenchId, WORKBENCH_CATALOG};
+use icelines_core::{
+    WorkbenchExperience, WorkbenchId, WorkbenchPaneBinding, WorkbenchSurface, WorkbenchZone,
+    WORKBENCH_CATALOG, WORKBENCH_EXPERIENCES, WORKBENCH_PANE_BINDINGS,
+};
 
 use crate::tui::app::Screen;
 
@@ -65,9 +68,29 @@ pub fn workbench_for_screen(screen: &Screen) -> Option<WorkbenchId> {
     }
 }
 
+#[allow(dead_code)] // Pulse 02 adapter seam; Pulse 03 wires visible TUI pane controls.
+pub fn tui_pane_bindings_for_zone(
+    zone: WorkbenchZone,
+) -> impl Iterator<Item = &'static WorkbenchPaneBinding> {
+    WORKBENCH_PANE_BINDINGS.iter().filter(move |binding| {
+        binding.zone == zone && binding.supported_surfaces.contains(&WorkbenchSurface::Tui)
+    })
+}
+
+#[allow(dead_code)] // Pulse 02 adapter seam; Pulse 03 applies bound experiences.
+pub fn tui_bound_experiences() -> impl Iterator<Item = &'static WorkbenchExperience> {
+    WORKBENCH_EXPERIENCES.iter().filter(|experience| {
+        experience
+            .supported_surfaces
+            .contains(&WorkbenchSurface::Tui)
+            && screen_for_workbench(experience.center).is_some()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use icelines_core::{WorkbenchExperienceId, WorkbenchPaneBindingId};
 
     #[test]
     fn l0_tui_workbench_adapter_covers_main_no_arg_screens() {
@@ -130,5 +153,27 @@ mod tests {
             workbench_for_screen(&Screen::FantasySim),
             Some(WorkbenchId::Simulate)
         );
+    }
+
+    #[test]
+    fn l0_tui_workbench_adapter_exposes_only_renderable_pane_bindings() {
+        let left: Vec<_> = tui_pane_bindings_for_zone(WorkbenchZone::LeftPane)
+            .map(|binding| binding.id)
+            .collect();
+        let right: Vec<_> = tui_pane_bindings_for_zone(WorkbenchZone::RightPane)
+            .map(|binding| binding.id)
+            .collect();
+
+        assert_eq!(left, vec![WorkbenchPaneBindingId::FavoritesLeft]);
+        assert_eq!(right, vec![WorkbenchPaneBindingId::ScheduleRight]);
+    }
+
+    #[test]
+    fn l0_tui_workbench_adapter_exposes_supported_experiences_with_screens() {
+        let experiences: Vec<_> = tui_bound_experiences()
+            .map(|experience| experience.id)
+            .collect();
+
+        assert_eq!(experiences, vec![WorkbenchExperienceId::TonightBench]);
     }
 }

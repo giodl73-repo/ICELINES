@@ -50,7 +50,7 @@ Schedule-right forever.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Pane composition inventory and contract | complete | `PANE-COMPOSITION-INVENTORY.md`; `plans/pulse-01.md` |
-| 02 - Shared pane binding contract | planned | depends on Pulse 01 |
+| 02 - Shared pane binding contract | complete | `icelines-core/src/workbench.rs`; `icelines-core/src/lib.rs`; `icelines-cli/src/tui/workbench.rs`; `icelines-web/src/workbench.rs`; `plans/pulse-02.md` |
 | 03 - TUI pane composition controls | planned | depends on Pulse 02 |
 | 04 - Web pane composition controls | planned | depends on Pulse 02 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 03-04 |
@@ -72,12 +72,12 @@ Schedule-right forever.
 
 ## Current Result
 
-Pulse 01 produced the pane composition inventory. The current split remains
-valid: Pulse 02 should evolve the existing core workbench metadata into explicit
-pane bindings and surface support; Pulse 03 should wire TUI pane controls only
-for real/stubbed pane bodies; Pulse 04 should wire safe no-JS web pane controls;
-Pulse 05 closes with docs and broad gates.
+Pulse 02 added the shared pane binding contract. Core now exposes typed pane
+binding IDs, supported surfaces, binding interactions, status scopes, and
+experience compositions that reference bindings rather than raw pane models. TUI
+and web adapters lower the shared metadata to surface-ready bindings without
+adding visible controls yet.
 
 ## Next
 
-Execute Pulse 02: Shared pane binding contract.
+Execute Pulse 03: TUI pane composition controls.
