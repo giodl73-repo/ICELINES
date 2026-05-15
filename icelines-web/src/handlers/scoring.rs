@@ -143,6 +143,34 @@ pub async fn get_game_scoring_json(State(state): State<WebState>, Path(id): Path
     }
 }
 
+pub async fn get_player_scoring(State(state): State<WebState>, Path(id): Path<u32>) -> Response {
+    match build_player_scoring_view(&state, id).await {
+        Ok((active_label, season, season_type, view)) => {
+            let page = player_scoring_page(&view, season, season_type);
+            render_scoring_template(active_label, page)
+        }
+        Err(response) => *response,
+    }
+}
+
+pub async fn get_player_scoring_json(
+    State(state): State<WebState>,
+    Path(id): Path<u32>,
+) -> Response {
+    match build_player_scoring_view(&state, id).await {
+        Ok((_active_label, _season, _season_type, view)) => {
+            let meta = serde_json::json!({
+                "player_id": view.player_id,
+                "season": view.context.window.season.0.to_string(),
+                "season_type": view.context.window.season_type.label(),
+                "source_state": view.context.source_state,
+            });
+            crate::api::json_data_meta("player-scoring", view, meta)
+        }
+        Err(response) => *response,
+    }
+}
+
 pub async fn get_team_scoring(
     State(state): State<WebState>,
     Path(abbrev_raw): Path<String>,
@@ -244,6 +272,33 @@ async fn build_team_scoring_view(
     let context = ViewContext::new(ViewWindow::new(season, season_type));
     let view =
         icelines_fetch::scoring_provider::load_team_scoring_profile(&store, context, &team.0);
+    Ok((active_label, season, season_type, view))
+}
+
+async fn build_player_scoring_view(
+    state: &WebState,
+    player_id: u32,
+) -> Result<
+    (
+        String,
+        Season,
+        SeasonType,
+        icelines_core::PlayerScoringProfileView,
+    ),
+    Box<Response>,
+> {
+    let (active_label, season, season_type) = active_window(state).await?;
+    let store = open_data_store("player-scoring")?;
+    let context = ViewContext::new(ViewWindow::new(season, season_type));
+    let player_name = icelines_fetch::stats_loader::find_player_candidate_by_id(player_id)
+        .map(|candidate| candidate.full_name)
+        .unwrap_or_else(|| player_id.to_string());
+    let view = icelines_fetch::scoring_provider::load_player_scoring_profile(
+        &store,
+        context,
+        player_id,
+        player_name,
+    );
     Ok((active_label, season, season_type, view))
 }
 
@@ -373,6 +428,34 @@ fn team_scoring_page(
             teams: view.team.clone(),
             return_to: format!("/team/{}/scoring", view.team),
         }),
+    }
+}
+
+fn player_scoring_page(
+    view: &icelines_core::PlayerScoringProfileView,
+    season: Season,
+    season_type: SeasonType,
+) -> ScoringReportPage {
+    let source_loaded = source_loaded(&view.context.source_state);
+    ScoringReportPage {
+        title: format!("{} Scoring Profile", view.player_name),
+        subtitle: format!(
+            "{} · {} · official NHL play-by-play",
+            pretty_season_label(season.0),
+            season_type.label()
+        ),
+        back_href: format!("/player/{}", view.player_id),
+        back_label: "player card".to_string(),
+        api_href: format!("/api/v1/player/{}/scoring", view.player_id),
+        source_loaded,
+        source_label: source_label(source_loaded),
+        summary: summary_row(view.summary),
+        team_summaries: Vec::new(),
+        period_summaries: split_rows(&view.period_summaries),
+        situation_summaries: split_rows(&view.situation_summaries),
+        top_shooters: Vec::new(),
+        events: event_rows(&view.events),
+        load_form: None,
     }
 }
 

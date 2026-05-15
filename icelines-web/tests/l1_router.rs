@@ -4986,6 +4986,47 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
 }
 
 #[tokio::test]
+async fn l1_rocket_player_scoring_json_filters_player_events() {
+    let _guard = home_env_lock().await;
+    let data_root = DataRootEnvFixture::new();
+    seed_scoring_play_by_play(&data_root.data_root(), 2025020001, "2025-10-07");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/player/8483493/scoring")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "player-scoring");
+    assert_eq!(
+        json["meta"]["player_id"],
+        serde_json::Value::from(8483493_u64)
+    );
+    assert_eq!(
+        json["data"]["summary"]["goals"],
+        serde_json::Value::from(1_u64)
+    );
+    assert_eq!(
+        json["data"]["summary"]["shots_on_goal"],
+        serde_json::Value::from(2_u64)
+    );
+    assert_eq!(
+        json["data"]["events"]
+            .as_array()
+            .expect("events array")
+            .len(),
+        2
+    );
+}
+
+#[tokio::test]
 async fn l1_rocket_team_scoring_html_offers_cache_load_when_missing() {
     let _guard = home_env_lock().await;
     let _data_root = DataRootEnvFixture::new();

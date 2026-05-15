@@ -82,6 +82,10 @@ pub fn router(state: WebState) -> Router {
             get(handlers::awards::get_player_awards),
         )
         .route(
+            "/player/:id/scoring",
+            get(handlers::scoring::get_player_scoring),
+        )
+        .route(
             "/player/:id/streaks",
             get(handlers::streaks::get_player_streaks),
         )
@@ -90,6 +94,10 @@ pub fn router(state: WebState) -> Router {
         .route(
             "/api/v1/player/:id/awards",
             get(handlers::awards::get_player_awards_json),
+        )
+        .route(
+            "/api/v1/player/:id/scoring",
+            get(handlers::scoring::get_player_scoring_json),
         )
         .route(
             "/api/v1/player/:id/streaks",

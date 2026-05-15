@@ -516,8 +516,9 @@ with `icelines fetch play-by-play --date YYYY-MM-DD` or use the web Admin game
 cache loader's "Scoring events / play-by-play" artifact.
 
 Web routes: `/game/:id/scoring`, `/team/:abbrev/scoring`,
-`/tonight/intel`, `/api/v1/game/:id/scoring`,
-`/api/v1/team/:abbrev/scoring`, and `/api/v1/tonight/intel`.
+`/player/:id/scoring`, `/tonight/intel`, `/api/v1/game/:id/scoring`,
+`/api/v1/team/:abbrev/scoring`, `/api/v1/player/:id/scoring`, and
+`/api/v1/tonight/intel`.
 
 ## `x` — quick CSV/JSON export
 

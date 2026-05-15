@@ -38,7 +38,7 @@ tonight's games.
 | 03 - Shot-event cache loader | done | `plans/pulse-03.md`; scoring cache aliases; source-state-aware `load_game_scoring_report` |
 | 04 - Game/team scoring reports | done | `plans/pulse-04.md`; `/game/:id/scoring`; `/team/:abbrev/scoring`; scoring JSON twins |
 | 05 - Tonight scoring intelligence | done | `plans/pulse-05.md`; `/tonight/intel`; `/api/v1/tonight/intel`; favorites-first `TonightScoringIntelView` |
-| 06 - Player scoring profiles and projections | planned | Depends on game/team scoring report primitives |
+| 06 - Player scoring profiles and projections | done | `plans/pulse-06.md`; `/player/:id/scoring`; `/api/v1/player/:id/scoring`; player scoring profiles from cached play-by-play |
 
 ## Role Notes
 
@@ -61,9 +61,10 @@ while still using `DataKind::PlayByPlay`, and added source-state-aware scoring
 report providers. Pulse 04 shipped the first report surfaces:
 `/game/:id/scoring`, `/api/v1/game/:id/scoring`, `/team/:abbrev/scoring`, and
 `/api/v1/team/:abbrev/scoring`. Pulse 05 added favorites-first tonight scoring
-intel at `/tonight/intel` and `/api/v1/tonight/intel`.
+intel at `/tonight/intel` and `/api/v1/tonight/intel`. Pulse 06 added player
+scoring profiles at `/player/:id/scoring` and `/api/v1/player/:id/scoring`.
 
 ## Next
 
-Generate Pulse 06 for player scoring profiles and lightweight projections on
-top of the scoring report primitives.
+Wave 1 is complete. The next Rocket Richard wave should deepen projections and
+shot-quality modeling only after owned data contracts are explicitly scoped.
