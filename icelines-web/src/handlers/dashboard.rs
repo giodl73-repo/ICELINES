@@ -155,6 +155,7 @@ pub async fn get_dashboard(
 
 pub async fn post_dashboard_command(
     headers: HeaderMap,
+    State(state): State<WebState>,
     Form(form): Form<DashboardCommandForm>,
 ) -> Response {
     let current_workspace = normalize_workspace(form.workspace.as_deref());
@@ -194,13 +195,32 @@ pub async fn post_dashboard_command(
             .await
         }
         Ok(crate::dashboard_command::DashboardCommand::Mutation(
-            crate::dashboard_command::DashboardMutationIntent::WatchPlayer { player, .. },
+            crate::dashboard_command::DashboardMutationIntent::WatchPlayer {
+                player, trigger, ..
+            },
         )) => {
             super::poach::post_watch_rule_create_form(Form(super::poach::WatchRuleCreateForm {
                 player,
-                trigger: "available".to_owned(),
+                trigger,
                 return_to: Some(dashboard_workspace_href(&current_workspace)),
             }))
+            .await
+        }
+        Ok(crate::dashboard_command::DashboardCommand::Mutation(
+            crate::dashboard_command::DashboardMutationIntent::WatchSetEnabled {
+                rule_id,
+                enabled,
+                ..
+            },
+        )) => {
+            super::poach::post_watch_rule_enabled_form(
+                State(state),
+                Form(super::poach::WatchRuleMutationForm {
+                    rule_id,
+                    enabled,
+                    return_to: Some(dashboard_workspace_href(&current_workspace)),
+                }),
+            )
             .await
         }
         Err(err) => (

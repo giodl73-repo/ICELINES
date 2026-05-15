@@ -22,9 +22,24 @@ pub enum DashboardPane {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DashboardMutationIntent {
-    FavoriteAdd { player: String, post_url: String },
-    FavoriteRemove { player: String, post_url: String },
-    WatchPlayer { player: String, post_url: String },
+    FavoriteAdd {
+        player: String,
+        post_url: String,
+    },
+    FavoriteRemove {
+        player: String,
+        post_url: String,
+    },
+    WatchPlayer {
+        player: String,
+        trigger: String,
+        post_url: String,
+    },
+    WatchSetEnabled {
+        rule_id: String,
+        enabled: bool,
+        post_url: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -36,6 +51,7 @@ pub enum DashboardCommandError {
     },
     BadPane(String),
     ExternalRoute(String),
+    UnsupportedMutation(String),
 }
 
 impl std::fmt::Display for DashboardCommandError {
@@ -46,6 +62,7 @@ impl std::fmt::Display for DashboardCommandError {
             Self::MissingArg { command, arg } => write!(f, "{command}: missing <{arg}>"),
             Self::BadPane(pane) => write!(f, "unknown pane: {pane}"),
             Self::ExternalRoute(route) => write!(f, "command resolved outside dashboard: {route}"),
+            Self::UnsupportedMutation(message) => write!(f, "{message}"),
         }
     }
 }
@@ -271,19 +288,80 @@ fn parse_favorite_mutation(args: &str) -> Result<DashboardCommand, DashboardComm
 }
 
 fn parse_watch_mutation(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
-    let player = args.trim();
-    if player.is_empty() {
+    let trimmed = args.trim();
+    if trimmed.is_empty() {
         return Err(DashboardCommandError::MissingArg {
             command: "watch",
             arg: "player",
         });
     }
+    let (subcommand, rest) = split_first_word(trimmed);
+    let (player, trigger) = match subcommand.to_ascii_lowercase().as_str() {
+        "enable" | "on" => return parse_watch_rule_set_enabled(rest, true),
+        "disable" | "off" => return parse_watch_rule_set_enabled(rest, false),
+        "team" | "deployment" => {
+            return Err(DashboardCommandError::UnsupportedMutation(
+                "watch team/deployment rule editing is deferred; use `icelines watch deployment ...` for CLI preview or `/watchlist` for player rules".to_owned(),
+            ))
+        }
+        "player" => parse_watch_player_args(rest)?,
+        _ => (trimmed.to_owned(), "available".to_owned()),
+    };
     Ok(DashboardCommand::Mutation(
         DashboardMutationIntent::WatchPlayer {
-            player: player.to_owned(),
+            player,
+            trigger,
             post_url: "/watch-rules/create".to_owned(),
         },
     ))
+}
+
+fn parse_watch_rule_set_enabled(
+    args: &str,
+    enabled: bool,
+) -> Result<DashboardCommand, DashboardCommandError> {
+    let rule_id = args.trim();
+    if rule_id.is_empty() {
+        return Err(DashboardCommandError::MissingArg {
+            command: "watch",
+            arg: "rule-id",
+        });
+    }
+    Ok(DashboardCommand::Mutation(
+        DashboardMutationIntent::WatchSetEnabled {
+            rule_id: rule_id.to_owned(),
+            enabled,
+            post_url: "/watch-rules/set-enabled".to_owned(),
+        },
+    ))
+}
+
+fn parse_watch_player_args(args: &str) -> Result<(String, String), DashboardCommandError> {
+    let trimmed = args.trim();
+    if trimmed.is_empty() {
+        return Err(DashboardCommandError::MissingArg {
+            command: "watch player",
+            arg: "player",
+        });
+    }
+    let lower = trimmed.to_ascii_lowercase();
+    if let Some(idx) = lower.rfind(" when=") {
+        let player = trimmed[..idx].trim();
+        let trigger = trimmed[idx + " when=".len()..].trim();
+        if player.is_empty() {
+            return Err(DashboardCommandError::MissingArg {
+                command: "watch player",
+                arg: "player",
+            });
+        }
+        if trigger.is_empty() || trigger.split_whitespace().nth(1).is_some() {
+            return Err(DashboardCommandError::UnsupportedMutation(
+                "watch player expects a single trigger after when=".to_owned(),
+            ));
+        }
+        return Ok((player.to_owned(), trigger.to_owned()));
+    }
+    Ok((trimmed.to_owned(), "available".to_owned()))
 }
 
 fn parse_pane(args: &str) -> Result<DashboardPane, DashboardCommandError> {
@@ -576,8 +654,44 @@ mod tests {
             parse_dashboard_command("watch Connor McDavid").expect("watch parses"),
             DashboardCommand::Mutation(DashboardMutationIntent::WatchPlayer {
                 player: "Connor McDavid".to_owned(),
+                trigger: "available".to_owned(),
                 post_url: "/watch-rules/create".to_owned(),
             })
+        );
+        assert_eq!(
+            parse_dashboard_command("watch disable player-connor-mcdavid")
+                .expect("watch disable parses"),
+            DashboardCommand::Mutation(DashboardMutationIntent::WatchSetEnabled {
+                rule_id: "player-connor-mcdavid".to_owned(),
+                enabled: false,
+                post_url: "/watch-rules/set-enabled".to_owned(),
+            })
+        );
+    }
+
+    #[test]
+    fn l0_dashboard_command_watch_player_supports_trigger_and_fences_deployment() {
+        match parse_dashboard_command("watch player Connor McDavid when=pp1")
+            .expect("watch player parses")
+        {
+            DashboardCommand::Mutation(DashboardMutationIntent::WatchPlayer {
+                player,
+                trigger,
+                post_url,
+            }) => {
+                assert_eq!(player, "Connor McDavid");
+                assert_eq!(trigger, "pp1");
+                assert_eq!(post_url, "/watch-rules/create");
+            }
+            other => panic!("expected watch mutation, got {other:?}"),
+        }
+
+        let err = parse_dashboard_command("watch deployment TOR")
+            .expect_err("deployment editor is deferred");
+        assert!(
+            err.to_string()
+                .contains("watch team/deployment rule editing is deferred"),
+            "unexpected error: {err}"
         );
     }
 

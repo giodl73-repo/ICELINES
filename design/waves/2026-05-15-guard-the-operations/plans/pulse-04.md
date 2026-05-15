@@ -2,7 +2,7 @@
 wave: guard-the-operations
 pulse: 04
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - keel
   - wire
@@ -36,10 +36,19 @@ must stay deferred.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-core --quiet`
-- [ ] `cargo test -p icelines-cli --quiet`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -p icelines-core --no-deps -- -D warnings`
-- [ ] `cargo clippy -p icelines-cli --no-deps -- -D warnings`
-- [ ] `cargo clippy -p icelines-web --no-deps -- -D warnings`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-core --quiet`
+- [x] `cargo test -p icelines-cli --quiet`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -p icelines-core --no-deps -- -D warnings`
+- [x] `cargo clippy -p icelines-cli --no-deps -- -D warnings`
+- [x] `cargo clippy -p icelines-web --no-deps -- -D warnings`
+
+## Result
+
+Richer arbitrary team/deployment editing remains deferred because the shared
+`WatchRuleMutationIntent` only carries create/enable/disable/delete by rule id
+and has no validated team/deployment fields. The pulse fenced the unsupported
+phrases instead: TUI and web dashboard commands now reject team/deployment edit
+attempts rather than reinterpreting them as player rules, while player-rule
+create/toggle/delete paths remain POST-backed or TUI-command-backed.

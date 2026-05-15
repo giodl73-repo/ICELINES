@@ -542,6 +542,9 @@ fn parse_watch(args: &str) -> Result<Command, ParseError> {
         "player" => parse_watch_player_rule(rest),
         "enable" | "on" => parse_watch_rule_set_enabled(rest, true),
         "disable" | "off" => parse_watch_rule_set_enabled(rest, false),
+        "team" | "deployment" => Err(ParseError::BadFilter {
+            details: "watch team/deployment rule editing is deferred; use `icelines watch deployment ...` for CLI preview or `/watchlist` for player rules".to_string(),
+        }),
         _ => Ok(Command::WatchPlayer {
             needle: needle.to_string(),
         }),
@@ -2270,6 +2273,12 @@ mod tests {
                 id: "player-connor-mcdavid".to_string(),
                 enabled: false,
             }
+        );
+        let err = parse_command("watch deployment TOR").expect_err("deployment editor deferred");
+        assert!(
+            err.to_string()
+                .contains("watch team/deployment rule editing is deferred"),
+            "unexpected error: {err}"
         );
     }
 

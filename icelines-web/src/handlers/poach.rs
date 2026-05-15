@@ -52,6 +52,8 @@ pub struct WatchRuleMutationRequest {
 pub struct WatchRuleMutationForm {
     pub rule_id: String,
     pub enabled: bool,
+    #[serde(default)]
+    pub return_to: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -204,6 +206,7 @@ pub async fn post_watch_rule_enabled_form(
     State(state): State<WebState>,
     Form(req): Form<WatchRuleMutationForm>,
 ) -> Response {
+    let return_to = safe_return_to(req.return_to.as_deref()).unwrap_or("/watchlist");
     let intent = match WatchRuleMutationIntent::resolve(&req.rule_id, req.enabled) {
         Ok(intent) => intent,
         Err(message) => return bad_request_html(message),
@@ -215,7 +218,7 @@ pub async fn post_watch_rule_enabled_form(
     match set_persisted_watch_rule_enabled(&intent.rule_id, intent.enabled) {
         Ok(true) => {
             let _result = intent.result_view(context, true);
-            Redirect::to("/watchlist").into_response()
+            Redirect::to(return_to).into_response()
         }
         Ok(false) => bad_request_html(format!("unknown persisted watch rule '{}'", intent.rule_id)),
         Err(message) => watch_rules_error(StatusCode::INTERNAL_SERVER_ERROR, message),

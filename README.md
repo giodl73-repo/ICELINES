@@ -297,6 +297,11 @@ icelines serve --port 8000
 # GET /team/:abbrev/outlook    -> cached GF/GA pace and recent pressure
 ```
 
+Watch-rule editors are intentionally narrow: TUI/web can create player rules and
+toggle persisted rules, and the web watchlist can delete persisted rules.
+Team/deployment rule editing stays on the CLI preview/save path until the shared
+mutation contract carries those dimensions.
+
 **Fantasy schemes:** `yahoo-standard`, `espn-standard`, `simple-pts`
 
 ### Data and history

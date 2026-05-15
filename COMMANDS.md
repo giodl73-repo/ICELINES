@@ -846,6 +846,7 @@ watch Connor McDavid                       -> POST /watch-rules/create
 watch player Connor McDavid when=available -> save player watch rule
 watch enable player-connor-mcdavid         -> toggle persisted watch rule on
 watch disable player-connor-mcdavid        -> toggle persisted watch rule off
+watch deployment TOR                       -> deferred; use CLI preview, not dashboard mutation
 ```
 
 Fantasy screen shortcuts prefill the same command bar grammar: `g` on Fantasy
@@ -1041,6 +1042,11 @@ icelines serve --bind 0.0.0.0          # LAN-accessible (warning prints)
 # The `icelines-site` crate still exists for markdown generation
 # but has no CLI entry point.
 ```
+
+The web/TUI watch-rule editors intentionally support player-rule create,
+enable/disable, and web delete only. Arbitrary team/deployment editing remains a
+CLI preview/save shortcut until the shared mutation intent carries validated
+team/deployment dimensions.
 
 ---
 

@@ -1173,6 +1173,69 @@ async fn l1_dashboard_command_watch_returns_to_dashboard_workspace() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_command_watch_toggle_returns_to_dashboard_workspace() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let home = std::env::var_os("USERPROFILE").expect("temp userprofile");
+    let db_dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE watch_rules (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            trigger_json TEXT NOT NULL,
+            unsupported_sources_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+         );
+         INSERT INTO watch_rules VALUES (
+            'player-matthew-knies',
+            'Watch Matthew Knies when pp1',
+            1,
+            '{\"kind\":\"player_promoted\",\"player_id\":null,\"evidence\":{\"kind\":\"unknown\"}}',
+            '[\"shifts\"]',
+            '2026-05-09T12:00:00Z',
+            '2026-05-09T12:00:00Z'
+         );",
+    )
+    .expect("seed watch rules db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/dashboard/command")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from(
+                    "command=watch+disable+player-matthew-knies&workspace=%2Fpoach%3Ftop%3D8",
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let location = response
+        .headers()
+        .get("location")
+        .and_then(|value| value.to_str().ok())
+        .expect("redirect location");
+    assert_eq!(location, "/dashboard?workspace=%2Fpoach%3Ftop%3D8");
+    let enabled: i64 = conn
+        .query_row(
+            "SELECT enabled FROM watch_rules WHERE id = 'player-matthew-knies'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("enabled flag");
+    assert_eq!(enabled, 0);
+}
+
+#[tokio::test]
 async fn l1_dashboard_poach_workspace_exposes_report_actions() {
     let app = router(WebState::new());
     let response = app
@@ -2676,12 +2739,50 @@ async fn l1_watchlist_html_renders_watch_rule_toggle_form() {
     assert!(html.contains("<h2>Rules</h2>"));
     assert!(html.contains("action=\"/watch-rules/create\""));
     assert!(html.contains(">Add rule</button>"));
+    assert!(html.contains("arbitrary team/deployment"));
     assert!(html.contains("player-matthew-knies"));
     assert!(html.contains("Watch Matthew Knies when pp1"));
     assert!(html.contains("action=\"/watch-rules/set-enabled\""));
     assert!(html.contains("action=\"/watch-rules/delete\""));
     assert!(html.contains(">Disable</button>"));
     assert!(html.contains(">Delete</button>"));
+}
+
+#[tokio::test]
+async fn l1_dashboard_command_rejects_deployment_watch_without_persisting_player_rule() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/dashboard/command")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from(
+                    "command=watch+deployment+TOR&workspace=%2Fpoach%3Ftop%3D8",
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+    assert!(body.contains("watch team/deployment rule editing is deferred"));
+
+    let home = std::env::var_os("USERPROFILE").expect("temp userprofile");
+    let db_path = std::path::PathBuf::from(home)
+        .join(".icelines")
+        .join("icelines.db");
+    assert!(
+        !db_path.exists(),
+        "unsupported dashboard command must not create watch-rule storage"
+    );
 }
 
 #[tokio::test]
