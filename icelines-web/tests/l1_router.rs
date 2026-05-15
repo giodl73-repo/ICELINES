@@ -919,14 +919,16 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     let body = std::str::from_utf8(&bytes).expect("html is utf-8");
 
     assert!(body.contains("aria-label=\"Scores ribbon\""));
-    assert!(body.contains("aria-label=\"Favorites and watchlist\""));
+    assert!(body.contains("aria-label=\"Left context pane\""));
     assert!(body.contains("data-dashboard-pane=\"favorites\""));
     assert!(body.contains("jaw-pane-content"));
+    assert!(body.contains("aria-label=\"Choose left pane\""));
     assert!(body.contains("aria-expanded=\"true\""));
     assert!(body.contains("aria-label=\"Workspace\""));
     assert!(body.contains("data-workspace-url=\"/poach?availability=imported-available\""));
-    assert!(body.contains("aria-label=\"Schedule\""));
+    assert!(body.contains("aria-label=\"Right context pane\""));
     assert!(body.contains("data-dashboard-pane=\"schedule\""));
+    assert!(body.contains("aria-label=\"Choose right pane\""));
     assert!(body.contains("aria-label=\"Command palette\""));
     assert!(body.contains("data-dashboard-command-status"));
     assert!(body.contains("data-dashboard-command-input"));
@@ -935,8 +937,9 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-label=\"Activity catalog rail\""));
     assert!(body.contains("aria-label=\"Bound workbench experiences\""));
     assert!(body.contains("Career cohorts"));
-    assert!(body.contains("Favorites navigator"));
-    assert!(body.contains("Schedule inspector"));
+    assert!(body.contains("Favorites"));
+    assert!(body.contains("Schedule"));
+    assert!(body.contains("data-dashboard-composition-link"));
     assert!(body.contains("jaw-command-examples"));
     assert!(body.contains("aria-live=\"polite\""));
     assert!(body.contains("src=\"/static/dashboard.js\""));

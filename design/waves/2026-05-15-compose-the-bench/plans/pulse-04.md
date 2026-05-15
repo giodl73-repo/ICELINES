@@ -36,7 +36,15 @@ workspace links.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -p icelines-web --no-deps -- -D warnings`
-- [ ] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 web-captures`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -p icelines-web --no-deps -- -D warnings`
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 web-captures`
+
+## Result
+
+Complete. `/dashboard` now accepts allowlisted read-only `left=`, `right=`, and
+`experience=` query state, renders server-side pane selectors, and keeps
+experience tabs as coherent workspace + pane presets. Pane bodies stay truthful:
+implemented Favorites/Watchlist/Schedule panes render their canonical summaries,
+while other shared bindings render explicit no-mutation context stubs.

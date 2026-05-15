@@ -187,6 +187,7 @@
 
         var link = event.target.closest("a[href]");
         if (!link) return;
+        if (link.hasAttribute("data-dashboard-composition-link")) return;
 
         var workspace = workspaceFromUrl(link.href);
         if (!workspace) return;

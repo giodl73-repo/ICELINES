@@ -32,7 +32,7 @@
 
     <nav class="jaw-experience-tabs" aria-label="Bound workbench experiences">
         {% for tab in experience_tabs %}
-        <a href="{{ tab.href }}" {% if tab.is_active %}aria-current="page"{% endif %}>
+        <a href="{{ tab.href }}" data-dashboard-composition-link {% if tab.is_active %}aria-current="page"{% endif %}>
             <strong>{{ tab.label }}</strong>
             <span class="jaw-detail">{{ tab.detail }}</span>
         </a>
@@ -40,13 +40,19 @@
     </nav>
 
     <div class="jaw-body">
-        <aside class="jaw-pane jaw-side-left" aria-label="Favorites and watchlist" data-dashboard-pane="favorites">
+        <aside class="jaw-pane jaw-side-left" aria-label="Left context pane" data-dashboard-pane="favorites">
             <div class="jaw-pane-title">
-                <h2>{{ left_pane_model.label }}</h2>
+                <h2>{{ left_pane_binding.label }}</h2>
                 <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="favorites" aria-label="Toggle favorites pane" aria-expanded="true">Hide</button>
             </div>
             <div class="jaw-pane-content">
-            <p class="jaw-pane-model"><strong>{{ left_pane_model.kind }}</strong><span class="jaw-detail">{{ left_pane_model.detail }}</span></p>
+            <p class="jaw-pane-model"><strong>{{ left_pane_binding.kind }}</strong><span class="jaw-detail">{{ left_pane_binding.detail }}</span><span class="jaw-detail">{{ left_pane_binding.interaction }}</span></p>
+            <nav class="jaw-pane-selector" aria-label="Choose left pane">
+                {% for option in left_pane_options %}
+                <a href="{{ option.href }}" data-dashboard-composition-link {% if option.is_active %}aria-current="true"{% endif %}>{{ option.label }}</a>
+                {% endfor %}
+            </nav>
+            {% if left_pane_binding.id == "favorites-left" %}
             {% if favorites.is_empty() %}
             <p class="empty-state">No favorites yet. Add players or teams from player and team pages.</p>
             {% else %}
@@ -72,18 +78,41 @@
             </ul>
             {% endif %}
             <p><a href="/favorites">Manage favorites</a> · <a href="/watchlist">Watchlist</a></p>
+            {% else if left_pane_binding.id == "watchlist-left" %}
+            <h2>Watchlist</h2>
+            {% if watchlist.is_empty() %}
+            <p class="empty-state">No watchlist entries yet.</p>
+            {% else %}
+            <ul class="jaw-list">
+                {% for row in watchlist %}
+                <li>
+                    <a href="{{ row.href }}">{{ row.label }} <span class="jaw-kind">{{ row.kind }}</span></a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            <p><a href="/watchlist">Open watchlist</a></p>
+            {% else %}
+            <p class="empty-state">{{ left_pane_binding.label }} is selected. This pane is shared metadata today; use its fields above or open the canonical workspace links in the center.</p>
+            {% endif %}
             </div>
         </aside>
 
         {% include "dashboard_workspace.html" %}
 
-        <aside class="jaw-pane jaw-side-right" aria-label="Schedule" data-dashboard-pane="schedule">
+        <aside class="jaw-pane jaw-side-right" aria-label="Right context pane" data-dashboard-pane="schedule">
             <div class="jaw-pane-title">
-                <h2>{{ right_pane_model.label }}</h2>
+                <h2>{{ right_pane_binding.label }}</h2>
                 <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="schedule" aria-label="Toggle schedule pane" aria-expanded="true">Hide</button>
             </div>
             <div class="jaw-pane-content">
-            <p class="jaw-pane-model"><strong>{{ right_pane_model.kind }}</strong><span class="jaw-detail">{{ right_pane_model.detail }}</span></p>
+            <p class="jaw-pane-model"><strong>{{ right_pane_binding.kind }}</strong><span class="jaw-detail">{{ right_pane_binding.detail }}</span><span class="jaw-detail">{{ right_pane_binding.interaction }}</span></p>
+            <nav class="jaw-pane-selector" aria-label="Choose right pane">
+                {% for option in right_pane_options %}
+                <a href="{{ option.href }}" data-dashboard-composition-link {% if option.is_active %}aria-current="true"{% endif %}>{{ option.label }}</a>
+                {% endfor %}
+            </nav>
+            {% if right_pane_binding.id == "schedule-right" %}
             <ul class="jaw-list">
                 {% for row in schedule_links %}
                 <li>
@@ -91,6 +120,15 @@
                 </li>
                 {% endfor %}
             </ul>
+            {% else if right_pane_binding.id == "docs-help-right" %}
+            <p class="empty-state">Docs/help is selected. Use the center Docs workspace for the full command reference.</p>
+            <p><a href="/docs">Open docs</a></p>
+            {% else if right_pane_binding.id == "data-source-right" %}
+            <p class="empty-state">Data/source is selected. Admin mutations remain POST-backed from the canonical Admin surface.</p>
+            <p><a href="/admin">Open admin</a></p>
+            {% else %}
+            <p class="empty-state">{{ right_pane_binding.label }} is selected. This read-only context pane is available as shared metadata; open the center workspace for full details.</p>
+            {% endif %}
             </div>
         </aside>
     </div>

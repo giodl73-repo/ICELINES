@@ -1,9 +1,9 @@
 use crate::state::WebState;
 use crate::templates::{
     DashboardCatalogEntry, DashboardCatalogGroup, DashboardEntityRow, DashboardExperienceTab,
-    DashboardFieldRow, DashboardLinkRow, DashboardPaneModelRow, DashboardSummaryRow,
-    DashboardTemplate, DashboardWorkspaceTemplate, PlayoffsSeriesView, ScheduleRow, ScoreRow,
-    TransactionRow,
+    DashboardFieldRow, DashboardLinkRow, DashboardPaneBindingRow, DashboardPaneModelRow,
+    DashboardSummaryRow, DashboardTemplate, DashboardWorkspaceTemplate, PlayoffsSeriesView,
+    ScheduleRow, ScoreRow, TransactionRow,
 };
 use askama::Template;
 use axum::extract::{Form, Query, State};
@@ -22,14 +22,23 @@ use icelines_core::{
     MetricCell, MetricValue, PlayerCardView, PlayerSeasonSummary, ScheduleRecord, TeamAbbr,
     TeamDepthView, TeamSeasonView, ViewContext, ViewWindow, WatchlistView, WorkbenchEntry,
     WorkbenchExperience, WorkbenchFieldId, WorkbenchFieldSource, WorkbenchFieldSummary,
-    WorkbenchGroup, WorkbenchId, WorkbenchPaneBindingId, WorkbenchPaneKind, WorkbenchPaneModelId,
-    WorkbenchValueKind, WORKBENCH_EXPERIENCES,
+    WorkbenchGroup, WorkbenchId, WorkbenchPaneBinding, WorkbenchPaneBindingId,
+    WorkbenchPaneInteraction, WorkbenchPaneKind, WorkbenchPaneModelId, WorkbenchValueKind,
+    WorkbenchZone, WORKBENCH_EXPERIENCES,
 };
 use serde::Deserialize;
 
 const DASHBOARD_PREVIEW_N: usize = 3;
 const DASHBOARD_GOALIE_GP_REGULAR: u32 = 5;
 const DASHBOARD_GOALIE_GP_PLAYOFF: u32 = 1;
+const DEFAULT_LEFT_PANE: WorkbenchPaneBindingId = WorkbenchPaneBindingId::FavoritesLeft;
+const DEFAULT_RIGHT_PANE: WorkbenchPaneBindingId = WorkbenchPaneBindingId::ScheduleRight;
+
+struct DashboardComposition {
+    experience: Option<&'static WorkbenchExperience>,
+    left: &'static WorkbenchPaneBinding,
+    right: &'static WorkbenchPaneBinding,
+}
 
 #[derive(Debug, Deserialize, Default)]
 pub struct DashboardQuery {
@@ -37,6 +46,12 @@ pub struct DashboardQuery {
     pub workspace: Option<String>,
     #[serde(default)]
     pub partial: Option<String>,
+    #[serde(default)]
+    pub left: Option<String>,
+    #[serde(default)]
+    pub right: Option<String>,
+    #[serde(default)]
+    pub experience: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,12 +66,18 @@ pub async fn get_dashboard(
     Query(q): Query<DashboardQuery>,
 ) -> Response {
     let active_label = state.config.read().await.active_label.clone();
-    let workspace_url = normalize_workspace(q.workspace.as_deref());
+    let requested_experience = q.experience.as_deref().and_then(web_experience_by_slug);
+    let workspace_url = requested_experience
+        .filter(|_| q.workspace.is_none())
+        .and_then(|experience| crate::workbench::route_for_workbench(experience.center))
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(|| normalize_workspace(q.workspace.as_deref()));
     let workspace_label = workspace_label(&workspace_url);
     let workspace_links = workspace_links(&workspace_url);
     let workspace_summary = workspace_summary(&state, &workspace_url).await;
     let active_workbench = workbench_id_for_workspace(&workspace_url);
-    let active_fields = active_dashboard_fields(active_workbench);
+    let composition = dashboard_composition(&q, active_workbench);
+    let active_fields = active_dashboard_fields(active_workbench, composition.experience);
     let active_pane_models = active_dashboard_pane_models(active_workbench);
 
     if matches!(q.partial.as_deref(), Some("workspace")) {
@@ -87,12 +108,42 @@ pub async fn get_dashboard(
         workspace_label,
         workspace_summary,
         scores_summary: "Live, final, and scheduled games stay one click away.".to_owned(),
-        catalog_groups: dashboard_catalog_groups(active_workbench),
-        experience_tabs: dashboard_experience_tabs(active_workbench),
+        catalog_groups: dashboard_catalog_groups(active_workbench, &composition),
+        experience_tabs: dashboard_experience_tabs(active_workbench, composition.experience),
         active_fields,
         active_pane_models,
-        left_pane_model: dashboard_pane_model_row(WorkbenchPaneModelId::FavoritesNavigator),
-        right_pane_model: dashboard_pane_model_row(WorkbenchPaneModelId::ScheduleInspector),
+        left_pane_binding: dashboard_pane_binding_row(
+            composition.left,
+            dashboard_href(
+                &workspace_url,
+                composition.left.id,
+                composition.right.id,
+                composition.experience,
+            ),
+            true,
+        ),
+        right_pane_binding: dashboard_pane_binding_row(
+            composition.right,
+            dashboard_href(
+                &workspace_url,
+                composition.left.id,
+                composition.right.id,
+                composition.experience,
+            ),
+            true,
+        ),
+        left_pane_options: dashboard_pane_options(
+            WorkbenchZone::LeftPane,
+            composition.left.id,
+            composition.right.id,
+            &workspace_url,
+        ),
+        right_pane_options: dashboard_pane_options(
+            WorkbenchZone::RightPane,
+            composition.left.id,
+            composition.right.id,
+            &workspace_url,
+        ),
         favorites,
         watchlist,
         schedule_links: schedule_links(),
@@ -1622,7 +1673,61 @@ fn watchlist_entity_rows(view: &WatchlistView) -> Vec<DashboardEntityRow> {
         .collect()
 }
 
-fn dashboard_catalog_groups(active: Option<WorkbenchId>) -> Vec<DashboardCatalogGroup> {
+fn dashboard_composition(q: &DashboardQuery, active: Option<WorkbenchId>) -> DashboardComposition {
+    let experience = q
+        .experience
+        .as_deref()
+        .and_then(web_experience_by_slug)
+        .filter(|experience| active == Some(experience.center));
+    let default_left = experience
+        .and_then(|experience| experience.left_pane)
+        .filter(|id| web_pane_binding_for_zone(*id, WorkbenchZone::LeftPane).is_some())
+        .unwrap_or(DEFAULT_LEFT_PANE);
+    let default_right = experience
+        .and_then(|experience| experience.right_pane)
+        .filter(|id| web_pane_binding_for_zone(*id, WorkbenchZone::RightPane).is_some())
+        .unwrap_or(DEFAULT_RIGHT_PANE);
+    let left_id = normalize_pane_binding(q.left.as_deref(), WorkbenchZone::LeftPane, default_left);
+    let right_id =
+        normalize_pane_binding(q.right.as_deref(), WorkbenchZone::RightPane, default_right);
+
+    DashboardComposition {
+        experience,
+        left: web_pane_binding_for_zone(left_id, WorkbenchZone::LeftPane)
+            .expect("normalized left pane binding must exist"),
+        right: web_pane_binding_for_zone(right_id, WorkbenchZone::RightPane)
+            .expect("normalized right pane binding must exist"),
+    }
+}
+
+fn normalize_pane_binding(
+    raw: Option<&str>,
+    zone: WorkbenchZone,
+    fallback: WorkbenchPaneBindingId,
+) -> WorkbenchPaneBindingId {
+    raw.and_then(|slug| {
+        crate::workbench::web_pane_bindings_for_zone(zone)
+            .find(|binding| binding.id.slug() == slug)
+            .map(|binding| binding.id)
+    })
+    .unwrap_or(fallback)
+}
+
+fn web_pane_binding_for_zone(
+    id: WorkbenchPaneBindingId,
+    zone: WorkbenchZone,
+) -> Option<&'static WorkbenchPaneBinding> {
+    crate::workbench::web_pane_bindings_for_zone(zone).find(|binding| binding.id == id)
+}
+
+fn web_experience_by_slug(slug: &str) -> Option<&'static WorkbenchExperience> {
+    crate::workbench::web_bound_experiences().find(|experience| experience.id.slug() == slug)
+}
+
+fn dashboard_catalog_groups(
+    active: Option<WorkbenchId>,
+    composition: &DashboardComposition,
+) -> Vec<DashboardCatalogGroup> {
     let ready: Vec<_> = crate::workbench::dashboard_ready_workbenches().collect();
     [
         WorkbenchGroup::League,
@@ -1641,7 +1746,8 @@ fn dashboard_catalog_groups(active: Option<WorkbenchId>) -> Vec<DashboardCatalog
             .iter()
             .filter_map(|(id, route)| {
                 let entry = workbench_entry(*id)?;
-                (entry.group == group).then(|| dashboard_catalog_entry(entry, route, active))
+                (entry.group == group)
+                    .then(|| dashboard_catalog_entry(entry, route, active, composition))
             })
             .collect::<Vec<_>>();
         (!entries.is_empty()).then(|| DashboardCatalogGroup {
@@ -1656,10 +1762,11 @@ fn dashboard_catalog_entry(
     entry: &WorkbenchEntry,
     route: &str,
     active: Option<WorkbenchId>,
+    composition: &DashboardComposition,
 ) -> DashboardCatalogEntry {
     DashboardCatalogEntry {
         label: entry.label.to_owned(),
-        href: dashboard_workspace_href(route),
+        href: dashboard_href(route, composition.left.id, composition.right.id, None),
         detail: format!(
             "{} · {} · {}",
             workbench_zone_label(entry.default_zone),
@@ -1670,16 +1777,20 @@ fn dashboard_catalog_entry(
     }
 }
 
-fn dashboard_experience_tabs(active: Option<WorkbenchId>) -> Vec<DashboardExperienceTab> {
+fn dashboard_experience_tabs(
+    active: Option<WorkbenchId>,
+    active_experience: Option<&WorkbenchExperience>,
+) -> Vec<DashboardExperienceTab> {
     WORKBENCH_EXPERIENCES
         .iter()
-        .filter_map(|experience| dashboard_experience_tab(experience, active))
+        .filter_map(|experience| dashboard_experience_tab(experience, active, active_experience))
         .collect()
 }
 
 fn dashboard_experience_tab(
     experience: &WorkbenchExperience,
     active: Option<WorkbenchId>,
+    active_experience: Option<&WorkbenchExperience>,
 ) -> Option<DashboardExperienceTab> {
     let route = crate::workbench::route_for_workbench(experience.center)?;
     let left = experience
@@ -1692,13 +1803,32 @@ fn dashboard_experience_tab(
         .unwrap_or("no right pane");
     Some(DashboardExperienceTab {
         label: experience.label.to_owned(),
-        href: dashboard_workspace_href(route),
+        href: dashboard_href(
+            route,
+            experience.left_pane.unwrap_or(DEFAULT_LEFT_PANE),
+            experience.right_pane.unwrap_or(DEFAULT_RIGHT_PANE),
+            Some(experience),
+        ),
         detail: format!("{left} + {right}"),
-        is_active: active == Some(experience.center),
+        is_active: active_experience
+            .map(|active| active.id == experience.id)
+            .unwrap_or(active == Some(experience.center)),
     })
 }
 
-fn active_dashboard_fields(active: Option<WorkbenchId>) -> Vec<DashboardFieldRow> {
+fn active_dashboard_fields(
+    active: Option<WorkbenchId>,
+    experience: Option<&WorkbenchExperience>,
+) -> Vec<DashboardFieldRow> {
+    if let Some(experience) = experience {
+        return experience
+            .fields
+            .iter()
+            .copied()
+            .map(dashboard_field_row)
+            .collect();
+    }
+
     active
         .and_then(workbench_entry)
         .map(|entry| {
@@ -1710,6 +1840,60 @@ fn active_dashboard_fields(active: Option<WorkbenchId>) -> Vec<DashboardFieldRow
                 .collect()
         })
         .unwrap_or_default()
+}
+
+fn dashboard_pane_options(
+    zone: WorkbenchZone,
+    left: WorkbenchPaneBindingId,
+    right: WorkbenchPaneBindingId,
+    workspace_url: &str,
+) -> Vec<DashboardPaneBindingRow> {
+    crate::workbench::web_pane_bindings_for_zone(zone)
+        .map(|binding| {
+            let next_left = if zone == WorkbenchZone::LeftPane {
+                binding.id
+            } else {
+                left
+            };
+            let next_right = if zone == WorkbenchZone::RightPane {
+                binding.id
+            } else {
+                right
+            };
+            dashboard_pane_binding_row(
+                binding,
+                dashboard_href(workspace_url, next_left, next_right, None),
+                binding.id
+                    == if zone == WorkbenchZone::LeftPane {
+                        left
+                    } else {
+                        right
+                    },
+            )
+        })
+        .collect()
+}
+
+fn dashboard_pane_binding_row(
+    binding: &WorkbenchPaneBinding,
+    href: String,
+    is_active: bool,
+) -> DashboardPaneBindingRow {
+    DashboardPaneBindingRow {
+        id: binding.id.slug().to_owned(),
+        label: binding.label.to_owned(),
+        href,
+        kind: workbench_pane_binding_kind_label(binding).to_owned(),
+        detail: binding
+            .fields
+            .iter()
+            .copied()
+            .map(workbench_field_label)
+            .collect::<Vec<_>>()
+            .join(", "),
+        interaction: workbench_pane_interaction_label(binding.interaction).to_owned(),
+        is_active,
+    }
 }
 
 fn active_dashboard_pane_models(active: Option<WorkbenchId>) -> Vec<DashboardPaneModelRow> {
@@ -1784,6 +1968,20 @@ fn workbench_pane_binding_label(id: WorkbenchPaneBindingId) -> &'static str {
     workbench_pane_binding(id)
         .map(|binding| binding.label)
         .unwrap_or_else(|| id.slug())
+}
+
+fn workbench_pane_binding_kind_label(binding: &WorkbenchPaneBinding) -> &'static str {
+    workbench_pane_model(binding.pane_model)
+        .map(|pane| workbench_pane_kind_label(pane.kind))
+        .unwrap_or("Pane")
+}
+
+fn workbench_pane_interaction_label(interaction: WorkbenchPaneInteraction) -> &'static str {
+    match interaction {
+        WorkbenchPaneInteraction::ReadOnly => "Read-only",
+        WorkbenchPaneInteraction::LocalState => "Local state",
+        WorkbenchPaneInteraction::PostBackedActionStatus => "POST-backed actions",
+    }
 }
 
 fn workbench_field_label(id: WorkbenchFieldId) -> &'static str {
@@ -1976,6 +2174,25 @@ fn workspace_action_link(label: &str, href: &str, detail: &str) -> DashboardLink
     }
 }
 
+fn dashboard_href(
+    path: &str,
+    left: WorkbenchPaneBindingId,
+    right: WorkbenchPaneBindingId,
+    experience: Option<&WorkbenchExperience>,
+) -> String {
+    let mut href = format!(
+        "/dashboard?workspace={}&left={}&right={}",
+        url_component(path),
+        url_component(left.slug()),
+        url_component(right.slug())
+    );
+    if let Some(experience) = experience {
+        href.push_str("&experience=");
+        href.push_str(&url_component(experience.id.slug()));
+    }
+    href
+}
+
 fn dashboard_workspace_href(path: &str) -> String {
     format!("/dashboard?workspace={}", url_component(path))
 }
@@ -2061,7 +2278,9 @@ mod tests {
 
     #[test]
     fn l0_dashboard_catalog_uses_shared_workbench_adapter() {
-        let groups = dashboard_catalog_groups(Some(WorkbenchId::Stats));
+        let q = DashboardQuery::default();
+        let composition = dashboard_composition(&q, Some(WorkbenchId::Stats));
+        let groups = dashboard_catalog_groups(Some(WorkbenchId::Stats), &composition);
         let entries: Vec<_> = groups
             .iter()
             .flat_map(|group| group.entries.iter())
@@ -2071,14 +2290,20 @@ mod tests {
             .iter()
             .find(|entry| entry.label == "Stats")
             .expect("shared Stats catalog entry");
-        assert_eq!(stats.href, "/dashboard?workspace=%2Fleaders");
+        assert_eq!(
+            stats.href,
+            "/dashboard?workspace=%2Fleaders&left=favorites-left&right=schedule-right"
+        );
         assert!(stats.is_active);
 
         let admin = entries
             .iter()
             .find(|entry| entry.label == "Admin")
             .expect("shared Admin catalog entry");
-        assert_eq!(admin.href, "/dashboard?workspace=%2Fadmin");
+        assert_eq!(
+            admin.href,
+            "/dashboard?workspace=%2Fadmin&left=favorites-left&right=schedule-right"
+        );
         assert!(
             entries
                 .iter()
@@ -2089,21 +2314,25 @@ mod tests {
 
     #[test]
     fn l0_dashboard_bound_experience_tabs_are_composed_layouts() {
-        let tabs = dashboard_experience_tabs(Some(WorkbenchId::Scores));
+        let active = web_experience_by_slug("tonight-bench");
+        let tabs = dashboard_experience_tabs(Some(WorkbenchId::Scores), active);
         let tonight = tabs
             .iter()
             .find(|tab| tab.label == "Tonight bench")
             .expect("Tonight bench tab");
 
         assert!(tonight.is_active);
-        assert_eq!(tonight.href, "/dashboard?workspace=%2Fscores");
+        assert_eq!(
+            tonight.href,
+            "/dashboard?workspace=%2Fscores&left=favorites-left&right=schedule-right&experience=tonight-bench"
+        );
         assert!(tonight.detail.contains("Favorites"));
         assert!(tonight.detail.contains("Schedule"));
     }
 
     #[test]
     fn l0_dashboard_active_fields_and_panes_use_shared_metadata() {
-        let fields = active_dashboard_fields(Some(WorkbenchId::Scores));
+        let fields = active_dashboard_fields(Some(WorkbenchId::Scores), None);
         assert!(fields.iter().any(|field| field.label == "Date"));
         assert!(fields.iter().any(|field| field.label == "Game state"));
 
@@ -2114,6 +2343,64 @@ mod tests {
         assert!(panes
             .iter()
             .any(|pane| pane.label == "Schedule inspector" && pane.kind == "Timeline"));
+    }
+
+    #[test]
+    fn l0_dashboard_composition_query_is_allowlisted() {
+        let q = DashboardQuery {
+            workspace: Some("/scores".to_owned()),
+            left: Some("watchlist-left".to_owned()),
+            right: Some("data-source-right".to_owned()),
+            experience: Some("tonight-bench".to_owned()),
+            ..Default::default()
+        };
+
+        let composition = dashboard_composition(&q, Some(WorkbenchId::Scores));
+
+        assert_eq!(composition.left.id, WorkbenchPaneBindingId::WatchlistLeft);
+        assert_eq!(
+            composition.right.id,
+            WorkbenchPaneBindingId::DataSourceRight
+        );
+        assert_eq!(
+            composition
+                .experience
+                .map(|experience| experience.id.slug()),
+            Some("tonight-bench")
+        );
+
+        let unsafe_q = DashboardQuery {
+            left: Some("//evil.example".to_owned()),
+            right: Some("/admin".to_owned()),
+            experience: Some("admin-room".to_owned()),
+            ..Default::default()
+        };
+        let fallback = dashboard_composition(&unsafe_q, Some(WorkbenchId::Scores));
+        assert_eq!(fallback.left.id, WorkbenchPaneBindingId::FavoritesLeft);
+        assert_eq!(fallback.right.id, WorkbenchPaneBindingId::ScheduleRight);
+        assert!(fallback.experience.is_none());
+    }
+
+    #[test]
+    fn l0_dashboard_pane_options_are_safe_get_navigation() {
+        let options = dashboard_pane_options(
+            WorkbenchZone::RightPane,
+            WorkbenchPaneBindingId::FavoritesLeft,
+            WorkbenchPaneBindingId::ScheduleRight,
+            "/scores",
+        );
+        let data_source = options
+            .iter()
+            .find(|row| row.id == "data-source-right")
+            .expect("data/source option");
+
+        assert_eq!(data_source.label, "Data/source");
+        assert_eq!(data_source.interaction, "POST-backed actions");
+        assert!(data_source
+            .href
+            .starts_with("/dashboard?workspace=%2Fscores"));
+        assert!(data_source.href.contains("&right=data-source-right"));
+        assert!(!data_source.href.contains("/command"));
     }
 
     #[test]

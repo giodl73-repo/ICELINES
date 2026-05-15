@@ -52,7 +52,7 @@ Schedule-right forever.
 | 01 - Pane composition inventory and contract | complete | `PANE-COMPOSITION-INVENTORY.md`; `plans/pulse-01.md` |
 | 02 - Shared pane binding contract | complete | `icelines-core/src/workbench.rs`; `icelines-core/src/lib.rs`; `icelines-cli/src/tui/workbench.rs`; `icelines-web/src/workbench.rs`; `plans/pulse-02.md` |
 | 03 - TUI pane composition controls | complete | `icelines-cli/src/tui/mdi.rs`; `icelines-cli/src/tui/app.rs`; `icelines-cli/src/tui/screens/mod.rs`; `plans/pulse-03.md` |
-| 04 - Web pane composition controls | planned | depends on Pulse 02 |
+| 04 - Web pane composition controls | complete | `icelines-web/src/handlers/dashboard.rs`; `icelines-web/templates/dashboard.html`; `icelines-web/static/style.css`; `icelines-web/static/dashboard.js`; `plans/pulse-04.md` |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 03-04 |
 
 ## Role Notes
@@ -72,12 +72,11 @@ Schedule-right forever.
 
 ## Current Result
 
-Pulse 03 wired the shared pane binding contract into default TUI MDI. The TUI
-layout now stores active experience plus left/right pane binding IDs, applies the
-Tonight bench experience from the activity rail, and cycles focused side panes
-with truthful labels and explicit non-rendered stubs where a full TUI pane body
-does not exist yet.
+Pulse 04 wired the shared pane binding contract into `/dashboard`. The web shell
+now accepts allowlisted read-only pane/experience query state, renders no-JS
+left/right pane selectors, and keeps bound experience tabs as coherent workspace
+and pane presets without adding mutation routes.
 
 ## Next
 
-Execute Pulse 04: web pane composition controls.
+Execute Pulse 05: docs, regression gates, and closeout.

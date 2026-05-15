@@ -70,8 +70,10 @@ pub struct DashboardTemplate {
     pub experience_tabs: Vec<DashboardExperienceTab>,
     pub active_fields: Vec<DashboardFieldRow>,
     pub active_pane_models: Vec<DashboardPaneModelRow>,
-    pub left_pane_model: DashboardPaneModelRow,
-    pub right_pane_model: DashboardPaneModelRow,
+    pub left_pane_binding: DashboardPaneBindingRow,
+    pub right_pane_binding: DashboardPaneBindingRow,
+    pub left_pane_options: Vec<DashboardPaneBindingRow>,
+    pub right_pane_options: Vec<DashboardPaneBindingRow>,
     pub favorites: Vec<DashboardEntityRow>,
     pub watchlist: Vec<DashboardEntityRow>,
     pub schedule_links: Vec<DashboardLinkRow>,
@@ -137,6 +139,17 @@ pub struct DashboardPaneModelRow {
     pub label: String,
     pub kind: String,
     pub detail: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardPaneBindingRow {
+    pub id: String,
+    pub label: String,
+    pub href: String,
+    pub kind: String,
+    pub detail: String,
+    pub interaction: String,
+    pub is_active: bool,
 }
 
 #[derive(Debug, Clone)]

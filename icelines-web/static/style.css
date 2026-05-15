@@ -528,6 +528,28 @@ code {
     padding: 0.5rem;
 }
 
+.jaw-pane-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0.5rem 0 0.75rem;
+}
+
+.jaw-pane-selector a {
+    border: 1px solid var(--ice-divider);
+    border-radius: 999px;
+    color: var(--nhl-navy);
+    font-size: 0.82rem;
+    padding: 0.18rem 0.45rem;
+    text-decoration: none;
+}
+
+.jaw-pane-selector a[aria-current="true"] {
+    background: var(--nhl-navy);
+    border-color: var(--nhl-navy);
+    color: #fff;
+}
+
 .jaw-workspace-card {
     background: var(--ice-bg);
     border: 1px solid var(--ice-divider);
