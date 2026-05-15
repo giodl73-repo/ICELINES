@@ -34,6 +34,6 @@ remaining-game count is supplied.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-core --quiet`
-- [ ] `cargo clippy -p icelines-core -- -D warnings`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-core --quiet`
+- [x] `cargo clippy -p icelines-core -- -D warnings`

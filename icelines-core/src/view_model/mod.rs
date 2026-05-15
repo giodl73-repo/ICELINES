@@ -28,6 +28,7 @@ pub mod report;
 pub mod schedule;
 pub mod scores;
 pub mod scoring;
+pub mod scoring_pace;
 pub mod snapshot;
 pub mod streaks;
 pub mod team_depth;
@@ -121,6 +122,10 @@ pub use scoring::{
     ScoringEventSummary, ScoringShooterSummary, ScoringSplitSummary, ShotEventKind, ShotLocation,
     TeamScoringProfileView, TonightFavoritePlayerScoringRow, TonightFavoriteTeamScoringRow,
     TonightScoringIntelView,
+};
+pub use scoring_pace::{
+    PlayerScoringPaceMetric, PlayerScoringPaceRow, PlayerScoringPaceSampleStatus,
+    PlayerScoringPaceView,
 };
 pub use snapshot::{
     SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,

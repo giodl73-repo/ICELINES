@@ -37,8 +37,8 @@ finish look like, and how much should I trust that read?"
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Projection inventory and assumptions contract | done | `SPARK-INVENTORY.md`; `plans/pulse-01.md` |
-| 02 - Player scoring pace ViewModel | planned | `plans/pulse-02.md`; depends on Pulse 01 |
-| 03 - Team scoring outlook ViewModel | planned | depends on Pulse 01 |
+| 02 - Player scoring pace ViewModel | done | `PlayerScoringPaceView`; `plans/pulse-02.md` |
+| 03 - Team scoring outlook ViewModel | planned | `plans/pulse-03.md`; depends on Pulse 02 |
 | 04 - Surface parity and docs | planned | depends on Pulses 02-03 |
 | 05 - Wave closeout | planned | depends on Pulse 04 |
 
@@ -58,7 +58,10 @@ finish look like, and how much should I trust that read?"
 Wave opened after Measure the Finish closed and CI passed for Pulse 05. Pulse 01
 inventoried existing pace/projection code, scoring trend inputs, team season
 inputs, cache/source-state constraints, and required tests before implementation.
+Pulse 02 added core-owned `PlayerScoringPaceView` rows for goals, points, and
+shots from already-loaded `PlayerView` totals. Pace and projected-finish values
+stay nullable below `MIN_GP` or when remaining games are unavailable.
 
 ## Next
 
-Execute Pulse 02: player scoring pace ViewModel.
+Execute Pulse 03: team scoring outlook ViewModel.
