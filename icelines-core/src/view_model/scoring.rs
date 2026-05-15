@@ -40,6 +40,72 @@ pub struct ShotLocation {
     pub zone_code: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum InsideShotBucket {
+    Crease,
+    Inside,
+    Slot,
+    Outside,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct InsideShotProxy {
+    pub bucket: InsideShotBucket,
+    pub distance_ft: Option<f64>,
+}
+
+impl InsideShotProxy {
+    pub fn from_location(location: &ShotLocation) -> Self {
+        let Some(x_coord) = location.x_coord else {
+            return Self::unknown();
+        };
+        let Some(y_coord) = location.y_coord else {
+            return Self::unknown();
+        };
+
+        let x_distance = 89.0 - f64::from(x_coord).abs();
+        let y_distance = f64::from(y_coord);
+        let distance_ft = (x_distance.powi(2) + y_distance.powi(2)).sqrt();
+        Self {
+            bucket: InsideShotBucket::from_distance_ft(distance_ft),
+            distance_ft: Some(distance_ft),
+        }
+    }
+
+    fn unknown() -> Self {
+        Self {
+            bucket: InsideShotBucket::Unknown,
+            distance_ft: None,
+        }
+    }
+}
+
+impl InsideShotBucket {
+    pub fn from_distance_ft(distance_ft: f64) -> Self {
+        if distance_ft <= 10.0 {
+            Self::Crease
+        } else if distance_ft <= 25.0 {
+            Self::Inside
+        } else if distance_ft <= 40.0 {
+            Self::Slot
+        } else {
+            Self::Outside
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Crease => "crease",
+            Self::Inside => "inside",
+            Self::Slot => "slot",
+            Self::Outside => "outside",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScoringEventInput {
     pub game_id: u64,
@@ -62,6 +128,25 @@ pub struct ScoringEventInput {
     pub home_team_defending_side: Option<String>,
     pub away_score: Option<u8>,
     pub home_score: Option<u8>,
+}
+
+impl ScoringEventInput {
+    pub fn inside_shot_proxy(&self) -> InsideShotProxy {
+        InsideShotProxy::from_location(&self.location)
+    }
+
+    pub fn scoring_attempt_player_id(&self) -> Option<u32> {
+        match self.kind {
+            ShotEventKind::Goal => self.scoring_player_id,
+            ShotEventKind::ShotOnGoal | ShotEventKind::MissedShot | ShotEventKind::BlockedShot => {
+                self.shooting_player_id
+            }
+        }
+    }
+
+    pub fn matches_scoring_attempt_player(&self, player_id: u32) -> bool {
+        self.scoring_attempt_player_id() == Some(player_id)
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -437,6 +522,100 @@ mod tests {
             away_score: None,
             home_score: None,
         }
+    }
+
+    fn location(x_coord: Option<i16>, y_coord: Option<i16>) -> ShotLocation {
+        ShotLocation {
+            x_coord,
+            y_coord,
+            zone_code: None,
+        }
+    }
+
+    #[test]
+    fn l0_inside_shot_proxy_buckets_known_distances() {
+        let cases = [
+            // distance = sqrt((89 - abs(89))^2 + 0^2) = 0 ft.
+            (Some(89), Some(0), 0.0, InsideShotBucket::Crease),
+            // distance = sqrt((89 - abs(79))^2 + 0^2) = 10 ft.
+            (Some(79), Some(0), 10.0, InsideShotBucket::Crease),
+            // distance = sqrt((89 - abs(69))^2 + 0^2) = 20 ft.
+            (Some(69), Some(0), 20.0, InsideShotBucket::Inside),
+            // distance = sqrt((89 - abs(54))^2 + 0^2) = 35 ft.
+            (Some(54), Some(0), 35.0, InsideShotBucket::Slot),
+            // distance = sqrt((89 - abs(0))^2 + 0^2) = 89 ft.
+            (Some(0), Some(0), 89.0, InsideShotBucket::Outside),
+        ];
+
+        for (x_coord, y_coord, distance_ft, bucket) in cases {
+            let proxy = InsideShotProxy::from_location(&location(x_coord, y_coord));
+
+            assert_eq!(proxy.distance_ft, Some(distance_ft));
+            assert_eq!(proxy.bucket, bucket);
+        }
+    }
+
+    #[test]
+    fn l0_inside_shot_proxy_missing_coordinates_are_unknown() {
+        for (x_coord, y_coord) in [(None, Some(0)), (Some(89), None), (None, None)] {
+            let proxy = InsideShotProxy::from_location(&location(x_coord, y_coord));
+
+            assert_eq!(proxy.distance_ft, None);
+            assert_eq!(proxy.bucket, InsideShotBucket::Unknown);
+        }
+    }
+
+    #[test]
+    fn l0_inside_shot_proxy_is_symmetric_across_rink_ends() {
+        let positive = InsideShotProxy::from_location(&location(Some(69), Some(0)));
+        let negative = InsideShotProxy::from_location(&location(Some(-69), Some(0)));
+
+        assert_eq!(positive.distance_ft, Some(20.0));
+        assert_eq!(negative.distance_ft, Some(20.0));
+        assert_eq!(positive.bucket, negative.bucket);
+    }
+
+    #[test]
+    fn l0_scoring_event_projects_inside_shot_proxy_from_location() {
+        let mut event = event(ShotEventKind::ShotOnGoal);
+        event.location = location(Some(54), Some(0));
+
+        let proxy = event.inside_shot_proxy();
+
+        assert_eq!(proxy.distance_ft, Some(35.0));
+        assert_eq!(proxy.bucket, InsideShotBucket::Slot);
+    }
+
+    #[test]
+    fn l0_scoring_attempt_player_id_matches_kind_specific_source() {
+        let mut goal = event(ShotEventKind::Goal);
+        goal.scoring_player_id = Some(1);
+        goal.shooting_player_id = Some(2);
+        let mut shot = event(ShotEventKind::ShotOnGoal);
+        shot.scoring_player_id = Some(1);
+        shot.shooting_player_id = Some(2);
+
+        assert_eq!(goal.scoring_attempt_player_id(), Some(1));
+        assert!(goal.matches_scoring_attempt_player(1));
+        assert!(!goal.matches_scoring_attempt_player(2));
+        assert_eq!(shot.scoring_attempt_player_id(), Some(2));
+        assert!(shot.matches_scoring_attempt_player(2));
+        assert!(!shot.matches_scoring_attempt_player(1));
+    }
+
+    #[test]
+    fn l0_scoring_attempt_player_id_does_not_guess_missing_ids() {
+        let mut goal = event(ShotEventKind::Goal);
+        goal.scoring_player_id = None;
+        goal.shooting_player_id = Some(2);
+        let mut shot = event(ShotEventKind::MissedShot);
+        shot.scoring_player_id = Some(1);
+        shot.shooting_player_id = None;
+
+        assert_eq!(goal.scoring_attempt_player_id(), None);
+        assert!(!goal.matches_scoring_attempt_player(2));
+        assert_eq!(shot.scoring_attempt_player_id(), None);
+        assert!(!shot.matches_scoring_attempt_player(1));
     }
 
     #[test]
