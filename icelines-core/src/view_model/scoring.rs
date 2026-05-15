@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-use crate::view_model::{SourceKind, SourceState, ViewContext};
+use crate::view_model::{Completeness, SourceKind, SourceState, ViewContext};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -106,6 +106,27 @@ impl InsideShotBucket {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InsideShotBucketCounts {
+    pub crease: u32,
+    pub inside: u32,
+    pub slot: u32,
+    pub outside: u32,
+    pub unknown: u32,
+}
+
+impl InsideShotBucketCounts {
+    fn record(&mut self, bucket: InsideShotBucket) {
+        match bucket {
+            InsideShotBucket::Crease => self.crease += 1,
+            InsideShotBucket::Inside => self.inside += 1,
+            InsideShotBucket::Slot => self.slot += 1,
+            InsideShotBucket::Outside => self.outside += 1,
+            InsideShotBucket::Unknown => self.unknown += 1,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScoringEventInput {
     pub game_id: u64,
@@ -163,23 +184,27 @@ impl ScoringEventSummary {
     pub fn from_events(events: &[ScoringEventInput]) -> Self {
         let mut summary = Self::default();
         for event in events {
-            match event.kind {
-                ShotEventKind::Goal => summary.goals += 1,
-                ShotEventKind::ShotOnGoal => {}
-                ShotEventKind::MissedShot => summary.missed_shots += 1,
-                ShotEventKind::BlockedShot => summary.blocked_shots += 1,
-            }
-            if event.kind.counts_as_shot_on_goal() {
-                summary.shots_on_goal += 1;
-            }
-            if event.kind.counts_as_unblocked_attempt() {
-                summary.unblocked_attempts += 1;
-            }
-            if event.kind.counts_as_attempt() {
-                summary.shot_attempts += 1;
-            }
+            summary.record_event(event);
         }
         summary
+    }
+
+    pub fn record_event(&mut self, event: &ScoringEventInput) {
+        match event.kind {
+            ShotEventKind::Goal => self.goals += 1,
+            ShotEventKind::ShotOnGoal => {}
+            ShotEventKind::MissedShot => self.missed_shots += 1,
+            ShotEventKind::BlockedShot => self.blocked_shots += 1,
+        }
+        if event.kind.counts_as_shot_on_goal() {
+            self.shots_on_goal += 1;
+        }
+        if event.kind.counts_as_unblocked_attempt() {
+            self.unblocked_attempts += 1;
+        }
+        if event.kind.counts_as_attempt() {
+            self.shot_attempts += 1;
+        }
     }
 }
 
@@ -193,6 +218,87 @@ pub struct ScoringSplitSummary {
 pub struct ScoringShooterSummary {
     pub player_id: u32,
     pub summary: ScoringEventSummary,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PlayerScoringTrendWindow {
+    Last3Games,
+    Last5Games,
+    Last10Games,
+    SeasonLoaded,
+}
+
+impl PlayerScoringTrendWindow {
+    fn max_games(self) -> Option<usize> {
+        match self {
+            Self::Last3Games => Some(3),
+            Self::Last5Games => Some(5),
+            Self::Last10Games => Some(10),
+            Self::SeasonLoaded => None,
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Last3Games => "recent volume - last 3 games",
+            Self::Last5Games => "recent volume - last 5 games",
+            Self::Last10Games => "recent volume - last 10 games",
+            Self::SeasonLoaded => "season loaded",
+        }
+    }
+}
+
+const PLAYER_SCORING_TREND_WINDOWS: [PlayerScoringTrendWindow; 4] = [
+    PlayerScoringTrendWindow::Last3Games,
+    PlayerScoringTrendWindow::Last5Games,
+    PlayerScoringTrendWindow::Last10Games,
+    PlayerScoringTrendWindow::SeasonLoaded,
+];
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlayerScoringTrendRow {
+    pub window: PlayerScoringTrendWindow,
+    pub label: String,
+    pub games_loaded: usize,
+    pub events_loaded: usize,
+    pub source_loaded: bool,
+    pub source_partial: bool,
+    pub summary: ScoringEventSummary,
+    pub shot_pct: Option<f64>,
+    pub bucket_counts: InsideShotBucketCounts,
+}
+
+impl PlayerScoringTrendRow {
+    fn from_games(
+        window: PlayerScoringTrendWindow,
+        source_loaded: bool,
+        source_partial: bool,
+        games: &[Vec<&ScoringEventInput>],
+    ) -> Self {
+        let mut summary = ScoringEventSummary::default();
+        let mut bucket_counts = InsideShotBucketCounts::default();
+        let mut events_loaded = 0;
+        for game in games {
+            for event in game {
+                events_loaded += 1;
+                summary.record_event(event);
+                bucket_counts.record(event.inside_shot_proxy().bucket);
+            }
+        }
+        Self {
+            window,
+            label: window.label().to_string(),
+            games_loaded: games.len(),
+            events_loaded,
+            source_loaded,
+            source_partial,
+            summary,
+            shot_pct: (summary.shots_on_goal > 0)
+                .then_some(summary.goals as f64 / summary.shots_on_goal as f64),
+            bucket_counts,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -284,13 +390,14 @@ impl TeamScoringProfileView {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PlayerScoringProfileView {
     pub context: ViewContext,
     pub player_id: u32,
     pub player_name: String,
     pub events: Vec<ScoringEventInput>,
     pub summary: ScoringEventSummary,
+    pub trends: Vec<PlayerScoringTrendRow>,
     pub period_summaries: Vec<ScoringSplitSummary>,
     pub situation_summaries: Vec<ScoringSplitSummary>,
 }
@@ -316,6 +423,12 @@ impl PlayerScoringProfileView {
             .source_state
             .push(play_by_play_source_state(source_loaded));
         let summary = ScoringEventSummary::from_events(&events);
+        let trends = player_scoring_trend_rows(
+            player_id,
+            source_loaded,
+            play_by_play_source_partial(&context),
+            &events,
+        );
         let period_summaries = split_summaries(&events, period_label);
         let situation_summaries = split_summaries(&events, situation_label);
         Self {
@@ -324,6 +437,7 @@ impl PlayerScoringProfileView {
             player_name: player_name.into(),
             events,
             summary,
+            trends,
             period_summaries,
             situation_summaries,
         }
@@ -414,6 +528,46 @@ fn play_by_play_source_state(source_loaded: bool) -> SourceState {
     } else {
         SourceState::missing(SourceKind::PlayByPlay)
     }
+}
+
+fn play_by_play_source_partial(context: &ViewContext) -> bool {
+    context.completeness == Completeness::Partial
+        || context.source_state.iter().any(|state| {
+            state.source == SourceKind::PlayByPlay && state.state == Completeness::Partial
+        })
+}
+
+fn player_scoring_trend_rows(
+    player_id: u32,
+    source_loaded: bool,
+    source_partial: bool,
+    events: &[ScoringEventInput],
+) -> Vec<PlayerScoringTrendRow> {
+    let mut games: BTreeMap<(Option<String>, u64), Vec<&ScoringEventInput>> = BTreeMap::new();
+    for event in events
+        .iter()
+        .filter(|event| event.matches_scoring_attempt_player(player_id))
+    {
+        games
+            .entry((event.date.clone(), event.game_id))
+            .or_default()
+            .push(event);
+    }
+    let games: Vec<Vec<&ScoringEventInput>> = games.into_values().collect();
+    PLAYER_SCORING_TREND_WINDOWS
+        .into_iter()
+        .map(|window| {
+            let start = window
+                .max_games()
+                .map_or(0, |max_games| games.len().saturating_sub(max_games));
+            PlayerScoringTrendRow::from_games(
+                window,
+                source_loaded,
+                source_partial,
+                &games[start..],
+            )
+        })
+        .collect()
 }
 
 fn split_summaries(
@@ -532,6 +686,30 @@ mod tests {
         }
     }
 
+    fn player_event(
+        kind: ShotEventKind,
+        game_number: u64,
+        x_coord: Option<i16>,
+        y_coord: Option<i16>,
+    ) -> ScoringEventInput {
+        let mut event = event(kind);
+        event.game_id = 2025020000 + game_number;
+        event.event_id = game_number as u32;
+        event.date = Some(format!("2025-10-{game_number:02}"));
+        event.location = location(x_coord, y_coord);
+        event
+    }
+
+    fn trend<'a>(
+        view: &'a PlayerScoringProfileView,
+        window: PlayerScoringTrendWindow,
+    ) -> &'a PlayerScoringTrendRow {
+        view.trends
+            .iter()
+            .find(|row| row.window == window)
+            .expect("trend window")
+    }
+
     #[test]
     fn l0_inside_shot_proxy_buckets_known_distances() {
         let cases = [
@@ -616,6 +794,153 @@ mod tests {
         assert!(!goal.matches_scoring_attempt_player(2));
         assert_eq!(shot.scoring_attempt_player_id(), None);
         assert!(!shot.matches_scoring_attempt_player(1));
+    }
+
+    #[test]
+    fn l0_player_scoring_trends_select_recent_windows() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let events = vec![
+            // Game 1: one goal, distance = 0 ft -> crease.
+            player_event(ShotEventKind::Goal, 1, Some(89), Some(0)),
+            // Game 2: one saved shot, distance = 20 ft -> inside.
+            player_event(ShotEventKind::ShotOnGoal, 2, Some(69), Some(0)),
+            // Game 3: one miss, missing x -> unknown location.
+            player_event(ShotEventKind::MissedShot, 3, None, Some(0)),
+            // Game 4: one block, distance = 89 ft -> outside.
+            player_event(ShotEventKind::BlockedShot, 4, Some(0), Some(0)),
+        ];
+
+        let view = PlayerScoringProfileView::from_source_events(
+            context,
+            8483493,
+            "Connor Bedard",
+            true,
+            events,
+        );
+        let last_three = trend(&view, PlayerScoringTrendWindow::Last3Games);
+        let season = trend(&view, PlayerScoringTrendWindow::SeasonLoaded);
+
+        assert_eq!(view.trends.len(), 4);
+        assert_eq!(last_three.label, "recent volume - last 3 games");
+        assert_eq!(last_three.games_loaded, 3);
+        assert_eq!(last_three.events_loaded, 3);
+        assert_eq!(last_three.summary.goals, 0);
+        assert_eq!(last_three.summary.shots_on_goal, 1);
+        assert_eq!(last_three.summary.unblocked_attempts, 2);
+        assert_eq!(last_three.summary.shot_attempts, 3);
+        assert_eq!(season.games_loaded, 4);
+        assert_eq!(season.events_loaded, 4);
+        assert_eq!(season.summary.goals, 1);
+        assert_eq!(season.summary.shots_on_goal, 2);
+        assert_eq!(season.shot_pct, Some(0.5));
+    }
+
+    #[test]
+    fn l0_player_scoring_trends_match_goal_and_shot_player_ids() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let mut matching_goal = player_event(ShotEventKind::Goal, 1, Some(89), Some(0));
+        matching_goal.scoring_player_id = Some(1);
+        matching_goal.shooting_player_id = Some(2);
+        let mut matching_shot = player_event(ShotEventKind::ShotOnGoal, 2, Some(69), Some(0));
+        matching_shot.scoring_player_id = Some(2);
+        matching_shot.shooting_player_id = Some(1);
+        let mut non_matching_goal = player_event(ShotEventKind::Goal, 3, Some(54), Some(0));
+        non_matching_goal.scoring_player_id = Some(2);
+        non_matching_goal.shooting_player_id = Some(1);
+        let mut non_matching_shot = player_event(ShotEventKind::MissedShot, 4, Some(0), Some(0));
+        non_matching_shot.scoring_player_id = Some(1);
+        non_matching_shot.shooting_player_id = Some(2);
+
+        let view = PlayerScoringProfileView::from_source_events(
+            context,
+            1,
+            "Player One",
+            true,
+            vec![
+                matching_goal,
+                matching_shot,
+                non_matching_goal,
+                non_matching_shot,
+            ],
+        );
+        let season = trend(&view, PlayerScoringTrendWindow::SeasonLoaded);
+
+        assert_eq!(season.games_loaded, 2);
+        assert_eq!(season.events_loaded, 2);
+        assert_eq!(season.summary.goals, 1);
+        assert_eq!(season.summary.shots_on_goal, 2);
+        assert_eq!(season.summary.shot_attempts, 2);
+    }
+
+    #[test]
+    fn l0_player_scoring_trends_keep_zero_shot_conversion_null() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let view = PlayerScoringProfileView::from_source_events(
+            context,
+            8483493,
+            "Connor Bedard",
+            true,
+            vec![
+                player_event(ShotEventKind::MissedShot, 1, Some(54), Some(0)),
+                player_event(ShotEventKind::BlockedShot, 2, Some(0), Some(0)),
+            ],
+        );
+        let season = trend(&view, PlayerScoringTrendWindow::SeasonLoaded);
+
+        assert_eq!(season.summary.shots_on_goal, 0);
+        assert_eq!(season.summary.shot_attempts, 2);
+        assert_eq!(season.shot_pct, None);
+    }
+
+    #[test]
+    fn l0_player_scoring_trends_count_inside_proxy_buckets_and_unknown_locations() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let view = PlayerScoringProfileView::from_source_events(
+            context,
+            8483493,
+            "Connor Bedard",
+            true,
+            vec![
+                // Hand-calculated buckets from Pulse 02: 0, 20, 35, 89, unknown.
+                player_event(ShotEventKind::Goal, 1, Some(89), Some(0)),
+                player_event(ShotEventKind::ShotOnGoal, 2, Some(69), Some(0)),
+                player_event(ShotEventKind::MissedShot, 3, Some(54), Some(0)),
+                player_event(ShotEventKind::BlockedShot, 4, Some(0), Some(0)),
+                player_event(ShotEventKind::ShotOnGoal, 5, None, Some(0)),
+            ],
+        );
+        let season = trend(&view, PlayerScoringTrendWindow::SeasonLoaded);
+
+        assert_eq!(season.bucket_counts.crease, 1);
+        assert_eq!(season.bucket_counts.inside, 1);
+        assert_eq!(season.bucket_counts.slot, 1);
+        assert_eq!(season.bucket_counts.outside, 1);
+        assert_eq!(season.bucket_counts.unknown, 1);
+    }
+
+    #[test]
+    fn l0_player_scoring_trends_distinguish_missing_from_loaded_empty_source() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let missing = PlayerScoringProfileView::from_events(
+            context.clone(),
+            8483493,
+            "Connor Bedard",
+            vec![],
+        );
+        let loaded_empty = PlayerScoringProfileView::from_source_events(
+            context,
+            8483493,
+            "Connor Bedard",
+            true,
+            vec![],
+        );
+
+        let missing_season = trend(&missing, PlayerScoringTrendWindow::SeasonLoaded);
+        let loaded_season = trend(&loaded_empty, PlayerScoringTrendWindow::SeasonLoaded);
+        assert!(!missing_season.source_loaded);
+        assert!(loaded_season.source_loaded);
+        assert_eq!(missing_season.events_loaded, 0);
+        assert_eq!(loaded_season.events_loaded, 0);
     }
 
     #[test]

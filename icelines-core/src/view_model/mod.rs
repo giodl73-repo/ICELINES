@@ -116,10 +116,11 @@ pub use schedule::{
 };
 pub use scores::{scores_context, ScheduledGameInput, ScoreGameRow, ScoresDayView, ScoresView};
 pub use scoring::{
-    GameScoringReportView, InsideShotBucket, InsideShotProxy, PlayerScoringProfileView,
-    ScoringEventInput, ScoringEventSummary, ScoringShooterSummary, ScoringSplitSummary,
-    ShotEventKind, ShotLocation, TeamScoringProfileView, TonightFavoritePlayerScoringRow,
-    TonightFavoriteTeamScoringRow, TonightScoringIntelView,
+    GameScoringReportView, InsideShotBucket, InsideShotBucketCounts, InsideShotProxy,
+    PlayerScoringProfileView, PlayerScoringTrendRow, PlayerScoringTrendWindow, ScoringEventInput,
+    ScoringEventSummary, ScoringShooterSummary, ScoringSplitSummary, ShotEventKind, ShotLocation,
+    TeamScoringProfileView, TonightFavoritePlayerScoringRow, TonightFavoriteTeamScoringRow,
+    TonightScoringIntelView,
 };
 pub use snapshot::{
     SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,
