@@ -32,11 +32,12 @@ icelines tui player Bedard        # Bedard's card cold
 icelines tui team EDM             # Edmonton depth chart
 ```
 
-Inside `icelines tui`, the default MDI mode is a shared workbench: an activity
-catalog rail, a center workspace, Favorites/watchlist and Schedule context
-panes, a scores ribbon, and a bottom command bar. Use `Tab` / `Shift+Tab` to
-move focus across workbench zones; press `:` for commands. Fantasy views accept
-the same product grammar as the CLI: `gaps cats=hits,blocks,shots top=8`,
+Inside `icelines tui`, the default MDI mode is a shared composable workbench: an
+activity catalog rail, a center workspace, swappable left/right context panes, a
+scores ribbon, bound experience presets, active field summaries, and a bottom
+command bar. Use `Tab` / `Shift+Tab` to move focus across workbench zones; when a
+side pane is focused, `←` / `→` cycles its shared pane binding. Fantasy views
+accept the same product grammar as the CLI: `gaps cats=hits,blocks,shots top=8`,
 `poach rw cats=hits,blocks free top=12`, and
 `simulate add=Connor_McDavid drop=Bench_Forward weeks=3`.
 
@@ -284,7 +285,8 @@ icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --ex
 
 # Web dashboard
 icelines serve --port 8000
-# GET /dashboard               -> shared workbench catalog, panes, tabs, command bar
+# GET /dashboard               -> shared workbench catalog, pane selectors, presets, command bar
+# GET /dashboard?workspace=/scores&left=favorites-left&right=schedule-right&experience=tonight-bench
 # Try: poach rw cats=hits,blocks free top=12
 # Try: fantasy simulate add Connor_McDavid drop Bench_Forward
 # GET /fantasy                 -> HTML gaps + simulation scenarios
@@ -322,12 +324,13 @@ icelines query leaders --seasons 5  --sort pts-pace --top 10
 
 ### TUI (`icelines tui` or `icelines dashboard`)
 
-Interactive dashboard. By default `icelines tui` opens the shared MDI
-workbench: activity/catalog rail, scores ribbon, Favorites/watchlist left pane,
-central workspace, Schedule/context right pane, bound experience presets, and a
-command bar. `Tab` / `Shift+Tab` moves focus across workbench zones in default
-MDI; use `--classic` for the older tabbed single-document UI or `--standalone`
-for a locked one-screen surface. Player cards lazy-load every player's full
+Interactive dashboard. By default `icelines tui` opens the shared composable MDI
+workbench: activity/catalog rail, scores ribbon, swappable left/right context
+panes, central workspace, bound experience presets, active field summaries, and
+a command bar. `Tab` / `Shift+Tab` moves focus across workbench zones in default
+MDI; with a side pane focused, `←` / `→` cycles the shared pane binding. Use
+`--classic` for the older tabbed single-document UI or `--standalone` for a
+locked one-screen surface. Player cards lazy-load every player's full
 historical career across all 38 bundled seasons on first open. Cross-league
 cohort boards use the canonical CLI/web surfaces instead; from the command bar,
 `:career league=OHL season=20142015 top=8` flashes the exact `query career`
@@ -342,9 +345,10 @@ handoffs.
 
 | Key | Action |
 |---|---|
-| `Tab` / `Shift+Tab` | Cycle tabs forward / backward |
-| `1` / `↑↓` | Navigate within a tab |
-| `Enter` | Drill into selection (team / player / game) |
+| `Tab` / `Shift+Tab` | Default MDI: move focus across workbench rail / panes / workspace. `--classic`: cycle tabs forward / backward. `--standalone`: no-op. |
+| `↑↓` | Navigate within the focused zone or screen |
+| `←→` | With a side pane focused, cycle pane composition; otherwise screen-local navigation |
+| `Enter` | Rail focused: open selected workbench entry; workspace focused: drill into selection (team / player / game) |
 | `Esc` / `q` | Back / quit |
 | `?` | Help overlay |
 | `R` | **Reports overlay** — toggle which Tier-1 reports populate columns |

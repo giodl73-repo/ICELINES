@@ -626,17 +626,18 @@ The bundled-data cap is 38 seasons because `BUNDLED_SEASONS` is the canonical so
 
 ## TUI (`icelines tui` or `icelines dashboard`)
 
-Interactive dashboard. By default `icelines tui` opens the shared workbench:
-an activity/catalog rail, scores ribbon, Favorites/watchlist left pane, central
-workspace, Schedule/context right pane, bound experience presets, and a command
-bar. Use `--classic` for the older tabbed single-document UI. Player cards
-lazy-load every player's full historical career across all 38 bundled seasons
-on first open.
+Interactive dashboard. By default `icelines tui` opens the shared composable
+workbench: an activity/catalog rail, scores ribbon, swappable left/right context
+panes, central workspace, bound experience presets, active field summaries, and a
+command bar. Use `--classic` for the older tabbed single-document UI. Player
+cards lazy-load every player's full historical career across all 38 bundled
+seasons on first open.
 
 | Key | Action |
 |---|---|
 | `Tab` / `Shift+Tab` | Default MDI: move focus across workbench rail / panes / workspace. `--classic`: cycle tabs forward / backward. `--standalone`: no-op. |
-| `↑↓` / `←→` | Navigate within the focused zone or screen |
+| `↑↓` | Navigate within the focused zone or screen |
+| `←→` | Side pane focused: cycle pane composition. Workspace focused: screen-local navigation. |
 | `Enter` | Rail focused: open selected workbench entry. Workspace focused: drill into selection (team / player / game). |
 | `Esc` / `q` | Back / quit |
 | `?` | Help overlay (keybind cheatsheet) |
@@ -720,6 +721,9 @@ icelines tui --classic                   # older tabbed single-document UI
 # In MDI mode: Tab/Shift+Tab move focus between the activity rail, side
 # panes, and center workspace. With the rail focused, ↑/↓ selects a shared
 # catalog entry and Enter opens it when it has a no-argument TUI screen.
+# With a side pane focused, ←/→ cycles the shared pane binding. If a selected
+# binding does not yet have a full TUI renderer, the pane shows an explicit
+# "not yet rendered" stub rather than mismatched content.
 # Press `:` or `/` to focus the cmdbar; type a verb (e.g. `stats`, `goalies`,
 # `team EDM`, `query g >= 30`, `/fav add Bedard`, `/hide schedule`); Enter to
 # submit. `?` shows the full command reference. Ctrl+H toggles Favorites pane,
@@ -781,17 +785,28 @@ between workbench zones instead of cycling legacy tabs.
 | `/quit` (alias `q`, `quit`) | Exit | `:q` |
 
 Global hotkeys (work without entering the bar): `q` quits, `?` opens
-help overlay, `Tab`/`Shift+Tab` moves workbench focus, `Ctrl+H` toggles
-Favorites pane, `Ctrl+L` toggles Schedule pane.
+help overlay, `Tab`/`Shift+Tab` moves workbench focus, `←`/`→` cycles a focused
+side pane, `Ctrl+H` toggles Favorites pane, `Ctrl+L` toggles Schedule pane.
 
 ### Web dashboard command contract (Phase Jack Adams Web)
 
 Run `icelines serve --port 8000` and open `/dashboard` for the browser version
 of the shared workbench: grouped activity/catalog rail, bound experience tabs,
-scores ribbon, Favorites/watchlist pane, central workspace, Schedule pane,
-visible pane-model/field affordances, and a command bar. Canonical route pages
-still work directly; the dashboard shell wraps them as workspace panels through
+scores ribbon, left/right pane selectors, central workspace, active
+pane-model/field affordances, and a command bar. Canonical route pages still
+work directly; the dashboard shell wraps them as workspace panels through
 `/dashboard?workspace=<route>`.
+
+Pane composition is read-only URL state and allowlisted by shared workbench IDs:
+
+```text
+/dashboard?workspace=/scores&left=favorites-left&right=schedule-right&experience=tonight-bench
+/dashboard?workspace=/leaders&left=saved-queries-left&right=stat-filter-right
+```
+
+Bound experience tabs carry coherent workspace + pane presets. Left/right pane
+selector chips swap context panes without mutating favorites, watch rules,
+caches, snapshots, or config. Pane visibility remains local browser state.
 
 The browser dashboard uses the same deterministic command vocabulary as the
 TUI where the web route exists. Read commands resolve to internal workspace
@@ -839,12 +854,13 @@ selected player in the local Watchlist, and `a` on Fantasy Sim starts
 `simulate add=`.
 
 Browser adaptive layout: wide screens show the catalog rail + experience tabs +
-scores + Favorites/Watchlist + Workspace + Schedule. Tablet/mobile keeps
-Workspace primary, collapses Schedule first when no user preference exists,
-lets both side panes reopen via visible Show/Hide handles, and keeps the
-command bar as a sticky reach target. Command history is session-local;
-side-pane visibility is local browser state. Dashboard GET navigation is
-read-only; favorite/watch writes continue to use POST-backed endpoints.
+scores + left context pane + Workspace + right context pane. Tablet/mobile keeps
+Workspace primary, collapses Schedule/right context first when no user
+preference exists, lets both side panes reopen via visible Show/Hide handles,
+and keeps the command bar as a sticky reach target. Command history is
+session-local; side-pane visibility is local browser state. Dashboard GET
+navigation is read-only; favorite/watch writes continue to use POST-backed
+endpoints.
 
 Visual capture gate:
 

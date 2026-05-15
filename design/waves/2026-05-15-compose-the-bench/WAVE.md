@@ -1,7 +1,7 @@
 ---
 wave: compose-the-bench
 date_open: 2026-05-15
-status: active
+status: closed
 source: user selected next wave after Call the Changes closeout
 ---
 
@@ -53,7 +53,7 @@ Schedule-right forever.
 | 02 - Shared pane binding contract | complete | `icelines-core/src/workbench.rs`; `icelines-core/src/lib.rs`; `icelines-cli/src/tui/workbench.rs`; `icelines-web/src/workbench.rs`; `plans/pulse-02.md` |
 | 03 - TUI pane composition controls | complete | `icelines-cli/src/tui/mdi.rs`; `icelines-cli/src/tui/app.rs`; `icelines-cli/src/tui/screens/mod.rs`; `plans/pulse-03.md` |
 | 04 - Web pane composition controls | complete | `icelines-web/src/handlers/dashboard.rs`; `icelines-web/templates/dashboard.html`; `icelines-web/static/style.css`; `icelines-web/static/dashboard.js`; `plans/pulse-04.md` |
-| 05 - Docs, regression gates, and closeout | planned | depends on Pulses 03-04 |
+| 05 - Docs, regression gates, and closeout | complete | `README.md`; `COMMANDS.md`; `design/specs/surface-parity.md`; `plans/pulse-05.md` |
 
 ## Role Notes
 
@@ -72,11 +72,14 @@ Schedule-right forever.
 
 ## Current Result
 
-Pulse 04 wired the shared pane binding contract into `/dashboard`. The web shell
-now accepts allowlisted read-only pane/experience query state, renders no-JS
-left/right pane selectors, and keeps bound experience tabs as coherent workspace
-and pane presets without adding mutation routes.
+Compose the Bench is closed. IceLines now has a shared pane-composition contract
+with typed pane bindings, field sets, pane models, and bound experiences in
+`icelines-core::workbench`; TUI users can apply bound experiences and cycle
+focused side-pane bindings; web dashboard users can use allowlisted
+`left`/`right`/`experience` URL state and no-JS pane selector chips. README,
+COMMANDS, and the surface-parity matrix document the system and preserve the
+GET-read versus POST-mutation boundary.
 
 ## Next
 
-Execute Pulse 05: docs, regression gates, and closeout.
+Choose the next wave from the phase inventory.

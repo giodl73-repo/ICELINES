@@ -78,7 +78,7 @@ a feature fully shipped.
 
 | Feature | ViewModel | CLI | TUI | Web HTML | Web JSON | Status | Owner |
 |---|---|---|---|---|---|---|---|
-| Shared workbench shell | `WORKBENCH_CATALOG`, `WORKBENCH_PANE_MODELS`, `WORKBENCH_FIELDS`, `WORKBENCH_EXPERIENCES` | n/a | default `icelines tui` MDI workbench; `--classic` preserves legacy tab cycling; `--standalone` locks one workspace | `/dashboard` | n/a | done - TUI and web lower from `icelines-core::workbench` through surface adapters; default TUI exposes the activity/catalog rail, zone focus traversal, shared side-pane labels, and command-bar shortcut; web renders grouped catalog entries, bound experience tabs, shared pane-model cards, and active field cards server-side; dashboard GET navigation is read-only and write actions stay POST-backed | Jack Adams/Call the Changes |
+| Shared workbench shell | `WORKBENCH_CATALOG`, `WORKBENCH_PANE_BINDINGS`, `WORKBENCH_FIELDS`, `WORKBENCH_EXPERIENCES` | n/a | default `icelines tui` MDI workbench; `--classic` preserves legacy tab cycling; `--standalone` locks one workspace | `/dashboard` | n/a | done - TUI and web lower from `icelines-core::workbench` through surface adapters; default TUI exposes the activity/catalog rail, zone focus traversal, bound experience state, shared left/right pane binding IDs, focused side-pane cycling, truthful side-pane titles/bodies, and command-bar shortcut; web renders grouped catalog entries, bound experience tabs, allowlisted `left`/`right`/`experience` query state, pane selector chips, shared pane-model cards, active field cards, and no-mutation stubs server-side; dashboard GET navigation is read-only and write actions stay POST-backed | Jack Adams/Compose the Bench |
 | Favorites/groups | `FavoritesView` / `MutationResultView` | `group ...` | favorites/group affordances | `/favorites` | `/api/v1/favorites`, `/api/v1/favorites/add`, `/api/v1/favorites/remove` | partial - web HTML, read JSON, and Jack Adams dashboard side panes project membership through `FavoritesView` and share the same best-effort nightly `stat_line` lookup; web add/remove resolves through `FavoriteMutationIntent`; HTML routes redirect and JSON mutation twins return `MutationResultView` | Ted Lindsay |
 | Fantasy league management / roster gaps / simulation | `FantasyLeagueView` / `FantasyRosterGapView` / `FantasySimulationView` / `MutationResultView` | `fantasy ...`, `fantasy gaps`, `fantasy simulate` | `fantasy gaps`, `fantasy simulate` screens | `/fantasy` | `/api/v1/fantasy/gaps`, `/api/v1/fantasy/simulate` | done for read/product views, intentionally deferred for main-dashboard mutations - CLI league/team listing projects through `FantasyLeagueView`; CLI and legacy `fantasy serve` remain the write surfaces for league/team mutations this phase; `fantasy team-use <name>` marks the user's roster for poach availability; roster-gap read surfaces share `FantasyRosterGapView`; league simulation plus add/drop/drop-only scenario projection share `FantasySimulationView` across CLI/TUI/web/JSON; scenario resolution canonicalizes player names and invalid drops render explicit errors | Ted Lindsay/Selke |
 | Poacher board | `PoachBoardView` | `poach` | Poach screen | `/poach` | `/api/v1/poach` | implemented - shared board ViewModel across CLI/TUI/web/JSON; `scoring_categories` resolves from explicit query categories or the selected built-in scheme; CLI/TUI/web read active fantasy-league rosters when present to mark `rostered_by_user`, `imported_rostered`, and `imported_available`; CLI/web expose the shared availability filter including `imported-available` for waiver-wire candidates | Selke |
@@ -147,7 +147,7 @@ Verified from `icelines-web/src/lib.rs` after the handler-module split.
 | Route | Handler module | Surface | Matrix row | Status |
 |---|---|---|---|---|
 | `GET /` | `handlers/home.rs` | HTML | League/home | done - preview skaters/goalies project from `HomeView`; covered by `cargo test -p icelines-web` |
-| `GET /dashboard` | `handlers/dashboard.rs` | HTML shell | Shared workbench shell | server-rendered no-JS shell with grouped shared activity catalog, bound experience tabs, scores ribbon, Favorites/Watchlist context, allowlisted `workspace` URL state, schedule pane, active pane-model and field affordances, command-palette examples, `?partial=workspace` fragment, progressive workspace loader, collapsible side-pane bodies, report workspace links, responsive mobile/tablet breakpoints, and local side-pane state; covered by `l1_dashboard_shell_renders_no_js_regions`, `l1_dashboard_rejects_unsafe_workspace_paths`, `l1_dashboard_workspace_partial_renders_fragment_only`, and dashboard static-asset tests |
+| `GET /dashboard` | `handlers/dashboard.rs` | HTML shell | Shared workbench shell | server-rendered no-JS shell with grouped shared activity catalog, bound experience tabs, scores ribbon, allowlisted `workspace` / `left` / `right` / `experience` URL state, left/right pane selector chips, truthful Favorites/Watchlist/Schedule pane bodies, explicit no-mutation stubs for metadata-only pane bindings, active pane-model and field affordances, command-palette examples, `?partial=workspace` fragment, progressive workspace loader, collapsible side-pane bodies, report workspace links, responsive mobile/tablet breakpoints, and local side-pane visibility state; covered by `l0_dashboard_composition_query_is_allowlisted`, `l0_dashboard_pane_options_are_safe_get_navigation`, `l1_dashboard_shell_renders_no_js_regions`, `l1_dashboard_rejects_unsafe_workspace_paths`, `l1_dashboard_workspace_partial_renders_fragment_only`, and dashboard static-asset tests |
 | `POST /dashboard/command` | `handlers/dashboard.rs` | HTML command action | Jack Adams Web dashboard | deterministic command form endpoint; read commands redirect to allowlisted dashboard workspace URLs, including TUI-shaped phrases such as `poach rw cats=hits,blocks free top=12`, `fantasy poach top=8 available`, `fantasy simulate add Connor_McDavid drop Bench_Forward`, `team EDM season`, and `class 2015`; pane commands preserve URL state, command errors render explicit text labels, and favorite/watch mutations delegate to existing POST handlers/intents; progressively enhanced by `dashboard.js` |
 | `GET /static/:asset` | `static_assets` | asset | Static assets | done |
 | `GET /leaders` | `handlers/leaders.rs` | HTML | Leaders/skater leaderboard | projects template rows from `LeadersView`; adapter round-trip covered by `l0_web_leaders_view_round_trips_template_and_json_rows` |
@@ -284,17 +284,19 @@ The central dashboard panel is summary-ready for:
 | `/reports/weekly` | `PoachReportView` | ready |
 | `/docs` | canonical docs route only; no product summary needed | allowed |
 
-Dashboard command routes and workspace links preserve canonical route state; side
-pane visibility remains local browser state. The catalog, pane-model labels,
-field cards, and bound experience tabs are projected from
-`icelines-core::workbench` through the web adapter, while canonical pages remain
-the full-route source of truth. Responsive shell behavior keeps the workspace
-primary, collapses Schedule first on medium screens when there is no saved
-preference, and leaves visible Show/Hide handles for both context panes. The
-focused dashboard projection tests live in `handlers::dashboard::tests::*`,
-while `l1_dashboard_*` route tests fence shell rendering, URL allowlisting,
-fragment behavior, responsive/accessibility tokens, and command redirect safety.
-Responsive visual capture is available through
+Dashboard command routes and workspace links preserve canonical route state. Pane
+composition is explicit read-only URL state (`left`, `right`, `experience`) and
+is allowlisted against shared IDs; side-pane visibility remains local browser
+state. The catalog, pane binding labels, pane-model labels, field cards, and
+bound experience tabs are projected from `icelines-core::workbench` through the
+web adapter, while canonical pages remain the full-route source of truth.
+Responsive shell behavior keeps the workspace primary, collapses Schedule/right
+context first on medium screens when there is no saved preference, and leaves
+visible Show/Hide handles for both context panes. The focused dashboard
+projection tests live in `handlers::dashboard::tests::*`, while `l1_dashboard_*`
+route tests fence shell rendering, URL allowlisting, fragment behavior,
+responsive/accessibility tokens, and command redirect safety. Responsive visual
+capture is available through
 `scripts/test-slice.ps1 web-captures`, which writes desktop and mobile dashboard
 screenshots under `dist/web-dashboard-captures/` using installed Edge/Chrome
 headless.

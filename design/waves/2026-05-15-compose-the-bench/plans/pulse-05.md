@@ -29,10 +29,16 @@ bound experiences, and active fields compose in both TUI and web.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-core --quiet`
-- [ ] `cargo test -p icelines-cli --quiet`
-- [ ] `cargo test -p icelines-web --quiet`
-- [ ] `cargo clippy -- -D warnings`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-compose-the-bench README.md COMMANDS.md design\specs\surface-parity.md --errors-only`
-- [ ] `cargo build --release -p icelines-cli`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-core --quiet`
+- [x] `cargo test -p icelines-cli --quiet`
+- [x] `cargo test -p icelines-web --quiet`
+- [x] `cargo clippy -- -D warnings`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-compose-the-bench README.md COMMANDS.md design\specs\surface-parity.md --errors-only`
+- [x] `cargo build --release -p icelines-cli`
+
+## Result
+
+Closed Compose the Bench after documenting shared pane composition in README,
+COMMANDS, and the surface-parity matrix. The closeout gates passed, including
+the release CLI build.
