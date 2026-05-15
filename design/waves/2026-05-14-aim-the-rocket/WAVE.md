@@ -1,7 +1,7 @@
 ---
 wave: aim-the-rocket
 date_open: 2026-05-14
-status: active
+status: closed
 source: hockey-stat-site benchmark and user request to turn missing major-site features into the next award phase
 ---
 
@@ -66,5 +66,6 @@ scoring profiles at `/player/:id/scoring` and `/api/v1/player/:id/scoring`.
 
 ## Next
 
-Wave 1 is complete. The next Rocket Richard wave should deepen projections and
-shot-quality modeling only after owned data contracts are explicitly scoped.
+Wave 1 is complete. The next Rocket Richard wave is
+`design/waves/2026-05-14-measure-the-finish/`, focused on player scoring trends,
+streak leaderboards, and owned shot-quality proxy contracts.
