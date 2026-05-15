@@ -105,7 +105,7 @@ fn parse_verb(input: &str) -> Result<DashboardCommand, DashboardCommandError> {
         "schedule" => workspace("/schedule"),
         "transactions" | "txs" | "tx" => workspace("/transactions"),
         "playoffs" => workspace("/playoffs"),
-        "favorites" => workspace("/favorites"),
+        "favorites" => parse_favorites_workspace(args),
         "watchlist" => workspace("/watchlist"),
         "roster" => workspace("/fantasy"),
         "career" | "cohort" => workspace(&career_url(args)),
@@ -127,8 +127,38 @@ fn parse_verb(input: &str) -> Result<DashboardCommand, DashboardCommandError> {
         }),
         "compare" => parse_compare(args),
         "fav" | "favorite" => parse_favorite_mutation(args),
+        "group" | "groups" => parse_group_workspace(args),
         "watch" => parse_watch_mutation(args),
         unknown => Err(DashboardCommandError::UnknownCommand(unknown.to_owned())),
+    }
+}
+
+fn parse_favorites_workspace(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
+    let args = args.trim();
+    if args.is_empty() {
+        return workspace("/favorites");
+    }
+    if let Some(group) = args.strip_prefix("group=") {
+        return required_workspace_arg("favorites", "group", group, |group| {
+            format!("/favorites?group={}", url_component(group))
+        });
+    }
+    workspace("/favorites")
+}
+
+fn parse_group_workspace(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
+    let (subcommand, rest) = split_first_word(args);
+    match subcommand.to_ascii_lowercase().as_str() {
+        "" | "list" => workspace("/favorites"),
+        "show" | "open" => required_workspace_arg("group show", "name", rest, |group| {
+            format!("/favorites?group={}", url_component(group))
+        }),
+        "create" | "delete" | "remove" | "rename" | "add" => {
+            Err(DashboardCommandError::UnsupportedMutation(
+                "Web dashboard group create/delete/rename/member edits are deferred; use the TUI Groups screen or `icelines group`.".to_owned(),
+            ))
+        }
+        group => workspace(&format!("/favorites?group={}", url_component(group))),
     }
 }
 
@@ -639,6 +669,11 @@ mod tests {
             route("compare Connor McDavid, Nathan MacKinnon"),
             "/compare?left=Connor+McDavid&right=Nathan+MacKinnon"
         );
+        assert_eq!(
+            route("favorites group=Prospects"),
+            "/favorites?group=Prospects"
+        );
+        assert_eq!(route("group show Prospects"), "/favorites?group=Prospects");
     }
 
     #[test]
@@ -691,6 +726,17 @@ mod tests {
         assert!(
             err.to_string()
                 .contains("watch team/deployment rule editing is deferred"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn l0_dashboard_command_group_mutations_are_deferred() {
+        let err = parse_dashboard_command("group create Prospects")
+            .expect_err("group create is deferred");
+        assert!(
+            err.to_string()
+                .contains("group create/delete/rename/member edits are deferred"),
             "unexpected error: {err}"
         );
     }

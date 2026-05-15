@@ -53,7 +53,7 @@ operate.
 | 02 - Persistent config/report toggle contract | complete | `icelines-web/src/handlers/admin.rs`; `icelines-web/src/config.rs`; `icelines-web/tests/l1_router.rs`; `plans/pulse-02.md` |
 | 03 - Admin data operation safety | complete | `ADMIN-DATA-SAFETY.md`; `icelines-web/src/handlers/admin.rs`; `icelines-web/tests/l1_router.rs`; `plans/pulse-03.md` |
 | 04 - Watch-rule editor parity | complete | `WATCH-RULE-EDITOR-SAFETY.md`; `icelines-cli/src/tui/command.rs`; `icelines-web/src/dashboard_command.rs`; `icelines-web/src/handlers/dashboard.rs`; `icelines-web/src/handlers/poach.rs`; `icelines-web/templates/watchlist.html`; `icelines-web/tests/l1_router.rs`; `plans/pulse-04.md` |
-| 05 - Favorites/groups parity | planned | depends on Pulse 01 |
+| 05 - Favorites/groups parity | complete | `FAVORITES-GROUPS-SAFETY.md`; `icelines-cli/src/tui/command.rs`; `icelines-web/src/handlers/favorites.rs`; `icelines-web/src/dashboard_command.rs`; `icelines-web/tests/l1_router.rs`; `plans/pulse-05.md` |
 | 06 - Docs, regression gates, and closeout | planned | depends on Pulses 02-05 |
 
 ## Role Notes
@@ -70,14 +70,12 @@ operate.
 
 ## Current Result
 
-Pulse 04 fenced watch-rule editor parity. Player-rule create/toggle/delete
-remains supported through shared mutation paths, while arbitrary
-team/deployment editing stays deferred because `WatchRuleMutationIntent` has no
-validated team/deployment fields. TUI and web dashboard commands now reject
-team/deployment edit phrases instead of silently creating player rules, and the
-web dashboard command path uses the existing POST-backed toggle handler for
-`watch enable|disable`.
+Pulse 05 fenced favorites/groups parity. Web favorites can inspect any SQLite
+group in read-only mode through `?group=<name>`, while POST-backed web add/remove
+controls remain scoped to the canonical `Favorites` group. Dashboard group
+commands open read-only group views or reject create/delete/rename/member edits;
+TUI `/fav add/remove` now accepts team abbreviations as team members.
 
 ## Next
 
-Execute Pulse 05: favorites/groups parity.
+Execute Pulse 06: docs, regression gates, and closeout.

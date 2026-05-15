@@ -287,6 +287,7 @@ icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --ex
 icelines serve --port 8000
 # GET /dashboard               -> shared workbench catalog, pane selectors, presets, command bar
 # GET /dashboard?workspace=/scores&left=favorites-left&right=schedule-right&experience=tonight-bench
+# GET /favorites?group=Prospects -> read-only web group view; Favorites group keeps add/remove forms
 # Try: poach rw cats=hits,blocks free top=12
 # Try: fantasy simulate add Connor_McDavid drop Bench_Forward
 # GET /fantasy                 -> HTML gaps + simulation scenarios
@@ -301,6 +302,11 @@ Watch-rule editors are intentionally narrow: TUI/web can create player rules and
 toggle persisted rules, and the web watchlist can delete persisted rules.
 Team/deployment rule editing stays on the CLI preview/save path until the shared
 mutation contract carries those dimensions.
+
+Favorites and groups share the local SQLite `GroupDb`. Web `/favorites` can
+select any group for read-only inspection, but web add/remove forms intentionally
+target only the canonical `Favorites` group. Create, rename, delete, and arbitrary
+group membership edits remain on `icelines group ...` and the TUI Groups surface.
 
 **Fantasy schemes:** `yahoo-standard`, `espn-standard`, `simple-pts`
 
@@ -378,8 +384,9 @@ icelines schedule --days 7          # upcoming schedule
 icelines team-season EDM            # team season-performance view
 icelines trade "Bouchard" for "Fox" --team EDM  # depth chart trade impact
 
-icelines group create "Watchlist"   # player watchlists (SQLite-backed)
+icelines group create "Watchlist"   # player/team groups (SQLite-backed)
 icelines group add "Watchlist" "McDavid"
+icelines group add "Watchlist" EDM  # team abbrevs are stored as team members
 icelines group show "Watchlist"
 
 icelines scheme list                # fantasy scoring schemes

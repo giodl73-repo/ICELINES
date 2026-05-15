@@ -26,6 +26,12 @@ pub(crate) struct WatchAlertEvent {
     pub(crate) fired_at: String,
 }
 
+#[derive(Debug, Clone)]
+pub(crate) struct GroupOption {
+    pub(crate) name: String,
+    pub(crate) member_count: usize,
+}
+
 #[derive(Debug, serde::Serialize)]
 pub(crate) struct GroupApiResponse {
     pub(crate) schema_version: &'static str,
@@ -36,7 +42,7 @@ pub(crate) struct GroupApiResponse {
 
 #[derive(Debug, serde::Serialize)]
 pub(crate) struct GroupApiMeta {
-    pub(crate) group: &'static str,
+    pub(crate) group: String,
     pub(crate) count: usize,
     pub(crate) player_count: usize,
     pub(crate) team_count: usize,
@@ -131,6 +137,52 @@ pub(crate) fn read_group_members(group_name: &str) -> Vec<(String, String)> {
                 .collect()
         })
         .unwrap_or_default()
+}
+
+pub(crate) fn read_group_options() -> Vec<GroupOption> {
+    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else {
+        return default_group_options();
+    };
+    let db_path = std::path::PathBuf::from(&home)
+        .join(".icelines")
+        .join("icelines.db");
+    if !db_path.exists() {
+        return default_group_options();
+    }
+    let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+        return default_group_options();
+    };
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT g.name, COUNT(gm.entity_ref) \
+         FROM groups g \
+         LEFT JOIN group_members gm ON gm.group_name = g.name \
+         GROUP BY g.name \
+         ORDER BY CASE WHEN g.name = 'Favorites' THEN 0 ELSE 1 END, lower(g.name)",
+    ) else {
+        return default_group_options();
+    };
+    let groups: Vec<GroupOption> = stmt
+        .query_map([], |r| {
+            Ok(GroupOption {
+                name: r.get(0)?,
+                member_count: r.get::<_, i64>(1)?.max(0) as usize,
+            })
+        })
+        .ok()
+        .map(|rows| rows.filter_map(Result::ok).collect())
+        .unwrap_or_default();
+    if groups.is_empty() {
+        default_group_options()
+    } else {
+        groups
+    }
+}
+
+fn default_group_options() -> Vec<GroupOption> {
+    vec![GroupOption {
+        name: "Favorites".to_owned(),
+        member_count: 0,
+    }]
 }
 
 pub(crate) fn read_watch_notes() -> HashMap<String, WatchNote> {

@@ -2014,10 +2014,20 @@ fn apply_forced_column(
     }
 }
 
-/// Resolve a player needle (name substring or "pid:1234567")
-/// then upsert into the Favorites group via GroupDb.
+/// Resolve a team abbrev or player needle, then upsert into the Favorites group.
 fn exec_fav_add(app: &mut crate::tui::app::App, needle: &str) -> ExecResult {
     let _ = app; // App not needed for the DB call (open-by-path)
+    if let Ok(abbr) = icelines_core::TeamAbbr::parse(needle) {
+        return match crate::db::GroupDb::open() {
+            Ok(db) => match db.add_member_kind("Favorites", &abbr.0, crate::db::MemberKind::Team) {
+                Ok(true) => ExecResult::Flash(format!("★ added {} to Favorites", abbr.0)),
+                Ok(false) => ExecResult::Flash(format!("★ {} is already in Favorites", abbr.0)),
+                Err(e) => ExecResult::Flash(format!("DB error: {e}")),
+            },
+            Err(e) => ExecResult::Flash(format!("couldn't open Favorites DB: {e}")),
+        };
+    }
+
     let pid = match icelines_fetch::stats_loader::resolve_player_id_by_name(needle) {
         Some(pid) => pid,
         None => return ExecResult::Flash(format!("player not found: {needle:?}")),
@@ -2044,6 +2054,18 @@ fn exec_fav_add(app: &mut crate::tui::app::App, needle: &str) -> ExecResult {
 
 fn exec_fav_remove(app: &mut crate::tui::app::App, needle: &str) -> ExecResult {
     let _ = app;
+    if let Ok(abbr) = icelines_core::TeamAbbr::parse(needle) {
+        return match crate::db::GroupDb::open() {
+            Ok(db) => {
+                match db.remove_member_kind("Favorites", &abbr.0, crate::db::MemberKind::Team) {
+                    Ok(()) => ExecResult::Flash(format!("removed {} from Favorites", abbr.0)),
+                    Err(e) => ExecResult::Flash(format!("DB error: {e}")),
+                }
+            }
+            Err(e) => ExecResult::Flash(format!("couldn't open Favorites DB: {e}")),
+        };
+    }
+
     let pid = match icelines_fetch::stats_loader::resolve_player_id_by_name(needle) {
         Some(pid) => pid,
         None => return ExecResult::Flash(format!("player not found: {needle:?}")),

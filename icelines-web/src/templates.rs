@@ -833,12 +833,23 @@ pub struct FantasySimulationScenarioRow {
 #[template(path = "favorites.html")]
 pub struct FavoritesTemplate {
     pub active_label: String,
+    pub group: String,
+    pub can_mutate: bool,
+    pub groups: Vec<FavoriteGroupOptionRow>,
     pub active_season: String,
     pub active_season_type: String,
     pub player_count: usize,
     pub team_count: usize,
     pub players: Vec<FavoritePlayerRow>,
     pub teams: Vec<FavoriteTeamRow>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FavoriteGroupOptionRow {
+    pub name: String,
+    pub href: String,
+    pub member_count: usize,
+    pub is_active: bool,
 }
 
 #[derive(Debug, Clone)]

@@ -1,14 +1,15 @@
 use super::favorites_data::{
-    group_api_rows_from_view, mutate_favorites, read_group_members, read_watch_alert_events,
-    read_watch_notes, watchlist_api_rows, GroupApiMeta, GroupApiResponse, MutateOp,
-    WatchAlertEvent, WatchlistApiMeta, WatchlistApiResponse,
+    group_api_rows_from_view, mutate_favorites, read_group_members, read_group_options,
+    read_watch_alert_events, read_watch_notes, watchlist_api_rows, GroupApiMeta, GroupApiResponse,
+    MutateOp, WatchAlertEvent, WatchlistApiMeta, WatchlistApiResponse,
 };
 use crate::templates::{
-    FavoritePlayerRow, FavoriteTeamRow, FavoritesTemplate, WatchRuleTemplateRow, WatchlistAlertRow,
-    WatchlistPlayerRow, WatchlistTeamRow, WatchlistTemplate,
+    FavoriteGroupOptionRow, FavoritePlayerRow, FavoriteTeamRow, FavoritesTemplate,
+    WatchRuleTemplateRow, WatchlistAlertRow, WatchlistPlayerRow, WatchlistTeamRow,
+    WatchlistTemplate,
 };
 use askama::Template;
-use axum::extract::{Form, State};
+use axum::extract::{Form, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::model::Season;
@@ -19,8 +20,18 @@ use icelines_core::{
 };
 use serde::Deserialize;
 
-pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
-    let members = read_group_members("Favorites");
+#[derive(Debug, Default, Deserialize)]
+pub struct FavoritesQuery {
+    group: Option<String>,
+}
+
+pub async fn get_favorites(
+    State(state): State<crate::WebState>,
+    Query(query): Query<FavoritesQuery>,
+) -> Response {
+    let group = selected_group(query.group.as_deref());
+    let can_mutate = group == "Favorites";
+    let members = read_group_members(&group);
     let (active_label, context) = match favorites_context(&state, "favorites").await {
         Ok(context) => context,
         Err(response) => return response,
@@ -34,13 +45,16 @@ pub async fn get_favorites(State(state): State<crate::WebState>) -> Response {
     let stat_lines = compute_player_stat_lines(&members).await;
     let view = FavoritesView::from_members(
         context,
-        "Favorites".to_string(),
+        group.clone(),
         favorite_member_inputs(&members),
         stat_lines,
     );
 
     let tmpl = FavoritesTemplate {
         active_label,
+        group: group.clone(),
+        can_mutate,
+        groups: favorite_group_options(&group),
         active_season: view.context.window.season.as_str(),
         active_season_type: view.context.window.season_type.label().to_string(),
         player_count: view.player_count,
@@ -103,21 +117,22 @@ pub async fn get_watchlist(State(state): State<crate::WebState>) -> Response {
     render_template(tmpl)
 }
 
-pub async fn get_favorites_json() -> Response {
-    let members = read_group_members("Favorites");
+pub async fn get_favorites_json(Query(query): Query<FavoritesQuery>) -> Response {
+    let group = selected_group(query.group.as_deref());
+    let members = read_group_members(&group);
     let stat_lines = compute_player_stat_lines(&members).await;
     let view = FavoritesView::from_members(
         ViewContext::new(ViewWindow::new(
             Season(icelines_core::CURRENT_SEASON),
             icelines_core::season_stats::SeasonType::Regular,
         )),
-        "Favorites".to_string(),
+        group.clone(),
         favorite_member_inputs(&members),
         stat_lines,
     );
     let rows = group_api_rows_from_view(&view);
     let meta = GroupApiMeta {
-        group: "Favorites",
+        group,
         count: view.rows.len(),
         player_count: view.player_count,
         team_count: view.team_count,
@@ -129,6 +144,54 @@ pub async fn get_favorites_json() -> Response {
         meta,
     })
     .into_response()
+}
+
+fn selected_group(group: Option<&str>) -> String {
+    group
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .unwrap_or("Favorites")
+        .to_owned()
+}
+
+fn favorite_group_options(active_group: &str) -> Vec<FavoriteGroupOptionRow> {
+    let mut rows: Vec<FavoriteGroupOptionRow> = read_group_options()
+        .into_iter()
+        .map(|group| FavoriteGroupOptionRow {
+            href: if group.name == "Favorites" {
+                "/favorites".to_owned()
+            } else {
+                format!("/favorites?group={}", url_component(&group.name))
+            },
+            is_active: group.name == active_group,
+            name: group.name,
+            member_count: group.member_count,
+        })
+        .collect();
+
+    if !rows.iter().any(|row| row.name == active_group) {
+        rows.push(FavoriteGroupOptionRow {
+            name: active_group.to_owned(),
+            href: format!("/favorites?group={}", url_component(active_group)),
+            member_count: 0,
+            is_active: true,
+        });
+    }
+
+    rows
+}
+
+fn url_component(raw: &str) -> String {
+    let mut encoded = String::new();
+    for byte in raw.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(char::from(byte));
+            }
+            _ => encoded.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    encoded
 }
 
 async fn favorites_context(

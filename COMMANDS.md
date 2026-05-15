@@ -725,7 +725,7 @@ icelines tui --classic                   # older tabbed single-document UI
 # binding does not yet have a full TUI renderer, the pane shows an explicit
 # "not yet rendered" stub rather than mismatched content.
 # Press `:` or `/` to focus the cmdbar; type a verb (e.g. `stats`, `goalies`,
-# `team EDM`, `query g >= 30`, `/fav add Bedard`, `/hide schedule`); Enter to
+# `team EDM`, `query g >= 30`, `/fav add Bedard`, `/fav add EDM`, `/hide schedule`); Enter to
 # submit. `?` shows the full command reference. Ctrl+H toggles Favorites pane,
 # Ctrl+L toggles Schedule pane.
 # --mdi is mutually exclusive with --standalone and --classic.
@@ -777,8 +777,8 @@ between workbench zones instead of cycling legacy tabs.
 | `compare <a>` / `compare <a> vs <b>` | Similarity peers / head-to-head handoff | `:compare McDavid`, `:compare McDavid vs Crosby` |
 | `box <game-id>` / `box <AWAY@HOME>` | Boxscore detail from id or loaded slate | `:box 2025020001`, `:box EDM@BOS` |
 | `query <filter>` | Apply Phase Art Ross filter, swap to Stats | `:query g >= 30 AND age <= 25` |
-| `/fav add <name>` | Add to Favorites | `/fav add Bedard` |
-| `/fav remove <name>` | Remove from Favorites | `/fav remove Bedard` |
+| `/fav add <name-or-team>` | Add to Favorites | `/fav add Bedard`, `/fav add EDM` |
+| `/fav remove <name-or-team>` | Remove from Favorites | `/fav remove Bedard`, `/fav remove EDM` |
 | `/hide favorites` / `/hide schedule` | Hide a side pane | `/hide schedule` |
 | `/show favorites` / `/show schedule` | Restore a side pane | `/show schedule` |
 | `/help` (alias `/h`, `/?`) | Full command reference overlay | `/help` |
@@ -833,6 +833,9 @@ report poach availability=imported-available
                                            -> /reports/poach?availability=imported-available
 records team EDM                           -> /records/team/EDM
 records player 8478402                     -> /records/player/8478402
+favorites group=Prospects                  -> /favorites?group=Prospects
+group show Prospects                        -> /favorites?group=Prospects
+group create Prospects                      -> deferred; use TUI Groups or `icelines group`
 team EDM                                   -> /team/EDM
 team EDM season                            -> /team/EDM/season
 team EDM schedule                          -> /schedule?team=EDM
@@ -848,6 +851,11 @@ watch enable player-connor-mcdavid         -> toggle persisted watch rule on
 watch disable player-connor-mcdavid        -> toggle persisted watch rule off
 watch deployment TOR                       -> deferred; use CLI preview, not dashboard mutation
 ```
+
+`/favorites` can select any SQLite group in read-only mode with
+`?group=<name>`. Web add/remove controls remain scoped to the canonical
+`Favorites` group; create, rename, delete, and arbitrary group membership edits
+stay on `icelines group ...` or the TUI Groups screen.
 
 Fantasy screen shortcuts prefill the same command bar grammar: `g` on Fantasy
 Gaps starts `gaps `, `p` on Poach starts `poach `, `w` on Poach toggles the

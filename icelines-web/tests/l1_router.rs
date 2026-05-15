@@ -2277,6 +2277,115 @@ async fn l1_favorites_json_returns_group_members() {
 }
 
 #[tokio::test]
+async fn l1_favorites_html_supports_read_only_group_selection() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let home = std::env::var_os("HOME").expect("test home set");
+    let db_dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE groups (
+            name TEXT PRIMARY KEY,
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+         );
+         CREATE TABLE group_members (
+            group_name TEXT NOT NULL,
+            entity_ref TEXT NOT NULL,
+            added_at TEXT NOT NULL,
+            PRIMARY KEY (group_name, entity_ref)
+         );
+         INSERT INTO groups VALUES ('Favorites', '', datetime('now'));
+         INSERT INTO groups VALUES ('Prospects', '', datetime('now'));
+         INSERT INTO group_members VALUES ('Prospects', 'team:EDM', datetime('now'));",
+    )
+    .expect("seed groups db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/favorites?group=Prospects")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("<h1>Prospects</h1>"));
+    assert!(body.contains("class=\"group-chip active\""));
+    assert!(body.contains("href=\"/team/EDM\""));
+    assert!(body.contains("Read-only group view"));
+    assert!(body.contains("icelines group add"));
+    assert!(!body.contains("action=\"/favorites/add\""));
+    assert!(!body.contains("action=\"/favorites/remove\""));
+    assert!(!body.contains("action=\"/admin/game-cache/load-favorites\""));
+}
+
+#[tokio::test]
+async fn l1_favorites_json_can_read_named_group_without_mutating() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let home = std::env::var_os("HOME").expect("test home set");
+    let db_dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE groups (
+            name TEXT PRIMARY KEY,
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+         );
+         CREATE TABLE group_members (
+            group_name TEXT NOT NULL,
+            entity_ref TEXT NOT NULL,
+            added_at TEXT NOT NULL,
+            PRIMARY KEY (group_name, entity_ref)
+         );
+         INSERT INTO groups VALUES ('Favorites', '', datetime('now'));
+         INSERT INTO groups VALUES ('Prospects', '', datetime('now'));
+         INSERT INTO group_members VALUES ('Prospects', 'team:EDM', datetime('now'));",
+    )
+    .expect("seed groups db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/favorites?group=Prospects")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("json body");
+
+    assert_eq!(json["meta"]["group"], "Prospects");
+    assert_eq!(json["meta"]["count"], 1);
+    assert_eq!(json["meta"]["player_count"], 0);
+    assert_eq!(json["meta"]["team_count"], 1);
+    assert!(json["data"]
+        .as_array()
+        .expect("data array")
+        .iter()
+        .any(|row| row["kind"] == "team" && row["key"] == "EDM"));
+}
+
+#[tokio::test]
 async fn l1_watchlist_json_returns_watch_reason_metadata() {
     let _guard = home_env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp home");
