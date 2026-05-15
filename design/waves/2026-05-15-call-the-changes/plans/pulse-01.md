@@ -1,25 +1,28 @@
-# Pulse 01 - MDI Navigation Inventory and Contract
+# Pulse 01 - MDI Workbench Inventory and Zone Contract
 
 ## Goal
 
 Define the final MDI navigation contract before implementation. Inventory the
 current TUI MDI dashboard, classic tab behavior, standalone launchers, web
 dashboard workspace routing, command grammar, and docs. Produce an implementation
-map for replacing tab-first/default command-recall navigation with an explicit
-screen catalog/picker across TUI and web.
+map for replacing tab-first/default command-recall navigation with a true
+workbench model across TUI and web: activity/catalog rail, center workspace,
+left/right context panes, top live ribbon, bottom command/status surface, and
+temporary overlays.
 
 ## Governing roles
 
-- **keel**: one catalog identity must map cleanly to TUI screens, web workspace
-  routes, and command aliases.
-- **glass**: the catalog/picker must be discoverable and readable without
-  memorized command syntax; tab strip removal must not strand users.
+- **keel**: one catalog identity and one zone taxonomy must map cleanly to TUI
+  screens, web workspace routes, and command aliases.
+- **glass**: the catalog/picker and pane layout must be discoverable and readable
+  without memorized command syntax; tab strip removal must not strand users.
 - **forge**: prefer typed catalog entries and existing screen/route enums over
   duplicated string tables.
 - **wire**: picker/catalog navigation must not create GET-backed mutations, live
   fetches, or browser-only state that changes canonical route meaning.
 - **bench**: inventory must name regression tests for active-screen selection,
-  catalog completeness, keyboard access, and docs parity.
+  catalog completeness, ViewModel-backed pane dimensions, keyboard access, and
+  docs parity.
 
 ## Owned scope
 
@@ -29,8 +32,18 @@ screen catalog/picker across TUI and web.
    command endpoint, and static dashboard assets.
 3. Write a wave-local inventory/contract document covering:
    - main screen catalog entries and aliases;
-   - TUI picker/catalog UX options and selected default;
-   - web catalog/picker UX options and selected default;
+   - workbench zones and placement rules:
+     - activity/catalog rail;
+     - center workspace;
+     - left context pane;
+     - right context pane;
+     - top live ribbon;
+     - bottom command/status surface;
+     - overlays;
+   - context-pane option bank sourced from existing ViewModels, including filter
+     dimensions/pivots each pane can expose;
+   - TUI workbench UX options and selected default;
+   - web workbench UX options and selected default;
    - tab removal/compatibility rules for default MDI and `--classic`;
    - keyboard and accessibility expectations;
    - tests and docs required before closeout.
@@ -45,15 +58,15 @@ screen catalog/picker across TUI and web.
 
 ## Candidate deliverable
 
-`MDI-NAVIGATION-INVENTORY.md` in this wave folder.
+`MDI-WORKBENCH-INVENTORY.md` in this wave folder.
 
 ## Initial implementation split to validate
 
 | Pulse | Scope |
 |---|---|
-| 02 - Shared screen catalog | Add typed catalog entries and tests for labels, aliases, TUI targets, and web targets. |
-| 03 - TUI full-MDI picker | Replace default MDI tab strip/cycling with picker/catalog selection while preserving `--classic`. |
-| 04 - Web dashboard screen catalog | Add visible catalog/picker navigation to `/dashboard` that opens canonical workspace panels. |
+| 02 - Shared workbench catalog and zone model | Add typed catalog entries and tests for labels, aliases, default zone, TUI targets, web targets, and ViewModel-backed pane dimensions. |
+| 03 - TUI full-MDI workbench shell | Replace default TUI MDI tab-first navigation with activity/catalog selection, center workspace, context panes, live ribbon, and command/status surface while preserving `--classic`. |
+| 04 - Web dashboard workbench catalog | Add visible catalog/zone navigation to `/dashboard` that opens canonical workspace panels and keeps side-pane semantics aligned with TUI. |
 | 05 - Docs, regression gates, and closeout | Update README/COMMANDS/surface parity, run gates, and close the wave. |
 
 ## Gates
