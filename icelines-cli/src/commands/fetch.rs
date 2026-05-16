@@ -36,6 +36,13 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             out,
             gate,
         } => do_fletch_quivers(&season, season_type, &out, gate).await,
+        FetchSubcommand::FletchCacheIndex {
+            season,
+            season_type,
+            manifest,
+            out,
+            gate,
+        } => do_fletch_cache_index(&season, season_type, manifest.as_deref(), &out, gate).await,
         FetchSubcommand::Stats {
             season,
             refresh,
@@ -148,6 +155,50 @@ async fn do_fletch_quivers(
             ));
         }
         println!("FLETCH query quiver gate passed.");
+    }
+
+    Ok(())
+}
+
+async fn do_fletch_cache_index(
+    season: &str,
+    season_type: FetchSeasonType,
+    manifest: Option<&std::path::Path>,
+    out: &std::path::Path,
+    gate: bool,
+) -> anyhow::Result<()> {
+    let cfg = Config::load()?;
+    let default_manifest =
+        icelines_fetch::fletch::fletch_cache_manifest_path(&fletch_cache_root(&cfg));
+    let manifest_path = manifest.unwrap_or(default_manifest.as_path());
+    let manifest = icelines_fetch::fletch::read_fletch_cache_manifest(manifest_path)?;
+    let report = icelines_fetch::fletch::fletch_cache_index_report(
+        season,
+        season_type_label(season_type),
+        &manifest,
+    );
+    icelines_fetch::fletch::write_fletch_cache_index(out, &report)
+        .with_context(|| format!("writing FLETCH cache-index report to {}", out.display()))?;
+
+    println!(
+        "FLETCH cache index: {} indexed source(s), {} missing, {} unexpected, {} unverified",
+        report.indexed_source_count,
+        report.missing_source_count,
+        report.unexpected_index_count,
+        report.unverified_index_count,
+    );
+    println!("Read {}", manifest_path.display());
+    println!("Wrote {}", out.display());
+
+    if gate {
+        let failures = icelines_fetch::fletch::fletch_cache_index_gate_failures(&report);
+        if !failures.is_empty() {
+            return Err(anyhow!(
+                "FLETCH cache index gate failed:\n{}",
+                failures.join("\n")
+            ));
+        }
+        println!("FLETCH cache index gate passed.");
     }
 
     Ok(())

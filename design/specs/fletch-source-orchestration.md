@@ -12,11 +12,13 @@ The non-mutating command is:
 icelines fetch fletch-sources --season 20252026 --type regular --gate
 icelines fetch fletch-partitions --season 20252026 --type regular --gate
 icelines fetch fletch-quivers --season 20252026 --type regular --gate
+icelines fetch fletch-cache-index --season 20252026 --type regular --gate
 ```
 
 It writes `data/fletch-source-handoff.csv` and fails the gate only on registry or ICELINES handoff review failures. Adapter-required rows are expected inventory, not failures.
 The partition command writes `data/fletch-query-partitions.json`, mapping ICELINES query-facing surfaces to FLETCH partition and rollup identifiers. It records which source fletches can already be acquired generically and which still need ICELINES adapters before a partition can become active.
 The quiver command writes `data/fletch-query-quivers.json`, grouping query partitions into season/offline bootstrap bundle candidates. It is a handoff report, not a byte export or activation step.
+FLETCH-backed ICELINES fetches upsert `cache-manifest.json` under the ICELINES FLETCH cache root. The cache-index command reads that manifest by default and writes `data/fletch-cache-index.json`, mapping `fletch.cache-index.v1` evidence back onto ICELINES registered source IDs.
 
 Execution migration scope:
 
@@ -28,3 +30,4 @@ Execution migration scope:
 - `icelines fetch transactions` lets ICELINES expand the season into ESPN date windows, then acquire each transaction window through FLETCH's generic batch cacheline before ICELINES parses schema drift, classifies prose, writes stale flags, and seals the snapshot.
 - `icelines fetch fletch-partitions --gate` projects query surfaces such as leaders, player, compare, goalies, windowed game-line queries, career queries, roster bios, and MoneyPuck advanced metrics onto durable partition/rollup IDs. FLETCH source cache presence is not treated as active query data; ICELINES sealed snapshots and active pointers remain the activation evidence.
 - `icelines fetch fletch-quivers --gate` groups those partition rows into query bootstrap and enrichment quiver candidates while preserving the rule that ICELINES must parse, validate, seal, and activate snapshots before queries trust imported or staged bytes.
+- `icelines fetch fletch-cache-index --gate` maps the ICELINES-owned FLETCH cache manifest to compact cache-index evidence. Missing source rows are allowed because not every source is fetched on every run; unverified or unexpected rows fail the gate.

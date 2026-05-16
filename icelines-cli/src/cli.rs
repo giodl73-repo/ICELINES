@@ -1762,6 +1762,28 @@ pub enum FetchSubcommand {
         #[arg(long)]
         gate: bool,
     },
+    /// Map the ICELINES FLETCH cache manifest to cache-index evidence.
+    #[command(name = "fletch-cache-index")]
+    FletchCacheIndex {
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
+        /// Season type: regular, playoff, or both.
+        #[arg(long = "type", value_enum, default_value_t = FetchSeasonType::Regular)]
+        season_type: FetchSeasonType,
+        /// Read this FLETCH cache manifest. Defaults to the ICELINES FLETCH manifest.
+        #[arg(long, value_name = "PATH")]
+        manifest: Option<PathBuf>,
+        /// Write the cache-index evidence report JSON to this path.
+        #[arg(
+            long,
+            value_name = "PATH",
+            default_value = "data/fletch-cache-index.json"
+        )]
+        out: PathBuf,
+        /// Fail when indexed rows are unverified or outside the ICELINES FLETCH registry.
+        #[arg(long)]
+        gate: bool,
+    },
     /// Fetch all 32 team rosters (headshots, positions, bios).
     Rosters {
         #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
