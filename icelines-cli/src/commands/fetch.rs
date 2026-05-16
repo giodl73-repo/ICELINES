@@ -1257,9 +1257,8 @@ async fn do_positions(season: &str, dry_run: bool) -> anyhow::Result<()> {
 async fn do_transactions(season: &str, dry_run: bool) -> anyhow::Result<()> {
     use icelines_core::transactions::CURRENT_CLASSIFIER_VERSION;
     use icelines_fetch::{
-        bundled::TransactionsEnvelope,
-        snapshot::SnapshotMetaFlags,
-        transactions::{raw_to_transactions, EspnSource},
+        bundled::TransactionsEnvelope, snapshot::SnapshotMetaFlags,
+        transactions::raw_to_transactions,
     };
 
     let cfg = Config::load()?;
@@ -1274,8 +1273,13 @@ async fn do_transactions(season: &str, dry_run: bool) -> anyhow::Result<()> {
     }
 
     println!("Fetching transactions from ESPN...");
-    let espn = EspnSource::production();
-    let outcome = match espn.fetch_season(season).await {
+    let outcome = match icelines_fetch::fletch::fetch_transactions_batch_async(
+        season.to_string(),
+        fletch_cache_root(&cfg),
+        false,
+    )
+    .await
+    {
         Ok(o) => o,
         Err(e) => {
             // Set the stale flag so the next `icelines transactions`

@@ -1,3 +1,4 @@
+use crate::schema::RawTransaction;
 use anyhow::{Context, Result};
 use fletch_core::{
     adapter_handoff_report, dry_run_flight, fetch_batch_to_cache_best_effort,
@@ -56,6 +57,15 @@ impl FletchPlayerLandingArtifact {
             Self::Landing => "landing",
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct FletchTransactionsOutcome {
+    pub rows: Vec<RawTransaction>,
+    pub dropped_unknown_schema: Vec<String>,
+    pub partial: bool,
+    pub source_etag: Option<String>,
+    pub fetched_at: String,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -225,8 +235,8 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             "transactions",
             format!("icelines-espn-transactions://season/{season}"),
             format!("snapshots/{season}-<date>-transactions/transactions/transactions.json"),
-            "adapter-required",
-            "ICELINES owns ESPN monthly window expansion, retry/circuit-breaker, prose classification, warnings, and stale flags",
+            "generic-window-batch-http-cacheline-after-season",
+            "ICELINES owns ESPN monthly window expansion, prose classification, warnings, and stale flags",
             "ICELINES validates ESPN schema fallback, classifier version, unknown-team handling, and stale metadata",
         ),
         (
@@ -323,6 +333,7 @@ pub fn fletch_source_handoff_report(season: &str, season_type: &str) -> FletchSo
                     metadata(definition, "acquisition_mode").as_str(),
                     "generic-batch-http-cacheline-after-schedule"
                         | "generic-batch-http-cacheline-after-player-set"
+                        | "generic-window-batch-http-cacheline-after-season"
                 )
             {
                 "batch-expansion-ready-after-domain-set"
@@ -398,6 +409,7 @@ pub fn fletch_query_partition_report(
                             metadata(definition, "acquisition_mode").as_str(),
                             "generic-batch-http-cacheline-after-schedule"
                                 | "generic-batch-http-cacheline-after-player-set"
+                                | "generic-window-batch-http-cacheline-after-season"
                         ) =>
                     {
                         "batch-source-fletch-ready-after-domain-set"
@@ -1084,6 +1096,141 @@ pub async fn fetch_player_landing_batch_bytes_async(
     .context("joining FLETCH player landing batch fetch task")?
 }
 
+pub fn espn_transactions_url(base_url: &str, window: &str) -> String {
+    format!("{base_url}/transactions?dates={window}&limit=1000")
+}
+
+pub fn fetch_transactions_batch_with_base(
+    base_url: &str,
+    season: &str,
+    cache_root: &Path,
+    force: bool,
+) -> Result<FletchTransactionsOutcome> {
+    let windows = crate::transactions::espn::season_month_windows(season)
+        .with_context(|| format!("invalid season ID '{season}' - expected 8 digits"))?;
+    let plans = windows
+        .iter()
+        .map(|window| {
+            let fletch_id = format!("icelines.transactions.{season}.{window}");
+            let mut plan = fetch_plan_with_kind(
+                fletch_id.clone(),
+                espn_transactions_url(base_url, window),
+                SourceKind::Http,
+            )
+            .with_context(|| format!("building FLETCH transaction window plan for {fletch_id}"))?;
+            plan.cache_policy = CachePolicy {
+                freshness: FreshnessPolicy::AlwaysCheck,
+                allow_offline: true,
+                resumable: true,
+            };
+            plan.tags = vec![
+                "icelines".to_string(),
+                "transactions".to_string(),
+                "generic-window-batch-http-cacheline".to_string(),
+            ];
+            plan.metadata
+                .insert("adapter".to_string(), "icelines".to_string());
+            Ok((window.clone(), plan))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let plan_only = plans
+        .iter()
+        .map(|(_, plan)| plan.clone())
+        .collect::<Vec<_>>();
+    let outcome = fetch_batch_to_cache_best_effort(
+        &plan_only,
+        FetchOptions::new(cache_root)
+            .with_force(force)
+            .with_timeout_ms(30_000)
+            .with_retry_attempts(5),
+    )
+    .context("fetching ESPN transaction windows through FLETCH")?;
+
+    if outcome.outcomes.is_empty() && !outcome.failures.is_empty() {
+        anyhow::bail!(
+            "all ESPN transaction windows failed through FLETCH: {}",
+            outcome
+                .failures
+                .iter()
+                .map(|failure| format!("{}: {}", failure.dataset_id, failure.error))
+                .collect::<Vec<_>>()
+                .join("; ")
+        );
+    }
+
+    let window_by_dataset = plans
+        .iter()
+        .map(|(window, plan)| (plan.dataset_id.clone(), window.clone()))
+        .collect::<BTreeMap<_, _>>();
+    let mut rows = Vec::new();
+    let mut dropped_unknown_schema = Vec::new();
+    let mut seen = BTreeSet::new();
+    for item in &outcome.outcomes {
+        let window = window_by_dataset
+            .get(&item.entry.dataset_id)
+            .cloned()
+            .unwrap_or_else(|| item.entry.dataset_id.clone());
+        let bytes = std::fs::read(&item.path)
+            .with_context(|| format!("reading FLETCH cache object {}", item.path.display()))?;
+        let body = match serde_json::from_slice::<serde_json::Value>(&bytes) {
+            Ok(body) => body,
+            Err(error) => {
+                dropped_unknown_schema.push(format!(
+                    "{window}: ESPN body not parseable as JSON: {error}"
+                ));
+                continue;
+            }
+        };
+        let (window_rows, dropped) = crate::transactions::espn::parse_page_with_fallback(&body);
+        for row in window_rows {
+            let key = (row.date.clone(), row.description.clone());
+            if seen.insert(key) {
+                rows.push(row);
+            }
+        }
+        dropped_unknown_schema.extend(dropped.into_iter().map(|path| format!("{window}: {path}")));
+    }
+    dropped_unknown_schema.extend(
+        outcome
+            .failures
+            .iter()
+            .map(|failure| format!("{}: {}", failure.dataset_id, failure.error)),
+    );
+
+    Ok(FletchTransactionsOutcome {
+        rows,
+        dropped_unknown_schema,
+        partial: outcome.failure_count > 0,
+        source_etag: None,
+        fetched_at: chrono::Utc::now().to_rfc3339(),
+    })
+}
+
+pub fn fetch_transactions_batch(
+    season: &str,
+    cache_root: &Path,
+    force: bool,
+) -> Result<FletchTransactionsOutcome> {
+    fetch_transactions_batch_with_base(
+        crate::transactions::espn::DEFAULT_ESPN_BASE,
+        season,
+        cache_root,
+        force,
+    )
+}
+
+pub async fn fetch_transactions_batch_async(
+    season: impl Into<String>,
+    cache_root: impl Into<std::path::PathBuf>,
+    force: bool,
+) -> Result<FletchTransactionsOutcome> {
+    let season = season.into();
+    let cache_root = cache_root.into();
+    tokio::task::spawn_blocking(move || fetch_transactions_batch(&season, &cache_root, force))
+        .await
+        .context("joining FLETCH transaction window batch fetch task")?
+}
+
 fn push_query_quiver(
     rows: &mut Vec<FletchQueryQuiverRow>,
     quiver_id: String,
@@ -1328,7 +1475,8 @@ mod tests {
         assert!(report.rows.iter().any(|row| {
             row.fletch_id == "icelines.transactions.20252026"
                 && row.source_kind == "adapter"
-                && row.handoff_status == "adapter-required"
+                && row.acquisition_mode == "generic-window-batch-http-cacheline-after-season"
+                && row.handoff_status == "batch-expansion-ready-after-domain-set"
         }));
     }
 
@@ -1631,5 +1779,36 @@ mod tests {
         );
         first.assert_hits(1);
         second.assert_hits(1);
+    }
+
+    #[test]
+    fn fetch_transactions_batch_uses_fletch_window_cache_objects() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET).path("/transactions");
+            then.status(200)
+                .header("content-type", "application/json")
+                .body(
+                    r#"{
+                      "transactions": [
+                        {
+                          "date": "2026-04-29",
+                          "description": "Recalled F Test Player from Bakersfield",
+                          "team": { "id": "22", "abbreviation": "EDM", "displayName": "Edmonton Oilers" }
+                        }
+                      ]
+                    }"#,
+                );
+        });
+        let dir = tempfile::tempdir().unwrap();
+
+        let outcome =
+            fetch_transactions_batch_with_base(&server.base_url(), "20252026", dir.path(), false)
+                .unwrap();
+
+        assert_eq!(outcome.rows.len(), 1);
+        assert_eq!(outcome.rows[0].team.as_ref().unwrap().abbreviation, "EDM");
+        assert!(!outcome.partial);
+        assert!(mock.hits() >= 11);
     }
 }

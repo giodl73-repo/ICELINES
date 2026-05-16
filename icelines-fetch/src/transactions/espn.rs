@@ -51,7 +51,7 @@ fn season_to_date_range(season: &str) -> Option<String> {
 /// 11 months total: Sept of the start year through July of the end year.
 ///
 /// Workaround for ESPN's broken pageIndex pagination — see fetch_season.
-fn season_month_windows(season: &str) -> Option<Vec<String>> {
+pub(crate) fn season_month_windows(season: &str) -> Option<Vec<String>> {
     if season.len() != 8 || !season.chars().all(|c| c.is_ascii_digit()) {
         return None;
     }
@@ -307,7 +307,9 @@ struct RawPage {
 /// Parse an ESPN page body into rows + a list of dropped (unknown) field
 /// paths. Single permissive walk over the JSON Value — explicit drift
 /// accounting per row, never throws away the page on a new ESPN field.
-fn parse_page_with_fallback(body: &serde_json::Value) -> (Vec<RawTransaction>, Vec<String>) {
+pub(crate) fn parse_page_with_fallback(
+    body: &serde_json::Value,
+) -> (Vec<RawTransaction>, Vec<String>) {
     let mut rows = Vec::new();
     let mut dropped: Vec<String> = Vec::new();
 
