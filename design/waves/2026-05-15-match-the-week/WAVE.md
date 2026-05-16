@@ -1,7 +1,7 @@
 ---
 wave: match-the-week
 date_open: 2026-05-15
-status: active
+status: closed
 source: Tier 3 backlog - Fantasy head-to-head matchup weekly
 ---
 
@@ -51,7 +51,7 @@ without pretending to be a proprietary Yahoo integration.
 | 02 - Core weekly matchup ViewModel | complete | `icelines-core/src/view_model/fantasy_matchup.rs`; `plans/pulse-02.md` |
 | 03 - FantasyDb schedule and weekly builder | complete | `icelines-fetch/src/fantasy_db.rs`; `icelines-fetch/src/fantasy_matchup.rs`; `plans/pulse-03.md` |
 | 04 - CLI, web, and TUI matchup surfaces | complete | `icelines-cli/src/commands/fantasy.rs`; `icelines-web/src/handlers/fantasy.rs`; `icelines-cli/src/tui/command.rs`; `icelines-web/src/dashboard_command.rs`; `plans/pulse-04.md` |
-| 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
+| 05 - Docs, regression gates, and closeout | complete | `README.md`; `COMMANDS.md`; `design/specs/surface-parity.md`; `design/plans/INDEX.md`; `plans/pulse-05.md` |
 
 ## Role Notes
 
@@ -68,12 +68,15 @@ without pretending to be a proprietary Yahoo integration.
 
 ## Current Result
 
-Pulse 04 added thin read/setup surfaces over the shared data path: CLI
-`fantasy matchup --date`, CLI `fantasy matchup-set --week --home [--away]`,
-read-only JSON `/api/v1/fantasy/matchup?date=...`, and TUI/web-dashboard
-command handoffs. Missing schedule/cache and unfinalized source state remain
-visible through the shared ViewModel.
+Match the Week is closed. The shipped path adds `FantasyMatchupWeekView`, local
+`fl_matchups` schedule persistence, cached weekly aggregation over Score the
+Day daily-delta results, CLI `fantasy matchup-set` / `fantasy matchup --date`,
+JSON `/api/v1/fantasy/matchup?date=...`, and TUI/web-dashboard handoffs.
+Missing schedule/cache and unfinalized games remain explicit empty/source-state
+signals, not zero-shaped success.
 
-## Next
+## Closeout Gates
 
-Execute Pulse 05: docs, regression gates, and closeout.
+- `cargo fmt --check`
+- focused matchup tests from Pulses 02-04
+- proof on touched docs

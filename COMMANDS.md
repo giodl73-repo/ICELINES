@@ -573,6 +573,8 @@ icelines fantasy team-add --team "My Team" --player "McDavid"
 icelines fantasy team-show --team "My Team"
 icelines fantasy standings
 icelines fantasy daily --date 2026-01-15 --json
+icelines fantasy matchup-set --week 2026-01-15 --home "My Team" --away "Rival"
+icelines fantasy matchup --date 2026-01-15 --json
 icelines fantasy league-list
 icelines fantasy league-switch --name "My League"
 
@@ -589,6 +591,7 @@ icelines fantasy serve --port 8080
 
 # Main web dashboard also exposes:
 # GET /api/v1/fantasy/daily?date=YYYY-MM-DD   FantasyDailyDeltaView JSON
+# GET /api/v1/fantasy/matchup?date=YYYY-MM-DD FantasyMatchupWeekView JSON
 ```
 
 ## `scheme` — fantasy scoring schemes

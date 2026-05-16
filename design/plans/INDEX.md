@@ -97,7 +97,6 @@ Cleared in Clear the Unblocks:
 | NHL Edge skating speed (Phase Maurice Richard) | ⭐⭐ | **Parked** — no public JSON endpoint discovered |
 | Strength-state 5v5/PP/PK splits (`query-engine` Phase 5C) | ⭐⭐ | Tier 3 shifts + play-by-play join |
 | Tier 4 advanced metrics (NST, Evolving Hockey RAPM) | ⭐ | External scraping; large lift |
-| Fantasy head-to-head matchup weekly | ⭐⭐ | Active in Match the Week: new local `fl_matchups` table + cached daily-delta schedule walker |
 | Yahoo league CSV roster import | ⭐⭐ | Nothing — backlog |
 | MoneyPuck historical xG (multi-season) | ⭐ | Nothing — backlog |
 | Historical shift-data bundles | ⭐⭐ | Parked — no supported `fetch shifts` command, fixtures, or source/bundle policy; `sync.capabilities.shifts=off` is enforced |
@@ -108,6 +107,12 @@ Cleared in Score the Day:
 - Fantasy daily delta scoring — shipped via `FantasyDailyDeltaView`,
   `icelines fantasy daily --date`, and `/api/v1/fantasy/daily?date=...`
   from cached finalized boxscores and local FantasyDb rosters.
+
+Cleared in Match the Week:
+- Fantasy head-to-head matchup weekly — shipped via `FantasyMatchupWeekView`,
+  local `fl_matchups` schedule rows, `icelines fantasy matchup-set`,
+  `icelines fantasy matchup --date`, and `/api/v1/fantasy/matchup?date=...`
+  from cached finalized daily-delta totals.
 
 ### Cancelled (referenced in specs but won't ship)
 

@@ -2,7 +2,7 @@
 wave: match-the-week
 pulse: 05
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - bench
   - wire
@@ -31,6 +31,12 @@ gates updated.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] focused tests from Pulses 02-04
-- [ ] proof on touched docs
+- [x] `cargo fmt --check`
+- [x] focused tests from Pulses 02-04
+- [x] proof on touched docs
+
+## Result
+
+Closed Match the Week with user docs, surface parity, backlog status, and wave
+records updated. The closeout gates passed for fmt, focused matchup tests from
+Pulses 02-04, proof on touched docs, and diff whitespace checks.
