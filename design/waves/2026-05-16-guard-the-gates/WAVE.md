@@ -1,7 +1,7 @@
 ---
 wave: guard-the-gates
 date_open: 2026-05-16
-status: active
+status: closed
 source: Tier 3 backlog - CI cargo fmt + cargo audit gates
 ---
 
@@ -48,7 +48,7 @@ repeatable CI/local checks.
 | 02 - Cargo audit CI and local slice | complete | `.github/workflows/ci.yml`; `scripts/test-slice.ps1`; cargo-audit baseline exits 0 with three warning-class advisories |
 | 03 - Advisory policy and failure messaging | complete | `design/release-checklist.md`; `scripts/test-slice.ps1`; warning ledger for `async-std`, `paste`, `lru` |
 | 04 - Release docs and backlog truth | complete | `README.md`; `COMMANDS.md`; `design/plans/INDEX.md`; `design/release-checklist.md` |
-| 05 - Regression gates and closeout | planned | depends on Pulses 02-04 |
+| 05 - Regression gates and closeout | complete | `scripts/test-slice.ps1 ci-audit`; `scripts/test-slice.ps1 ci-fmt`; proof; `git diff --check` |
 
 ## Role Notes
 
@@ -82,6 +82,11 @@ slice prints the same failure guidance that CI uses.
 Pulse 04 updated README/COMMANDS with the local audit slice and moved the Tier 3
 backlog row into the Guard the Gates cleared list.
 
-## Next
+Pulse 05 closed the wave after rerunning the local audit/fmt gates, proof over
+the touched docs/wave records, and whitespace checks.
 
-Execute Pulse 05: run closeout gates and close the wave.
+## Closeout
+
+Guard the Gates is closed. The remaining Tier 3 backlog no longer includes the
+CI cargo fmt/audit item; future RustSec warning remediation is tracked by the
+release checklist warning ledger.

@@ -2,7 +2,7 @@
 wave: guard-the-gates
 pulse: 05
 date: 2026-05-16
-status: planned
+status: complete
 governing_roles:
   - bench
   - forge
@@ -30,12 +30,19 @@ truth are complete.
 
 ## Gates
 
-- [ ] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-audit`
-- [ ] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-fmt`
-- [ ] proof on touched docs
-- [ ] `git diff --check`
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-audit`
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-fmt`
+- [x] proof on touched docs
+- [x] `git diff --check`
 
 ## Stop Conditions
 
 - Stop if cargo-audit cannot be reproduced locally.
 - Stop if any pulse gates remain unchecked.
+
+## Result
+
+Closed Guard the Gates. The CI/local audit path, warning-class advisory ledger,
+README/COMMANDS docs, release checklist, and backlog truth are complete. Closeout
+reran the focused audit/fmt/proof/whitespace gates before marking the wave
+closed.
