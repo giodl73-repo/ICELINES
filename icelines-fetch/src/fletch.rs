@@ -1,13 +1,13 @@
 use crate::schema::RawTransaction;
 use anyhow::{Context, Result};
 use fletch_core::{
-    adapter_handoff_report, cache_index_from_manifest, dry_run_flight,
+    adapter_handoff_report, cache_index_from_manifest, cache_index_gate_report, dry_run_flight,
     fetch_batch_to_cache_best_effort, fetch_batch_to_cache_best_effort_with_delay,
     fetch_paged_json_to_cache, fetch_plan_with_kind, fetch_to_cache, graph_from_registry,
     read_cache_manifest_json, upsert_cache_manifest_entries, validate_registry,
-    write_cache_manifest_json, CacheEntry, CacheManifest, CachePolicy, DataFormat, FetchOptions,
-    FletchDefinition, FletchRegistry, FreshnessPolicy, GraphNodeKind, PagedJsonOptions, SourceKind,
-    SourceSpec, FLETCH_CACHE_INDEX_SCHEMA, FLETCH_REGISTRY_SCHEMA,
+    write_cache_manifest_json, CacheEntry, CacheIndexGatePolicy, CacheManifest, CachePolicy,
+    DataFormat, FetchOptions, FletchDefinition, FletchRegistry, FreshnessPolicy, GraphNodeKind,
+    PagedJsonOptions, SourceKind, SourceSpec, FLETCH_CACHE_INDEX_SCHEMA, FLETCH_REGISTRY_SCHEMA,
 };
 use icelines_core::stats_catalog::ReportKind;
 use serde::Serialize;
@@ -669,6 +669,7 @@ pub fn fletch_cache_index_report(
     let index = cache_index_from_manifest(manifest);
     let mut indexed_by_fletch = BTreeMap::<String, Vec<_>>::new();
     let mut unexpected_entries = Vec::new();
+    let mut gate_index = index.clone();
     for entry in &index.entries {
         if let Some(fletch_id) =
             fletch_cache_index_registry_id(&entry.dataset_id, season, &expected_ids)
@@ -678,6 +679,21 @@ pub fn fletch_cache_index_report(
             unexpected_entries.push(entry);
         }
     }
+    for entry in &mut gate_index.entries {
+        if let Some(fletch_id) =
+            fletch_cache_index_registry_id(&entry.dataset_id, season, &expected_ids)
+        {
+            entry.dataset_id = fletch_id;
+        }
+    }
+    let gate = cache_index_gate_report(
+        &gate_index,
+        &CacheIndexGatePolicy {
+            expected_dataset_ids: expected_ids.iter().cloned().collect(),
+            require_verified: true,
+            allow_missing_expected: true,
+        },
+    );
 
     let mut rows = Vec::new();
     for fletch_id in &expected_ids {
@@ -743,14 +759,8 @@ pub fn fletch_cache_index_report(
         .iter()
         .filter(|row| row.evidence_status == "missing-index-row")
         .count();
-    let unexpected_index_count = rows
-        .iter()
-        .filter(|row| row.evidence_status == "unexpected-index-row")
-        .count();
-    let unverified_index_count = rows
-        .iter()
-        .filter(|row| row.evidence_status == "indexed-unverified")
-        .count();
+    let unexpected_index_count = gate.unexpected_count;
+    let unverified_index_count = gate.unverified_count;
     let byte_count = rows
         .iter()
         .filter(|row| row.evidence_status == "indexed-verified")
