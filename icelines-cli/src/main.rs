@@ -1024,6 +1024,13 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 away,
                 league,
             } => commands::fantasy::run_matchup_set(week, home, away, league).await?,
+            FantasySubcommand::ImportYahoo {
+                file,
+                league,
+                my_team,
+                dry_run,
+                json,
+            } => commands::fantasy::run_import_yahoo(file, league, my_team, dry_run, json).await?,
             FantasySubcommand::Trade {
                 player1,
                 to_team,

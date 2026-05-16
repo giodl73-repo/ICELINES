@@ -49,7 +49,7 @@ discipline.
 | 01 - CSV import inventory and pulse map | complete | `FANTASY-CSV-IMPORT-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Shared import contract | complete | `icelines-core/src/view_model/fantasy_import.rs`; `plans/pulse-02.md` |
 | 03 - CSV parser and FantasyDb importer | complete | `icelines-fetch/src/fantasy_import.rs`; `icelines-fetch/src/lib.rs`; `plans/pulse-03.md` |
-| 04 - CLI, TUI, and dashboard import surfaces | planned | depends on Pulse 03 |
+| 04 - CLI, TUI, and dashboard import surfaces | complete | `icelines fantasy import-yahoo`; TUI/web-dashboard command handoffs; `plans/pulse-04.md` |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
 
 ## Role Notes
@@ -69,12 +69,13 @@ discipline.
 
 ## Current Result
 
-Pulse 03 added the fetch-layer Yahoo roster CSV import path. The parser supports
-BOM stripping, flexible rows, header aliases, row-level diagnostics, optional
-known-player validation, duplicate ownership detection, dry-run no-mutation
-preview, and apply-mode FantasyDb league/team/roster convergence through the
-shared `FantasyImportView` contract.
+Pulse 04 exposed the Yahoo roster CSV import path through
+`icelines fantasy import-yahoo --file <path> --league <name> [--my-team <name>]
+[--dry-run] [--json]`. The CLI renders text/JSON from the shared
+`FantasyImportView`, the TUI command bar hands import phrases to the CLI flow,
+and the web dashboard command parser truthfully defers browser import because
+GET routes must remain read-only.
 
 ## Next
 
-Execute Pulse 04: CLI, TUI, and dashboard import surfaces.
+Execute Pulse 05: docs, regression gates, and closeout.

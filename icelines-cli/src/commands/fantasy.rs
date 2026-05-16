@@ -1,6 +1,7 @@
 //! Fantasy league commands — leagues, teams, scoring, trades, HTTP server.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
@@ -13,8 +14,8 @@ use axum::{
 use chrono::NaiveDate;
 use icelines_core::timeframe::Timeframe;
 use icelines_core::view_model::{
-    FantasyDailyDeltaView, FantasyDailyPlayerStatus, FantasyDailyTeamRow, FantasyMatchupOutcome,
-    FantasyMatchupSideRow, FantasyMatchupWeekView,
+    FantasyDailyDeltaView, FantasyDailyPlayerStatus, FantasyDailyTeamRow, FantasyImportRowStatus,
+    FantasyImportView, FantasyMatchupOutcome, FantasyMatchupSideRow, FantasyMatchupWeekView,
 };
 use icelines_core::{
     build_fantasy_simulation_view,
@@ -33,6 +34,7 @@ use icelines_core::{
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
+use icelines_fetch::fantasy_import::{import_yahoo_roster_csv, FantasyRosterImportOptions};
 use icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view;
 use icelines_fetch::nhl_api::NhlApiClient;
 use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
@@ -981,6 +983,142 @@ fn matchup_outcome_label(outcome: FantasyMatchupOutcome) -> &'static str {
         FantasyMatchupOutcome::Tie => "tie",
         FantasyMatchupOutcome::Bye => "bye",
         FantasyMatchupOutcome::Pending => "pending",
+    }
+}
+
+/// `icelines fantasy import-yahoo --file rosters.csv --league "My League" [--my-team "Me"] [--dry-run] [--json]`
+pub async fn run_import_yahoo(
+    file: PathBuf,
+    league: String,
+    my_team: Option<String>,
+    dry_run: bool,
+    json: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let known_player_keys = known_player_keys()?;
+    let mut options = if dry_run {
+        FantasyRosterImportOptions::dry_run(league)
+    } else {
+        FantasyRosterImportOptions::apply(league)
+    };
+    options.user_team = my_team;
+    options.known_player_keys = Some(known_player_keys);
+
+    let view = import_yahoo_roster_csv(&db, &file, options)
+        .with_context(|| format!("import Yahoo roster CSV from {}", file.display()))?;
+
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&view).context("serializing fantasy import view")?
+        );
+        return Ok(());
+    }
+
+    print_import_yahoo(&view);
+    Ok(())
+}
+
+fn known_player_keys() -> anyhow::Result<BTreeSet<String>> {
+    let (outcome, season) = load_pools()?;
+    let (skaters, goalies) = pools_views(&outcome.repo, season);
+    Ok(skaters
+        .iter()
+        .chain(goalies.iter())
+        .map(|view| view.identity.name_normalized.clone())
+        .collect())
+}
+
+fn print_import_yahoo(view: &FantasyImportView) {
+    println!(
+        "Fantasy Yahoo roster import - {} / {}",
+        view.league, view.mode_label
+    );
+    println!(
+        "Teams: {} seen, {} created, {} updated, {} unchanged, {} errors",
+        view.summary.teams_seen,
+        view.summary.teams_created,
+        view.summary.teams_updated,
+        view.summary.teams_unchanged,
+        view.summary.teams_error
+    );
+    println!(
+        "Players: {} seen, {} imported, {} skipped, {} unresolved, {} duplicate, {} errors",
+        view.summary.players_seen,
+        view.summary.players_imported,
+        view.summary.players_skipped,
+        view.summary.players_unresolved,
+        view.summary.players_duplicate,
+        view.summary.players_error
+    );
+    if view.mode_label == "dry-run" {
+        println!("Dry-run only: no FantasyDb changes were written.");
+    }
+    for warning in &view.warnings {
+        println!("warning: {}", warning.message);
+    }
+    if let Some(empty) = &view.empty_state {
+        println!("{}: {}", empty.title, empty.detail.as_deref().unwrap_or(""));
+        return;
+    }
+
+    if !view.teams.is_empty() {
+        println!();
+        println!(
+            "{:<4} {:<28} {:<16} {:>8} {:>8} {:>8}",
+            "Rank", "Team", "Status", "Import", "Skipped", "Errors"
+        );
+        for team in &view.teams {
+            let team_name = if team.is_user_team {
+                format!("{} (mine)", team.team)
+            } else {
+                team.team.clone()
+            };
+            println!(
+                "{:<4} {:<28} {:<16} {:>8} {:>8} {:>8}",
+                team.rank,
+                team_name,
+                format!("{:?}", team.status).to_ascii_lowercase(),
+                team.imported_players,
+                team.skipped_rows,
+                team.error_rows
+            );
+        }
+    }
+
+    let diagnostic_rows = view
+        .rows
+        .iter()
+        .filter(|row| row.status != FantasyImportRowStatus::Imported)
+        .collect::<Vec<_>>();
+    println!();
+    if diagnostic_rows.is_empty() {
+        println!("Diagnostics: none");
+        return;
+    }
+    println!(
+        "{:<5} {:<28} {:<24} {:<12} {}",
+        "Row", "Player", "Team", "Status", "Message"
+    );
+    for row in diagnostic_rows {
+        println!(
+            "{:<5} {:<28} {:<24} {:<12} {}",
+            row.row_number,
+            row.player_name,
+            row.fantasy_team.as_deref().unwrap_or("-"),
+            row_status_label(row.status),
+            row.message.as_deref().unwrap_or("-")
+        );
+    }
+}
+
+fn row_status_label(status: FantasyImportRowStatus) -> &'static str {
+    match status {
+        FantasyImportRowStatus::Imported => "imported",
+        FantasyImportRowStatus::Skipped => "skipped",
+        FantasyImportRowStatus::Unresolved => "unresolved",
+        FantasyImportRowStatus::Duplicate => "duplicate",
+        FantasyImportRowStatus::Error => "error",
     }
 }
 

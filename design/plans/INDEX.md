@@ -97,7 +97,7 @@ Cleared in Clear the Unblocks:
 | NHL Edge skating speed (Phase Maurice Richard) | ⭐⭐ | **Parked** — no public JSON endpoint discovered |
 | Strength-state 5v5/PP/PK splits (`query-engine` Phase 5C) | ⭐⭐ | Tier 3 shifts + play-by-play join |
 | Tier 4 advanced metrics (NST, Evolving Hockey RAPM) | ⭐ | External scraping; large lift |
-| Yahoo league CSV roster import | ⭐⭐ | Active in Import the Rosters: local CSV parser + FantasyDb roster import contract |
+| Yahoo league CSV roster import | ⭐⭐ | Active in Import the Rosters: local CSV parser + FantasyDb importer + CLI/TUI/web-dashboard handoffs |
 | MoneyPuck historical xG (multi-season) | ⭐ | Nothing — backlog |
 | Historical shift-data bundles | ⭐⭐ | Parked — no supported `fetch shifts` command, fixtures, or source/bundle policy; `sync.capabilities.shifts=off` is enforced |
 | Fantasy roster shape enforcement | ⭐ | Per-scheme rules in TOML |

@@ -75,6 +75,13 @@ pub enum Command {
     FantasyMatchup {
         date: String,
     },
+    /// `fantasy import file=... league=... [dry-run]` - hand off to CLI import.
+    FantasyImport {
+        file: String,
+        league: String,
+        my_team: Option<String>,
+        dry_run: bool,
+    },
     /// `watchlist` - workspace becomes local fantasy Watchlist.
     Watchlist,
     /// `watch <player>` — command-bar bridge to watch-rule/note
@@ -472,6 +479,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "matchup" | "fantasy-matchup" => Ok(Command::FantasyMatchup {
             date: parse_dated_handoff("matchup", args)?,
         }),
+        "import-yahoo" | "fantasy-import" => parse_fantasy_import(args),
         "watchlist" if args.trim().is_empty() => Ok(Command::Watchlist),
         "watch" => parse_watch(args),
         "transactions" | "txs" | "tx" => Ok(Command::Transactions),
@@ -895,6 +903,7 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
         "matchup" => Ok(Command::FantasyMatchup {
             date: parse_dated_handoff("matchup", rest)?,
         }),
+        "import" | "import-yahoo" => parse_fantasy_import(rest),
         "poach" if rest.trim().is_empty() => Ok(Command::Poach),
         "poach" => Ok(Command::PoachKv {
             args: parse_poach_kv(rest)?,
@@ -923,6 +932,50 @@ fn parse_dated_handoff(command: &'static str, args: &str) -> Result<String, Pars
         details: format!("{command}: date {value:?} must be YYYY-MM-DD"),
     })?;
     Ok(value.to_string())
+}
+
+fn parse_fantasy_import(args: &str) -> Result<Command, ParseError> {
+    let segments = parse_command_segments(args, &["file", "league", "my-team", "dry-run"])?;
+    let mut file = None;
+    let mut league = None;
+    let mut my_team = None;
+    let mut dry_run = false;
+
+    for (key, value) in segments {
+        match key.as_str() {
+            "file" => file = Some(required_segment_value("import-yahoo", "file", &value)?),
+            "league" => league = Some(required_segment_value("import-yahoo", "league", &value)?),
+            "my-team" => {
+                my_team = Some(required_segment_value("import-yahoo", "my-team", &value)?);
+            }
+            "dry-run" => {
+                if !value.trim().is_empty() {
+                    return Err(ParseError::BadFilter {
+                        details: "import-yahoo: dry-run does not take a value".to_string(),
+                    });
+                }
+                dry_run = true;
+            }
+            other => {
+                return Err(ParseError::BadFilter {
+                    details: format!("import-yahoo: unknown filter {other:?}"),
+                });
+            }
+        }
+    }
+
+    Ok(Command::FantasyImport {
+        file: file.ok_or(ParseError::MissingArg {
+            command: "import-yahoo",
+            arg: "file",
+        })?,
+        league: league.ok_or(ParseError::MissingArg {
+            command: "import-yahoo",
+            arg: "league",
+        })?,
+        my_team,
+        dry_run,
+    })
 }
 
 fn parse_fantasy_sim_kv(args: &str) -> Result<FantasySimulationCommandArgs, ParseError> {
@@ -1364,6 +1417,19 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         )),
         Command::FantasyMatchup { date } => ExecResult::Flash(format!(
             "fantasy matchup week: run `icelines fantasy matchup --date {date}` or open `/api/v1/fantasy/matchup?date={date}`"
+        )),
+        Command::FantasyImport {
+            file,
+            league,
+            my_team,
+            dry_run,
+        } => ExecResult::Flash(format!(
+            "fantasy roster import: run `icelines fantasy import-yahoo --file {file} --league \"{league}\"{}{}`; web dashboard import is POST-deferred",
+            my_team
+                .as_ref()
+                .map(|team| format!(" --my-team \"{team}\""))
+                .unwrap_or_default(),
+            if dry_run { " --dry-run" } else { "" }
         )),
         Command::Watchlist => {
             app.screen = Screen::GroupDetail("Watchlist".to_string());
@@ -2396,6 +2462,18 @@ mod tests {
             parse_command("fantasy matchup date=2026-01-15").unwrap(),
             Command::FantasyMatchup {
                 date: "2026-01-15".to_string()
+            }
+        );
+        assert_eq!(
+            parse_command(
+                "fantasy import file=C:\\exports\\rosters.csv league Office_Pool my-team My_Team dry-run"
+            )
+            .unwrap(),
+            Command::FantasyImport {
+                file: "C:\\exports\\rosters.csv".to_string(),
+                league: "Office Pool".to_string(),
+                my_team: Some("My Team".to_string()),
+                dry_run: true,
             }
         );
         assert_eq!(parse_command("fantasy poach").unwrap(), Command::Poach);
@@ -3446,6 +3524,23 @@ mod tests {
         };
         assert!(message.contains("icelines fantasy matchup --date 2026-01-15"));
         assert!(message.contains("/api/v1/fantasy/matchup?date=2026-01-15"));
+    }
+
+    #[test]
+    fn l0_adams_exec_fantasy_import_hands_off_cli_surface() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("fantasy import file=rosters.csv league Office_Pool dry-run").unwrap(),
+            &mut app,
+        );
+
+        let ExecResult::Flash(message) = r else {
+            panic!("import command should return a handoff flash");
+        };
+        assert!(message.contains("icelines fantasy import-yahoo --file rosters.csv"));
+        assert!(message.contains("--league \"Office Pool\""));
+        assert!(message.contains("--dry-run"));
+        assert!(message.contains("POST-deferred"));
     }
 
     #[test]

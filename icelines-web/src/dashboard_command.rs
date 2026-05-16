@@ -119,6 +119,7 @@ fn parse_verb(input: &str) -> Result<DashboardCommand, DashboardCommandError> {
         }
         "daily" | "fantasy-daily" => workspace(&fantasy_daily_url(args)),
         "matchup" | "fantasy-matchup" => workspace(&fantasy_matchup_url(args)),
+        "import-yahoo" | "fantasy-import" => unsupported_fantasy_import(),
         "fantasy" => parse_fantasy(args),
         "player" => required_workspace_arg("player", "name", args, |needle| {
             format!("/leaders?filter=name%3D{}", url_component(needle))
@@ -172,11 +173,18 @@ fn parse_fantasy(args: &str) -> Result<DashboardCommand, DashboardCommandError> 
         "simulate" | "sim" => workspace(&fantasy_url(rest, FantasyMode::Simulation)),
         "daily" => workspace(&fantasy_daily_url(rest)),
         "matchup" => workspace(&fantasy_matchup_url(rest)),
+        "import" | "import-yahoo" => unsupported_fantasy_import(),
         "poach" => workspace(&poach_url(rest)),
         unknown => Err(DashboardCommandError::UnknownCommand(format!(
             "fantasy {unknown}"
         ))),
     }
+}
+
+fn unsupported_fantasy_import() -> Result<DashboardCommand, DashboardCommandError> {
+    Err(DashboardCommandError::UnsupportedMutation(
+        "Web dashboard fantasy CSV import is deferred because GET routes must stay read-only; use `icelines fantasy import-yahoo --dry-run` first, then rerun without --dry-run to apply.".to_owned(),
+    ))
 }
 
 fn parse_report(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
@@ -774,6 +782,20 @@ mod tests {
         assert!(
             err.to_string()
                 .contains("group create/delete/rename/member edits are deferred"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn l0_dashboard_command_fantasy_import_is_deferred_not_get_backed() {
+        let err = parse_dashboard_command("fantasy import file=rosters.csv league=Office")
+            .expect_err("web GET import is deferred");
+        assert!(
+            err.to_string().contains("GET routes must stay read-only"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            err.to_string().contains("icelines fantasy import-yahoo"),
             "unexpected error: {err}"
         );
     }

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand, ValueEnum};
 
 // ── Top-level CLI ─────────────────────────────────────────────────────────────
@@ -1212,6 +1214,41 @@ mod tui_surface_tests {
                 assert_eq!(away.as_deref(), Some("Rival"));
             }
             other => panic!("expected fantasy matchup-set, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_fantasy_import_yahoo_clap_surface_parses() {
+        let cli = Cli::try_parse_from([
+            "icelines",
+            "fantasy",
+            "import-yahoo",
+            "--file",
+            "rosters.csv",
+            "--league",
+            "Office Pool",
+            "--my-team",
+            "My Team",
+            "--dry-run",
+            "--json",
+        ])
+        .expect("fantasy import-yahoo should parse");
+
+        match cli.command {
+            Commands::Fantasy(FantasySubcommand::ImportYahoo {
+                file,
+                league,
+                my_team,
+                dry_run,
+                json,
+            }) => {
+                assert_eq!(file, std::path::PathBuf::from("rosters.csv"));
+                assert_eq!(league, "Office Pool");
+                assert_eq!(my_team.as_deref(), Some("My Team"));
+                assert!(dry_run);
+                assert!(json);
+            }
+            other => panic!("expected fantasy import-yahoo, got {other:?}"),
         }
     }
 }
@@ -2609,6 +2646,24 @@ pub enum FantasySubcommand {
         away: Option<String>,
         #[arg(long)]
         league: Option<String>,
+    },
+
+    /// Import a Yahoo roster CSV into the local FantasyDb.
+    ImportYahoo {
+        /// Yahoo roster CSV export to parse.
+        #[arg(long)]
+        file: PathBuf,
+        /// Fantasy league name to preview or create/update.
+        #[arg(long)]
+        league: String,
+        /// Mark this fantasy team as your roster after import.
+        #[arg(long = "my-team")]
+        my_team: Option<String>,
+        /// Preview diagnostics without writing FantasyDb changes.
+        #[arg(long)]
+        dry_run: bool,
+        #[arg(long)]
+        json: bool,
     },
 
     // Trade

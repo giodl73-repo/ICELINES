@@ -2,7 +2,7 @@
 wave: import-the-rosters
 pulse: 04
 date: 2026-05-16
-status: planned
+status: complete
 governing_roles:
   - wire
   - forge
@@ -36,10 +36,18 @@ shared contract and data path exist.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-cli fantasy_import --quiet`
-- [ ] `cargo test -p icelines-cli l2_cmd_fantasy_import --test system_tests --quiet`
-- [ ] `cargo test -p icelines-web fantasy_import --quiet`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-cli fantasy_import --quiet`
+- [x] `cargo test -p icelines-cli l2_cmd_fantasy_import --test system_tests --quiet`
+- [x] `cargo test -p icelines-web fantasy_import --quiet`
+
+## Result
+
+Added `icelines fantasy import-yahoo --file <path> --league <name>
+[--my-team <name>] [--dry-run] [--json]` over the shared
+`FantasyImportView` contract. TUI command-bar import phrases now hand off to the
+CLI flow, and the web dashboard command parser rejects browser import as a
+truthful POST-only deferral so GET navigation remains read-only.
 
 ## Stop Conditions
 

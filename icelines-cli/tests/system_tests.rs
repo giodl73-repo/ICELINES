@@ -2042,6 +2042,68 @@ fn l2_cmd_fantasy_matchup_json_surfaces_missing_schedule() {
 }
 
 #[test]
+fn l2_cmd_fantasy_import_yahoo_json_applies_roster_csv() {
+    let tmp = tempfile::tempdir().expect("tempdir for isolated HOME");
+    let home = tmp.path();
+    let league = unique_league("import-yahoo");
+    let csv_path = home.join("yahoo-roster.csv");
+    std::fs::write(
+        &csv_path,
+        "Player,Fantasy Team,Owner,NHL Team,Eligible Positions\nConnor McDavid,Csv Team,Me,EDM,C\n",
+    )
+    .expect("write roster csv");
+
+    let out = run_isolated(
+        home,
+        &[
+            "fantasy",
+            "import-yahoo",
+            "--file",
+            csv_path.to_str().unwrap(),
+            "--league",
+            &league,
+            "--my-team",
+            "Csv Team",
+            "--json",
+        ],
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "fantasy import-yahoo --json must succeed, stderr: {stderr}"
+    );
+    assert!(
+        stdout.contains("\"mode\": \"apply\""),
+        "import JSON must expose apply mode, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"league\":"),
+        "import JSON must expose league, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("Connor McDavid") && stdout.contains("Csv Team"),
+        "import JSON must include imported row/team, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"players_imported\": 1"),
+        "import JSON must count the imported player, got: {stdout}"
+    );
+
+    let list = run_isolated(home, &["fantasy", "team-list", "--league", &league]);
+    let list_stdout = String::from_utf8_lossy(&list.stdout);
+    assert!(
+        list.status.success(),
+        "team-list after import must succeed, stderr: {}",
+        String::from_utf8_lossy(&list.stderr)
+    );
+    assert!(
+        list_stdout.contains("Csv Team"),
+        "import must persist the fantasy team, got: {list_stdout}"
+    );
+}
+
+#[test]
 fn l2_cmd_fetch_contracts_dry_run_exits_zero() {
     // contracts --dry-run needs a bios.json in the active snapshot;
     // if none exists it will error — that's acceptable (no panic required)
