@@ -1,0 +1,71 @@
+---
+wave: shape-the-rosters
+date_open: 2026-05-16
+status: active
+source: Tier 3 backlog - Fantasy roster shape enforcement
+---
+
+# Shape the Rosters
+
+## Mission
+
+Add fantasy roster shape enforcement so local leagues can describe legal roster
+composition, validate imported/manual rosters, and surface clear setup problems
+without changing fantasy scoring math.
+
+## Award Fit
+
+This is a Frank J. Selke / Lady Byng fantasy-operations wave: defensive, rules
+aware, and focused on preventing invalid local roster state from looking valid.
+
+## Scope
+
+| Track | Target | Non-goal |
+|---|---|---|
+| Inventory | Map current FantasyDb, import, CLI, TUI/dashboard handoffs, and docs gaps. | Implement browser-side roster mutation. |
+| Core contract | Add pure roster-shape rules and validation ViewModel types. | Move scoring math out of existing scheme functions. |
+| Persistence/import | Persist league roster-shape settings and validate dry-run/apply imports. | Treat Yahoo CSV position hints as NHL truth. |
+| CLI/surfaces | Add command-copyable validation/config surfaces and read-only dashboard/TUI handoffs. | GET-backed mutation. |
+| Docs/closeout | Update README, COMMANDS, surface parity, and backlog truth. | Add remote Yahoo API sync. |
+
+## Operating Rules
+
+- Business logic belongs in `icelines-core`; fetch/DB wires it, CLI/web/TUI only
+  render or dispatch.
+- Roster-shape enforcement must not change fantasy point totals.
+- Yahoo CSV positions are hints only; canonical eligibility must come from the
+  active player pool when available.
+- Existing leagues must keep working through safe defaults/migrations.
+- Mutations stay POST/CLI-backed; dashboard and TUI command bars may hand off or
+  defer but must not mutate through GET.
+
+## Pulse Status
+
+| Pulse | Status | Evidence |
+|---|---|---|
+| 01 - Roster shape inventory and pulse map | complete | `FANTASY-ROSTER-SHAPE-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
+| 02 - Core roster shape contract | planned | depends on Pulse 01 |
+| 03 - FantasyDb shape persistence and import validation | planned | depends on Pulse 02 |
+| 04 - CLI, TUI, and dashboard validation surfaces | planned | depends on Pulses 02-03 |
+| 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
+
+## Role Notes
+
+- **bench**: validation needs fixtures for legal rosters, over-cap rosters,
+  missing goalie slots, duplicates, imports with hints, and unknown players.
+- **forge**: make roster-shape invalid states explicit typed rows/errors; avoid
+  stringly slot math leaking into CLI handlers.
+- **wire**: Yahoo CSV fields are external hints and must degrade to warnings, not
+  become authoritative player eligibility.
+- **glass**: surfaces must show roster-compliance status at a glance without
+  burying recovery commands.
+
+## Current Result
+
+Pulse 01 opened the wave. Current storage tracks teams and normalized rostered
+player names only; the scoring scheme has weights but no roster-slot rules; and
+manual/import paths enforce duplicate ownership but not roster shape.
+
+## Next
+
+Execute Pulse 02: add the pure core roster-shape contract and L0 tests.
