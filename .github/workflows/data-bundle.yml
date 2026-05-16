@@ -7,10 +7,6 @@ on:
         description: 'Reserved for future use; this workflow currently builds all 38 matrix seasons'
         required: false
         default: ''
-  schedule:
-    # Refresh the current-season GitHub data tarball weekly on Monday mornings.
-    # Embedded binary data changes only after data/seasons updates are committed.
-    - cron: '0 6 * * 1'
 
 permissions:
   contents: write   # required to create GitHub Releases
