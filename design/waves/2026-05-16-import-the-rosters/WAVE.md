@@ -48,7 +48,7 @@ discipline.
 |---|---|---|
 | 01 - CSV import inventory and pulse map | complete | `FANTASY-CSV-IMPORT-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Shared import contract | complete | `icelines-core/src/view_model/fantasy_import.rs`; `plans/pulse-02.md` |
-| 03 - CSV parser and FantasyDb importer | planned | depends on Pulse 02 |
+| 03 - CSV parser and FantasyDb importer | complete | `icelines-fetch/src/fantasy_import.rs`; `icelines-fetch/src/lib.rs`; `plans/pulse-03.md` |
 | 04 - CLI, TUI, and dashboard import surfaces | planned | depends on Pulse 03 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
 
@@ -69,12 +69,12 @@ discipline.
 
 ## Current Result
 
-Pulse 02 added `FantasyImportView` and related pure core import contract types:
-dry-run/apply mode labels, team rows, player-row diagnostics, summary counts,
-source state, warnings, and empty-state handling. The contract distinguishes
-imported, skipped, unresolved, duplicate, and error rows before any CSV or
-SQLite implementation writes rosters.
+Pulse 03 added the fetch-layer Yahoo roster CSV import path. The parser supports
+BOM stripping, flexible rows, header aliases, row-level diagnostics, optional
+known-player validation, duplicate ownership detection, dry-run no-mutation
+preview, and apply-mode FantasyDb league/team/roster convergence through the
+shared `FantasyImportView` contract.
 
 ## Next
 
-Execute Pulse 03: CSV parser and FantasyDb importer.
+Execute Pulse 04: CLI, TUI, and dashboard import surfaces.
