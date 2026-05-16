@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
 use fletch_core::{
-    adapter_handoff_report, dry_run_flight, fetch_paged_json_to_cache, fetch_plan_with_kind,
-    fetch_to_cache, graph_from_registry, validate_registry, CachePolicy, DataFormat, FetchOptions,
-    FletchDefinition, FletchRegistry, FreshnessPolicy, GraphNodeKind, PagedJsonOptions, SourceKind,
-    SourceSpec, FLETCH_REGISTRY_SCHEMA,
+    adapter_handoff_report, dry_run_flight, fetch_batch_to_cache_best_effort,
+    fetch_paged_json_to_cache, fetch_plan_with_kind, fetch_to_cache, graph_from_registry,
+    validate_registry, CachePolicy, DataFormat, FetchOptions, FletchDefinition, FletchRegistry,
+    FreshnessPolicy, GraphNodeKind, PagedJsonOptions, SourceKind, SourceSpec,
+    FLETCH_REGISTRY_SCHEMA,
 };
 use icelines_core::stats_catalog::ReportKind;
 use serde::Serialize;
@@ -20,6 +21,28 @@ const TEAMS: &[&str] = &[
 
 pub fn roster_url(team: &str, season: &str) -> String {
     format!("{WEB_BASE}/roster/{team}/{season}")
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FletchGamecenterArtifact {
+    Boxscore,
+    PlayByPlay,
+}
+
+impl FletchGamecenterArtifact {
+    fn path_segment(self) -> &'static str {
+        match self {
+            Self::Boxscore => "boxscore",
+            Self::PlayByPlay => "play-by-play",
+        }
+    }
+
+    fn id_segment(self) -> &'static str {
+        match self {
+            Self::Boxscore => "boxscore",
+            Self::PlayByPlay => "play-by-play",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -183,12 +206,13 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
         ),
     );
 
-    for (id_suffix, surface, source_url, target, activation, validation) in [
+    for (id_suffix, surface, source_url, target, acquisition, activation, validation) in [
         (
             "transactions",
             "transactions",
             format!("icelines-espn-transactions://season/{season}"),
             format!("snapshots/{season}-<date>-transactions/transactions/transactions.json"),
+            "adapter-required",
             "ICELINES owns ESPN monthly window expansion, retry/circuit-breaker, prose classification, warnings, and stale flags",
             "ICELINES validates ESPN schema fallback, classifier version, unknown-team handling, and stale metadata",
         ),
@@ -197,6 +221,7 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             "contracts",
             "icelines-player-landing-batch://contracts/from-active-stats-bios".to_string(),
             format!("snapshots/{season}-<date>-contracts/contracts/contracts.json"),
+            "adapter-required",
             "ICELINES owns active-bios player-set expansion, per-player rate limit, partial skip logging, and snapshot sealing",
             "ICELINES validates player-id coverage and nullable contract field forward-compatibility",
         ),
@@ -205,6 +230,7 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             "career",
             "icelines-player-landing-batch://career/from-active-or-bundled-bios".to_string(),
             "~/.icelines/career_history.json".to_string(),
+            "adapter-required",
             "ICELINES owns active/bundled player-set expansion, merge/upsert semantics, rate limit, and skipped-player reporting",
             "ICELINES validates career landing parsing, multi-league history merge, and preserved existing entries",
         ),
@@ -213,6 +239,7 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             "boxscore",
             "icelines-gamecenter-batch://boxscore/from-schedule-date".to_string(),
             "~/.icelines/data/boxscores/<date>/<game_id>.json + EventStream score rows".to_string(),
+            "generic-batch-http-cacheline-after-schedule",
             "ICELINES owns date schedule expansion, favorite filters, event-stream writes, and derived record payloads",
             "ICELINES validates game identity, score/event payload versioning, and favorite-player intersections",
         ),
@@ -221,6 +248,7 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             "play-by-play",
             "icelines-gamecenter-batch://play-by-play/from-schedule-date".to_string(),
             "~/.icelines/data/play_by_play/<date>/<game_id>.json".to_string(),
+            "generic-batch-http-cacheline-after-schedule",
             "ICELINES owns date schedule expansion, favorite filters, raw event persistence, and records eligibility",
             "ICELINES validates event participants, goalie/fight record semantics, and manifest updates",
         ),
@@ -238,7 +266,7 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
                 target,
                 "application/json",
                 "dynamic source set",
-                "adapter-required",
+                acquisition,
                 activation,
                 validation,
             ),
@@ -277,6 +305,11 @@ pub fn fletch_source_handoff_report(season: &str, season_type: &str) -> FletchSo
                     .is_some_and(|id| id == definition.id)
             }) {
                 "registry-blocked"
+            } else if source.is_some_and(|source| source.kind == SourceKind::Adapter)
+                && metadata(definition, "acquisition_mode")
+                    == "generic-batch-http-cacheline-after-schedule"
+            {
+                "batch-expansion-ready-after-schedule"
             } else if source.is_some_and(|source| source.kind == SourceKind::Adapter) {
                 "adapter-required"
             } else {
@@ -344,6 +377,12 @@ pub fn fletch_query_partition_report(
                 .first()
                 .map(|source| match source.kind {
                     SourceKind::Http | SourceKind::File => "source-byte-fletch-ready",
+                    SourceKind::Adapter
+                        if metadata(definition, "acquisition_mode")
+                            == "generic-batch-http-cacheline-after-schedule" =>
+                    {
+                        "batch-source-fletch-ready-after-schedule"
+                    }
                     SourceKind::Adapter => "adapter-required-before-active-partition",
                 })
                 .unwrap_or("missing-source");
@@ -788,6 +827,116 @@ pub async fn fetch_paged_report_bytes_async(
     .context("joining FLETCH paged fetch task")?
 }
 
+pub fn gamecenter_url(base_web: &str, game_id: u64, artifact: FletchGamecenterArtifact) -> String {
+    format!(
+        "{base_web}/gamecenter/{game_id}/{}",
+        artifact.path_segment()
+    )
+}
+
+pub fn fetch_gamecenter_batch_bytes_with_base(
+    base_web: &str,
+    game_ids: &[u64],
+    artifact: FletchGamecenterArtifact,
+    cache_root: &Path,
+    force: bool,
+) -> Result<BTreeMap<u64, Vec<u8>>> {
+    let plans = game_ids
+        .iter()
+        .map(|game_id| {
+            let fletch_id = format!("icelines.gamecenter.{}.{game_id}", artifact.id_segment());
+            let mut plan = fetch_plan_with_kind(
+                fletch_id.clone(),
+                gamecenter_url(base_web, *game_id, artifact),
+                SourceKind::Http,
+            )
+            .with_context(|| format!("building FLETCH Gamecenter plan for {fletch_id}"))?;
+            plan.cache_policy = CachePolicy {
+                freshness: FreshnessPolicy::AlwaysCheck,
+                allow_offline: true,
+                resumable: true,
+            };
+            plan.tags = vec![
+                "icelines".to_string(),
+                "gamecenter".to_string(),
+                artifact.id_segment().to_string(),
+                "generic-batch-http-cacheline".to_string(),
+            ];
+            plan.metadata
+                .insert("adapter".to_string(), "icelines".to_string());
+            Ok((*game_id, plan))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let plan_only = plans
+        .iter()
+        .map(|(_, plan)| plan.clone())
+        .collect::<Vec<_>>();
+    let outcome = fetch_batch_to_cache_best_effort(
+        &plan_only,
+        FetchOptions::new(cache_root)
+            .with_force(force)
+            .with_timeout_ms(30_000)
+            .with_retry_attempts(5),
+    )
+    .with_context(|| {
+        format!(
+            "fetching {} Gamecenter artifact(s) through FLETCH",
+            artifact.id_segment()
+        )
+    })?;
+
+    let game_by_dataset = plans
+        .iter()
+        .map(|(game_id, plan)| (plan.dataset_id.clone(), *game_id))
+        .collect::<BTreeMap<_, _>>();
+    let mut bytes_by_game = BTreeMap::new();
+    for outcome in &outcome.outcomes {
+        let Some(game_id) = game_by_dataset.get(&outcome.entry.dataset_id) else {
+            continue;
+        };
+        let bytes = std::fs::read(&outcome.path)
+            .with_context(|| format!("reading FLETCH cache object {}", outcome.path.display()))?;
+        bytes_by_game.insert(*game_id, bytes);
+    }
+    if !outcome.failures.is_empty() {
+        let failures = outcome
+            .failures
+            .iter()
+            .map(|failure| format!("{}: {}", failure.dataset_id, failure.error))
+            .collect::<Vec<_>>()
+            .join("; ");
+        eprintln!(
+            "FLETCH Gamecenter batch skipped {} {} artifact(s): {failures}",
+            outcome.failure_count,
+            artifact.id_segment()
+        );
+    }
+    Ok(bytes_by_game)
+}
+
+pub fn fetch_gamecenter_batch_bytes(
+    game_ids: &[u64],
+    artifact: FletchGamecenterArtifact,
+    cache_root: &Path,
+    force: bool,
+) -> Result<BTreeMap<u64, Vec<u8>>> {
+    fetch_gamecenter_batch_bytes_with_base(WEB_BASE, game_ids, artifact, cache_root, force)
+}
+
+pub async fn fetch_gamecenter_batch_bytes_async(
+    game_ids: Vec<u64>,
+    artifact: FletchGamecenterArtifact,
+    cache_root: impl Into<std::path::PathBuf>,
+    force: bool,
+) -> Result<BTreeMap<u64, Vec<u8>>> {
+    let cache_root = cache_root.into();
+    tokio::task::spawn_blocking(move || {
+        fetch_gamecenter_batch_bytes(&game_ids, artifact, &cache_root, force)
+    })
+    .await
+    .context("joining FLETCH Gamecenter batch fetch task")?
+}
+
 fn push_query_quiver(
     rows: &mut Vec<FletchQueryQuiverRow>,
     quiver_id: String,
@@ -808,7 +957,12 @@ fn push_query_quiver(
         .collect::<Vec<_>>();
     let source_ready_partition_count = members
         .iter()
-        .filter(|row| row.source_handoff_status == "source-byte-fletch-ready")
+        .filter(|row| {
+            matches!(
+                row.source_handoff_status.as_str(),
+                "source-byte-fletch-ready" | "batch-source-fletch-ready-after-schedule"
+            )
+        })
         .count();
     let adapter_required_partition_count = members
         .iter()
@@ -1230,6 +1384,45 @@ mod tests {
 
         assert_eq!(value["data"].as_array().unwrap().len(), 3);
         assert_eq!(value["total"], 3);
+        first.assert_hits(1);
+        second.assert_hits(1);
+    }
+
+    #[test]
+    fn fetch_gamecenter_batch_bytes_uses_fletch_batch_cache_objects() {
+        let server = MockServer::start();
+        let first = server.mock(|when, then| {
+            when.method(GET).path("/gamecenter/2025020001/boxscore");
+            then.status(200)
+                .header("content-type", "application/json")
+                .body(r#"{"id":2025020001}"#);
+        });
+        let second = server.mock(|when, then| {
+            when.method(GET).path("/gamecenter/2025020002/boxscore");
+            then.status(200)
+                .header("content-type", "application/json")
+                .body(r#"{"id":2025020002}"#);
+        });
+        let dir = tempfile::tempdir().unwrap();
+
+        let bytes = fetch_gamecenter_batch_bytes_with_base(
+            &server.base_url(),
+            &[2025020001, 2025020002],
+            FletchGamecenterArtifact::Boxscore,
+            dir.path(),
+            false,
+        )
+        .unwrap();
+
+        assert_eq!(bytes.len(), 2);
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&bytes[&2025020001]).unwrap()["id"],
+            2025020001
+        );
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&bytes[&2025020002]).unwrap()["id"],
+            2025020002
+        );
         first.assert_hits(1);
         second.assert_hits(1);
     }

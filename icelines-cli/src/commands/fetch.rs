@@ -306,18 +306,29 @@ async fn do_play_by_play(
 
     let data_root = icelines_data_root()?;
     let store = icelines_fetch::datastore::DataStore::open(&data_root).context("open DataStore")?;
+    let game_ids = to_fetch.iter().map(|game| game.game_id).collect::<Vec<_>>();
+    let raw_by_game = icelines_fetch::fletch::fetch_gamecenter_batch_bytes_async(
+        game_ids,
+        icelines_fetch::fletch::FletchGamecenterArtifact::PlayByPlay,
+        data_root.join(".fletch"),
+        false,
+    )
+    .await
+    .context("fetching play-by-play batch through FLETCH")?;
     let mut persisted = 0usize;
     let mut skipped = 0usize;
 
     for g in &to_fetch {
-        match client.fetch_play_by_play_with_raw(g.game_id).await {
-            Ok((parsed, raw)) => {
+        match raw_by_game.get(&g.game_id) {
+            Some(raw_bytes) => {
+                let raw: serde_json::Value =
+                    serde_json::from_slice(raw_bytes).context("parse play-by-play body")?;
+                let parsed = icelines_fetch::nhl_api::parse_play_by_play(&raw, g.game_id);
                 let path = data_root
                     .join("play_by_play")
                     .join(&anchor_str)
                     .join(format!("{}.json", g.game_id));
-                let bytes = serde_json::to_vec(&raw).context("serialize play-by-play body")?;
-                if let Err(e) = icelines_fetch::atomic_write::write_bytes_atomic(&path, &bytes) {
+                if let Err(e) = icelines_fetch::atomic_write::write_bytes_atomic(&path, raw_bytes) {
                     skipped += 1;
                     eprintln!(
                         "  ! play-by-play body write failed for game {}: {e}",
@@ -349,9 +360,12 @@ async fn do_play_by_play(
                     );
                 }
             }
-            Err(e) => {
+            None => {
                 skipped += 1;
-                eprintln!("  · play-by-play skipped for game {} ({e})", g.game_id);
+                eprintln!(
+                    "  · play-by-play skipped for game {} (missing FLETCH cache result)",
+                    g.game_id
+                );
             }
         }
     }
@@ -1434,6 +1448,15 @@ async fn do_boxscore(
         .ok_or_else(|| anyhow!("cannot determine home directory"))?;
     let data_root = home_dir.join(".icelines").join("data");
     let store = icelines_fetch::datastore::DataStore::open(&data_root).context("open DataStore")?;
+    let game_ids = to_fetch.iter().map(|game| game.game_id).collect::<Vec<_>>();
+    let raw_by_game = icelines_fetch::fletch::fetch_gamecenter_batch_bytes_async(
+        game_ids,
+        icelines_fetch::fletch::FletchGamecenterArtifact::Boxscore,
+        data_root.join(".fletch"),
+        false,
+    )
+    .await
+    .context("fetching boxscore batch through FLETCH")?;
 
     let mut wrote = 0usize;
     let mut updated = 0usize;
@@ -1443,19 +1466,22 @@ async fn do_boxscore(
         let game = GameId(g.game_id);
         let away = TeamAbbr(g.away_abbrev.clone());
         let home = TeamAbbr(g.home_abbrev.clone());
+        let mut parsed_for_game = None;
 
         // Foster +3 — fetch the raw boxscore body, persist atomically,
         // register a manifest entry. Best-effort: if the body fetch
         // fails (game not yet started, API hiccup), keep going with
         // the slate-level score event so the user still sees the row.
-        match client.fetch_boxscore_with_raw(g.game_id).await {
-            Ok((_parsed, raw)) => {
+        match raw_by_game.get(&g.game_id) {
+            Some(raw_bytes) => {
+                let raw: serde_json::Value =
+                    serde_json::from_slice(raw_bytes).context("parse boxscore body")?;
+                parsed_for_game = Some(icelines_fetch::nhl_api::parse_boxscore(&raw, g.game_id));
                 let path = data_root
                     .join("boxscores")
                     .join(&anchor_str)
                     .join(format!("{}.json", g.game_id));
-                let bytes = serde_json::to_vec(&raw).context("serialize boxscore body")?;
-                if let Err(e) = icelines_fetch::atomic_write::write_bytes_atomic(&path, &bytes) {
+                if let Err(e) = icelines_fetch::atomic_write::write_bytes_atomic(&path, raw_bytes) {
                     eprintln!("  ! boxscore body write failed for game {}: {e}", g.game_id);
                 } else {
                     let entry = icelines_fetch::manifest::ManifestEntry {
@@ -1477,9 +1503,12 @@ async fn do_boxscore(
                     }
                 }
             }
-            Err(e) => {
+            None => {
                 persist_skipped += 1;
-                eprintln!("  · boxscore body skipped for game {} ({e})", g.game_id);
+                eprintln!(
+                    "  · boxscore body skipped for game {} (missing FLETCH cache result)",
+                    g.game_id
+                );
             }
         }
 
@@ -1504,7 +1533,7 @@ async fn do_boxscore(
         // PIDs with the Favorites group. Quiet on failure: a
         // missing boxscore body just means the lines stay empty.
         if !favorited_player_ids.is_empty() {
-            if let Ok((parsed_box, _)) = client.fetch_boxscore_with_raw(g.game_id).await {
+            if let Some(parsed_box) = parsed_for_game.as_ref() {
                 use icelines_core::entity::EntityRef;
                 use icelines_core::identity::PlayerId;
                 for skater in parsed_box
@@ -1559,18 +1588,17 @@ async fn do_boxscore(
             };
             // The "today" team: search both home_skaters / away_skaters
             // for the pid; the team is whichever side they appear on.
-            let today_team =
-                if let Ok((parsed, _)) = client.fetch_boxscore_with_raw(g.game_id).await {
-                    if parsed.home_skaters.iter().any(|s| s.player_id == pid.0) {
-                        Some(icelines_core::TeamAbbr(parsed.home_abbrev.clone()))
-                    } else if parsed.away_skaters.iter().any(|s| s.player_id == pid.0) {
-                        Some(icelines_core::TeamAbbr(parsed.away_abbrev.clone()))
-                    } else {
-                        None
-                    }
+            let today_team = if let Some(parsed) = parsed_for_game.as_ref() {
+                if parsed.home_skaters.iter().any(|s| s.player_id == pid.0) {
+                    Some(icelines_core::TeamAbbr(parsed.home_abbrev.clone()))
+                } else if parsed.away_skaters.iter().any(|s| s.player_id == pid.0) {
+                    Some(icelines_core::TeamAbbr(parsed.away_abbrev.clone()))
                 } else {
                     None
-                };
+                }
+            } else {
+                None
+            };
             let Some(today_team) = today_team else {
                 continue;
             };
