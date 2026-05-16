@@ -2,7 +2,7 @@
 wave: clear-the-unblocks
 pulse: 03
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - tape
   - wire
@@ -33,5 +33,13 @@ the specs/backlog truthful either way.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-fetch shift_profile --quiet`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\specs\data-sources.md design\specs\foster-data-architecture.md design\plans\INDEX.md --errors-only`
+- [x] `cargo test -p icelines-fetch shift_profile --quiet`
+- [x] `cargo test -p icelines-cli mates --quiet`
+- [x] `C:\src\proof\target\debug\proof.exe check design\specs\data-sources.md design\specs\foster-data-architecture.md design\specs\query-engine.md design\plans\INDEX.md README.md COMMANDS.md src\data\commands.md src\data\command-map.md --errors-only`
+
+## Result
+
+Parked historical shift-data bundling until a source contract, fixtures, bundle
+policy, and capability unlock exist. Updated docs and command copy so users are
+not told to run a nonexistent `fetch shifts`; `icelines mates` remains a
+roster-derived fallback unless a precomputed `ShiftProfile` already exists.

@@ -82,7 +82,7 @@ column tells us why it isn't shipping yet.
 
 | Item | Value | Notes |
 |------|-------|-------|
-| Bundle shift data for historical seasons | ⭐ | Required for `mates`/`peers` against historical seasons. ~5 MB/season. |
+| _None currently active_ | — | Clear the Unblocks moved stale test rows to "cleared" and parked historical shift bundles until a source/capability contract exists. |
 
 Cleared in Clear the Unblocks:
 - `headshot.rs` test coverage — focused L0 coverage exists for braille encoding,
@@ -101,6 +101,7 @@ Cleared in Clear the Unblocks:
 | Fantasy head-to-head matchup weekly | ⭐⭐ | New `fl_matchups` table + schedule walker |
 | Yahoo league CSV roster import | ⭐⭐ | Nothing — backlog |
 | MoneyPuck historical xG (multi-season) | ⭐ | Nothing — backlog |
+| Historical shift-data bundles | ⭐⭐ | Parked — no supported `fetch shifts` command, fixtures, or source/bundle policy; `sync.capabilities.shifts=off` is enforced |
 | Fantasy roster shape enforcement | ⭐ | Per-scheme rules in TOML |
 | CI: cargo fmt + cargo audit gates | ⭐⭐ | Nothing — backlog |
 

@@ -374,8 +374,9 @@ fetch. Setup wizard maps three user questions to the matrix:
 ```
 
 `shifts` capability is reserved in the matrix but enforced as
-`off`-only until per-shift parsing ships in a future phase. Setting
-to `favorites`/`league` returns this **literal error message**:
+`off`-only until per-shift parsing, fixtures, and bundle policy ship in a future
+phase. There is no supported historical shift bundle or `fetch shifts` command
+today. Setting to `favorites`/`league` returns this **literal error message**:
 
 ```
 error: capability `shifts` cannot be set to `<chosen>` yet —

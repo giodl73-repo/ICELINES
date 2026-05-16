@@ -170,7 +170,7 @@ All available values for `--sort`:
 | `peers <player> [--size N] [--json]` | Draft class ± 1 year peers, ranked |
 | `class <year> [--pos P] [--top N] [--json]` | Full draft class ranked by production |
 | `compare <player1> <player2> [--json]` | Side-by-side stat comparison |
-| `mates <player> [--top N]` | Linemates (requires fetch shifts) |
+| `mates <player> [--top N]` | Linemate-style roster fallback; shift bundles parked |
 | `trade <player_out> for <player_in> [--team T]` | Depth chart before/after a trade |
 | `tonight [--team T]` | Tonight's NHL games (live API) |
 | `schedule [--team T] [--days N]` | Upcoming schedule |

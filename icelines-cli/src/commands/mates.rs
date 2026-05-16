@@ -132,7 +132,7 @@ fn display_placeholder(
 
     if format == Format::Table && out.is_none() {
         eprintln!("No shift data found for {target_full_name}.");
-        eprintln!("Run `icelines fetch shifts` to compute linemate data.");
+        eprintln!("Shift-profile fetch/bundling is not supported yet; showing roster fallback.");
         eprintln!();
         eprintln!("PLACEHOLDER — forwards on {target_team} roster:");
     }

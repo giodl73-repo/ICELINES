@@ -415,7 +415,7 @@ icelines scouting "Evan Bouchard"            # 8-section scouting report
 icelines peers "Lane Hutson" --size 8        # draft-class statistical peers
 icelines class 2022 --top 15                 # full draft class ranked
 icelines compare "McDavid" "MacKinnon"       # alias for `query compare`
-icelines mates "Beniers" --top 5             # linemates (requires fetch shifts)
+icelines mates "Beniers" --top 5             # roster fallback; shift bundles parked
 ```
 
 ## `report` — report surface map and durable decision reports

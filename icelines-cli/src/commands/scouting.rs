@@ -451,7 +451,7 @@ pub(crate) fn render_report(
     let _ = writeln!(out, "## 5. Linemates");
     let _ = writeln!(
         out,
-        "  Run `icelines fetch shifts` then `icelines mates {}` for shift-based linemate data.",
+        "  Shift-profile fetch/bundling is parked; run `icelines mates {}` for the roster fallback.",
         view.identity
             .full_name
             .split_whitespace()

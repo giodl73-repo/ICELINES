@@ -42,7 +42,7 @@ scope creep.
 |---|---|---|
 | 01 - Small unblock inventory and pulse map | complete | `SMALL-UNBLOCKS-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Headshot and admin-overlay spec truth | complete | `design/specs/headshot-rendering.md`; `design/specs/tui-admin-overlay.md`; `design/plans/INDEX.md`; `plans/pulse-02.md` |
-| 03 - Shift-data bundle decision | planned | depends on Pulse 01 |
+| 03 - Shift-data bundle decision | complete | `design/specs/data-sources.md`; `design/specs/foster-data-architecture.md`; `design/specs/query-engine.md`; `design/plans/INDEX.md`; `icelines-cli/src/commands/mates.rs`; `icelines-cli/src/commands/scouting.rs`; `plans/pulse-03.md` |
 | 04 - Docs, regression gates, and closeout | planned | depends on Pulses 02-03 |
 
 ## Role Notes
@@ -58,10 +58,11 @@ scope creep.
 
 ## Current Result
 
-Pulse 02 corrected stale headshot/admin-overlay test-coverage docs. The specs
-and plans index now reflect existing focused L0 coverage, and no runtime behavior
-or network tests were added.
+Pulse 03 parked historical shift-data bundling until IceLines has a supported
+source contract, fixtures, bundle policy, and capability unlock. Docs and command
+copy no longer tell users to run a nonexistent `fetch shifts`; `icelines mates`
+remains a roster fallback unless a precomputed `ShiftProfile` already exists.
 
 ## Next
 
-Execute Pulse 03: shift-data bundle decision.
+Execute Pulse 04: docs, regression gates, and closeout.

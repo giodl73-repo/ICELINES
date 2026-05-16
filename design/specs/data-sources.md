@@ -30,13 +30,33 @@ and how it feeds into the depth chart engine.
 | 2c — Live Scores | NHL API `/v1/score/now` | Per-game live | 30s while active | In-progress scores, period, time |
 | 2d — Boxscore | NHL API `/v1/gamecenter/{id}/boxscore` | Per-game | Permanent once final | Goals, goalies, key stats |
 | 2e — Playoff Bracket | NHL API `/v1/playoff-bracket/{year}` | Per-series | Daily during playoffs | Bracket, series state, advancement |
-| 3 — Shifts | NHL API `/shiftcharts` | Per-shift, per-game | Daily | Real line deployment, line partners, zone starts |
+| 3 — Shifts | NHL API `/shiftcharts` | Per-shift, per-game | Parked | Real line deployment, line partners, zone starts |
 | 4 — Advanced | NHL Edge / Natural Stat Trick | Per-situation | Daily | Corsi, xG, HDCA, zone entries |
 | 5 — Social | Reddit NHL / Twitter | Per-day | Real-time | Fan sentiment, injury rumors, line news |
 | 6 — Beat Media | RSS / web scrape | Per-article | Real-time | Official line rushes, coach quotes, practice lines |
 
-Tiers 0–3 are **primary** — they drive all rankings, depth charts, and live screens.  
-Tiers 4–6 are **contextual** — they annotate, not override.
+Tiers 0–2e are **primary** today — they drive rankings, depth charts, live
+screens, and event-backed records. Tier 3 shift data is reserved but not enabled:
+there is no `fetch shifts` command, no bundled historical shift artifacts under
+`data/seasons/`, and the Foster sync capability matrix locks `shifts=off` until
+a source contract and fixtures exist. Tiers 4–6 are **contextual** — they
+annotate, not override.
+
+### Tier 3 — Shifts (parked)
+
+`icelines-fetch/src/shift_profile.rs` contains the domain projection for
+linemate summaries from boxscore-shaped inputs, and `icelines mates` can read a
+precomputed `ShiftProfile` from the legacy Positions snapshot tier. That is not
+the same as having a supported data source.
+
+Current truth:
+- no historical shift bundles are shipped;
+- no `icelines fetch shifts` surface is mounted;
+- no live shiftchart tests or fixtures exist;
+- `sync.capabilities.shifts` accepts only `off`.
+
+Until those contracts exist, shift-aware surfaces must present roster-derived
+fallbacks or explicit deferrals rather than instructing users to fetch shifts.
 
 ---
 
@@ -319,32 +339,15 @@ lines for a player, flag the discrepancy. This is the "coach override" signal.
 
 ## Data Pipeline Architecture
 
-```
-Yahoo CSV          NHL API Bios    NHL API Stats    Shift Charts
-    │                   │               │                │
-    ▼                   ▼               ▼                ▼
-YahooRecord     ────► PlayerBio    SkaterStats      ShiftProfile
-    │                   │               │                │
-    └───────────────────┴───────────────┴────────────────┘
-                                │
-                         PlayerRecord           ◄─── Social / Beat (annotations)
-                                │
-                        ┌───────┴────────┐
-                        │                │
-                  PaceScore          ShiftScore
-                        │                │
-                        └───────┬────────┘
-                          CompositeScore
-                                │
-                    ┌───────────┴───────────┐
-                    │                       │
-              DepthChart              FitClass
-                    │                       │
-                    └───────────┬───────────┘
-                          LineCard (HTML)
-                                │
-                         GitHub Pages
-```
+| Inputs | Domain records | Scoring/outputs |
+|--------|----------------|-----------------|
+| Yahoo CSV | YahooRecord | Fantasy context |
+| NHL API bios | PlayerBio | PlayerRecord |
+| NHL API stats | SkaterStats | PaceScore |
+| Shift charts | ShiftProfile (parked) | ShiftScore (parked) |
+| Social / beat annotations | PlayerRecord annotations | Coach override signals |
+| PlayerRecord + scores | CompositeScore | DepthChart and FitClass |
+| DepthChart + FitClass | LineCard HTML | GitHub Pages |
 
 ---
 

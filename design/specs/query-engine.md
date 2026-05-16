@@ -158,7 +158,12 @@ icelines query compare --draft-year 2022 --round 1 --sort xgf-pct
 | TOI/game (ES) | `es-toi` | From shift data (Tier 3) |
 | Zone Start % | `zs-pct` | From shift data (Tier 3) |
 
-### Tier 2 — Available via shift data (Tier 3, `icelines fetch shifts`)
+### Tier 2 — Reserved for future shift data (Tier 3)
+
+Shift-derived metrics are reserved but not currently enabled. There is no
+supported `fetch shifts` command or historical shift bundle; see
+`data-sources.md` for the parked Tier 3 contract.
+
 | Metric | Key | Notes |
 |--------|-----|-------|
 | ES TOI/game | `es-toi` | Even strength time on ice |
@@ -235,10 +240,11 @@ Phase 5 addition: Pull play-by-play from NHL API and cross-reference with shifts
 2. `icelines query compare --similar N`
 3. Career arc comparison (`--by career-arc`)
 
-### Phase 5C — Strength states (requires Tier 3 data)
-1. `icelines fetch shifts` → compute 5v5/PP/PK splits
-2. `--situation` filter in all query commands
-3. `icelines query leaders --situation 5v5 --sort pts-pace` works
+### Phase 5C — Strength states (requires future Tier 3 data)
+1. Define a supported shift-data source contract and fixtures.
+2. Add shift-data ingestion to compute 5v5/PP/PK splits.
+3. `--situation` filter in all query commands.
+4. `icelines query leaders --situation 5v5 --sort pts-pace` works.
 
 ### Phase 5D — Advanced metrics (requires Tier 4 data scraping)
 1. NST scraper for CF%, FF%, xGF%
