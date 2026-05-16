@@ -1743,6 +1743,25 @@ pub enum FetchSubcommand {
         #[arg(long)]
         gate: bool,
     },
+    /// Group FLETCH query partitions into quiver handoff bundles.
+    #[command(name = "fletch-quivers")]
+    FletchQuivers {
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
+        /// Season type: regular, playoff, or both.
+        #[arg(long = "type", value_enum, default_value_t = FetchSeasonType::Regular)]
+        season_type: FetchSeasonType,
+        /// Write the quiver handoff report JSON to this path.
+        #[arg(
+            long,
+            value_name = "PATH",
+            default_value = "data/fletch-query-quivers.json"
+        )]
+        out: PathBuf,
+        /// Fail when quiver metadata is incomplete.
+        #[arg(long)]
+        gate: bool,
+    },
     /// Fetch all 32 team rosters (headshots, positions, bios).
     Rosters {
         #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]

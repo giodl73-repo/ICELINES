@@ -10,6 +10,7 @@
 | `icelines fetch money-puck` | Download MoneyPuck xG, CF%, FF%, xGF% CSV | MoneyPuck via FLETCH |
 | `icelines fetch fletch-sources --gate` | Validate FLETCH source handoff inventory | Local registry |
 | `icelines fetch fletch-partitions --gate` | Map query surfaces to FLETCH partition/rollup IDs | Local registry |
+| `icelines fetch fletch-quivers --gate` | Group query partitions into FLETCH quiver handoff bundles | Local registry |
 | `icelines fetch all` | Run rosters + stats + realtime in one pass | Live API |
 | `icelines rank` | Top-N players by pts-pace with optional position filter | Bundled |
 | `icelines team <ABBR>` | Team depth chart — 4×3 forwards, 3×2 defense | Bundled |

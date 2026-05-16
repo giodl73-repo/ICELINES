@@ -30,6 +30,12 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             out,
             gate,
         } => do_fletch_partitions(&season, season_type, &out, gate).await,
+        FetchSubcommand::FletchQuivers {
+            season,
+            season_type,
+            out,
+            gate,
+        } => do_fletch_quivers(&season, season_type, &out, gate).await,
         FetchSubcommand::Stats {
             season,
             refresh,
@@ -114,6 +120,37 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             dry_run,
         } => do_report(kind, &season, season_type, no_lock, dry_run).await,
     }
+}
+
+async fn do_fletch_quivers(
+    season: &str,
+    season_type: FetchSeasonType,
+    out: &std::path::Path,
+    gate: bool,
+) -> anyhow::Result<()> {
+    let report =
+        icelines_fetch::fletch::fletch_query_quiver_report(season, season_type_label(season_type));
+    icelines_fetch::fletch::write_fletch_query_quivers(out, &report)
+        .with_context(|| format!("writing FLETCH query quiver report to {}", out.display()))?;
+
+    println!(
+        "FLETCH query quivers: {} quiver(s), {} member partition(s), {} adapter-required",
+        report.quiver_count, report.member_count, report.adapter_required_partition_count,
+    );
+    println!("Wrote {}", out.display());
+
+    if gate {
+        let failures = icelines_fetch::fletch::fletch_query_quiver_gate_failures(&report);
+        if !failures.is_empty() {
+            return Err(anyhow!(
+                "FLETCH query quiver gate failed:\n{}",
+                failures.join("\n")
+            ));
+        }
+        println!("FLETCH query quiver gate passed.");
+    }
+
+    Ok(())
 }
 
 async fn do_fletch_partitions(

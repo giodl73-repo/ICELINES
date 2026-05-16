@@ -66,6 +66,7 @@ icelines query compare "Wayne Gretzky" "Mario Lemieux" --seasons 38
 icelines query goalies --filter "save-pct>=0.92" --top 10
 icelines tui                                          # interactive dashboard
 icelines fetch fletch-partitions --gate               # query partitions/rollups handoff
+icelines fetch fletch-quivers --gate                  # query bootstrap quiver handoff
 ```
 
 **38 seasons (1987-88 → 2025-26)** are bundled into the binary. No internet, no fetch, no setup needed.
@@ -75,11 +76,14 @@ FLETCH integration commands:
 ```bash
 icelines fetch fletch-sources --gate
 icelines fetch fletch-partitions --gate
+icelines fetch fletch-quivers --gate
 ```
 
 `fletch-sources` inventories source-byte acquisition. `fletch-partitions`
 projects ICELINES query surfaces into FLETCH partition/rollup IDs while keeping
-activation on ICELINES sealed snapshots and active pointers.
+activation on ICELINES sealed snapshots and active pointers. `fletch-quivers`
+groups those partition rows into query bootstrap and enrichment bundle
+candidates without exporting bytes or activating data.
 
 ---
 

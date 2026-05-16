@@ -80,6 +80,33 @@ pub struct FletchQueryPartitionReport {
     pub rows: Vec<FletchQueryPartitionRow>,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FletchQueryQuiverRow {
+    pub quiver_id: String,
+    pub season: String,
+    pub season_type: String,
+    pub bundle_role: String,
+    pub member_partition_ids: String,
+    pub member_rollup_ids: String,
+    pub member_count: usize,
+    pub source_ready_partition_count: usize,
+    pub adapter_required_partition_count: usize,
+    pub activation_evidence: String,
+    pub offline_bootstrap_rule: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FletchQueryQuiverReport {
+    pub schema_version: String,
+    pub generated_by: String,
+    pub season: String,
+    pub season_type: String,
+    pub quiver_count: usize,
+    pub member_count: usize,
+    pub adapter_required_partition_count: usize,
+    pub rows: Vec<FletchQueryQuiverRow>,
+}
+
 pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegistry {
     let mut fletches = Vec::new();
     let mut seen = BTreeSet::new();
@@ -473,6 +500,64 @@ pub fn fletch_query_partition_report(
     }
 }
 
+pub fn fletch_query_quiver_report(season: &str, season_type: &str) -> FletchQueryQuiverReport {
+    let partitions = fletch_query_partition_report(season, season_type);
+    let mut rows = Vec::new();
+    for ty in expanded_season_types(season_type) {
+        let members = partitions
+            .rows
+            .iter()
+            .filter(|row| row.season_type == ty)
+            .collect::<Vec<_>>();
+        push_query_quiver(
+            &mut rows,
+            format!("icelines.quiver.{season}.{ty}.query"),
+            season,
+            ty,
+            "season-query-bootstrap",
+            &members,
+        );
+    }
+
+    let regular_members = partitions
+        .rows
+        .iter()
+        .filter(|row| {
+            row.season_type == "regular"
+                && matches!(
+                    row.query_surface.as_str(),
+                    "query-roster-bio" | "query-advanced-metrics" | "query-career"
+                )
+        })
+        .collect::<Vec<_>>();
+    push_query_quiver(
+        &mut rows,
+        format!("icelines.quiver.{season}.regular.enrichment"),
+        season,
+        "regular",
+        "roster-advanced-career-enrichment",
+        &regular_members,
+    );
+
+    rows.sort_by(|left, right| left.quiver_id.cmp(&right.quiver_id));
+    let member_count = rows.iter().map(|row| row.member_count).sum();
+    let adapter_required_partition_count = rows
+        .iter()
+        .map(|row| row.adapter_required_partition_count)
+        .sum();
+
+    FletchQueryQuiverReport {
+        schema_version: "icelines.fletch-query-quivers.v1".to_string(),
+        generated_by: "icelines-fetch".to_string(),
+        season: season.to_string(),
+        season_type: season_type.to_string(),
+        quiver_count: rows.len(),
+        member_count,
+        adapter_required_partition_count,
+        rows,
+    }
+}
+
 pub fn write_fletch_source_handoff(path: &Path, report: &FletchSourceHandoffReport) -> Result<()> {
     if let Some(parent) = path
         .parent()
@@ -494,6 +579,21 @@ pub fn write_fletch_query_partitions(
     path: &Path,
     report: &FletchQueryPartitionReport,
 ) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let file =
+        std::fs::File::create(path).with_context(|| format!("writing {}", path.display()))?;
+    serde_json::to_writer_pretty(file, report)
+        .with_context(|| format!("serializing {}", path.display()))?;
+    Ok(())
+}
+
+pub fn write_fletch_query_quivers(path: &Path, report: &FletchQueryQuiverReport) -> Result<()> {
     if let Some(parent) = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -557,6 +657,22 @@ pub fn fletch_query_partition_gate_failures(report: &FletchQueryPartitionReport)
     failures
 }
 
+pub fn fletch_query_quiver_gate_failures(report: &FletchQueryQuiverReport) -> Vec<String> {
+    let mut failures = Vec::new();
+    for row in &report.rows {
+        if row.quiver_id.is_empty()
+            || row.member_count == 0
+            || row.member_partition_ids.is_empty()
+            || row.member_rollup_ids.is_empty()
+            || row.activation_evidence.is_empty()
+            || row.offline_bootstrap_rule.is_empty()
+        {
+            failures.push(format!("{} has incomplete quiver metadata", row.quiver_id));
+        }
+    }
+    failures
+}
+
 pub fn fetch_generic_http_bytes(
     fletch_id: impl Into<String>,
     source_url: impl Into<String>,
@@ -603,6 +719,50 @@ pub async fn fetch_generic_http_bytes_async(
     })
     .await
     .context("joining FLETCH fetch task")?
+}
+
+fn push_query_quiver(
+    rows: &mut Vec<FletchQueryQuiverRow>,
+    quiver_id: String,
+    season: &str,
+    season_type: &str,
+    bundle_role: &str,
+    members: &[&FletchQueryPartitionRow],
+) {
+    let member_partition_ids = members
+        .iter()
+        .map(|row| row.partition_id.clone())
+        .collect::<Vec<_>>();
+    let member_rollup_ids = members
+        .iter()
+        .map(|row| row.rollup_id.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let source_ready_partition_count = members
+        .iter()
+        .filter(|row| row.source_handoff_status == "source-byte-fletch-ready")
+        .count();
+    let adapter_required_partition_count = members
+        .iter()
+        .filter(|row| {
+            row.source_handoff_status
+                .contains("adapter-required-before-active-partition")
+        })
+        .count();
+    rows.push(FletchQueryQuiverRow {
+        quiver_id,
+        season: season.to_string(),
+        season_type: season_type.to_string(),
+        bundle_role: bundle_role.to_string(),
+        member_partition_ids: member_partition_ids.join(";"),
+        member_rollup_ids: member_rollup_ids.join(";"),
+        member_count: members.len(),
+        source_ready_partition_count,
+        adapter_required_partition_count,
+        activation_evidence: "ICELINES sealed snapshots and active pointers decide whether imported quiver members are query-active".to_string(),
+        offline_bootstrap_rule: "FLETCH quiver members can stage/cache bytes; ICELINES must parse, validate, seal, and activate snapshots before queries trust them".to_string(),
+    });
 }
 
 struct QueryPartitionInput<'a> {
@@ -867,6 +1027,37 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[test]
+    fn query_quiver_report_groups_partition_members_by_season_type() {
+        let report = fletch_query_quiver_report("20252026", "both");
+        assert_eq!(report.schema_version, "icelines.fletch-query-quivers.v1");
+        assert_eq!(
+            fletch_query_quiver_gate_failures(&report),
+            Vec::<String>::new()
+        );
+        assert!(report.rows.iter().any(|row| {
+            row.quiver_id == "icelines.quiver.20252026.regular.query"
+                && row
+                    .member_partition_ids
+                    .contains("icelines.partition.20252026.regular.skater.summary")
+                && row
+                    .member_partition_ids
+                    .contains("icelines.partition.20252026.regular.moneypuck.skaters")
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.quiver_id == "icelines.quiver.20252026.playoff.query"
+                && row
+                    .member_partition_ids
+                    .contains("icelines.partition.20252026.playoff.skater.summary")
+                && !row.member_partition_ids.contains("moneypuck")
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.quiver_id == "icelines.quiver.20252026.regular.enrichment"
+                && row.member_count == 3
+                && row.source_ready_partition_count == 2
+        }));
     }
 
     #[test]

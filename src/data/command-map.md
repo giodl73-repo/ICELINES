@@ -40,9 +40,10 @@ Launch with `icelines tui` (or just `icelines` with no args).
 ## icelines query
 
 FLETCH handoff note: `icelines fetch fletch-partitions --gate` maps these
-query surfaces to durable FLETCH partition and rollup IDs. It is a local report:
-ICELINES sealed snapshots and active pointers remain the query activation
-evidence.
+query surfaces to durable FLETCH partition and rollup IDs, and
+`icelines fetch fletch-quivers --gate` groups those partitions into query
+bootstrap/enrichment quiver candidates. These are local reports: ICELINES
+sealed snapshots and active pointers remain the query activation evidence.
 
 ### query leaders
 
