@@ -18,6 +18,7 @@ param(
         "ci-cli-smoke",
         "ci-clippy",
         "ci-fmt",
+        "ci-audit",
         "ci-release",
         "ci-system",
         "ci-docs",
@@ -70,6 +71,30 @@ function Invoke-Test {
     }
 }
 
+function Ensure-CargoAudit {
+    if (Get-Command cargo-audit -ErrorAction SilentlyContinue) {
+        return
+    }
+
+    Write-Host ""
+    Write-Host "cargo install cargo-audit --locked" -ForegroundColor Cyan
+    & cargo install cargo-audit --locked
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
+}
+
+function Invoke-CargoAudit {
+    Ensure-CargoAudit
+
+    Write-Host ""
+    Write-Host "cargo audit" -ForegroundColor Cyan
+    & cargo audit
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
+}
+
 if ($Slice -eq "list") {
     @"
 IceLines test slices
@@ -111,6 +136,7 @@ CI gates:
   ci-docs          Tests / doc-tests
   ci-clippy        Quality / clippy
   ci-fmt           Quality / fmt
+  ci-audit         Quality / dependency advisories
   ci-release       Build / release CLI + release smoke
   ci-all           legacy monolithic cargo test
 
@@ -145,6 +171,7 @@ switch ($Slice) {
         Invoke-Test @("test", "-p", "icelines-cli", "--test", "system_tests", "--test", "system_tui_experiences")
         Invoke-Test @("test", "-p", "icelines-cli", "--test", "foster_capability_matrix", "--test", "proof_lib_smoke")
         Invoke-Test @("test", "--workspace", "--doc")
+        Invoke-CargoAudit
         Invoke-Cargo @("clippy", "--", "-D", "warnings")
         Invoke-Cargo @("fmt", "--check")
         Invoke-Cargo @("build", "--release", "-p", "icelines-cli")
@@ -193,6 +220,9 @@ switch ($Slice) {
     }
     "ci-fmt" {
         Invoke-Cargo @("fmt", "--check")
+    }
+    "ci-audit" {
+        Invoke-CargoAudit
     }
     "ci-release" {
         Write-Host ""

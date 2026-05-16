@@ -17,9 +17,13 @@ Make cargo-audit failures actionable and document any accepted advisory risk.
 
 ## Owned Scope
 
-- If `cargo audit` is clean, document that no ignore file is required.
-- If advisories exist, either fix them or add a cargo-audit config with advisory
-  ID, rationale, owner, and expiry/removal condition.
+- Decide warning-class policy for the Pulse 02 baseline advisories:
+  `RUSTSEC-2025-0052` (`async-std` via `httpmock`), `RUSTSEC-2024-0436`
+  (`paste` via `ratatui`), and `RUSTSEC-2026-0002` (`lru` via `ratatui`).
+- Either fix warning-class advisories or document why the gate remains
+  vulnerability-blocking while warnings are tracked separately.
+- If an ignore/config file is introduced, include advisory ID, rationale, owner,
+  and expiry/removal condition.
 - Update release docs to explain how to handle new RustSec advisories.
 - Keep policy scoped to dependency security advisories; do not add unrelated
   lint or benchmark policy.

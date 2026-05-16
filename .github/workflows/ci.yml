@@ -68,6 +68,8 @@ jobs:
             command: cargo fmt --check
           - area: clippy
             command: cargo clippy -- -D warnings
+          - area: audit
+            command: cargo audit
 
     steps:
       - uses: actions/checkout@v4
@@ -83,11 +85,16 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
+            ~/.cargo/advisory-db
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('icelines-*/**/*.rs') }}
           restore-keys: |
             ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
             ${{ runner.os }}-cargo-
+
+      - name: Install cargo-audit
+        if: matrix.area == 'audit'
+        uses: taiki-e/install-action@cargo-audit
 
       - name: Run ${{ matrix.area }}
         run: ${{ matrix.command }}

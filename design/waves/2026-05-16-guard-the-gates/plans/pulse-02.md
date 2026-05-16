@@ -2,7 +2,7 @@
 wave: guard-the-gates
 pulse: 02
 date: 2026-05-16
-status: planned
+status: complete
 governing_roles:
   - bench
   - forge
@@ -32,10 +32,10 @@ Add a reproducible cargo-audit gate to CI and `scripts/test-slice.ps1`.
 
 ## Gates
 
-- [ ] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 list`
-- [ ] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-audit`
-- [ ] `cargo fmt --check`
-- [ ] `git diff --check`
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 list`
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-audit`
+- [x] `cargo fmt --check`
+- [x] `git diff --check`
 
 ## Stop Conditions
 
@@ -43,3 +43,17 @@ Add a reproducible cargo-audit gate to CI and `scripts/test-slice.ps1`.
   decision before the gate can be blocking.
 - Stop if tool installation requires credentials or external services beyond
   public Cargo/RustSec access.
+
+## Result
+
+Added a CI quality-matrix `audit` entry that installs `cargo-audit` with
+`taiki-e/install-action@cargo-audit`, runs `cargo audit`, and caches
+`~/.cargo/advisory-db` with the existing Cargo cache. Added a matching local
+`ci-audit` slice to `scripts/test-slice.ps1`, including missing-tool bootstrap
+through `cargo install cargo-audit --locked`, and included it in the serial
+`ci` slice after doc tests.
+
+The baseline exits 0. It reports three warning-class advisories for Pulse 03 to
+handle explicitly: `RUSTSEC-2025-0052` (`async-std` via `httpmock`),
+`RUSTSEC-2024-0436` (`paste` via `ratatui`), and `RUSTSEC-2026-0002` (`lru` via
+`ratatui`).
