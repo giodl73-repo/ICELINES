@@ -120,7 +120,7 @@ icelines query career --league OHL --season 20142015 --top 20
 ```
 
 ICELINES keeps this hockey query UX and IR. SLICE examples are limited to simple
-prepared row predicates; see
+prepared row predicates and SQLite fold plans for ICELINES-owned joins; see
 [`design/specs/slice-selectors.md`](design/specs/slice-selectors.md).
 
 ### Sort metrics

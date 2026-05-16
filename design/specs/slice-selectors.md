@@ -10,7 +10,10 @@ selectors.
   leaderboards, similarity search, ranking, percentiles, data requirements, and
   hockey-facing error messages.
 - SLICE owns selector parsing, typed field catalogs, requirements, diagnostics,
-  and row predicate evaluation for adapter-projected rows.
+  row predicate evaluation for adapter-projected rows, and fold-plan analysis for
+  prepared SQLite predicates.
+- SQLite schema, joins, query execution, ranking, and residual-row materializing
+  remain ICELINES-owned.
 - A SLICE selector should never replace ICELINES query UX. It can help when a
   prepared row already has fields such as `player.position`,
   `player.nationality`, and `stats.ppg`.
@@ -24,3 +27,9 @@ player.position eq 'C' and player.nationality eq 'SWE' and stats.ppg ge 0.8
 The runtime helper `icelines_query::select_prepared_player_rows` and the checked
 test `icelines-query/tests/slice_simple_selector.rs` demonstrate that narrow
 row-filter shape while keeping advanced ICELINES semantics in `icelines-query`.
+
+The runtime helper `icelines_query::plan_prepared_player_sqlite_selector` lowers
+the same prepared-row predicate shape into a SLICE `slice.fold.v1` plan. ICELINES
+can attach the `players` predicate to its player table, the `stats` predicate to
+its stat table, run the ICELINES-owned join, and then evaluate any residual
+SLICE filter locally.

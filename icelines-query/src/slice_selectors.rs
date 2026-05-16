@@ -5,7 +5,7 @@
 //! windows, ranking, aggregation, and requirements remain owned by ICELINES.
 
 use serde_json::Value;
-use slice_core::{CompiledExpr, FieldCatalog, SliceError, ValueType};
+use slice_core::{CompiledExpr, FieldCatalog, FoldCatalog, FoldPlan, SliceError, ValueType};
 
 pub fn select_prepared_player_rows<'a>(
     rows: &'a [Value],
@@ -17,6 +17,10 @@ pub fn select_prepared_player_rows<'a>(
 
 pub fn compile_prepared_player_selector(expr: &str) -> Result<CompiledExpr, SliceError> {
     slice_core::compile(expr, &prepared_player_selector_catalog())
+}
+
+pub fn plan_prepared_player_sqlite_selector(expr: &str) -> Result<FoldPlan, SliceError> {
+    slice_core::parse(expr)?.plan_sqlite(&prepared_player_sqlite_fold_catalog())
 }
 
 pub fn prepared_player_selector_catalog() -> FieldCatalog {
@@ -38,6 +42,63 @@ pub fn prepared_player_selector_catalog() -> FieldCatalog {
         .insert("stats.wins", ValueType::Number)
         .insert("stats.saves", ValueType::Number)
         .insert("stats.save_pct", ValueType::Number);
+    catalog
+}
+
+pub fn prepared_player_sqlite_fold_catalog() -> FoldCatalog {
+    let mut catalog = FoldCatalog::new();
+    catalog
+        .insert_sqlite("player.id", ValueType::String, "players", "players.id")
+        .insert_sqlite(
+            "player.position",
+            ValueType::String,
+            "players",
+            "players.position",
+        )
+        .insert_sqlite(
+            "player.nationality",
+            ValueType::String,
+            "players",
+            "players.nationality",
+        )
+        .insert_sqlite(
+            "player.shoots",
+            ValueType::String,
+            "players",
+            "players.shoots",
+        )
+        .insert_sqlite("player.age", ValueType::Number, "players", "players.age")
+        .insert_sqlite(
+            "player.draft_year",
+            ValueType::Number,
+            "players",
+            "players.draft_year",
+        )
+        .insert_sqlite(
+            "player.height",
+            ValueType::Number,
+            "players",
+            "players.height",
+        )
+        .insert_sqlite(
+            "player.weight",
+            ValueType::Number,
+            "players",
+            "players.weight",
+        )
+        .insert_sqlite("stats.games", ValueType::Number, "stats", "stats.games")
+        .insert_sqlite("stats.goals", ValueType::Number, "stats", "stats.goals")
+        .insert_sqlite("stats.assists", ValueType::Number, "stats", "stats.assists")
+        .insert_sqlite("stats.points", ValueType::Number, "stats", "stats.points")
+        .insert_sqlite("stats.ppg", ValueType::Number, "stats", "stats.ppg")
+        .insert_sqlite("stats.wins", ValueType::Number, "stats", "stats.wins")
+        .insert_sqlite("stats.saves", ValueType::Number, "stats", "stats.saves")
+        .insert_sqlite(
+            "stats.save_pct",
+            ValueType::Number,
+            "stats",
+            "stats.save_pct",
+        );
     catalog
 }
 
@@ -80,6 +141,25 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(required, ["player.position", "stats.goals"]);
+    }
+
+    #[test]
+    fn plans_sqlite_fold_for_prepared_player_rows_without_owning_joins() {
+        let plan = plan_prepared_player_sqlite_selector(
+            "player.position eq 'C' and player.nationality eq 'SWE' and stats.ppg ge 0.8",
+        )
+        .unwrap();
+
+        assert_eq!(plan.backend, "sqlite");
+        assert_eq!(plan.source_count, 2);
+        assert_eq!(plan.sources[0].source, "players");
+        assert_eq!(
+            plan.sources[0].predicate.text,
+            "((\"players\".\"position\" = ?) AND (\"players\".\"nationality\" = ?))"
+        );
+        assert_eq!(plan.sources[1].source, "stats");
+        assert_eq!(plan.sources[1].predicate.text, "((\"stats\".\"ppg\" >= ?))");
+        assert!(plan.residual.is_none());
     }
 
     fn player_row(id: &str, position: &str, nationality: &str, ppg: f64, goals: f64) -> Value {
