@@ -1,0 +1,37 @@
+{
+  "schema_version": "icelines.fletch-query-quivers.v1",
+  "generated_by": "icelines-fetch",
+  "season": "20252026",
+  "season_type": "regular",
+  "quiver_count": 2,
+  "member_count": 30,
+  "adapter_required_partition_count": 0,
+  "rows": [
+    {
+      "quiver_id": "icelines.quiver.20252026.regular.enrichment",
+      "season": "20252026",
+      "season_type": "regular",
+      "bundle_role": "roster-advanced-career-enrichment",
+      "member_partition_ids": "icelines.partition.20252026.regular.moneypuck.skaters;icelines.partition.20252026.career-history;icelines.partition.20252026.regular.rosters",
+      "member_rollup_ids": "icelines.rollup.20252026.career;icelines.rollup.20252026.regular.advanced-metrics;icelines.rollup.20252026.regular.roster-bios",
+      "member_count": 3,
+      "source_ready_partition_count": 3,
+      "adapter_required_partition_count": 0,
+      "activation_evidence": "ICELINES sealed snapshots and active pointers decide whether imported quiver members are query-active",
+      "offline_bootstrap_rule": "FLETCH quiver members can stage/cache bytes; ICELINES must parse, validate, seal, and activate snapshots before queries trust them"
+    },
+    {
+      "quiver_id": "icelines.quiver.20252026.regular.query",
+      "season": "20252026",
+      "season_type": "regular",
+      "bundle_role": "season-query-bootstrap",
+      "member_partition_ids": "icelines.partition.20252026.regular.moneypuck.skaters;icelines.partition.20252026.career-history;icelines.partition.20252026.regular.goalie.advanced;icelines.partition.20252026.regular.goalie.bios;icelines.partition.20252026.regular.goalie.daysrest;icelines.partition.20252026.regular.goalie.penaltyShots;icelines.partition.20252026.regular.goalie.savesByStrength;icelines.partition.20252026.regular.goalie.shootout;icelines.partition.20252026.regular.goalie.startedVsRelieved;icelines.partition.20252026.regular.goalie.summary;icelines.partition.20252026.regular.skater.bios;icelines.partition.20252026.regular.skater.faceoffpercentages;icelines.partition.20252026.regular.skater.faceoffwins;icelines.partition.20252026.regular.skater.goalsForAgainst;icelines.partition.20252026.regular.skater.penalties;icelines.partition.20252026.regular.skater.penaltykill;icelines.partition.20252026.regular.skater.powerplay;icelines.partition.20252026.regular.skater.puckPossessions;icelines.partition.20252026.regular.skater.realtime;icelines.partition.20252026.regular.skater.scoringRates;icelines.partition.20252026.regular.skater.scoringpergame;icelines.partition.20252026.regular.skater.shottype;icelines.partition.20252026.regular.skater.summary;icelines.partition.20252026.regular.skater.summaryshooting;icelines.partition.20252026.regular.skater.timeonice;icelines.partition.20252026.regular.rosters;icelines.partition.20252026.regular.boxscores.by-date",
+      "member_rollup_ids": "icelines.rollup.20252026.career;icelines.rollup.20252026.regular.advanced-metrics;icelines.rollup.20252026.regular.game-lines;icelines.rollup.20252026.regular.query-stats;icelines.rollup.20252026.regular.roster-bios",
+      "member_count": 27,
+      "source_ready_partition_count": 27,
+      "adapter_required_partition_count": 0,
+      "activation_evidence": "ICELINES sealed snapshots and active pointers decide whether imported quiver members are query-active",
+      "offline_bootstrap_rule": "FLETCH quiver members can stage/cache bytes; ICELINES must parse, validate, seal, and activate snapshots before queries trust them"
+    }
+  ]
+}
