@@ -1,6 +1,6 @@
 //! Native ASCII sparklines rendered with Unicode block characters.
 //!
-//! Replaces the proof_lib runtime dependency we briefly carried in
+//! Replaces the proof_lib dependency we briefly carried in
 //! Phase 8j. proof's `proof:chart` directive doesn't compose inside
 //! `proof:region` bodies (issue filed at design/proof-bug-report.md),
 //! and a sparkline is small enough that pulling in a 5MB+ dependency

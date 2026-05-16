@@ -55,12 +55,5 @@ async-trait           = "0.1"
 libc = "0.2"
 
 [dev-dependencies]
-# proof_lib is parked as a dev-dep — the smoke test in
-# `tests/proof_lib_smoke.rs` keeps the integration code paved in case
-# we re-introduce proof for site dashboard generation later. The TUI
-# panel renders sparklines natively (`tui::sparkline`) after we hit a
-# dashboard-region directive composition bug
-# (see design/proof-bug-report.md).
-proof_lib = { package = "proof", git = "https://github.com/giodl73-repo/PROOF", rev = "9c5d456ef49cf8e1aeb516557d52ea0ddb79fd2c" }
 tempfile.workspace = true
 regex.workspace = true

@@ -649,7 +649,7 @@ L1 integration (~140 fetch lib + ~115 across 7 fetch integration files = ~255)
      179.0 / 50.0 / 130.0 / 122.0 / 195.0 / 440.0 / 50.0 (giveaway-penalty)
    across yahoo / espn / simple / custom scheme variants
 
-L2 system (~140 in cli tests/system_tests.rs + 1 proof_lib_smoke.rs)
+L2 system (~140 in cli tests/system_tests.rs)
    subprocess invocation; covers every top-level command
 
 cargo test --workspace runs all tiers; CI gates green on every commit.

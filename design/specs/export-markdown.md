@@ -249,10 +249,9 @@ Seven shapes shipped:
 | `fantasy` | ✅ Implemented | fantasy poacher report rendered from `PoachReportView`; source omissions disclose missing league imports |
 | `series` | ✅ Implemented | playoff game log rendered from `PlayoffsView` and the historical playoffs bundle |
 
-13 L0 tests + 3 L2 subprocess tests. proof DASHBOARD-SPEC integration
-is unblocked — the smoke test in `icelines-cli/tests/proof_lib_smoke.rs`
-proves library link works; consuming the exported markdown into the
-TUI is a separate phase.
+13 L0 tests + 3 L2 subprocess tests. PROOF DASHBOARD-SPEC integration is
+tracked as a future tool/generator pipeline, not an embedded `proof_lib`
+runtime or dev-dependency.
 
 ---
 

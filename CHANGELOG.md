@@ -1313,7 +1313,7 @@ Binary grew 23 MB → 57 MB to fit the full historical era.
 ## Unreleased
 
 ### Changed
-- Phase 8j (rev): Native sparklines, proof_lib back to dev-only.
+- Phase 8j (rev): Native sparklines, proof_lib removed from ICELINES linkage.
   `proof:chart` directives don't compose inside `proof:region` bodies
   (filed at design/proof-bug-report.md), so the dashboard compositor
   was wrapping plain text we already lay out cheaply with ratatui.
@@ -1326,9 +1326,9 @@ Binary grew 23 MB → 57 MB to fit the full historical era.
     that season's row. Players with no bundled history get the pace
     fallback. `if a player has less than 5 we can just show the seasons
     they have` — done.
-  - proof_lib + tempfile demoted from runtime back to dev-deps. The
-    smoke test (`tests/proof_lib_smoke.rs`) keeps the integration
-    paved if we re-introduce proof for site dashboard generation.
+  - proof_lib removed from runtime and dev-dependencies. Future PROOF
+    site/dashboard work should use PROOF as a tool/generator pipeline
+    or consume generated artifacts, not link PROOF into ICELINES.
   - `--dashboards` flag remains as the opt-in toggle for the panel.
   - 9 new L0 tests in `tui::sparkline` (empty input, single value,
     constant series, increasing walk, bucket-when-overflow, negatives,

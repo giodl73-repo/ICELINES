@@ -1,5 +1,11 @@
 # Consuming `proof_lib` from icelines
 
+> **Superseded integration mode:** ICELINES no longer links `proof_lib`,
+> even as a dev-dependency. Keep this note only as historical API context
+> if a future site/dashboard generator shells out to PROOF or consumes
+> PROOF-generated artifacts. Do not re-add `proof_lib` as an ICELINES
+> runtime dependency unless ICELINES directly embeds PROOF APIs.
+
 Hand-off note from the PROOF maintainer. Read this first; it answers the
 "how do I call proof from icelines for dashboard spec rendering" question end
 to end so you don't have to reverse-engineer the crate.

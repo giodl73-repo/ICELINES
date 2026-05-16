@@ -13,9 +13,9 @@
 //! `design/proof-bug-report.md`). For our use case — a small text
 //! panel + two sparklines — native rendering with `tui::sparkline` is
 //! ~50 lines, has zero new deps, and gives ratatui full control over
-//! borders and styling. proof_lib stays in the codebase as a dev-dep
-//! for the smoke test in case we want to re-introduce it for site
-//! generation later.
+//! borders and styling. If site generation returns, PROOF should be
+//! invoked as a tool/generator pipeline rather than linked into the
+//! ICELINES runtime.
 
 use icelines_core::identity::PlayerId;
 use icelines_core::model::{Position, Season};
