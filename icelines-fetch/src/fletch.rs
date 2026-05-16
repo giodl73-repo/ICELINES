@@ -4,7 +4,8 @@ use fletch_core::{
     adapter_handoff_report, cache_index_from_manifest, dry_run_flight,
     fetch_batch_to_cache_best_effort, fetch_batch_to_cache_best_effort_with_delay,
     fetch_paged_json_to_cache, fetch_plan_with_kind, fetch_to_cache, graph_from_registry,
-    validate_registry, CacheEntry, CacheManifest, CachePolicy, DataFormat, FetchOptions,
+    read_cache_manifest_json, upsert_cache_manifest_entries, validate_registry,
+    write_cache_manifest_json, CacheEntry, CacheManifest, CachePolicy, DataFormat, FetchOptions,
     FletchDefinition, FletchRegistry, FreshnessPolicy, GraphNodeKind, PagedJsonOptions, SourceKind,
     SourceSpec, FLETCH_CACHE_INDEX_SCHEMA, FLETCH_REGISTRY_SCHEMA,
 };
@@ -954,25 +955,8 @@ pub fn fletch_cache_manifest_path(cache_root: &Path) -> std::path::PathBuf {
 }
 
 pub fn read_fletch_cache_manifest(path: &Path) -> Result<CacheManifest> {
-    let json = std::fs::read_to_string(path)
-        .with_context(|| format!("reading FLETCH cache manifest {}", path.display()))?;
-    serde_json::from_str(&json)
-        .with_context(|| format!("parsing FLETCH cache manifest {}", path.display()))
-}
-
-fn write_fletch_cache_manifest(path: &Path, manifest: &CacheManifest) -> Result<()> {
-    if let Some(parent) = path
-        .parent()
-        .filter(|parent| !parent.as_os_str().is_empty())
-    {
-        std::fs::create_dir_all(parent)
-            .with_context(|| format!("creating {}", parent.display()))?;
-    }
-    let file = std::fs::File::create(path)
-        .with_context(|| format!("writing FLETCH cache manifest {}", path.display()))?;
-    serde_json::to_writer_pretty(file, manifest)
-        .with_context(|| format!("serializing FLETCH cache manifest {}", path.display()))?;
-    Ok(())
+    read_cache_manifest_json(path)
+        .with_context(|| format!("reading FLETCH cache manifest {}", path.display()))
 }
 
 fn upsert_fletch_cache_manifest_entries(
@@ -995,11 +979,10 @@ fn upsert_fletch_cache_manifest_entries(
         fletch_core::cache_manifest(cache_root.display().to_string(), Vec::new())
             .context("creating empty FLETCH cache manifest")?
     };
-    for entry in entries {
-        manifest = fletch_core::upsert_cache_manifest_entry(manifest, entry)
-            .context("upserting FLETCH cache manifest entry")?;
-    }
-    write_fletch_cache_manifest(&manifest_path, &manifest)?;
+    manifest = upsert_cache_manifest_entries(manifest, entries)
+        .context("upserting FLETCH cache manifest entries")?;
+    write_cache_manifest_json(&manifest_path, &manifest)
+        .with_context(|| format!("writing FLETCH cache manifest {}", manifest_path.display()))?;
     Ok(manifest)
 }
 
