@@ -1,7 +1,7 @@
 ---
 wave: shape-the-rosters
 date_open: 2026-05-16
-status: active
+status: closed
 source: Tier 3 backlog - Fantasy roster shape enforcement
 ---
 
@@ -47,7 +47,7 @@ aware, and focused on preventing invalid local roster state from looking valid.
 | 02 - Core roster shape contract | complete | `icelines-core/src/roster_shape.rs`; 6 L0 tests |
 | 03 - FantasyDb shape persistence and import validation | complete | `fl_leagues.roster_shape`; import warnings from canonical positions; fetch L1 tests |
 | 04 - CLI, TUI, and dashboard validation surfaces | complete | CLI show/set/validate; TUI/web-dashboard handoffs; read-only web JSON validation |
-| 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
+| 05 - Docs, regression gates, and closeout | complete | README/COMMANDS/surface parity/backlog truth updated; focused gates passed |
 
 ## Role Notes
 
@@ -84,6 +84,12 @@ the read-only API; web dashboard command parsing that rejects shape mutation; an
 JSON `GET /api/v1/fantasy/roster-shape` validation for persisted FantasyDb
 rosters.
 
+Pulse 05 closed the wave. README, COMMANDS, the surface-parity matrix, and the
+backlog index now document roster-shape setup/validation as shipped, with CLI as
+the mutation surface and web/TUI dashboard paths as read-only handoffs or
+deferrals. The wave and phase index records are closed after focused core/fetch,
+CLI, and web roster-shape gates, proof, formatting, and whitespace checks.
+
 ## Next
 
-Execute Pulse 05: update docs, rerun regression gates, and close the wave.
+Shape the Rosters is closed.

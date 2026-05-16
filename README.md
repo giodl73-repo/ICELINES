@@ -247,6 +247,9 @@ icelines fantasy team-add "My Team" "McDavid"
 icelines fantasy team-add "My Team" "Kucherov"
 icelines fantasy import-yahoo --file rosters.csv --league "My League" --dry-run
 icelines fantasy import-yahoo --file rosters.csv --league "My League" --my-team "My Team"
+icelines fantasy roster-shape
+icelines fantasy roster-shape-set yahoo-standard --league "My League"
+icelines fantasy roster-shape-validate --team "My Team" --json
 
 # Manage
 icelines fantasy team-show "My Team"       # roster with per-player fantasy scores
@@ -268,6 +271,7 @@ icelines tui
 # :fantasy daily date=2026-01-15
 # :fantasy matchup date=2026-01-15
 # :fantasy import file=rosters.csv league My_League dry-run
+# :fantasy roster-shape validate team My_Team
 
 # Poacher
 icelines poach --category hits,blocks --top 15
@@ -304,11 +308,13 @@ icelines serve --port 8000
 # Try: fantasy simulate add Connor_McDavid drop Bench_Forward
 # Try: fantasy daily date=2026-01-15
 # Try: fantasy matchup date=2026-01-15
+# Try: fantasy roster-shape validate team=My_Team
 # GET /fantasy                 -> HTML gaps + simulation scenarios
 # GET /api/v1/fantasy/gaps     -> FantasyRosterGapView JSON
 # GET /api/v1/fantasy/simulate -> FantasySimulationView JSON
 # GET /api/v1/fantasy/daily?date=YYYY-MM-DD -> FantasyDailyDeltaView JSON
 # GET /api/v1/fantasy/matchup?date=YYYY-MM-DD -> FantasyMatchupWeekView JSON
+# GET /api/v1/fantasy/roster-shape?team=<name> -> RosterShapeValidationView JSON
 # GET /poach                   -> HTML poacher board
 # GET /player/:id/outlook      -> descriptive scoring pace, nullable finish
 # GET /team/:abbrev/outlook    -> cached GF/GA pace and recent pressure
@@ -325,6 +331,12 @@ target only the canonical `Favorites` group. Create, rename, delete, and arbitra
 group membership edits remain on `icelines group ...` and the TUI Groups surface.
 
 **Fantasy schemes:** `yahoo-standard`, `espn-standard`, `simple-pts`
+
+Fantasy roster shapes are local league setup rules, separate from scoring
+schemes. The default `yahoo-standard` shape validates active roster composition
+by canonical NHL/bundled player positions; Yahoo CSV position hints remain
+diagnostic only. Shape changes stay on the CLI, while the web dashboard exposes
+read-only validation and rejects GET-backed mutation.
 
 Yahoo roster CSV import is local setup only: it writes FantasyDb league/team
 membership after a dry-run/apply diagnostic pass. NHL API/bundled data remains

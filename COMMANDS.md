@@ -574,6 +574,9 @@ icelines fantasy team-create "My Team" --owner "Gio"
 icelines fantasy team-add "My Team" "McDavid"
 icelines fantasy import-yahoo --file rosters.csv --league "My League" --dry-run
 icelines fantasy import-yahoo --file rosters.csv --league "My League" --my-team "My Team"
+icelines fantasy roster-shape
+icelines fantasy roster-shape-set yahoo-standard --league "My League"
+icelines fantasy roster-shape-validate --team "My Team" --json
 
 # Manage
 icelines fantasy team-show "My Team"
@@ -598,6 +601,7 @@ icelines fantasy serve --port 8080
 # Main web dashboard also exposes:
 # GET /api/v1/fantasy/daily?date=YYYY-MM-DD   FantasyDailyDeltaView JSON
 # GET /api/v1/fantasy/matchup?date=YYYY-MM-DD FantasyMatchupWeekView JSON
+# GET /api/v1/fantasy/roster-shape?team=<name> RosterShapeValidationView JSON
 ```
 
 `fantasy import-yahoo` accepts Yahoo roster CSV exports with a player column
@@ -608,6 +612,13 @@ are diagnostic context only. Use `--dry-run` first to preview created/updated
 teams, imported/skipped players, unresolved names, duplicate ownership, and
 header problems; rerun without `--dry-run` to apply local FantasyDb membership.
 Yahoo stats are ignored and never become player/stat/photo truth.
+
+`fantasy roster-shape` lists the active league shape and available built-ins.
+`fantasy roster-shape-set <shape>` persists the per-league setup rule, and
+`fantasy roster-shape-validate [--team <name>] [--json]` validates persisted
+FantasyDb rosters against canonical NHL/bundled player positions. Shape mutation
+stays CLI-backed; TUI and web dashboard commands hand off or defer so GET
+navigation never mutates roster state.
 
 ## `scheme` — fantasy scoring schemes
 
@@ -779,6 +790,8 @@ between workbench zones instead of cycling legacy tabs.
 | `poach <kv...>` / `fantasy poach <kv...>` | Fantasy poacher filters | `:poach rw cats=hits,blocks free top=12` |
 | `simulate <kv...>` / `fantasy simulate <kv...>` | Fantasy add/drop scenario projection | `:simulate add=Connor_McDavid drop=Bench_Forward weeks=3` |
 | `daily date=YYYY-MM-DD` / `fantasy daily date=YYYY-MM-DD` | Fantasy daily-delta read-surface handoff | `:fantasy daily date=2026-01-15` |
+| `fantasy roster-shape show|validate ...` | Fantasy roster-shape CLI/API handoff | `:fantasy roster-shape validate team My_Team` |
+| `fantasy roster-shape set <shape>` | Fantasy roster-shape setup CLI handoff | `:fantasy roster-shape set yahoo-standard` |
 | `fantasy import file=... league ... [dry-run]` | Fantasy roster CSV import CLI handoff | `:fantasy import file=rosters.csv league My_League dry-run` |
 | `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
 | `report poach` / `report weekly` | Show exact report CLI/web target | `:report weekly cats=shots,hits top=12` |
@@ -853,6 +866,9 @@ simulate add=Connor_McDavid drop=Bench_Forward weeks=3
 fantasy simulate add Connor_McDavid drop Bench_Forward
                                            -> /fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward
 fantasy daily date=2026-01-15              -> /api/v1/fantasy/daily?date=2026-01-15
+fantasy roster-shape validate team="My Team"
+                                           -> /api/v1/fantasy/roster-shape?team=My+Team
+fantasy roster-shape set yahoo-standard    -> deferred; use `icelines fantasy roster-shape-set`
 fantasy import file=rosters.csv league=Office
                                            -> deferred; use `icelines fantasy import-yahoo --dry-run`
 report weekly cats=shots,hits top=12       -> /reports/weekly?category=shots%2Chits&top=12

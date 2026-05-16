@@ -99,7 +99,6 @@ Cleared in Clear the Unblocks:
 | Tier 4 advanced metrics (NST, Evolving Hockey RAPM) | ⭐ | External scraping; large lift |
 | MoneyPuck historical xG (multi-season) | ⭐ | Nothing — backlog |
 | Historical shift-data bundles | ⭐⭐ | Parked — no supported `fetch shifts` command, fixtures, or source/bundle policy; `sync.capabilities.shifts=off` is enforced |
-| Fantasy roster shape enforcement | ⭐ | **Active** - Shape the Rosters wave; current gap is explicit per-league shape rules plus validation surfaces |
 
 Cleared in Score the Day:
 - Fantasy daily delta scoring — shipped via `FantasyDailyDeltaView`,
@@ -118,6 +117,13 @@ Cleared in Import the Rosters:
   `icelines fantasy import-yahoo --file <path> --league <name> [--dry-run]`;
   TUI/web-dashboard command bars hand off or defer rather than mutating through
   GET.
+
+Cleared in Shape the Rosters:
+- Fantasy roster shape enforcement — shipped via `RosterShape` /
+  `RosterShapeValidationView`, `fl_leagues.roster_shape`, Yahoo import warnings
+  from canonical player positions, CLI `fantasy roster-shape*` commands, TUI/web
+  dashboard handoffs, and read-only
+  `/api/v1/fantasy/roster-shape[?team=<name>]` validation.
 
 Cleared in Guard the Gates:
 - CI cargo fmt + cargo audit gates — `cargo fmt --check` was already blocking;
