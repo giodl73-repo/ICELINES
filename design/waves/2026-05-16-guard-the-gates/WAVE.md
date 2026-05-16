@@ -46,7 +46,7 @@ repeatable CI/local checks.
 |---|---|---|
 | 01 - CI gate inventory and pulse map | complete | `CI-GATES-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Cargo audit CI and local slice | complete | `.github/workflows/ci.yml`; `scripts/test-slice.ps1`; cargo-audit baseline exits 0 with three warning-class advisories |
-| 03 - Advisory policy and failure messaging | planned | depends on Pulse 02 |
+| 03 - Advisory policy and failure messaging | complete | `design/release-checklist.md`; `scripts/test-slice.ps1`; warning ledger for `async-std`, `paste`, `lru` |
 | 04 - Release docs and backlog truth | planned | depends on Pulses 02-03 |
 | 05 - Regression gates and closeout | planned | depends on Pulses 02-04 |
 
@@ -74,6 +74,11 @@ baseline exits 0 but reports three warning-class advisories for Pulse 03 policy:
 `RUSTSEC-2025-0052` (`async-std` via `httpmock`), `RUSTSEC-2024-0436` (`paste`
 via `ratatui`), and `RUSTSEC-2026-0002` (`lru` via `ratatui`).
 
+Pulse 03 made `cargo audit` vulnerability-blocking while keeping warning-class
+advisories visible instead of ignored. `design/release-checklist.md` now carries
+the warning ledger with owner, rationale, and removal condition; the local audit
+slice prints the same failure guidance that CI uses.
+
 ## Next
 
-Execute Pulse 03: decide and document warning-class advisory handling.
+Execute Pulse 04: update user/developer docs and backlog truth.

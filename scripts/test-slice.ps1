@@ -88,9 +88,12 @@ function Invoke-CargoAudit {
     Ensure-CargoAudit
 
     Write-Host ""
+    Write-Host "cargo audit blocks vulnerability advisories; warning advisories are tracked in design/release-checklist.md." -ForegroundColor DarkGray
     Write-Host "cargo audit" -ForegroundColor Cyan
     & cargo audit
     if ($LASTEXITCODE -ne 0) {
+        Write-Host ""
+        Write-Host "cargo audit failed. Fix the dependency, or document a time-boxed advisory exception in design/release-checklist.md before merging." -ForegroundColor Red
         exit $LASTEXITCODE
     }
 }

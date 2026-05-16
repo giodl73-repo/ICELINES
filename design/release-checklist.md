@@ -51,6 +51,7 @@ Run the normal focused gates before creating a tag:
 cargo fmt --check
 cargo check --workspace
 cargo test -p icelines-fetch bundled
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-audit
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-release
 ```
 
@@ -133,11 +134,26 @@ If a tag was pushed but artifacts are wrong:
 If a release is public and users may have downloaded it, prefer a patch release
 over replacing artifacts in place.
 
-## 9. Known advisory gates
+## 9. Known advisory gates and cargo-audit policy
 
 - Browser screenshots are currently manual/advisory. Prince of Wales recorded
   the visual contract; Jim Gregory should add automated screenshots when the
   harness is stable.
-- `cargo audit` is not yet a blocking release gate. Add it only with documented
-  ignored advisories and expiry dates.
+- `cargo audit` is a blocking CI/local gate for vulnerability advisories. Run it
+  with `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1
+  ci-audit`; the script installs `cargo-audit --locked` when missing.
+- Warning-class advisories are not ignored in config and are not hidden. They
+  remain visible in audit output and must be listed below with advisory ID,
+  dependency path, risk owner, rationale, and removal condition.
+- If `cargo audit` exits nonzero, fix or upgrade the dependency first. Only add
+  a time-boxed exception after documenting advisory ID, reason, owner, and
+  removal condition in this section.
 - Performance benchmarks are advisory until a specific budget is documented.
+
+Current warning-class advisory ledger:
+
+| Advisory | Class | Dependency path | Owner | Rationale | Removal condition |
+|---|---|---|---|---|---|
+| `RUSTSEC-2025-0052` (`async-std`) | unmaintained warning | `httpmock` -> `icelines-fetch` tests | BENCH / FORGE | Test-only mock dependency; not shipped in the release binary. Keep visible so a fixture/mock replacement can retire it. | Remove when `httpmock` drops `async-std`, or replace the mock stack if the warning becomes a vulnerability or runtime dependency. |
+| `RUSTSEC-2024-0436` (`paste`) | unmaintained warning | `ratatui` -> `icelines-cli` | FORGE | Transitive TUI dependency with no current vulnerability finding. Not ignored; audit continues to report it. | Remove when the TUI stack upgrades past the `paste` dependency, or replace the dependency if the warning becomes a vulnerability. |
+| `RUSTSEC-2026-0002` (`lru`) | unsound warning | `ratatui` -> `icelines-cli` | FORGE | Transitive TUI dependency; IceLines does not call `lru` directly. Not ignored; audit continues to report it for upgrade pressure. | Remove when `ratatui` upgrades past affected `lru`, or patch/replace the TUI dependency if RustSec reclassifies the issue or a reachable unsafe path is identified. |

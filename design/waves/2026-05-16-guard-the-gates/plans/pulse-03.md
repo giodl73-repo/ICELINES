@@ -2,7 +2,7 @@
 wave: guard-the-gates
 pulse: 03
 date: 2026-05-16
-status: planned
+status: complete
 governing_roles:
   - wire
   - forge
@@ -36,12 +36,25 @@ Make cargo-audit failures actionable and document any accepted advisory risk.
 
 ## Gates
 
-- [ ] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-audit`
-- [ ] `cargo fmt --check`
-- [ ] proof on touched docs
-- [ ] `git diff --check`
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-audit`
+- [x] `cargo fmt --check`
+- [x] proof on touched docs
+- [x] `git diff --check`
 
 ## Stop Conditions
 
 - Stop if an advisory affects a runtime dependency and cannot be fixed or
   time-boxed with an explicit risk owner.
+
+## Result
+
+Made the policy explicit: `cargo audit` is a blocking CI/local gate for
+vulnerability advisories, while warning-class advisories remain visible in audit
+output and are tracked in `design/release-checklist.md` rather than hidden in an
+ignore config. The current warning ledger records owner, rationale, and removal
+condition for `RUSTSEC-2025-0052` (`async-std` via test-only `httpmock`),
+`RUSTSEC-2024-0436` (`paste` via `ratatui`), and `RUSTSEC-2026-0002` (`lru` via
+`ratatui`).
+
+The local `ci-audit` slice now prints remediation guidance before exiting
+nonzero, and CI runs the same slice after installing `cargo-audit`.

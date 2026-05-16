@@ -69,7 +69,7 @@ jobs:
           - area: clippy
             command: cargo clippy -- -D warnings
           - area: audit
-            command: cargo audit
+            command: powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-audit
 
     steps:
       - uses: actions/checkout@v4
