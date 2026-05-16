@@ -11,6 +11,7 @@ pwsh scripts/test-slice.ps1 quick            # workspace compile + ViewModel tes
 pwsh scripts/test-slice.ps1 viewmodel        # Campbell ViewModel tests
 pwsh scripts/test-slice.ps1 cli-matrix       # Foster capability matrix
 pwsh scripts/test-slice.ps1 workspace-check  # compile all crates
+pwsh scripts/test-slice.ps1 ci-audit         # cargo-audit vulnerability gate
 pwsh scripts/test-slice.ps1 full             # long gate: workspace --no-fail-fast
 ```
 
@@ -43,6 +44,9 @@ powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1 -SkipBuild
 ```
 
 Full release checklist: `design/release-checklist.md`.
+`ci-audit` installs `cargo-audit --locked` when missing; RustSec vulnerability
+advisories block, while warning-class advisories remain visible in the release
+checklist ledger.
 
 ---
 

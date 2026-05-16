@@ -100,7 +100,6 @@ Cleared in Clear the Unblocks:
 | MoneyPuck historical xG (multi-season) | ⭐ | Nothing — backlog |
 | Historical shift-data bundles | ⭐⭐ | Parked — no supported `fetch shifts` command, fixtures, or source/bundle policy; `sync.capabilities.shifts=off` is enforced |
 | Fantasy roster shape enforcement | ⭐ | Per-scheme rules in TOML |
-| CI: cargo fmt + cargo audit gates | ⭐⭐ | **Active** - Guard the Gates wave; inventory found fmt is already blocking and cargo-audit needs CI/local/policy wiring |
 
 Cleared in Score the Day:
 - Fantasy daily delta scoring — shipped via `FantasyDailyDeltaView`,
@@ -119,6 +118,12 @@ Cleared in Import the Rosters:
   `icelines fantasy import-yahoo --file <path> --league <name> [--dry-run]`;
   TUI/web-dashboard command bars hand off or defer rather than mutating through
   GET.
+
+Cleared in Guard the Gates:
+- CI cargo fmt + cargo audit gates — `cargo fmt --check` was already blocking;
+  `cargo audit` now runs through the CI quality matrix and local
+  `scripts/test-slice.ps1 ci-audit`, with warning-class advisories tracked in
+  `design/release-checklist.md`.
 
 ### Cancelled (referenced in specs but won't ship)
 

@@ -47,7 +47,7 @@ repeatable CI/local checks.
 | 01 - CI gate inventory and pulse map | complete | `CI-GATES-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Cargo audit CI and local slice | complete | `.github/workflows/ci.yml`; `scripts/test-slice.ps1`; cargo-audit baseline exits 0 with three warning-class advisories |
 | 03 - Advisory policy and failure messaging | complete | `design/release-checklist.md`; `scripts/test-slice.ps1`; warning ledger for `async-std`, `paste`, `lru` |
-| 04 - Release docs and backlog truth | planned | depends on Pulses 02-03 |
+| 04 - Release docs and backlog truth | complete | `README.md`; `COMMANDS.md`; `design/plans/INDEX.md`; `design/release-checklist.md` |
 | 05 - Regression gates and closeout | planned | depends on Pulses 02-04 |
 
 ## Role Notes
@@ -79,6 +79,9 @@ advisories visible instead of ignored. `design/release-checklist.md` now carries
 the warning ledger with owner, rationale, and removal condition; the local audit
 slice prints the same failure guidance that CI uses.
 
+Pulse 04 updated README/COMMANDS with the local audit slice and moved the Tier 3
+backlog row into the Guard the Gates cleared list.
+
 ## Next
 
-Execute Pulse 04: update user/developer docs and backlog truth.
+Execute Pulse 05: run closeout gates and close the wave.

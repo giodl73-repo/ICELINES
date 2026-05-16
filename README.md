@@ -453,6 +453,7 @@ icelines-cli     thin UI layer - commands, TUI, HTTP server (axum)
 cargo test                    # full workspace tests: L0, L1, L2, mock API, persona waves
 cargo clippy -- -D warnings   # must be clean
 cargo fmt --check             # must be clean
+cargo audit                   # dependency vulnerability gate
 ```
 
 Windows-friendly slices:
@@ -463,8 +464,13 @@ powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-query        
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-cli-tui      # Tests / cli-tui-bin
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 scenarios       # TUI + CLI + query + web scenario harnesses
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-clippy       # Quality / clippy
+powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-audit        # Quality / dependency advisories
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 tui-snapshots   # app snapshot module only
 ```
+
+`ci-audit` installs `cargo-audit --locked` when missing. Vulnerability advisories
+block CI and local release gates; warning-class advisories stay visible in the
+release checklist until their dependency path is removed.
 
 ---
 

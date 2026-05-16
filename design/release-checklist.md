@@ -61,6 +61,9 @@ For code changes touching shared contracts or multiple surfaces, also run:
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci
 ```
 
+The `ci` slice includes the dependency vulnerability audit, clippy, fmt, and
+release build/smoke sequence after the split test gates.
+
 For visual-system changes, run:
 
 ```powershell

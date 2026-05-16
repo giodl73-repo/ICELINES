@@ -2,7 +2,7 @@
 wave: guard-the-gates
 pulse: 04
 date: 2026-05-16
-status: planned
+status: complete
 governing_roles:
   - bench
   - glass
@@ -31,11 +31,18 @@ Make user/developer docs and backlog status match the final gate behavior.
 
 ## Gates
 
-- [ ] proof on touched docs
-- [ ] `cargo fmt --check`
-- [ ] `git diff --check`
+- [x] proof on touched docs
+- [x] `cargo fmt --check`
+- [x] `git diff --check`
 
 ## Stop Conditions
 
 - Stop if docs would claim cargo-audit is blocking before Pulse 02/03 gates prove
   it locally.
+
+## Result
+
+Updated README and COMMANDS with `ci-audit` as the command-copyable local
+dependency vulnerability gate. Clarified that the release `ci` slice includes
+the audit gate, moved the Tier 3 backlog row into "Cleared in Guard the Gates",
+and kept the warning-class advisory ledger anchored in the release checklist.
