@@ -2,7 +2,7 @@
 wave: score-the-day
 pulse: 03
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - wire
   - bench
@@ -32,5 +32,13 @@ finalized game lines for a date into the core daily-delta ViewModel.
 
 ## Gates
 
-- [ ] focused fetch/CLI adapter tests for daily fantasy data path
-- [ ] `cargo fmt --check`
+- [x] `cargo test -p icelines-fetch fantasy_daily --quiet`
+- [x] `cargo fmt --check`
+
+## Result
+
+Added `icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view`, which
+combines `FantasyDb` league snapshots with cached boxscore manifest entries for
+a date, projects finalized skater/goalie lines into the core daily-delta
+ViewModel, and surfaces missing cache, missing user team, and unfinalized lines
+without live NHL calls.

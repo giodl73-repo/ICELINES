@@ -12,6 +12,7 @@ pub mod chunkstore;
 pub mod csv_loader;
 pub mod datastore;
 pub mod error;
+pub mod fantasy_daily;
 pub mod fantasy_db;
 pub mod fetch_lock;
 pub mod game_cache;
