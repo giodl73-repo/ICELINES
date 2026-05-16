@@ -1601,6 +1601,8 @@ dependencies = [
  "chrono",
  "icelines-core",
  "proptest",
+ "serde_json",
+ "slice-core",
  "thiserror 2.0.18",
 ]
 
@@ -3025,6 +3027,16 @@ name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
+
+[[package]]
+name = "slice-core"
+version = "0.1.0"
+source = "git+https://github.com/giodl73-repo/SLICE?rev=23b1f100b46c36d18e1a4807aff680433f7ae636#23b1f100b46c36d18e1a4807aff680433f7ae636"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
 
 [[package]]
 name = "smallvec"
