@@ -45,7 +45,7 @@ into proprietary projections or live external integrations.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Daily delta inventory and pulse map | complete | `FANTASY-DAILY-DELTA-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
-| 02 - Core daily-delta ViewModel and scoring adapter | planned | depends on Pulse 01 |
+| 02 - Core daily-delta ViewModel and scoring adapter | complete | `icelines-core/src/view_model/fantasy_daily.rs`; `icelines-core/src/view_model/mod.rs`; `icelines-core/src/lib.rs`; `plans/pulse-02.md` |
 | 03 - Cached boxscore/FantasyDb data path | planned | depends on Pulse 02 |
 | 04 - CLI, web, and TUI read surfaces | planned | depends on Pulse 03 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
@@ -63,10 +63,10 @@ into proprietary projections or live external integrations.
 
 ## Current Result
 
-Pulse 01 opened the wave, mapped the existing fantasy scoring/projection
-contracts, and split the feature into core contract, cached data path, surface,
-and closeout pulses.
+Pulse 02 added the pure core daily-delta ViewModel and one-game scoring adapters.
+Daily skater/goalie points reuse `Scheme` weights, do not apply season minimum-GP
+thresholds, sort rows stably, and refuse to count unfinalized game lines.
 
 ## Next
 
-Execute Pulse 02: core daily-delta ViewModel and scoring adapter.
+Execute Pulse 03: cached boxscore and FantasyDb data path.

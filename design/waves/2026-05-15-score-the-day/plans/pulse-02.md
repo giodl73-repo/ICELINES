@@ -2,7 +2,7 @@
 wave: score-the-day
 pulse: 02
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - pace
   - bench
@@ -31,5 +31,13 @@ Add the pure core contract for fantasy daily delta scoring.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-core fantasy_daily --quiet`
-- [ ] `cargo fmt --check`
+- [x] `cargo test -p icelines-core fantasy_daily --quiet`
+- [x] `cargo fmt --check`
+
+## Result
+
+Added the pure core daily-delta contract in
+`icelines-core::view_model::fantasy_daily`: dated league/team/player rows,
+stable team/player ordering, source-state/warning propagation, finalized-game
+gating, and one-game skater/goalie scoring adapters that reuse `Scheme` weights
+without season minimum-GP thresholds.

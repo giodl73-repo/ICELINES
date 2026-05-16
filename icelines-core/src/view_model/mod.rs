@@ -11,6 +11,7 @@ pub mod config;
 pub mod context;
 pub mod data_status;
 pub mod docs;
+pub mod fantasy_daily;
 pub mod fantasy_gap;
 pub mod fantasy_league;
 pub mod fantasy_sim;
@@ -54,6 +55,11 @@ pub use data_status::{
     DataMutationIntent, DataMutationOperation, DataStatusEntryInput, DataStatusRow, DataStatusView,
 };
 pub use docs::DocsView;
+pub use fantasy_daily::{
+    score_daily_goalie_line, score_daily_skater_line, FantasyDailyDeltaInput,
+    FantasyDailyDeltaView, FantasyDailyLineInput, FantasyDailyPlayerInput, FantasyDailyPlayerRow,
+    FantasyDailyPlayerStatus, FantasyDailyScore, FantasyDailyTeamInput, FantasyDailyTeamRow,
+};
 pub use fantasy_gap::{
     FantasyRosterGapAction, FantasyRosterGapCandidate, FantasyRosterGapInput,
     FantasyRosterGapReplacement, FantasyRosterGapRow, FantasyRosterGapView,
