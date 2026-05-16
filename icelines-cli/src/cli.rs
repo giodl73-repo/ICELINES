@@ -1166,6 +1166,54 @@ mod tui_surface_tests {
             other => panic!("expected fantasy daily, got {other:?}"),
         }
     }
+
+    #[test]
+    fn l0_fantasy_matchup_clap_surfaces_parse() {
+        let read = Cli::try_parse_from([
+            "icelines",
+            "fantasy",
+            "matchup",
+            "--date",
+            "2026-01-15",
+            "--league",
+            "Matchup League",
+            "--json",
+        ])
+        .expect("fantasy matchup should parse");
+        match read.command {
+            Commands::Fantasy(FantasySubcommand::Matchup {
+                date, league, json, ..
+            }) => {
+                assert_eq!(date.to_string(), "2026-01-15");
+                assert_eq!(league.as_deref(), Some("Matchup League"));
+                assert!(json);
+            }
+            other => panic!("expected fantasy matchup, got {other:?}"),
+        }
+
+        let setup = Cli::try_parse_from([
+            "icelines",
+            "fantasy",
+            "matchup-set",
+            "--week",
+            "2026-01-15",
+            "--home",
+            "My Team",
+            "--away",
+            "Rival",
+        ])
+        .expect("fantasy matchup-set should parse");
+        match setup.command {
+            Commands::Fantasy(FantasySubcommand::MatchupSet {
+                week, home, away, ..
+            }) => {
+                assert_eq!(week.to_string(), "2026-01-15");
+                assert_eq!(home, "My Team");
+                assert_eq!(away.as_deref(), Some("Rival"));
+            }
+            other => panic!("expected fantasy matchup-set, got {other:?}"),
+        }
+    }
 }
 
 // ── Fetch sub-commands ────────────────────────────────────────────────────────
@@ -2532,6 +2580,35 @@ pub enum FantasySubcommand {
         season_type: QuerySeasonType,
         #[arg(long)]
         json: bool,
+    },
+
+    /// Show fantasy head-to-head matchups for the week containing a date.
+    Matchup {
+        /// Date inside the matchup week, in YYYY-MM-DD format.
+        #[arg(long)]
+        date: chrono::NaiveDate,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Add a local fantasy matchup schedule row for a week.
+    MatchupSet {
+        /// Date inside the matchup week, in YYYY-MM-DD format.
+        #[arg(long)]
+        week: chrono::NaiveDate,
+        #[arg(long)]
+        home: String,
+        /// Opponent team. Omit for a bye.
+        #[arg(long)]
+        away: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
     },
 
     // Trade

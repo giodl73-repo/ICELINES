@@ -1454,6 +1454,40 @@ async fn l1_fantasy_daily_json_surfaces_missing_cache_as_warning() {
 }
 
 #[tokio::test]
+async fn l1_fantasy_matchup_json_surfaces_missing_schedule_as_empty_state() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Matchup Route League", &["matty_beniers"], &[]);
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/matchup?date=2026-01-15")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_eq!(json["league"], "Matchup Route League");
+    assert_eq!(json["week_start"], "2026-01-12");
+    assert_eq!(
+        json["matchups"].as_array().expect("matchups array").len(),
+        0
+    );
+    assert_eq!(json["empty_state"]["kind"], "no_rows");
+    assert!(json["source_state"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|source| { source["source"] == "schedule" && source["state"] == "unavailable" }));
+}
+
+#[tokio::test]
 async fn l1_fantasy_simulation_json_projects_add_scenario() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();

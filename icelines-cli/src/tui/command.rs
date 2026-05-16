@@ -71,6 +71,10 @@ pub enum Command {
     FantasyDaily {
         date: String,
     },
+    /// `fantasy matchup date=YYYY-MM-DD` — hand off to weekly matchup read surfaces.
+    FantasyMatchup {
+        date: String,
+    },
     /// `watchlist` - workspace becomes local fantasy Watchlist.
     Watchlist,
     /// `watch <player>` — command-bar bridge to watch-rule/note
@@ -464,6 +468,9 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         }),
         "daily" | "fantasy-daily" => Ok(Command::FantasyDaily {
             date: parse_daily_date(args)?,
+        }),
+        "matchup" | "fantasy-matchup" => Ok(Command::FantasyMatchup {
+            date: parse_dated_handoff("matchup", args)?,
         }),
         "watchlist" if args.trim().is_empty() => Ok(Command::Watchlist),
         "watch" => parse_watch(args),
@@ -885,6 +892,9 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
         "daily" => Ok(Command::FantasyDaily {
             date: parse_daily_date(rest)?,
         }),
+        "matchup" => Ok(Command::FantasyMatchup {
+            date: parse_dated_handoff("matchup", rest)?,
+        }),
         "poach" if rest.trim().is_empty() => Ok(Command::Poach),
         "poach" => Ok(Command::PoachKv {
             args: parse_poach_kv(rest)?,
@@ -894,6 +904,10 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
 }
 
 fn parse_daily_date(args: &str) -> Result<String, ParseError> {
+    parse_dated_handoff("daily", args)
+}
+
+fn parse_dated_handoff(command: &'static str, args: &str) -> Result<String, ParseError> {
     let value = args
         .trim()
         .strip_prefix("date=")
@@ -901,12 +915,12 @@ fn parse_daily_date(args: &str) -> Result<String, ParseError> {
         .trim();
     if value.is_empty() {
         return Err(ParseError::MissingArg {
-            command: "daily",
+            command,
             arg: "date=YYYY-MM-DD",
         });
     }
     chrono::NaiveDate::parse_from_str(value, "%Y-%m-%d").map_err(|_| ParseError::BadFilter {
-        details: format!("daily: date {value:?} must be YYYY-MM-DD"),
+        details: format!("{command}: date {value:?} must be YYYY-MM-DD"),
     })?;
     Ok(value.to_string())
 }
@@ -1347,6 +1361,9 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         Command::FantasySimKv { args } => exec_fantasy_sim_kv(app, args),
         Command::FantasyDaily { date } => ExecResult::Flash(format!(
             "daily fantasy delta: run `icelines fantasy daily --date {date}` or open `/api/v1/fantasy/daily?date={date}`"
+        )),
+        Command::FantasyMatchup { date } => ExecResult::Flash(format!(
+            "fantasy matchup week: run `icelines fantasy matchup --date {date}` or open `/api/v1/fantasy/matchup?date={date}`"
         )),
         Command::Watchlist => {
             app.screen = Screen::GroupDetail("Watchlist".to_string());
@@ -2372,6 +2389,12 @@ mod tests {
         assert_eq!(
             parse_command("fantasy daily date=2026-01-15").unwrap(),
             Command::FantasyDaily {
+                date: "2026-01-15".to_string()
+            }
+        );
+        assert_eq!(
+            parse_command("fantasy matchup date=2026-01-15").unwrap(),
+            Command::FantasyMatchup {
                 date: "2026-01-15".to_string()
             }
         );
@@ -3408,6 +3431,21 @@ mod tests {
         };
         assert!(message.contains("icelines fantasy daily --date 2026-01-15"));
         assert!(message.contains("/api/v1/fantasy/daily?date=2026-01-15"));
+    }
+
+    #[test]
+    fn l0_adams_exec_fantasy_matchup_hands_off_read_surface() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("fantasy matchup date=2026-01-15").unwrap(),
+            &mut app,
+        );
+
+        let ExecResult::Flash(message) = r else {
+            panic!("matchup command should return a handoff flash");
+        };
+        assert!(message.contains("icelines fantasy matchup --date 2026-01-15"));
+        assert!(message.contains("/api/v1/fantasy/matchup?date=2026-01-15"));
     }
 
     #[test]

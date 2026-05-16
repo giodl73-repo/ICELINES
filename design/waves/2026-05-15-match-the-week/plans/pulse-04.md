@@ -2,7 +2,7 @@
 wave: match-the-week
 pulse: 04
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - glass
   - wire
@@ -37,7 +37,15 @@ shared ViewModel and builder exist.
 
 ## Gates
 
-- [ ] focused CLI tests for matchup schedule/read commands
-- [ ] focused web tests if JSON route is added
-- [ ] focused TUI/dashboard command parser tests
-- [ ] `cargo fmt --check`
+- [x] focused CLI tests for matchup schedule/read commands
+- [x] focused web tests if JSON route is added
+- [x] focused TUI/dashboard command parser tests
+- [x] `cargo fmt --check`
+
+## Result
+
+Added thin weekly matchup surfaces over the shared fetch/core path: CLI
+`fantasy matchup --date`, CLI `fantasy matchup-set --week --home [--away]`,
+read-only JSON `/api/v1/fantasy/matchup?date=...`, and TUI/web-dashboard
+command handoffs. Focused tests cover clap parsing, missing-schedule JSON,
+web route behavior, and TUI/dashboard handoffs.

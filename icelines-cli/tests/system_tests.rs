@@ -1999,6 +1999,49 @@ fn l2_cmd_fantasy_daily_json_surfaces_missing_cache() {
 }
 
 #[test]
+fn l2_cmd_fantasy_matchup_json_surfaces_missing_schedule() {
+    let tmp = tempfile::tempdir().expect("tempdir for isolated HOME");
+    let home = tmp.path();
+    seed_daily_league(home);
+
+    let out = run_isolated(
+        home,
+        &[
+            "fantasy",
+            "matchup",
+            "--date",
+            "2026-01-15",
+            "--league",
+            "Daily League",
+            "--json",
+        ],
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "fantasy matchup --json must succeed with explicit missing-schedule state, stderr: {stderr}"
+    );
+    assert!(
+        stdout.contains("\"league\": \"Daily League\""),
+        "matchup JSON must expose the league name, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"week_start\": \"2026-01-12\""),
+        "matchup JSON must expose the ISO week start, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"empty_state\""),
+        "matchup JSON must expose setup empty state, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"source\": \"schedule\"")
+            && stdout.contains("\"state\": \"unavailable\""),
+        "matchup JSON must expose unavailable schedule source state, got: {stdout}"
+    );
+}
+
+#[test]
 fn l2_cmd_fetch_contracts_dry_run_exits_zero() {
     // contracts --dry-run needs a bios.json in the active snapshot;
     // if none exists it will error — that's acceptable (no panic required)

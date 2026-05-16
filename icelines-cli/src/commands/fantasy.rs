@@ -11,8 +11,10 @@ use axum::{
     Json,
 };
 use chrono::NaiveDate;
+use icelines_core::timeframe::Timeframe;
 use icelines_core::view_model::{
-    FantasyDailyDeltaView, FantasyDailyPlayerStatus, FantasyDailyTeamRow,
+    FantasyDailyDeltaView, FantasyDailyPlayerStatus, FantasyDailyTeamRow, FantasyMatchupOutcome,
+    FantasyMatchupSideRow, FantasyMatchupWeekView,
 };
 use icelines_core::{
     build_fantasy_simulation_view,
@@ -31,6 +33,7 @@ use icelines_core::{
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
+use icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view;
 use icelines_fetch::nhl_api::NhlApiClient;
 use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
 use icelines_fetch::stats_loader::LoadOutcome;
@@ -864,6 +867,120 @@ fn print_simulation(view: &FantasySimulationView) {
                 scenario.explanation
             );
         }
+    }
+}
+
+/// `icelines fantasy matchup --date YYYY-MM-DD [--league <league>] [--json]`
+pub async fn run_matchup(
+    date: NaiveDate,
+    league_override: Option<String>,
+    season: u32,
+    season_type: SeasonType,
+    json: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let data_root = icelines_data_root()?;
+    let store = DataStore::open(&data_root).context("open DataStore")?;
+    let view = build_fantasy_matchup_week_view(
+        &db,
+        &store,
+        date,
+        Season(season),
+        season_type,
+        league_override.as_deref(),
+    )?;
+
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&view).context("serializing fantasy matchup week")?
+        );
+        return Ok(());
+    }
+
+    print_matchup(&view);
+    Ok(())
+}
+
+/// `icelines fantasy matchup-set --week YYYY-MM-DD --home A [--away B]`
+pub async fn run_matchup_set(
+    week: NaiveDate,
+    home: String,
+    away: Option<String>,
+    league_override: Option<String>,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    let (week_start, week_end) = Timeframe::Week.range(week);
+    let id = db.schedule_matchup(&league.id, week_start, &home, away.as_deref())?;
+    println!(
+        "Scheduled fantasy matchup {} for {} through {}: {}{}",
+        id,
+        week_start,
+        week_end,
+        home,
+        away.as_ref()
+            .map(|opponent| format!(" vs {opponent}"))
+            .unwrap_or_else(|| " (bye)".to_string())
+    );
+    Ok(())
+}
+
+fn print_matchup(view: &FantasyMatchupWeekView) {
+    println!(
+        "Fantasy matchups - {} / {} to {} ({})",
+        view.league, view.week_start, view.week_end, view.scoring_scheme
+    );
+    for warning in &view.warnings {
+        println!("warning: {warning}");
+    }
+    if let Some(empty) = &view.empty_state {
+        println!("{}: {}", empty.title, empty.detail.as_deref().unwrap_or(""));
+        return;
+    }
+    println!(
+        "{:<5} {:<24} {:>10} {:<10} {:<24} {:>10} {:<10}",
+        "Rank", "Home", "Points", "Result", "Away", "Points", "Result"
+    );
+    for matchup in &view.matchups {
+        let away = matchup.away.as_ref();
+        println!(
+            "{:<5} {:<24} {:>10} {:<10} {:<24} {:>10} {:<10}",
+            matchup.rank,
+            matchup_side_label(&matchup.home),
+            matchup_points_label(matchup.home.weekly_points),
+            matchup_outcome_label(matchup.home.outcome),
+            away.map(matchup_side_label)
+                .unwrap_or_else(|| "-".to_string()),
+            away.map(|side| matchup_points_label(side.weekly_points))
+                .unwrap_or_else(|| "-".to_string()),
+            away.map(|side| matchup_outcome_label(side.outcome))
+                .unwrap_or("-")
+        );
+    }
+}
+
+fn matchup_side_label(side: &FantasyMatchupSideRow) -> String {
+    if side.is_user_team {
+        format!("{} (mine)", side.team)
+    } else {
+        side.team.clone()
+    }
+}
+
+fn matchup_points_label(points: Option<f32>) -> String {
+    points
+        .map(|points| format!("{points:.1}"))
+        .unwrap_or_else(|| "pending".to_string())
+}
+
+fn matchup_outcome_label(outcome: FantasyMatchupOutcome) -> &'static str {
+    match outcome {
+        FantasyMatchupOutcome::Win => "win",
+        FantasyMatchupOutcome::Loss => "loss",
+        FantasyMatchupOutcome::Tie => "tie",
+        FantasyMatchupOutcome::Bye => "bye",
+        FantasyMatchupOutcome::Pending => "pending",
     }
 }
 

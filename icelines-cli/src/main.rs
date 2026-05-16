@@ -1008,6 +1008,22 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 commands::fantasy::run_daily(date, league, season, season_type.to_core(), json)
                     .await?
             }
+            FantasySubcommand::Matchup {
+                date,
+                league,
+                season,
+                season_type,
+                json,
+            } => {
+                commands::fantasy::run_matchup(date, league, season, season_type.to_core(), json)
+                    .await?
+            }
+            FantasySubcommand::MatchupSet {
+                week,
+                home,
+                away,
+                league,
+            } => commands::fantasy::run_matchup_set(week, home, away, league).await?,
             FantasySubcommand::Trade {
                 player1,
                 to_team,

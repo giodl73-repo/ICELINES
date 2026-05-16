@@ -18,6 +18,7 @@ use icelines_core::{
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
 use icelines_fetch::fantasy_db::FantasyDb;
+use icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view;
 use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
 use serde::Deserialize;
 
@@ -116,6 +117,20 @@ pub async fn get_fantasy_daily_json(
     Query(q): Query<FantasyWebQuery>,
 ) -> Response {
     match build_fantasy_daily(&state, &q).await {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(message) => (
+            StatusCode::BAD_REQUEST,
+            axum::Json(serde_json::json!({ "error": message })),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_fantasy_matchup_json(
+    State(state): State<WebState>,
+    Query(q): Query<FantasyWebQuery>,
+) -> Response {
+    match build_fantasy_matchup(&state, &q).await {
         Ok(view) => axum::Json(view).into_response(),
         Err(message) => (
             StatusCode::BAD_REQUEST,
@@ -385,6 +400,40 @@ pub(super) async fn build_fantasy_daily(
     let data_root = data_root().ok_or_else(|| "cannot determine home directory".to_string())?;
     let store = DataStore::open(&data_root).map_err(|e| e.to_string())?;
     build_fantasy_daily_delta_view(
+        &db,
+        &store,
+        date,
+        Season(season_u32),
+        season_type,
+        q.league.as_deref(),
+    )
+    .map_err(|e| e.to_string())
+}
+
+pub(super) async fn build_fantasy_matchup(
+    state: &WebState,
+    q: &FantasyWebQuery,
+) -> Result<icelines_core::FantasyMatchupWeekView, String> {
+    let date_raw = q
+        .date
+        .as_deref()
+        .ok_or_else(|| "date is required; use ?date=YYYY-MM-DD".to_string())?;
+    let date = NaiveDate::parse_from_str(date_raw, "%Y-%m-%d")
+        .map_err(|e| format!("date '{date_raw}' is not a valid YYYY-MM-DD value: {e}"))?;
+    let (season_str, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_season.clone(),
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+    let season_u32: u32 = season_str
+        .parse()
+        .map_err(|e| format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"))?;
+    let db = FantasyDb::open().map_err(|e| e.to_string())?;
+    let data_root = data_root().ok_or_else(|| "cannot determine home directory".to_string())?;
+    let store = DataStore::open(&data_root).map_err(|e| e.to_string())?;
+    build_fantasy_matchup_week_view(
         &db,
         &store,
         date,
