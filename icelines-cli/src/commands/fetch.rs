@@ -24,6 +24,12 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             out,
             gate,
         } => do_fletch_sources(&season, season_type, &out, gate).await,
+        FetchSubcommand::FletchPartitions {
+            season,
+            season_type,
+            out,
+            gate,
+        } => do_fletch_partitions(&season, season_type, &out, gate).await,
         FetchSubcommand::Stats {
             season,
             refresh,
@@ -108,6 +114,39 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             dry_run,
         } => do_report(kind, &season, season_type, no_lock, dry_run).await,
     }
+}
+
+async fn do_fletch_partitions(
+    season: &str,
+    season_type: FetchSeasonType,
+    out: &std::path::Path,
+    gate: bool,
+) -> anyhow::Result<()> {
+    let report = icelines_fetch::fletch::fletch_query_partition_report(
+        season,
+        season_type_label(season_type),
+    );
+    icelines_fetch::fletch::write_fletch_query_partitions(out, &report)
+        .with_context(|| format!("writing FLETCH query partition report to {}", out.display()))?;
+
+    println!(
+        "FLETCH query partitions: {} partition(s), {} rollup(s), {} adapter-required",
+        report.partition_count, report.rollup_count, report.adapter_required_count,
+    );
+    println!("Wrote {}", out.display());
+
+    if gate {
+        let failures = icelines_fetch::fletch::fletch_query_partition_gate_failures(&report);
+        if !failures.is_empty() {
+            return Err(anyhow!(
+                "FLETCH query partition gate failed:\n{}",
+                failures.join("\n")
+            ));
+        }
+        println!("FLETCH query partition gate passed.");
+    }
+
+    Ok(())
 }
 
 async fn do_fletch_sources(

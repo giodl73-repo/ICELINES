@@ -39,6 +39,11 @@ Launch with `icelines tui` (or just `icelines` with no args).
 <!-- proof:figure id="query-commands" kind="table.reference" -->
 ## icelines query
 
+FLETCH handoff note: `icelines fetch fletch-partitions --gate` maps these
+query surfaces to durable FLETCH partition and rollup IDs. It is a local report:
+ICELINES sealed snapshots and active pointers remain the query activation
+evidence.
+
 ### query leaders
 
 Ranked leaderboard. All filter flags combine with AND logic.

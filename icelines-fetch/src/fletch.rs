@@ -53,6 +53,33 @@ pub struct FletchSourceHandoffReport {
     pub rows: Vec<FletchSourceHandoffRow>,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FletchQueryPartitionRow {
+    pub query_surface: String,
+    pub partition_id: String,
+    pub rollup_id: String,
+    pub season: String,
+    pub season_type: String,
+    pub partition_role: String,
+    pub source_fletch_ids: String,
+    pub source_handoff_status: String,
+    pub activation_evidence: String,
+    pub query_examples: String,
+    pub icelines_validation_floor: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FletchQueryPartitionReport {
+    pub schema_version: String,
+    pub generated_by: String,
+    pub season: String,
+    pub season_type: String,
+    pub partition_count: usize,
+    pub rollup_count: usize,
+    pub adapter_required_count: usize,
+    pub rows: Vec<FletchQueryPartitionRow>,
+}
+
 pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegistry {
     let mut fletches = Vec::new();
     let mut seen = BTreeSet::new();
@@ -279,6 +306,173 @@ pub fn fletch_source_handoff_report(season: &str, season_type: &str) -> FletchSo
     }
 }
 
+pub fn fletch_query_partition_report(
+    season: &str,
+    season_type: &str,
+) -> FletchQueryPartitionReport {
+    let registry = fletch_registry_for_season(season, season_type);
+    let source_status = registry
+        .fletches
+        .iter()
+        .map(|definition| {
+            let status = definition
+                .shafts
+                .first()
+                .map(|source| match source.kind {
+                    SourceKind::Http | SourceKind::File => "source-byte-fletch-ready",
+                    SourceKind::Adapter => "adapter-required-before-active-partition",
+                })
+                .unwrap_or("missing-source");
+            (definition.id.clone(), status.to_string())
+        })
+        .collect::<BTreeMap<_, _>>();
+
+    let mut rows = Vec::new();
+    for ty in expanded_season_types(season_type) {
+        for kind in ReportKind::all()
+            .iter()
+            .copied()
+            .filter(|kind| kind.is_known_working())
+        {
+            let url_path = kind.url_path();
+            let source_id = format!(
+                "icelines.stats.{season}.{ty}.{}",
+                url_path.replace('/', ".")
+            );
+            let skater = url_path.starts_with("skater/");
+            let goalie = url_path.starts_with("goalie/");
+            push_query_partition(
+                &mut rows,
+                QueryPartitionInput {
+                    query_surface: if goalie {
+                        "query-goalies"
+                    } else {
+                        "query-leaders-player-compare"
+                    },
+                    partition_id: format!(
+                        "icelines.partition.{season}.{ty}.{}",
+                        url_path.replace('/', ".")
+                    ),
+                    rollup_id: format!("icelines.rollup.{season}.{ty}.query-stats"),
+                    season,
+                    season_type: ty,
+                    partition_role: if skater {
+                        "skater-stats-report"
+                    } else {
+                        "goalie-stats-report"
+                    },
+                    source_fletch_ids: source_id,
+                    source_status: &source_status,
+                    query_examples: if goalie {
+                        "icelines query goalies --filter \"save-pct>=0.92\""
+                    } else {
+                        "icelines query leaders --filter \"g>=50\"; icelines query compare"
+                    },
+                    validation_floor: "ICELINES validates typed report rows, stat catalog semantics, snapshot integrity, and season/type fences",
+                },
+            );
+        }
+
+        push_query_partition(
+            &mut rows,
+            QueryPartitionInput {
+                query_surface: "query-windowed",
+                partition_id: format!("icelines.partition.{season}.{ty}.boxscores.by-date"),
+                rollup_id: format!("icelines.rollup.{season}.{ty}.game-lines"),
+                season,
+                season_type: ty,
+                partition_role: "boxscore-date-partition",
+                source_fletch_ids: format!("icelines.boxscore.{season}"),
+                source_status: &source_status,
+                query_examples: "icelines query leaders --week; sliding-window filters",
+                validation_floor: "ICELINES validates schedule expansion, game identity, boxscore parsing, player participation, and event payload versions",
+            },
+        );
+    }
+
+    let roster_sources = TEAMS
+        .iter()
+        .map(|team| format!("icelines.roster.{season}.{team}"))
+        .collect::<Vec<_>>();
+    push_query_partition(
+        &mut rows,
+        QueryPartitionInput {
+            query_surface: "query-roster-bio",
+            partition_id: format!("icelines.partition.{season}.regular.rosters"),
+            rollup_id: format!("icelines.rollup.{season}.regular.roster-bios"),
+            season,
+            season_type: "regular",
+            partition_role: "team-roster-set",
+            source_fletch_ids: roster_sources.join(";"),
+            source_status: &source_status,
+            query_examples: "icelines query leaders --team EDM --pos C; icelines query player",
+            validation_floor: "ICELINES validates roster JSON shape, player identity joins, positions, active snapshot chain, and seal integrity",
+        },
+    );
+
+    push_query_partition(
+        &mut rows,
+        QueryPartitionInput {
+            query_surface: "query-advanced-metrics",
+            partition_id: format!("icelines.partition.{season}.regular.moneypuck.skaters"),
+            rollup_id: format!("icelines.rollup.{season}.regular.advanced-metrics"),
+            season,
+            season_type: "regular",
+            partition_role: "moneypuck-skaters",
+            source_fletch_ids: format!("icelines.moneypuck.{season}.skaters"),
+            source_status: &source_status,
+            query_examples: "icelines query leaders --sort xg; icelines query leaders --sort cf-pct",
+            validation_floor: "ICELINES validates CSV headers, player joins, derived percentages, null policy, and snapshot metadata",
+        },
+    );
+
+    push_query_partition(
+        &mut rows,
+        QueryPartitionInput {
+            query_surface: "query-career",
+            partition_id: format!("icelines.partition.{season}.career-history"),
+            rollup_id: format!("icelines.rollup.{season}.career"),
+            season,
+            season_type: "regular",
+            partition_role: "career-history-cache",
+            source_fletch_ids: format!("icelines.career.{season}"),
+            source_status: &source_status,
+            query_examples: "icelines query player \"Connor McDavid\" --seasons 38; career league filters",
+            validation_floor: "ICELINES validates active/bundled player expansion, multi-league history parsing, merge/upsert semantics, and skipped-player reporting",
+        },
+    );
+
+    rows.sort_by(|left, right| {
+        left.query_surface
+            .cmp(&right.query_surface)
+            .then(left.season_type.cmp(&right.season_type))
+            .then(left.partition_id.cmp(&right.partition_id))
+    });
+    let rollup_count = rows
+        .iter()
+        .map(|row| row.rollup_id.clone())
+        .collect::<BTreeSet<_>>()
+        .len();
+    let adapter_required_count = rows
+        .iter()
+        .filter(|row| {
+            row.source_handoff_status
+                .contains("adapter-required-before-active-partition")
+        })
+        .count();
+
+    FletchQueryPartitionReport {
+        schema_version: "icelines.fletch-query-partitions.v1".to_string(),
+        generated_by: "icelines-fetch".to_string(),
+        season: season.to_string(),
+        season_type: season_type.to_string(),
+        partition_count: rows.len(),
+        rollup_count,
+        adapter_required_count,
+        rows,
+    }
+}
+
 pub fn write_fletch_source_handoff(path: &Path, report: &FletchSourceHandoffReport) -> Result<()> {
     if let Some(parent) = path
         .parent()
@@ -293,6 +487,24 @@ pub fn write_fletch_source_handoff(path: &Path, report: &FletchSourceHandoffRepo
         writer.serialize(row)?;
     }
     writer.flush()?;
+    Ok(())
+}
+
+pub fn write_fletch_query_partitions(
+    path: &Path,
+    report: &FletchQueryPartitionReport,
+) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating {}", parent.display()))?;
+    }
+    let file =
+        std::fs::File::create(path).with_context(|| format!("writing {}", path.display()))?;
+    serde_json::to_writer_pretty(file, report)
+        .with_context(|| format!("serializing {}", path.display()))?;
     Ok(())
 }
 
@@ -316,6 +528,30 @@ pub fn fletch_source_handoff_gate_failures(report: &FletchSourceHandoffReport) -
         }
         if row.handoff_status == "registry-blocked" {
             failures.push(format!("{} is registry-blocked", row.fletch_id));
+        }
+    }
+    failures
+}
+
+pub fn fletch_query_partition_gate_failures(report: &FletchQueryPartitionReport) -> Vec<String> {
+    let mut failures = Vec::new();
+    for row in &report.rows {
+        if row.partition_id.is_empty()
+            || row.rollup_id.is_empty()
+            || row.source_fletch_ids.is_empty()
+            || row.activation_evidence.is_empty()
+            || row.icelines_validation_floor.is_empty()
+        {
+            failures.push(format!(
+                "{} has incomplete partition metadata",
+                row.partition_id
+            ));
+        }
+        if row.source_handoff_status.contains("missing-source") {
+            failures.push(format!(
+                "{} references missing source(s): {}",
+                row.partition_id, row.source_fletch_ids
+            ));
         }
     }
     failures
@@ -367,6 +603,49 @@ pub async fn fetch_generic_http_bytes_async(
     })
     .await
     .context("joining FLETCH fetch task")?
+}
+
+struct QueryPartitionInput<'a> {
+    query_surface: &'a str,
+    partition_id: String,
+    rollup_id: String,
+    season: &'a str,
+    season_type: &'a str,
+    partition_role: &'a str,
+    source_fletch_ids: String,
+    source_status: &'a BTreeMap<String, String>,
+    query_examples: &'a str,
+    validation_floor: &'a str,
+}
+
+fn push_query_partition(rows: &mut Vec<FletchQueryPartitionRow>, input: QueryPartitionInput<'_>) {
+    let statuses = input
+        .source_fletch_ids
+        .split(';')
+        .map(|source_id| {
+            input
+                .source_status
+                .get(source_id)
+                .cloned()
+                .unwrap_or_else(|| "missing-source".to_string())
+        })
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>()
+        .join(";");
+    rows.push(FletchQueryPartitionRow {
+        query_surface: input.query_surface.to_string(),
+        partition_id: input.partition_id,
+        rollup_id: input.rollup_id,
+        season: input.season.to_string(),
+        season_type: input.season_type.to_string(),
+        partition_role: input.partition_role.to_string(),
+        source_fletch_ids: input.source_fletch_ids,
+        source_handoff_status: statuses,
+        activation_evidence: "ICELINES sealed snapshot plus active pointer; FLETCH source cache alone is not active query data".to_string(),
+        query_examples: input.query_examples.to_string(),
+        icelines_validation_floor: input.validation_floor.to_string(),
+    });
 }
 
 fn source_def(
@@ -540,6 +819,51 @@ mod tests {
                 .rows
                 .iter()
                 .filter(|row| row.fletch_id == "icelines.moneypuck.20252026.skaters")
+                .count(),
+            1
+        );
+    }
+
+    #[test]
+    fn query_partition_report_maps_query_surfaces_to_partition_rollups() {
+        let report = fletch_query_partition_report("20252026", "regular");
+        assert_eq!(report.schema_version, "icelines.fletch-query-partitions.v1");
+        assert_eq!(
+            fletch_query_partition_gate_failures(&report),
+            Vec::<String>::new()
+        );
+        assert!(report.rows.iter().any(|row| {
+            row.partition_id == "icelines.partition.20252026.regular.skater.summary"
+                && row.rollup_id == "icelines.rollup.20252026.regular.query-stats"
+                && row.source_fletch_ids == "icelines.stats.20252026.regular.skater.summary"
+                && row.source_handoff_status == "adapter-required-before-active-partition"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.partition_id == "icelines.partition.20252026.regular.moneypuck.skaters"
+                && row.query_surface == "query-advanced-metrics"
+                && row.source_handoff_status == "source-byte-fletch-ready"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.partition_id == "icelines.partition.20252026.regular.rosters"
+                && row.source_handoff_status == "source-byte-fletch-ready"
+        }));
+    }
+
+    #[test]
+    fn query_partition_report_expands_both_season_types_for_stats_rollups() {
+        let report = fletch_query_partition_report("20252026", "both");
+        assert!(report.rows.iter().any(|row| {
+            row.partition_id == "icelines.partition.20252026.regular.skater.summary"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.partition_id == "icelines.partition.20252026.playoff.skater.summary"
+        }));
+        assert_eq!(
+            report
+                .rows
+                .iter()
+                .filter(|row| row.partition_id
+                    == "icelines.partition.20252026.regular.moneypuck.skaters")
                 .count(),
             1
         );

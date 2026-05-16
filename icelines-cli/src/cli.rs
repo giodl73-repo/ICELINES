@@ -1724,6 +1724,25 @@ pub enum FetchSubcommand {
         #[arg(long)]
         gate: bool,
     },
+    /// Map ICELINES query surfaces onto FLETCH partition and rollup IDs.
+    #[command(name = "fletch-partitions")]
+    FletchPartitions {
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
+        /// Season type: regular, playoff, or both.
+        #[arg(long = "type", value_enum, default_value_t = FetchSeasonType::Regular)]
+        season_type: FetchSeasonType,
+        /// Write the partition report JSON to this path.
+        #[arg(
+            long,
+            value_name = "PATH",
+            default_value = "data/fletch-query-partitions.json"
+        )]
+        out: PathBuf,
+        /// Fail when partition metadata references missing FLETCH source IDs.
+        #[arg(long)]
+        gate: bool,
+    },
     /// Fetch all 32 team rosters (headshots, positions, bios).
     Rosters {
         #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
