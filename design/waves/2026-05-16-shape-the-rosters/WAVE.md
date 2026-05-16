@@ -44,7 +44,7 @@ aware, and focused on preventing invalid local roster state from looking valid.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Roster shape inventory and pulse map | complete | `FANTASY-ROSTER-SHAPE-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
-| 02 - Core roster shape contract | planned | depends on Pulse 01 |
+| 02 - Core roster shape contract | complete | `icelines-core/src/roster_shape.rs`; 6 L0 tests |
 | 03 - FantasyDb shape persistence and import validation | planned | depends on Pulse 02 |
 | 04 - CLI, TUI, and dashboard validation surfaces | planned | depends on Pulses 02-03 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
@@ -66,6 +66,11 @@ Pulse 01 opened the wave. Current storage tracks teams and normalized rostered
 player names only; the scoring scheme has weights but no roster-slot rules; and
 manual/import paths enforce duplicate ownership but not roster shape.
 
+Pulse 02 added the pure core roster-shape contract. `RosterShape` and
+`RosterShapeValidationView` can now validate canonical position inputs for legal
+rosters, underfilled/overfilled slots, unknown players, duplicate rows, and
+goalie/skater shape mismatches without touching scoring math.
+
 ## Next
 
-Execute Pulse 02: add the pure core roster-shape contract and L0 tests.
+Execute Pulse 03: persist league shape settings and wire import validation.
