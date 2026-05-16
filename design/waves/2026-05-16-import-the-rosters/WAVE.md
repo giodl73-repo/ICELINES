@@ -47,7 +47,7 @@ discipline.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - CSV import inventory and pulse map | complete | `FANTASY-CSV-IMPORT-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
-| 02 - Shared import contract | planned | depends on Pulse 01 |
+| 02 - Shared import contract | complete | `icelines-core/src/view_model/fantasy_import.rs`; `plans/pulse-02.md` |
 | 03 - CSV parser and FantasyDb importer | planned | depends on Pulse 02 |
 | 04 - CLI, TUI, and dashboard import surfaces | planned | depends on Pulse 03 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
@@ -69,11 +69,12 @@ discipline.
 
 ## Current Result
 
-Pulse 01 opened the wave and scoped Yahoo roster CSV import as a local,
-fixture-testable FantasyDb setup helper. The existing eligibility parser remains
-useful precedent, but the wave must add a typed roster-import contract before
-any surface writes team rosters.
+Pulse 02 added `FantasyImportView` and related pure core import contract types:
+dry-run/apply mode labels, team rows, player-row diagnostics, summary counts,
+source state, warnings, and empty-state handling. The contract distinguishes
+imported, skipped, unresolved, duplicate, and error rows before any CSV or
+SQLite implementation writes rosters.
 
 ## Next
 
-Execute Pulse 02: shared import contract.
+Execute Pulse 03: CSV parser and FantasyDb importer.

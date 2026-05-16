@@ -2,7 +2,7 @@
 wave: import-the-rosters
 pulse: 02
 date: 2026-05-16
-status: planned
+status: complete
 governing_roles:
   - forge
   - bench
@@ -34,8 +34,8 @@ reports the same import summary and row diagnostics.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] `cargo test -p icelines-core fantasy_import --quiet`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-core fantasy_import --quiet`
 
 ## Stop Conditions
 
@@ -43,3 +43,10 @@ reports the same import summary and row diagnostics.
   or HTML.
 - Stop if row status cannot distinguish imported, skipped, unresolved,
   duplicate, and error outcomes.
+
+## Result
+
+Added `FantasyImportView` in core with dry-run/apply mode labels, summary
+counts, deterministic team/player rows, row diagnostics, source state, warnings,
+and empty-state handling. L0 tests cover counts, ordering, team summaries,
+mode labels, warnings, and empty input.

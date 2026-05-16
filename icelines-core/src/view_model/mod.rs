@@ -13,6 +13,7 @@ pub mod data_status;
 pub mod docs;
 pub mod fantasy_daily;
 pub mod fantasy_gap;
+pub mod fantasy_import;
 pub mod fantasy_league;
 pub mod fantasy_matchup;
 pub mod fantasy_sim;
@@ -64,6 +65,11 @@ pub use fantasy_daily::{
 pub use fantasy_gap::{
     FantasyRosterGapAction, FantasyRosterGapCandidate, FantasyRosterGapInput,
     FantasyRosterGapReplacement, FantasyRosterGapRow, FantasyRosterGapView,
+};
+pub use fantasy_import::{
+    FantasyImportMode, FantasyImportPlayerRow, FantasyImportRowInput, FantasyImportRowStatus,
+    FantasyImportSummary, FantasyImportTeamInput, FantasyImportTeamRow, FantasyImportTeamStatus,
+    FantasyImportView, FantasyImportViewInput,
 };
 pub use fantasy_league::{
     FantasyLeagueInput, FantasyLeagueRow, FantasyLeagueTeamInput, FantasyLeagueTeamRow,
