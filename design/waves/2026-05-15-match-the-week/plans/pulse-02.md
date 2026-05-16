@@ -2,7 +2,7 @@
 wave: match-the-week
 pulse: 02
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - pace
   - bench
@@ -34,5 +34,12 @@ render.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-core fantasy_matchup --quiet`
-- [ ] `cargo fmt --check`
+- [x] `cargo test -p icelines-core fantasy_matchup --quiet`
+- [x] `cargo fmt --check`
+
+## Result
+
+Added `FantasyMatchupWeekView` and its input/row/outcome family in
+`icelines-core::view_model::fantasy_matchup`. The pure ViewModel resolves
+weekly matchup rows, team rankings, wins/losses/ties/byes/pending outcomes,
+missing schedule empty state, and source-state completeness without any I/O.

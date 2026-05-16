@@ -14,6 +14,7 @@ pub mod docs;
 pub mod fantasy_daily;
 pub mod fantasy_gap;
 pub mod fantasy_league;
+pub mod fantasy_matchup;
 pub mod fantasy_sim;
 pub mod favorites;
 pub mod game;
@@ -67,6 +68,11 @@ pub use fantasy_gap::{
 pub use fantasy_league::{
     FantasyLeagueInput, FantasyLeagueRow, FantasyLeagueTeamInput, FantasyLeagueTeamRow,
     FantasyLeagueView,
+};
+pub use fantasy_matchup::{
+    FantasyMatchupOutcome, FantasyMatchupRow, FantasyMatchupScheduleInput, FantasyMatchupSideRow,
+    FantasyMatchupTeamRow, FantasyMatchupTeamTotalInput, FantasyMatchupWeekInput,
+    FantasyMatchupWeekView,
 };
 pub use fantasy_sim::{
     build_fantasy_simulation_view, fantasy_roster_games_played, fantasy_roster_games_remaining,

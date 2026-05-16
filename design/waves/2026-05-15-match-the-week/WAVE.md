@@ -48,7 +48,7 @@ without pretending to be a proprietary Yahoo integration.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Matchup inventory and pulse map | complete | `FANTASY-MATCHUP-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
-| 02 - Core weekly matchup ViewModel | planned | depends on Pulse 01 |
+| 02 - Core weekly matchup ViewModel | complete | `icelines-core/src/view_model/fantasy_matchup.rs`; `plans/pulse-02.md` |
 | 03 - FantasyDb schedule and weekly builder | planned | depends on Pulse 02 |
 | 04 - CLI, web, and TUI matchup surfaces | planned | depends on Pulse 03 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
@@ -68,9 +68,11 @@ without pretending to be a proprietary Yahoo integration.
 
 ## Current Result
 
-Pulse 01 opened Match the Week and scoped weekly matchup scoring as a local,
-descriptive aggregation over Score the Day's cached finalized daily-delta path.
+Pulse 02 added the pure core weekly matchup contract:
+`FantasyMatchupWeekView` with week range, matchup rows, team totals,
+wins/losses/ties/byes/pending outcomes, source-state completeness, and missing
+schedule empty state.
 
 ## Next
 
-Execute Pulse 02: core weekly matchup ViewModel and aggregation contract.
+Execute Pulse 03: FantasyDb schedule persistence and cached weekly builder.
