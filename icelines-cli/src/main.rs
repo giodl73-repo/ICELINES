@@ -1031,6 +1031,15 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 dry_run,
                 json,
             } => commands::fantasy::run_import_yahoo(file, league, my_team, dry_run, json).await?,
+            FantasySubcommand::RosterShape { league, json } => {
+                commands::fantasy::run_roster_shape_show(league, json).await?
+            }
+            FantasySubcommand::RosterShapeSet { shape, league } => {
+                commands::fantasy::run_roster_shape_set(shape, league).await?
+            }
+            FantasySubcommand::RosterShapeValidate { league, team, json } => {
+                commands::fantasy::run_roster_shape_validate(league, team, json).await?
+            }
             FantasySubcommand::Trade {
                 player1,
                 to_team,

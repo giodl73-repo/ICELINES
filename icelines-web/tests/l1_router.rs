@@ -1488,6 +1488,33 @@ async fn l1_fantasy_matchup_json_surfaces_missing_schedule_as_empty_state() {
 }
 
 #[tokio::test]
+async fn l1_fantasy_roster_shape_json_projects_seeded_team() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Shape Route League", &[], &[]);
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/roster-shape?team=My%20Team")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    let rows = json.as_array().expect("roster-shape response array");
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["league"], "Shape Route League");
+    assert_eq!(rows[0]["team"], "My Team");
+    assert!(rows[0]["slots"].as_array().expect("slot rows").len() > 0);
+    assert!(rows[0]["summary"].is_object());
+}
+
+#[tokio::test]
 async fn l1_fantasy_simulation_json_projects_add_scenario() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();

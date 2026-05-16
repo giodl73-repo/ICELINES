@@ -861,6 +861,8 @@ Examples:
   icelines fantasy team-create "My Team" --owner "Gio"
   icelines fantasy import-yahoo --file rosters.csv --league "My League" --dry-run
   icelines fantasy import-yahoo --file rosters.csv --league "My League" --my-team "My Team"
+  icelines fantasy roster-shape
+  icelines fantasy roster-shape-validate --team "My Team"
   icelines fantasy gaps --category hits,blocks,shots
   icelines fantasy daily --date 2026-01-15 --json
 "#
@@ -1266,6 +1268,63 @@ mod tui_surface_tests {
                 assert!(json);
             }
             other => panic!("expected fantasy import-yahoo, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn l0_fantasy_roster_shape_clap_surfaces_parse() {
+        let show = Cli::try_parse_from([
+            "icelines",
+            "fantasy",
+            "roster-shape",
+            "--league",
+            "Office Pool",
+            "--json",
+        ])
+        .expect("fantasy roster-shape should parse");
+        match show.command {
+            Commands::Fantasy(FantasySubcommand::RosterShape { league, json }) => {
+                assert_eq!(league.as_deref(), Some("Office Pool"));
+                assert!(json);
+            }
+            other => panic!("expected fantasy roster-shape, got {other:?}"),
+        }
+
+        let set = Cli::try_parse_from([
+            "icelines",
+            "fantasy",
+            "roster-shape-set",
+            "yahoo-standard",
+            "--league",
+            "Office Pool",
+        ])
+        .expect("fantasy roster-shape-set should parse");
+        match set.command {
+            Commands::Fantasy(FantasySubcommand::RosterShapeSet { shape, league }) => {
+                assert_eq!(shape, "yahoo-standard");
+                assert_eq!(league.as_deref(), Some("Office Pool"));
+            }
+            other => panic!("expected fantasy roster-shape-set, got {other:?}"),
+        }
+
+        let validate = Cli::try_parse_from([
+            "icelines",
+            "fantasy",
+            "roster-shape-validate",
+            "--league",
+            "Office Pool",
+            "--team",
+            "My Team",
+            "--json",
+        ])
+        .expect("fantasy roster-shape-validate should parse");
+        match validate.command {
+            Commands::Fantasy(FantasySubcommand::RosterShapeValidate { league, team, json }) => {
+                assert_eq!(league.as_deref(), Some("Office Pool"));
+                assert_eq!(team.as_deref(), Some("My Team"));
+                assert!(json);
+            }
+            other => panic!("expected fantasy roster-shape-validate, got {other:?}"),
         }
     }
 }
@@ -2679,6 +2738,31 @@ pub enum FantasySubcommand {
         /// Preview diagnostics without writing FantasyDb changes.
         #[arg(long)]
         dry_run: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show the active league roster-shape preset and built-ins.
+    RosterShape {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Set the roster-shape preset for a league.
+    RosterShapeSet {
+        shape: String,
+        #[arg(long)]
+        league: Option<String>,
+    },
+
+    /// Validate one team or every team against the persisted roster shape.
+    RosterShapeValidate {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
         #[arg(long)]
         json: bool,
     },

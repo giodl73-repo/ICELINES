@@ -2,7 +2,7 @@
 wave: shape-the-rosters
 pulse: 04
 date: 2026-05-16
-status: planned
+status: complete
 governing_roles:
   - glass
   - bench
@@ -32,12 +32,19 @@ mutation.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-cli roster_shape --quiet`
-- [ ] `cargo test -p icelines-web roster_shape --quiet`
-- [ ] `cargo test -p icelines-cli l2_cmd_fantasy_roster_shape --test system_tests --quiet`
-- [ ] `cargo fmt --check`
-- [ ] `git diff --check`
+- [x] `cargo test -p icelines-cli roster_shape --quiet`
+- [x] `cargo test -p icelines-web roster_shape --quiet`
+- [x] `cargo test -p icelines-cli l2_cmd_fantasy_roster_shape --test system_tests --quiet`
+- [x] `cargo fmt --check`
+- [x] `git diff --check`
 
 ## Stop Conditions
 
 - Stop if a proposed dashboard link would mutate roster state through GET.
+
+## Result
+
+Completed. CLI now exposes roster-shape show/set/validate commands, the TUI
+command bar hands off to canonical CLI/API targets, and the web dashboard/API
+surface validates persisted FantasyDb rosters through read-only GET routes while
+explicitly deferring browser mutation.

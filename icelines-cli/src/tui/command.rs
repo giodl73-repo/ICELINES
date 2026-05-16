@@ -82,6 +82,10 @@ pub enum Command {
         my_team: Option<String>,
         dry_run: bool,
     },
+    /// `fantasy roster-shape ...` - hand off to CLI/API shape validation/setup.
+    FantasyRosterShape {
+        action: FantasyRosterShapeAction,
+    },
     /// `watchlist` - workspace becomes local fantasy Watchlist.
     Watchlist,
     /// `watch <player>` — command-bar bridge to watch-rule/note
@@ -252,6 +256,21 @@ pub struct FantasySimulationCommandArgs {
 pub struct FantasyGapsCommandArgs {
     pub categories: Option<Vec<String>>,
     pub limit: Option<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FantasyRosterShapeAction {
+    Show {
+        league: Option<String>,
+    },
+    Set {
+        shape: String,
+        league: Option<String>,
+    },
+    Validate {
+        league: Option<String>,
+        team: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -480,6 +499,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
             date: parse_dated_handoff("matchup", args)?,
         }),
         "import-yahoo" | "fantasy-import" => parse_fantasy_import(args),
+        "roster-shape" | "fantasy-roster-shape" => parse_fantasy_roster_shape(args),
         "watchlist" if args.trim().is_empty() => Ok(Command::Watchlist),
         "watch" => parse_watch(args),
         "transactions" | "txs" | "tx" => Ok(Command::Transactions),
@@ -904,6 +924,7 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
             date: parse_dated_handoff("matchup", rest)?,
         }),
         "import" | "import-yahoo" => parse_fantasy_import(rest),
+        "roster-shape" | "shape" => parse_fantasy_roster_shape(rest),
         "poach" if rest.trim().is_empty() => Ok(Command::Poach),
         "poach" => Ok(Command::PoachKv {
             args: parse_poach_kv(rest)?,
@@ -976,6 +997,90 @@ fn parse_fantasy_import(args: &str) -> Result<Command, ParseError> {
         my_team,
         dry_run,
     })
+}
+
+fn parse_fantasy_roster_shape(args: &str) -> Result<Command, ParseError> {
+    let (sub, rest) = split_first_word(args);
+    let action = match sub.to_ascii_lowercase().as_str() {
+        "" | "show" => {
+            let segments = parse_command_segments(rest, &["league"])?;
+            let mut league = None;
+            for (key, value) in segments {
+                match key.as_str() {
+                    "league" => {
+                        league = Some(required_segment_value("roster-shape", "league", &value)?);
+                    }
+                    other => {
+                        return Err(ParseError::BadFilter {
+                            details: format!("roster-shape: unknown filter {other:?}"),
+                        })
+                    }
+                }
+            }
+            FantasyRosterShapeAction::Show { league }
+        }
+        "set" => {
+            let (bare_shape, remaining) = leading_bare_value(rest, &["shape", "league"]);
+            let segments = parse_command_segments(remaining, &["shape", "league"])?;
+            let mut shape = bare_shape;
+            let mut league = None;
+            for (key, value) in segments {
+                match key.as_str() {
+                    "shape" => {
+                        shape = Some(required_segment_value("roster-shape", "shape", &value)?);
+                    }
+                    "league" => {
+                        league = Some(required_segment_value("roster-shape", "league", &value)?);
+                    }
+                    other => {
+                        return Err(ParseError::BadFilter {
+                            details: format!("roster-shape: unknown filter {other:?}"),
+                        })
+                    }
+                }
+            }
+            FantasyRosterShapeAction::Set {
+                shape: shape.ok_or(ParseError::MissingArg {
+                    command: "roster-shape set",
+                    arg: "shape",
+                })?,
+                league,
+            }
+        }
+        "validate" | "check" => {
+            let segments = parse_command_segments(rest, &["league", "team"])?;
+            let mut league = None;
+            let mut team = None;
+            for (key, value) in segments {
+                match key.as_str() {
+                    "league" => {
+                        league = Some(required_segment_value("roster-shape", "league", &value)?);
+                    }
+                    "team" => {
+                        team = Some(required_segment_value("roster-shape", "team", &value)?);
+                    }
+                    other => {
+                        return Err(ParseError::BadFilter {
+                            details: format!("roster-shape: unknown filter {other:?}"),
+                        })
+                    }
+                }
+            }
+            FantasyRosterShapeAction::Validate { league, team }
+        }
+        other => return Err(ParseError::UnknownCommand(format!("roster-shape {other}"))),
+    };
+    Ok(Command::FantasyRosterShape { action })
+}
+
+fn leading_bare_value<'a>(input: &'a str, keys: &[&'static str]) -> (Option<String>, &'a str) {
+    let (first, rest) = split_first_word(input);
+    let key = first.to_ascii_lowercase();
+    if first.is_empty() || first.contains('=') || keys.contains(&key.as_str()) {
+        (None, input)
+    } else {
+        (Some(first.replace('_', " ")), rest)
+    }
 }
 
 fn parse_fantasy_sim_kv(args: &str) -> Result<FantasySimulationCommandArgs, ParseError> {
@@ -1431,6 +1536,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                 .unwrap_or_default(),
             if dry_run { " --dry-run" } else { "" }
         )),
+        Command::FantasyRosterShape { action } => ExecResult::Flash(roster_shape_handoff(action)),
         Command::Watchlist => {
             app.screen = Screen::GroupDetail("Watchlist".to_string());
             ExecResult::Continue
@@ -1966,6 +2072,50 @@ fn exec_favorites_kv(
     ExecResult::Flash("favorites filters applied".to_string())
 }
 
+fn roster_shape_handoff(action: FantasyRosterShapeAction) -> String {
+    match action {
+        FantasyRosterShapeAction::Show { league } => format!(
+            "fantasy roster shape: run `icelines fantasy roster-shape{}` or open `/api/v1/fantasy/roster-shape{}`",
+            league
+                .as_ref()
+                .map(|league| format!(" --league \"{league}\""))
+                .unwrap_or_default(),
+            league
+                .as_ref()
+                .map(|league| format!("?league={}", url_component(league)))
+                .unwrap_or_default()
+        ),
+        FantasyRosterShapeAction::Set { shape, league } => format!(
+            "fantasy roster shape setup: run `icelines fantasy roster-shape-set {shape}{}`; web dashboard shape mutation is POST-deferred",
+            league
+                .map(|league| format!(" --league \"{league}\""))
+                .unwrap_or_default()
+        ),
+        FantasyRosterShapeAction::Validate { league, team } => {
+            let mut cli = "icelines fantasy roster-shape-validate".to_string();
+            if let Some(league) = &league {
+                cli.push_str(&format!(" --league \"{league}\""));
+            }
+            if let Some(team) = &team {
+                cli.push_str(&format!(" --team \"{team}\""));
+            }
+            let mut route = "/api/v1/fantasy/roster-shape".to_string();
+            let mut params = Vec::new();
+            if let Some(league) = &league {
+                params.push(format!("league={}", url_component(league)));
+            }
+            if let Some(team) = &team {
+                params.push(format!("team={}", url_component(team)));
+            }
+            if !params.is_empty() {
+                route.push('?');
+                route.push_str(&params.join("&"));
+            }
+            format!("fantasy roster shape validation: run `{cli}` or open `{route}`")
+        }
+    }
+}
+
 fn resolve_matchup_game_id(
     app: &crate::tui::app::App,
     matchup: &str,
@@ -2474,6 +2624,34 @@ mod tests {
                 league: "Office Pool".to_string(),
                 my_team: Some("My Team".to_string()),
                 dry_run: true,
+            }
+        );
+        assert_eq!(
+            parse_command("fantasy roster-shape validate team My_Team").unwrap(),
+            Command::FantasyRosterShape {
+                action: FantasyRosterShapeAction::Validate {
+                    league: None,
+                    team: Some("My Team".to_string()),
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("fantasy roster-shape set shape yahoo-standard league Office_Pool")
+                .unwrap(),
+            Command::FantasyRosterShape {
+                action: FantasyRosterShapeAction::Set {
+                    shape: "yahoo-standard".to_string(),
+                    league: Some("Office Pool".to_string()),
+                },
+            }
+        );
+        assert_eq!(
+            parse_command("fantasy roster-shape set yahoo-standard league Office_Pool").unwrap(),
+            Command::FantasyRosterShape {
+                action: FantasyRosterShapeAction::Set {
+                    shape: "yahoo-standard".to_string(),
+                    league: Some("Office Pool".to_string()),
+                },
             }
         );
         assert_eq!(parse_command("fantasy poach").unwrap(), Command::Poach);
@@ -3541,6 +3719,31 @@ mod tests {
         assert!(message.contains("--league \"Office Pool\""));
         assert!(message.contains("--dry-run"));
         assert!(message.contains("POST-deferred"));
+    }
+
+    #[test]
+    fn l0_adams_exec_fantasy_roster_shape_hands_off_cli_and_api_surfaces() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("fantasy roster-shape validate team My_Team").unwrap(),
+            &mut app,
+        );
+        let ExecResult::Flash(message) = r else {
+            panic!("roster-shape validate command should return a handoff flash");
+        };
+        assert!(message.contains("icelines fantasy roster-shape-validate"));
+        assert!(message.contains("--team \"My Team\""));
+        assert!(message.contains("/api/v1/fantasy/roster-shape?team=My+Team"));
+
+        let r = execute_command(
+            parse_command("fantasy roster-shape set shape yahoo-standard").unwrap(),
+            &mut app,
+        );
+        let ExecResult::Flash(message) = r else {
+            panic!("roster-shape set command should return a handoff flash");
+        };
+        assert!(message.contains("icelines fantasy roster-shape-set yahoo-standard"));
+        assert!(message.contains("web dashboard shape mutation"));
     }
 
     #[test]

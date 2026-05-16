@@ -294,6 +294,10 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/fantasy/matchup",
             get(handlers::fantasy::get_fantasy_matchup_json),
         )
+        .route(
+            "/api/v1/fantasy/roster-shape",
+            get(handlers::fantasy::get_fantasy_roster_shape_json),
+        )
         .route("/admin", get(handlers::admin::get_admin))
         .route(
             "/api/v1/admin/data-status",

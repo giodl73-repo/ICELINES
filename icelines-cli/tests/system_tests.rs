@@ -1957,6 +1957,75 @@ fn l2_cmd_fantasy_gaps_json_emits_view_contract() {
 }
 
 #[test]
+fn l2_cmd_fantasy_roster_shape_json_surfaces_persisted_shape_validation() {
+    let tmp = tempfile::tempdir().expect("tempdir for isolated HOME");
+    let home = tmp.path();
+    let league = unique_league("roster-shape");
+    let team = "Shape Checkers";
+
+    let out = run_isolated(home, &["fantasy", "league-create", &league]);
+    assert!(
+        out.status.success(),
+        "league-create must succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+
+    let out = run_isolated(home, &["fantasy", "team-create", team]);
+    assert!(
+        out.status.success(),
+        "team-create must succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+
+    let out = run_isolated(
+        home,
+        &[
+            "fantasy",
+            "roster-shape-set",
+            "yahoo-standard",
+            "--league",
+            &league,
+        ],
+    );
+    assert!(
+        out.status.success(),
+        "roster-shape-set must succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+
+    let out = run_isolated(
+        home,
+        &[
+            "fantasy",
+            "roster-shape-validate",
+            "--league",
+            &league,
+            "--team",
+            team,
+            "--json",
+        ],
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "roster-shape-validate --json must succeed, stderr: {stderr}"
+    );
+    assert!(
+        stdout.contains("\"team\": \"Shape Checkers\""),
+        "roster shape JSON must expose team name, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"slots\""),
+        "roster shape JSON must expose slot rows, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"summary\""),
+        "roster shape JSON must expose summary, got: {stdout}"
+    );
+}
+
+#[test]
 fn l2_cmd_fantasy_daily_json_surfaces_missing_cache() {
     let tmp = tempfile::tempdir().expect("tempdir for isolated HOME");
     let home = tmp.path();

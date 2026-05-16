@@ -7,7 +7,7 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use chrono::NaiveDate;
-use icelines_core::model::Season;
+use icelines_core::model::{Position, Season};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
     build_fantasy_simulation_view, resolve_fantasy_scenario_roster_details, FantasyRosterGapInput,
@@ -21,6 +21,7 @@ use icelines_fetch::fantasy_db::FantasyDb;
 use icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view;
 use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
 use serde::Deserialize;
+use std::collections::BTreeMap;
 
 #[derive(Debug, Deserialize, Default)]
 pub struct FantasyWebQuery {
@@ -40,6 +41,8 @@ pub struct FantasyWebQuery {
     pub drop_player: Option<String>,
     #[serde(default)]
     pub date: Option<String>,
+    #[serde(default)]
+    pub team: Option<String>,
 }
 
 pub async fn get_fantasy(
@@ -131,6 +134,20 @@ pub async fn get_fantasy_matchup_json(
     Query(q): Query<FantasyWebQuery>,
 ) -> Response {
     match build_fantasy_matchup(&state, &q).await {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(message) => (
+            StatusCode::BAD_REQUEST,
+            axum::Json(serde_json::json!({ "error": message })),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_fantasy_roster_shape_json(
+    State(state): State<WebState>,
+    Query(q): Query<FantasyWebQuery>,
+) -> Response {
+    match build_fantasy_roster_shape(&state, &q).await {
         Ok(view) => axum::Json(view).into_response(),
         Err(message) => (
             StatusCode::BAD_REQUEST,
@@ -442,6 +459,53 @@ pub(super) async fn build_fantasy_matchup(
         q.league.as_deref(),
     )
     .map_err(|e| e.to_string())
+}
+
+pub(super) async fn build_fantasy_roster_shape(
+    state: &WebState,
+    q: &FantasyWebQuery,
+) -> Result<Vec<icelines_core::RosterShapeValidationView>, String> {
+    let (season_str, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_season.clone(),
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+    let season_u32: u32 = season_str
+        .parse()
+        .map_err(|e| format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"))?;
+    let db = FantasyDb::open().map_err(|e| e.to_string())?;
+    let league = if let Some(name) = q.league.as_deref() {
+        db.list_leagues()
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .find(|league| league.name == name)
+            .ok_or_else(|| format!("fantasy league '{name}' not found"))?
+    } else {
+        db.get_active_league()
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "no active fantasy league found".to_string())?
+    };
+    let teams = if let Some(team_name) = q.team.as_deref() {
+        vec![db
+            .get_team_by_name(&league.id, team_name)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| format!("team '{team_name}' not found in '{}'", league.name))?]
+    } else {
+        db.list_teams(&league.id).map_err(|e| e.to_string())?
+    };
+    let repo = state.repo.read().await;
+    let positions = repo
+        .skaters(Season(season_u32), season_type)
+        .chain(repo.goalies(Season(season_u32), season_type))
+        .map(|view| (view.identity.name_normalized.clone(), vec![view.position()]))
+        .collect::<BTreeMap<String, Vec<Position>>>();
+    teams
+        .iter()
+        .map(|team| db.validate_team_roster_shape(&league, team, &positions))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())
 }
 
 pub(super) async fn build_fantasy_gaps(

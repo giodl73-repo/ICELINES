@@ -119,6 +119,7 @@ fn parse_verb(input: &str) -> Result<DashboardCommand, DashboardCommandError> {
         }
         "daily" | "fantasy-daily" => workspace(&fantasy_daily_url(args)),
         "matchup" | "fantasy-matchup" => workspace(&fantasy_matchup_url(args)),
+        "roster-shape" | "fantasy-roster-shape" => parse_fantasy_roster_shape(args),
         "import-yahoo" | "fantasy-import" => unsupported_fantasy_import(),
         "fantasy" => parse_fantasy(args),
         "player" => required_workspace_arg("player", "name", args, |needle| {
@@ -173,10 +174,25 @@ fn parse_fantasy(args: &str) -> Result<DashboardCommand, DashboardCommandError> 
         "simulate" | "sim" => workspace(&fantasy_url(rest, FantasyMode::Simulation)),
         "daily" => workspace(&fantasy_daily_url(rest)),
         "matchup" => workspace(&fantasy_matchup_url(rest)),
+        "roster-shape" | "shape" => parse_fantasy_roster_shape(rest),
         "import" | "import-yahoo" => unsupported_fantasy_import(),
         "poach" => workspace(&poach_url(rest)),
         unknown => Err(DashboardCommandError::UnknownCommand(format!(
             "fantasy {unknown}"
+        ))),
+    }
+}
+
+fn parse_fantasy_roster_shape(args: &str) -> Result<DashboardCommand, DashboardCommandError> {
+    let (sub, rest) = split_first_word(args);
+    match sub.to_ascii_lowercase().as_str() {
+        "" | "show" => workspace(&query_url("/api/v1/fantasy/roster-shape", rest)),
+        "validate" | "check" => workspace(&query_url("/api/v1/fantasy/roster-shape", rest)),
+        "set" => Err(DashboardCommandError::UnsupportedMutation(
+            "Web dashboard roster-shape mutation is deferred because GET routes must stay read-only; use `icelines fantasy roster-shape-set <shape>`.".to_owned(),
+        )),
+        other => Err(DashboardCommandError::UnknownCommand(format!(
+            "fantasy roster-shape {other}"
         ))),
     }
 }
@@ -673,6 +689,10 @@ mod tests {
             "/api/v1/fantasy/matchup?date=2026-01-15"
         );
         assert_eq!(
+            route("fantasy roster-shape validate team=\"My Team\""),
+            "/api/v1/fantasy/roster-shape?team=My+Team"
+        );
+        assert_eq!(
             route("report weekly cats=shots,hits top=12"),
             "/reports/weekly?category=shots%2Chits&top=12"
         );
@@ -796,6 +816,21 @@ mod tests {
         );
         assert!(
             err.to_string().contains("icelines fantasy import-yahoo"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn l0_dashboard_command_fantasy_roster_shape_set_is_deferred_not_get_backed() {
+        let err = parse_dashboard_command("fantasy roster-shape set yahoo-standard")
+            .expect_err("web GET roster-shape set is deferred");
+        assert!(
+            err.to_string().contains("GET routes must stay read-only"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            err.to_string()
+                .contains("icelines fantasy roster-shape-set"),
             "unexpected error: {err}"
         );
     }

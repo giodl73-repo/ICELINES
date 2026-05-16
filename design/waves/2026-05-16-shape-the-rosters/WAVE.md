@@ -46,7 +46,7 @@ aware, and focused on preventing invalid local roster state from looking valid.
 | 01 - Roster shape inventory and pulse map | complete | `FANTASY-ROSTER-SHAPE-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Core roster shape contract | complete | `icelines-core/src/roster_shape.rs`; 6 L0 tests |
 | 03 - FantasyDb shape persistence and import validation | complete | `fl_leagues.roster_shape`; import warnings from canonical positions; fetch L1 tests |
-| 04 - CLI, TUI, and dashboard validation surfaces | planned | depends on Pulses 02-03 |
+| 04 - CLI, TUI, and dashboard validation surfaces | complete | CLI show/set/validate; TUI/web-dashboard handoffs; read-only web JSON validation |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
 
 ## Role Notes
@@ -77,6 +77,13 @@ Yahoo CSV imports to emit roster-shape warnings only from canonical player
 positions supplied by the active player pool. Yahoo CSV position hints remain
 diagnostics/fallback context and do not become NHL eligibility truth.
 
+Pulse 04 added the user-facing validation/config surfaces without GET-backed
+mutation: CLI `fantasy roster-shape`, `fantasy roster-shape-set`, and
+`fantasy roster-shape-validate`; TUI command-bar handoffs to those commands and
+the read-only API; web dashboard command parsing that rejects shape mutation; and
+JSON `GET /api/v1/fantasy/roster-shape` validation for persisted FantasyDb
+rosters.
+
 ## Next
 
-Execute Pulse 04: add CLI, TUI, and dashboard validation/config surfaces.
+Execute Pulse 05: update docs, rerun regression gates, and close the wave.

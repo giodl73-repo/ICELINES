@@ -19,7 +19,7 @@ use icelines_core::view_model::{
 };
 use icelines_core::{
     build_fantasy_simulation_view,
-    model::Season,
+    model::{Position, Season},
     name::normalize_name,
     resolve_fantasy_scenario_roster_details,
     scheme::Scheme,
@@ -29,8 +29,8 @@ use icelines_core::{
     FantasyLeagueInput, FantasyLeagueTeamInput, FantasyLeagueView, FantasyRosterGapInput,
     FantasyRosterGapView, FantasySimulationBuildInput, FantasySimulationConfidence,
     FantasySimulationHorizon, FantasySimulationRosterTeamInput,
-    FantasySimulationScenarioRosterInput, FantasySimulationView, ViewContext, ViewWindow,
-    CURRENT_SEASON,
+    FantasySimulationScenarioRosterInput, FantasySimulationView, RosterShape, RosterShapeStatus,
+    RosterShapeValidationView, ViewContext, ViewWindow, CURRENT_SEASON,
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
@@ -41,7 +41,7 @@ use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
 use icelines_fetch::stats_loader::LoadOutcome;
 use serde_json::{json, Value};
 
-use crate::fantasy_db::{FantasyDb, LeagueRow, TeamRow};
+use crate::fantasy_db::{resolve_roster_shape, FantasyDb, LeagueRow, TeamRow};
 
 /// Find a view by partial normalized name in the given slice.
 fn fuzzy_find_view_in<'a, 'r>(
@@ -1021,7 +1021,7 @@ pub async fn run_import_yahoo(
     Ok(())
 }
 
-fn known_player_positions() -> anyhow::Result<BTreeMap<String, Vec<icelines_core::Position>>> {
+fn known_player_positions() -> anyhow::Result<BTreeMap<String, Vec<Position>>> {
     let (outcome, season) = load_pools()?;
     let (skaters, goalies) = pools_views(&outcome.repo, season);
     Ok(skaters
@@ -1029,6 +1029,158 @@ fn known_player_positions() -> anyhow::Result<BTreeMap<String, Vec<icelines_core
         .chain(goalies.iter())
         .map(|view| (view.identity.name_normalized.clone(), vec![view.position()]))
         .collect())
+}
+
+/// `icelines fantasy roster-shape [--league <league>] [--json]`
+pub async fn run_roster_shape_show(
+    league_override: Option<String>,
+    json: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let league = if league_override.is_some() || db.get_active_league()?.is_some() {
+        Some(require_league(&db, &league_override)?)
+    } else {
+        None
+    };
+    let shapes = RosterShape::all_builtins();
+
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&json!({
+                "league": league.as_ref().map(|league| league.name.clone()),
+                "roster_shape": league.as_ref().map(|league| league.roster_shape.clone()),
+                "available_shapes": shapes,
+            }))
+            .context("serializing roster shape summary")?
+        );
+        return Ok(());
+    }
+
+    if let Some(league) = &league {
+        println!(
+            "League: {} | roster shape: {}",
+            league.name, league.roster_shape
+        );
+    } else {
+        println!("No active fantasy league; available roster shapes:");
+    }
+    println!("{:<18} Description", "Shape");
+    println!("{}", "-".repeat(64));
+    for shape in shapes {
+        println!("{:<18} {}", shape.name, shape.description);
+    }
+    Ok(())
+}
+
+/// `icelines fantasy roster-shape-set <shape> [--league <league>]`
+pub async fn run_roster_shape_set(
+    shape_name: String,
+    league_override: Option<String>,
+) -> anyhow::Result<()> {
+    resolve_roster_shape(&shape_name)?;
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    db.set_league_roster_shape(&league.id, &shape_name)?;
+    println!(
+        "League '{}' roster shape set to '{}'.",
+        league.name, shape_name
+    );
+    Ok(())
+}
+
+/// `icelines fantasy roster-shape-validate [--league <league>] [--team <team>] [--json]`
+pub async fn run_roster_shape_validate(
+    league_override: Option<String>,
+    team: Option<String>,
+    json: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    let teams = if let Some(team_name) = team {
+        vec![require_team(&db, &league.id, &team_name)?]
+    } else {
+        db.list_teams(&league.id)?
+    };
+    let positions = if teams_have_rostered_players(&db, &teams)? {
+        known_player_positions()?
+    } else {
+        BTreeMap::<String, Vec<Position>>::new()
+    };
+    let views = teams
+        .iter()
+        .map(|team| db.validate_team_roster_shape(&league, team, &positions))
+        .collect::<anyhow::Result<Vec<_>>>()?;
+
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&views).context("serializing roster shape validation")?
+        );
+        return Ok(());
+    }
+
+    print_roster_shape_validation(&league, &views);
+    Ok(())
+}
+
+fn teams_have_rostered_players(db: &FantasyDb, teams: &[TeamRow]) -> anyhow::Result<bool> {
+    for team in teams {
+        if !db.list_roster(&team.id)?.is_empty() {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn print_roster_shape_validation(league: &LeagueRow, views: &[RosterShapeValidationView]) {
+    println!(
+        "Fantasy roster shape - {} ({})",
+        league.name, league.roster_shape
+    );
+    if views.is_empty() {
+        println!("No teams found. Create one with `icelines fantasy team-create <name>`.");
+        return;
+    }
+    for view in views {
+        println!(
+            "\n{}: {} ({} players, {} missing groups, {} over-cap groups, {} issues)",
+            view.team,
+            roster_shape_status_label(view.status),
+            view.summary.rostered_players,
+            view.summary.missing_slots,
+            view.summary.overflow_slots,
+            view.summary.unknown_players
+                + view.summary.duplicate_players
+                + view.summary.ineligible_players
+        );
+        println!(
+            "{:<8} {:>5} {:>5} {:>5} Status",
+            "Slot", "Have", "Min", "Max"
+        );
+        for slot in &view.slots {
+            println!(
+                "{:<8} {:>5} {:>5} {:>5} {}",
+                slot.label,
+                slot.count,
+                slot.min,
+                slot.max
+                    .map(|max| max.to_string())
+                    .unwrap_or_else(|| "-".to_string()),
+                format!("{:?}", slot.status).to_ascii_lowercase()
+            );
+        }
+        for issue in &view.player_issues {
+            println!("  warning: {}", issue.message);
+        }
+    }
+}
+
+fn roster_shape_status_label(status: RosterShapeStatus) -> &'static str {
+    match status {
+        RosterShapeStatus::Legal => "legal",
+        RosterShapeStatus::Invalid => "invalid",
+    }
 }
 
 fn print_import_yahoo(view: &FantasyImportView) {
