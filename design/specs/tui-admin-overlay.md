@@ -37,24 +37,23 @@ While the overlay is open, all other keys (number jumps, `/` search,
 A centered popup (~44 cols × 50% height), bordered, yellow title:
 
 ```
-┌─── Admin — Esc to close ──────────────────────┐
-│                                                │
-│  Admin commands (run in terminal):             │
-│                                                │
-│    icelines fetch all                          │
-│      → refresh all NHL data                    │
-│                                                │
-│    icelines data list                          │
-│      → show installed seasons                  │
-│                                                │
-│    icelines data install 20032004              │
-│      → install a historical season             │
-│                                                │
-│  ─────────────────────────────────────────     │
-│    No install in progress.                     │
-│                                                │
-│    Esc to close                                │
-└────────────────────────────────────────────────┘
+Admin — Esc to close
+
+  Admin commands (run in terminal):
+
+    icelines fetch all
+      -> refresh all NHL data
+
+    icelines data list
+      -> show installed seasons
+
+    icelines data install 20032004
+      -> install a historical season
+
+  -----------------------------------------
+    No install in progress.
+
+    Esc to close
 ```
 
 The bottom block is the **install status line** — driven by
@@ -171,24 +170,27 @@ A common workflow:
 ## Test coverage
 
 The overlay is implemented (toggle on `Char('F')` at `app.rs`,
-`show_admin` field, `render_admin` in `screens/misc.rs`), but
-**dedicated tests are not yet written**. Recommended coverage:
+`show_admin` field, `render_admin` in `screens/misc.rs`) and now has dedicated
+L0 coverage.
 
-L0 (in `tui/app.rs::tests`):
-- `l0_admin_overlay_opens_on_capital_F` — capital `F` flips `show_admin`
-- `l0_admin_overlay_closes_on_esc`
-- `l0_admin_overlay_blocks_other_keys` — pressing `Tab` while open
-  is a no-op
-- `l0_admin_overlay_does_not_open_on_lowercase_f` — verify
-  add-to-Favorites still fires
+Covered in `tui/app.rs::tests`:
+- `l0_admin_overlay_opens_on_capital_f_key` — capital `F` opens the overlay.
+- `l0_admin_overlay_closes_on_esc` — `Esc` closes it.
+- `l0_admin_overlay_blocks_other_keys` — keys such as `Tab` are no-ops while
+  open.
+- `l0_admin_overlay_does_not_open_on_lowercase_f` — lowercase `f` remains
+  separate from the admin overlay.
+- `l0_admin_overlay_capital_f_key_toggles_off` — capital `F` toggles an open
+  overlay closed.
 
-L0 (render in `screens/misc.rs::tests`):
+Covered in render tests:
 - `l0_render_admin_idle_phase_shows_no_install`
 - `l0_render_admin_downloading_phase_shows_spinner`
 - `l0_render_admin_error_phase_shows_red`
-
-Adding these is tracked in `design/plans/INDEX.md` backlog under
-"admin overlay test coverage".
+- `l0_render_admin_done_phase_shows_check_and_size`
+- `l0_app_admin_overlay_renders_when_show_admin_is_true`
+- `l0_tui_scenario_admin_overlay_opens_and_closes`
+- `l0_admin_overlay_title_style_is_yellow`
 
 ---
 

@@ -2,7 +2,7 @@
 wave: clear-the-unblocks
 pulse: 02
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - bench
   - glass
@@ -33,6 +33,12 @@ so the docs reflect existing focused test coverage.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-cli headshot --quiet`
-- [ ] `cargo test -p icelines-cli admin_overlay --quiet`
-- [ ] `C:\src\proof\target\debug\proof.exe check design\specs\headshot-rendering.md design\specs\tui-admin-overlay.md design\plans\INDEX.md --errors-only`
+- [x] `cargo test -p icelines-cli headshot --quiet`
+- [x] `cargo test -p icelines-cli admin_overlay --quiet`
+- [x] `C:\src\proof\target\debug\proof.exe check design\specs\headshot-rendering.md design\specs\tui-admin-overlay.md design\plans\INDEX.md --errors-only`
+
+## Result
+
+Updated the headshot and admin-overlay specs plus the plans index to reflect
+existing focused tests. No runtime behavior changed and no live network tests
+were added.

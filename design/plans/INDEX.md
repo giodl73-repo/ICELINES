@@ -83,8 +83,12 @@ column tells us why it isn't shipping yet.
 | Item | Value | Notes |
 |------|-------|-------|
 | Bundle shift data for historical seasons | ⭐ | Required for `mates`/`peers` against historical seasons. ~5 MB/season. |
-| `headshot.rs` test coverage | ⭐ | Spec calls it out. Manual smoke only today. |
-| `tui-admin-overlay` test coverage | ⭐ | Spec calls it out. Needs 5c.6 snapshot harness. |
+
+Cleared in Clear the Unblocks:
+- `headshot.rs` test coverage — focused L0 coverage exists for braille encoding,
+  cache markers, clone sharing, and disk-cache behavior.
+- `tui-admin-overlay` test coverage — focused L0 coverage exists for key handling,
+  render phases, integration rendering, and overlay title styling.
 
 ### Tier 3 — future features
 

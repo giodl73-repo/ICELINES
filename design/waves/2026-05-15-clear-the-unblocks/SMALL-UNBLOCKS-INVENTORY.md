@@ -7,8 +7,8 @@ current code/spec state for the three listed small unblocks.
 
 | Residual | Source | Decision | Pulse | Notes |
 |---|---|---|---|---|
-| `headshot.rs` test coverage | `design/plans/INDEX.md`; `design/specs/headshot-rendering.md` | spec drift | 02 | `icelines-cli/src/tui/headshot.rs` already has L0 coverage for braille bit layout, threshold constants, cache markers, clone sharing, and disk-cache roundtrips. The spec still says no `#[cfg(test)]` blocks exist. |
-| `tui-admin-overlay` test coverage | `design/plans/INDEX.md`; `design/specs/tui-admin-overlay.md` | spec drift | 02 | `app.rs`, `screens/misc.rs`, and `screens/mod.rs` already cover capital-F toggle, Esc close, blocked keys, lowercase `f`, render phases, and overlay style. The spec still says dedicated tests are missing. |
+| `headshot.rs` test coverage | `design/plans/INDEX.md`; `design/specs/headshot-rendering.md` | done | 02 | Specs/index now reflect existing L0 coverage for braille bit layout, threshold constants, cache markers, clone sharing, and disk-cache roundtrips. |
+| `tui-admin-overlay` test coverage | `design/plans/INDEX.md`; `design/specs/tui-admin-overlay.md` | done | 02 | Specs/index now reflect existing tests for capital-F toggle, Esc close, blocked keys, lowercase `f`, render phases, integration rendering, and overlay style. |
 | Bundle shift data for historical seasons | `design/plans/INDEX.md`; `design/specs/data-sources.md`; `icelines-fetch/src/shift_profile.rs` | decision | 03 | `ShiftProfile` derives linemate summaries from boxscore-shaped data, but no `data/seasons/**/shift*` bundles exist and the sync capability matrix currently keeps shifts disabled. This needs a source/capability decision, not a casual bundle claim. |
 
 ## Pulse Map

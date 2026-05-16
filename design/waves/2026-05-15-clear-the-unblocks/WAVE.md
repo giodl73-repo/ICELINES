@@ -41,7 +41,7 @@ scope creep.
 | Pulse | Status | Evidence |
 |---|---|---|
 | 01 - Small unblock inventory and pulse map | complete | `SMALL-UNBLOCKS-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
-| 02 - Headshot and admin-overlay spec truth | planned | depends on Pulse 01 |
+| 02 - Headshot and admin-overlay spec truth | complete | `design/specs/headshot-rendering.md`; `design/specs/tui-admin-overlay.md`; `design/plans/INDEX.md`; `plans/pulse-02.md` |
 | 03 - Shift-data bundle decision | planned | depends on Pulse 01 |
 | 04 - Docs, regression gates, and closeout | planned | depends on Pulses 02-03 |
 
@@ -58,10 +58,10 @@ scope creep.
 
 ## Current Result
 
-Pulse 01 inventoried the Tier 2 small-unblock backlog. Headshot and admin-overlay
-test gaps appear stale because focused tests now exist; shift-data bundling
-remains a real data/source decision and should not be treated as a tiny cleanup.
+Pulse 02 corrected stale headshot/admin-overlay test-coverage docs. The specs
+and plans index now reflect existing focused L0 coverage, and no runtime behavior
+or network tests were added.
 
 ## Next
 
-Execute Pulse 02: headshot and admin-overlay spec truth.
+Execute Pulse 03: shift-data bundle decision.

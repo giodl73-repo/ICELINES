@@ -11,7 +11,8 @@
 Render player face photos as **ASCII art** inside the terminal — the
 small portrait shown on the TUI player card. Uses Unicode braille
 characters for 2×4-pixel resolution per cell, fetched live from the
-NHL CDN and cached in-process for the session.
+NHL CDN, cached in-process for the session, and persisted as rendered
+braille rows under the user cache directory.
 
 This is a reference doc for the existing implementation in
 `icelines-cli/src/tui/headshot.rs`. Behavior is intentionally
@@ -67,8 +68,11 @@ Two sentinel row patterns let the renderer show progress:
 - `is_loading(rows)` — true if the rows match a "loading…" placeholder
 - `is_error(rows)` — true if the rows match an "error" placeholder
 
-The cache is **session-scoped** — never persisted to disk. A fresh
-TUI launch refetches every viewed player.
+The in-memory cache is session-scoped. Successful fetches also write the
+rendered rows to `~/.icelines/cache/headshots/{nhl_id}.txt`; a fresh TUI launch
+checks that disk cache before making an NHL CDN request. Disk reads are
+best-effort: missing, empty, or unreadable files fall through to the network
+path.
 
 ---
 
@@ -108,17 +112,12 @@ rendering at 10 fps with the loading placeholder until the rows land.
 
 Unicode braille codepoints have eight dots arranged 2×4:
 
-```
-  ┌───┬───┐
-  │ 1 │ 4 │     bit positions in U+2800:
-  ├───┼───┤       1 → 0x01    4 → 0x08
-  │ 2 │ 5 │       2 → 0x02    5 → 0x10
-  ├───┼───┤       3 → 0x04    6 → 0x20
-  │ 3 │ 6 │       7 → 0x40    8 → 0x80
-  ├───┼───┤
-  │ 7 │ 8 │
-  └───┴───┘
-```
+| Row | Left dot | Right dot |
+|---|---:|---:|
+| 1 | 1 (`0x01`) | 4 (`0x08`) |
+| 2 | 2 (`0x02`) | 5 (`0x10`) |
+| 3 | 3 (`0x04`) | 6 (`0x20`) |
+| 4 | 7 (`0x40`) | 8 (`0x80`) |
 
 A rendered character is `U+2800 + Σ(bit for each set dot)`. All
 ranges from `U+2800` (blank) to `U+28FF` (all eight dots) are valid.
@@ -164,10 +163,9 @@ state automatically.
 
 ## Decisions (Open Questions resolved)
 
-1. **Session-only cache, no disk persistence**: Photos are 50–80 KB
-   each; persisting all 1,000+ active skaters is ~80 MB. Not worth
-   the complexity for a feature that only renders one face at a
-   time.
+1. **Persist rendered rows, not source photos**: Source photos are 50–80 KB each,
+   but dithered rows are about 1 KB per player. Persisting the rendered text
+   avoids repeated CDN requests without creating a large photo cache.
 
 2. **No fallback URL**: If the CDN fetch fails (404 for traded
    player, network error), show the error placeholder. Don't try
@@ -193,23 +191,26 @@ state automatically.
 
 ## Test coverage
 
-The rendering pipeline is **not yet covered by automated tests** —
-the headshot module ships without `#[cfg(test)]` blocks. Manual
-smoke test renders the player card on TUI launch and visually
-confirms a recognizable face.
+The pure rendering and cache helpers have L0 coverage in
+`icelines-cli/src/tui/headshot.rs::tests`.
 
-Recommended coverage (when added):
+Covered:
+- `l0_braille_dot_bit_layout_matches_unicode` — every dot maps to the expected
+  Unicode braille bit.
+- `l0_threshold_dither_solid_black_sets_all_dots` and
+  `l0_threshold_dither_solid_white_clears_all_dots` — all-on/all-off contracts.
+- `l0_threshold_constant_is_midpoint` — threshold stays at the 8-bit midpoint.
+- `l0_cache_get_set_roundtrip` and `l0_cache_clone_shares_storage` — in-memory
+  cache behavior.
+- `l0_is_loading_detects_placeholder` and `l0_is_error_detects_placeholder` —
+  sentinel detection.
+- `l0_disk_write_and_read_roundtrip`,
+  `l0_disk_write_creates_parent_directory_on_first_use`,
+  `l0_disk_read_returns_none_when_file_missing`, and
+  `l0_disk_read_treats_empty_file_as_miss` — disk-cache behavior in an isolated
+  temp home.
 
-L0 (unit, in `tui/headshot.rs::tests`):
-- `braille_dot_bit_layout_matches_unicode` — assert each of the 8
-  positions encodes to the expected codepoint
-- `threshold_dither_solid_black_sets_all_dots`
-- `threshold_dither_solid_white_clears_all_dots`
-- `cache_get_set_roundtrip`
-- `is_loading_detects_placeholder`
-- `is_error_detects_placeholder`
-
-Live network is intentionally untested in CI.
+Live NHL CDN requests remain intentionally untested in CI.
 
 ---
 
@@ -217,7 +218,6 @@ Live network is intentionally untested in CI.
 
 | Item | Priority | Why deferred |
 |------|----------|--------------|
-| Disk-persistent cache (`~/.icelines/cache/headshots/`) | LOW | Session-only is fine |
 | Color braille | LOW | Marginal recognition gain |
 | Team logo rendering tweaks | LOW | Half-block already good |
 | Local SVG → braille for team logos | LOW | Already works via PNG |
