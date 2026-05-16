@@ -1,7 +1,7 @@
 ---
 wave: clear-the-unblocks
 date_open: 2026-05-15
-status: active
+status: closed
 source: Tier 2 backlog and spec drift after Guard the Operations closeout
 ---
 
@@ -43,7 +43,7 @@ scope creep.
 | 01 - Small unblock inventory and pulse map | complete | `SMALL-UNBLOCKS-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Headshot and admin-overlay spec truth | complete | `design/specs/headshot-rendering.md`; `design/specs/tui-admin-overlay.md`; `design/plans/INDEX.md`; `plans/pulse-02.md` |
 | 03 - Shift-data bundle decision | complete | `design/specs/data-sources.md`; `design/specs/foster-data-architecture.md`; `design/specs/query-engine.md`; `design/plans/INDEX.md`; `icelines-cli/src/commands/mates.rs`; `icelines-cli/src/commands/scouting.rs`; `plans/pulse-03.md` |
-| 04 - Docs, regression gates, and closeout | planned | depends on Pulses 02-03 |
+| 04 - Docs, regression gates, and closeout | complete | `design/waves/PHASES.md`; `WAVE.md`; `plans/pulse-04.md`; closeout gates |
 
 ## Role Notes
 
@@ -58,11 +58,10 @@ scope creep.
 
 ## Current Result
 
-Pulse 03 parked historical shift-data bundling until IceLines has a supported
-source contract, fixtures, bundle policy, and capability unlock. Docs and command
-copy no longer tell users to run a nonexistent `fetch shifts`; `icelines mates`
-remains a roster fallback unless a precomputed `ShiftProfile` already exists.
+Clear the Unblocks is closed. Pulse 02 corrected stale headshot/admin-overlay
+test-coverage docs, Pulse 03 parked historical shift-data bundles behind a future
+source/capability contract, and Pulse 04 ran the focused regression/doc gates.
 
 ## Next
 
-Execute Pulse 04: docs, regression gates, and closeout.
+No active pulse remains in this wave.

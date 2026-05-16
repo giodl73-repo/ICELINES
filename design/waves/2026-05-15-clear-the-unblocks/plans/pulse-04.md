@@ -2,7 +2,7 @@
 wave: clear-the-unblocks
 pulse: 04
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - bench
   - wire
@@ -28,6 +28,14 @@ truthful.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] focused crate tests from Pulses 02-03
-- [ ] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-clear-the-unblocks design\plans\INDEX.md design\specs\headshot-rendering.md design\specs\tui-admin-overlay.md design\specs\data-sources.md design\specs\foster-data-architecture.md --errors-only`
+- [x] `cargo fmt --check`
+- [x] `cargo test -p icelines-cli headshot --quiet`
+- [x] `cargo test -p icelines-cli admin_overlay --quiet`
+- [x] `cargo test -p icelines-fetch shift_profile --quiet`
+- [x] `cargo test -p icelines-cli mates --quiet`
+- [x] `C:\src\proof\target\debug\proof.exe check design\waves\2026-05-15-clear-the-unblocks design\plans\INDEX.md design\specs\headshot-rendering.md design\specs\tui-admin-overlay.md design\specs\data-sources.md design\specs\foster-data-architecture.md design\specs\query-engine.md README.md COMMANDS.md src\data\commands.md src\data\command-map.md --errors-only`
+
+## Result
+
+Closed Clear the Unblocks after all small-unblock records were either corrected
+or truthfully parked. No runtime behavior was added in closeout.
