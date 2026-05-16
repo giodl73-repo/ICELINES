@@ -1,4 +1,4 @@
-# SLICE selector examples
+# SLICE prepared-row selectors
 
 ICELINES has its own hockey query language and typed query IR. SLICE is only a
 candidate for simple low-level row predicates that already look like portable
@@ -21,6 +21,6 @@ selectors.
 player.position eq 'C' and player.nationality eq 'SWE' and stats.ppg ge 0.8
 ```
 
-The checked test `icelines-query/tests/slice_simple_selector.rs` demonstrates
-that narrow row-filter shape while keeping advanced ICELINES semantics in
-`icelines-query`.
+The runtime helper `icelines_query::select_prepared_player_rows` and the checked
+test `icelines-query/tests/slice_simple_selector.rs` demonstrate that narrow
+row-filter shape while keeping advanced ICELINES semantics in `icelines-query`.
