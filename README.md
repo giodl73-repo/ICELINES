@@ -241,6 +241,8 @@ icelines fantasy league-create "My League" --scheme yahoo-standard
 icelines fantasy team-create "My Team" --owner "Gio"
 icelines fantasy team-add "My Team" "McDavid"
 icelines fantasy team-add "My Team" "Kucherov"
+icelines fantasy import-yahoo --file rosters.csv --league "My League" --dry-run
+icelines fantasy import-yahoo --file rosters.csv --league "My League" --my-team "My Team"
 
 # Manage
 icelines fantasy team-show "My Team"       # roster with per-player fantasy scores
@@ -261,6 +263,7 @@ icelines tui
 # :simulate add=Connor_McDavid drop=Bench_Forward weeks=3
 # :fantasy daily date=2026-01-15
 # :fantasy matchup date=2026-01-15
+# :fantasy import file=rosters.csv league My_League dry-run
 
 # Poacher
 icelines poach --category hits,blocks --top 15
@@ -318,6 +321,11 @@ target only the canonical `Favorites` group. Create, rename, delete, and arbitra
 group membership edits remain on `icelines group ...` and the TUI Groups surface.
 
 **Fantasy schemes:** `yahoo-standard`, `espn-standard`, `simple-pts`
+
+Yahoo roster CSV import is local setup only: it writes FantasyDb league/team
+membership after a dry-run/apply diagnostic pass. NHL API/bundled data remains
+authoritative for player identity, teams, stats, and photos; Yahoo stat columns
+are ignored.
 
 ### Data and history
 

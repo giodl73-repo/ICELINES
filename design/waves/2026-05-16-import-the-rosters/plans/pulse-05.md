@@ -2,7 +2,7 @@
 wave: import-the-rosters
 pulse: 05
 date: 2026-05-16
-status: planned
+status: complete
 governing_roles:
   - bench
   - wire
@@ -32,7 +32,14 @@ backlog status, and regression gates updated.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] focused tests from Pulses 02-04
-- [ ] proof on touched docs
-- [ ] `git diff --check`
+- [x] `cargo fmt --check`
+- [x] focused tests from Pulses 02-04
+- [x] proof on touched docs
+- [x] `git diff --check`
+
+## Result
+
+Closed Import the Rosters with user-facing docs for `fantasy import-yahoo`,
+Yahoo CSV source-truth clarification, surface-parity status, backlog movement,
+and focused regression gates across the core contract, fetch importer, CLI/TUI
+surfaces, and web-dashboard deferral.

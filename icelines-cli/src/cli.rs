@@ -846,8 +846,25 @@ ENTRY POINTS COVERED
     #[command(subcommand)]
     Query(QuerySubcommand),
 
-    /// Fantasy league management — teams, scoring, trades, server.
-    #[command(subcommand)]
+    /// Fantasy league management — teams, scoring, imports, trades, server.
+    #[command(
+        subcommand,
+        long_about = r#"
+Manage local fantasy leagues in `~/.icelines/icelines.db`.
+
+Yahoo roster CSV import is a local setup helper: preview with `--dry-run`, then
+apply league/team/roster membership to FantasyDb. NHL API/bundled data remains
+authoritative for player identity, current NHL teams, stats, and photos.
+
+Examples:
+  icelines fantasy league-create "My League" --scheme yahoo-standard
+  icelines fantasy team-create "My Team" --owner "Gio"
+  icelines fantasy import-yahoo --file rosters.csv --league "My League" --dry-run
+  icelines fantasy import-yahoo --file rosters.csv --league "My League" --my-team "My Team"
+  icelines fantasy gaps --category hits,blocks,shots
+  icelines fantasy daily --date 2026-01-15 --json
+"#
+    )]
     Fantasy(FantasySubcommand),
 }
 

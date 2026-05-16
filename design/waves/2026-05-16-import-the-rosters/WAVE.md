@@ -1,7 +1,7 @@
 ---
 wave: import-the-rosters
 date_open: 2026-05-16
-status: active
+status: closed
 source: Tier 3 backlog - Yahoo league CSV roster import
 ---
 
@@ -50,7 +50,7 @@ discipline.
 | 02 - Shared import contract | complete | `icelines-core/src/view_model/fantasy_import.rs`; `plans/pulse-02.md` |
 | 03 - CSV parser and FantasyDb importer | complete | `icelines-fetch/src/fantasy_import.rs`; `icelines-fetch/src/lib.rs`; `plans/pulse-03.md` |
 | 04 - CLI, TUI, and dashboard import surfaces | complete | `icelines fantasy import-yahoo`; TUI/web-dashboard command handoffs; `plans/pulse-04.md` |
-| 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
+| 05 - Docs, regression gates, and closeout | complete | `README.md`; `COMMANDS.md`; `design/specs/surface-parity.md`; `design/specs/data-sources.md`; `plans/pulse-05.md` |
 
 ## Role Notes
 
@@ -69,13 +69,12 @@ discipline.
 
 ## Current Result
 
-Pulse 04 exposed the Yahoo roster CSV import path through
-`icelines fantasy import-yahoo --file <path> --league <name> [--my-team <name>]
-[--dry-run] [--json]`. The CLI renders text/JSON from the shared
-`FantasyImportView`, the TUI command bar hands import phrases to the CLI flow,
-and the web dashboard command parser truthfully defers browser import because
-GET routes must remain read-only.
+Pulse 05 closed the wave. README, COMMANDS, surface-parity, data-source, backlog,
+and wave records now document the Yahoo roster CSV import flow, dry-run/apply
+behavior, row diagnostics, and the rule that Yahoo data is optional fantasy
+context only. Focused gates from Pulses 02-04, proof, and whitespace checks
+passed.
 
 ## Next
 
-Execute Pulse 05: docs, regression gates, and closeout.
+Import the Rosters is closed.

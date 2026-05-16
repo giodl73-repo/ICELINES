@@ -565,22 +565,24 @@ Shapes: `leaders`, `team`, `team-season`, `depth`, `fantasy`, `compare`, `series
 
 ```bash
 # Setup
-icelines fantasy league-create --name "My League" --scheme yahoo-default-points
-icelines fantasy team-create --name "My Team" --owner "Gio"
-icelines fantasy team-add --team "My Team" --player "McDavid"
+icelines fantasy league-create "My League" --scheme yahoo-standard
+icelines fantasy team-create "My Team" --owner "Gio"
+icelines fantasy team-add "My Team" "McDavid"
+icelines fantasy import-yahoo --file rosters.csv --league "My League" --dry-run
+icelines fantasy import-yahoo --file rosters.csv --league "My League" --my-team "My Team"
 
 # Manage
-icelines fantasy team-show --team "My Team"
+icelines fantasy team-show "My Team"
 icelines fantasy standings
 icelines fantasy daily --date 2026-01-15 --json
 icelines fantasy matchup-set --week 2026-01-15 --home "My Team" --away "Rival"
 icelines fantasy matchup --date 2026-01-15 --json
 icelines fantasy league-list
-icelines fantasy league-switch --name "My League"
+icelines fantasy league-switch "My League"
 
 # Trades
-icelines fantasy trade --from "My Team" --to "Other" --send "Bouchard" --receive "Werenski"
-icelines fantasy trade ... --execute     # commit instead of simulate
+icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski"
+icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --execute
 
 # Web dashboard
 icelines fantasy serve --port 8080
@@ -594,15 +596,24 @@ icelines fantasy serve --port 8080
 # GET /api/v1/fantasy/matchup?date=YYYY-MM-DD FantasyMatchupWeekView JSON
 ```
 
+`fantasy import-yahoo` accepts Yahoo roster CSV exports with a player column
+(`Player`, `Name`, `Player Name`, or `First Name` + `Last Name`) and a fantasy
+team column (`Fantasy Team`, `Team Name`, `Rostered By`, `Owner Team`, or
+`Manager Team`). Optional `Owner`, `NHL Team`, and `Eligible Positions` columns
+are diagnostic context only. Use `--dry-run` first to preview created/updated
+teams, imported/skipped players, unresolved names, duplicate ownership, and
+header problems; rerun without `--dry-run` to apply local FantasyDb membership.
+Yahoo stats are ignored and never become player/stat/photo truth.
+
 ## `scheme` — fantasy scoring schemes
 
 ```bash
 icelines scheme list
-icelines scheme show yahoo-default-points
+icelines scheme show yahoo-standard
 icelines scheme from-csv path/to/yahoo.csv      # detect platform, build template
 ```
 
-Built-in schemes: `yahoo-default-points`, `yahoo-default-rotisserie`, `head-to-head-9cat`, `simple-points`.
+Built-in schemes: `yahoo-standard`, `espn-standard`, `simple-pts`.
 
 ---
 
@@ -764,6 +775,7 @@ between workbench zones instead of cycling legacy tabs.
 | `poach <kv...>` / `fantasy poach <kv...>` | Fantasy poacher filters | `:poach rw cats=hits,blocks free top=12` |
 | `simulate <kv...>` / `fantasy simulate <kv...>` | Fantasy add/drop scenario projection | `:simulate add=Connor_McDavid drop=Bench_Forward weeks=3` |
 | `daily date=YYYY-MM-DD` / `fantasy daily date=YYYY-MM-DD` | Fantasy daily-delta read-surface handoff | `:fantasy daily date=2026-01-15` |
+| `fantasy import file=... league ... [dry-run]` | Fantasy roster CSV import CLI handoff | `:fantasy import file=rosters.csv league My_League dry-run` |
 | `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
 | `report poach` / `report weekly` | Show exact report CLI/web target | `:report weekly cats=shots,hits top=12` |
 | `awards player <name>` | Open the cached TUI Trophy Case | `:awards player Connor McDavid` |
@@ -837,6 +849,8 @@ simulate add=Connor_McDavid drop=Bench_Forward weeks=3
 fantasy simulate add Connor_McDavid drop Bench_Forward
                                            -> /fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward
 fantasy daily date=2026-01-15              -> /api/v1/fantasy/daily?date=2026-01-15
+fantasy import file=rosters.csv league=Office
+                                           -> deferred; use `icelines fantasy import-yahoo --dry-run`
 report weekly cats=shots,hits top=12       -> /reports/weekly?category=shots%2Chits&top=12
 report poach availability=imported-available
                                            -> /reports/poach?availability=imported-available

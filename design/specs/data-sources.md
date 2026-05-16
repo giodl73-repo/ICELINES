@@ -24,7 +24,7 @@ and how it feeds into the depth chart engine.
 | Tier | Source | Granularity | Latency | What It Answers |
 |------|--------|-------------|---------|-----------------|
 | 0 — Rosters | NHL API `/v1/roster` | Per-team | 48h TTL | Player universe, position, headshot URL |
-| 1 — Fantasy | Yahoo CSV export | Season totals | Manual export | Fantasy-context positions, ownership |
+| 1 — Fantasy | Yahoo CSV export | Roster membership + eligibility context | Manual export | Fantasy-context positions, ownership |
 | 2a — Core Stats | NHL API `/stats/rest` | Season totals + bios | Daily | GP, G, A, TOI, PPG, shots |
 | 2b — Schedule | NHL API `/v1/schedule/{date}` | Per-date | 6h TTL (future), permanent (past) | Game schedule, results |
 | 2c — Live Scores | NHL API `/v1/score/now` | Per-game live | 30s while active | In-progress scores, period, time |
@@ -111,27 +111,41 @@ every season and after roster moves. There is no CSV dependency for the player l
 ## Tier 1 — Yahoo Fantasy CSV (optional)
 
 **Status**: **Optional** — IceLines works without it.  
-**Path**: `data/fantasy.csv` (user-supplied, manual export)
+**Paths**: `data/fantasy.csv` for legacy eligibility context; user-supplied
+roster exports passed to `icelines fantasy import-yahoo --file <path>`.
 
-The Yahoo CSV is useful for one thing: fantasy position eligibility. Yahoo designates
-some players as eligible at multiple positions (e.g., Draisaitl as C and LW) based on
-their usage. This multi-position eligibility is fantasy-specific and not in the NHL API.
+Yahoo CSVs are useful only as optional fantasy context. The legacy
+`data/fantasy.csv` path can provide fantasy position eligibility. The
+`fantasy import-yahoo` command can preview/apply local FantasyDb league/team
+roster membership from a user-supplied Yahoo roster export. Neither path makes
+Yahoo authoritative for NHL player identity, teams, stats, or photos.
 
 **What we use (and only this):**
 - `Eligible Positions` — multi-position fantasy eligibility (e.g., `C,LW,Util`)
 - `First Name`, `Last Name` — for matching to NHL player ID if rosters are stale
+- `Player` / `Name` / `Player Name` — roster-import player name aliases
+- `Fantasy Team` / `Team Name` / `Rostered By` / `Owner Team` / `Manager Team` —
+  local fantasy roster membership for `FantasyDb`
+- `Owner` / `Manager` — optional local team-owner label
 
 **What we do NOT use:**
 - Any stat columns (`G (P)`, `A (P)`, etc.) — all stats come from Tier 2 NHL API
 - `Image` — all photos come from Tier 0 NHL roster API
-- `Team` — authoritative source is NHL API `currentTeamAbbrev`
+- `Team` / `NHL Team` as authority — current NHL team remains NHL API
+  `currentTeamAbbrev`; roster import treats this only as a diagnostic hint
 
 **Limitations:**
 - Manual export — not automated
 - Export frequency is user-controlled
 - When not provided, position eligibility falls back to NHL API `positionCode`
+- Roster import validates headers and known player names, surfaces duplicate
+  ownership/unresolved rows as diagnostics, and supports dry-run no-mutation
+  previews before applying FantasyDb writes
 
-**Pipeline:** `data/fantasy.csv` (optional) → `icelines-core::YahooEligibility`
+**Pipelines:**
+- `data/fantasy.csv` (optional) → `icelines-core::YahooEligibility`
+- user-supplied roster CSV → `icelines_fetch::fantasy_import` →
+  `FantasyImportView` → local `FantasyDb`
 
 ---
 
