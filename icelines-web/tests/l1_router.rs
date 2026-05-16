@@ -1422,6 +1422,38 @@ async fn l1_fantasy_gaps_json_projects_seeded_league() {
 }
 
 #[tokio::test]
+async fn l1_fantasy_daily_json_surfaces_missing_cache_as_warning() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Daily Route League", &["matty_beniers"], &[]);
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/daily?date=2026-01-15")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_eq!(json["league"], "Daily Route League");
+    assert_eq!(json["date"], "2026-01-15");
+    assert!(json["warnings"]
+        .as_array()
+        .expect("warnings array")
+        .iter()
+        .any(|warning| warning
+            .as_str()
+            .is_some_and(|text| text.contains("no cached boxscores"))));
+    assert_eq!(json["source_state"][1]["state"], "unavailable");
+}
+
+#[tokio::test]
 async fn l1_fantasy_simulation_json_projects_add_scenario() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();

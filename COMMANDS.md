@@ -572,6 +572,7 @@ icelines fantasy team-add --team "My Team" --player "McDavid"
 # Manage
 icelines fantasy team-show --team "My Team"
 icelines fantasy standings
+icelines fantasy daily --date 2026-01-15 --json
 icelines fantasy league-list
 icelines fantasy league-switch --name "My League"
 
@@ -756,6 +757,7 @@ between workbench zones instead of cycling legacy tabs.
 | `gaps <kv...>` / `fantasy gaps <kv...>` | Fantasy roster-gap filters | `:gaps cats=hits,blocks,shots top=8` |
 | `poach <kv...>` / `fantasy poach <kv...>` | Fantasy poacher filters | `:poach rw cats=hits,blocks free top=12` |
 | `simulate <kv...>` / `fantasy simulate <kv...>` | Fantasy add/drop scenario projection | `:simulate add=Connor_McDavid drop=Bench_Forward weeks=3` |
+| `daily date=YYYY-MM-DD` / `fantasy daily date=YYYY-MM-DD` | Fantasy daily-delta read-surface handoff | `:fantasy daily date=2026-01-15` |
 | `simulate clear` | Clear the active fantasy simulation scenario | `:simulate clear` |
 | `report poach` / `report weekly` | Show exact report CLI/web target | `:report weekly cats=shots,hits top=12` |
 | `awards player <name>` | Open the cached TUI Trophy Case | `:awards player Connor McDavid` |
@@ -828,6 +830,7 @@ simulate add=Connor_McDavid drop=Bench_Forward weeks=3
                                            -> /fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward&weeks=3
 fantasy simulate add Connor_McDavid drop Bench_Forward
                                            -> /fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward
+fantasy daily date=2026-01-15              -> /api/v1/fantasy/daily?date=2026-01-15
 report weekly cats=shots,hits top=12       -> /reports/weekly?category=shots%2Chits&top=12
 report poach availability=imported-available
                                            -> /reports/poach?availability=imported-available

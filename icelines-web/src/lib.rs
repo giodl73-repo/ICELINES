@@ -286,6 +286,10 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/fantasy/simulate",
             get(handlers::fantasy::get_fantasy_simulation_json),
         )
+        .route(
+            "/api/v1/fantasy/daily",
+            get(handlers::fantasy::get_fantasy_daily_json),
+        )
         .route("/admin", get(handlers::admin::get_admin))
         .route(
             "/api/v1/admin/data-status",

@@ -998,6 +998,16 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 )
                 .await?
             }
+            FantasySubcommand::Daily {
+                date,
+                league,
+                season,
+                season_type,
+                json,
+            } => {
+                commands::fantasy::run_daily(date, league, season, season_type.to_core(), json)
+                    .await?
+            }
             FantasySubcommand::Trade {
                 player1,
                 to_team,

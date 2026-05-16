@@ -34,6 +34,25 @@ fn run_isolated(home: &std::path::Path, args: &[&str]) -> std::process::Output {
         .unwrap_or_else(|e| panic!("failed to run icelines binary: {e}"))
 }
 
+fn seed_daily_league(home: &std::path::Path) {
+    let icelines_dir = home.join(".icelines");
+    std::fs::create_dir_all(&icelines_dir).expect("create .icelines");
+    let db = icelines_fetch::fantasy_db::FantasyDb::open_path(icelines_dir.join("icelines.db"))
+        .expect("open fantasy db");
+    let league_id = db
+        .create_league("Daily League", "yahoo-standard")
+        .expect("create league");
+    db.set_active_league("Daily League")
+        .expect("set active league");
+    let team_id = db
+        .create_team(&league_id, "My Team", "Me")
+        .expect("create team");
+    db.set_user_team(&league_id, "My Team")
+        .expect("set user team");
+    db.add_player(&team_id, "matty_beniers")
+        .expect("add daily roster player");
+}
+
 // ── L2: --version exits 0 and prints version ─────────────────────────────────
 
 #[test]
@@ -1934,6 +1953,48 @@ fn l2_cmd_fantasy_gaps_json_emits_view_contract() {
     assert!(
         stdout.contains("\"weighted_gap_score\""),
         "gaps JSON must expose weighted gap scores, got: {stdout}"
+    );
+}
+
+#[test]
+fn l2_cmd_fantasy_daily_json_surfaces_missing_cache() {
+    let tmp = tempfile::tempdir().expect("tempdir for isolated HOME");
+    let home = tmp.path();
+    seed_daily_league(home);
+
+    let out = run_isolated(
+        home,
+        &[
+            "fantasy",
+            "daily",
+            "--date",
+            "2026-01-15",
+            "--league",
+            "Daily League",
+            "--json",
+        ],
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "fantasy daily --json must succeed with explicit missing-cache state, stderr: {stderr}"
+    );
+    assert!(
+        stdout.contains("\"league\": \"Daily League\""),
+        "daily JSON must expose the league name, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"date\": \"2026-01-15\""),
+        "daily JSON must expose the requested date, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("no cached boxscores"),
+        "daily JSON must warn instead of zero-shaping missing cache, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"state\": \"unavailable\""),
+        "daily JSON must expose unavailable boxscore source state, got: {stdout}"
     );
 }
 

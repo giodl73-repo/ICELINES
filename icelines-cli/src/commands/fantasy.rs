@@ -10,6 +10,10 @@ use axum::{
     routing::{get, post},
     Json,
 };
+use chrono::NaiveDate;
+use icelines_core::view_model::{
+    FantasyDailyDeltaView, FantasyDailyPlayerStatus, FantasyDailyTeamRow,
+};
 use icelines_core::{
     build_fantasy_simulation_view,
     model::Season,
@@ -25,6 +29,8 @@ use icelines_core::{
     FantasySimulationScenarioRosterInput, FantasySimulationView, ViewContext, ViewWindow,
     CURRENT_SEASON,
 };
+use icelines_fetch::datastore::DataStore;
+use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
 use icelines_fetch::nhl_api::NhlApiClient;
 use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
 use icelines_fetch::stats_loader::LoadOutcome;
@@ -685,6 +691,89 @@ pub async fn run_simulate(
     Ok(())
 }
 
+/// `icelines fantasy daily --date YYYY-MM-DD [--league <league>] [--json]`
+pub async fn run_daily(
+    date: NaiveDate,
+    league_override: Option<String>,
+    season: u32,
+    season_type: SeasonType,
+    json: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let data_root = icelines_data_root()?;
+    let store = DataStore::open(&data_root).context("open DataStore")?;
+    let view = build_fantasy_daily_delta_view(
+        &db,
+        &store,
+        date,
+        Season(season),
+        season_type,
+        league_override.as_deref(),
+    )?;
+
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&view).context("serializing fantasy daily delta")?
+        );
+        return Ok(());
+    }
+
+    print_daily(&view);
+    Ok(())
+}
+
+fn print_daily(view: &FantasyDailyDeltaView) {
+    println!(
+        "Fantasy daily delta - {} / {} ({})",
+        view.league, view.date, view.scoring_scheme
+    );
+    for warning in &view.warnings {
+        println!("warning: {warning}");
+    }
+    println!(
+        "{:<5} {:<24} {:<18} {:>10} {:>8} {:>8}",
+        "Rank", "Team", "Owner", "Points", "Scored", "Missing"
+    );
+    for team in &view.teams {
+        print_daily_team(team);
+    }
+}
+
+fn print_daily_team(team: &FantasyDailyTeamRow) {
+    println!(
+        "{:<5} {:<24} {:<18} {:>10.1} {:>8} {:>8}",
+        team.rank,
+        if team.is_user_team {
+            format!("{} (mine)", team.team)
+        } else {
+            team.team.clone()
+        },
+        team.owner,
+        team.daily_points,
+        team.scored_players,
+        team.unscored_players
+    );
+    for player in &team.players {
+        println!(
+            "      {:<24} {:<4} {:>8.1} {:<12} {}",
+            player.display_name,
+            player.position,
+            player.daily_points,
+            daily_status_label(player.status),
+            player.nhl_team.as_deref().unwrap_or("-")
+        );
+    }
+}
+
+fn daily_status_label(status: FantasyDailyPlayerStatus) -> &'static str {
+    match status {
+        FantasyDailyPlayerStatus::Scored => "scored",
+        FantasyDailyPlayerStatus::NoFinalLine => "no-final",
+        FantasyDailyPlayerStatus::Unfinalized => "unfinalized",
+    }
+}
+
 async fn remaining_games_by_team(season: Season) -> (HashMap<String, u32>, Option<String>) {
     let cache = remaining_games_by_team_from_cache(season);
     let mut remaining = cache.remaining_by_team;
@@ -892,6 +981,14 @@ pub async fn run_trade(
         println!("\n(use --execute to commit this trade)");
     }
     Ok(())
+}
+
+fn icelines_data_root() -> anyhow::Result<std::path::PathBuf> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+    Ok(home.join(".icelines").join("data"))
 }
 
 // ── HTTP server ───────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 wave: score-the-day
 pulse: 04
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - bench
   - wire
@@ -30,8 +30,16 @@ Expose fantasy daily delta scoring through thin read-only surfaces.
 - No fantasy league write-management expansion.
 - No live network fetch from the daily command.
 
+## Outcome
+
+- Added `icelines fantasy daily --date YYYY-MM-DD [--league] [--json]`.
+- Added `GET /api/v1/fantasy/daily?date=YYYY-MM-DD`.
+- Added TUI and web-dashboard command handoffs for `fantasy daily date=...`.
+- Kept all scoring/data projection in the shared
+  `FantasyDailyDeltaView`/`build_fantasy_daily_delta_view` path.
+
 ## Gates
 
-- [ ] focused CLI tests for `fantasy daily`
-- [ ] focused web tests if web/API routes are added
-- [ ] `cargo fmt --check`
+- [x] focused CLI tests for `fantasy daily`
+- [x] focused web tests if web/API routes are added
+- [x] `cargo fmt --check`

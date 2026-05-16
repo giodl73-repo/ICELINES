@@ -67,6 +67,10 @@ pub enum Command {
     FantasySimKv {
         args: FantasySimulationCommandArgs,
     },
+    /// `fantasy daily date=YYYY-MM-DD` — hand off to the daily delta read surfaces.
+    FantasyDaily {
+        date: String,
+    },
     /// `watchlist` - workspace becomes local fantasy Watchlist.
     Watchlist,
     /// `watch <player>` — command-bar bridge to watch-rule/note
@@ -457,6 +461,9 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "simulate" | "sim" | "fantasy-sim" if args.trim().is_empty() => Ok(Command::FantasySim),
         "simulate" | "sim" | "fantasy-sim" => Ok(Command::FantasySimKv {
             args: parse_fantasy_sim_kv(args)?,
+        }),
+        "daily" | "fantasy-daily" => Ok(Command::FantasyDaily {
+            date: parse_daily_date(args)?,
         }),
         "watchlist" if args.trim().is_empty() => Ok(Command::Watchlist),
         "watch" => parse_watch(args),
@@ -875,12 +882,33 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
             args: parse_fantasy_sim_kv(rest)?,
         }),
         "simulate" | "sim" => Ok(Command::FantasySim),
+        "daily" => Ok(Command::FantasyDaily {
+            date: parse_daily_date(rest)?,
+        }),
         "poach" if rest.trim().is_empty() => Ok(Command::Poach),
         "poach" => Ok(Command::PoachKv {
             args: parse_poach_kv(rest)?,
         }),
         unknown => Err(ParseError::UnknownCommand(format!("fantasy {unknown}"))),
     }
+}
+
+fn parse_daily_date(args: &str) -> Result<String, ParseError> {
+    let value = args
+        .trim()
+        .strip_prefix("date=")
+        .unwrap_or(args.trim())
+        .trim();
+    if value.is_empty() {
+        return Err(ParseError::MissingArg {
+            command: "daily",
+            arg: "date=YYYY-MM-DD",
+        });
+    }
+    chrono::NaiveDate::parse_from_str(value, "%Y-%m-%d").map_err(|_| ParseError::BadFilter {
+        details: format!("daily: date {value:?} must be YYYY-MM-DD"),
+    })?;
+    Ok(value.to_string())
 }
 
 fn parse_fantasy_sim_kv(args: &str) -> Result<FantasySimulationCommandArgs, ParseError> {
@@ -1317,6 +1345,9 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             ExecResult::Continue
         }
         Command::FantasySimKv { args } => exec_fantasy_sim_kv(app, args),
+        Command::FantasyDaily { date } => ExecResult::Flash(format!(
+            "daily fantasy delta: run `icelines fantasy daily --date {date}` or open `/api/v1/fantasy/daily?date={date}`"
+        )),
         Command::Watchlist => {
             app.screen = Screen::GroupDetail("Watchlist".to_string());
             ExecResult::Continue
@@ -2338,6 +2369,12 @@ mod tests {
             parse_command("fantasy simulate").unwrap(),
             Command::FantasySim
         );
+        assert_eq!(
+            parse_command("fantasy daily date=2026-01-15").unwrap(),
+            Command::FantasyDaily {
+                date: "2026-01-15".to_string()
+            }
+        );
         assert_eq!(parse_command("fantasy poach").unwrap(), Command::Poach);
     }
 
@@ -3356,6 +3393,21 @@ mod tests {
             vec!["hits".to_string(), "blocks".to_string()]
         );
         assert_eq!(app.fantasy_gaps.limit, 7);
+    }
+
+    #[test]
+    fn l0_adams_exec_fantasy_daily_hands_off_read_surface() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(
+            parse_command("fantasy daily date=2026-01-15").unwrap(),
+            &mut app,
+        );
+
+        let ExecResult::Flash(message) = r else {
+            panic!("daily command should return a handoff flash");
+        };
+        assert!(message.contains("icelines fantasy daily --date 2026-01-15"));
+        assert!(message.contains("/api/v1/fantasy/daily?date=2026-01-15"));
     }
 
     #[test]

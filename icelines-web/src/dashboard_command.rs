@@ -117,6 +117,7 @@ fn parse_verb(input: &str) -> Result<DashboardCommand, DashboardCommandError> {
         "simulate" | "sim" | "fantasy-sim" => {
             workspace(&fantasy_url(args, FantasyMode::Simulation))
         }
+        "daily" | "fantasy-daily" => workspace(&fantasy_daily_url(args)),
         "fantasy" => parse_fantasy(args),
         "player" => required_workspace_arg("player", "name", args, |needle| {
             format!("/leaders?filter=name%3D{}", url_component(needle))
@@ -168,6 +169,7 @@ fn parse_fantasy(args: &str) -> Result<DashboardCommand, DashboardCommandError> 
         "" | "roster" => workspace("/fantasy"),
         "gaps" => workspace(&fantasy_url(rest, FantasyMode::Gaps)),
         "simulate" | "sim" => workspace(&fantasy_url(rest, FantasyMode::Simulation)),
+        "daily" => workspace(&fantasy_daily_url(rest)),
         "poach" => workspace(&poach_url(rest)),
         unknown => Err(DashboardCommandError::UnknownCommand(format!(
             "fantasy {unknown}"
@@ -479,6 +481,17 @@ fn fantasy_url(args: &str, mode: FantasyMode) -> String {
     query_url(base, args)
 }
 
+fn fantasy_daily_url(args: &str) -> String {
+    let args = args.trim();
+    if args.is_empty() {
+        return "/api/v1/fantasy/daily".to_string();
+    }
+    if let Some(date) = args.strip_prefix("date=") {
+        return format!("/api/v1/fantasy/daily?date={}", url_component(date.trim()));
+    }
+    format!("/api/v1/fantasy/daily?date={}", url_component(args))
+}
+
 fn query_url(base: &str, args: &str) -> String {
     let query = command_args_to_query(args);
     if query.is_empty() {
@@ -626,6 +639,10 @@ mod tests {
         assert_eq!(
             route("fantasy simulate add Connor_McDavid drop Bench_Forward"),
             "/fantasy?add_player=Connor_McDavid&drop_player=Bench_Forward"
+        );
+        assert_eq!(
+            route("fantasy daily date=2026-01-15"),
+            "/api/v1/fantasy/daily?date=2026-01-15"
         );
         assert_eq!(
             route("report weekly cats=shots,hits top=12"),

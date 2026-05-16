@@ -1134,6 +1134,38 @@ mod tui_surface_tests {
             other => panic!("expected fantasy simulate, got {other:?}"),
         }
     }
+
+    #[test]
+    fn l0_fantasy_daily_clap_surface_parses() {
+        let cli = Cli::try_parse_from([
+            "icelines",
+            "fantasy",
+            "daily",
+            "--date",
+            "2026-01-15",
+            "--league",
+            "Daily League",
+            "--json",
+        ])
+        .expect("fantasy daily should parse");
+
+        match cli.command {
+            Commands::Fantasy(FantasySubcommand::Daily {
+                date,
+                league,
+                season,
+                season_type,
+                json,
+            }) => {
+                assert_eq!(date.to_string(), "2026-01-15");
+                assert_eq!(league.as_deref(), Some("Daily League"));
+                assert_eq!(season, icelines_core::CURRENT_SEASON);
+                assert_eq!(season_type, QuerySeasonType::Regular);
+                assert!(json);
+            }
+            other => panic!("expected fantasy daily, got {other:?}"),
+        }
+    }
 }
 
 // ── Fetch sub-commands ────────────────────────────────────────────────────────
@@ -2483,6 +2515,21 @@ pub enum FantasySubcommand {
         /// Player to drop in the scenario.
         #[arg(long = "drop")]
         drop_player: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show fantasy points earned on a date from cached finalized boxscores.
+    Daily {
+        /// Date to score, in YYYY-MM-DD format.
+        #[arg(long)]
+        date: chrono::NaiveDate,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
         #[arg(long)]
         json: bool,
     },

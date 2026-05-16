@@ -47,7 +47,7 @@ into proprietary projections or live external integrations.
 | 01 - Daily delta inventory and pulse map | complete | `FANTASY-DAILY-DELTA-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Core daily-delta ViewModel and scoring adapter | complete | `icelines-core/src/view_model/fantasy_daily.rs`; `icelines-core/src/view_model/mod.rs`; `icelines-core/src/lib.rs`; `plans/pulse-02.md` |
 | 03 - Cached boxscore/FantasyDb data path | complete | `icelines-fetch/src/fantasy_daily.rs`; `icelines-fetch/src/lib.rs`; `plans/pulse-03.md` |
-| 04 - CLI, web, and TUI read surfaces | planned | depends on Pulse 03 |
+| 04 - CLI, web, and TUI read surfaces | complete | `icelines-cli/src/commands/fantasy.rs`; `icelines-web/src/handlers/fantasy.rs`; `icelines-cli/src/tui/command.rs`; `plans/pulse-04.md` |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
 
 ## Role Notes
@@ -63,10 +63,11 @@ into proprietary projections or live external integrations.
 
 ## Current Result
 
-Pulse 03 added the offline data path from FantasyDb roster snapshots and cached
-boxscore manifest entries into `FantasyDailyDeltaView`. Missing cache, missing
-user-team setup, and unfinalized game lines are explicit; no live fetch is used.
+Pulse 04 added thin read surfaces over that shared data path: CLI
+`fantasy daily --date`, JSON `/api/v1/fantasy/daily?date=...`, and TUI/web
+command handoffs. Missing cache remains an explicit warning/source-state, not a
+zero-shaped success.
 
 ## Next
 
-Execute Pulse 04: CLI, web, and TUI read surfaces.
+Execute Pulse 05: docs, regression gates, and closeout.
