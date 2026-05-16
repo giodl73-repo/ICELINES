@@ -10,8 +10,8 @@ path = "src/lib.rs"
 icelines-core = { path = "../icelines-core" }
 thiserror.workspace = true
 chrono.workspace = true
+serde_json.workspace = true
+slice-core.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
-serde_json.workspace = true
-slice-core.workspace = true

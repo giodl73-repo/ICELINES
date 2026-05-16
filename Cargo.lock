@@ -1032,6 +1032,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "slice-core 0.1.0 (git+https://github.com/giodl73-repo/SLICE?rev=50b63a2eefc66916e9a015a915c845c28d80773c)",
  "thiserror 2.0.18",
 ]
 
@@ -1602,7 +1603,7 @@ dependencies = [
  "icelines-core",
  "proptest",
  "serde_json",
- "slice-core",
+ "slice-core 0.1.0 (git+https://github.com/giodl73-repo/SLICE?rev=05b16d8137f8190ba5f16126097724144a6dfb82)",
  "thiserror 2.0.18",
 ]
 
@@ -3031,7 +3032,17 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 [[package]]
 name = "slice-core"
 version = "0.1.0"
-source = "git+https://github.com/giodl73-repo/SLICE?rev=23b1f100b46c36d18e1a4807aff680433f7ae636#23b1f100b46c36d18e1a4807aff680433f7ae636"
+source = "git+https://github.com/giodl73-repo/SLICE?rev=05b16d8137f8190ba5f16126097724144a6dfb82#05b16d8137f8190ba5f16126097724144a6dfb82"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "slice-core"
+version = "0.1.0"
+source = "git+https://github.com/giodl73-repo/SLICE?rev=50b63a2eefc66916e9a015a915c845c28d80773c#50b63a2eefc66916e9a015a915c845c28d80773c"
 dependencies = [
  "serde",
  "serde_json",

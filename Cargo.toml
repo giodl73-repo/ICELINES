@@ -54,4 +54,4 @@ askama      = "0.12"
 open        = "5"
 pulldown-cmark = "0.10"
 fletch-core = { path = "../FLETCH/crates/fletch-core" }
-slice-core = { git = "https://github.com/giodl73-repo/SLICE", package = "slice-core", rev = "23b1f100b46c36d18e1a4807aff680433f7ae636" }
+slice-core = { git = "https://github.com/giodl73-repo/SLICE", package = "slice-core", rev = "05b16d8137f8190ba5f16126097724144a6dfb82" }

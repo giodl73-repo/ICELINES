@@ -44,6 +44,7 @@ pub mod input;
 pub mod parser;
 pub mod plan;
 pub mod planner;
+pub mod slice_selectors;
 pub mod sliding_window;
 pub mod tokenizer;
 pub mod url;
@@ -60,6 +61,9 @@ pub use plan::{
     NumericRange, PatternOp, Predicate, QueryPlan, ScalarOp, ScalarValue, SeasonAxis,
     SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint, StrictMode, WindowPolicy,
     WindowScope,
+};
+pub use slice_selectors::{
+    compile_prepared_player_selector, prepared_player_selector_catalog, select_prepared_player_rows,
 };
 pub use url::{combine_filter_exprs, parse_filters_from_query};
 
