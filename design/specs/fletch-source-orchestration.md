@@ -2,9 +2,9 @@
 
 ICELINES has a larger source surface than ROUTE or BISECT: some inputs are single public HTTP objects, while others are paged, expanded from schedules, or expanded from active player sets. The migration boundary is therefore incremental.
 
-FLETCH owns neutral source-byte acquisition for stable single-object URLs currently routed through the migration slice: team roster JSON and MoneyPuck CSV. ICELINES keeps ownership of snapshot sealing, active snapshot pointers, manifest shards, stale/TTL decisions, fetch locks, parsing, event-stream writes, and hockey-domain validation.
+FLETCH owns neutral source-byte acquisition for stable single-object URLs and paged JSON reports currently routed through the migration slice: team roster JSON, MoneyPuck CSV, and NHL stats API paged report envelopes. ICELINES keeps ownership of snapshot sealing, active snapshot pointers, manifest shards, stale/TTL decisions, fetch locks, parsing, event-stream writes, and hockey-domain validation.
 
-Paged NHL stats reports, ESPN transaction windows, player landing batches, boxscore/play-by-play batches, contracts, and career history remain adapter-required until FLETCH has generic pagination, batch expansion, and rate-limit primitives that match ICELINES semantics.
+ESPN transaction windows, player landing batches, boxscore/play-by-play batches, contracts, and career history remain adapter-required until FLETCH has generic batch expansion and rate-limit primitives that match ICELINES semantics.
 
 The non-mutating command is:
 
@@ -22,6 +22,7 @@ Execution migration scope:
 
 - `icelines fetch rosters` acquires each team roster source object through FLETCH, then ICELINES parses `RosterResponse`, writes the rosters snapshot, and seals it.
 - `icelines fetch money-puck` acquires the MoneyPuck CSV through FLETCH, then ICELINES parses/derives `moneypuck.json` and seals the snapshot.
+- `icelines fetch report` acquires NHL stats paged JSON through FLETCH's generic paged cacheline, then ICELINES writes the report envelope into its snapshot layout and remains responsible for typed loading and validation.
 - `icelines fetch fletch-partitions --gate` projects query surfaces such as leaders, player, compare, goalies, windowed game-line queries, career queries, roster bios, and MoneyPuck advanced metrics onto durable partition/rollup IDs. FLETCH source cache presence is not treated as active query data; ICELINES sealed snapshots and active pointers remain the activation evidence.
 - `icelines fetch fletch-quivers --gate` groups those partition rows into query bootstrap and enrichment quiver candidates while preserving the rule that ICELINES must parse, validate, seal, and activate snapshots before queries trust imported or staged bytes.
-- Paged stats reports, ESPN transaction windows, player landing batches, boxscore/play-by-play batches, contracts, and career history stay adapter-required.
+- ESPN transaction windows, player landing batches, boxscore/play-by-play batches, contracts, and career history stay adapter-required.

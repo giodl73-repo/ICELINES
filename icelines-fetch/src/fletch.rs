@@ -1,9 +1,9 @@
 use anyhow::{Context, Result};
 use fletch_core::{
-    adapter_handoff_report, dry_run_flight, fetch_plan_with_kind, fetch_to_cache,
-    graph_from_registry, validate_registry, CachePolicy, DataFormat, FetchOptions,
-    FletchDefinition, FletchRegistry, FreshnessPolicy, GraphNodeKind, SourceKind, SourceSpec,
-    FLETCH_REGISTRY_SCHEMA,
+    adapter_handoff_report, dry_run_flight, fetch_paged_json_to_cache, fetch_plan_with_kind,
+    fetch_to_cache, graph_from_registry, validate_registry, CachePolicy, DataFormat, FetchOptions,
+    FletchDefinition, FletchRegistry, FreshnessPolicy, GraphNodeKind, PagedJsonOptions, SourceKind,
+    SourceSpec, FLETCH_REGISTRY_SCHEMA,
 };
 use icelines_core::stats_catalog::ReportKind;
 use serde::Serialize;
@@ -139,7 +139,6 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             .filter(|kind| kind.is_known_working())
         {
             let url_path = kind.url_path();
-            let game_type_id = game_type_id(ty);
             push_unique(
                 &mut fletches,
                 &mut seen,
@@ -151,15 +150,13 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
                     "stats-report",
                     season,
                     ty,
-                    SourceKind::Adapter,
-                    format!(
-                        "icelines-nhl-stats-paged://{url_path}?seasonId={season}&gameTypeId={game_type_id}"
-                    ),
+                    SourceKind::Http,
+                    stats_report_url(kind, season, ty),
                     format!("snapshots/<active-stats>/{season}/{ty}/{}.json", url_path.replace('/', "-")),
                     "application/json",
-                    "NHL stats API paged report",
-                    "adapter-required",
-                    "ICELINES currently owns pagination, typed/report-specific parsing, lock policy, and atomic snapshot writes",
+                    "paged JSON envelope with data rows and total count",
+                    "generic-paged-json-cacheline",
+                    "FLETCH acquires and caches paged JSON bytes; ICELINES owns report parsing, lock policy, snapshot seal, and active pointer",
                     "download success is not an analytics claim; ICELINES validates report shape, typed rows, chunk manifests, and stat catalog semantics",
                 ),
             );
@@ -721,6 +718,76 @@ pub async fn fetch_generic_http_bytes_async(
     .context("joining FLETCH fetch task")?
 }
 
+pub fn stats_report_url(kind: ReportKind, season: &str, season_type: &str) -> String {
+    let game_type_id = game_type_id(season_type);
+    format!(
+        "https://api.nhle.com/stats/rest/en/{}?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D{game_type_id}",
+        kind.url_path()
+    )
+}
+
+pub fn fetch_paged_report_bytes(
+    kind: ReportKind,
+    season: &str,
+    season_type: &str,
+    cache_root: &Path,
+    force: bool,
+) -> Result<Vec<u8>> {
+    let fletch_id = format!(
+        "icelines.stats.{season}.{season_type}.{}",
+        kind.url_path().replace('/', ".")
+    );
+    let source_url = stats_report_url(kind, season, season_type);
+    let mut plan = fetch_plan_with_kind(fletch_id.clone(), source_url, SourceKind::Http)
+        .with_context(|| format!("building FLETCH paged fetch plan for {fletch_id}"))?;
+    plan.cache_policy = CachePolicy {
+        freshness: FreshnessPolicy::AlwaysCheck,
+        allow_offline: true,
+        resumable: true,
+    };
+    plan.tags = vec![
+        "icelines".to_string(),
+        "stats-report".to_string(),
+        "generic-paged-json-cacheline".to_string(),
+    ];
+    plan.metadata
+        .insert("adapter".to_string(), "icelines".to_string());
+
+    let outcome = fetch_paged_json_to_cache(
+        &plan,
+        FetchOptions::new(cache_root)
+            .with_force(force)
+            .with_timeout_ms(30_000)
+            .with_retry_attempts(5),
+        PagedJsonOptions::default().with_limit(100),
+    )
+    .with_context(|| format!("fetching paged report {fletch_id} through FLETCH"))?;
+
+    std::fs::read(&outcome.outcome.path).with_context(|| {
+        format!(
+            "reading FLETCH cache object {}",
+            outcome.outcome.path.display()
+        )
+    })
+}
+
+pub async fn fetch_paged_report_bytes_async(
+    kind: ReportKind,
+    season: impl Into<String>,
+    season_type: impl Into<String>,
+    cache_root: impl Into<std::path::PathBuf>,
+    force: bool,
+) -> Result<Vec<u8>> {
+    let season = season.into();
+    let season_type = season_type.into();
+    let cache_root = cache_root.into();
+    tokio::task::spawn_blocking(move || {
+        fetch_paged_report_bytes(kind, &season, &season_type, &cache_root, force)
+    })
+    .await
+    .context("joining FLETCH paged fetch task")?
+}
+
 fn push_query_quiver(
     rows: &mut Vec<FletchQueryQuiverRow>,
     quiver_id: String,
@@ -949,12 +1016,13 @@ mod tests {
     }
 
     #[test]
-    fn registry_keeps_paged_and_dynamic_sources_adapter_owned() {
+    fn registry_marks_paged_stats_sources_as_fletch_ready() {
         let report = fletch_source_handoff_report("20252026", "regular");
         assert!(report.rows.iter().any(|row| {
             row.fletch_id == "icelines.stats.20252026.regular.skater.summary"
-                && row.source_kind == "adapter"
-                && row.acquisition_mode == "adapter-required"
+                && row.source_kind == "http"
+                && row.acquisition_mode == "generic-paged-json-cacheline"
+                && row.handoff_status == "generic-fetch-ready"
         }));
         assert!(report.rows.iter().any(|row| {
             row.fletch_id == "icelines.transactions.20252026"
@@ -996,7 +1064,7 @@ mod tests {
             row.partition_id == "icelines.partition.20252026.regular.skater.summary"
                 && row.rollup_id == "icelines.rollup.20252026.regular.query-stats"
                 && row.source_fletch_ids == "icelines.stats.20252026.regular.skater.summary"
-                && row.source_handoff_status == "adapter-required-before-active-partition"
+                && row.source_handoff_status == "source-byte-fletch-ready"
         }));
         assert!(report.rows.iter().any(|row| {
             row.partition_id == "icelines.partition.20252026.regular.moneypuck.skaters"
@@ -1115,5 +1183,54 @@ mod tests {
             serde_json::json!({"forwards":[],"defensemen":[],"goalies":[]})
         );
         mock.assert_hits(1);
+    }
+
+    #[test]
+    fn fetch_paged_report_bytes_uses_fletch_paged_cache_object() {
+        let server = MockServer::start();
+        let first = server.mock(|when, then| {
+            when.method(GET)
+                .path("/skater/summary")
+                .query_param("limit", "100")
+                .query_param("start", "0");
+            then.status(200)
+                .header("content-type", "application/json")
+                .body(r#"{"data":[{"playerId":1},{"playerId":2}],"total":3}"#);
+        });
+        let second = server.mock(|when, then| {
+            when.method(GET)
+                .path("/skater/summary")
+                .query_param("limit", "100")
+                .query_param("start", "100");
+            then.status(200)
+                .header("content-type", "application/json")
+                .body(r#"{"data":[{"playerId":3}],"total":3}"#);
+        });
+        let dir = tempfile::tempdir().unwrap();
+
+        let source_url = format!(
+            "{}/skater/summary?cayenneExp=seasonId%3D20252026%20and%20gameTypeId%3D2",
+            server.base_url()
+        );
+        let mut plan = fetch_plan_with_kind(
+            "icelines.stats.20252026.regular.skater.summary",
+            source_url,
+            SourceKind::Http,
+        )
+        .unwrap();
+        plan.cache_policy.freshness = FreshnessPolicy::AlwaysCheck;
+        let outcome = fetch_paged_json_to_cache(
+            &plan,
+            FetchOptions::new(dir.path()).with_timeout_ms(1_000),
+            PagedJsonOptions::default().with_limit(100),
+        )
+        .unwrap();
+        let value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(outcome.outcome.path).unwrap()).unwrap();
+
+        assert_eq!(value["data"].as_array().unwrap().len(), 3);
+        assert_eq!(value["total"], 3);
+        first.assert_hits(1);
+        second.assert_hits(1);
     }
 }

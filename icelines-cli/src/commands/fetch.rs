@@ -367,9 +367,9 @@ async fn do_play_by_play(
 ///   1. validate `kind.is_known_working()` (TAPE-R3 follow-up #3)
 ///   2. validate `kind.tier() == Tier1` (Tier-2 deferred)
 ///   3. acquire fs lock (unless `--no-lock`) — TAPE-R3 cross-process guard
-///   4. fetch via `NhlApiClient::fetch_report_paged` (DI-29 fence applies
+///   4. fetch via FLETCH's generic paged JSON cacheline (DI-29 fence applies
 ///      at *load* time when the file is read back through
-///      `load_report_with_fallback`; here we just write the rows verbatim)
+///      `load_report_with_fallback`; here we just write the envelope verbatim)
 ///   5. write `{"data": [...], "total": N}` envelope to
 ///      `<snapshot_root>/<season>/<season_type>/<filename>`
 async fn do_report(
@@ -454,20 +454,28 @@ async fn do_report(
         )
     };
 
-    // (4) HTTP fetch via the generic helper.
-    let client = NhlApiClient::production();
-    let rows = client
-        .fetch_report_paged(kind, season, st)
-        .await
-        .with_context(|| format!("fetching {} {} {}", kind.url_path(), season, st.label()))?;
+    // (4) HTTP fetch via FLETCH's generic paged JSON cacheline. ICELINES
+    // still owns the snapshot write, typed parsing, and active pointer.
+    let report_bytes = icelines_fetch::fletch::fetch_paged_report_bytes_async(
+        kind,
+        season.to_string(),
+        st.label().to_string(),
+        fletch_cache_root(&cfg),
+        false,
+    )
+    .await
+    .with_context(|| format!("fetching {} {} {}", kind.url_path(), season, st.label()))?;
+    let envelope: serde_json::Value = serde_json::from_slice(&report_bytes)
+        .with_context(|| format!("parsing FLETCH paged report {}", kind.url_path()))?;
+    let row_count = envelope
+        .get("data")
+        .and_then(serde_json::Value::as_array)
+        .map(Vec::len)
+        .with_context(|| format!("FLETCH paged report {} missing data array", kind.url_path()))?;
 
-    // (5) Wrap in the API's `{"data": [...], "total": N}` envelope and
-    // write to the per-window file. Atomic write via the existing
+    // (5) Write the FLETCH-acquired `{"data": [...], "total": N}`
+    // envelope to the per-window file. Atomic write via the existing
     // snapshot helpers.
-    let envelope = serde_json::json!({
-        "data": rows,
-        "total": rows.len(),
-    });
     let target = cfg
         .snapshot_dir()
         .join(season)
@@ -482,7 +490,7 @@ async fn do_report(
 
     println!(
         "✓ fetched {} rows for {} {} → {}",
-        rows.len(),
+        row_count,
         kind.url_path(),
         st.label(),
         target.display(),
