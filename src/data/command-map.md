@@ -147,11 +147,12 @@ All available values for `--sort`:
 | Command | Description |
 |---------|-------------|
 | `fetch all` | Fetch rosters + stats in one pass |
-| `fetch rosters [--season S] [--refresh] [--dry-run]` | All 32 team rosters |
+| `fetch rosters [--season S] [--refresh] [--dry-run]` | All 32 team rosters; source bytes acquired through FLETCH |
 | `fetch stats [--season S] [--refresh] [--dry-run]` | Bios + summary stats |
 | `fetch realtime [--season S] [--dry-run]` | Hits, blocks, giveaways, takeaways, PIM |
 | `fetch contracts [--dry-run]` | UFA/RFA/ELC expiry data |
-| `fetch money-puck [--season S] [--dry-run]` | xG, CF%, FF%, xGF% CSV |
+| `fetch money-puck [--season S] [--dry-run]` | xG, CF%, FF%, xGF% CSV; source bytes acquired through FLETCH |
+| `fetch fletch-sources [--season S] [--type regular\|playoff\|both] [--out PATH] [--gate]` | FLETCH handoff inventory and gate |
 | `fetch positions [--season S] [--dry-run]` | Boxscore-derived position eligibility |
 
 ---

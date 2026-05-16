@@ -18,6 +18,12 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             refresh,
             dry_run,
         } => do_rosters(&season, refresh, dry_run).await,
+        FetchSubcommand::FletchSources {
+            season,
+            season_type,
+            out,
+            gate,
+        } => do_fletch_sources(&season, season_type, &out, gate).await,
         FetchSubcommand::Stats {
             season,
             refresh,
@@ -101,6 +107,50 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             no_lock,
             dry_run,
         } => do_report(kind, &season, season_type, no_lock, dry_run).await,
+    }
+}
+
+async fn do_fletch_sources(
+    season: &str,
+    season_type: FetchSeasonType,
+    out: &std::path::Path,
+    gate: bool,
+) -> anyhow::Result<()> {
+    let report = icelines_fetch::fletch::fletch_source_handoff_report(
+        season,
+        season_type_label(season_type),
+    );
+    icelines_fetch::fletch::write_fletch_source_handoff(out, &report)
+        .with_context(|| format!("writing FLETCH source handoff to {}", out.display()))?;
+
+    println!(
+        "FLETCH source handoff: {} fletches, {} source(s), {} adapter-required, {} validation finding(s)",
+        report.fletch_count,
+        report.source_count,
+        report.adapter_source_count,
+        report.validation_finding_count,
+    );
+    println!("Wrote {}", out.display());
+
+    if gate {
+        let failures = icelines_fetch::fletch::fletch_source_handoff_gate_failures(&report);
+        if !failures.is_empty() {
+            return Err(anyhow!(
+                "FLETCH source gate failed:\n{}",
+                failures.join("\n")
+            ));
+        }
+        println!("FLETCH source gate passed.");
+    }
+
+    Ok(())
+}
+
+fn season_type_label(season_type: FetchSeasonType) -> &'static str {
+    match season_type {
+        FetchSeasonType::Regular => "regular",
+        FetchSeasonType::Playoff => "playoff",
+        FetchSeasonType::Both => "both",
     }
 }
 
@@ -373,7 +423,6 @@ const TEAMS: &[&str] = &[
 async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<()> {
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
-    let client = NhlApiClient::production();
     let today = today_date();
     let snap = format!("{season}-{today}-rosters");
 
@@ -401,15 +450,27 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
         .context("creating roster snapshot")?;
 
     println!("Fetching rosters → snapshot '{snap}'");
+    let fletch_cache = fletch_cache_root(&cfg);
     for team in TEAMS {
-        let roster = match client.fetch_team_roster(team, season).await {
-            Ok(r) => r,
+        let url = icelines_fetch::fletch::roster_url(team, season);
+        let fletch_id = format!("icelines.roster.{season}.{team}");
+        let roster_bytes = match icelines_fetch::fletch::fetch_generic_http_bytes_async(
+            fletch_id,
+            url,
+            fletch_cache.clone(),
+            refresh,
+        )
+        .await
+        {
+            Ok(bytes) => bytes,
             Err(e) => {
                 // Skip teams that didn't exist in this season (e.g. UTA before 2024-25)
                 println!("  {team}: skipped ({e})");
                 continue;
             }
         };
+        let roster: icelines_fetch::schema::RosterResponse = serde_json::from_slice(&roster_bytes)
+            .with_context(|| format!("parsing roster JSON for {team}"))?;
         let count = roster.forwards.len() + roster.defensemen.len() + roster.goalies.len();
         let json = serde_json::to_vec(&roster).context("serializing roster")?;
         store
@@ -785,15 +846,20 @@ async fn do_moneypuck(season: &str, dry_run: bool) -> anyhow::Result<()> {
 
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
-    let client = NhlApiClient::production();
     let today = today_date();
     let snap = format!("{season}-{today}-moneypuck");
 
     println!("Downloading MoneyPuck CSV: {url}");
-    let csv_text = client
-        .fetch_text(&url)
-        .await
-        .context("downloading MoneyPuck CSV")?;
+    let fletch_id = format!("icelines.moneypuck.{season}.skaters");
+    let csv_bytes = icelines_fetch::fletch::fetch_generic_http_bytes_async(
+        fletch_id,
+        url,
+        fletch_cache_root(&cfg),
+        true,
+    )
+    .await
+    .context("downloading MoneyPuck CSV through FLETCH")?;
+    let csv_text = String::from_utf8(csv_bytes).context("MoneyPuck CSV is not valid UTF-8")?;
 
     let stats_map = moneypuck::parse_csv(&csv_text);
     println!("  {} players parsed", stats_map.len());
@@ -1481,6 +1547,15 @@ fn icelines_data_root() -> anyhow::Result<std::path::PathBuf> {
         .map(std::path::PathBuf::from)
         .ok_or_else(|| anyhow!("cannot determine home directory"))?;
     Ok(home.join(".icelines").join("data"))
+}
+
+fn fletch_cache_root(cfg: &Config) -> std::path::PathBuf {
+    cfg.snapshot_dir()
+        .parent()
+        .map(std::path::Path::to_path_buf)
+        .unwrap_or_else(|| cfg.snapshot_dir())
+        .join("data")
+        .join(".fletch")
 }
 
 // ── Phase Foster.4 — `icelines fetch sync` CLI surface ───────────────────────

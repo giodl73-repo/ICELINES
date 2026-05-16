@@ -637,8 +637,10 @@ Built-in schemes: `yahoo-standard`, `espn-standard`, `simple-pts`.
 ```bash
 # Fetch fresh data (optional — bundles work immediately)
 icelines fetch all                    # rosters + stats (~5 min)
+icelines fetch rosters                # roster source bytes via FLETCH, ICELINES snapshot seal
 icelines fetch realtime               # hits, blocks, giveaways, takeaways
-icelines fetch money-puck             # xG, CF%, FF%, xGF% (free)
+icelines fetch money-puck             # MoneyPuck CSV via FLETCH, ICELINES parses xG/CF/FF/xGF
+icelines fetch fletch-sources --gate  # source handoff inventory + migration gate
 icelines fetch contracts              # UFA/RFA/ELC
 icelines fetch career --bundled-seasons 5   # multi-league career history (Calder)
                                             # ~100s; populates ~/.icelines/career_history.json

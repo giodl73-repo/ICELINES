@@ -18,6 +18,7 @@ sha2.workspace       = true
 chrono.workspace     = true
 rusqlite.workspace   = true
 uuid.workspace       = true
+fletch-core.workspace = true
 
 [dev-dependencies]
 httpmock.workspace = true

@@ -3,11 +3,12 @@
 <!-- proof:figure id="commands-table" kind="table.reference" -->
 | Command | Description | Data required |
 |---------|-------------|---------------|
-| `icelines fetch rosters` | Fetch all 32 team rosters (headshots, positions) | Live API |
+| `icelines fetch rosters` | Fetch all 32 team rosters (headshots, positions) | Live API via FLETCH |
 | `icelines fetch stats` | Fetch skater season stats (G, A, GP, TOI, PP, SH) | Live API |
 | `icelines fetch realtime` | Fetch physical stats (hits, blocks, giveaways, takeaways, PIM) | Live API |
 | `icelines fetch contracts` | Fetch contract status (expiry year, UFA/RFA/ELC type) | Live API |
-| `icelines fetch money-puck` | Download MoneyPuck xG, CF%, FF%, xGF% CSV | Live + MoneyPuck |
+| `icelines fetch money-puck` | Download MoneyPuck xG, CF%, FF%, xGF% CSV | MoneyPuck via FLETCH |
+| `icelines fetch fletch-sources --gate` | Validate FLETCH source handoff inventory | Local registry |
 | `icelines fetch all` | Run rosters + stats + realtime in one pass | Live API |
 | `icelines rank` | Top-N players by pts-pace with optional position filter | Bundled |
 | `icelines team <ABBR>` | Team depth chart — 4×3 forwards, 3×2 defense | Bundled |

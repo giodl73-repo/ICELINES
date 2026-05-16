@@ -53,3 +53,4 @@ ulid        = "1"
 askama      = "0.12"
 open        = "5"
 pulldown-cmark = "0.10"
+fletch-core = { path = "../FLETCH/crates/fletch-core" }
