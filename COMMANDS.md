@@ -586,6 +586,9 @@ icelines fantasy serve --port 8080
 # GET /api/standings       JSON
 # GET /api/team/<name>     team JSON
 # POST /api/trade          simulation JSON
+
+# Main web dashboard also exposes:
+# GET /api/v1/fantasy/daily?date=YYYY-MM-DD   FantasyDailyDeltaView JSON
 ```
 
 ## `scheme` — fantasy scoring schemes

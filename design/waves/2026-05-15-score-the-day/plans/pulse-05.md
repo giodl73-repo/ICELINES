@@ -2,7 +2,7 @@
 wave: score-the-day
 pulse: 05
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - bench
   - wire
@@ -29,6 +29,12 @@ Close Score the Day with docs, parity records, and regression gates updated.
 
 ## Gates
 
-- [ ] `cargo fmt --check`
-- [ ] focused tests from Pulses 02-04
-- [ ] proof on touched docs
+- [x] `cargo fmt --check`
+- [x] focused tests from Pulses 02-04
+- [x] proof on touched docs
+
+## Result
+
+Closed Score the Day with user docs, surface parity, backlog status, and wave
+records updated. The closeout gates passed for fmt, focused daily-delta tests
+from Pulses 02-04, proof on touched docs, and diff whitespace checks.

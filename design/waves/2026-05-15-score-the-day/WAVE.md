@@ -1,7 +1,7 @@
 ---
 wave: score-the-day
 date_open: 2026-05-15
-status: active
+status: closed
 source: Tier 3 backlog - Fantasy daily delta scoring
 ---
 
@@ -48,7 +48,7 @@ into proprietary projections or live external integrations.
 | 02 - Core daily-delta ViewModel and scoring adapter | complete | `icelines-core/src/view_model/fantasy_daily.rs`; `icelines-core/src/view_model/mod.rs`; `icelines-core/src/lib.rs`; `plans/pulse-02.md` |
 | 03 - Cached boxscore/FantasyDb data path | complete | `icelines-fetch/src/fantasy_daily.rs`; `icelines-fetch/src/lib.rs`; `plans/pulse-03.md` |
 | 04 - CLI, web, and TUI read surfaces | complete | `icelines-cli/src/commands/fantasy.rs`; `icelines-web/src/handlers/fantasy.rs`; `icelines-cli/src/tui/command.rs`; `plans/pulse-04.md` |
-| 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
+| 05 - Docs, regression gates, and closeout | complete | `README.md`; `COMMANDS.md`; `design/specs/surface-parity.md`; `design/plans/INDEX.md`; `plans/pulse-05.md` |
 
 ## Role Notes
 
@@ -63,11 +63,14 @@ into proprietary projections or live external integrations.
 
 ## Current Result
 
-Pulse 04 added thin read surfaces over that shared data path: CLI
-`fantasy daily --date`, JSON `/api/v1/fantasy/daily?date=...`, and TUI/web
-command handoffs. Missing cache remains an explicit warning/source-state, not a
-zero-shaped success.
+Score the Day is closed. The shipped path adds `FantasyDailyDeltaView`, cached
+FantasyDb/boxscore assembly, CLI `fantasy daily --date`, JSON
+`/api/v1/fantasy/daily?date=...`, and TUI/web command handoffs. Missing cache
+and unfinalized games remain explicit warnings/source-state, not zero-shaped
+success.
 
-## Next
+## Closeout Gates
 
-Execute Pulse 05: docs, regression gates, and closeout.
+- `cargo fmt --check`
+- focused fantasy daily tests from Pulses 02-04
+- proof on touched docs

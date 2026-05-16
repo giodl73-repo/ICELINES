@@ -250,12 +250,14 @@ icelines fantasy team-use "My Team"        # mark your roster for gaps/poach
 icelines fantasy gaps --category hits,blocks,shots
 icelines fantasy simulate --weeks 4
 icelines fantasy simulate --add "McDavid" --drop "Bouchard" --json
+icelines fantasy daily --date 2026-01-15 --json # cached finalized boxscores only
 
 # Same fantasy workflow in the TUI command bar:
 icelines tui
 # :gaps cats=hits,blocks,shots top=8
 # :poach rw cats=hits,blocks free top=12
 # :simulate add=Connor_McDavid drop=Bench_Forward weeks=3
+# :fantasy daily date=2026-01-15
 
 # Poacher
 icelines poach --category hits,blocks --top 15
@@ -290,9 +292,11 @@ icelines serve --port 8000
 # GET /favorites?group=Prospects -> read-only web group view; Favorites group keeps add/remove forms
 # Try: poach rw cats=hits,blocks free top=12
 # Try: fantasy simulate add Connor_McDavid drop Bench_Forward
+# Try: fantasy daily date=2026-01-15
 # GET /fantasy                 -> HTML gaps + simulation scenarios
 # GET /api/v1/fantasy/gaps     -> FantasyRosterGapView JSON
 # GET /api/v1/fantasy/simulate -> FantasySimulationView JSON
+# GET /api/v1/fantasy/daily?date=YYYY-MM-DD -> FantasyDailyDeltaView JSON
 # GET /poach                   -> HTML poacher board
 # GET /player/:id/outlook      -> descriptive scoring pace, nullable finish
 # GET /team/:abbrev/outlook    -> cached GF/GA pace and recent pressure
