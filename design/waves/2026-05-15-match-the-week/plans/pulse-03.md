@@ -2,7 +2,7 @@
 wave: match-the-week
 pulse: 03
 date: 2026-05-15
-status: planned
+status: complete
 governing_roles:
   - wire
   - forge
@@ -36,5 +36,14 @@ daily fantasy scoring.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-fetch fantasy_matchup --quiet`
-- [ ] `cargo fmt --check`
+- [x] `cargo test -p icelines-fetch fantasy_matchup --quiet`
+- [x] `cargo fmt --check`
+
+## Result
+
+Added local `fl_matchups` schedule persistence to `FantasyDb`, including
+explicit byes, duplicate team-slot rejection, and same-team rejection. Added
+`icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view`, which
+resolves ISO weeks through `Timeframe::Week`, reuses the daily-delta builder for
+each date, aggregates team totals, and preserves missing schedule/cache and
+unfinalized-game source state.

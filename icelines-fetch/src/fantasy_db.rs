@@ -4,6 +4,7 @@
 //! on every startup.  Use `FantasyDb::open_in_memory()` in unit tests.
 
 use anyhow::{bail, Context};
+use chrono::NaiveDate;
 use rusqlite::Connection;
 
 // ── Public types ──────────────────────────────────────────────────────────────
@@ -43,6 +44,14 @@ pub struct FantasyTeamSnapshot {
     pub name: String,
     pub owner: String,
     pub roster: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FantasyMatchupScheduleRow {
+    pub id: String,
+    pub week_start: NaiveDate,
+    pub home_team: String,
+    pub away_team: Option<String>,
 }
 
 impl FantasyLeagueSnapshot {
@@ -129,6 +138,23 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
         );",
     )
     .context("migration 005: create fl_roster table")?;
+
+    // Migration 007 — local fantasy matchup schedule.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_matchups (
+            id           TEXT PRIMARY KEY,
+            league_id    TEXT NOT NULL,
+            week_start   TEXT NOT NULL,
+            home_team_id TEXT NOT NULL,
+            away_team_id TEXT,
+            created_at   TEXT NOT NULL,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE,
+            FOREIGN KEY(home_team_id) REFERENCES fl_teams(id) ON DELETE CASCADE,
+            FOREIGN KEY(away_team_id) REFERENCES fl_teams(id) ON DELETE CASCADE,
+            UNIQUE(league_id, week_start, home_team_id)
+        );",
+    )
+    .context("migration 007: create fl_matchups table")?;
 
     // Enable foreign-key enforcement (off by default in rusqlite).
     conn.execute_batch("PRAGMA foreign_keys = ON;")
@@ -463,6 +489,89 @@ impl FantasyDb {
         Ok(rows)
     }
 
+    pub fn schedule_matchup(
+        &self,
+        league_id: &str,
+        week_start: NaiveDate,
+        home_team_name: &str,
+        away_team_name: Option<&str>,
+    ) -> anyhow::Result<String> {
+        let home = self
+            .get_team_by_name(league_id, home_team_name)?
+            .ok_or_else(|| anyhow::anyhow!("home team '{home_team_name}' not found"))?;
+        let away = away_team_name
+            .map(|name| {
+                self.get_team_by_name(league_id, name)?
+                    .ok_or_else(|| anyhow::anyhow!("away team '{name}' not found"))
+            })
+            .transpose()?;
+        if away.as_ref().is_some_and(|team| team.id == home.id) {
+            bail!("a fantasy matchup cannot schedule a team against itself");
+        }
+
+        let week = week_start.format("%Y-%m-%d").to_string();
+        ensure_team_unscheduled(&self.conn, league_id, &week, &home.id, &home.name)?;
+        if let Some(away) = &away {
+            ensure_team_unscheduled(&self.conn, league_id, &week, &away.id, &away.name)?;
+        }
+
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        self.conn
+            .execute(
+                "INSERT INTO fl_matchups
+                 (id, league_id, week_start, home_team_id, away_team_id, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                rusqlite::params![
+                    id,
+                    league_id,
+                    week,
+                    home.id,
+                    away.as_ref().map(|team| &team.id),
+                    now
+                ],
+            )
+            .with_context(|| format!("schedule fantasy matchup for week {week}"))?;
+        Ok(id)
+    }
+
+    pub fn list_matchups(
+        &self,
+        league_id: &str,
+        week_start: NaiveDate,
+    ) -> anyhow::Result<Vec<FantasyMatchupScheduleRow>> {
+        let week = week_start.format("%Y-%m-%d").to_string();
+        let mut stmt = self.conn.prepare(
+            "SELECT m.id, m.week_start, home.name, away.name
+             FROM fl_matchups m
+             JOIN fl_teams home ON home.id = m.home_team_id
+             LEFT JOIN fl_teams away ON away.id = m.away_team_id
+             WHERE m.league_id = ?1 AND m.week_start = ?2
+             ORDER BY home.name, away.name",
+        )?;
+        let rows = stmt
+            .query_map(rusqlite::params![league_id, week], |row| {
+                let week_start: String = row.get(1)?;
+                let week_start =
+                    NaiveDate::parse_from_str(&week_start, "%Y-%m-%d").map_err(|err| {
+                        rusqlite::Error::FromSqlConversionFailure(
+                            1,
+                            rusqlite::types::Type::Text,
+                            Box::new(err),
+                        )
+                    })?;
+                Ok(FantasyMatchupScheduleRow {
+                    id: row.get(0)?,
+                    week_start,
+                    home_team: row.get(2)?,
+                    away_team: row.get(3)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()
+            .context("list fantasy matchups")?;
+        Ok(rows)
+    }
+
     /// Check whether a player (by normalized name) is already on any team in
     /// the given league.  Returns `Some(team_name)` if taken, `None` if free.
     pub fn is_on_any_team(
@@ -531,6 +640,31 @@ impl FantasyDb {
             teams,
         })
     }
+}
+
+fn ensure_team_unscheduled(
+    conn: &Connection,
+    league_id: &str,
+    week_start: &str,
+    team_id: &str,
+    team_name: &str,
+) -> anyhow::Result<()> {
+    let already_scheduled: bool = conn
+        .query_row(
+            "SELECT 1
+             FROM fl_matchups
+             WHERE league_id = ?1
+               AND week_start = ?2
+               AND (home_team_id = ?3 OR away_team_id = ?3)
+             LIMIT 1",
+            rusqlite::params![league_id, week_start, team_id],
+            |_| Ok(true),
+        )
+        .unwrap_or(false);
+    if already_scheduled {
+        bail!("team '{team_name}' already has a matchup for week {week_start}");
+    }
+    Ok(())
 }
 
 // ── Unit tests (L1) ───────────────────────────────────────────────────────────
@@ -911,5 +1045,42 @@ mod tests {
             .any(|team| team.name == "Rival Team" && team.roster == ["nathan_mackinnon"]));
         assert_eq!(snapshot.user_rostered(), vec!["connor_mcdavid"]);
         assert_eq!(snapshot.all_rostered().len(), 2);
+    }
+
+    #[test]
+    fn l1_fantasy_matchup_schedule_persists_byes_and_rejects_duplicates() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Matchups", "yahoo-standard")
+            .expect("create league");
+        db.create_team(&league_id, "Alpha", "Alice")
+            .expect("create alpha");
+        db.create_team(&league_id, "Bravo", "Bob")
+            .expect("create bravo");
+        db.create_team(&league_id, "Charlie", "Cam")
+            .expect("create charlie");
+        let week = NaiveDate::from_ymd_opt(2026, 1, 12).expect("valid date");
+
+        db.schedule_matchup(&league_id, week, "Alpha", Some("Bravo"))
+            .expect("schedule matchup");
+        db.schedule_matchup(&league_id, week, "Charlie", None)
+            .expect("schedule bye");
+        let rows = db.list_matchups(&league_id, week).expect("list matchups");
+
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].home_team, "Alpha");
+        assert_eq!(rows[0].away_team.as_deref(), Some("Bravo"));
+        assert_eq!(rows[1].home_team, "Charlie");
+        assert_eq!(rows[1].away_team, None);
+        assert!(
+            db.schedule_matchup(&league_id, week, "Bravo", Some("Charlie"))
+                .is_err(),
+            "a team can only occupy one matchup slot per week"
+        );
+        assert!(
+            db.schedule_matchup(&league_id, week, "Alpha", Some("Alpha"))
+                .is_err(),
+            "self-matchups are invalid"
+        );
     }
 }
