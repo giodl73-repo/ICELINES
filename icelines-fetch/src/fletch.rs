@@ -1,10 +1,10 @@
 use anyhow::{Context, Result};
 use fletch_core::{
     adapter_handoff_report, dry_run_flight, fetch_batch_to_cache_best_effort,
-    fetch_paged_json_to_cache, fetch_plan_with_kind, fetch_to_cache, graph_from_registry,
-    validate_registry, CachePolicy, DataFormat, FetchOptions, FletchDefinition, FletchRegistry,
-    FreshnessPolicy, GraphNodeKind, PagedJsonOptions, SourceKind, SourceSpec,
-    FLETCH_REGISTRY_SCHEMA,
+    fetch_batch_to_cache_best_effort_with_delay, fetch_paged_json_to_cache, fetch_plan_with_kind,
+    fetch_to_cache, graph_from_registry, validate_registry, CachePolicy, DataFormat, FetchOptions,
+    FletchDefinition, FletchRegistry, FreshnessPolicy, GraphNodeKind, PagedJsonOptions, SourceKind,
+    SourceSpec, FLETCH_REGISTRY_SCHEMA,
 };
 use icelines_core::stats_catalog::ReportKind;
 use serde::Serialize;
@@ -41,6 +41,19 @@ impl FletchGamecenterArtifact {
         match self {
             Self::Boxscore => "boxscore",
             Self::PlayByPlay => "play-by-play",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FletchPlayerLandingArtifact {
+    Landing,
+}
+
+impl FletchPlayerLandingArtifact {
+    fn id_segment(self) -> &'static str {
+        match self {
+            Self::Landing => "landing",
         }
     }
 }
@@ -221,7 +234,7 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             "contracts",
             "icelines-player-landing-batch://contracts/from-active-stats-bios".to_string(),
             format!("snapshots/{season}-<date>-contracts/contracts/contracts.json"),
-            "adapter-required",
+            "generic-batch-http-cacheline-after-player-set",
             "ICELINES owns active-bios player-set expansion, per-player rate limit, partial skip logging, and snapshot sealing",
             "ICELINES validates player-id coverage and nullable contract field forward-compatibility",
         ),
@@ -230,7 +243,7 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             "career",
             "icelines-player-landing-batch://career/from-active-or-bundled-bios".to_string(),
             "~/.icelines/career_history.json".to_string(),
-            "adapter-required",
+            "generic-batch-http-cacheline-after-player-set",
             "ICELINES owns active/bundled player-set expansion, merge/upsert semantics, rate limit, and skipped-player reporting",
             "ICELINES validates career landing parsing, multi-league history merge, and preserved existing entries",
         ),
@@ -306,10 +319,13 @@ pub fn fletch_source_handoff_report(season: &str, season_type: &str) -> FletchSo
             }) {
                 "registry-blocked"
             } else if source.is_some_and(|source| source.kind == SourceKind::Adapter)
-                && metadata(definition, "acquisition_mode")
-                    == "generic-batch-http-cacheline-after-schedule"
+                && matches!(
+                    metadata(definition, "acquisition_mode").as_str(),
+                    "generic-batch-http-cacheline-after-schedule"
+                        | "generic-batch-http-cacheline-after-player-set"
+                )
             {
-                "batch-expansion-ready-after-schedule"
+                "batch-expansion-ready-after-domain-set"
             } else if source.is_some_and(|source| source.kind == SourceKind::Adapter) {
                 "adapter-required"
             } else {
@@ -378,10 +394,13 @@ pub fn fletch_query_partition_report(
                 .map(|source| match source.kind {
                     SourceKind::Http | SourceKind::File => "source-byte-fletch-ready",
                     SourceKind::Adapter
-                        if metadata(definition, "acquisition_mode")
-                            == "generic-batch-http-cacheline-after-schedule" =>
+                        if matches!(
+                            metadata(definition, "acquisition_mode").as_str(),
+                            "generic-batch-http-cacheline-after-schedule"
+                                | "generic-batch-http-cacheline-after-player-set"
+                        ) =>
                     {
-                        "batch-source-fletch-ready-after-schedule"
+                        "batch-source-fletch-ready-after-domain-set"
                     }
                     SourceKind::Adapter => "adapter-required-before-active-partition",
                 })
@@ -937,6 +956,134 @@ pub async fn fetch_gamecenter_batch_bytes_async(
     .context("joining FLETCH Gamecenter batch fetch task")?
 }
 
+pub fn player_landing_url(
+    base_web: &str,
+    player_id: u32,
+    _artifact: FletchPlayerLandingArtifact,
+) -> String {
+    format!("{base_web}/player/{player_id}/landing")
+}
+
+pub fn fetch_player_landing_batch_bytes_with_base(
+    base_web: &str,
+    player_ids: &[u32],
+    artifact: FletchPlayerLandingArtifact,
+    cache_root: &Path,
+    force: bool,
+    delay_between_items_ms: u64,
+) -> Result<BTreeMap<u32, Vec<u8>>> {
+    let plans = player_ids
+        .iter()
+        .map(|player_id| {
+            let fletch_id = format!("icelines.player.{}.{player_id}", artifact.id_segment());
+            let mut plan = fetch_plan_with_kind(
+                fletch_id.clone(),
+                player_landing_url(base_web, *player_id, artifact),
+                SourceKind::Http,
+            )
+            .with_context(|| format!("building FLETCH player landing plan for {fletch_id}"))?;
+            plan.cache_policy = CachePolicy {
+                freshness: FreshnessPolicy::AlwaysCheck,
+                allow_offline: true,
+                resumable: true,
+            };
+            plan.tags = vec![
+                "icelines".to_string(),
+                "player-landing".to_string(),
+                artifact.id_segment().to_string(),
+                "generic-batch-http-cacheline".to_string(),
+            ];
+            plan.metadata
+                .insert("adapter".to_string(), "icelines".to_string());
+            Ok((*player_id, plan))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let plan_only = plans
+        .iter()
+        .map(|(_, plan)| plan.clone())
+        .collect::<Vec<_>>();
+    let outcome = fetch_batch_to_cache_best_effort_with_delay(
+        &plan_only,
+        FetchOptions::new(cache_root)
+            .with_force(force)
+            .with_timeout_ms(30_000)
+            .with_retry_attempts(5),
+        delay_between_items_ms,
+    )
+    .with_context(|| {
+        format!(
+            "fetching {} player landing artifact(s) through FLETCH",
+            artifact.id_segment()
+        )
+    })?;
+
+    let player_by_dataset = plans
+        .iter()
+        .map(|(player_id, plan)| (plan.dataset_id.clone(), *player_id))
+        .collect::<BTreeMap<_, _>>();
+    let mut bytes_by_player = BTreeMap::new();
+    for outcome in &outcome.outcomes {
+        let Some(player_id) = player_by_dataset.get(&outcome.entry.dataset_id) else {
+            continue;
+        };
+        let bytes = std::fs::read(&outcome.path)
+            .with_context(|| format!("reading FLETCH cache object {}", outcome.path.display()))?;
+        bytes_by_player.insert(*player_id, bytes);
+    }
+    if !outcome.failures.is_empty() {
+        let failures = outcome
+            .failures
+            .iter()
+            .map(|failure| format!("{}: {}", failure.dataset_id, failure.error))
+            .collect::<Vec<_>>()
+            .join("; ");
+        eprintln!(
+            "FLETCH player landing batch skipped {} {} artifact(s): {failures}",
+            outcome.failure_count,
+            artifact.id_segment()
+        );
+    }
+    Ok(bytes_by_player)
+}
+
+pub fn fetch_player_landing_batch_bytes(
+    player_ids: &[u32],
+    artifact: FletchPlayerLandingArtifact,
+    cache_root: &Path,
+    force: bool,
+    delay_between_items_ms: u64,
+) -> Result<BTreeMap<u32, Vec<u8>>> {
+    fetch_player_landing_batch_bytes_with_base(
+        WEB_BASE,
+        player_ids,
+        artifact,
+        cache_root,
+        force,
+        delay_between_items_ms,
+    )
+}
+
+pub async fn fetch_player_landing_batch_bytes_async(
+    player_ids: Vec<u32>,
+    artifact: FletchPlayerLandingArtifact,
+    cache_root: impl Into<std::path::PathBuf>,
+    force: bool,
+    delay_between_items_ms: u64,
+) -> Result<BTreeMap<u32, Vec<u8>>> {
+    let cache_root = cache_root.into();
+    tokio::task::spawn_blocking(move || {
+        fetch_player_landing_batch_bytes(
+            &player_ids,
+            artifact,
+            &cache_root,
+            force,
+            delay_between_items_ms,
+        )
+    })
+    .await
+    .context("joining FLETCH player landing batch fetch task")?
+}
+
 fn push_query_quiver(
     rows: &mut Vec<FletchQueryQuiverRow>,
     quiver_id: String,
@@ -960,7 +1107,7 @@ fn push_query_quiver(
         .filter(|row| {
             matches!(
                 row.source_handoff_status.as_str(),
-                "source-byte-fletch-ready" | "batch-source-fletch-ready-after-schedule"
+                "source-byte-fletch-ready" | "batch-source-fletch-ready-after-domain-set"
             )
         })
         .count();
@@ -1186,6 +1333,21 @@ mod tests {
     }
 
     #[test]
+    fn registry_marks_player_landing_batches_as_fletch_ready_after_player_set() {
+        let report = fletch_source_handoff_report("20252026", "regular");
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.contracts.20252026"
+                && row.acquisition_mode == "generic-batch-http-cacheline-after-player-set"
+                && row.handoff_status == "batch-expansion-ready-after-domain-set"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.career.20252026"
+                && row.acquisition_mode == "generic-batch-http-cacheline-after-player-set"
+                && row.handoff_status == "batch-expansion-ready-after-domain-set"
+        }));
+    }
+
+    #[test]
     fn both_season_type_expands_stats_windows_without_duplicate_regular_only_sources() {
         let report = fletch_source_handoff_report("20252026", "both");
         assert!(report
@@ -1228,6 +1390,10 @@ mod tests {
         assert!(report.rows.iter().any(|row| {
             row.partition_id == "icelines.partition.20252026.regular.rosters"
                 && row.source_handoff_status == "source-byte-fletch-ready"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.partition_id == "icelines.partition.20252026.career-history"
+                && row.source_handoff_status == "batch-source-fletch-ready-after-domain-set"
         }));
     }
 
@@ -1278,7 +1444,7 @@ mod tests {
         assert!(report.rows.iter().any(|row| {
             row.quiver_id == "icelines.quiver.20252026.regular.enrichment"
                 && row.member_count == 3
-                && row.source_ready_partition_count == 2
+                && row.source_ready_partition_count == 3
         }));
     }
 
@@ -1422,6 +1588,46 @@ mod tests {
         assert_eq!(
             serde_json::from_slice::<serde_json::Value>(&bytes[&2025020002]).unwrap()["id"],
             2025020002
+        );
+        first.assert_hits(1);
+        second.assert_hits(1);
+    }
+
+    #[test]
+    fn fetch_player_landing_batch_bytes_uses_fletch_paced_batch_cache_objects() {
+        let server = MockServer::start();
+        let first = server.mock(|when, then| {
+            when.method(GET).path("/player/8478402/landing");
+            then.status(200)
+                .header("content-type", "application/json")
+                .body(r#"{"playerId":8478402,"seasonTotals":[]}"#);
+        });
+        let second = server.mock(|when, then| {
+            when.method(GET).path("/player/8477934/landing");
+            then.status(200)
+                .header("content-type", "application/json")
+                .body(r#"{"playerId":8477934,"seasonTotals":[]}"#);
+        });
+        let dir = tempfile::tempdir().unwrap();
+
+        let bytes = fetch_player_landing_batch_bytes_with_base(
+            &server.base_url(),
+            &[8478402, 8477934],
+            FletchPlayerLandingArtifact::Landing,
+            dir.path(),
+            false,
+            1,
+        )
+        .unwrap();
+
+        assert_eq!(bytes.len(), 2);
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&bytes[&8478402]).unwrap()["playerId"],
+            8478402
+        );
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&bytes[&8477934]).unwrap()["playerId"],
+            8477934
         );
         first.assert_hits(1);
         second.assert_hits(1);

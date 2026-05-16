@@ -384,30 +384,7 @@ impl NhlApiClient {
     ) -> Result<PlayerContract, FetchError> {
         let url = format!("{}/player/{player_id}/landing", self.base_web);
         let raw: serde_json::Value = self.get_json(&url).await?;
-
-        // Extract contract fields if/when the NHL API exposes them.
-        // Current API response has no contract keys — all fields will be None.
-        let expiry_year = raw["currentContract"]["expiryYear"]
-            .as_u64()
-            .map(|y| y as u16)
-            .or_else(|| raw["expiryYear"].as_u64().map(|y| y as u16));
-
-        let expiry_type = raw["currentContract"]["expiryType"]
-            .as_str()
-            .map(|s| s.to_owned())
-            .or_else(|| raw["expiryType"].as_str().map(|s| s.to_owned()));
-
-        let salary = raw["currentContract"]["capHit"]
-            .as_u64()
-            .or_else(|| raw["currentContract"]["salary"].as_u64())
-            .or_else(|| raw["capHit"].as_u64());
-
-        Ok(PlayerContract {
-            player_id,
-            expiry_year,
-            expiry_type,
-            salary,
-        })
+        Ok(parse_player_landing_contract(player_id, &raw))
     }
 
     /// Batch-fetch contracts for all player IDs.
@@ -677,6 +654,32 @@ impl ScheduledGame {
             "{} {aw}–{hw} {} · {gm}",
             self.away_abbrev, self.home_abbrev
         ))
+    }
+}
+
+pub fn parse_player_landing_contract(player_id: u32, raw: &serde_json::Value) -> PlayerContract {
+    // Extract contract fields if/when the NHL API exposes them.
+    // Current API response has no contract keys — all fields will be None.
+    let expiry_year = raw["currentContract"]["expiryYear"]
+        .as_u64()
+        .map(|y| y as u16)
+        .or_else(|| raw["expiryYear"].as_u64().map(|y| y as u16));
+
+    let expiry_type = raw["currentContract"]["expiryType"]
+        .as_str()
+        .map(|s| s.to_owned())
+        .or_else(|| raw["expiryType"].as_str().map(|s| s.to_owned()));
+
+    let salary = raw["currentContract"]["capHit"]
+        .as_u64()
+        .or_else(|| raw["currentContract"]["salary"].as_u64())
+        .or_else(|| raw["capHit"].as_u64());
+
+    PlayerContract {
+        player_id,
+        expiry_year,
+        expiry_type,
+        salary,
     }
 }
 

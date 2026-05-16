@@ -1019,8 +1019,31 @@ async fn do_contracts(season: &str, dry_run: bool) -> anyhow::Result<()> {
         "Fetching contract data for {n} players (this takes ~{}s)...",
         (n as f64 * 0.05).ceil() as u64
     );
-    let client = NhlApiClient::production();
-    let contracts = client.fetch_all_contracts(&player_ids).await;
+    let landing_by_player = icelines_fetch::fletch::fetch_player_landing_batch_bytes_async(
+        player_ids.clone(),
+        icelines_fetch::fletch::FletchPlayerLandingArtifact::Landing,
+        fletch_cache_root(&cfg),
+        false,
+        50,
+    )
+    .await
+    .context("fetching player landing contract batch through FLETCH")?;
+    let contracts = player_ids
+        .iter()
+        .filter_map(|player_id| {
+            let raw_bytes = landing_by_player.get(player_id)?;
+            let raw = match serde_json::from_slice::<serde_json::Value>(raw_bytes) {
+                Ok(raw) => raw,
+                Err(error) => {
+                    eprintln!("  contracts: skipping player {player_id}: {error}");
+                    return None;
+                }
+            };
+            Some(icelines_fetch::nhl_api::parse_player_landing_contract(
+                *player_id, &raw,
+            ))
+        })
+        .collect::<Vec<_>>();
     let found = contracts.len();
 
     let json = serde_json::to_vec(&contracts).context("serializing contracts")?;
@@ -1092,8 +1115,34 @@ async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
         "Fetching career history for {n} players (~{}s)...",
         (n as f64 * 0.06).ceil() as u64
     );
-    let client = NhlApiClient::production();
-    let (histories, skipped) = client.fetch_all_career_histories(&player_ids).await;
+    let landing_by_player = icelines_fetch::fletch::fetch_player_landing_batch_bytes_async(
+        player_ids.clone(),
+        icelines_fetch::fletch::FletchPlayerLandingArtifact::Landing,
+        fletch_cache_root(&cfg),
+        false,
+        50,
+    )
+    .await
+    .context("fetching player landing career batch through FLETCH")?;
+    let mut histories = Vec::with_capacity(landing_by_player.len());
+    let mut skipped = Vec::new();
+    for player_id in &player_ids {
+        let Some(raw_bytes) = landing_by_player.get(player_id) else {
+            skipped.push((*player_id, "missing FLETCH cache result".to_string()));
+            continue;
+        };
+        let raw = match serde_json::from_slice::<serde_json::Value>(raw_bytes) {
+            Ok(raw) => raw,
+            Err(error) => {
+                skipped.push((*player_id, error.to_string()));
+                continue;
+            }
+        };
+        match icelines_fetch::career_landing::parse_career_history(*player_id, &raw) {
+            Ok(history) => histories.push(history),
+            Err(error) => skipped.push((*player_id, error.to_string())),
+        }
+    }
 
     // Merge into the existing on-disk store rather than replace it —
     // a player who was on the active roster last fetch but not this
