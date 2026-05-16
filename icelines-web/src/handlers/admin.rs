@@ -830,7 +830,7 @@ fn render_data_status_section(html: &mut String, view: &DataStatusView) {
 
 fn render_data_install_remove_deferral(html: &mut String) {
     html.push_str("<div class=\"muted\">");
-    html.push_str("Web data install is deferred because it performs live/network release downloads; use <code>icelines data install</code> from the CLI when you intentionally want that operation. ");
+    html.push_str("Web data install is deferred because it performs live source fetches; use <code>icelines data install</code> from the CLI when you intentionally want that operation. ");
     html.push_str("Web data remove is deferred because it is destructive filesystem mutation and needs a scoped confirmation contract.");
     html.push_str("</div>");
 }

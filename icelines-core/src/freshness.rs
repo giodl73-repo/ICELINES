@@ -35,8 +35,8 @@ pub enum FetchSource {
     Setup,
     /// Lazy-fetched on read miss.
     Live,
-    /// Installed via `icelines data install` — frozen, never refreshed
-    /// unless the user passes `--force`.
+    /// Legacy data-install source. Kept for old manifests; new installs fetch
+    /// source snapshots through `icelines fetch all --type both`.
     DataInstall,
     /// Explicit `icelines fetch X` invocation.
     Manual,

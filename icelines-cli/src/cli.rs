@@ -2147,15 +2147,15 @@ pub enum SchemeSubcommand {
 
 #[derive(Debug, Subcommand)]
 pub enum DataSubcommand {
-    /// Install season data bundles from GitHub Releases.
+    /// Fetch season data from original sources for local use.
     Install {
-        /// Install last N seasons [default: 1 = current season refresh].
+        /// Fetch last N seasons [default: 1 = current season refresh].
         #[arg(long, default_value_t = 1)]
         seasons: u8,
-        /// Install a specific season (e.g. 20212022).
+        /// Fetch a specific season (e.g. 20212022).
         #[arg(long)]
         season: Option<String>,
-        /// Re-download even if the season is already installed.
+        /// Re-fetch even if the season already has local source snapshots.
         #[arg(long)]
         force: bool,
     },

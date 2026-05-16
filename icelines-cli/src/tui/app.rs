@@ -2862,7 +2862,7 @@ impl App {
                             self.show_season_picker = false;
                         } else {
                             self.status = format!(
-                                "Season {} not installed. Press 'i' to install, or run `icelines data install {}`.",
+                                "Season {} not loaded. Press 'i' to fetch from source, or run `icelines data install --season {}`.",
                                 season_id, season_id
                             );
                         }

@@ -22,8 +22,7 @@ struct RawConfig {
     /// Phase Reports — per-Tier-1 report toggles. Controls which reports
     /// the loader pulls from the snapshot store and which `StatId`
     /// columns are visible in TUI / query output. Absent section defaults
-    /// to `realtime=true, others=false` (matches the historical behavior
-    /// where realtime was always loaded, the rest required `data install`).
+    /// to `realtime=true, others=false`.
     #[serde(default)]
     reports: Option<RawReportToggles>,
     /// Phase Foster.0.7 — `[sync]` section.

@@ -17,8 +17,9 @@
 //!
 //! L.7b (2026-05-03) — expanded the bundle from 5 to 38 seasons via the
 //! table-driven layout below. Binary grew ~23 MB → ~56 MB; closes the
-//! "BUNDLED_SEASONS != all-seasons" gap that forced `data install` for
-//! historical queries.
+//! "BUNDLED_SEASONS != all-seasons" gap that once forced `data install` for
+//! historical queries. Release-backed installs are retired; source fetches now
+//! refresh local snapshots.
 
 use crate::{
     error::FetchError,
@@ -385,7 +386,7 @@ pub fn get_stats(season: &str) -> Option<Vec<SkaterStats>> {
 /// Deserialize bundled goalie stats for a season (Phase G.1). Returns
 /// `None` when the season isn't one of the 38 embedded seasons. Use
 /// `get_goalie_stats_installed` to read from `~/.icelines/seasons/` for
-/// pre-1987 seasons or fresher data brought in via `data install`.
+/// pre-1987 seasons or fresher data brought in via source fetches.
 pub fn get_goalie_stats(season: &str) -> Option<Vec<GoalieStats>> {
     let bytes = lookup(BUNDLED_GOALIES, season)?;
     serde_json::from_slice(bytes).ok()

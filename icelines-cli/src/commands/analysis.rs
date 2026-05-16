@@ -61,7 +61,7 @@ pub async fn run_class(
         if year < current_year - 4 {
             eprintln!("DRAFT CLASS {year} — 0 active players found in installed seasons.");
             eprintln!("  Players from the {year} draft class may have retired before the bundled data window.");
-            eprintln!("  Install older seasons to see historical draft class data:");
+            eprintln!("  Fetch older seasons to see historical draft class data:");
             eprintln!("    icelines data install <YYYYZZZZ>");
         } else {
             eprintln!("DRAFT CLASS {year} — 0 players matched. Check the draft year.");
@@ -274,7 +274,7 @@ pub async fn run_history(
     let summary = load_career(&player_name, seasons, &store)
         .with_context(|| format!(
             "'{player_name}' not found in installed seasons (checked last {seasons}).\n\
-             Tip: install older seasons with `icelines data install <YYYYZZZZ>` to view historical players."
+             Tip: fetch older seasons with `icelines data install <YYYYZZZZ>` to view historical players."
         ))?;
 
     let headers = &[

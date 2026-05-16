@@ -1,15 +1,14 @@
-//! `icelines data` — download and manage additional season data bundles.
+//! `icelines data` — fetch and manage local season data.
 
-use crate::cli::DataSubcommand;
+use crate::cli::{DataSubcommand, FetchSeasonType, FetchSubcommand};
 use anyhow::Context;
 use icelines_core::{
     DataMutationIntent, DataMutationOperation, ViewContext, ViewWindow, CURRENT_SEASON,
 };
 
-/// All seasons with published GitHub Releases, newest first.
-/// The first 5 are also bundled in the binary; the rest require `data install`.
+/// Seasons that can be fetched from source data, newest first.
 const AVAILABLE_SEASONS: &[&str] = &[
-    // Current + recent (bundled in binary)
+    // Current + recent
     "20252026", "20242025", "20232024", "20222023", "20212022",
     // Salary-cap era history 2005-06 → 2020-21
     "20202021", "20192020", "20182019", "20172018", "20162017", "20152016", "20142015", "20132014",
@@ -22,9 +21,6 @@ const AVAILABLE_SEASONS: &[&str] = &[
     "19871988",
     // Note: 20042005 omitted — full lockout, no games played
 ];
-
-const RELEASE_URL_TEMPLATE: &str =
-    "https://github.com/giodl73-repo/ICELINES/releases/download/data-{SEASON}/data-{SEASON}.tar.gz";
 
 pub async fn run(cmd: DataSubcommand) -> anyhow::Result<()> {
     match cmd {
@@ -54,9 +50,9 @@ async fn run_install(seasons: u8, season: Option<String>, force: bool) -> anyhow
         }
         if !AVAILABLE_SEASONS.contains(&s.as_str()) {
             println!(
-                "Season {s} is not available as a pre-built bundle.\n  \
-                 To fetch it yourself: `icelines fetch stats --season {s}`\n  \
-                 Available: 19871988–20252026 (excluding 20042005 lockout)"
+                "Season {s} is not available from the supported source fetch set.\n  \
+                 To try a direct fetch anyway: `icelines fetch all --season {s} --type both`\n  \
+                  Available: 19871988–20252026 (excluding 20042005 lockout)"
             );
             return Ok(());
         }
@@ -84,30 +80,9 @@ pub async fn install_season_tui(season: &str) -> anyhow::Result<u64> {
     let home = std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
         .context("cannot determine home directory")?;
-    let seasons_dir = std::path::Path::new(&home)
-        .join(".icelines")
-        .join("seasons");
-    std::fs::create_dir_all(&seasons_dir)?;
-    let dest = seasons_dir.join(season);
-    let bundle_dir = dest.join(format!("bundle-{season}"));
-    if bundle_dir.join("bios.json").exists() {
-        anyhow::bail!("already installed");
-    }
-    let url = RELEASE_URL_TEMPLATE.replace("{SEASON}", season);
-    let client = reqwest::Client::builder()
-        .user_agent("icelines-cli")
-        .build()?;
-    let response = client.get(&url).send().await?;
-    if !response.status().is_success() {
-        anyhow::bail!("HTTP {}", response.status());
-    }
-    let bytes = response.bytes().await?;
-    let kb = bytes.len() as u64 / 1024;
-    std::fs::create_dir_all(&dest)?;
-    extract_tar_gz(&bytes, &dest)?;
-    write_bundle_manifest(&dest, season)
-        .with_context(|| format!("writing manifest for {season}"))?;
-    Ok(kb)
+    let _home = home;
+    fetch_season_from_source(season, false).await?;
+    Ok(0)
 }
 
 async fn install_season(
@@ -117,83 +92,43 @@ async fn install_season(
 ) -> anyhow::Result<()> {
     let dest = seasons_dir.join(season);
 
-    // Installed seasons are extracted under dest/bundle-{season}/ by the tar.gz layout.
-    let bundle_dir = dest.join(format!("bundle-{season}"));
-
-    // Skip if already installed and not forcing a refresh.
-    if !force && bundle_dir.join("bios.json").exists() && bundle_dir.join("stats.json").exists() {
-        println!("Season {season} already installed (use --force to re-download).");
+    if !force && source_snapshot_exists(season) {
+        println!("Season {season} already fetched from source (use --force to refresh).");
         return Ok(());
     }
 
-    let url = RELEASE_URL_TEMPLATE.replace("{SEASON}", season);
-
-    // Download.
-    let client = reqwest::Client::builder()
-        .user_agent("icelines-cli")
-        .build()
-        .context("build HTTP client")?;
-
-    let response = client
-        .get(&url)
-        .send()
-        .await
-        .with_context(|| format!("GET {url}"))?;
-
-    if response.status() == reqwest::StatusCode::NOT_FOUND {
-        println!(
-            "Season {season} not yet available — run \
-             `icelines fetch stats --season {season}` to build it."
-        );
-        return Ok(());
-    }
-
-    if !response.status().is_success() {
-        anyhow::bail!(
-            "download failed for season {season}: HTTP {}",
-            response.status()
-        );
-    }
-
-    let bytes = response.bytes().await.context("read response bytes")?;
-    let kb = bytes.len() / 1024;
-    println!("Downloading data-{season}... {kb} KB");
-
-    // Extract tar.gz into dest/
-    std::fs::create_dir_all(&dest).with_context(|| format!("create {}", dest.display()))?;
-
-    extract_tar_gz(&bytes, &dest).with_context(|| format!("extract data-{season}.tar.gz"))?;
-
-    // Phase 8f.8: write a SHA-256 manifest covering each JSON file in the
-    // extracted bundle so `data verify` can flag corruption / tampering.
-    write_bundle_manifest(&dest, season)
-        .with_context(|| format!("writing manifest for {season}"))?;
-
-    // Phase 8f.8: write a SHA-256 manifest covering each JSON file in the
-    // extracted bundle so `data verify` can flag corruption / tampering.
-    write_bundle_manifest(&dest, season)
-        .with_context(|| format!("writing manifest for {season}"))?;
-
-    println!("Installed season {season} → {}", dest.display());
+    let _dest = dest;
+    fetch_season_from_source(season, force).await?;
+    println!("Fetched season {season} from source data.");
     Ok(())
 }
 
-/// Unpack a tar.gz byte slice into `dest_dir`.
-fn extract_tar_gz(bytes: &[u8], dest_dir: &std::path::Path) -> anyhow::Result<()> {
-    use std::io::Read;
+async fn fetch_season_from_source(season: &str, force: bool) -> anyhow::Result<()> {
+    println!("Fetching season {season} from NHL source data...");
+    crate::commands::fetch::run(FetchSubcommand::All {
+        season: season.to_owned(),
+        refresh: force,
+        dry_run: false,
+        chunked: false,
+        season_type: FetchSeasonType::Both,
+    })
+    .await
+}
 
-    // Decompress gzip.
-    let mut gz_decoder = flate2_decoder(bytes)?;
-    let mut tar_bytes = Vec::new();
-    gz_decoder
-        .read_to_end(&mut tar_bytes)
-        .context("decompress gzip")?;
-
-    // Unpack tar archive.
-    let mut archive = tar_archive(&tar_bytes);
-    archive.unpack(dest_dir).context("unpack tar archive")?;
-
-    Ok(())
+fn source_snapshot_exists(season: &str) -> bool {
+    let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) else {
+        return false;
+    };
+    let snapshot_root = std::path::Path::new(&home)
+        .join(".icelines")
+        .join("snapshots");
+    let Ok(entries) = std::fs::read_dir(snapshot_root) else {
+        return false;
+    };
+    entries
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .any(|name| name.starts_with(&format!("{season}-")))
 }
 
 // ── list ──────────────────────────────────────────────────────────────────────
@@ -202,7 +137,7 @@ fn run_list() -> anyhow::Result<()> {
     let seasons_dir = seasons_base_dir()?;
 
     if !seasons_dir.exists() {
-        println!("No seasons installed. Use `icelines data install` to download.");
+        println!("No legacy season bundles installed. Use `icelines data install` to fetch source snapshots.");
         return Ok(());
     }
 
@@ -246,7 +181,7 @@ fn run_list() -> anyhow::Result<()> {
     }
 
     if !found {
-        println!("No seasons installed. Use `icelines data install` to download.");
+        println!("No legacy season bundles installed. Use `icelines data install` to fetch source snapshots.");
     }
 
     Ok(())
@@ -316,19 +251,6 @@ fn bios_player_count(season_dir: &std::path::Path) -> Option<usize> {
     Some(bios.len())
 }
 
-// ── thin wrappers so we can use std/miniz without a new dep ──────────────────
-// We already depend on `reqwest` which pulls in flate2 transitively.
-// Re-export the flate2 + tar types behind thin functions so the body stays
-// dependency-agnostic and easy to swap.
-
-fn flate2_decoder(bytes: &[u8]) -> anyhow::Result<flate2::read::GzDecoder<&[u8]>> {
-    Ok(flate2::read::GzDecoder::new(bytes))
-}
-
-fn tar_archive(bytes: &[u8]) -> tar::Archive<&[u8]> {
-    tar::Archive::new(bytes)
-}
-
 // ── Phase 8f.8: SHA-256 verification of installed bundles ────────────────────
 
 /// Format a byte slice as lowercase hex. Avoids pulling in the `hex` crate
@@ -342,20 +264,6 @@ fn to_hex(bytes: &[u8]) -> String {
     }
     s
 }
-
-/// Files we hash for a season bundle. Optional files are skipped
-/// silently when absent so older bundles (pre-Hart.6 / pre-G.0) still
-/// verify cleanly. The playoff trio (Hart.6.3, 2026-05-02) ships in
-/// every bundle authored from that date forward.
-const HASHED_FILES: &[&str] = &[
-    "bios.json",
-    "stats.json",
-    "goalie-stats.json",
-    "playoffs.json",
-    "playoff-bios.json",
-    "playoff-stats.json",
-    "playoff-goalie-stats.json",
-];
 
 /// Manifest written next to the bundle's JSON files at install time.
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -399,33 +307,6 @@ fn file_sha256(path: &std::path::Path) -> anyhow::Result<Option<String>> {
     Ok(Some(to_hex(&hasher.finalize())))
 }
 
-/// Walk the bundle's JSON files, compute hashes, and write `manifest.json`.
-fn write_bundle_manifest(dest: &std::path::Path, season: &str) -> anyhow::Result<()> {
-    let dir = bundle_files_dir(dest, season);
-    let mut sha256 = std::collections::BTreeMap::new();
-    for f in HASHED_FILES {
-        if let Some(hex) = file_sha256(&dir.join(f))? {
-            sha256.insert((*f).to_owned(), hex);
-        }
-    }
-    if sha256.is_empty() {
-        anyhow::bail!(
-            "nothing to hash in {} — bundle layout unexpected",
-            dir.display()
-        );
-    }
-    let manifest = BundleManifest {
-        season: season.to_owned(),
-        sha256,
-        version: default_manifest_version(),
-        written_at: chrono::Utc::now().to_rfc3339(),
-    };
-    let json = serde_json::to_string_pretty(&manifest).context("serialize manifest")?;
-    let path = dir.join("manifest.json");
-    std::fs::write(&path, json).with_context(|| format!("writing {}", path.display()))?;
-    Ok(())
-}
-
 /// Verify hashes of one or all installed bundles. Errors loud for any
 /// mismatched, missing, or unmanifested bundle.
 fn run_verify(season: Option<&str>, all: bool) -> anyhow::Result<()> {
@@ -435,7 +316,7 @@ fn run_verify(season: Option<&str>, all: bool) -> anyhow::Result<()> {
     let seasons_dir = seasons_base_dir()?;
     if !seasons_dir.exists() {
         anyhow::bail!(
-            "no installed seasons in {} — run `icelines data install` first",
+            "no legacy season bundles in {} — run `icelines data install` to fetch source snapshots",
             seasons_dir.display()
         );
     }
