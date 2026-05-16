@@ -33,3 +33,10 @@ the same prepared-row predicate shape into a SLICE `slice.fold.v1` plan. ICELINE
 can attach the `players` predicate to its player table, the `stats` predicate to
 its stat table, run the ICELINES-owned join, and then evaluate any residual
 SLICE filter locally.
+
+For simple ICELINES `QueryPlan` trees that contain only prepared-row-safe bio and
+season-stat predicates, `prepared_player_slice_expr_for_query_plan` and
+`plan_prepared_player_query_sqlite_selector` translate the ICELINES IR into the
+same SLICE expression/fold path. Unsupported domain shapes, such as country
+matching, team history, sliding windows, career aggregation, and league queries,
+return `None` and stay in ICELINES.

@@ -1,6 +1,7 @@
 use icelines_query::{
-    compile_prepared_player_selector, plan_prepared_player_sqlite_selector,
-    select_prepared_player_rows,
+    compile_prepared_player_selector, parse_query, plan_prepared_player_query_sqlite_selector,
+    plan_prepared_player_sqlite_selector, prepared_player_slice_expr_for_query_plan,
+    select_prepared_player_rows, FilterInput,
 };
 use serde_json::{json, Value};
 
@@ -59,6 +60,28 @@ fn slice_plans_sqlite_predicates_for_icelines_owned_joins() {
         "((\"stats\".\"ppg\" >= ?) AND (\"stats\".\"goals\" BETWEEN ? AND ?))"
     );
     assert!(plan.residual.is_none());
+}
+
+#[test]
+fn slice_can_plan_simple_icelines_query_ir_for_prepared_rows() {
+    let query = parse_query(FilterInput::Cli(
+        "pos=C AND nationality=SWE AND ppg>=0.8".to_string(),
+    ))
+    .unwrap();
+    let expr = prepared_player_slice_expr_for_query_plan(&query).unwrap();
+    let plan = plan_prepared_player_query_sqlite_selector(&query)
+        .unwrap()
+        .unwrap();
+
+    assert_eq!(
+        expr,
+        "(player.position eq 'c') and (player.nationality eq 'swe') and (stats.ppg ge 0.8)"
+    );
+    assert_eq!(plan.source_count, 2);
+    assert_eq!(
+        plan.sources[0].predicate.text,
+        "((\"players\".\"position\" = ?) AND (\"players\".\"nationality\" = ?))"
+    );
 }
 
 fn player_row(id: &str, position: &str, nationality: &str, ppg: f64) -> Value {

@@ -63,8 +63,9 @@ pub use plan::{
     WindowScope,
 };
 pub use slice_selectors::{
-    compile_prepared_player_selector, plan_prepared_player_sqlite_selector,
-    prepared_player_selector_catalog, prepared_player_sqlite_fold_catalog,
+    compile_prepared_player_selector, plan_prepared_player_query_sqlite_selector,
+    plan_prepared_player_sqlite_selector, prepared_player_selector_catalog,
+    prepared_player_slice_expr_for_query_plan, prepared_player_sqlite_fold_catalog,
     select_prepared_player_rows,
 };
 pub use url::{combine_filter_exprs, parse_filters_from_query};
