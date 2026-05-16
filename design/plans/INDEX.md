@@ -100,7 +100,7 @@ Cleared in Clear the Unblocks:
 | MoneyPuck historical xG (multi-season) | ⭐ | Nothing — backlog |
 | Historical shift-data bundles | ⭐⭐ | Parked — no supported `fetch shifts` command, fixtures, or source/bundle policy; `sync.capabilities.shifts=off` is enforced |
 | Fantasy roster shape enforcement | ⭐ | Per-scheme rules in TOML |
-| CI: cargo fmt + cargo audit gates | ⭐⭐ | Nothing — backlog |
+| CI: cargo fmt + cargo audit gates | ⭐⭐ | **Active** - Guard the Gates wave; inventory found fmt is already blocking and cargo-audit needs CI/local/policy wiring |
 
 Cleared in Score the Day:
 - Fantasy daily delta scoring — shipped via `FantasyDailyDeltaView`,
