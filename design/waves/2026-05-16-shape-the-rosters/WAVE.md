@@ -45,7 +45,7 @@ aware, and focused on preventing invalid local roster state from looking valid.
 |---|---|---|
 | 01 - Roster shape inventory and pulse map | complete | `FANTASY-ROSTER-SHAPE-INVENTORY.md`; `plans/pulse-01.md`; `panels/wave-plan-review/` |
 | 02 - Core roster shape contract | complete | `icelines-core/src/roster_shape.rs`; 6 L0 tests |
-| 03 - FantasyDb shape persistence and import validation | planned | depends on Pulse 02 |
+| 03 - FantasyDb shape persistence and import validation | complete | `fl_leagues.roster_shape`; import warnings from canonical positions; fetch L1 tests |
 | 04 - CLI, TUI, and dashboard validation surfaces | planned | depends on Pulses 02-03 |
 | 05 - Docs, regression gates, and closeout | planned | depends on Pulses 02-04 |
 
@@ -71,6 +71,12 @@ Pulse 02 added the pure core roster-shape contract. `RosterShape` and
 rosters, underfilled/overfilled slots, unknown players, duplicate rows, and
 goalie/skater shape mismatches without touching scoring math.
 
+Pulse 03 added FantasyDb roster-shape persistence through the default
+`yahoo-standard` preset, exposed persisted roster validation helpers, and wired
+Yahoo CSV imports to emit roster-shape warnings only from canonical player
+positions supplied by the active player pool. Yahoo CSV position hints remain
+diagnostics/fallback context and do not become NHL eligibility truth.
+
 ## Next
 
-Execute Pulse 03: persist league shape settings and wire import validation.
+Execute Pulse 04: add CLI, TUI, and dashboard validation/config surfaces.

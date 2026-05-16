@@ -11,9 +11,15 @@ use icelines_core::view_model::{
     FantasyImportTeamStatus, FantasyImportView, FantasyImportViewInput, SourceKind, ViewWarning,
     WarningKind,
 };
-use icelines_core::{model::Season, CURRENT_SEASON};
+use icelines_core::{
+    model::{Position, Season},
+    RosterShapePlayerInput, RosterShapeStatus, RosterShapeValidationInput,
+    RosterShapeValidationView, CURRENT_SEASON,
+};
 
-use crate::fantasy_db::{FantasyDb, LeagueRow, TeamRow};
+use crate::fantasy_db::{
+    resolve_roster_shape, FantasyDb, LeagueRow, TeamRow, DEFAULT_ROSTER_SHAPE,
+};
 
 const DEFAULT_SCORING_SCHEME: &str = "yahoo-standard";
 
@@ -38,6 +44,7 @@ pub struct FantasyRosterImportOptions {
     pub user_team: Option<String>,
     pub mode: FantasyImportMode,
     pub known_player_keys: Option<BTreeSet<String>>,
+    pub known_player_positions: Option<BTreeMap<String, Vec<Position>>>,
 }
 
 impl FantasyRosterImportOptions {
@@ -48,6 +55,7 @@ impl FantasyRosterImportOptions {
             user_team: None,
             mode: FantasyImportMode::DryRun,
             known_player_keys: None,
+            known_player_positions: None,
         }
     }
 
@@ -135,7 +143,13 @@ pub fn import_yahoo_roster_rows(
         &existing_teams,
         &existing_rosters,
     );
-    let warnings = import_warnings(&options, &teams);
+    let warnings = import_warnings(
+        &options,
+        existing_league.as_ref(),
+        &teams,
+        &rows,
+        &existing_rosters,
+    )?;
 
     if options.mode == FantasyImportMode::Apply {
         apply_import(db, &options, existing_league.as_ref(), &teams, &rows)?;
@@ -438,20 +452,143 @@ fn team_inputs(
 
 fn import_warnings(
     options: &FantasyRosterImportOptions,
+    existing_league: Option<&LeagueRow>,
     teams: &[FantasyImportTeamInput],
-) -> Vec<ViewWarning> {
-    let Some(user_team) = options.user_team.as_ref() else {
-        return Vec::new();
-    };
-    if teams.iter().any(|team| &team.team == user_team) {
-        return Vec::new();
+    rows: &[FantasyImportRowInput],
+    existing_rosters: &BTreeMap<String, BTreeSet<String>>,
+) -> anyhow::Result<Vec<ViewWarning>> {
+    let mut warnings = Vec::new();
+    if let Some(user_team) = options.user_team.as_ref() {
+        if !teams.iter().any(|team| &team.team == user_team) {
+            warnings.push(ViewWarning {
+                kind: WarningKind::PartialSource,
+                source: Some(SourceKind::FantasyImport),
+                message: format!("user team '{user_team}' was not present in the import rows"),
+                recovery: Vec::new(),
+            });
+        }
     }
-    vec![ViewWarning {
+
+    if let Some(player_positions) = options.known_player_positions.as_ref() {
+        let shape_name = existing_league
+            .map(|league| league.roster_shape.as_str())
+            .unwrap_or(DEFAULT_ROSTER_SHAPE);
+        let shape = resolve_roster_shape(shape_name)?;
+        for validation in validate_import_roster_shapes(
+            &options.league_name,
+            &shape,
+            teams,
+            rows,
+            existing_rosters,
+            player_positions,
+        ) {
+            if validation.status == RosterShapeStatus::Invalid {
+                warnings.push(roster_shape_warning(&validation));
+            }
+        }
+    }
+
+    Ok(warnings)
+}
+
+fn validate_import_roster_shapes(
+    league_name: &str,
+    shape: &icelines_core::RosterShape,
+    teams: &[FantasyImportTeamInput],
+    rows: &[FantasyImportRowInput],
+    existing_rosters: &BTreeMap<String, BTreeSet<String>>,
+    player_positions: &BTreeMap<String, Vec<Position>>,
+) -> Vec<RosterShapeValidationView> {
+    teams
+        .iter()
+        .filter(|team| team.status != FantasyImportTeamStatus::Error)
+        .map(|team| {
+            let mut roster_keys = existing_rosters
+                .get(&team.team)
+                .cloned()
+                .unwrap_or_default();
+            rows.iter()
+                .filter(|row| {
+                    row.fantasy_team.as_deref() == Some(team.team.as_str())
+                        && row.status == FantasyImportRowStatus::Imported
+                })
+                .filter_map(|row| row.normalized_name.as_ref())
+                .for_each(|player| {
+                    roster_keys.insert(player.clone());
+                });
+            let display_by_key = rows
+                .iter()
+                .filter_map(|row| {
+                    row.normalized_name
+                        .as_ref()
+                        .map(|key| (key.clone(), row.player_name.clone()))
+                })
+                .collect::<BTreeMap<_, _>>();
+            let players = roster_keys
+                .into_iter()
+                .map(|player_key| {
+                    let display_name = display_by_key
+                        .get(&player_key)
+                        .cloned()
+                        .unwrap_or_else(|| player_key.clone());
+                    let positions = player_positions
+                        .get(&player_key)
+                        .cloned()
+                        .unwrap_or_default();
+                    if positions.is_empty() {
+                        RosterShapePlayerInput::unknown(player_key, display_name)
+                    } else {
+                        RosterShapePlayerInput::known(player_key, display_name, positions)
+                    }
+                })
+                .collect();
+            RosterShapeValidationView::validate(RosterShapeValidationInput {
+                league: league_name.to_string(),
+                team: team.team.clone(),
+                shape: shape.clone(),
+                players,
+            })
+        })
+        .collect()
+}
+
+fn roster_shape_warning(validation: &RosterShapeValidationView) -> ViewWarning {
+    let mut fragments = Vec::new();
+    if validation.summary.missing_slots > 0 {
+        fragments.push(format!(
+            "{} missing slot groups",
+            validation.summary.missing_slots
+        ));
+    }
+    if validation.summary.overflow_slots > 0 {
+        fragments.push(format!(
+            "{} over-cap slot groups",
+            validation.summary.overflow_slots
+        ));
+    }
+    if validation.summary.unknown_players > 0 {
+        fragments.push(format!(
+            "{} unknown players",
+            validation.summary.unknown_players
+        ));
+    }
+    if validation.summary.ineligible_players > 0 {
+        fragments.push(format!(
+            "{} ineligible players",
+            validation.summary.ineligible_players
+        ));
+    }
+    ViewWarning {
         kind: WarningKind::PartialSource,
         source: Some(SourceKind::FantasyImport),
-        message: format!("user team '{user_team}' was not present in the import rows"),
+        message: format!(
+            "roster shape '{}' is not satisfied for '{}': {}",
+            validation.shape_name,
+            validation.team,
+            fragments.join(", ")
+        ),
         recovery: Vec::new(),
-    }]
+    }
 }
 
 fn apply_import(
@@ -527,6 +664,13 @@ mod tests {
         names.iter().map(|name| normalize_name(name)).collect()
     }
 
+    fn known_positions(names: &[(&str, Vec<Position>)]) -> BTreeMap<String, Vec<Position>> {
+        names
+            .iter()
+            .map(|(name, positions)| (normalize_name(name), positions.clone()))
+            .collect()
+    }
+
     #[test]
     fn l1_fantasy_import_parses_bom_and_header_aliases_with_diacritics() {
         let mut content = vec![0xEF, 0xBB, 0xBF];
@@ -596,6 +740,79 @@ mod tests {
         assert_eq!(
             db.list_roster(&team.id).expect("list roster"),
             vec![normalize_name("Connor McDavid")]
+        );
+    }
+
+    #[test]
+    fn l1_fantasy_import_roster_shape_validation_uses_canonical_positions() {
+        let file = write_csv("Player,Fantasy Team,Owner,Positions\nConnor McDavid,Alpha,Alice,G\n");
+        let db = FantasyDb::open_in_memory().expect("open db");
+
+        let view = import_yahoo_roster_csv(
+            &db,
+            file.path(),
+            FantasyRosterImportOptions {
+                known_player_keys: Some(known(&["Connor McDavid"])),
+                known_player_positions: Some(known_positions(&[(
+                    "Connor McDavid",
+                    vec![Position::Center],
+                )])),
+                ..FantasyRosterImportOptions::dry_run("Office League")
+            },
+        )
+        .expect("dry-run import");
+
+        assert_eq!(view.summary.players_imported, 1);
+        assert!(view.warnings.iter().any(|warning| {
+            warning.message.contains("roster shape 'yahoo-standard'")
+                && warning.message.contains("'Alpha'")
+                && warning.message.contains("missing slot groups")
+        }));
+        assert!(
+            !view
+                .warnings
+                .iter()
+                .any(|warning| warning.message.contains("G")),
+            "Yahoo CSV position hints must not be treated as canonical validation input"
+        );
+        assert!(
+            db.list_leagues().expect("list leagues").is_empty(),
+            "dry-run validation must not create a league"
+        );
+    }
+
+    #[test]
+    fn l1_fantasy_import_roster_shape_validation_includes_existing_rosters() {
+        let db = FantasyDb::open_in_memory().expect("open db");
+        let league_id = db
+            .create_league("Office League", "yahoo-standard")
+            .expect("create league");
+        let team_id = db
+            .create_team(&league_id, "Alpha", "Alice")
+            .expect("create team");
+        db.add_player(&team_id, "existing_goalie")
+            .expect("add existing player");
+        let file = write_csv("Player,Fantasy Team,Owner\nConnor McDavid,Alpha,Alice\n");
+
+        let view = import_yahoo_roster_csv(
+            &db,
+            file.path(),
+            FantasyRosterImportOptions {
+                known_player_keys: Some(known(&["Connor McDavid"])),
+                known_player_positions: Some(known_positions(&[(
+                    "Connor McDavid",
+                    vec![Position::Center],
+                )])),
+                ..FantasyRosterImportOptions::dry_run("Office League")
+            },
+        )
+        .expect("dry-run import");
+
+        assert!(
+            view.warnings.iter().any(|warning| {
+                warning.message.contains("'Alpha'") && warning.message.contains("unknown players")
+            }),
+            "existing roster members without canonical positions should be surfaced"
         );
     }
 

@@ -2,7 +2,7 @@
 wave: shape-the-rosters
 pulse: 03
 date: 2026-05-16
-status: planned
+status: complete
 governing_roles:
   - forge
   - wire
@@ -33,12 +33,27 @@ through the core contract.
 
 ## Gates
 
-- [ ] `cargo test -p icelines-fetch roster_shape --quiet`
-- [ ] `cargo test -p icelines-fetch fantasy_import --quiet`
-- [ ] `cargo fmt --check`
-- [ ] `git diff --check`
+- [x] `cargo test -p icelines-fetch roster_shape --quiet`
+- [x] `cargo test -p icelines-fetch fantasy_import --quiet`
+- [x] `cargo fmt --check`
+- [x] `git diff --check`
 
 ## Stop Conditions
 
 - Stop if migration would make existing leagues unreadable or silently discard
   existing roster rows.
+
+## Result
+
+Completed in Pulse 03:
+
+- Added the built-in roster-shape resolver around the core `RosterShape`
+  contract.
+- Added a safe `fl_leagues.roster_shape` migration/default and snapshot
+  propagation in FantasyDb.
+- Added fetch-layer roster-shape validation helpers for persisted team rosters.
+- Wired Yahoo CSV import validation through canonical player positions when
+  available, while keeping CSV position hints non-authoritative.
+- Added L1 coverage for default persistence, unknown preset rejection, persisted
+  roster validation, import dry-run validation warnings, and existing-roster
+  unknown-player diagnostics.

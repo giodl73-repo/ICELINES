@@ -5,7 +5,14 @@
 
 use anyhow::{bail, Context};
 use chrono::NaiveDate;
+use icelines_core::{
+    model::Position, RosterShape, RosterShapePlayerInput, RosterShapeValidationInput,
+    RosterShapeValidationView,
+};
 use rusqlite::Connection;
+use std::collections::BTreeMap;
+
+pub const DEFAULT_ROSTER_SHAPE: &str = "yahoo-standard";
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -15,6 +22,7 @@ pub struct LeagueRow {
     pub id: String,
     pub name: String,
     pub scheme: String,
+    pub roster_shape: String,
     pub is_active: bool,
     pub team_count: usize,
 }
@@ -35,6 +43,7 @@ pub struct FantasyLeagueSnapshot {
     pub league: String,
     pub user_team: String,
     pub scoring_scheme: String,
+    pub roster_shape: String,
     pub teams: Vec<FantasyTeamSnapshot>,
 }
 
@@ -90,6 +99,7 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
             id         TEXT PRIMARY KEY,
             name       TEXT UNIQUE NOT NULL,
             scheme     TEXT NOT NULL DEFAULT 'yahoo-standard',
+            roster_shape TEXT NOT NULL DEFAULT 'yahoo-standard',
             is_active  INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL
         );",
@@ -127,6 +137,15 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
         .context("migration 006: add fl_teams.is_user_team")?;
     }
 
+    let has_roster_shape_column = table_has_column(conn, "fl_leagues", "roster_shape")
+        .context("migration 008: inspect fl_leagues.roster_shape")?;
+    if !has_roster_shape_column {
+        conn.execute_batch(
+            "ALTER TABLE fl_leagues ADD COLUMN roster_shape TEXT NOT NULL DEFAULT 'yahoo-standard';",
+        )
+        .context("migration 008: add fl_leagues.roster_shape")?;
+    }
+
     // Migration 005 — fantasy rosters
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS fl_roster (
@@ -161,6 +180,18 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
         .context("enable foreign keys")?;
 
     Ok(())
+}
+
+fn table_has_column(conn: &Connection, table: &str, column: &str) -> anyhow::Result<bool> {
+    let mut stmt = conn
+        .prepare(&format!("PRAGMA table_info({table})"))
+        .with_context(|| format!("inspect {table} columns"))?;
+    let columns = stmt
+        .query_map([], |row| row.get::<_, String>(1))
+        .with_context(|| format!("read {table} columns"))?
+        .collect::<Result<Vec<_>, _>>()
+        .with_context(|| format!("collect {table} columns"))?;
+    Ok(columns.iter().any(|name| name == column))
 }
 
 // ── FantasyDb impl ────────────────────────────────────────────────────────────
@@ -210,13 +241,23 @@ impl FantasyDb {
 
     /// Create a new fantasy league.  Returns its UUID.
     pub fn create_league(&self, name: &str, scheme: &str) -> anyhow::Result<String> {
+        self.create_league_with_shape(name, scheme, DEFAULT_ROSTER_SHAPE)
+    }
+
+    pub fn create_league_with_shape(
+        &self,
+        name: &str,
+        scheme: &str,
+        roster_shape: &str,
+    ) -> anyhow::Result<String> {
+        resolve_roster_shape(roster_shape)?;
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         self.conn
             .execute(
-                "INSERT INTO fl_leagues (id, name, scheme, is_active, created_at) \
-                 VALUES (?1, ?2, ?3, 0, ?4)",
-                rusqlite::params![id, name, scheme, now],
+                "INSERT INTO fl_leagues (id, name, scheme, roster_shape, is_active, created_at) \
+                 VALUES (?1, ?2, ?3, ?4, 0, ?5)",
+                rusqlite::params![id, name, scheme, roster_shape, now],
             )
             .with_context(|| format!("create league '{name}'"))?;
         Ok(id)
@@ -225,7 +266,7 @@ impl FantasyDb {
     /// List all leagues with team counts.
     pub fn list_leagues(&self) -> anyhow::Result<Vec<LeagueRow>> {
         let mut stmt = self.conn.prepare(
-            "SELECT l.id, l.name, l.scheme, l.is_active,
+            "SELECT l.id, l.name, l.scheme, l.roster_shape, l.is_active,
                     COUNT(t.id) AS team_count
              FROM fl_leagues l
              LEFT JOIN fl_teams t ON t.league_id = l.id
@@ -239,8 +280,9 @@ impl FantasyDb {
                     id: row.get(0)?,
                     name: row.get(1)?,
                     scheme: row.get(2)?,
-                    is_active: row.get::<_, i64>(3)? != 0,
-                    team_count: row.get::<_, i64>(4)? as usize,
+                    roster_shape: row.get(3)?,
+                    is_active: row.get::<_, i64>(4)? != 0,
+                    team_count: row.get::<_, i64>(5)? as usize,
                 })
             })
             .context("list_leagues query")?
@@ -281,7 +323,7 @@ impl FantasyDb {
     /// Get the currently active league (if any).
     pub fn get_active_league(&self) -> anyhow::Result<Option<LeagueRow>> {
         let mut stmt = self.conn.prepare(
-            "SELECT l.id, l.name, l.scheme, l.is_active,
+            "SELECT l.id, l.name, l.scheme, l.roster_shape, l.is_active,
                     COUNT(t.id) AS team_count
              FROM fl_leagues l
              LEFT JOIN fl_teams t ON t.league_id = l.id
@@ -295,8 +337,9 @@ impl FantasyDb {
                     id: row.get(0)?,
                     name: row.get(1)?,
                     scheme: row.get(2)?,
-                    is_active: row.get::<_, i64>(3)? != 0,
-                    team_count: row.get::<_, i64>(4)? as usize,
+                    roster_shape: row.get(3)?,
+                    is_active: row.get::<_, i64>(4)? != 0,
+                    team_count: row.get::<_, i64>(5)? as usize,
                 })
             })
             .context("get_active_league query")?;
@@ -315,6 +358,57 @@ impl FantasyDb {
             )
             .with_context(|| format!("delete league '{name}'"))?;
         Ok(rows > 0)
+    }
+
+    pub fn set_league_roster_shape(
+        &self,
+        league_id: &str,
+        roster_shape: &str,
+    ) -> anyhow::Result<()> {
+        resolve_roster_shape(roster_shape)?;
+        let rows = self
+            .conn
+            .execute(
+                "UPDATE fl_leagues SET roster_shape = ?1 WHERE id = ?2",
+                rusqlite::params![roster_shape, league_id],
+            )
+            .with_context(|| format!("set roster shape '{roster_shape}' for league {league_id}"))?;
+        if rows == 0 {
+            bail!("league '{league_id}' not found");
+        }
+        Ok(())
+    }
+
+    pub fn validate_team_roster_shape(
+        &self,
+        league: &LeagueRow,
+        team: &TeamRow,
+        player_positions: &BTreeMap<String, Vec<Position>>,
+    ) -> anyhow::Result<RosterShapeValidationView> {
+        let shape = resolve_roster_shape(&league.roster_shape)?;
+        let players = self
+            .list_roster(&team.id)?
+            .into_iter()
+            .map(|player_key| {
+                let positions = player_positions
+                    .get(&player_key)
+                    .cloned()
+                    .unwrap_or_default();
+                if positions.is_empty() {
+                    RosterShapePlayerInput::unknown(player_key.clone(), player_key)
+                } else {
+                    RosterShapePlayerInput::known(player_key.clone(), player_key, positions)
+                }
+            })
+            .collect();
+        Ok(RosterShapeValidationView::validate(
+            RosterShapeValidationInput {
+                league: league.name.clone(),
+                team: team.name.clone(),
+                shape,
+                players,
+            },
+        ))
     }
 
     // ── Team operations ────────────────────────────────────────────────────────
@@ -637,9 +731,21 @@ impl FantasyDb {
             league: league.name,
             user_team: user_team.name,
             scoring_scheme: league.scheme,
+            roster_shape: league.roster_shape,
             teams,
         })
     }
+}
+
+pub fn resolve_roster_shape(name: &str) -> anyhow::Result<RosterShape> {
+    RosterShape::builtin_named(name).with_context(|| {
+        let names = RosterShape::all_builtins()
+            .into_iter()
+            .map(|shape| shape.name)
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("unknown roster shape '{name}'. Try: {names}")
+    })
 }
 
 fn ensure_team_unscheduled(
@@ -1034,6 +1140,7 @@ mod tests {
         assert_eq!(snapshot.league, "Snapshot League");
         assert_eq!(snapshot.user_team, "My Team");
         assert_eq!(snapshot.scoring_scheme, "yahoo-standard");
+        assert_eq!(snapshot.roster_shape, DEFAULT_ROSTER_SHAPE);
         assert_eq!(snapshot.teams.len(), 2);
         assert!(snapshot
             .teams
@@ -1045,6 +1152,61 @@ mod tests {
             .any(|team| team.name == "Rival Team" && team.roster == ["nathan_mackinnon"]));
         assert_eq!(snapshot.user_rostered(), vec!["connor_mcdavid"]);
         assert_eq!(snapshot.all_rostered().len(), 2);
+    }
+
+    #[test]
+    fn l1_fantasy_roster_shape_defaults_and_rejects_unknown_presets() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Shape Defaults", "yahoo-standard")
+            .expect("create league");
+
+        let league = db
+            .list_leagues()
+            .expect("list leagues")
+            .into_iter()
+            .find(|league| league.id == league_id)
+            .expect("created league is listed");
+
+        assert_eq!(league.roster_shape, DEFAULT_ROSTER_SHAPE);
+        assert!(
+            db.set_league_roster_shape(&league_id, "not-a-shape")
+                .is_err(),
+            "unknown roster shape names must be rejected before persistence"
+        );
+    }
+
+    #[test]
+    fn l1_fantasy_roster_shape_validation_uses_persisted_shape() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Shape League", "yahoo-standard")
+            .expect("create league");
+        let team_id = db
+            .create_team(&league_id, "Short Bench", "Alice")
+            .expect("create team");
+        db.add_player(&team_id, "connor_mcdavid")
+            .expect("add player");
+        let league = db.get_active_league().expect("active").unwrap_or_else(|| {
+            db.list_leagues()
+                .expect("list leagues")
+                .into_iter()
+                .find(|league| league.id == league_id)
+                .expect("league")
+        });
+        let team = db
+            .get_team_by_name(&league_id, "Short Bench")
+            .expect("team query")
+            .expect("team");
+        let positions = BTreeMap::from([("connor_mcdavid".to_string(), vec![Position::Center])]);
+
+        let view = db
+            .validate_team_roster_shape(&league, &team, &positions)
+            .expect("validate shape");
+
+        assert_eq!(view.shape_name, DEFAULT_ROSTER_SHAPE);
+        assert_eq!(view.status, icelines_core::RosterShapeStatus::Invalid);
+        assert!(view.summary.missing_slots > 0);
     }
 
     #[test]

@@ -39,6 +39,17 @@ impl RosterShape {
         )
     }
 
+    pub fn all_builtins() -> Vec<Self> {
+        vec![Self::yahoo_standard()]
+    }
+
+    pub fn builtin_named(name: &str) -> Option<Self> {
+        let needle = name.trim().to_ascii_lowercase();
+        Self::all_builtins()
+            .into_iter()
+            .find(|shape| shape.name.eq_ignore_ascii_case(&needle))
+    }
+
     pub fn validates_group(&self, position: Position) -> bool {
         self.rules.iter().any(|rule| {
             rule.group != RosterPositionGroup::Total && rule.group.matches_position(position)

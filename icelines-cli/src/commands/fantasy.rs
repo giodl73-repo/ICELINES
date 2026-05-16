@@ -1,6 +1,6 @@
 //! Fantasy league commands — leagues, teams, scoring, trades, HTTP server.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, HashMap};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -995,7 +995,8 @@ pub async fn run_import_yahoo(
     json: bool,
 ) -> anyhow::Result<()> {
     let db = FantasyDb::open()?;
-    let known_player_keys = known_player_keys()?;
+    let known_player_positions = known_player_positions()?;
+    let known_player_keys = known_player_positions.keys().cloned().collect();
     let mut options = if dry_run {
         FantasyRosterImportOptions::dry_run(league)
     } else {
@@ -1003,6 +1004,7 @@ pub async fn run_import_yahoo(
     };
     options.user_team = my_team;
     options.known_player_keys = Some(known_player_keys);
+    options.known_player_positions = Some(known_player_positions);
 
     let view = import_yahoo_roster_csv(&db, &file, options)
         .with_context(|| format!("import Yahoo roster CSV from {}", file.display()))?;
@@ -1019,13 +1021,13 @@ pub async fn run_import_yahoo(
     Ok(())
 }
 
-fn known_player_keys() -> anyhow::Result<BTreeSet<String>> {
+fn known_player_positions() -> anyhow::Result<BTreeMap<String, Vec<icelines_core::Position>>> {
     let (outcome, season) = load_pools()?;
     let (skaters, goalies) = pools_views(&outcome.repo, season);
     Ok(skaters
         .iter()
         .chain(goalies.iter())
-        .map(|view| view.identity.name_normalized.clone())
+        .map(|view| (view.identity.name_normalized.clone(), vec![view.position()]))
         .collect())
 }
 
