@@ -7,6 +7,49 @@ use anyhow::{bail, Context};
 use rusqlite::Connection;
 use std::time::Duration;
 
+#[cfg(test)]
+thread_local! {
+    static TEST_HOME: std::cell::RefCell<Option<std::path::PathBuf>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+struct TestHomeGuard(Option<std::path::PathBuf>);
+
+#[cfg(test)]
+impl Drop for TestHomeGuard {
+    fn drop(&mut self) {
+        let previous = self.0.take();
+        TEST_HOME.with(|home| {
+            home.replace(previous);
+        });
+    }
+}
+
+#[cfg(test)]
+pub fn with_test_home<F, R>(home: &std::path::Path, f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    let previous = TEST_HOME.with(|cell| cell.replace(Some(home.to_path_buf())));
+    let _guard = TestHomeGuard(previous);
+    f()
+}
+
+fn group_home_dir() -> anyhow::Result<std::path::PathBuf> {
+    #[cfg(test)]
+    {
+        if let Some(home) = TEST_HOME.with(|cell| cell.borrow().clone()) {
+            return Ok(home);
+        }
+    }
+
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))
+}
+
 // ── Public types ──────────────────────────────────────────────────────────────
 
 /// A row returned by `list_groups`.
@@ -314,10 +357,7 @@ fn entity_ref_split(entity_ref: &str) -> (MemberKind, String) {
 impl GroupDb {
     /// Open (or create) `~/.icelines/icelines.db` and run migrations.
     pub fn open() -> anyhow::Result<Self> {
-        let home = std::env::var_os("HOME")
-            .or_else(|| std::env::var_os("USERPROFILE"))
-            .map(std::path::PathBuf::from)
-            .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+        let home = group_home_dir()?;
 
         let dir = home.join(".icelines");
         std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;

@@ -6145,15 +6145,18 @@ mod tests {
         );
     }
 
-    /// When `app.mdi` is Some, Tab is a no-op. The screen stays
-    /// put — Tab is reserved for cmd-bar autocomplete in
-    /// Adams.2; for Adams.1 it's just intercepted.
+    /// When `app.mdi` is Some, Tab moves dashboard focus instead
+    /// of cycling the SDI tab strip.
     #[test]
-    fn l0_adams_mdi_tab_is_noop() {
+    fn l0_adams_mdi_tab_moves_focus_without_screen_cycle() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
         app.mdi = Some(crate::tui::mdi::MdiLayout::default());
         app.handle(Action::Tab);
+        assert_eq!(
+            app.mdi.as_ref().unwrap().focus,
+            crate::tui::mdi::MdiFocus::RightPane
+        );
         assert_eq!(
             app.screen,
             Screen::Queries,
@@ -6161,13 +6164,18 @@ mod tests {
         );
     }
 
-    /// When `app.mdi` is Some, Shift+Tab is a no-op too.
+    /// When `app.mdi` is Some, Shift+Tab reverses dashboard focus
+    /// instead of cycling the SDI tab strip.
     #[test]
-    fn l0_adams_mdi_tabprev_is_noop() {
+    fn l0_adams_mdi_tabprev_moves_focus_without_screen_cycle() {
         let mut app = App::new(false);
         app.screen = Screen::Queries;
         app.mdi = Some(crate::tui::mdi::MdiLayout::default());
         app.handle(Action::TabPrev);
+        assert_eq!(
+            app.mdi.as_ref().unwrap().focus,
+            crate::tui::mdi::MdiFocus::LeftPane
+        );
         assert_eq!(
             app.screen,
             Screen::Queries,

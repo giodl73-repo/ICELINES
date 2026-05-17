@@ -3328,28 +3328,6 @@ mod tests {
         app
     }
 
-    fn with_temp_home<F, R>(f: F) -> R
-    where
-        F: FnOnce(&std::path::Path) -> R,
-    {
-        let _guard = crate::test_utils::home_env_lock();
-        let dir = tempfile::TempDir::new().unwrap();
-        let prev_userprofile = std::env::var_os("USERPROFILE");
-        let prev_home = std::env::var_os("HOME");
-        std::env::set_var("USERPROFILE", dir.path());
-        std::env::set_var("HOME", dir.path());
-        let result = f(dir.path());
-        match prev_userprofile {
-            Some(p) => std::env::set_var("USERPROFILE", p),
-            None => std::env::remove_var("USERPROFILE"),
-        }
-        match prev_home {
-            Some(p) => std::env::set_var("HOME", p),
-            None => std::env::remove_var("HOME"),
-        }
-        result
-    }
-
     fn scheduled_game(id: u64, away: &str, home: &str) -> icelines_fetch::nhl_api::ScheduledGame {
         icelines_fetch::nhl_api::ScheduledGame {
             game_id: id,
@@ -3594,7 +3572,8 @@ mod tests {
 
     #[test]
     fn l1_tui_watch_cmdbar_rule_editor_persists_and_toggles_without_erasing_history() {
-        with_temp_home(|_| {
+        let dir = tempfile::TempDir::new().unwrap();
+        crate::db::with_test_home(dir.path(), || {
             let mut app = fresh_app_with_mdi();
 
             let r = execute_command(
