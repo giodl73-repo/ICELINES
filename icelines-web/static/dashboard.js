@@ -70,6 +70,16 @@
         return url;
     }
 
+    function compositionUrl(href) {
+        var url = new URL(href, window.location.origin);
+        if (url.origin !== window.location.origin || url.pathname !== "/dashboard") return null;
+        ["left_workspace", "right_workspace"].forEach(function (key) {
+            var value = new URLSearchParams(window.location.search).get(key);
+            if (value) url.searchParams.set(key, value);
+        });
+        return url;
+    }
+
     function partialUrl(workspace) {
         var url = dashboardUrl(workspace);
         url.searchParams.set("partial", "workspace");
@@ -239,7 +249,14 @@
 
         var link = event.target.closest("a[href]");
         if (!link) return;
-        if (link.hasAttribute("data-dashboard-composition-link")) return;
+        if (link.hasAttribute("data-dashboard-composition-link")) {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            var composedUrl = compositionUrl(link.href);
+            if (!composedUrl) return;
+            event.preventDefault();
+            window.location.href = composedUrl.toString();
+            return;
+        }
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.altKey) return;
         var paneTarget = paneTargetFromClick(event);
         if (!paneTarget && event.shiftKey) return;

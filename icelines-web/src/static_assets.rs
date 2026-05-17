@@ -250,6 +250,7 @@ mod tests {
             "data-dashboard-workspace-input",
             "data-dashboard-workspace",
             "copyDashboardState",
+            "compositionUrl",
             "left",
             "right",
             "experience",
