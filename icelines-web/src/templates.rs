@@ -77,6 +77,8 @@ pub struct DashboardTemplate {
     pub player_surface_html: String,
     pub show_full_team: bool,
     pub team_surface_html: String,
+    pub show_full_team_season: bool,
+    pub team_season_surface_html: String,
     pub left_pane_binding: DashboardPaneBindingRow,
     pub right_pane_binding: DashboardPaneBindingRow,
     pub left_pane_options: Vec<DashboardPaneBindingRow>,
@@ -104,6 +106,8 @@ pub struct DashboardWorkspaceTemplate {
     pub player_surface_html: String,
     pub show_full_team: bool,
     pub team_surface_html: String,
+    pub show_full_team_season: bool,
+    pub team_season_surface_html: String,
 }
 
 #[derive(Debug, Clone)]

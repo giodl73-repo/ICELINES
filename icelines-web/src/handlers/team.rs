@@ -221,12 +221,10 @@ pub async fn get_team_season(
     State(state): State<WebState>,
     Path(abbrev_raw): Path<String>,
 ) -> Response {
-    let (active_label, view, fetch_error) = match build_team_season_view(&state, &abbrev_raw).await
-    {
-        Ok(result) => result,
+    let tmpl = match build_team_season_template(&state, &abbrev_raw).await {
+        Ok(tmpl) => tmpl,
         Err(response) => return response,
     };
-    let tmpl = team_season_template(active_label, &view, fetch_error);
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),
         Err(e) => (
@@ -235,6 +233,14 @@ pub async fn get_team_season(
         )
             .into_response(),
     }
+}
+
+pub async fn build_team_season_template(
+    state: &WebState,
+    abbrev_raw: &str,
+) -> Result<TeamSeasonTemplate, Response> {
+    let (active_label, view, fetch_error) = build_team_season_view(state, abbrev_raw).await?;
+    Ok(team_season_template(active_label, &view, fetch_error))
 }
 
 pub async fn get_team_season_json(
