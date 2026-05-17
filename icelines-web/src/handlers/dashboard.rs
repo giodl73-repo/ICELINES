@@ -228,8 +228,18 @@ pub async fn get_dashboard(
         workspace_summary: center_workspace_summary,
         scores_summary: "Current slate".to_owned(),
         scores_preview,
-        catalog_groups: dashboard_catalog_groups(active_workbench, &composition),
-        experience_tabs: dashboard_experience_tabs(active_workbench, composition.experience),
+        catalog_groups: dashboard_catalog_groups(
+            active_workbench,
+            &composition,
+            &left_pane_workspace_url,
+            &right_pane_workspace_url,
+        ),
+        experience_tabs: dashboard_experience_tabs(
+            active_workbench,
+            composition.experience,
+            &left_pane_workspace_url,
+            &right_pane_workspace_url,
+        ),
         active_fields,
         active_pane_models,
         show_full_leaders,
@@ -248,10 +258,10 @@ pub async fn get_dashboard(
         scores_surface_html,
         show_full_schedule,
         schedule_surface_html,
-        left_pane_workspace_url,
+        left_pane_workspace_url: left_pane_workspace_url.clone(),
         left_pane_workspace_label,
         left_pane_workspace_summary,
-        right_pane_workspace_url,
+        right_pane_workspace_url: right_pane_workspace_url.clone(),
         right_pane_workspace_label,
         right_pane_workspace_summary,
         left_pane_binding: dashboard_pane_binding_row(
@@ -261,6 +271,8 @@ pub async fn get_dashboard(
                 composition.left.id,
                 composition.right.id,
                 composition.experience,
+                &left_pane_workspace_url,
+                &right_pane_workspace_url,
             ),
             true,
         ),
@@ -271,6 +283,8 @@ pub async fn get_dashboard(
                 composition.left.id,
                 composition.right.id,
                 composition.experience,
+                &left_pane_workspace_url,
+                &right_pane_workspace_url,
             ),
             true,
         ),
@@ -279,12 +293,16 @@ pub async fn get_dashboard(
             composition.left.id,
             composition.right.id,
             &workspace_url,
+            &left_pane_workspace_url,
+            &right_pane_workspace_url,
         ),
         right_pane_options: dashboard_pane_options(
             WorkbenchZone::RightPane,
             composition.left.id,
             composition.right.id,
             &workspace_url,
+            &left_pane_workspace_url,
+            &right_pane_workspace_url,
         ),
         leaders_preview,
         favorites,
@@ -2209,6 +2227,8 @@ fn web_experience_by_slug(slug: &str) -> Option<&'static WorkbenchExperience> {
 fn dashboard_catalog_groups(
     active: Option<WorkbenchId>,
     composition: &DashboardComposition,
+    left_workspace: &str,
+    right_workspace: &str,
 ) -> Vec<DashboardCatalogGroup> {
     let ready: Vec<_> = crate::workbench::dashboard_ready_workbenches().collect();
     [
@@ -2228,8 +2248,16 @@ fn dashboard_catalog_groups(
             .iter()
             .filter_map(|(id, route)| {
                 let entry = workbench_entry(*id)?;
-                (entry.group == group)
-                    .then(|| dashboard_catalog_entry(entry, route, active, composition))
+                (entry.group == group).then(|| {
+                    dashboard_catalog_entry(
+                        entry,
+                        route,
+                        active,
+                        composition,
+                        left_workspace,
+                        right_workspace,
+                    )
+                })
             })
             .collect::<Vec<_>>();
         (!entries.is_empty()).then(|| DashboardCatalogGroup {
@@ -2245,10 +2273,19 @@ fn dashboard_catalog_entry(
     route: &str,
     active: Option<WorkbenchId>,
     composition: &DashboardComposition,
+    left_workspace: &str,
+    right_workspace: &str,
 ) -> DashboardCatalogEntry {
     DashboardCatalogEntry {
         label: entry.label.to_owned(),
-        href: dashboard_href(route, composition.left.id, composition.right.id, None),
+        href: dashboard_href(
+            route,
+            composition.left.id,
+            composition.right.id,
+            None,
+            left_workspace,
+            right_workspace,
+        ),
         detail: format!(
             "{} · {} · {}",
             workbench_zone_label(entry.default_zone),
@@ -2262,10 +2299,20 @@ fn dashboard_catalog_entry(
 fn dashboard_experience_tabs(
     active: Option<WorkbenchId>,
     active_experience: Option<&WorkbenchExperience>,
+    left_workspace: &str,
+    right_workspace: &str,
 ) -> Vec<DashboardExperienceTab> {
     WORKBENCH_EXPERIENCES
         .iter()
-        .filter_map(|experience| dashboard_experience_tab(experience, active, active_experience))
+        .filter_map(|experience| {
+            dashboard_experience_tab(
+                experience,
+                active,
+                active_experience,
+                left_workspace,
+                right_workspace,
+            )
+        })
         .collect()
 }
 
@@ -2273,6 +2320,8 @@ fn dashboard_experience_tab(
     experience: &WorkbenchExperience,
     active: Option<WorkbenchId>,
     active_experience: Option<&WorkbenchExperience>,
+    left_workspace: &str,
+    right_workspace: &str,
 ) -> Option<DashboardExperienceTab> {
     let route = crate::workbench::route_for_workbench(experience.center)?;
     let left = experience
@@ -2290,6 +2339,8 @@ fn dashboard_experience_tab(
             experience.left_pane.unwrap_or(DEFAULT_LEFT_PANE),
             experience.right_pane.unwrap_or(DEFAULT_RIGHT_PANE),
             Some(experience),
+            left_workspace,
+            right_workspace,
         ),
         detail: format!("{left} + {right}"),
         is_active: active_experience
@@ -2329,6 +2380,8 @@ fn dashboard_pane_options(
     left: WorkbenchPaneBindingId,
     right: WorkbenchPaneBindingId,
     workspace_url: &str,
+    left_workspace: &str,
+    right_workspace: &str,
 ) -> Vec<DashboardPaneBindingRow> {
     crate::workbench::web_pane_bindings_for_zone(zone)
         .map(|binding| {
@@ -2344,7 +2397,14 @@ fn dashboard_pane_options(
             };
             dashboard_pane_binding_row(
                 binding,
-                dashboard_href(workspace_url, next_left, next_right, None),
+                dashboard_href(
+                    workspace_url,
+                    next_left,
+                    next_right,
+                    None,
+                    left_workspace,
+                    right_workspace,
+                ),
                 binding.id
                     == if zone == WorkbenchZone::LeftPane {
                         left
@@ -2661,6 +2721,8 @@ fn dashboard_href(
     left: WorkbenchPaneBindingId,
     right: WorkbenchPaneBindingId,
     experience: Option<&WorkbenchExperience>,
+    left_workspace: &str,
+    right_workspace: &str,
 ) -> String {
     let mut href = format!(
         "/dashboard?workspace={}&left={}&right={}",
@@ -2671,6 +2733,14 @@ fn dashboard_href(
     if let Some(experience) = experience {
         href.push_str("&experience=");
         href.push_str(&url_component(experience.id.slug()));
+    }
+    if !left_workspace.is_empty() {
+        href.push_str("&left_workspace=");
+        href.push_str(&url_component(left_workspace));
+    }
+    if !right_workspace.is_empty() {
+        href.push_str("&right_workspace=");
+        href.push_str(&url_component(right_workspace));
     }
     href
 }
@@ -2780,7 +2850,7 @@ mod tests {
     fn l0_dashboard_catalog_uses_shared_workbench_adapter() {
         let q = DashboardQuery::default();
         let composition = dashboard_composition(&q, Some(WorkbenchId::Stats));
-        let groups = dashboard_catalog_groups(Some(WorkbenchId::Stats), &composition);
+        let groups = dashboard_catalog_groups(Some(WorkbenchId::Stats), &composition, "", "");
         let entries: Vec<_> = groups
             .iter()
             .flat_map(|group| group.entries.iter())
@@ -2815,7 +2885,7 @@ mod tests {
     #[test]
     fn l0_dashboard_bound_experience_tabs_are_composed_layouts() {
         let active = web_experience_by_slug("tonight-bench");
-        let tabs = dashboard_experience_tabs(Some(WorkbenchId::Scores), active);
+        let tabs = dashboard_experience_tabs(Some(WorkbenchId::Scores), active, "", "");
         let tonight = tabs
             .iter()
             .find(|tab| tab.label == "Tonight bench")
@@ -2888,6 +2958,8 @@ mod tests {
             WorkbenchPaneBindingId::FavoritesLeft,
             WorkbenchPaneBindingId::ScheduleRight,
             "/scores",
+            "",
+            "",
         );
         let data_source = options
             .iter()
@@ -2901,6 +2973,55 @@ mod tests {
             .starts_with("/dashboard?workspace=%2Fscores"));
         assert!(data_source.href.contains("&right=data-source-right"));
         assert!(!data_source.href.contains("/command"));
+    }
+
+    #[test]
+    fn l0_dashboard_composition_links_preserve_pinned_panes() {
+        let q = DashboardQuery::default();
+        let composition = dashboard_composition(&q, Some(WorkbenchId::Stats));
+        let groups = dashboard_catalog_groups(
+            Some(WorkbenchId::Stats),
+            &composition,
+            "/player/8478402",
+            "/team/EDM",
+        );
+        let stats = groups
+            .iter()
+            .flat_map(|group| group.entries.iter())
+            .find(|entry| entry.label == "Stats")
+            .expect("shared Stats catalog entry");
+        assert!(stats.href.contains("&left_workspace=%2Fplayer%2F8478402"));
+        assert!(stats.href.contains("&right_workspace=%2Fteam%2FEDM"));
+
+        let tabs = dashboard_experience_tabs(
+            Some(WorkbenchId::Scores),
+            web_experience_by_slug("tonight-bench"),
+            "/player/8478402",
+            "/team/EDM",
+        );
+        let tonight = tabs
+            .iter()
+            .find(|tab| tab.label == "Tonight bench")
+            .expect("Tonight bench tab");
+        assert!(tonight.href.contains("&left_workspace=%2Fplayer%2F8478402"));
+        assert!(tonight.href.contains("&right_workspace=%2Fteam%2FEDM"));
+
+        let options = dashboard_pane_options(
+            WorkbenchZone::RightPane,
+            WorkbenchPaneBindingId::FavoritesLeft,
+            WorkbenchPaneBindingId::ScheduleRight,
+            "/scores",
+            "/player/8478402",
+            "/team/EDM",
+        );
+        let data_source = options
+            .iter()
+            .find(|row| row.id == "data-source-right")
+            .expect("data/source option");
+        assert!(data_source
+            .href
+            .contains("&left_workspace=%2Fplayer%2F8478402"));
+        assert!(data_source.href.contains("&right_workspace=%2Fteam%2FEDM"));
     }
 
     #[test]

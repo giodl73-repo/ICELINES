@@ -52,6 +52,7 @@ unrendered side-pane placeholders.
 | 40 | Serve pane-target navigation | done | Added modifier-click navigation so dashboard links can pin previews into left or right panes while preserving the center workspace. |
 | 41 | Serve pane navigation state hardening | done | Preserved composed room and side-pane state when center swaps or pane pins rewrite dashboard URLs. |
 | 42 | Serve composition pinned-pane hardening | done | Preserved pinned pane URLs when room and pane-control composition links navigate with full dashboard GETs. |
+| 43 | Serve server-side pinned-pane links | done | Preserved pinned pane URLs in server-rendered room and pane-control hrefs for no-JS and open-in-new-tab flows. |
 
 ## Success criteria
 
@@ -117,3 +118,4 @@ unrendered side-pane placeholders.
 - Browser dashboard Ctrl-click pins link previews into the left pane, and Ctrl+Shift-click pins them into the right pane.
 - Browser dashboard center swaps and pane pins preserve selected room, left pane, right pane, and pinned pane URL state.
 - Browser dashboard room and pane-control navigation preserves pinned left/right workspace previews.
+- Browser dashboard server-rendered room and pane-control links carry pinned left/right workspace URLs.
