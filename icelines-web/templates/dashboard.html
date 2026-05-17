@@ -47,12 +47,6 @@
                 <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="favorites" aria-label="Toggle favorites pane" aria-expanded="true">Hide</button>
             </div>
             <div class="jaw-pane-content">
-            <p class="jaw-pane-model"><strong>{{ left_pane_binding.kind }}</strong><span class="jaw-detail">{{ left_pane_binding.detail }}</span><span class="jaw-detail">{{ left_pane_binding.interaction }}</span></p>
-            <nav class="jaw-pane-selector" aria-label="Choose left pane">
-                {% for option in left_pane_options %}
-                <a href="{{ option.href }}" data-dashboard-composition-link {% if option.is_active %}aria-current="true"{% endif %}>{{ option.label }}</a>
-                {% endfor %}
-            </nav>
             {% if left_pane_binding.id == "favorites-left" %}
             {% if favorites.is_empty() %}
             <p class="empty-state">No favorites yet. Add players or teams from player and team pages.</p>
@@ -94,8 +88,17 @@
             {% endif %}
             <p><a href="/watchlist">Open watchlist</a></p>
             {% else %}
-            <p class="empty-state">{{ left_pane_binding.label }} is selected. This pane is shared metadata today; use its fields above or open the canonical workspace links in the center.</p>
+            <p class="empty-state">{{ left_pane_binding.label }} is selected. Open the center workspace for full details.</p>
             {% endif %}
+            <details class="jaw-pane-controls">
+                <summary>Pane controls</summary>
+                <p class="jaw-pane-model"><strong>{{ left_pane_binding.kind }}</strong><span class="jaw-detail">{{ left_pane_binding.detail }}</span><span class="jaw-detail">{{ left_pane_binding.interaction }}</span></p>
+                <nav class="jaw-pane-selector" aria-label="Choose left pane">
+                    {% for option in left_pane_options %}
+                    <a href="{{ option.href }}" data-dashboard-composition-link {% if option.is_active %}aria-current="true"{% endif %}>{{ option.label }}</a>
+                    {% endfor %}
+                </nav>
+            </details>
             </div>
         </aside>
 
@@ -107,12 +110,6 @@
                 <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="schedule" aria-label="Toggle schedule pane" aria-expanded="true">Hide</button>
             </div>
             <div class="jaw-pane-content">
-            <p class="jaw-pane-model"><strong>{{ right_pane_binding.kind }}</strong><span class="jaw-detail">{{ right_pane_binding.detail }}</span><span class="jaw-detail">{{ right_pane_binding.interaction }}</span></p>
-            <nav class="jaw-pane-selector" aria-label="Choose right pane">
-                {% for option in right_pane_options %}
-                <a href="{{ option.href }}" data-dashboard-composition-link {% if option.is_active %}aria-current="true"{% endif %}>{{ option.label }}</a>
-                {% endfor %}
-            </nav>
             {% if right_pane_binding.id == "schedule-right" %}
             <ul class="jaw-list">
                 {% for row in schedule_links %}
@@ -130,6 +127,15 @@
             {% else %}
             <p class="empty-state">{{ right_pane_binding.label }} is selected. This read-only context pane is available as shared metadata; open the center workspace for full details.</p>
             {% endif %}
+            <details class="jaw-pane-controls">
+                <summary>Pane controls</summary>
+                <p class="jaw-pane-model"><strong>{{ right_pane_binding.kind }}</strong><span class="jaw-detail">{{ right_pane_binding.detail }}</span><span class="jaw-detail">{{ right_pane_binding.interaction }}</span></p>
+                <nav class="jaw-pane-selector" aria-label="Choose right pane">
+                    {% for option in right_pane_options %}
+                    <a href="{{ option.href }}" data-dashboard-composition-link {% if option.is_active %}aria-current="true"{% endif %}>{{ option.label }}</a>
+                    {% endfor %}
+                </nav>
+            </details>
             </div>
         </aside>
     </div>

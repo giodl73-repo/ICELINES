@@ -588,6 +588,18 @@ code {
     color: #fff;
 }
 
+.jaw-pane-controls {
+    border-top: 1px solid var(--ice-divider);
+    margin-top: 0.75rem;
+    padding-top: 0.55rem;
+}
+
+.jaw-pane-controls summary {
+    color: var(--nhl-navy);
+    cursor: pointer;
+    font-weight: 700;
+}
+
 .jaw-workspace-card {
     background: var(--ice-bg);
     border: 1px solid var(--ice-divider);
