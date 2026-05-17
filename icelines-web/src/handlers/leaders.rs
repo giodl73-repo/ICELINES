@@ -777,12 +777,26 @@ pub async fn get_leaders(
     Query(q): Query<LeadersQuery>,
     uri: axum::http::Uri,
 ) -> Response {
+    match build_leaders_template(&state, q, uri.query().unwrap_or("")).await {
+        Ok(tmpl) => match tmpl.render() {
+            Ok(html) => Html(html).into_response(),
+            Err(e) => error_page(format!("template render failed: {e}")),
+        },
+        Err(response) => response,
+    }
+}
+
+pub async fn build_leaders_template(
+    state: &WebState,
+    q: LeadersQuery,
+    raw_query: &str,
+) -> Result<LeadersTemplate, Response> {
     // Extract repeated `?filter=` from the raw query string.
     // The default `Query<HashMap>` collapses repeats; the
     // typed `Query<LeadersQuery>` above only captures
     // sort/pos/top because Option<String> overwrites on
     // re-parse. For filter, we need ALL occurrences ANDed.
-    let raw_filters = icelines_query::parse_filters_from_query(uri.query().unwrap_or(""));
+    let raw_filters = icelines_query::parse_filters_from_query(raw_query);
 
     // QueryA — pre-extract bio atoms from each filter's
     // top-level AND chain via the shared icelines-query crate.
@@ -811,7 +825,7 @@ pub async fn get_leaders(
                 .replace('<', "&lt;")
                 .replace('>', "&gt;"),
         );
-        return (StatusCode::BAD_REQUEST, Html(body)).into_response();
+        return Err((StatusCode::BAD_REQUEST, Html(body)).into_response());
     }
 
     let filter_expr_result = icelines_query::combine_filter_exprs(&legacy_residue);
@@ -827,9 +841,9 @@ pub async fn get_leaders(
     let season_u32: u32 = match season_str.parse() {
         Ok(n) => n,
         Err(e) => {
-            return error_page(format!(
+            return Err(error_page(format!(
                 "active season '{season_str}' is not a valid YYYYZZZZ id: {e}"
-            ));
+            )));
         }
     };
     let season = Season(season_u32);
@@ -852,7 +866,7 @@ pub async fn get_leaders(
             let hint = e
                 .hint()
                 .unwrap_or("see `icelines docs` for the filter grammar");
-            return (
+            return Err((
                 StatusCode::BAD_REQUEST,
                 Html(format!(
                     "<!doctype html><html><body>\
@@ -863,7 +877,7 @@ pub async fn get_leaders(
                              </body></html>",
                 )),
             )
-                .into_response();
+                .into_response());
         }
     };
 
@@ -1180,7 +1194,7 @@ pub async fn get_leaders(
         bio_query_suffix.push_str(&format!("&shoots={v}"));
     }
 
-    let tmpl = LeadersTemplate {
+    Ok(LeadersTemplate {
         active_label,
         rows,
         total,
@@ -1203,11 +1217,7 @@ pub async fn get_leaders(
         bio_shoots: bio_shoots_str,
         bio_active,
         bio_query_suffix,
-    };
-    match tmpl.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(e) => error_page(format!("template render failed: {e}")),
-    }
+    })
 }
 
 /// Wave 17 fix — partition raw filter strings into the

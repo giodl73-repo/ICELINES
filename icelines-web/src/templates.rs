@@ -71,6 +71,8 @@ pub struct DashboardTemplate {
     pub experience_tabs: Vec<DashboardExperienceTab>,
     pub active_fields: Vec<DashboardFieldRow>,
     pub active_pane_models: Vec<DashboardPaneModelRow>,
+    pub show_full_leaders: bool,
+    pub leaders_surface: LeadersTemplate,
     pub left_pane_binding: DashboardPaneBindingRow,
     pub right_pane_binding: DashboardPaneBindingRow,
     pub left_pane_options: Vec<DashboardPaneBindingRow>,
@@ -92,6 +94,8 @@ pub struct DashboardWorkspaceTemplate {
     pub workspace_links: Vec<DashboardLinkRow>,
     pub active_fields: Vec<DashboardFieldRow>,
     pub active_pane_models: Vec<DashboardPaneModelRow>,
+    pub show_full_leaders: bool,
+    pub leaders_surface: LeadersTemplate,
 }
 
 #[derive(Debug, Clone)]

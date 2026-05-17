@@ -3,6 +3,189 @@
         <h1>{{ workspace_label }}</h1>
         <a class="link-button-secondary" href="{{ workspace_url }}">Open full {{ workspace_label }}</a>
     </div>
+    {% if show_full_leaders %}
+    <div class="jaw-full-workspace" aria-label="Full Leaders workspace">
+        <p class="meta-line">
+            Top {{ leaders_surface.rows.len() }} skaters by {{ leaders_surface.active_sort_label }} · {{ leaders_surface.active_label }}
+            {% if leaders_surface.total > leaders_surface.rows.len() %}
+                · {{ leaders_surface.total }} total
+            {% endif %}
+        </p>
+
+        <nav aria-label="Position filter" class="chip-strip">
+            <span class="chip-strip-label">Position:</span>
+            {% for chip in leaders_surface.pos_chips %}
+                <a href="/leaders?sort={{ leaders_surface.active_sort }}&pos={{ chip.value }}&top={{ leaders_surface.active_top }}{{ leaders_surface.bio_query_suffix }}"
+                   class="filter-chip{% if chip.is_active %} fit-solid{% endif %}">
+                    {{ chip.label }}
+                </a>
+            {% endfor %}
+        </nav>
+
+        <form method="get" action="/leaders" class="filter-panel">
+            <input type="hidden" name="sort" value="{{ leaders_surface.active_sort }}">
+            <input type="hidden" name="pos" value="{{ leaders_surface.active_pos }}">
+            <input type="hidden" name="top" value="{{ leaders_surface.active_top }}">
+            <div class="inline-form-row">
+                <label for="dashboard-filter-1" class="filter-label">Filter:</label>
+                <input id="dashboard-filter-1" type="text" name="filter"
+                       placeholder="g&gt;=50 OR a&gt;=50"
+                       value="{% if leaders_surface.active_filters.len() > 0 %}{{ leaders_surface.active_filters[0] }}{% endif %}"
+                       class="filter-input-wide">
+                {% if leaders_surface.active_filters.len() > 1 %}
+                    {% for extra in leaders_surface.active_filters %}
+                        {% if loop.index0 > 0 %}
+                        <input type="text" name="filter" value="{{ extra }}" class="filter-input-wide">
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <button type="submit">Apply</button>
+                {% if leaders_surface.active_filters.len() > 0 %}
+                    <a href="/leaders?sort={{ leaders_surface.active_sort }}&pos={{ leaders_surface.active_pos }}&top={{ leaders_surface.active_top }}{{ leaders_surface.bio_query_suffix }}"
+                       class="link-button-secondary">Clear</a>
+                {% endif %}
+            </div>
+            <p class="filter-help">
+                Grammar: <code>&lt;stat&gt;&lt;op&gt;&lt;value&gt;</code> with <code>AND / OR / NOT</code> and parens.
+                Examples: <code>g&gt;=50</code>, <code>g&gt;=30 AND a&gt;=30</code>, <code>(g&gt;=40 OR a&gt;=60) AND gp&gt;=70</code>.
+                Stat keys: <code>g/a/p/gp/hits/blocks/ppg/...</code> (run <code>icelines docs</code> for the full catalog).
+            </p>
+        </form>
+
+        <details class="bio-filter" {% if leaders_surface.bio_active %}open{% endif %}>
+            <summary class="accordion-summary">
+                Bio filters
+                {% if leaders_surface.bio_active %}<span class="active-dot">●</span>{% endif %}
+            </summary>
+            <form method="get" action="/leaders" class="filter-panel">
+                <input type="hidden" name="sort" value="{{ leaders_surface.active_sort }}">
+                <input type="hidden" name="pos" value="{{ leaders_surface.active_pos }}">
+                <input type="hidden" name="top" value="{{ leaders_surface.active_top }}">
+                {% for f in leaders_surface.active_filters %}<input type="hidden" name="filter" value="{{ f }}">{% endfor %}
+                <div class="bio-filter-grid">
+                    <label class="compact-label">Age
+                        <span class="range-inputs">
+                            <input type="number" name="age-min" min="16" max="50" placeholder="min" value="{{ leaders_surface.bio_age_min_str }}" class="range-input">
+                            <input type="number" name="age-max" min="16" max="50" placeholder="max" value="{{ leaders_surface.bio_age_max_str }}" class="range-input">
+                        </span>
+                    </label>
+                    <label class="compact-label">Draft year
+                        <span class="range-inputs">
+                            <input type="number" name="draft-min" min="1960" max="2030" placeholder="min" value="{{ leaders_surface.bio_draft_min_str }}" class="range-input-wide">
+                            <input type="number" name="draft-max" min="1960" max="2030" placeholder="max" value="{{ leaders_surface.bio_draft_max_str }}" class="range-input-wide">
+                        </span>
+                    </label>
+                    <label class="compact-label">Height (in)
+                        <span class="range-inputs">
+                            <input type="number" name="height-min" min="60" max="84" placeholder="min" value="{{ leaders_surface.bio_height_min_str }}" class="range-input">
+                            <input type="number" name="height-max" min="60" max="84" placeholder="max" value="{{ leaders_surface.bio_height_max_str }}" class="range-input">
+                        </span>
+                    </label>
+                    <label class="compact-label">Weight (lb)
+                        <span class="range-inputs">
+                            <input type="number" name="weight-min" min="120" max="290" placeholder="min" value="{{ leaders_surface.bio_weight_min_str }}" class="range-input">
+                            <input type="number" name="weight-max" min="120" max="290" placeholder="max" value="{{ leaders_surface.bio_weight_max_str }}" class="range-input">
+                        </span>
+                    </label>
+                    <label class="compact-label">Country
+                        <input type="text" name="country" placeholder="CAN" maxlength="3" value="{{ leaders_surface.bio_country }}"
+                               class="short-code-input">
+                    </label>
+                    <label class="compact-label">Shoots
+                        <select name="shoots" class="compact-select">
+                            <option value="" {% if leaders_surface.bio_shoots == "" %}selected{% endif %}>-</option>
+                            <option value="L" {% if leaders_surface.bio_shoots == "L" %}selected{% endif %}>Left</option>
+                            <option value="R" {% if leaders_surface.bio_shoots == "R" %}selected{% endif %}>Right</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Apply bio filters</button>
+                    {% if leaders_surface.bio_active %}
+                        <a href="/leaders?sort={{ leaders_surface.active_sort }}&pos={{ leaders_surface.active_pos }}&top={{ leaders_surface.active_top }}{% for f in leaders_surface.active_filters %}&filter={{ f }}{% endfor %}"
+                           class="link-button-secondary">Clear bio filters</a>
+                    {% endif %}
+                </div>
+                <p class="filter-help">
+                    Age cutoff is hockey-standard Sept 15. Country accepts ISO 3-letter codes (CAN, USA, SWE, FIN, RUS, ...).
+                    Players missing the relevant bio field are excluded from filtered results.
+                </p>
+            </form>
+        </details>
+
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th class="numeric">#</th>
+                    <th>Player</th>
+                    <th>Pos</th>
+                    <th>Team</th>
+                    {% for col in leaders_surface.col_headers %}
+                        <th class="numeric"
+                            {% if col.is_active %}aria-sort="descending"{% endif %}>
+                            <a href="/leaders?sort={{ col.url_token }}&pos={{ leaders_surface.active_pos }}&top={{ leaders_surface.active_top }}{{ leaders_surface.bio_query_suffix }}{% for f in leaders_surface.active_filters %}&filter={{ f }}{% endfor %}"
+                               class="sort-link{% if col.is_active %} sort-link-active{% endif %}"
+                               title="Sort by {{ col.label }}">
+                                {{ col.label }}{% if col.is_active %} ↓{% endif %}
+                            </a>
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in leaders_surface.rows %}
+                <tr>
+                    <td class="rank-cell">{{ loop.index }}</td>
+                    <td>
+                        <div class="player-cell">
+                            <img class="avatar" src="{{ row.headshot_url }}" alt="" loading="lazy"
+                                 onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}"
+                                 data-fallback="{{ row.headshot_fallback_url }}">
+                            <a class="player-name" href="/player/{{ row.nhl_id }}">{{ row.name }}</a>
+                        </div>
+                    </td>
+                    <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
+                    <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
+                    <td class="numeric">{{ row.gp }}</td>
+                    <td class="numeric">{{ row.goals }}</td>
+                    <td class="numeric">{{ row.assists }}</td>
+                    <td class="numeric"><strong>{{ row.points }}</strong></td>
+                    <td class="numeric">{% if row.ppg_str.is_empty() %}-{% else %}{{ row.ppg_str }}{% endif %}</td>
+                    <td class="numeric">{{ row.plus_minus_str }}</td>
+                    <td class="numeric">{{ row.pim }}</td>
+                    <td class="numeric">{{ row.shots }}</td>
+                    <td class="numeric">{{ row.shooting_pct_str }}</td>
+                    <td class="numeric">{{ row.hits_str }}</td>
+                    <td class="numeric">{{ row.blocks_str }}</td>
+                    <td class="numeric">{{ row.faceoff_pct_str }}</td>
+                    <td class="numeric">{{ row.pp_points }}</td>
+                    <td class="numeric">{{ row.points_per_60_str }}</td>
+                    <td class="numeric">{{ row.goals_per_60_str }}</td>
+                    <td class="numeric">{{ row.assists_per_60_str }}</td>
+                    <td class="numeric">{{ row.hits_per_60_str }}</td>
+                    <td class="numeric">{{ row.blocks_per_60_str }}</td>
+                    <td class="numeric">
+                        {% if row.points_delta_str.is_empty() %}-{% else %}<span class="stat-delta {{ row.points_delta_class }}">{{ row.points_delta_str }}</span>{% endif %}
+                    </td>
+                    <td class="numeric">
+                        {% if row.points_delta_str.is_empty() %}-{% else %}<span class="stat-delta {{ row.points_delta_class }}">{{ row.points_delta_str }}</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+
+        <p class="page-section meta-line">
+            Click any column header to sort by that stat. Click a position chip to filter.
+            Default: top 20, sorted by points.
+            Filter grammar examples: <code>g&gt;=50 AND hits&gt;=200</code>,
+            <code>(g&gt;=40 OR a&gt;=60) AND gp&gt;=70</code>.
+            JSON twin: <a href="/api/v1/leaders"><code>/api/v1/leaders</code></a>.
+        </p>
+    </div>
+    {% else %}
     {% if !workspace_summary.is_empty() %}
     <div class="table-scroll jaw-data-preview" aria-label="{{ workspace_label }} preview">
     <table class="jaw-data-table">
@@ -64,5 +247,6 @@
         </div>
         {% endif %}
     </details>
+    {% endif %}
     {% endif %}
 </section>

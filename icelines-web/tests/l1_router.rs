@@ -968,6 +968,34 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_leaders_workspace_embeds_full_leaders_surface() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/leaders")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("jaw-full-workspace"));
+    assert!(body.contains("aria-label=\"Full Leaders workspace\""));
+    assert!(body.contains("aria-label=\"Position filter\""));
+    assert!(body.contains("Bio filters"));
+    assert!(body.contains("Click any column header to sort by that stat"));
+    assert!(body.contains("href=\"/api/v1/leaders\""));
+    assert!(!body.contains("aria-label=\"Leaders preview\""));
+}
+
+#[tokio::test]
 async fn l1_dashboard_rejects_unsafe_workspace_paths() {
     let app = router(WebState::new());
     let response = app

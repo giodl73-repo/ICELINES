@@ -41,6 +41,7 @@ unrendered side-pane placeholders.
 | 29 | TUI full CLI validation | done | Ran the full `icelines-cli` binary test target after cleanup and release hardening. |
 | 30 | Serve wide dashboard layout | done | Let the browser dashboard break out of the global page width cap and prioritize the center workspace on wide screens. |
 | 31 | Serve center card expansion | done | Changed the dashboard workspace partial from nested `main` to `section` so it no longer inherits the global page width cap. |
+| 32 | Serve full leaders workspace | done | Embedded the full Leaders table/filter surface in the browser dashboard center workspace instead of the compact preview. |
 
 ## Success criteria
 
@@ -95,3 +96,4 @@ unrendered side-pane placeholders.
 - The full `icelines-cli` binary test target passes after the TUI cleanup wave.
 - Browser dashboard uses wide viewports for the workbench shell instead of centering inside the global content cap.
 - Browser dashboard center workspace expands inside the workbench grid instead of behaving like a nested capped page.
+- Browser dashboard Leaders workspace shows the full leaders table and controls rather than the generic preview table.

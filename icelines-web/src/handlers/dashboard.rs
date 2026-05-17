@@ -80,6 +80,17 @@ pub async fn get_dashboard(
     let composition = dashboard_composition(&q, active_workbench);
     let active_fields = active_dashboard_fields(active_workbench, composition.experience);
     let active_pane_models = active_dashboard_pane_models(active_workbench);
+    let show_full_leaders = workspace_route_key(&workspace_url) == "/leaders";
+    let leaders_surface = match super::leaders::build_leaders_template(
+        &state,
+        super::leaders::LeadersQuery::default(),
+        "",
+    )
+    .await
+    {
+        Ok(template) => template,
+        Err(response) => return response,
+    };
 
     if matches!(q.partial.as_deref(), Some("workspace")) {
         return render_template(DashboardWorkspaceTemplate {
@@ -89,6 +100,8 @@ pub async fn get_dashboard(
             workspace_links,
             active_fields,
             active_pane_models,
+            show_full_leaders,
+            leaders_surface,
         });
     }
 
@@ -116,6 +129,8 @@ pub async fn get_dashboard(
         experience_tabs: dashboard_experience_tabs(active_workbench, composition.experience),
         active_fields,
         active_pane_models,
+        show_full_leaders,
+        leaders_surface,
         left_pane_binding: dashboard_pane_binding_row(
             composition.left,
             dashboard_href(
