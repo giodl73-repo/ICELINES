@@ -39,6 +39,7 @@ unrendered side-pane placeholders.
 | 27 | TUI broad-suite hardening | done | Updated legacy MDI Tab tests to assert focus traversal and isolated command DB tests from process HOME races. |
 | 28 | TUI release warning cleanup | done | Scoped test-only TUI helpers/imports so the release build stays warning-clean after cleanup. |
 | 29 | TUI full CLI validation | done | Ran the full `icelines-cli` binary test target after cleanup and release hardening. |
+| 30 | Serve wide dashboard layout | done | Let the browser dashboard break out of the global page width cap and prioritize the center workspace on wide screens. |
 
 ## Success criteria
 
@@ -91,3 +92,4 @@ unrendered side-pane placeholders.
 - TUI command persistence tests isolate DB home state without process-wide HOME mutation.
 - TUI cleanup compiles in release mode without cleanup-related warnings.
 - The full `icelines-cli` binary test target passes after the TUI cleanup wave.
+- Browser dashboard uses wide viewports for the workbench shell instead of centering inside the global content cap.

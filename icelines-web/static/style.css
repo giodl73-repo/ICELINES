@@ -372,7 +372,9 @@ code {
     display: grid;
     gap: 0.55rem;
     grid-template-rows: auto auto auto minmax(24rem, 1fr) auto;
+    margin-left: calc(50% - 50vw + 1rem);
     min-height: calc(100vh - 8rem);
+    width: calc(100vw - 2rem);
 }
 
 .jaw-ribbon,
@@ -529,7 +531,7 @@ code {
 .jaw-body {
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr) minmax(13rem, 18rem);
+    grid-template-columns: minmax(12rem, 16rem) minmax(36rem, 1fr) minmax(12rem, 16rem);
 }
 
 .jaw-pane,
@@ -775,7 +777,9 @@ code {
 
 @media (max-width: 720px) {
     .jaw-shell {
+        margin-left: 0;
         min-height: auto;
+        width: 100%;
     }
 
     .jaw-ribbon {
@@ -785,6 +789,7 @@ code {
 
     .jaw-body {
         gap: 0.55rem;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .jaw-workspace {
