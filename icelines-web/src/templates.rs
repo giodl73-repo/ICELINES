@@ -78,6 +78,7 @@ pub struct DashboardTemplate {
     pub leaders_preview: Vec<DashboardSummaryRow>,
     pub favorites: Vec<DashboardEntityRow>,
     pub watchlist: Vec<DashboardEntityRow>,
+    pub schedule_preview: Vec<DashboardSummaryRow>,
     pub schedule_links: Vec<DashboardLinkRow>,
     pub workspace_links: Vec<DashboardLinkRow>,
 }

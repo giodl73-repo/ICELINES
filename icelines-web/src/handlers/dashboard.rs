@@ -103,6 +103,7 @@ pub async fn get_dashboard(
     let favorites = dashboard_favorites_entities(&state).await;
     let watchlist = dashboard_watchlist_entities(&state).await;
     let leaders_preview = leaders_workspace_summary(&state).await;
+    let schedule_preview = schedule_workspace_summary(&state, "/schedule").await;
 
     let tmpl = DashboardTemplate {
         active_label,
@@ -150,6 +151,7 @@ pub async fn get_dashboard(
         leaders_preview,
         favorites,
         watchlist,
+        schedule_preview,
         schedule_links: schedule_links(),
         workspace_links,
     };

@@ -25,6 +25,7 @@ unrendered side-pane placeholders.
 | 13 | Serve workspace catalog disclosure | done | Collapsed the browser workspace catalog behind a Workspaces disclosure so the default dashboard view starts with data. |
 | 14 | Serve scores ribbon preview | done | Replaced the generic scores ribbon copy with real score summary chips from the Scores workspace. |
 | 15 | Serve left pane leader fallback | done | Filled empty favorites/watchlist panes with a top-leaders preview so fresh dashboards still show data. |
+| 16 | Serve right pane schedule preview | done | Replaced generic right-pane schedule links with real schedule preview rows and collapsed links under Schedule views. |
 
 ## Success criteria
 
@@ -58,3 +59,5 @@ unrendered side-pane placeholders.
   navigation copy.
 - Empty browser favorites/watchlist panes fall back to top leaders instead of
   leaving the side column content-free.
+- The browser schedule side pane starts with real schedule rows before exposing
+  secondary schedule links.

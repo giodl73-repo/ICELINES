@@ -155,13 +155,29 @@
             </div>
             <div class="jaw-pane-content">
             {% if right_pane_binding.id == "schedule-right" %}
-            <ul class="jaw-list">
+            {% if !schedule_preview.is_empty() %}
+            <ul class="jaw-list jaw-preview-list">
+                {% for row in schedule_preview %}
+                <li>
+                    <a href="/schedule">
+                        <span class="jaw-kind">{{ row.label }}</span>
+                        <strong>{{ row.value }}</strong>
+                        {% if row.detail != "" %}<span class="jaw-detail">{{ row.detail }}</span>{% endif %}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            <details class="jaw-pane-controls">
+                <summary>Schedule views</summary>
+                <ul class="jaw-list">
                 {% for row in schedule_links %}
                 <li>
                     <a href="{{ row.href }}">{{ row.label }} <span class="jaw-detail">{{ row.detail }}</span></a>
                 </li>
                 {% endfor %}
-            </ul>
+                </ul>
+            </details>
             {% else if right_pane_binding.id == "docs-help-right" %}
             <p class="empty-state">Docs/help is selected. Use the center Docs workspace for the full command reference.</p>
             <p><a href="/docs">Open docs</a></p>

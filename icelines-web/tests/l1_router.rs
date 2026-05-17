@@ -936,6 +936,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("Workspace wiring"));
     assert!(body.contains("aria-label=\"Right context pane\""));
     assert!(body.contains("data-dashboard-pane=\"schedule\""));
+    assert!(body.contains("<summary>Schedule views</summary>"));
     assert!(body.contains("aria-label=\"Choose right pane\""));
     assert!(body.contains("aria-label=\"Command palette\""));
     assert!(body.contains("Press <kbd>/</kbd>"));
