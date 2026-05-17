@@ -568,10 +568,16 @@ fn render_mdi_activity_catalog(
             (false, true) => "* ",
             (false, false) => "  ",
         };
-        let label = if area.width < 18 {
+        let base_label = if area.width < 18 {
             compact_workbench_label(entry.label)
         } else {
             entry.label
+        };
+        let label = if area.width >= 18 {
+            let experience = crate::tui::workbench::tui_experience_for_workbench(entry.id);
+            workbench_rail_label(base_label, experience.map(|experience| experience.label))
+        } else {
+            base_label.to_owned()
         };
         let prefix = group_prefix(entry.group);
         let text = if available {
@@ -624,6 +630,29 @@ fn compact_workbench_label(label: &'static str) -> &'static str {
         "Transactions" => "Moves",
         "Favorites" => "Faves",
         "Simulation" => "Sim",
+        other => other,
+    }
+}
+
+fn workbench_rail_label(label: &str, experience_label: Option<&'static str>) -> String {
+    let Some(experience_label) = experience_label else {
+        return label.to_owned();
+    };
+    let compact = compact_experience_label(experience_label);
+    if label.eq_ignore_ascii_case(compact) {
+        format!("{label} room")
+    } else {
+        format!("{label} · {compact}")
+    }
+}
+
+fn compact_experience_label(label: &'static str) -> &'static str {
+    match label {
+        "Tonight bench" => "Today",
+        "Scoring room" => "Score",
+        "Team room" => "Team",
+        "Fantasy room" => "Fantasy",
+        "Admin room" => "Admin",
         other => other,
     }
 }
@@ -1207,6 +1236,26 @@ mod app_snapshot_tests {
             text.contains("type next command") && text.contains("Tab/Esc leaves"),
             "command chain hint missing after submit, got:\n{text}"
         );
+    }
+
+    #[test]
+    fn l0_mdi_activity_rail_surfaces_bound_experience_labels() {
+        let mut app = App::new(true);
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        let text = render_app_to_text(&app, 200, 30);
+
+        for label in [
+            "Stats · Score",
+            "Depth · Team",
+            "Scores · Today",
+            "Fantasy room",
+            "Admin room",
+        ] {
+            assert!(
+                text.contains(label),
+                "MDI rail missing bound experience label {label:?}; got:\n{text}"
+            );
+        }
     }
 
     /// Render every canonical landing screen with the default empty App.

@@ -11,6 +11,7 @@ unrendered side-pane placeholders.
 | Pulse | Title | Status | Outcome |
 |------:|-------|--------|---------|
 | 01 | TUI-bound workbench rooms | done | Bound Scoring, Team, Fantasy, and Admin room presets to TUI-safe pane compositions with compact side-pane summaries. |
+| 02 | Activity rail room labels | done | Made bound MDI room presets visible in the TUI activity rail and centralized TUI experience lookup. |
 
 ## Success criteria
 
@@ -20,3 +21,4 @@ unrendered side-pane placeholders.
   field/command summary.
 - MDI activity-rail activation applies the preset panes together with the
   workspace.
+- The activity rail advertises bound room presets before activation.

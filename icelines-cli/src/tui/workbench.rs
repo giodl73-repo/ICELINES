@@ -87,6 +87,10 @@ pub fn tui_bound_experiences() -> impl Iterator<Item = &'static WorkbenchExperie
     })
 }
 
+pub fn tui_experience_for_workbench(id: WorkbenchId) -> Option<&'static WorkbenchExperience> {
+    tui_bound_experiences().find(|experience| experience.center == id)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -203,5 +207,18 @@ mod tests {
                 WorkbenchExperienceId::AdminRoom,
             ]
         );
+    }
+
+    #[test]
+    fn l0_tui_workbench_adapter_finds_experience_by_center() {
+        assert_eq!(
+            tui_experience_for_workbench(WorkbenchId::Stats).map(|experience| experience.id),
+            Some(WorkbenchExperienceId::ScoringRoom)
+        );
+        assert_eq!(
+            tui_experience_for_workbench(WorkbenchId::Depth).map(|experience| experience.id),
+            Some(WorkbenchExperienceId::TeamRoom)
+        );
+        assert!(tui_experience_for_workbench(WorkbenchId::Goalies).is_none());
     }
 }

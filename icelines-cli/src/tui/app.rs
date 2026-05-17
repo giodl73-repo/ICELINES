@@ -1836,8 +1836,7 @@ impl App {
         &mut self,
         id: icelines_core::WorkbenchId,
     ) -> Option<&'static str> {
-        let experience = crate::tui::workbench::tui_bound_experiences()
-            .find(|experience| experience.center == id)?;
+        let experience = crate::tui::workbench::tui_experience_for_workbench(id)?;
         let mdi = self.mdi.as_mut()?;
         mdi.apply_experience(experience);
         Some(experience.label)
