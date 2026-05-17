@@ -24,11 +24,9 @@
 // data (PlayerId, TeamAbbr, etc.).
 
 #![allow(clippy::module_name_repetitions)]
-// Phase Masterton.2.1 ships the trait + dispatch types as
-// scaffolding. The first consumer (QueriesScreen) lands in
-// M.2.2; until then nothing uses these types so dead_code
-// warnings would fire. Allow at the module level — the lint
-// becomes meaningful again once migrations begin.
+// The dispatcher consumes ScreenAction and AppContext today. The
+// Screen trait itself remains a migration seam until individual
+// screen modules move behind concrete Screen impls.
 #![allow(dead_code)]
 
 use ratatui::{layout::Rect, Frame};

@@ -34,6 +34,7 @@ unrendered side-pane placeholders.
 | 22 | Serve row-specific preview links | done | Made center preview rows prefer row-specific hrefs before falling back to the workspace URL. |
 | 23 | TUI MDI scaffolding cleanup | done | Removed stale placeholder scaffolding, refreshed MDI comments, and made pane-cycle tests follow the shared binding catalog. |
 | 24 | TUI MDI Tab cleanup | done | Retired stale Tab no-op commentary and made the no-arg workbench mapper explicitly test-only. |
+| 25 | TUI event scaffolding cleanup | done | Removed broad event-action dead-code suppression, added event-map tests, and refreshed the screen dispatch seam comment. |
 
 ## Success criteria
 
@@ -80,3 +81,4 @@ unrendered side-pane placeholders.
 - Browser center preview rows use row-specific hrefs when available.
 - TUI MDI code no longer carries stale placeholder-pane scaffolding.
 - TUI Tab handling comments and test-only helpers reflect the current MDI behavior.
+- TUI event and screen dispatch scaffolding comments reflect current usage.

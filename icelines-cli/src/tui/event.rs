@@ -3,11 +3,9 @@ use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub enum Action {
     Quit,
     Help,
-    #[allow(dead_code)]
     Back,
     Escape,
     Up,
@@ -99,5 +97,49 @@ fn map_key(k: crossterm::event::KeyEvent) -> Option<Action> {
         BackTab => Some(Action::TabPrev),
         Tab => Some(Action::Tab),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn key(code: KeyCode, modifiers: KeyModifiers) -> crossterm::event::KeyEvent {
+        crossterm::event::KeyEvent::new_with_kind(code, modifiers, KeyEventKind::Press)
+    }
+
+    #[test]
+    fn l0_mdi_ctrl_h_and_ctrl_l_map_to_side_pane_toggles() {
+        assert!(matches!(
+            map_key(key(KeyCode::Char('h'), KeyModifiers::CONTROL)),
+            Some(Action::ToggleFavoritesPane)
+        ));
+        assert!(matches!(
+            map_key(key(KeyCode::Char('l'), KeyModifiers::CONTROL)),
+            Some(Action::ToggleSchedulePane)
+        ));
+    }
+
+    #[test]
+    fn l0_shift_tab_maps_to_reverse_tab_action() {
+        assert!(matches!(
+            map_key(key(KeyCode::Tab, KeyModifiers::SHIFT)),
+            Some(Action::TabPrev)
+        ));
+        assert!(matches!(
+            map_key(key(KeyCode::BackTab, KeyModifiers::NONE)),
+            Some(Action::TabPrev)
+        ));
+    }
+
+    #[test]
+    fn l0_key_release_events_are_ignored() {
+        let key = crossterm::event::KeyEvent::new_with_kind(
+            KeyCode::Char('q'),
+            KeyModifiers::NONE,
+            KeyEventKind::Release,
+        );
+
+        assert!(map_key(key).is_none());
     }
 }
