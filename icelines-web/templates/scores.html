@@ -46,12 +46,12 @@
             {% for r in d.rows %}
             <tr class="game-{{ r.state_class }}">
                 <td><code>{{ r.start_time_label }}</code></td>
-                <td><a class="team-link team-{{ r.away_abbrev }}" href="/team/{{ r.away_abbrev }}">{{ r.away_name }}</a></td>
-                <td class="table-score">{{ r.away_score_str }}</td>
+                <td><a class="team-link team-{{ r.away_abbrev }}" href="/team/{{ r.away_abbrev }}">{{ r.away_name }}</a> <a class="jaw-kind" href="/game/{{ r.game_id }}">game</a></td>
+                <td class="table-score"><a href="/game/{{ r.game_id }}">{{ r.away_score_str }}</a></td>
                 <td><a class="team-link team-{{ r.home_abbrev }}" href="/team/{{ r.home_abbrev }}">{{ r.home_name }}</a></td>
-                <td class="table-score">{{ r.home_score_str }}</td>
+                <td class="table-score"><a href="/game/{{ r.game_id }}">{{ r.home_score_str }}</a></td>
                 <td>
-                    {{ r.state_label }}
+                    <a href="/game/{{ r.game_id }}">{{ r.state_label }}</a>
                     {% if r.is_playoff %}
                         <br><small class="meta-line">{{ r.series_context }}</small>
                     {% endif %}

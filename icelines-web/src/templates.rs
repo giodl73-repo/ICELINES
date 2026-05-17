@@ -99,6 +99,7 @@ pub struct DashboardSummaryRow {
     pub label: String,
     pub value: String,
     pub detail: String,
+    pub href: String,
 }
 
 #[derive(Debug, Clone)]
@@ -373,6 +374,7 @@ pub struct ScoresDay {
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ScoreRow {
+    pub game_id: u64,
     pub away_abbrev: String,
     pub away_name: String,
     pub home_abbrev: String,

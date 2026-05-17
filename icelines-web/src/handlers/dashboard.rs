@@ -806,7 +806,8 @@ fn scores_summary_rows(result: &super::scores::ScoresResult) -> Vec<DashboardSum
             "{} · live {} · final {} · upcoming {}",
             result.active_date, live, finals, upcoming
         ),
-    )];
+    )
+    .with_href(format!("/scores?date={}", result.active_date))];
 
     rows.extend(games.into_iter().take(2).map(score_game_summary_row));
     rows
@@ -823,6 +824,7 @@ fn score_game_summary_row(game: &ScoreRow) -> DashboardSummaryRow {
         format!("{} @ {}", game.away_abbrev, game.home_abbrev),
         score,
     )
+    .with_href(format!("/game/{}", game.game_id))
 }
 
 async fn schedule_workspace_summary(state: &WebState, path: &str) -> Vec<DashboardSummaryRow> {
@@ -1557,6 +1559,18 @@ fn summary_row(
         label: label.into(),
         value: value.into(),
         detail: detail.into(),
+        href: String::new(),
+    }
+}
+
+trait DashboardSummaryRowExt {
+    fn with_href(self, href: impl Into<String>) -> Self;
+}
+
+impl DashboardSummaryRowExt for DashboardSummaryRow {
+    fn with_href(mut self, href: impl Into<String>) -> Self {
+        self.href = href.into();
+        self
     }
 }
 
@@ -2625,6 +2639,7 @@ mod tests {
                 date: "2026-05-13".to_string(),
                 date_pretty: "Wed, May 13".to_string(),
                 rows: vec![ScoreRow {
+                    game_id: 2025020001,
                     away_abbrev: "EDM".to_string(),
                     away_name: "Oilers".to_string(),
                     home_abbrev: "SEA".to_string(),
@@ -2647,7 +2662,9 @@ mod tests {
         assert_eq!(rows[0].label, "Slate");
         assert_eq!(rows[0].value, "1");
         assert!(rows[0].detail.contains("final 1"));
+        assert_eq!(rows[0].href, "/scores?date=2026-05-13");
         assert_eq!(rows[1].value, "EDM @ SEA");
+        assert_eq!(rows[1].href, "/game/2025020001");
     }
 
     #[test]

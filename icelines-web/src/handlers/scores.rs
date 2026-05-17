@@ -155,6 +155,7 @@ fn scores_day_from_view(day: &ScoresDayView) -> ScoresDay {
             .rows
             .iter()
             .map(|row| ScoreRow {
+                game_id: row.game_id,
                 away_abbrev: row.away_abbrev.clone(),
                 away_name: row.away_name.clone(),
                 home_abbrev: row.home_abbrev.clone(),
