@@ -45,6 +45,7 @@ unrendered side-pane placeholders.
 | 33 | Serve workspace-local navigation | done | Made same-origin dashboard links and GET filters swap the center workspace while preserving side panes and command chrome. |
 | 34 | Serve full player workspace | done | Embedded the full player card in dashboard player workspaces instead of the compact player summary preview. |
 | 35 | Serve navigation QA hardening | done | Tightened workspace routing so unsupported app links fall back cleanly instead of no-oping or swapping to the wrong center. |
+| 36 | Serve full team workspace | done | Embedded the full team roster in dashboard team workspaces instead of the compact team summary preview. |
 
 ## Success criteria
 
@@ -103,3 +104,4 @@ unrendered side-pane placeholders.
 - Browser dashboard navigation keeps app-route clicks and GET filters inside the center workspace by default.
 - Browser dashboard Player workspaces show the full player card content in the center workspace.
 - Browser dashboard link interception only claims routes the workspace renderer can serve, with clean fallback for unsupported routes.
+- Browser dashboard Team workspaces show the full roster content in the center workspace.

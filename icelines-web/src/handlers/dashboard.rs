@@ -82,6 +82,8 @@ pub async fn get_dashboard(
     let active_pane_models = active_dashboard_pane_models(active_workbench);
     let show_full_leaders = workspace_route_key(&workspace_url) == "/leaders";
     let show_full_player = workspace_route_key(&workspace_url).starts_with("/player/");
+    let show_full_team = team_workspace_slug(workspace_route_key(&workspace_url)).is_some()
+        && !workspace_route_key(&workspace_url).ends_with("/season");
     let (leaders_query, leaders_raw_query) = leaders_query_from_workspace(&workspace_url);
     let leaders_surface =
         match super::leaders::build_leaders_template(&state, leaders_query, &leaders_raw_query)
@@ -92,6 +94,14 @@ pub async fn get_dashboard(
         };
     let player_surface_html = if show_full_player {
         match full_player_workspace_html(&state, &workspace_url).await {
+            Ok(html) => html,
+            Err(response) => return response,
+        }
+    } else {
+        String::new()
+    };
+    let team_surface_html = if show_full_team {
+        match full_team_workspace_html(&state, &workspace_url).await {
             Ok(html) => html,
             Err(response) => return response,
         }
@@ -111,6 +121,8 @@ pub async fn get_dashboard(
             leaders_surface,
             show_full_player,
             player_surface_html,
+            show_full_team,
+            team_surface_html,
         });
     }
 
@@ -142,6 +154,8 @@ pub async fn get_dashboard(
         leaders_surface,
         show_full_player,
         player_surface_html,
+        show_full_team,
+        team_surface_html,
         left_pane_binding: dashboard_pane_binding_row(
             composition.left,
             dashboard_href(
@@ -299,6 +313,34 @@ async fn full_player_workspace_html(
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Html("player template did not render a main region".to_owned()),
+        )
+            .into_response()
+    })
+}
+
+async fn full_team_workspace_html(
+    state: &WebState,
+    workspace_url: &str,
+) -> Result<String, Response> {
+    let Some(team) = team_workspace_slug(workspace_route_key(workspace_url)) else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Html("invalid team workspace".to_owned()),
+        )
+            .into_response());
+    };
+    let template = super::team::build_team_template(state, team).await?;
+    let rendered = template.render().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response()
+    })?;
+    extract_main_content(&rendered).ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("team template did not render a main region".to_owned()),
         )
             .into_response()
     })

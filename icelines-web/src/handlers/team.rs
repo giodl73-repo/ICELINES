@@ -16,10 +16,27 @@ use icelines_core::view_model::{
 use icelines_core::{MetricCell, MetricValue};
 
 pub async fn get_team(State(state): State<WebState>, Path(abbrev_raw): Path<String>) -> Response {
+    match build_team_template(&state, &abbrev_raw).await {
+        Ok(tmpl) => match tmpl.render() {
+            Ok(html) => Html(html).into_response(),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Html(format!("template render failed: {e}")),
+            )
+                .into_response(),
+        },
+        Err(response) => response,
+    }
+}
+
+pub async fn build_team_template(
+    state: &WebState,
+    abbrev_raw: &str,
+) -> Result<TeamTemplate, Response> {
     let team = match parse_team(&abbrev_raw) {
         Ok(team) => team,
         Err((_abbrev_upper, message)) => {
-            return (
+            return Err((
                 StatusCode::NOT_FOUND,
                 Html(format!(
                     "<!doctype html><html><body><h1>Unknown team</h1>\
@@ -28,7 +45,7 @@ pub async fn get_team(State(state): State<WebState>, Path(abbrev_raw): Path<Stri
                      </body></html>"
                 )),
             )
-                .into_response();
+                .into_response());
         }
     };
 
@@ -40,7 +57,7 @@ pub async fn get_team(State(state): State<WebState>, Path(abbrev_raw): Path<Stri
     let season = match parse_season(&season_str) {
         Ok(season) => season,
         Err(()) => {
-            return (
+            return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Html(format!(
                     "<!doctype html><html><body><h1>500</h1>\
@@ -48,7 +65,7 @@ pub async fn get_team(State(state): State<WebState>, Path(abbrev_raw): Path<Stri
                      </body></html>"
                 )),
             )
-                .into_response();
+                .into_response());
         }
     };
 
@@ -77,20 +94,12 @@ pub async fn get_team(State(state): State<WebState>, Path(abbrev_raw): Path<Stri
         (skaters, goalies)
     };
 
-    let tmpl = TeamTemplate {
+    Ok(TeamTemplate {
         active_label,
         team_abbrev: team.0.to_string(),
         skaters,
         goalies,
-    };
-    match tmpl.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Html(format!("template render failed: {e}")),
-        )
-            .into_response(),
-    }
+    })
 }
 
 #[derive(Debug, serde::Serialize)]
