@@ -441,10 +441,28 @@ code {
 }
 
 .jaw-workbench-list {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.35rem;
+}
+
+.jaw-nav-section {
+    display: grid;
+    gap: 0.3rem;
+}
+
+.jaw-nav-section h2 {
+    color: var(--ice-muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.jaw-workbench-row {
     align-items: stretch;
     display: flex;
     gap: 0.3rem;
-    margin-top: 0.35rem;
     overflow-x: auto;
 }
 
@@ -493,16 +511,7 @@ code {
 }
 
 .jaw-experience-tabs {
-    background: var(--ice-bg);
-    border: 1px solid var(--ice-divider);
-    border-radius: 6px;
-    padding: 0.3rem 0.45rem;
-}
-
-.jaw-experience-tabs summary {
-    color: var(--nhl-navy);
-    cursor: pointer;
-    font-weight: 700;
+    min-width: 0;
 }
 
 .jaw-experience-tab-list {

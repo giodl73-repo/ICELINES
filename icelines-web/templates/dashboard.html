@@ -27,9 +27,12 @@
         <a href="/scores">Open scores</a>
     </header>
 
-    <details class="jaw-workbench-nav" aria-label="Activity catalog rail" data-dashboard-nav>
-        <summary>Workspaces</summary>
+    <details class="jaw-workbench-nav" aria-label="Dashboard navigation" data-dashboard-nav>
+        <summary>Navigation</summary>
         <div class="jaw-workbench-list">
+        <section class="jaw-nav-section" aria-label="Activity catalog rail">
+            <h2>Workspaces</h2>
+            <div class="jaw-workbench-row">
         {% for group in catalog_groups %}
         <section class="jaw-catalog-group" aria-label="{{ group.label }}">
             <h2>{{ group.label }}</h2>
@@ -42,17 +45,18 @@
             </div>
         </section>
         {% endfor %}
-        </div>
-    </details>
-
-    <details class="jaw-experience-tabs" aria-label="Bound workbench experiences">
-        <summary>Rooms</summary>
-        <div class="jaw-experience-tab-list">
+            </div>
+        </section>
+        <section class="jaw-nav-section jaw-experience-tabs" aria-label="Bound workbench experiences">
+            <h2>Rooms</h2>
+            <div class="jaw-experience-tab-list">
         {% for tab in experience_tabs %}
         <a href="{{ tab.href }}" title="{{ tab.detail }}" data-dashboard-composition-link {% if tab.is_active %}aria-current="page"{% endif %}>
             <strong>{{ tab.label }}</strong>
         </a>
         {% endfor %}
+            </div>
+        </section>
         </div>
     </details>
 
