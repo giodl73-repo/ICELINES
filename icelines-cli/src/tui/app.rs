@@ -456,13 +456,14 @@ impl App {
         let Some(mdi) = self.mdi.as_mut() else {
             return;
         };
-        let experience = crate::tui::workbench::workbench_for_screen(&self.screen)
-            .and_then(crate::tui::workbench::tui_experience_for_workbench);
-        if let Some(experience) = experience {
-            mdi.apply_experience(experience);
-        } else {
-            mdi.clear_active_experience();
+        if let Some(id) = crate::tui::workbench::workbench_for_screen(&self.screen) {
+            mdi.select_workbench_id(id);
+            if let Some(experience) = crate::tui::workbench::tui_experience_for_workbench(id) {
+                mdi.apply_experience(experience);
+                return;
+            }
         }
+        mdi.clear_active_experience();
     }
 
     // ── Hart.5c.6 Phase A — view-based accessors ─────────────────────
@@ -6118,6 +6119,10 @@ mod tests {
             mdi.right_pane_binding,
             icelines_core::WorkbenchPaneBindingId::StatFilterRight
         );
+        assert_eq!(
+            mdi.selected_workbench_id(),
+            Some(icelines_core::WorkbenchId::Stats)
+        );
     }
 
     #[test]
@@ -6136,6 +6141,10 @@ mod tests {
         assert_eq!(
             mdi.right_pane_binding,
             icelines_core::WorkbenchPaneBindingId::ScheduleRight
+        );
+        assert_eq!(
+            mdi.selected_workbench_id(),
+            Some(icelines_core::WorkbenchId::Goalies)
         );
     }
 

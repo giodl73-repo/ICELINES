@@ -804,9 +804,11 @@ Scoring room, Team room, Fantasy room, and Admin room. Each preset swaps the
 workspace plus left/right context panes together, using the same shared
 workbench IDs as the web dashboard. Starting the dashboard on a bound workspace
 (`icelines tui stats`, `icelines tui --start scores`, `icelines tui fantasy`)
-applies the matching room before the first frame. Cycling a side pane also
-exposes the shared inspector catalog; panes without native TUI bodies render
-compact field and command summaries instead of dead placeholders.
+applies the matching room before the first frame and positions the rail on that
+workspace. Command-bar workspace swaps keep the rail selection aligned too.
+Cycling a side pane also exposes the shared inspector catalog; panes without
+native TUI bodies render compact field and command summaries instead of dead
+placeholders.
 
 | Verb | Effect | Example |
 |---|---|---|

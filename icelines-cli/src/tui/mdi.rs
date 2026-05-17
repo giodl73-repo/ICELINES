@@ -294,6 +294,12 @@ impl MdiLayout {
             .map(|entry| entry.id)
     }
 
+    pub fn select_workbench_id(&mut self, id: WorkbenchId) {
+        if let Some(idx) = WORKBENCH_CATALOG.iter().position(|entry| entry.id == id) {
+            self.catalog_selected = idx;
+        }
+    }
+
     pub fn active_experience(&self) -> Option<&'static WorkbenchExperience> {
         self.active_experience.and_then(workbench_experience)
     }

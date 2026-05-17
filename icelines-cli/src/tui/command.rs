@@ -1455,13 +1455,14 @@ pub enum ExecResult {
 fn set_workspace_screen(app: &mut crate::tui::app::App, screen: crate::tui::app::Screen) {
     app.screen = screen;
     if let Some(mdi) = app.mdi.as_mut() {
-        let experience = crate::tui::workbench::workbench_for_screen(&app.screen)
-            .and_then(crate::tui::workbench::tui_experience_for_workbench);
-        if let Some(experience) = experience {
-            mdi.apply_experience(experience);
-        } else {
-            mdi.clear_active_experience();
+        if let Some(id) = crate::tui::workbench::workbench_for_screen(&app.screen) {
+            mdi.select_workbench_id(id);
+            if let Some(experience) = crate::tui::workbench::tui_experience_for_workbench(id) {
+                mdi.apply_experience(experience);
+                return;
+            }
         }
+        mdi.clear_active_experience();
     }
 }
 
@@ -3480,13 +3481,22 @@ mod tests {
             mdi.right_pane_binding,
             icelines_core::WorkbenchPaneBindingId::StatFilterRight
         );
+        assert_eq!(
+            mdi.selected_workbench_id(),
+            Some(icelines_core::WorkbenchId::Stats)
+        );
 
         let r = execute_command(Command::Goalies, &mut app);
 
         assert!(matches!(r, ExecResult::Continue));
+        let mdi = app.mdi.as_ref().unwrap();
         assert!(
-            app.mdi.as_ref().unwrap().active_experience.is_none(),
+            mdi.active_experience.is_none(),
             "workspace swaps without a bound room must clear stale room context"
+        );
+        assert_eq!(
+            mdi.selected_workbench_id(),
+            Some(icelines_core::WorkbenchId::Goalies)
         );
     }
 
