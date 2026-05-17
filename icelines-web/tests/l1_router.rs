@@ -930,6 +930,8 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-label=\"Choose left pane\""));
     assert!(body.contains("aria-expanded=\"true\""));
     assert!(body.contains("aria-label=\"Workspace\""));
+    assert!(body.contains("<section class=\"jaw-workspace\""));
+    assert!(!body.contains("<main class=\"jaw-workspace\""));
     assert!(body.contains("data-workspace-url=\"/poach?availability=imported-available\""));
     assert!(body.contains("class=\"jaw-data-table\""));
     assert!(body.contains("class=\"jaw-data-row\""));
