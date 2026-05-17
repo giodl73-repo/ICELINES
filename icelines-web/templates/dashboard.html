@@ -75,7 +75,7 @@
             <ul class="jaw-list jaw-preview-list">
                 {% for row in leaders_preview %}
                 <li>
-                    <a href="/leaders">
+                    <a href="{% if row.href != "" %}{{ row.href }}{% else %}/leaders{% endif %}">
                         <span class="jaw-kind">{{ row.label }}</span>
                         <strong>{{ row.value }}</strong>
                         {% if row.detail != "" %}<span class="jaw-detail">{{ row.detail }}</span>{% endif %}
@@ -102,7 +102,7 @@
             <ul class="jaw-list jaw-preview-list">
                 {% for row in leaders_preview %}
                 <li>
-                    <a href="/leaders">
+                    <a href="{% if row.href != "" %}{{ row.href }}{% else %}/leaders{% endif %}">
                         <span class="jaw-kind">{{ row.label }}</span>
                         <strong>{{ row.value }}</strong>
                         {% if row.detail != "" %}<span class="jaw-detail">{{ row.detail }}</span>{% endif %}

@@ -430,6 +430,7 @@ async fn leaders_workspace_summary(state: &WebState) -> Vec<DashboardSummaryRow>
                 row.display_name.clone(),
                 format!("{} {} pts · {} G", row.team.0, row.points, row.goals),
             )
+            .with_href(format!("/player/{}", row.player_id.0))
         })
         .collect()
 }
@@ -2667,6 +2668,14 @@ mod tests {
         assert_eq!(rows[0].href, "/scores?date=2026-05-13");
         assert_eq!(rows[1].value, "EDM @ SEA");
         assert_eq!(rows[1].href, "/game/2025020001");
+    }
+
+    #[test]
+    fn l0_dashboard_leader_rows_link_to_player_cards() {
+        let row = summary_row("#1", "Connor McDavid", "EDM 120 pts · 44 G")
+            .with_href(format!("/player/{}", PlayerId(8478402).0));
+
+        assert_eq!(row.href, "/player/8478402");
     }
 
     #[test]

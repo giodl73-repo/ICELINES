@@ -30,6 +30,7 @@ unrendered side-pane placeholders.
 | 18 | Serve clickable data preview | done | Made center workspace preview rows link to the full workspace so the data table itself is actionable. |
 | 19 | Serve score chip deep links | done | Carried game ids into score rows so dashboard score chips and score-table cells link to game pages. |
 | 20 | Serve schedule deep links | done | Carried game ids into schedule rows so right-pane schedule previews link to game pages. |
+| 21 | Serve leader deep links | done | Linked leader preview rows to player cards instead of the generic Leaders page. |
 
 ## Success criteria
 
@@ -72,3 +73,4 @@ unrendered side-pane placeholders.
   available.
 - Browser schedule previews link to specific game pages when a game id is
   available.
+- Browser leader previews link to player cards when player ids are available.
