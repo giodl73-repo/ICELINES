@@ -2,11 +2,24 @@
     var commandHistory = readCommandHistory();
     var commandHistoryIndex = commandHistory.length;
 
-    function workspaceFromUrl(url) {
+    function dashboardWorkspaceFromUrl(url) {
         try {
             var parsed = new URL(url, window.location.origin);
             if (parsed.pathname !== "/dashboard") return null;
             return parsed.searchParams.get("workspace");
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function appWorkspaceFromUrl(url) {
+        try {
+            var parsed = new URL(url, window.location.origin);
+            if (parsed.origin !== window.location.origin) return null;
+            if (parsed.pathname === "/dashboard") return dashboardWorkspaceFromUrl(url);
+            if (parsed.pathname.indexOf("/api/") === 0 || parsed.pathname.indexOf("/static/") === 0) return null;
+            if (parsed.pathname.indexOf("/season-type/") === 0 || parsed.pathname === "/seasons") return null;
+            return parsed.pathname + parsed.search;
         } catch (_) {
             return null;
         }
@@ -188,8 +201,9 @@
         var link = event.target.closest("a[href]");
         if (!link) return;
         if (link.hasAttribute("data-dashboard-composition-link")) return;
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-        var workspace = workspaceFromUrl(link.href);
+        var workspace = link.getAttribute("data-dashboard-workspace") || appWorkspaceFromUrl(link.href);
         if (!workspace) return;
 
         event.preventDefault();
@@ -236,7 +250,20 @@
 
     document.addEventListener("submit", function (event) {
         var form = event.target;
-        if (!form || !form.matches(".jaw-command form")) return;
+        if (!form) return;
+        if (!form.matches(".jaw-command form")) {
+            if (!form.closest(".jaw-workspace") || String(form.method || "get").toLowerCase() !== "get") return;
+
+            event.preventDefault();
+            var formUrl = new URL(form.action || window.location.href, window.location.origin);
+            var params = new URLSearchParams(new FormData(form));
+            var query = params.toString();
+            var workspace = formUrl.pathname + (query ? "?" + query : "");
+            loadWorkspace(workspace, true).catch(function () {
+                window.location.href = workspace;
+            });
+            return;
+        }
 
         event.preventDefault();
         var data = new FormData(form);
@@ -249,7 +276,7 @@
         }).then(function (response) {
             if (response.status >= 300 && response.status < 400) {
                 var location = response.headers.get("Location") || response.headers.get("location");
-                var workspace = location && workspaceFromUrl(location);
+                var workspace = location && appWorkspaceFromUrl(location);
                 if (workspace) return loadWorkspace(workspace, true);
             }
             if (!response.ok) {

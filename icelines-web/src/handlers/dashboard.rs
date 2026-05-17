@@ -81,16 +81,14 @@ pub async fn get_dashboard(
     let active_fields = active_dashboard_fields(active_workbench, composition.experience);
     let active_pane_models = active_dashboard_pane_models(active_workbench);
     let show_full_leaders = workspace_route_key(&workspace_url) == "/leaders";
-    let leaders_surface = match super::leaders::build_leaders_template(
-        &state,
-        super::leaders::LeadersQuery::default(),
-        "",
-    )
-    .await
-    {
-        Ok(template) => template,
-        Err(response) => return response,
-    };
+    let (leaders_query, leaders_raw_query) = leaders_query_from_workspace(&workspace_url);
+    let leaders_surface =
+        match super::leaders::build_leaders_template(&state, leaders_query, &leaders_raw_query)
+            .await
+        {
+            Ok(template) => template,
+            Err(response) => return response,
+        };
 
     if matches!(q.partial.as_deref(), Some("workspace")) {
         return render_template(DashboardWorkspaceTemplate {
@@ -310,6 +308,75 @@ fn workspace_route_key(path: &str) -> &str {
         route.trim_end_matches('/')
     } else {
         route
+    }
+}
+
+fn leaders_query_from_workspace(path: &str) -> (super::leaders::LeadersQuery, String) {
+    let raw_query = path
+        .split_once('?')
+        .map(|(_, query)| query.to_owned())
+        .unwrap_or_default();
+    let mut q = super::leaders::LeadersQuery::default();
+
+    for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
+        let value = decode_query_component(value);
+        match key {
+            "sort" => q.sort = Some(value),
+            "pos" => q.pos = Some(value),
+            "top" => q.top = value.parse().ok(),
+            "age-min" => q.age_min = value.parse().ok(),
+            "age-max" => q.age_max = value.parse().ok(),
+            "draft-min" => q.draft_year_min = value.parse().ok(),
+            "draft-max" => q.draft_year_max = value.parse().ok(),
+            "height-min" => q.height_min = value.parse().ok(),
+            "height-max" => q.height_max = value.parse().ok(),
+            "weight-min" => q.weight_min = value.parse().ok(),
+            "weight-max" => q.weight_max = value.parse().ok(),
+            "country" => q.country = Some(value),
+            "shoots" => q.shoots = Some(value),
+            _ => {}
+        }
+    }
+
+    (q, raw_query)
+}
+
+fn decode_query_component(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'+' => {
+                out.push(b' ');
+                i += 1;
+            }
+            b'%' if i + 2 < bytes.len() => {
+                if let (Some(high), Some(low)) = (hex_value(bytes[i + 1]), hex_value(bytes[i + 2]))
+                {
+                    out.push(high * 16 + low);
+                    i += 3;
+                } else {
+                    out.push(bytes[i]);
+                    i += 1;
+                }
+            }
+            byte => {
+                out.push(byte);
+                i += 1;
+            }
+        }
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn hex_value(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
     }
 }
 

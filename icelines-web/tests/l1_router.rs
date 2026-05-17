@@ -969,7 +969,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
 
 #[tokio::test]
 async fn l1_dashboard_leaders_workspace_embeds_full_leaders_surface() {
-    let app = router(WebState::new());
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
     let response = app
         .oneshot(
             Request::builder()
@@ -992,7 +992,34 @@ async fn l1_dashboard_leaders_workspace_embeds_full_leaders_surface() {
     assert!(body.contains("Bio filters"));
     assert!(body.contains("Click any column header to sort by that stat"));
     assert!(body.contains("href=\"/api/v1/leaders\""));
+    assert!(body.contains("data-dashboard-workspace=\"/player/"));
+    assert!(body.contains("data-dashboard-workspace=\"/team/"));
     assert!(!body.contains("aria-label=\"Leaders preview\""));
+}
+
+#[tokio::test]
+async fn l1_dashboard_leaders_workspace_preserves_leaders_query_state() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=%2Fleaders%3Fsort%3Dgoals%26top%3D7%26pos%3DF")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("skaters by Goals"));
+    assert!(body.contains("name=\"top\" value=\"7\""));
+    assert!(body.contains("href=\"/leaders?sort=goals&pos=F&top=7"));
+    assert!(body.contains("sort-link-active"));
 }
 
 #[tokio::test]

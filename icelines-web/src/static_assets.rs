@@ -248,6 +248,8 @@ mod tests {
             "data-dashboard-command-status",
             "data-dashboard-command-input",
             "data-dashboard-workspace-input",
+            "data-dashboard-workspace",
+            "appWorkspaceFromUrl",
             "setCommandStatus",
             "updateCommandWorkspace",
             "sessionStorage",

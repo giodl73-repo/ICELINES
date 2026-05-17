@@ -142,11 +142,11 @@
                             <img class="avatar" src="{{ row.headshot_url }}" alt="" loading="lazy"
                                  onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}"
                                  data-fallback="{{ row.headshot_fallback_url }}">
-                            <a class="player-name" href="/player/{{ row.nhl_id }}">{{ row.name }}</a>
+                            <a class="player-name" href="/player/{{ row.nhl_id }}" data-dashboard-workspace="/player/{{ row.nhl_id }}">{{ row.name }}</a>
                         </div>
                     </td>
                     <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
-                    <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
+                    <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}" data-dashboard-workspace="/team/{{ row.team }}">{{ row.team }}</a></td>
                     <td class="numeric">{{ row.gp }}</td>
                     <td class="numeric">{{ row.goals }}</td>
                     <td class="numeric">{{ row.assists }}</td>

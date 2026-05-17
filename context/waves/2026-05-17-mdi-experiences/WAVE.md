@@ -42,6 +42,7 @@ unrendered side-pane placeholders.
 | 30 | Serve wide dashboard layout | done | Let the browser dashboard break out of the global page width cap and prioritize the center workspace on wide screens. |
 | 31 | Serve center card expansion | done | Changed the dashboard workspace partial from nested `main` to `section` so it no longer inherits the global page width cap. |
 | 32 | Serve full leaders workspace | done | Embedded the full Leaders table/filter surface in the browser dashboard center workspace instead of the compact preview. |
+| 33 | Serve workspace-local navigation | done | Made same-origin dashboard links and GET filters swap the center workspace while preserving side panes and command chrome. |
 
 ## Success criteria
 
@@ -97,3 +98,4 @@ unrendered side-pane placeholders.
 - Browser dashboard uses wide viewports for the workbench shell instead of centering inside the global content cap.
 - Browser dashboard center workspace expands inside the workbench grid instead of behaving like a nested capped page.
 - Browser dashboard Leaders workspace shows the full leaders table and controls rather than the generic preview table.
+- Browser dashboard navigation keeps app-route clicks and GET filters inside the center workspace by default.
