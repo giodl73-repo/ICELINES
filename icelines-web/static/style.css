@@ -593,6 +593,16 @@ code {
     min-width: 100%;
 }
 
+.jaw-data-row a {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+}
+
+.jaw-data-row:hover {
+    background: var(--link-bg-soft);
+}
+
 .jaw-workspace-affordances {
     margin: 0.55rem 0;
 }

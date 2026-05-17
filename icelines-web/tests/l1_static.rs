@@ -180,6 +180,7 @@ async fn l1_static_css_contains_prince_route_layout_classes() {
         ".jaw-body",
         ".jaw-workspace",
         ".jaw-data-table",
+        ".jaw-data-row",
         ".jaw-workspace-heading",
         ".jaw-preview-list",
         ".jaw-pane-controls",

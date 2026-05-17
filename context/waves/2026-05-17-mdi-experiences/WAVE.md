@@ -27,6 +27,7 @@ unrendered side-pane placeholders.
 | 15 | Serve left pane leader fallback | done | Filled empty favorites/watchlist panes with a top-leaders preview so fresh dashboards still show data. |
 | 16 | Serve right pane schedule preview | done | Replaced generic right-pane schedule links with real schedule preview rows and collapsed links under Schedule views. |
 | 17 | Serve unified navigation drawer | done | Merged separate Workspaces and Rooms controls into one collapsed Navigation drawer. |
+| 18 | Serve clickable data preview | done | Made center workspace preview rows link to the full workspace so the data table itself is actionable. |
 
 ## Success criteria
 
@@ -64,3 +65,4 @@ unrendered side-pane placeholders.
   secondary schedule links.
 - Browser workspace and room navigation share one collapsed drawer instead of
   separate top chrome rows.
+- Browser center preview rows link directly to their full workspace.

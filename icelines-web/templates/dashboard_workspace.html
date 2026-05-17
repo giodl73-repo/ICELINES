@@ -15,10 +15,10 @@
         </thead>
         <tbody>
         {% for row in workspace_summary %}
-            <tr>
-                <td class="rank-cell">{{ row.label }}</td>
-                <td><strong>{{ row.value }}</strong></td>
-                <td>{% if row.detail != "" %}{{ row.detail }}{% else %}—{% endif %}</td>
+            <tr class="jaw-data-row">
+                <td class="rank-cell"><a href="{{ workspace_url }}">{{ row.label }}</a></td>
+                <td><a href="{{ workspace_url }}"><strong>{{ row.value }}</strong></a></td>
+                <td><a href="{{ workspace_url }}">{% if row.detail != "" %}{{ row.detail }}{% else %}—{% endif %}</a></td>
             </tr>
         {% endfor %}
         </tbody>
