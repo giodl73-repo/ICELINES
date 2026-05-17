@@ -86,6 +86,8 @@ pub async fn get_dashboard(
         && !workspace_route_key(&workspace_url).ends_with("/season");
     let show_full_team_season = team_workspace_slug(workspace_route_key(&workspace_url)).is_some()
         && workspace_route_key(&workspace_url).ends_with("/season");
+    let show_full_scores = workspace_route_key(&workspace_url) == "/scores";
+    let show_full_schedule = workspace_route_key(&workspace_url) == "/schedule";
     let (leaders_query, leaders_raw_query) = leaders_query_from_workspace(&workspace_url);
     let leaders_surface =
         match super::leaders::build_leaders_template(&state, leaders_query, &leaders_raw_query)
@@ -118,6 +120,22 @@ pub async fn get_dashboard(
     } else {
         String::new()
     };
+    let scores_surface_html = if show_full_scores {
+        match full_scores_workspace_html(&state, &workspace_url).await {
+            Ok(html) => html,
+            Err(response) => return response,
+        }
+    } else {
+        String::new()
+    };
+    let schedule_surface_html = if show_full_schedule {
+        match full_schedule_workspace_html(&state, &workspace_url).await {
+            Ok(html) => html,
+            Err(response) => return response,
+        }
+    } else {
+        String::new()
+    };
 
     if matches!(q.partial.as_deref(), Some("workspace")) {
         return render_template(DashboardWorkspaceTemplate {
@@ -135,6 +153,10 @@ pub async fn get_dashboard(
             team_surface_html,
             show_full_team_season,
             team_season_surface_html,
+            show_full_scores,
+            scores_surface_html,
+            show_full_schedule,
+            schedule_surface_html,
         });
     }
 
@@ -170,6 +192,10 @@ pub async fn get_dashboard(
         team_surface_html,
         show_full_team_season,
         team_season_surface_html,
+        show_full_scores,
+        scores_surface_html,
+        show_full_schedule,
+        schedule_surface_html,
         left_pane_binding: dashboard_pane_binding_row(
             composition.left,
             dashboard_href(
@@ -383,6 +409,50 @@ async fn full_team_season_workspace_html(
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Html("team season template did not render a main region".to_owned()),
+        )
+            .into_response()
+    })
+}
+
+async fn full_scores_workspace_html(
+    state: &WebState,
+    workspace_url: &str,
+) -> Result<String, Response> {
+    let q = scores_query_from_workspace(workspace_url);
+    let template = super::scores::build_scores_template(state, &q).await;
+    let rendered = template.render().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response()
+    })?;
+    extract_main_content(&rendered).ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("scores template did not render a main region".to_owned()),
+        )
+            .into_response()
+    })
+}
+
+async fn full_schedule_workspace_html(
+    state: &WebState,
+    workspace_url: &str,
+) -> Result<String, Response> {
+    let q = schedule_query_from_workspace(workspace_url);
+    let template = super::schedule::build_schedule_template(state, &q).await;
+    let rendered = template.render().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response()
+    })?;
+    extract_main_content(&rendered).ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("schedule template did not render a main region".to_owned()),
         )
             .into_response()
     })

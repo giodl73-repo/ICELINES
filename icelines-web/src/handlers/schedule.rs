@@ -53,16 +53,7 @@ pub async fn get_schedule(
     State(state): State<WebState>,
     Query(q): Query<ScheduleQuery>,
 ) -> Response {
-    let result = build_schedule_result(&state, &q).await;
-    let tmpl = ScheduleTemplate {
-        active_label: result.active_label,
-        season_pretty: result.season_pretty,
-        active_team: result.active_team,
-        team_chips: result.team_chips,
-        rows: result.rows,
-        total: result.total,
-        fetch_error: result.fetch_error,
-    };
+    let tmpl = build_schedule_template(&state, &q).await;
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),
         Err(e) => (
@@ -70,6 +61,19 @@ pub async fn get_schedule(
             Html(format!("template render failed: {e}")),
         )
             .into_response(),
+    }
+}
+
+pub async fn build_schedule_template(state: &WebState, q: &ScheduleQuery) -> ScheduleTemplate {
+    let result = build_schedule_result(state, q).await;
+    ScheduleTemplate {
+        active_label: result.active_label,
+        season_pretty: result.season_pretty,
+        active_team: result.active_team,
+        team_chips: result.team_chips,
+        rows: result.rows,
+        total: result.total,
+        fetch_error: result.fetch_error,
     }
 }
 

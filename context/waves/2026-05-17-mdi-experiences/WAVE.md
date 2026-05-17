@@ -47,6 +47,7 @@ unrendered side-pane placeholders.
 | 35 | Serve navigation QA hardening | done | Tightened workspace routing so unsupported app links fall back cleanly instead of no-oping or swapping to the wrong center. |
 | 36 | Serve full team workspace | done | Embedded the full team roster in dashboard team workspaces instead of the compact team summary preview. |
 | 37 | Serve full team season workspace | done | Embedded the full team season page in dashboard team-season workspaces instead of the compact season summary preview. |
+| 38 | Serve full slate workspaces | done | Embedded the full Scores and Schedule pages in dashboard slate workspaces instead of compact previews. |
 
 ## Success criteria
 
@@ -107,3 +108,4 @@ unrendered side-pane placeholders.
 - Browser dashboard link interception only claims routes the workspace renderer can serve, with clean fallback for unsupported routes.
 - Browser dashboard Team workspaces show the full roster content in the center workspace.
 - Browser dashboard Team Season workspaces show the full season summary and schedule table in the center workspace.
+- Browser dashboard Scores and Schedule workspaces show their full picker/table pages in the center workspace.

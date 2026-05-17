@@ -197,6 +197,14 @@
     <div class="jaw-full-workspace" aria-label="Full Team Season workspace">
         {{ team_season_surface_html|safe }}
     </div>
+    {% else if show_full_scores %}
+    <div class="jaw-full-workspace" aria-label="Full Scores workspace">
+        {{ scores_surface_html|safe }}
+    </div>
+    {% else if show_full_schedule %}
+    <div class="jaw-full-workspace" aria-label="Full Schedule workspace">
+        {{ schedule_surface_html|safe }}
+    </div>
     {% else %}
     {% if !workspace_summary.is_empty() %}
     <div class="table-scroll jaw-data-preview" aria-label="{{ workspace_label }} preview">

@@ -173,8 +173,20 @@ fn scores_day_from_view(day: &ScoresDayView) -> ScoresDay {
 }
 
 pub async fn get_scores(State(state): State<WebState>, Query(q): Query<ScoresQuery>) -> Response {
-    let result = build_scores_result(&state, &q).await;
-    let tmpl = ScoresTemplate {
+    let tmpl = build_scores_template(&state, &q).await;
+    match tmpl.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn build_scores_template(state: &WebState, q: &ScoresQuery) -> ScoresTemplate {
+    let result = build_scores_result(state, q).await;
+    ScoresTemplate {
         active_label: result.active_label,
         active_date: result.active_date,
         prev_date: result.prev_date,
@@ -183,14 +195,6 @@ pub async fn get_scores(State(state): State<WebState>, Query(q): Query<ScoresQue
         days: result.days,
         total_games: result.total_games,
         fetch_error: result.fetch_error,
-    };
-    match tmpl.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Html(format!("template render failed: {e}")),
-        )
-            .into_response(),
     }
 }
 

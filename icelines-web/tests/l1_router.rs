@@ -1109,6 +1109,60 @@ async fn l1_dashboard_team_season_workspace_embeds_full_team_season() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_scores_workspace_embeds_full_scores_page() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/scores?date=2024-10-04&partial=workspace")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("jaw-full-workspace"));
+    assert!(body.contains("aria-label=\"Full Scores workspace\""));
+    assert!(body.contains("Date picker"));
+    assert!(body.contains("showing week starting <strong>2024-10-04</strong>"));
+    assert!(!body.contains("aria-label=\"Scores preview\""));
+    assert!(!body.contains("<main id=\"main\">"));
+}
+
+#[tokio::test]
+async fn l1_dashboard_schedule_workspace_embeds_full_schedule_page() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/schedule?team=EDM&partial=workspace")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("jaw-full-workspace"));
+    assert!(body.contains("aria-label=\"Full Schedule workspace\""));
+    assert!(body.contains("Team picker"));
+    assert!(body.contains("EDM"));
+    assert!(!body.contains("aria-label=\"Schedule preview\""));
+    assert!(!body.contains("<main id=\"main\">"));
+}
+
+#[tokio::test]
 async fn l1_dashboard_rejects_unsafe_workspace_paths() {
     let app = router(WebState::new());
     for unsafe_workspace in [
