@@ -1346,6 +1346,33 @@ async fn l1_dashboard_report_workspaces_render_summary_shells() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_shell_renders_pinned_pane_workspaces() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/leaders&left_workspace=/player/8478402&right_workspace=/team/EDM")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("aria-label=\"Pinned left workspace\""));
+    assert!(body.contains("aria-label=\"Pinned right workspace\""));
+    assert!(body.contains("Pinned with Ctrl-click"));
+    assert!(body.contains("Pinned with Ctrl+Shift-click"));
+    assert!(body.contains("Connor McDavid"));
+    assert!(body.contains("EDM"));
+}
+
+#[tokio::test]
 async fn l1_dashboard_command_read_redirects_to_workspace_state() {
     let app = router(WebState::new());
     let response = app

@@ -42,6 +42,27 @@
     function dashboardUrl(workspace) {
         var url = new URL("/dashboard", window.location.origin);
         url.searchParams.set("workspace", workspace || "/leaders");
+        ["left_workspace", "right_workspace"].forEach(function (key) {
+            var value = new URLSearchParams(window.location.search).get(key);
+            if (value) url.searchParams.set(key, value);
+        });
+        return url;
+    }
+
+    function currentWorkspace() {
+        var input = document.querySelector("[data-dashboard-workspace-input]");
+        if (input && input.value) return input.value;
+        return new URLSearchParams(window.location.search).get("workspace") || "/leaders";
+    }
+
+    function paneTargetFromClick(event) {
+        if (!event.ctrlKey || event.metaKey || event.altKey) return null;
+        return event.shiftKey ? "right" : "left";
+    }
+
+    function paneTargetUrl(workspace, pane) {
+        var url = dashboardUrl(currentWorkspace());
+        url.searchParams.set(pane + "_workspace", workspace || "/leaders");
         return url;
     }
 
@@ -215,12 +236,18 @@
         var link = event.target.closest("a[href]");
         if (!link) return;
         if (link.hasAttribute("data-dashboard-composition-link")) return;
-        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.altKey) return;
+        var paneTarget = paneTargetFromClick(event);
+        if (!paneTarget && event.shiftKey) return;
 
         var workspace = link.getAttribute("data-dashboard-workspace") || appWorkspaceFromUrl(link.href);
         if (!workspace) return;
 
         event.preventDefault();
+        if (paneTarget) {
+            window.location.href = paneTargetUrl(workspace, paneTarget).toString();
+            return;
+        }
         loadWorkspace(workspace, true)
             .then(function (loaded) {
                 if (!loaded) window.location.href = link.href;

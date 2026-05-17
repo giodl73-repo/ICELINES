@@ -51,6 +51,10 @@ pub struct DashboardQuery {
     #[serde(default)]
     pub right: Option<String>,
     #[serde(default)]
+    pub left_workspace: Option<String>,
+    #[serde(default)]
+    pub right_workspace: Option<String>,
+    #[serde(default)]
     pub experience: Option<String>,
 }
 
@@ -72,9 +76,31 @@ pub async fn get_dashboard(
         .and_then(|experience| crate::workbench::route_for_workbench(experience.center))
         .map(ToOwned::to_owned)
         .unwrap_or_else(|| normalize_workspace(q.workspace.as_deref()));
+    let left_pane_workspace_url = normalize_optional_workspace(q.left_workspace.as_deref());
+    let right_pane_workspace_url = normalize_optional_workspace(q.right_workspace.as_deref());
+    let left_pane_workspace_label = if left_pane_workspace_url.is_empty() {
+        String::new()
+    } else {
+        workspace_label(&left_pane_workspace_url)
+    };
+    let right_pane_workspace_label = if right_pane_workspace_url.is_empty() {
+        String::new()
+    } else {
+        workspace_label(&right_pane_workspace_url)
+    };
     let workspace_label = workspace_label(&workspace_url);
     let workspace_links = workspace_links(&workspace_url);
-    let workspace_summary = workspace_summary(&state, &workspace_url).await;
+    let center_workspace_summary = workspace_summary(&state, &workspace_url).await;
+    let left_pane_workspace_summary = if left_pane_workspace_url.is_empty() {
+        Vec::new()
+    } else {
+        workspace_summary(&state, &left_pane_workspace_url).await
+    };
+    let right_pane_workspace_summary = if right_pane_workspace_url.is_empty() {
+        Vec::new()
+    } else {
+        workspace_summary(&state, &right_pane_workspace_url).await
+    };
     let scores_preview = scores_workspace_summary(&state, "/scores").await;
     let active_workbench = workbench_id_for_workspace(&workspace_url);
     let composition = dashboard_composition(&q, active_workbench);
@@ -159,7 +185,7 @@ pub async fn get_dashboard(
         return render_template(DashboardWorkspaceTemplate {
             workspace_url,
             workspace_label,
-            workspace_summary,
+            workspace_summary: center_workspace_summary,
             workspace_links,
             active_fields,
             active_pane_models,
@@ -199,7 +225,7 @@ pub async fn get_dashboard(
         active_label,
         workspace_url: workspace_url.clone(),
         workspace_label,
-        workspace_summary,
+        workspace_summary: center_workspace_summary,
         scores_summary: "Current slate".to_owned(),
         scores_preview,
         catalog_groups: dashboard_catalog_groups(active_workbench, &composition),
@@ -222,6 +248,12 @@ pub async fn get_dashboard(
         scores_surface_html,
         show_full_schedule,
         schedule_surface_html,
+        left_pane_workspace_url,
+        left_pane_workspace_label,
+        left_pane_workspace_summary,
+        right_pane_workspace_url,
+        right_pane_workspace_label,
+        right_pane_workspace_summary,
         left_pane_binding: dashboard_pane_binding_row(
             composition.left,
             dashboard_href(
@@ -535,6 +567,13 @@ fn normalize_workspace(raw: Option<&str>) -> String {
     raw.map(str::trim)
         .filter(|path| is_workspace_route(path))
         .unwrap_or("/leaders")
+        .to_owned()
+}
+
+fn normalize_optional_workspace(raw: Option<&str>) -> String {
+    raw.map(str::trim)
+        .filter(|path| is_workspace_route(path))
+        .unwrap_or("")
         .to_owned()
 }
 

@@ -49,6 +49,7 @@ unrendered side-pane placeholders.
 | 37 | Serve full team season workspace | done | Embedded the full team season page in dashboard team-season workspaces instead of the compact season summary preview. |
 | 38 | Serve full slate workspaces | done | Embedded the full Scores and Schedule pages in dashboard slate workspaces instead of compact previews. |
 | 39 | Serve full goalie and depth workspaces | done | Embedded the full Goalies and Depth pages in dashboard stat workspaces instead of compact previews. |
+| 40 | Serve pane-target navigation | done | Added modifier-click navigation so dashboard links can pin previews into left or right panes while preserving the center workspace. |
 
 ## Success criteria
 
@@ -111,3 +112,4 @@ unrendered side-pane placeholders.
 - Browser dashboard Team Season workspaces show the full season summary and schedule table in the center workspace.
 - Browser dashboard Scores and Schedule workspaces show their full picker/table pages in the center workspace.
 - Browser dashboard Goalies and Depth workspaces show their full stat table pages in the center workspace.
+- Browser dashboard Ctrl-click pins link previews into the left pane, and Ctrl+Shift-click pins them into the right pane.
