@@ -602,9 +602,15 @@ fn render_mdi_activity_catalog(
     let inner = block.inner(area);
 
     let mut lines = Vec::new();
+    let visible_rows = inner.height as usize;
+    let start = mdi
+        .catalog_selected
+        .saturating_add(1)
+        .saturating_sub(visible_rows);
     for (idx, entry) in WORKBENCH_CATALOG
         .iter()
         .enumerate()
+        .skip(start)
         .take(inner.height as usize)
     {
         let selected = idx == mdi.catalog_selected;
@@ -1337,6 +1343,23 @@ mod app_snapshot_tests {
                 "MDI rail missing bound experience label {label:?}; got:\n{text}"
             );
         }
+    }
+
+    #[test]
+    fn l0_mdi_activity_rail_scrolls_selected_room_into_view() {
+        let mut app = App::new(true);
+        let mut mdi = crate::tui::mdi::MdiLayout::default();
+        mdi.catalog_selected = icelines_core::WORKBENCH_CATALOG
+            .iter()
+            .position(|entry| entry.id == icelines_core::WorkbenchId::Admin)
+            .unwrap();
+        app.mdi = Some(mdi);
+
+        let text = render_app_to_text(&app, 200, 14);
+        assert!(
+            text.contains("> S Admin room") || text.contains(">>S Admin room"),
+            "MDI rail must keep the selected lower room visible on short terminals; got:\n{text}"
+        );
     }
 
     #[test]

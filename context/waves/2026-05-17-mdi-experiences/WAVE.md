@@ -16,6 +16,7 @@ unrendered side-pane placeholders.
 | 04 | Shared inspector pane cycling | done | Exposed the shared inspector pane catalog to TUI side-pane cycling with compact summaries. |
 | 05 | Launch-time room presets | done | Applied bound MDI room presets when launching directly into a start workspace. |
 | 06 | Activity rail selection sync | done | Kept the rail-selected workbench aligned with launch and command-driven workspace changes. |
+| 07 | Activity rail viewport | done | Scrolled the rail viewport so selected lower room presets stay visible on short terminals. |
 
 ## Success criteria
 
@@ -34,3 +35,4 @@ unrendered side-pane placeholders.
   the first dashboard frame.
 - Launch and command-bar workspace swaps keep the activity rail selection on the
   active workbench entry.
+- Short-terminal rail rendering keeps the selected room preset visible.

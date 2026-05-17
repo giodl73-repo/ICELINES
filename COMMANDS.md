@@ -806,9 +806,9 @@ workbench IDs as the web dashboard. Starting the dashboard on a bound workspace
 (`icelines tui stats`, `icelines tui --start scores`, `icelines tui fantasy`)
 applies the matching room before the first frame and positions the rail on that
 workspace. Command-bar workspace swaps keep the rail selection aligned too.
-Cycling a side pane also exposes the shared inspector catalog; panes without
-native TUI bodies render compact field and command summaries instead of dead
-placeholders.
+The rail keeps the selected room visible on shorter terminals. Cycling a side
+pane also exposes the shared inspector catalog; panes without native TUI bodies
+render compact field and command summaries instead of dead placeholders.
 
 | Verb | Effect | Example |
 |---|---|---|
