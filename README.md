@@ -376,7 +376,9 @@ Interactive dashboard. By default `icelines tui` opens the shared composable MDI
 workbench: activity/catalog rail, scores ribbon, swappable left/right context
 panes, central workspace, bound experience presets, active field summaries, and
 a command bar. `Tab` / `Shift+Tab` moves focus across workbench zones in default
-MDI; with a side pane focused, `←` / `→` cycles the shared pane binding. Use
+MDI; with a side pane focused, `←` / `→` cycles the shared pane binding. The
+TUI workbench includes Tonight bench, Scoring room, Team room, Fantasy room, and
+Admin room presets that swap workspace plus context panes together. Use
 `--classic` for the older tabbed single-document UI or `--standalone` for a
 locked one-screen surface. Player cards lazy-load every player's full
 historical career across all 38 bundled seasons on first open. Cross-league

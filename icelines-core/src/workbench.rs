@@ -953,7 +953,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Watchlist queue",
         WorkbenchPaneModelId::WatchlistQueue,
         WorkbenchZone::LeftPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::WatchStatus,
             WorkbenchFieldId::AlertType,
@@ -995,7 +995,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Recent entities",
         WorkbenchPaneModelId::RecentEntities,
         WorkbenchZone::LeftPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Player,
             WorkbenchFieldId::Team,
@@ -1010,7 +1010,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Fantasy roster",
         WorkbenchPaneModelId::FantasyRoster,
         WorkbenchZone::LeftPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Category,
             WorkbenchFieldId::Position,
@@ -1055,7 +1055,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Team inspector",
         WorkbenchPaneModelId::TeamInspector,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Team,
             WorkbenchFieldId::Position,
@@ -1070,7 +1070,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Stat/filter inspector",
         WorkbenchPaneModelId::StatFilterInspector,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::StatKey,
             WorkbenchFieldId::ReportType,
@@ -1144,7 +1144,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Poach filters",
         WorkbenchPaneModelId::PoachFilters,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Availability,
             WorkbenchFieldId::Position,
@@ -1551,7 +1551,7 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     experience(
         WorkbenchExperienceId::ScoringRoom,
         "Scoring room",
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         WorkbenchId::Stats,
         Some(WorkbenchPaneBindingId::SavedQueriesLeft),
         Some(WorkbenchPaneBindingId::StatFilterRight),
@@ -1567,7 +1567,7 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     experience(
         WorkbenchExperienceId::TeamRoom,
         "Team room",
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         WorkbenchId::Depth,
         Some(WorkbenchPaneBindingId::RecentEntitiesLeft),
         Some(WorkbenchPaneBindingId::TeamRight),
@@ -1582,7 +1582,7 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     experience(
         WorkbenchExperienceId::FantasyRoom,
         "Fantasy room",
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         WorkbenchId::Fantasy,
         Some(WorkbenchPaneBindingId::FantasyRosterLeft),
         Some(WorkbenchPaneBindingId::PoachFiltersRight),
@@ -1597,7 +1597,7 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     experience(
         WorkbenchExperienceId::AdminRoom,
         "Admin room",
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         WorkbenchId::Admin,
         Some(WorkbenchPaneBindingId::WatchlistLeft),
         Some(WorkbenchPaneBindingId::DataSourceRight),

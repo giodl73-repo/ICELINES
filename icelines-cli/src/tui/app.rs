@@ -6194,8 +6194,21 @@ mod tests {
 
         app.handle(Action::Enter);
 
+        let mdi = app.mdi.as_ref().unwrap();
         assert_eq!(app.screen, Screen::Queries);
-        assert_eq!(app.status, "Workbench · Stats");
+        assert_eq!(
+            mdi.active_experience,
+            Some(icelines_core::WorkbenchExperienceId::ScoringRoom)
+        );
+        assert_eq!(
+            mdi.left_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::SavedQueriesLeft
+        );
+        assert_eq!(
+            mdi.right_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::StatFilterRight
+        );
+        assert_eq!(app.status, "Workbench · Stats · Scoring room");
     }
 
     #[test]
@@ -6247,9 +6260,9 @@ mod tests {
         assert_eq!(app.screen, Screen::Queries);
         assert_eq!(
             mdi.right_pane_binding,
-            icelines_core::WorkbenchPaneBindingId::DataSourceRight
+            icelines_core::WorkbenchPaneBindingId::TeamRight
         );
-        assert_eq!(app.status, "Right pane · Data/source");
+        assert_eq!(app.status, "Right pane · Team inspector");
     }
 
     #[test]

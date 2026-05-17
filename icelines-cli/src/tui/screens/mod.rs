@@ -21,7 +21,7 @@ pub mod transactions;
 use crate::tui::app::{App, Screen};
 use crate::tui::mdi::MdiFocus;
 use crate::tui::widgets::{help_lines, mdi_help_lines};
-use icelines_core::{WorkbenchGroup, WORKBENCH_CATALOG};
+use icelines_core::{WorkbenchGroup, WorkbenchPaneBindingId, WORKBENCH_CATALOG};
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
@@ -504,7 +504,7 @@ fn render_mdi_favorites_pane(
         Some(icelines_core::WorkbenchPaneBindingId::FavoritesLeft) => {
             favorites::render(f, app, inner);
         }
-        Some(id) => render_mdi_unavailable_pane(f, inner, id),
+        Some(id) => render_mdi_summary_pane(f, app, inner, id),
         None => render_mdi_unavailable_label(f, inner, "Unknown pane"),
     }
 }
@@ -529,7 +529,7 @@ fn render_mdi_schedule_pane(
         Some(icelines_core::WorkbenchPaneBindingId::ScheduleRight) => {
             schedule::render(f, app, inner);
         }
-        Some(id) => render_mdi_unavailable_pane(f, inner, id),
+        Some(id) => render_mdi_summary_pane(f, app, inner, id),
         None => render_mdi_unavailable_label(f, inner, "Unknown pane"),
     }
 }
@@ -636,17 +636,6 @@ fn workbench_binding_title(
     format!(" {label} pane ")
 }
 
-fn render_mdi_unavailable_pane(
-    f: &mut Frame,
-    area: Rect,
-    id: icelines_core::WorkbenchPaneBindingId,
-) {
-    let label = icelines_core::workbench_pane_binding(id)
-        .map(|binding| binding.label)
-        .unwrap_or("Pane");
-    render_mdi_unavailable_label(f, area, label);
-}
-
 fn render_mdi_unavailable_label(f: &mut Frame, area: Rect, label: &str) {
     let dim = Style::default().fg(Color::DarkGray);
     let lines = vec![
@@ -661,6 +650,85 @@ fn render_mdi_unavailable_label(f: &mut Frame, area: Rect, label: &str) {
         )),
     ];
     f.render_widget(Paragraph::new(lines).style(dim), area);
+}
+
+fn render_mdi_summary_pane(f: &mut Frame, app: &App, area: Rect, id: WorkbenchPaneBindingId) {
+    let Some(binding) = icelines_core::workbench_pane_binding(id) else {
+        render_mdi_unavailable_label(f, area, "Unknown pane");
+        return;
+    };
+    let dim = Style::default().fg(Color::DarkGray);
+    let cyan = Style::default().fg(Color::Cyan);
+    let gray = Style::default().fg(Color::Gray);
+    let mut lines = vec![
+        Line::from(Span::styled(binding.label.to_owned(), cyan)),
+        Line::from(Span::styled(mdi_pane_context_hint(app, id), gray)),
+        Line::from(""),
+        Line::from(Span::styled("Fields", dim)),
+    ];
+    for field in binding.fields.iter().take(6) {
+        let label = icelines_core::workbench_field(*field)
+            .map(|field| field.label)
+            .unwrap_or_else(|| field.slug());
+        lines.push(Line::from(Span::styled(format!("- {label}"), gray)));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(mdi_pane_command_hint(id), dim)));
+    f.render_widget(Paragraph::new(lines), area);
+}
+
+fn mdi_pane_context_hint(app: &App, id: WorkbenchPaneBindingId) -> String {
+    match id {
+        WorkbenchPaneBindingId::SavedQueriesLeft => {
+            "Saved query shortcuts for the Stats workspace.".to_owned()
+        }
+        WorkbenchPaneBindingId::WatchlistLeft => "Watched players and alerts.".to_owned(),
+        WorkbenchPaneBindingId::RecentEntitiesLeft => {
+            format!("Recent context for {}.", chrome_screen_label(&app.screen))
+        }
+        WorkbenchPaneBindingId::FantasyRosterLeft => {
+            "Roster context for fantasy gaps and simulations.".to_owned()
+        }
+        WorkbenchPaneBindingId::TeamRight => "Team, position, and opponent inspector.".to_owned(),
+        WorkbenchPaneBindingId::StatFilterRight => {
+            let filter = app.queries.filter_text.trim();
+            if filter.is_empty() {
+                "No active Stats filter.".to_owned()
+            } else {
+                format!("Active filter: {filter}")
+            }
+        }
+        WorkbenchPaneBindingId::PoachFiltersRight => {
+            "Poach availability, position, category, and watch filters.".to_owned()
+        }
+        WorkbenchPaneBindingId::DataSourceRight => {
+            format!("Season {} data and source state.", app.active_season)
+        }
+        WorkbenchPaneBindingId::DocsHelpRight => {
+            "Use /help for the full command reference.".to_owned()
+        }
+        _ => "Workbench context pane.".to_owned(),
+    }
+}
+
+fn mdi_pane_command_hint(id: WorkbenchPaneBindingId) -> &'static str {
+    match id {
+        WorkbenchPaneBindingId::SavedQueriesLeft | WorkbenchPaneBindingId::StatFilterRight => {
+            "Try: stats  ·  query p>=100"
+        }
+        WorkbenchPaneBindingId::WatchlistLeft => {
+            "Try: watchlist  ·  watch player McDavid when=points"
+        }
+        WorkbenchPaneBindingId::RecentEntitiesLeft | WorkbenchPaneBindingId::TeamRight => {
+            "Try: team EDM  ·  depth pos=C"
+        }
+        WorkbenchPaneBindingId::FantasyRosterLeft | WorkbenchPaneBindingId::PoachFiltersRight => {
+            "Try: fantasy roster  ·  poach rw cats=hits,blocks"
+        }
+        WorkbenchPaneBindingId::DataSourceRight => "Try: admin  ·  config list",
+        WorkbenchPaneBindingId::DocsHelpRight => "Try: /help  ·  docs",
+        _ => "Use Left/Right to swap panes.",
+    }
 }
 
 /// Phase Adams.3 — Scores ribbon: top 1-row strip showing

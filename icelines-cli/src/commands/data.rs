@@ -443,6 +443,26 @@ mod tests {
         super::to_hex(&h.finalize())
     }
 
+    fn write_bundle_manifest(dir: &std::path::Path, season: &str) -> anyhow::Result<()> {
+        let mut sha256 = std::collections::BTreeMap::new();
+        for file in ["bios.json", "stats.json"] {
+            if let Some(hash) = file_sha256(&dir.join(file))? {
+                sha256.insert(file.to_owned(), hash);
+            }
+        }
+        let manifest = BundleManifest {
+            season: season.to_owned(),
+            sha256,
+            version: default_manifest_version(),
+            written_at: "2026-05-17T00:00:00Z".to_owned(),
+        };
+        std::fs::write(
+            dir.join("manifest.json"),
+            serde_json::to_vec_pretty(&manifest)?,
+        )?;
+        Ok(())
+    }
+
     #[test]
     fn l0_file_sha256_matches_known_hash() {
         let dir = tempfile::tempdir().unwrap();

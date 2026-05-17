@@ -168,13 +168,19 @@ mod tests {
             left,
             vec![
                 WorkbenchPaneBindingId::FavoritesLeft,
-                WorkbenchPaneBindingId::SavedQueriesLeft
+                WorkbenchPaneBindingId::WatchlistLeft,
+                WorkbenchPaneBindingId::SavedQueriesLeft,
+                WorkbenchPaneBindingId::RecentEntitiesLeft,
+                WorkbenchPaneBindingId::FantasyRosterLeft
             ]
         );
         assert_eq!(
             right,
             vec![
                 WorkbenchPaneBindingId::ScheduleRight,
+                WorkbenchPaneBindingId::TeamRight,
+                WorkbenchPaneBindingId::StatFilterRight,
+                WorkbenchPaneBindingId::PoachFiltersRight,
                 WorkbenchPaneBindingId::DataSourceRight,
                 WorkbenchPaneBindingId::DocsHelpRight
             ]
@@ -187,6 +193,15 @@ mod tests {
             .map(|experience| experience.id)
             .collect();
 
-        assert_eq!(experiences, vec![WorkbenchExperienceId::TonightBench]);
+        assert_eq!(
+            experiences,
+            vec![
+                WorkbenchExperienceId::TonightBench,
+                WorkbenchExperienceId::ScoringRoom,
+                WorkbenchExperienceId::TeamRoom,
+                WorkbenchExperienceId::FantasyRoom,
+                WorkbenchExperienceId::AdminRoom,
+            ]
+        );
     }
 }
