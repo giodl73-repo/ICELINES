@@ -385,7 +385,8 @@ Launching directly into a bound workspace, such as `icelines tui stats` or
 `icelines tui --start scores`, applies the matching room preset immediately and
 keeps the activity rail selected on that workspace; on shorter terminals the
 rail scrolls to keep that selected room visible. Admin, Docs, and Groups
-workbench destinations use named chrome labels in the dashboard footer. Use
+workbench destinations use named chrome labels in the dashboard footer. Hiding a
+focused side pane returns focus to the central workspace. Use
 `--classic` for the older tabbed single-document UI or `--standalone` for a
 locked one-screen surface. Player cards lazy-load every player's full
 historical career across all 38 bundled seasons on first open. Cross-league

@@ -243,6 +243,32 @@ impl MdiLayout {
         width < 100
     }
 
+    pub fn set_side_pane_visible(&mut self, pane: SidePane, visible: bool) {
+        match pane {
+            SidePane::Favorites => {
+                self.show_favorites = visible;
+                if !visible && self.focus == MdiFocus::LeftPane {
+                    self.focus = MdiFocus::Workspace;
+                }
+            }
+            SidePane::Schedule => {
+                self.show_schedule = visible;
+                if !visible && self.focus == MdiFocus::RightPane {
+                    self.focus = MdiFocus::Workspace;
+                }
+            }
+        }
+    }
+
+    pub fn toggle_side_pane(&mut self, pane: SidePane) -> bool {
+        let visible = match pane {
+            SidePane::Favorites => !self.show_favorites,
+            SidePane::Schedule => !self.show_schedule,
+        };
+        self.set_side_pane_visible(pane, visible);
+        visible
+    }
+
     pub fn focus_next(&mut self) {
         self.focus = self.next_focus(false);
     }

@@ -1485,19 +1485,13 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         Command::Quit => ExecResult::Quit,
         Command::Hide(pane) => {
             if let Some(mdi) = &mut app.mdi {
-                match pane {
-                    SidePane::Favorites => mdi.show_favorites = false,
-                    SidePane::Schedule => mdi.show_schedule = false,
-                }
+                mdi.set_side_pane_visible(pane, false);
             }
             ExecResult::Continue
         }
         Command::Show(pane) => {
             if let Some(mdi) = &mut app.mdi {
-                match pane {
-                    SidePane::Favorites => mdi.show_favorites = true,
-                    SidePane::Schedule => mdi.show_schedule = true,
-                }
+                mdi.set_side_pane_visible(pane, true);
             }
             ExecResult::Continue
         }
@@ -3498,6 +3492,19 @@ mod tests {
             mdi.selected_workbench_id(),
             Some(icelines_core::WorkbenchId::Goalies)
         );
+    }
+
+    #[test]
+    fn l0_mdi_hide_command_moves_focus_off_hidden_pane() {
+        let mut app = fresh_app_with_mdi();
+        app.mdi.as_mut().unwrap().focus = crate::tui::mdi::MdiFocus::RightPane;
+
+        let r = execute_command(Command::Hide(SidePane::Schedule), &mut app);
+
+        assert!(matches!(r, ExecResult::Continue));
+        let mdi = app.mdi.as_ref().unwrap();
+        assert!(!mdi.show_schedule);
+        assert_eq!(mdi.focus, crate::tui::mdi::MdiFocus::Workspace);
     }
 
     #[test]

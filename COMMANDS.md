@@ -810,7 +810,8 @@ The rail keeps the selected room visible on shorter terminals. Cycling a side
 pane also exposes the shared inspector catalog; panes without native TUI bodies
 render compact field and command summaries instead of dead placeholders. Admin,
 Docs, and Groups workbench destinations use named chrome labels instead of the
-generic screen fallback.
+generic screen fallback. Hiding the focused side pane moves focus back to the
+central workspace so keyboard input never lands on an invisible pane.
 
 | Verb | Effect | Example |
 |---|---|---|

@@ -597,21 +597,19 @@ impl App {
         match action {
             Action::ToggleFavoritesPane => {
                 if let Some(m) = self.mdi.as_mut() {
-                    m.show_favorites = !m.show_favorites;
+                    let visible = m.toggle_side_pane(crate::tui::mdi::SidePane::Favorites);
                     self.status = format!(
                         "Favorites pane {}",
-                        if m.show_favorites { "shown" } else { "hidden" }
+                        if visible { "shown" } else { "hidden" }
                     );
                 }
                 return false;
             }
             Action::ToggleSchedulePane => {
                 if let Some(m) = self.mdi.as_mut() {
-                    m.show_schedule = !m.show_schedule;
-                    self.status = format!(
-                        "Schedule pane {}",
-                        if m.show_schedule { "shown" } else { "hidden" }
-                    );
+                    let visible = m.toggle_side_pane(crate::tui::mdi::SidePane::Schedule);
+                    self.status =
+                        format!("Schedule pane {}", if visible { "shown" } else { "hidden" });
                 }
                 return false;
             }
@@ -6691,6 +6689,27 @@ mod tests {
         assert!(!app.mdi.as_ref().unwrap().show_schedule);
         app.handle(Action::ToggleSchedulePane);
         assert!(app.mdi.as_ref().unwrap().show_schedule);
+    }
+
+    #[test]
+    fn l0_mdi_hiding_focused_side_pane_returns_focus_to_workspace() {
+        let mut app = fresh_mdi_app();
+        app.mdi.as_mut().unwrap().focus = crate::tui::mdi::MdiFocus::LeftPane;
+
+        app.handle(Action::ToggleFavoritesPane);
+
+        let mdi = app.mdi.as_ref().unwrap();
+        assert!(!mdi.show_favorites);
+        assert_eq!(mdi.focus, crate::tui::mdi::MdiFocus::Workspace);
+
+        app.handle(Action::ToggleFavoritesPane);
+        app.mdi.as_mut().unwrap().focus = crate::tui::mdi::MdiFocus::RightPane;
+
+        app.handle(Action::ToggleSchedulePane);
+
+        let mdi = app.mdi.as_ref().unwrap();
+        assert!(!mdi.show_schedule);
+        assert_eq!(mdi.focus, crate::tui::mdi::MdiFocus::Workspace);
     }
 
     #[test]

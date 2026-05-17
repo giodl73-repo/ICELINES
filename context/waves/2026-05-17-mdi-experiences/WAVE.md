@@ -18,6 +18,7 @@ unrendered side-pane placeholders.
 | 06 | Activity rail selection sync | done | Kept the rail-selected workbench aligned with launch and command-driven workspace changes. |
 | 07 | Activity rail viewport | done | Scrolled the rail viewport so selected lower room presets stay visible on short terminals. |
 | 08 | Workbench chrome labels | done | Named Admin, Docs, and Groups in MDI chrome instead of falling back to generic Screen labels. |
+| 09 | Hidden pane focus recovery | done | Moved focus back to the workspace when hiding a currently focused side pane. |
 
 ## Success criteria
 
@@ -38,3 +39,4 @@ unrendered side-pane placeholders.
   active workbench entry.
 - Short-terminal rail rendering keeps the selected room preset visible.
 - Admin, Docs, and Groups workbench destinations use named MDI chrome labels.
+- Hiding a focused side pane moves focus to the visible workspace.
