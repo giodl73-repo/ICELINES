@@ -66,6 +66,20 @@
             {% if left_pane_binding.id == "favorites-left" %}
             {% if favorites.is_empty() %}
             <p class="empty-state">No favorites yet. Add players or teams from player and team pages.</p>
+            {% if !leaders_preview.is_empty() %}
+            <h2>Top leaders</h2>
+            <ul class="jaw-list jaw-preview-list">
+                {% for row in leaders_preview %}
+                <li>
+                    <a href="/leaders">
+                        <span class="jaw-kind">{{ row.label }}</span>
+                        <strong>{{ row.value }}</strong>
+                        {% if row.detail != "" %}<span class="jaw-detail">{{ row.detail }}</span>{% endif %}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
             {% else %}
             <ul class="jaw-list">
                 {% for row in favorites %}
@@ -79,6 +93,20 @@
             <h2>Watchlist</h2>
             {% if watchlist.is_empty() %}
             <p class="empty-state">No watchlist entries yet.</p>
+            {% if !leaders_preview.is_empty() %}
+            <h2>Top leaders</h2>
+            <ul class="jaw-list jaw-preview-list">
+                {% for row in leaders_preview %}
+                <li>
+                    <a href="/leaders">
+                        <span class="jaw-kind">{{ row.label }}</span>
+                        <strong>{{ row.value }}</strong>
+                        {% if row.detail != "" %}<span class="jaw-detail">{{ row.detail }}</span>{% endif %}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
             {% else %}
             <ul class="jaw-list">
                 {% for row in watchlist %}

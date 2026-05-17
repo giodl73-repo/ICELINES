@@ -24,6 +24,7 @@ unrendered side-pane placeholders.
 | 12 | Serve command jump bar | done | Turned the browser command footer into a compact jump bar with examples hidden behind help. |
 | 13 | Serve workspace catalog disclosure | done | Collapsed the browser workspace catalog behind a Workspaces disclosure so the default dashboard view starts with data. |
 | 14 | Serve scores ribbon preview | done | Replaced the generic scores ribbon copy with real score summary chips from the Scores workspace. |
+| 15 | Serve left pane leader fallback | done | Filled empty favorites/watchlist panes with a top-leaders preview so fresh dashboards still show data. |
 
 ## Success criteria
 
@@ -55,3 +56,5 @@ unrendered side-pane placeholders.
   chrome no longer competes with the center data view.
 - The browser scores ribbon shows real slate/game context instead of generic
   navigation copy.
+- Empty browser favorites/watchlist panes fall back to top leaders instead of
+  leaving the side column content-free.

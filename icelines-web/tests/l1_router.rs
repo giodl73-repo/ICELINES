@@ -924,6 +924,8 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-label=\"Left context pane\""));
     assert!(body.contains("data-dashboard-pane=\"favorites\""));
     assert!(body.contains("jaw-pane-content"));
+    assert!(body.contains("Top leaders"));
+    assert!(body.contains("jaw-preview-list"));
     assert!(body.contains("<summary>Pane controls</summary>"));
     assert!(body.contains("aria-label=\"Choose left pane\""));
     assert!(body.contains("aria-expanded=\"true\""));

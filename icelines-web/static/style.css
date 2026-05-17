@@ -547,6 +547,13 @@ code {
     text-decoration: none;
 }
 
+.jaw-preview-list a {
+    background: var(--ice-bg);
+    border: 1px solid var(--ice-divider);
+    border-radius: 5px;
+    padding: 0.4rem 0.5rem;
+}
+
 .jaw-detail,
 .jaw-kind {
     color: var(--ice-muted);

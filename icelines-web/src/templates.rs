@@ -75,6 +75,7 @@ pub struct DashboardTemplate {
     pub right_pane_binding: DashboardPaneBindingRow,
     pub left_pane_options: Vec<DashboardPaneBindingRow>,
     pub right_pane_options: Vec<DashboardPaneBindingRow>,
+    pub leaders_preview: Vec<DashboardSummaryRow>,
     pub favorites: Vec<DashboardEntityRow>,
     pub watchlist: Vec<DashboardEntityRow>,
     pub schedule_links: Vec<DashboardLinkRow>,
