@@ -192,6 +192,7 @@ fn team_chip_from_view(chip: &TeamChipView) -> TeamChip {
 
 fn schedule_row_from_view(row: &ScheduleGameRow) -> ScheduleRow {
     ScheduleRow {
+        game_id: row.game_id,
         date: row.date.clone(),
         away_abbrev: row.away_abbrev.clone(),
         home_abbrev: row.home_abbrev.clone(),

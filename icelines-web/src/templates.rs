@@ -456,6 +456,7 @@ pub struct TeamChip {
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ScheduleRow {
+    pub game_id: u64,
     pub date: String,
     pub away_abbrev: String,
     pub home_abbrev: String,

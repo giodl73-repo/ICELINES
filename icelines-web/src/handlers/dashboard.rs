@@ -869,7 +869,8 @@ fn schedule_summary_rows(result: &super::schedule::ScheduleResult) -> Vec<Dashbo
         "Schedule",
         result.total.to_string(),
         format!("{scope} · {}", result.season_pretty),
-    )];
+    )
+    .with_href("/schedule")];
     rows.extend(result.rows.iter().take(2).map(schedule_game_summary_row));
     rows
 }
@@ -893,6 +894,7 @@ fn schedule_game_summary_row(game: &ScheduleRow) -> DashboardSummaryRow {
         format!("{} @ {}", game.away_abbrev, game.home_abbrev),
         score,
     )
+    .with_href(format!("/game/{}", game.game_id))
 }
 
 async fn player_workspace_summary(
@@ -2680,6 +2682,7 @@ mod tests {
             active_date: None,
             team_chips: Vec::new(),
             rows: vec![ScheduleRow {
+                game_id: 2025020001,
                 date: "2026-05-13".to_string(),
                 away_abbrev: "EDM".to_string(),
                 home_abbrev: "SEA".to_string(),
@@ -2698,7 +2701,9 @@ mod tests {
 
         assert_eq!(rows[0].label, "Schedule");
         assert_eq!(rows[0].detail, "SEA · 2025-26");
+        assert_eq!(rows[0].href, "/schedule");
         assert_eq!(rows[1].value, "EDM @ SEA");
+        assert_eq!(rows[1].href, "/game/2025020001");
     }
 
     #[test]

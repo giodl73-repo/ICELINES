@@ -29,6 +29,7 @@ unrendered side-pane placeholders.
 | 17 | Serve unified navigation drawer | done | Merged separate Workspaces and Rooms controls into one collapsed Navigation drawer. |
 | 18 | Serve clickable data preview | done | Made center workspace preview rows link to the full workspace so the data table itself is actionable. |
 | 19 | Serve score chip deep links | done | Carried game ids into score rows so dashboard score chips and score-table cells link to game pages. |
+| 20 | Serve schedule deep links | done | Carried game ids into schedule rows so right-pane schedule previews link to game pages. |
 
 ## Success criteria
 
@@ -68,4 +69,6 @@ unrendered side-pane placeholders.
   separate top chrome rows.
 - Browser center preview rows link directly to their full workspace.
 - Browser score previews link to specific game pages when a game id is
+  available.
+- Browser schedule previews link to specific game pages when a game id is
   available.
