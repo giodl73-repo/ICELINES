@@ -1023,6 +1023,61 @@ async fn l1_dashboard_leaders_workspace_preserves_leaders_query_state() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_goalies_workspace_embeds_full_goalies_page() {
+    let app = router(WebState::with_repo(repo_with_mcdavid_and_bench_forward()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/goalies?include_below_threshold=true&partial=workspace")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("jaw-full-workspace"));
+    assert!(body.contains("aria-label=\"Full Goalies workspace\""));
+    assert!(body.contains("Goalies"));
+    assert!(body.contains("<th>Goalie</th>"));
+    assert!(body.contains("qualified threshold: 0+ GP"));
+    assert!(!body.contains("aria-label=\"Goalies preview\""));
+    assert!(!body.contains("<main id=\"main\">"));
+}
+
+#[tokio::test]
+async fn l1_dashboard_depth_workspace_embeds_full_depth_page() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/depth&partial=workspace")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("jaw-full-workspace"));
+    assert!(body.contains("aria-label=\"Full Depth workspace\""));
+    assert!(body.contains("Depth Rankings"));
+    assert!(body.contains("Cross-team line-value rankings"));
+    assert!(!body.contains("aria-label=\"Depth preview\""));
+    assert!(!body.contains("<main id=\"main\">"));
+}
+
+#[tokio::test]
 async fn l1_dashboard_player_workspace_embeds_full_player_card() {
     let app = router(WebState::with_repo(repo_with_mcdavid()));
     let response = app

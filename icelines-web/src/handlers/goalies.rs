@@ -245,21 +245,28 @@ fn goalie_metric_f64(row: &icelines_core::GoalieRow, key: &str) -> Option<f64> {
 }
 
 pub async fn get_goalies(State(state): State<WebState>, Query(q): Query<GoaliesQuery>) -> Response {
-    let r = match build_goalie_result(&state, &q).await {
-        Ok(v) => v,
+    let tmpl = match build_goalies_template(&state, &q).await {
+        Ok(tmpl) => tmpl,
         Err(resp) => return resp,
-    };
-    let _ = r.include_below_threshold;
-    let tmpl = GoaliesTemplate {
-        active_label: r.active_label,
-        rows: r.rows,
-        total: r.total,
-        qualified_threshold: r.qualified_threshold,
     };
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),
         Err(e) => error_500(format!("template render failed: {e}")),
     }
+}
+
+pub async fn build_goalies_template(
+    state: &WebState,
+    q: &GoaliesQuery,
+) -> Result<GoaliesTemplate, Response> {
+    let r = build_goalie_result(state, q).await?;
+    let _ = r.include_below_threshold;
+    Ok(GoaliesTemplate {
+        active_label: r.active_label,
+        rows: r.rows,
+        total: r.total,
+        qualified_threshold: r.qualified_threshold,
+    })
 }
 
 // ── King.5.2 — JSON envelope ─────────────────────────────────

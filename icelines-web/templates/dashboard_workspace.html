@@ -185,6 +185,14 @@
             JSON twin: <a href="/api/v1/leaders"><code>/api/v1/leaders</code></a>.
         </p>
     </div>
+    {% else if show_full_goalies %}
+    <div class="jaw-full-workspace" aria-label="Full Goalies workspace">
+        {{ goalies_surface_html|safe }}
+    </div>
+    {% else if show_full_depth %}
+    <div class="jaw-full-workspace" aria-label="Full Depth workspace">
+        {{ depth_surface_html|safe }}
+    </div>
     {% else if show_full_player %}
     <div class="jaw-full-workspace" aria-label="Full Player workspace">
         {{ player_surface_html|safe }}

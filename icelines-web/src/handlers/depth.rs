@@ -9,6 +9,23 @@ use icelines_core::season_stats::SeasonType;
 use icelines_core::{DepthLeagueView, DepthTeamStrengthRow};
 
 pub async fn get_depth(State(state): State<WebState>) -> Response {
+    let tmpl = match build_depth_template(&state).await {
+        Ok(tmpl) => tmpl,
+        Err(response) => return response,
+    };
+    match tmpl.render() {
+        Ok(html) => Html(html).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!(
+                "<!doctype html><body><h1>500</h1><p>{e}</p></body>"
+            )),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn build_depth_template(state: &WebState) -> Result<DepthTemplate, Response> {
     let (season_str, season_type, active_label) = {
         let cfg = state.config.read().await;
         (
@@ -20,14 +37,14 @@ pub async fn get_depth(State(state): State<WebState>) -> Response {
     let season_u32: u32 = match season_str.parse() {
         Ok(n) => n,
         Err(e) => {
-            return (
+            return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Html(format!(
                     "<!doctype html><body><h1>500</h1><p>active season \
                              '{season_str}' is not a valid YYYYZZZZ id: {e}</p></body>"
                 )),
             )
-                .into_response();
+                .into_response());
         }
     };
     let season = Season(season_u32);
@@ -38,17 +55,7 @@ pub async fn get_depth(State(state): State<WebState>) -> Response {
     };
     let rows = view.rows.iter().map(depth_row_from_view).collect();
 
-    let tmpl = DepthTemplate { active_label, rows };
-    match tmpl.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Html(format!(
-                "<!doctype html><body><h1>500</h1><p>{e}</p></body>"
-            )),
-        )
-            .into_response(),
-    }
+    Ok(DepthTemplate { active_label, rows })
 }
 
 // ── JSON twin ────────────────────────────────────────────────

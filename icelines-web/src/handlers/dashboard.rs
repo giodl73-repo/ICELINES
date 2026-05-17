@@ -81,6 +81,8 @@ pub async fn get_dashboard(
     let active_fields = active_dashboard_fields(active_workbench, composition.experience);
     let active_pane_models = active_dashboard_pane_models(active_workbench);
     let show_full_leaders = workspace_route_key(&workspace_url) == "/leaders";
+    let show_full_goalies = workspace_route_key(&workspace_url) == "/goalies";
+    let show_full_depth = workspace_route_key(&workspace_url) == "/depth";
     let show_full_player = workspace_route_key(&workspace_url).starts_with("/player/");
     let show_full_team = team_workspace_slug(workspace_route_key(&workspace_url)).is_some()
         && !workspace_route_key(&workspace_url).ends_with("/season");
@@ -96,6 +98,22 @@ pub async fn get_dashboard(
             Ok(template) => template,
             Err(response) => return response,
         };
+    let goalies_surface_html = if show_full_goalies {
+        match full_goalies_workspace_html(&state, &workspace_url).await {
+            Ok(html) => html,
+            Err(response) => return response,
+        }
+    } else {
+        String::new()
+    };
+    let depth_surface_html = if show_full_depth {
+        match full_depth_workspace_html(&state).await {
+            Ok(html) => html,
+            Err(response) => return response,
+        }
+    } else {
+        String::new()
+    };
     let player_surface_html = if show_full_player {
         match full_player_workspace_html(&state, &workspace_url).await {
             Ok(html) => html,
@@ -147,6 +165,10 @@ pub async fn get_dashboard(
             active_pane_models,
             show_full_leaders,
             leaders_surface,
+            show_full_goalies,
+            goalies_surface_html,
+            show_full_depth,
+            depth_surface_html,
             show_full_player,
             player_surface_html,
             show_full_team,
@@ -186,6 +208,10 @@ pub async fn get_dashboard(
         active_pane_models,
         show_full_leaders,
         leaders_surface,
+        show_full_goalies,
+        goalies_surface_html,
+        show_full_depth,
+        depth_surface_html,
         show_full_player,
         player_surface_html,
         show_full_team,
@@ -409,6 +435,46 @@ async fn full_team_season_workspace_html(
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Html("team season template did not render a main region".to_owned()),
+        )
+            .into_response()
+    })
+}
+
+async fn full_goalies_workspace_html(
+    state: &WebState,
+    workspace_url: &str,
+) -> Result<String, Response> {
+    let q = goalies_query_from_workspace(workspace_url);
+    let template = super::goalies::build_goalies_template(state, &q).await?;
+    let rendered = template.render().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response()
+    })?;
+    extract_main_content(&rendered).ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("goalies template did not render a main region".to_owned()),
+        )
+            .into_response()
+    })
+}
+
+async fn full_depth_workspace_html(state: &WebState) -> Result<String, Response> {
+    let template = super::depth::build_depth_template(state).await?;
+    let rendered = template.render().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response()
+    })?;
+    extract_main_content(&rendered).ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("depth template did not render a main region".to_owned()),
         )
             .into_response()
     })
@@ -1089,6 +1155,29 @@ fn scores_query_from_workspace(path: &str) -> super::scores::ScoresQuery {
         match key {
             "date" => q.date = Some(value),
             "range" => q.range = Some(value),
+            _ => {}
+        }
+    }
+    q
+}
+
+fn goalies_query_from_workspace(path: &str) -> super::goalies::GoaliesQuery {
+    let mut q = super::goalies::GoaliesQuery::default();
+    let Some(query) = path.split_once('?').map(|(_, query)| query) else {
+        return q;
+    };
+    for pair in query.split('&') {
+        let Some((key, value)) = pair.split_once('=') else {
+            continue;
+        };
+        let value = value.replace('+', " ");
+        match key {
+            "sort" => q.sort = Some(value),
+            "top" => q.top = value.parse().ok(),
+            "gp_min" | "min_gp" | "gp-min" | "min-gp" => q.gp_min = value.parse().ok(),
+            "include_below_threshold" => {
+                q.include_below_threshold = value.parse().ok();
+            }
             _ => {}
         }
     }
