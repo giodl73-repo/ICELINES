@@ -19,10 +19,24 @@
             if (parsed.pathname === "/dashboard") return dashboardWorkspaceFromUrl(url);
             if (parsed.pathname.indexOf("/api/") === 0 || parsed.pathname.indexOf("/static/") === 0) return null;
             if (parsed.pathname.indexOf("/season-type/") === 0 || parsed.pathname === "/seasons") return null;
-            return parsed.pathname + parsed.search;
+            var workspace = parsed.pathname + parsed.search;
+            return isDashboardWorkspace(workspace) ? workspace : null;
         } catch (_) {
             return null;
         }
+    }
+
+    function isDashboardWorkspace(workspace) {
+        var path = String(workspace || "").split("?")[0].replace(/\/+$/, "") || "/";
+        if (/^\/player\/[0-9]+$/.test(path)) return true;
+        if (/^\/team\/[A-Za-z]{2,3}(\/season)?$/.test(path)) return true;
+        if (/^\/game\/[^/]+$/.test(path)) return true;
+        return [
+            "/", "/leaders", "/goalies", "/depth", "/poach", "/fantasy",
+            "/scores", "/schedule", "/transactions", "/playoffs",
+            "/favorites", "/watchlist", "/career", "/reports/poach",
+            "/reports/weekly", "/admin", "/docs"
+        ].indexOf(path) !== -1;
     }
 
     function dashboardUrl(workspace) {
@@ -207,9 +221,13 @@
         if (!workspace) return;
 
         event.preventDefault();
-        loadWorkspace(workspace, true).catch(function () {
-            window.location.href = link.href;
-        });
+        loadWorkspace(workspace, true)
+            .then(function (loaded) {
+                if (!loaded) window.location.href = link.href;
+            })
+            .catch(function () {
+                window.location.href = link.href;
+            });
     });
 
     window.addEventListener("popstate", function () {
@@ -259,9 +277,17 @@
             var params = new URLSearchParams(new FormData(form));
             var query = params.toString();
             var workspace = formUrl.pathname + (query ? "?" + query : "");
-            loadWorkspace(workspace, true).catch(function () {
+            if (!isDashboardWorkspace(workspace)) {
                 window.location.href = workspace;
-            });
+                return;
+            }
+            loadWorkspace(workspace, true)
+                .then(function (loaded) {
+                    if (!loaded) window.location.href = workspace;
+                })
+                .catch(function () {
+                    window.location.href = workspace;
+                });
             return;
         }
 
@@ -277,7 +303,11 @@
             if (response.status >= 300 && response.status < 400) {
                 var location = response.headers.get("Location") || response.headers.get("location");
                 var workspace = location && appWorkspaceFromUrl(location);
-                if (workspace) return loadWorkspace(workspace, true);
+                if (workspace) {
+                    return loadWorkspace(workspace, true).then(function (loaded) {
+                        return loaded !== false;
+                    });
+                }
             }
             if (!response.ok) {
                 return response.text().then(function (text) {

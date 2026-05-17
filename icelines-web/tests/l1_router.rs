@@ -1023,12 +1023,12 @@ async fn l1_dashboard_leaders_workspace_preserves_leaders_query_state() {
 }
 
 #[tokio::test]
-async fn l1_dashboard_rejects_unsafe_workspace_paths() {
-    let app = router(WebState::new());
+async fn l1_dashboard_player_workspace_embeds_full_player_card() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/dashboard?workspace=/favorites/add")
+                .uri("/dashboard?workspace=/player/8478402&partial=workspace")
                 .body(Body::empty())
                 .expect("request builder ok"),
         )
@@ -1036,14 +1036,51 @@ async fn l1_dashboard_rejects_unsafe_workspace_paths() {
         .expect("dispatch ok");
 
     assert_eq!(response.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
         .await
         .expect("body fits");
     let body = std::str::from_utf8(&bytes).expect("html is utf-8");
 
-    assert!(body.contains("data-workspace-url=\"/leaders\""));
-    assert!(body.contains("href=\"/leaders\""));
-    assert!(!body.contains("data-workspace-url=\"/favorites/add\""));
+    assert!(body.contains("jaw-full-workspace"));
+    assert!(body.contains("aria-label=\"Full Player workspace\""));
+    assert!(body.contains("Connor McDavid"));
+    assert!(body.contains("aria-label=\"Player actions\""));
+    assert!(body.contains("active-season stat block") || body.contains("Active season stats"));
+    assert!(body.contains("Career"));
+    assert!(!body.contains("aria-label=\"Player Card preview\""));
+    assert!(!body.contains("<main id=\"main\">"));
+}
+
+#[tokio::test]
+async fn l1_dashboard_rejects_unsafe_workspace_paths() {
+    let app = router(WebState::new());
+    for unsafe_workspace in [
+        "/favorites/add",
+        "/player/8478402/awards",
+        "/team/EDM/streaks",
+        "/records/player/8478402",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/dashboard?workspace={unsafe_workspace}"))
+                    .body(Body::empty())
+                    .expect("request builder ok"),
+            )
+            .await
+            .expect("dispatch ok");
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+            .await
+            .expect("body fits");
+        let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+        assert!(body.contains("data-workspace-url=\"/leaders\""));
+        assert!(body.contains("href=\"/leaders\""));
+        assert!(!body.contains(&format!("data-workspace-url=\"{unsafe_workspace}\"")));
+    }
 }
 
 #[tokio::test]

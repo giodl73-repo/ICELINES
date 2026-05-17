@@ -43,6 +43,8 @@ unrendered side-pane placeholders.
 | 31 | Serve center card expansion | done | Changed the dashboard workspace partial from nested `main` to `section` so it no longer inherits the global page width cap. |
 | 32 | Serve full leaders workspace | done | Embedded the full Leaders table/filter surface in the browser dashboard center workspace instead of the compact preview. |
 | 33 | Serve workspace-local navigation | done | Made same-origin dashboard links and GET filters swap the center workspace while preserving side panes and command chrome. |
+| 34 | Serve full player workspace | done | Embedded the full player card in dashboard player workspaces instead of the compact player summary preview. |
+| 35 | Serve navigation QA hardening | done | Tightened workspace routing so unsupported app links fall back cleanly instead of no-oping or swapping to the wrong center. |
 
 ## Success criteria
 
@@ -99,3 +101,5 @@ unrendered side-pane placeholders.
 - Browser dashboard center workspace expands inside the workbench grid instead of behaving like a nested capped page.
 - Browser dashboard Leaders workspace shows the full leaders table and controls rather than the generic preview table.
 - Browser dashboard navigation keeps app-route clicks and GET filters inside the center workspace by default.
+- Browser dashboard Player workspaces show the full player card content in the center workspace.
+- Browser dashboard link interception only claims routes the workspace renderer can serve, with clean fallback for unsupported routes.

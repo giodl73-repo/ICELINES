@@ -25,6 +25,20 @@ fn pretty_season(s: Season) -> String {
 }
 
 pub async fn get_player(State(state): State<WebState>, Path(id): Path<u32>) -> Response {
+    match build_player_template(&state, id).await {
+        Ok(projection) => match projection.render() {
+            Ok(html) => Html(html).into_response(),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Html(format!("template render failed: {e}")),
+            )
+                .into_response(),
+        },
+        Err(response) => response,
+    }
+}
+
+pub async fn build_player_template(state: &WebState, id: u32) -> Result<PlayerTemplate, Response> {
     let (season_str, season_type, active_label) = {
         let cfg = state.config.read().await;
         let st = SeasonType::parse_lossy(&cfg.active_season_type);
@@ -33,7 +47,9 @@ pub async fn get_player(State(state): State<WebState>, Path(id): Path<u32>) -> R
     let season_u32: u32 = match season_str.parse() {
         Ok(n) => n,
         Err(_) => {
-            return not_found_page(format!("Season '{season_str}' is not a valid YYYYZZZZ id"));
+            return Err(not_found_page(format!(
+                "Season '{season_str}' is not a valid YYYYZZZZ id"
+            )));
         }
     };
     let season = Season(season_u32);
@@ -53,11 +69,11 @@ pub async fn get_player(State(state): State<WebState>, Path(id): Path<u32>) -> R
         let view = match PlayerCardView::from_repository(&local_repo, pid, season, season_type) {
             Some(view) => view,
             None => {
-                return not_found_page(format!(
+                return Err(not_found_page(format!(
                     "No player with NHL id {id} in the active repository. \
                              They may not have a row in the {season_str} season — \
                              try editing `~/.icelines/config.toml` to switch seasons."
-                ));
+                )));
             }
         };
 
@@ -69,23 +85,14 @@ pub async fn get_player(State(state): State<WebState>, Path(id): Path<u32>) -> R
         compare_suggestions.sort_by(|a, b| a.0.cmp(&b.0));
         (view, compare_suggestions)
     };
-    let projection = player_template_from_view(
+    Ok(player_template_from_view(
         view,
         active_label,
         id,
         season,
         season_type,
         compare_suggestions,
-    );
-
-    match projection.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Html(format!("template render failed: {e}")),
-        )
-            .into_response(),
-    }
+    ))
 }
 
 fn not_found_page(msg: String) -> Response {

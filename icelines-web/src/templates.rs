@@ -73,6 +73,8 @@ pub struct DashboardTemplate {
     pub active_pane_models: Vec<DashboardPaneModelRow>,
     pub show_full_leaders: bool,
     pub leaders_surface: LeadersTemplate,
+    pub show_full_player: bool,
+    pub player_surface_html: String,
     pub left_pane_binding: DashboardPaneBindingRow,
     pub right_pane_binding: DashboardPaneBindingRow,
     pub left_pane_options: Vec<DashboardPaneBindingRow>,
@@ -96,6 +98,8 @@ pub struct DashboardWorkspaceTemplate {
     pub active_pane_models: Vec<DashboardPaneModelRow>,
     pub show_full_leaders: bool,
     pub leaders_surface: LeadersTemplate,
+    pub show_full_player: bool,
+    pub player_surface_html: String,
 }
 
 #[derive(Debug, Clone)]

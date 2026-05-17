@@ -81,6 +81,7 @@ pub async fn get_dashboard(
     let active_fields = active_dashboard_fields(active_workbench, composition.experience);
     let active_pane_models = active_dashboard_pane_models(active_workbench);
     let show_full_leaders = workspace_route_key(&workspace_url) == "/leaders";
+    let show_full_player = workspace_route_key(&workspace_url).starts_with("/player/");
     let (leaders_query, leaders_raw_query) = leaders_query_from_workspace(&workspace_url);
     let leaders_surface =
         match super::leaders::build_leaders_template(&state, leaders_query, &leaders_raw_query)
@@ -89,6 +90,14 @@ pub async fn get_dashboard(
             Ok(template) => template,
             Err(response) => return response,
         };
+    let player_surface_html = if show_full_player {
+        match full_player_workspace_html(&state, &workspace_url).await {
+            Ok(html) => html,
+            Err(response) => return response,
+        }
+    } else {
+        String::new()
+    };
 
     if matches!(q.partial.as_deref(), Some("workspace")) {
         return render_template(DashboardWorkspaceTemplate {
@@ -100,6 +109,8 @@ pub async fn get_dashboard(
             active_pane_models,
             show_full_leaders,
             leaders_surface,
+            show_full_player,
+            player_surface_html,
         });
     }
 
@@ -129,6 +140,8 @@ pub async fn get_dashboard(
         active_pane_models,
         show_full_leaders,
         leaders_surface,
+        show_full_player,
+        player_surface_html,
         left_pane_binding: dashboard_pane_binding_row(
             composition.left,
             dashboard_href(
@@ -261,6 +274,43 @@ fn render_template<T: Template>(tmpl: T) -> Response {
     }
 }
 
+async fn full_player_workspace_html(
+    state: &WebState,
+    workspace_url: &str,
+) -> Result<String, Response> {
+    let Some(player_id) = player_workspace_id(workspace_route_key(workspace_url))
+        .and_then(|raw| raw.parse::<u32>().ok())
+    else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Html("invalid player workspace".to_owned()),
+        )
+            .into_response());
+    };
+    let template = super::player::build_player_template(state, player_id).await?;
+    let rendered = template.render().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response()
+    })?;
+    extract_main_content(&rendered).ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("player template did not render a main region".to_owned()),
+        )
+            .into_response()
+    })
+}
+
+fn extract_main_content(rendered: &str) -> Option<String> {
+    let start_marker = "<main id=\"main\">";
+    let start = rendered.find(start_marker)? + start_marker.len();
+    let end = rendered[start..].find("</main>")? + start;
+    Some(rendered[start..end].trim().to_owned())
+}
+
 fn normalize_workspace(raw: Option<&str>) -> String {
     raw.map(str::trim)
         .filter(|path| is_workspace_route(path))
@@ -297,9 +347,9 @@ fn is_workspace_route(path: &str) -> bool {
             | "/reports/weekly"
             | "/admin"
             | "/docs"
-    ) || route.starts_with("/player/")
-        || route.starts_with("/team/")
-        || route.starts_with("/game/")
+    ) || player_workspace_id(route).is_some()
+        || team_workspace_slug(route).is_some()
+        || game_workspace_id(route).is_some()
 }
 
 fn workspace_route_key(path: &str) -> &str {
@@ -309,6 +359,31 @@ fn workspace_route_key(path: &str) -> &str {
     } else {
         route
     }
+}
+
+fn player_workspace_id(route: &str) -> Option<&str> {
+    route
+        .strip_prefix("/player/")
+        .filter(|id| !id.is_empty() && id.bytes().all(|byte| byte.is_ascii_digit()))
+}
+
+fn team_workspace_slug(route: &str) -> Option<&str> {
+    let rest = route.strip_prefix("/team/")?;
+    let slug = rest.strip_suffix("/season").unwrap_or(rest);
+    if !slug.is_empty()
+        && (2..=3).contains(&slug.len())
+        && slug.bytes().all(|byte| byte.is_ascii_alphabetic())
+    {
+        Some(slug)
+    } else {
+        None
+    }
+}
+
+fn game_workspace_id(route: &str) -> Option<&str> {
+    route
+        .strip_prefix("/game/")
+        .filter(|id| !id.is_empty() && !id.contains('/'))
 }
 
 fn leaders_query_from_workspace(path: &str) -> (super::leaders::LeadersQuery, String) {
@@ -2351,6 +2426,24 @@ mod tests {
         assert_eq!(normalize_workspace(Some("/admin")), "/admin");
         assert_eq!(normalize_workspace(Some("/dashboard")), "/leaders");
         assert_eq!(normalize_workspace(Some("/favorites/add")), "/leaders");
+        assert_eq!(
+            normalize_workspace(Some("/player/8478402")),
+            "/player/8478402"
+        );
+        assert_eq!(
+            normalize_workspace(Some("/player/8478402/awards")),
+            "/leaders"
+        );
+        assert_eq!(normalize_workspace(Some("/team/EDM")), "/team/EDM");
+        assert_eq!(
+            normalize_workspace(Some("/team/EDM/season")),
+            "/team/EDM/season"
+        );
+        assert_eq!(normalize_workspace(Some("/team/EDM/streaks")), "/leaders");
+        assert_eq!(
+            normalize_workspace(Some("/records/player/8478402")),
+            "/leaders"
+        );
         assert_eq!(
             normalize_workspace(Some("/season-type/playoff")),
             "/leaders"
