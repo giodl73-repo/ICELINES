@@ -934,6 +934,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("data-dashboard-pane=\"schedule\""));
     assert!(body.contains("aria-label=\"Choose right pane\""));
     assert!(body.contains("aria-label=\"Command palette\""));
+    assert!(body.contains("Press <kbd>/</kbd>"));
     assert!(body.contains("data-dashboard-command-status"));
     assert!(body.contains("data-dashboard-command-input"));
     assert!(body.contains("data-dashboard-workspace-input"));
@@ -945,6 +946,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("Schedule"));
     assert!(body.contains("data-dashboard-composition-link"));
     assert!(body.contains("jaw-command-examples"));
+    assert!(body.contains("<summary>Command examples</summary>"));
     assert!(body.contains("aria-live=\"polite\""));
     assert!(body.contains("src=\"/static/dashboard.js\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fleaders\""));

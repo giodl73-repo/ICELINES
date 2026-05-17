@@ -611,10 +611,37 @@ code {
     white-space: normal;
 }
 
+.jaw-command-heading {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-between;
+}
+
+.jaw-command kbd {
+    background: var(--ice-bg);
+    border: 1px solid var(--ice-divider);
+    border-radius: 3px;
+    color: var(--nhl-navy);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 0.82em;
+    padding: 0.02rem 0.25rem;
+}
+
 .jaw-command form {
     display: grid;
     gap: 0.45rem;
     grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.jaw-command-help {
+    margin-top: 0.45rem;
+}
+
+.jaw-command-help summary {
+    color: var(--nhl-navy);
+    cursor: pointer;
+    font-weight: 700;
 }
 
 .jaw-command-examples {

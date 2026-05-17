@@ -141,22 +141,27 @@
     </div>
 
     <footer class="jaw-command" aria-label="Command palette">
-        <strong>Command</strong>
-        <span class="jaw-detail">Run a workspace command or jump straight to a scenario.</span>
-        <div class="jaw-command-examples" aria-label="Command examples">
-            <code>stats</code>
-            <code>goalies</code>
-            <code>team EDM</code>
-            <code>team EDM season</code>
-            <code>poach rw cats=hits,blocks free top=12</code>
-            <code>fantasy simulate add Connor_McDavid drop Bench_Forward</code>
+        <div class="jaw-command-heading">
+            <strong>Command</strong>
+            <span class="jaw-detail">Press <kbd>/</kbd> or <kbd>Ctrl</kbd>+<kbd>K</kbd> to jump.</span>
         </div>
         <p class="jaw-command-status" data-dashboard-command-status role="status" aria-live="polite"></p>
         <form method="post" action="/dashboard/command">
             <input type="hidden" name="workspace" value="{{ workspace_url }}" data-dashboard-workspace-input>
-            <input type="text" name="command" aria-label="Dashboard command" placeholder="team EDM" data-dashboard-command-input>
+            <input type="text" name="command" aria-label="Dashboard command" placeholder="stats, goalies, team EDM, poach rw free top=12" data-dashboard-command-input>
             <button type="submit" aria-label="Run dashboard command">Run</button>
         </form>
+        <details class="jaw-command-help">
+            <summary>Command examples</summary>
+            <div class="jaw-command-examples" aria-label="Command examples">
+                <code>stats</code>
+                <code>goalies</code>
+                <code>team EDM</code>
+                <code>team EDM season</code>
+                <code>poach rw cats=hits,blocks free top=12</code>
+                <code>fantasy simulate add Connor_McDavid drop Bench_Forward</code>
+            </div>
+        </details>
     </footer>
 </section>
 {% endblock %}

@@ -178,6 +178,8 @@ async fn l1_static_css_contains_prince_route_layout_classes() {
         ".jaw-data-table",
         ".jaw-workspace-heading",
         ".jaw-pane-controls",
+        ".jaw-command-heading",
+        ".jaw-command-help",
         ".jaw-command-examples",
         ".jaw-command-status",
         "data-dashboard-pane-collapsed",

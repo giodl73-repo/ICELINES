@@ -21,6 +21,7 @@ unrendered side-pane placeholders.
 | 09 | Hidden pane focus recovery | done | Moved focus back to the workspace when hiding a currently focused side pane. |
 | 10 | Serve dashboard data-first shell | done | Made the browser dashboard open on compact data previews with collapsed workspace wiring and shorter top navigation. |
 | 11 | Serve side panes data-first | done | Moved browser side-pane content ahead of pane selection/model controls so the columns read as data context first. |
+| 12 | Serve command jump bar | done | Turned the browser command footer into a compact jump bar with examples hidden behind help. |
 
 ## Success criteria
 
@@ -46,3 +47,5 @@ unrendered side-pane placeholders.
   affordances, with compact top navigation that stays to a single scannable row.
 - Browser side panes expose favorites, watchlist, and schedule context before
   pane control affordances.
+- The browser command surface stays available as a compact jump bar without
+  adding another always-open menu row.
