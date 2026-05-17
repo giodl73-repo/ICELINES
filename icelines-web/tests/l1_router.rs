@@ -919,6 +919,8 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     let body = std::str::from_utf8(&bytes).expect("html is utf-8");
 
     assert!(body.contains("aria-label=\"Scores ribbon\""));
+    assert!(body.contains("aria-label=\"Scores preview\""));
+    assert!(body.contains("jaw-score-chip"));
     assert!(body.contains("aria-label=\"Left context pane\""));
     assert!(body.contains("data-dashboard-pane=\"favorites\""));
     assert!(body.contains("jaw-pane-content"));

@@ -66,6 +66,7 @@ pub struct DashboardTemplate {
     pub workspace_label: String,
     pub workspace_summary: Vec<DashboardSummaryRow>,
     pub scores_summary: String,
+    pub scores_preview: Vec<DashboardSummaryRow>,
     pub catalog_groups: Vec<DashboardCatalogGroup>,
     pub experience_tabs: Vec<DashboardExperienceTab>,
     pub active_fields: Vec<DashboardFieldRow>,

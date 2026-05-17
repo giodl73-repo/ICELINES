@@ -9,8 +9,21 @@
 {% block content %}
 <section class="jaw-shell" aria-label="IceLines dashboard">
     <header class="jaw-ribbon" aria-label="Scores ribbon">
-        <strong>Scores</strong>
-        <span class="jaw-detail">{{ scores_summary }}</span>
+        <div class="jaw-ribbon-heading">
+            <strong>Scores</strong>
+            <span class="jaw-detail">{{ scores_summary }}</span>
+        </div>
+        {% if !scores_preview.is_empty() %}
+        <div class="jaw-score-strip" aria-label="Scores preview">
+            {% for row in scores_preview %}
+            <a class="jaw-score-chip" href="/scores" title="{{ row.detail }}">
+                <span class="jaw-kind">{{ row.label }}</span>
+                <strong>{{ row.value }}</strong>
+                {% if row.detail != "" %}<span class="jaw-detail">{{ row.detail }}</span>{% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
         <a href="/scores">Open scores</a>
     </header>
 

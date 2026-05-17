@@ -23,6 +23,7 @@ unrendered side-pane placeholders.
 | 11 | Serve side panes data-first | done | Moved browser side-pane content ahead of pane selection/model controls so the columns read as data context first. |
 | 12 | Serve command jump bar | done | Turned the browser command footer into a compact jump bar with examples hidden behind help. |
 | 13 | Serve workspace catalog disclosure | done | Collapsed the browser workspace catalog behind a Workspaces disclosure so the default dashboard view starts with data. |
+| 14 | Serve scores ribbon preview | done | Replaced the generic scores ribbon copy with real score summary chips from the Scores workspace. |
 
 ## Success criteria
 
@@ -52,3 +53,5 @@ unrendered side-pane placeholders.
   adding another always-open menu row.
 - The browser workspace catalog remains available but starts collapsed so top
   chrome no longer competes with the center data view.
+- The browser scores ribbon shows real slate/game context instead of generic
+  navigation copy.

@@ -75,6 +75,7 @@ pub async fn get_dashboard(
     let workspace_label = workspace_label(&workspace_url);
     let workspace_links = workspace_links(&workspace_url);
     let workspace_summary = workspace_summary(&state, &workspace_url).await;
+    let scores_preview = scores_workspace_summary(&state, "/scores").await;
     let active_workbench = workbench_id_for_workspace(&workspace_url);
     let composition = dashboard_composition(&q, active_workbench);
     let active_fields = active_dashboard_fields(active_workbench, composition.experience);
@@ -107,7 +108,8 @@ pub async fn get_dashboard(
         workspace_url: workspace_url.clone(),
         workspace_label,
         workspace_summary,
-        scores_summary: "Live, final, and scheduled games stay one click away.".to_owned(),
+        scores_summary: "Current slate".to_owned(),
+        scores_preview,
         catalog_groups: dashboard_catalog_groups(active_workbench, &composition),
         experience_tabs: dashboard_experience_tabs(active_workbench, composition.experience),
         active_fields,

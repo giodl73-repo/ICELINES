@@ -397,6 +397,36 @@ code {
     justify-content: space-between;
 }
 
+.jaw-ribbon-heading {
+    display: grid;
+    gap: 0.1rem;
+}
+
+.jaw-score-strip {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 0.35rem;
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.jaw-score-chip {
+    background: var(--ice-bg);
+    border: 1px solid var(--ice-divider);
+    border-radius: 5px;
+    color: var(--nhl-navy);
+    display: grid;
+    flex: 0 0 auto;
+    gap: 0.05rem;
+    min-width: 8.5rem;
+    padding: 0.3rem 0.45rem;
+    text-decoration: none;
+}
+
+.jaw-score-chip:hover {
+    background: var(--link-bg-soft);
+}
+
 .jaw-workbench-nav {
     background: var(--ice-bg);
     border: 1px solid var(--ice-divider);

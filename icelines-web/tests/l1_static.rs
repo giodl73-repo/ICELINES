@@ -172,6 +172,8 @@ async fn l1_static_css_contains_prince_route_layout_classes() {
         ".team-banner-meta",
         ".team-banner-button",
         ".jaw-shell",
+        ".jaw-score-strip",
+        ".jaw-score-chip",
         ".jaw-workbench-nav",
         ".jaw-workbench-list",
         ".jaw-body",
