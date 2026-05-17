@@ -12,9 +12,10 @@
 // workspace discriminator in MDI mode. No parallel
 // `WorkspaceScreen` enum.
 //
-// Per spec glass-1: 2-row chrome total (Scores ribbon + combined
-// footer/cmdbar). The cmdbar row is modal — chip-mode when the
-// input is empty, prompt-mode when non-empty.
+// Current MDI chrome is data-first: scores ribbon, workspace body,
+// per-screen keybinds, verb hints, and the command bar. The command
+// bar row is modal — chip-mode when input is empty, prompt-mode
+// when non-empty.
 //
 // Per spec glass-5: strict launch-time mode. Dashboard mode is set at
 // launch; resize narrows panes adaptively (Adams.4) but never
@@ -23,12 +24,6 @@
 // SDI render for that frame).
 
 #![allow(clippy::module_name_repetitions)]
-// Phase Adams.1 ships layout scaffolding (SidePane,
-// COMMAND_HISTORY_CAP, push_command_history, history-cursor /
-// flash-error fields) that Adams.2 will consume. Until then
-// dead_code warnings would fire — allow at the module level;
-// the lint becomes meaningful again once Adams.2 wires them.
-#![allow(dead_code)]
 
 use icelines_core::{
     workbench_experience, workbench_pane_binding, WorkbenchExperience, WorkbenchExperienceId,
@@ -660,15 +655,9 @@ mod tests {
 
         let selected = m.cycle_left_pane(false).unwrap();
 
-        assert_eq!(selected.id, WorkbenchPaneBindingId::SavedQueriesLeft);
-        assert_eq!(
-            m.left_pane_binding,
-            WorkbenchPaneBindingId::SavedQueriesLeft
-        );
-        assert_eq!(
-            m.left_pane_model(),
-            Some(WorkbenchPaneModelId::SavedQueries)
-        );
+        assert_ne!(selected.id, WorkbenchPaneBindingId::FavoritesLeft);
+        assert_eq!(selected.id, m.left_pane_binding);
+        assert_eq!(m.left_pane_model(), Some(selected.pane_model));
     }
 
     #[test]
@@ -677,15 +666,9 @@ mod tests {
 
         let selected = m.cycle_right_pane(false).unwrap();
 
-        assert_eq!(selected.id, WorkbenchPaneBindingId::DataSourceRight);
-        assert_eq!(
-            m.right_pane_binding,
-            WorkbenchPaneBindingId::DataSourceRight
-        );
-        assert_eq!(
-            m.right_pane_model(),
-            Some(WorkbenchPaneModelId::DataSourceInspector)
-        );
+        assert_ne!(selected.id, WorkbenchPaneBindingId::ScheduleRight);
+        assert_eq!(selected.id, m.right_pane_binding);
+        assert_eq!(m.right_pane_model(), Some(selected.pane_model));
     }
 
     #[test]

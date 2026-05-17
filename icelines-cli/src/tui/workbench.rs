@@ -68,7 +68,6 @@ pub fn workbench_for_screen(screen: &Screen) -> Option<WorkbenchId> {
     }
 }
 
-#[allow(dead_code)] // Pulse 02 adapter seam; Pulse 03 wires visible TUI pane controls.
 pub fn tui_pane_bindings_for_zone(
     zone: WorkbenchZone,
 ) -> impl Iterator<Item = &'static WorkbenchPaneBinding> {
@@ -77,7 +76,6 @@ pub fn tui_pane_bindings_for_zone(
     })
 }
 
-#[allow(dead_code)] // Pulse 02 adapter seam; Pulse 03 applies bound experiences.
 pub fn tui_bound_experiences() -> impl Iterator<Item = &'static WorkbenchExperience> {
     WORKBENCH_EXPERIENCES.iter().filter(|experience| {
         experience

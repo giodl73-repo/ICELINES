@@ -32,6 +32,7 @@ unrendered side-pane placeholders.
 | 20 | Serve schedule deep links | done | Carried game ids into schedule rows so right-pane schedule previews link to game pages. |
 | 21 | Serve leader deep links | done | Linked leader preview rows to player cards instead of the generic Leaders page. |
 | 22 | Serve row-specific preview links | done | Made center preview rows prefer row-specific hrefs before falling back to the workspace URL. |
+| 23 | TUI MDI scaffolding cleanup | done | Removed stale placeholder scaffolding, refreshed MDI comments, and made pane-cycle tests follow the shared binding catalog. |
 
 ## Success criteria
 
@@ -76,3 +77,4 @@ unrendered side-pane placeholders.
   available.
 - Browser leader previews link to player cards when player ids are available.
 - Browser center preview rows use row-specific hrefs when available.
+- TUI MDI code no longer carries stale placeholder-pane scaffolding.

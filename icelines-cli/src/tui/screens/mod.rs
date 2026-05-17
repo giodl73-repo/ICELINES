@@ -197,12 +197,10 @@ fn render_sdi(f: &mut Frame, app: &App) {
 ///   │ Combined footer/cmdbar (bottom, 1 row) ──────────────│
 ///   └──────────────────────────────────────────────────────┘
 ///
-/// Adams.1 ships STUBS for each pane (placeholder text +
-/// border). Real renderers wire in Adams.3 — Favorites pane
-/// reuses `screens::favorites::render`, Workspace dispatches on
-/// `app.screen` to the right per-screen renderer, Schedule pane
-/// reuses `screens::schedule::render`, Scores ribbon gets a new
-/// compact renderer in `screens::misc`.
+/// Favorites and schedule panes reuse their native renderers when
+/// the active pane binding maps to those models. Other TUI-safe
+/// shared bindings render compact summaries so the side columns stay
+/// useful without dead placeholders.
 ///
 /// Pane visibility is determined by
 /// `MdiLayout::effective_panes(width)` per spec Adams.4 —
@@ -947,17 +945,6 @@ fn screen_label(s: &Screen) -> &'static str {
         Screen::FantasyGaps => "Fantasy Gaps",
         Screen::FantasySim => "Fantasy Sim",
     }
-}
-
-/// Phase Adams.1 — placeholder renderer (kept for completeness;
-/// not currently called after Adams.3 wired real renderers).
-#[allow(dead_code)]
-fn render_mdi_pane_stub(f: &mut Frame, area: Rect, label: &str) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(format!(" {label} (stub) "))
-        .border_style(Style::default().fg(Color::DarkGray));
-    f.render_widget(block, area);
 }
 
 /// LP.4 — paint the docs overlay. Centered popup, scrollable
