@@ -40,7 +40,8 @@ Inside `icelines tui`, the default MDI mode is a shared composable workbench: an
 activity catalog rail, a center workspace, swappable left/right context panes, a
 scores ribbon, bound experience presets, active field summaries, and a bottom
 command bar. Use `Tab` / `Shift+Tab` to move focus across workbench zones; when a
-side pane is focused, `←` / `→` cycles its shared pane binding. Fantasy views
+side pane is focused, `←` / `→` cycles native panes plus compact summaries for
+the shared inspector pane catalog. Fantasy views
 accept the same product grammar as the CLI: `gaps cats=hits,blocks,shots top=8`,
 `poach rw cats=hits,blocks free top=12`, and
 `simulate add=Connor_McDavid drop=Bench_Forward weeks=3`.
@@ -378,7 +379,8 @@ panes, central workspace, bound experience presets, active field summaries, and
 a command bar. `Tab` / `Shift+Tab` moves focus across workbench zones in default
 MDI; with a side pane focused, `←` / `→` cycles the shared pane binding. The
 TUI workbench includes Tonight bench, Scoring room, Team room, Fantasy room, and
-Admin room presets that swap workspace plus context panes together. Use
+Admin room presets that swap workspace plus context panes together; web-derived
+inspectors render as compact field/command summaries when cycled in the TUI. Use
 `--classic` for the older tabbed single-document UI or `--standalone` for a
 locked one-screen surface. Player cards lazy-load every player's full
 historical career across all 38 bundled seasons on first open. Cross-league

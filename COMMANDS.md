@@ -773,7 +773,8 @@ icelines tui --classic                   # older tabbed single-document UI
 # panes, and center workspace. With the rail focused, ↑/↓ selects a shared
 # catalog entry and Enter opens it when it has a no-argument TUI screen.
 # With a side pane focused, ←/→ cycles the shared pane binding. TUI-safe
-# bindings render either the native pane or a compact field/command summary.
+# bindings render either the native pane or a compact field/command summary,
+# including web-derived player/game/record inspector panes.
 # Press `:` or `/` to focus the cmdbar; type a verb (e.g. `stats`, `goalies`,
 # `team EDM`, `query g >= 30`, `/fav add Bedard`, `/fav add EDM`, `/hide schedule`); Enter to
 # submit. `?` shows the full command reference. Ctrl+H toggles Favorites pane,
@@ -800,7 +801,9 @@ between workbench zones instead of cycling legacy tabs.
 Bound MDI experiences are available from the activity rail for Tonight bench,
 Scoring room, Team room, Fantasy room, and Admin room. Each preset swaps the
 workspace plus left/right context panes together, using the same shared
-workbench IDs as the web dashboard.
+workbench IDs as the web dashboard. Cycling a side pane also exposes the shared
+inspector catalog; panes without native TUI bodies render compact field and
+command summaries instead of dead placeholders.
 
 | Verb | Effect | Example |
 |---|---|---|

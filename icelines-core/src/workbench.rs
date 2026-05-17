@@ -968,7 +968,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Groups",
         WorkbenchPaneModelId::GroupsNavigator,
         WorkbenchZone::LeftPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::FavoriteGroup,
             WorkbenchFieldId::EntityKind,
@@ -1040,7 +1040,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Player inspector",
         WorkbenchPaneModelId::PlayerInspector,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Player,
             WorkbenchFieldId::Team,
@@ -1085,7 +1085,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Goalie inspector",
         WorkbenchPaneModelId::GoalieInspector,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Player,
             WorkbenchFieldId::Team,
@@ -1100,7 +1100,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Game inspector",
         WorkbenchPaneModelId::GameInspector,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Game,
             WorkbenchFieldId::GameState,
@@ -1115,7 +1115,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Scoring trend",
         WorkbenchPaneModelId::ScoringTrend,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Player,
             WorkbenchFieldId::Team,
@@ -1130,7 +1130,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Outlook summary",
         WorkbenchPaneModelId::OutlookSummary,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Player,
             WorkbenchFieldId::Team,
@@ -1159,7 +1159,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Fantasy simulation",
         WorkbenchPaneModelId::FantasySimulation,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Player,
             WorkbenchFieldId::Category,
@@ -1173,7 +1173,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Records inspector",
         WorkbenchPaneModelId::RecordsInspector,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::Player,
             WorkbenchFieldId::Team,
@@ -1188,7 +1188,7 @@ pub const WORKBENCH_PANE_BINDINGS: &[WorkbenchPaneBinding] = &[
         "Career cohort",
         WorkbenchPaneModelId::CareerCohort,
         WorkbenchZone::RightPane,
-        &[WorkbenchSurface::Web],
+        &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         &[
             WorkbenchFieldId::League,
             WorkbenchFieldId::Date,

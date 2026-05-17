@@ -763,9 +763,13 @@ fn mdi_pane_context_hint(app: &App, id: WorkbenchPaneBindingId) -> String {
         WorkbenchPaneBindingId::RecentEntitiesLeft => {
             format!("Recent context for {}.", chrome_screen_label(&app.screen))
         }
+        WorkbenchPaneBindingId::GroupsLeft => {
+            "Favorite groups and saved roster contexts.".to_owned()
+        }
         WorkbenchPaneBindingId::FantasyRosterLeft => {
             "Roster context for fantasy gaps and simulations.".to_owned()
         }
+        WorkbenchPaneBindingId::PlayerRight => "Player, team, and position inspector.".to_owned(),
         WorkbenchPaneBindingId::TeamRight => "Team, position, and opponent inspector.".to_owned(),
         WorkbenchPaneBindingId::StatFilterRight => {
             let filter = app.queries.filter_text.trim();
@@ -775,9 +779,24 @@ fn mdi_pane_context_hint(app: &App, id: WorkbenchPaneBindingId) -> String {
                 format!("Active filter: {filter}")
             }
         }
+        WorkbenchPaneBindingId::GoalieRight => "Goalie stat and source inspector.".to_owned(),
+        WorkbenchPaneBindingId::GameRight => "Game state and boxscore context.".to_owned(),
+        WorkbenchPaneBindingId::ScoringTrendRight => {
+            "Scoring trend context for active entities.".to_owned()
+        }
+        WorkbenchPaneBindingId::OutlookSummaryRight => {
+            "Availability and outlook summary context.".to_owned()
+        }
         WorkbenchPaneBindingId::PoachFiltersRight => {
             "Poach availability, position, category, and watch filters.".to_owned()
         }
+        WorkbenchPaneBindingId::FantasySimulationRight => {
+            "Simulation action status and category context.".to_owned()
+        }
+        WorkbenchPaneBindingId::RecordsRight => {
+            "Player, team, opponent, and record stat context.".to_owned()
+        }
+        WorkbenchPaneBindingId::CareerRight => "Career cohort and sorting context.".to_owned(),
         WorkbenchPaneBindingId::DataSourceRight => {
             format!("Season {} data and source state.", app.active_season)
         }
@@ -796,11 +815,25 @@ fn mdi_pane_command_hint(id: WorkbenchPaneBindingId) -> &'static str {
         WorkbenchPaneBindingId::WatchlistLeft => {
             "Try: watchlist  ·  watch player McDavid when=points"
         }
+        WorkbenchPaneBindingId::GroupsLeft => "Try: watchlist  ·  /fav add McDavid",
         WorkbenchPaneBindingId::RecentEntitiesLeft | WorkbenchPaneBindingId::TeamRight => {
             "Try: team EDM  ·  depth pos=C"
         }
+        WorkbenchPaneBindingId::PlayerRight
+        | WorkbenchPaneBindingId::GoalieRight
+        | WorkbenchPaneBindingId::ScoringTrendRight
+        | WorkbenchPaneBindingId::OutlookSummaryRight => {
+            "Try: player McDavid  ·  compare McDavid Draisaitl"
+        }
+        WorkbenchPaneBindingId::GameRight => "Try: scores  ·  box EDM@CGY",
         WorkbenchPaneBindingId::FantasyRosterLeft | WorkbenchPaneBindingId::PoachFiltersRight => {
             "Try: fantasy roster  ·  poach rw cats=hits,blocks"
+        }
+        WorkbenchPaneBindingId::FantasySimulationRight => {
+            "Try: simulate add=McDavid drop=Bench weeks=3"
+        }
+        WorkbenchPaneBindingId::RecordsRight | WorkbenchPaneBindingId::CareerRight => {
+            "Try: records player McDavid  ·  awards McDavid"
         }
         WorkbenchPaneBindingId::DataSourceRight => "Try: admin  ·  config list",
         WorkbenchPaneBindingId::DocsHelpRight => "Try: /help  ·  docs",
@@ -1323,6 +1356,31 @@ mod app_snapshot_tests {
                 && text.contains("Report type")
                 && text.contains("Stat key"),
             "MDI active room field summary missing; got:\n{text}"
+        );
+    }
+
+    #[test]
+    fn l0_mdi_side_pane_cycles_web_catalog_summaries() {
+        let mut app = App::new(true);
+        app.mdi = Some(crate::tui::mdi::MdiLayout {
+            focus: crate::tui::mdi::MdiFocus::RightPane,
+            ..Default::default()
+        });
+
+        app.handle(Action::Right);
+
+        let mdi = app.mdi.as_ref().expect("mdi attached");
+        assert_eq!(
+            mdi.right_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::PlayerRight
+        );
+        let text = render_app_to_text(&app, 200, 30);
+        assert!(
+            text.contains("Player inspector")
+                && text.contains("Player, team, and position")
+                && text.contains("- Player")
+                && text.contains("Try: player McDavid"),
+            "MDI pane cycling did not render web-derived summary; got:\n{text}"
         );
     }
 

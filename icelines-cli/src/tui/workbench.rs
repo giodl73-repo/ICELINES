@@ -173,6 +173,7 @@ mod tests {
             vec![
                 WorkbenchPaneBindingId::FavoritesLeft,
                 WorkbenchPaneBindingId::WatchlistLeft,
+                WorkbenchPaneBindingId::GroupsLeft,
                 WorkbenchPaneBindingId::SavedQueriesLeft,
                 WorkbenchPaneBindingId::RecentEntitiesLeft,
                 WorkbenchPaneBindingId::FantasyRosterLeft
@@ -182,9 +183,17 @@ mod tests {
             right,
             vec![
                 WorkbenchPaneBindingId::ScheduleRight,
+                WorkbenchPaneBindingId::PlayerRight,
                 WorkbenchPaneBindingId::TeamRight,
                 WorkbenchPaneBindingId::StatFilterRight,
+                WorkbenchPaneBindingId::GoalieRight,
+                WorkbenchPaneBindingId::GameRight,
+                WorkbenchPaneBindingId::ScoringTrendRight,
+                WorkbenchPaneBindingId::OutlookSummaryRight,
                 WorkbenchPaneBindingId::PoachFiltersRight,
+                WorkbenchPaneBindingId::FantasySimulationRight,
+                WorkbenchPaneBindingId::RecordsRight,
+                WorkbenchPaneBindingId::CareerRight,
                 WorkbenchPaneBindingId::DataSourceRight,
                 WorkbenchPaneBindingId::DocsHelpRight
             ]
