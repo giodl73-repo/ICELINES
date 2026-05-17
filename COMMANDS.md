@@ -808,7 +808,9 @@ applies the matching room before the first frame and positions the rail on that
 workspace. Command-bar workspace swaps keep the rail selection aligned too.
 The rail keeps the selected room visible on shorter terminals. Cycling a side
 pane also exposes the shared inspector catalog; panes without native TUI bodies
-render compact field and command summaries instead of dead placeholders.
+render compact field and command summaries instead of dead placeholders. Admin,
+Docs, and Groups workbench destinations use named chrome labels instead of the
+generic screen fallback.
 
 | Verb | Effect | Example |
 |---|---|---|

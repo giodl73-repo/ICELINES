@@ -409,6 +409,9 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
         Screen::Poach => "Poach",
         Screen::FantasyGaps => "Fantasy",
         Screen::Favorites => "Favorites",
+        Screen::Groups | Screen::GroupDetail(_) => "Groups",
+        Screen::Fetch => "Admin",
+        Screen::Help => "Docs",
         Screen::PlayerById(_) => "Player",
         Screen::PlayerRecordsById(_) => "Records",
         Screen::PlayerAwardsById(_) => "Awards",
@@ -1379,6 +1382,25 @@ mod app_snapshot_tests {
                 && text.contains("Report type")
                 && text.contains("Stat key"),
             "MDI active room field summary missing; got:\n{text}"
+        );
+    }
+
+    #[test]
+    fn l0_mdi_admin_room_uses_workbench_chrome_label() {
+        let mut app = App::new(true);
+        app.screen = Screen::Fetch;
+        app.mdi = Some(crate::tui::mdi::MdiLayout {
+            active_experience: Some(icelines_core::WorkbenchExperienceId::AdminRoom),
+            ..Default::default()
+        });
+
+        let text = render_app_to_text(&app, 220, 30);
+        assert!(
+            text.contains("Admin: no per-screen keys yet")
+                && text.contains("Room fields:")
+                && text.contains("Data kind")
+                && !text.contains("Screen: no per-screen keys yet"),
+            "MDI admin room should use a named chrome label, got:\n{text}"
         );
     }
 

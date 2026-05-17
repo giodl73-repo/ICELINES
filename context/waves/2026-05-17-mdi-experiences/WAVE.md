@@ -17,6 +17,7 @@ unrendered side-pane placeholders.
 | 05 | Launch-time room presets | done | Applied bound MDI room presets when launching directly into a start workspace. |
 | 06 | Activity rail selection sync | done | Kept the rail-selected workbench aligned with launch and command-driven workspace changes. |
 | 07 | Activity rail viewport | done | Scrolled the rail viewport so selected lower room presets stay visible on short terminals. |
+| 08 | Workbench chrome labels | done | Named Admin, Docs, and Groups in MDI chrome instead of falling back to generic Screen labels. |
 
 ## Success criteria
 
@@ -36,3 +37,4 @@ unrendered side-pane placeholders.
 - Launch and command-bar workspace swaps keep the activity rail selection on the
   active workbench entry.
 - Short-terminal rail rendering keeps the selected room preset visible.
+- Admin, Docs, and Groups workbench destinations use named MDI chrome labels.
