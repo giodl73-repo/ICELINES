@@ -370,8 +370,8 @@ code {
 
 .jaw-shell {
     display: grid;
-    gap: 0.75rem;
-    grid-template-rows: auto auto minmax(24rem, 1fr) auto;
+    gap: 0.55rem;
+    grid-template-rows: auto auto auto minmax(24rem, 1fr) auto;
     min-height: calc(100vh - 8rem);
 }
 
@@ -386,7 +386,7 @@ code {
 
 .jaw-ribbon,
 .jaw-command {
-    padding: 0.65rem 0.8rem;
+    padding: 0.5rem 0.7rem;
 }
 
 .jaw-ribbon {
@@ -403,30 +403,30 @@ code {
     border: 1px solid var(--ice-divider);
     border-radius: 6px;
     display: flex;
-    gap: 0.4rem;
+    gap: 0.3rem;
     overflow-x: auto;
-    padding: 0.45rem;
+    padding: 0.3rem;
 }
 
 .jaw-catalog-group {
     background: var(--ice-surface);
     border: 1px solid var(--ice-divider);
     border-radius: 5px;
-    flex: 0 0 12rem;
-    padding: 0.45rem;
+    flex: 0 0 auto;
+    padding: 0.3rem;
 }
 
 .jaw-catalog-group h2 {
     color: var(--ice-muted);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     letter-spacing: 0.08em;
-    margin: 0 0 0.35rem 0;
+    margin: 0 0 0.2rem 0;
     text-transform: uppercase;
 }
 
 .jaw-catalog-links {
-    display: grid;
-    gap: 0.3rem;
+    display: flex;
+    gap: 0.25rem;
 }
 
 .jaw-workbench-nav a,
@@ -436,8 +436,9 @@ code {
     border-radius: 4px;
     color: var(--nhl-navy);
     font-weight: 700;
-    padding: 0.45rem 0.6rem;
+    padding: 0.28rem 0.48rem;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .jaw-workbench-nav a:hover,
@@ -452,14 +453,28 @@ code {
 }
 
 .jaw-experience-tabs {
+    background: var(--ice-bg);
+    border: 1px solid var(--ice-divider);
+    border-radius: 6px;
+    padding: 0.3rem 0.45rem;
+}
+
+.jaw-experience-tabs summary {
+    color: var(--nhl-navy);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.jaw-experience-tab-list {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.3rem;
+    margin-top: 0.35rem;
     overflow-x: auto;
 }
 
 .jaw-experience-tabs a {
     flex: 0 0 auto;
-    min-width: 10rem;
+    min-width: 0;
 }
 
 .jaw-body {
@@ -505,13 +520,36 @@ code {
     grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
 }
 
+.jaw-workspace-heading {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+}
+
+.jaw-data-preview {
+    margin-bottom: 0.7rem;
+}
+
+.jaw-data-table {
+    margin: 0;
+    min-width: 100%;
+}
+
 .jaw-workspace-affordances {
-    margin: 0.8rem 0;
+    margin: 0.55rem 0;
 }
 
 .jaw-workspace-affordances h2 {
     font-size: 0.95rem;
     margin-bottom: 0.35rem;
+}
+
+.jaw-workspace-affordances summary {
+    color: var(--nhl-navy);
+    cursor: pointer;
+    font-weight: 700;
 }
 
 .jaw-affordance-grid {
@@ -670,6 +708,11 @@ code {
 
     .jaw-workspace-grid {
         grid-template-columns: 1fr;
+    }
+
+    .jaw-workspace-heading {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 

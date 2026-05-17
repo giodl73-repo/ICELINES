@@ -20,9 +20,8 @@
             <h2>{{ group.label }}</h2>
             <div class="jaw-catalog-links">
                 {% for entry in group.entries %}
-                <a href="{{ entry.href }}" {% if entry.is_active %}aria-current="page"{% endif %}>
+                <a href="{{ entry.href }}" title="{{ entry.detail }}" {% if entry.is_active %}aria-current="page"{% endif %}>
                     <strong>{{ entry.label }}</strong>
-                    <span class="jaw-detail">{{ entry.detail }}</span>
                 </a>
                 {% endfor %}
             </div>
@@ -30,14 +29,16 @@
         {% endfor %}
     </nav>
 
-    <nav class="jaw-experience-tabs" aria-label="Bound workbench experiences">
+    <details class="jaw-experience-tabs" aria-label="Bound workbench experiences">
+        <summary>Rooms</summary>
+        <div class="jaw-experience-tab-list">
         {% for tab in experience_tabs %}
-        <a href="{{ tab.href }}" data-dashboard-composition-link {% if tab.is_active %}aria-current="page"{% endif %}>
+        <a href="{{ tab.href }}" title="{{ tab.detail }}" data-dashboard-composition-link {% if tab.is_active %}aria-current="page"{% endif %}>
             <strong>{{ tab.label }}</strong>
-            <span class="jaw-detail">{{ tab.detail }}</span>
         </a>
         {% endfor %}
-    </nav>
+        </div>
+    </details>
 
     <div class="jaw-body">
         <aside class="jaw-pane jaw-side-left" aria-label="Left context pane" data-dashboard-pane="favorites">

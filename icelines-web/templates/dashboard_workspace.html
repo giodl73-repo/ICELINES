@@ -1,22 +1,45 @@
 <main class="jaw-workspace" aria-label="Workspace" data-workspace-url="{{ workspace_url }}">
-    <h1>{{ workspace_label }}</h1>
-    <p>
-        This workspace is server-rendered and URL-addressable.
-        <a href="{{ workspace_url }}">Open the full page</a>.
-    </p>
+    <div class="jaw-workspace-heading">
+        <h1>{{ workspace_label }}</h1>
+        <a class="link-button-secondary" href="{{ workspace_url }}">Open full {{ workspace_label }}</a>
+    </div>
     {% if !workspace_summary.is_empty() %}
-    <div class="stat-grid" aria-label="Workspace summary">
+    <div class="table-scroll jaw-data-preview" aria-label="{{ workspace_label }} preview">
+    <table class="jaw-data-table">
+        <thead>
+            <tr>
+                <th scope="col">Rank</th>
+                <th scope="col">{{ workspace_label }}</th>
+                <th scope="col">Detail</th>
+            </tr>
+        </thead>
+        <tbody>
         {% for row in workspace_summary %}
-        <div>
-            <span class="stat-label">{{ row.label }}</span>
-            <strong class="stat-value">{{ row.value }}</strong>
-            {% if row.detail != "" %}<span class="jaw-detail">{{ row.detail }}</span>{% endif %}
-        </div>
+            <tr>
+                <td class="rank-cell">{{ row.label }}</td>
+                <td><strong>{{ row.value }}</strong></td>
+                <td>{% if row.detail != "" %}{{ row.detail }}{% else %}—{% endif %}</td>
+            </tr>
         {% endfor %}
+        </tbody>
+    </table>
     </div>
     {% endif %}
-    {% if !active_pane_models.is_empty() %}
-    <section class="jaw-workspace-affordances" aria-label="Active pane models">
+    <details class="jaw-workspace-affordances">
+        <summary>More views</summary>
+        <div class="jaw-workspace-grid">
+            {% for row in workspace_links %}
+            <a class="jaw-workspace-card" href="{{ row.href }}">
+                <strong>{{ row.label }}</strong>
+                <span class="jaw-detail">{{ row.detail }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </details>
+    {% if !active_pane_models.is_empty() || !active_fields.is_empty() %}
+    <details class="jaw-workspace-affordances">
+        <summary>Workspace wiring</summary>
+        {% if !active_pane_models.is_empty() %}
         <h2>Pane models</h2>
         <div class="jaw-affordance-grid">
             {% for pane in active_pane_models %}
@@ -27,10 +50,8 @@
             </div>
             {% endfor %}
         </div>
-    </section>
-    {% endif %}
-    {% if !active_fields.is_empty() %}
-    <section class="jaw-workspace-affordances" aria-label="Active fields">
+        {% endif %}
+        {% if !active_fields.is_empty() %}
         <h2>Fields</h2>
         <div class="jaw-affordance-grid">
             {% for field in active_fields %}
@@ -41,14 +62,7 @@
             </div>
             {% endfor %}
         </div>
-    </section>
+        {% endif %}
+    </details>
     {% endif %}
-    <div class="jaw-workspace-grid">
-        {% for row in workspace_links %}
-        <a class="jaw-workspace-card" href="{{ row.href }}">
-            <strong>{{ row.label }}</strong>
-            <span class="jaw-detail">{{ row.detail }}</span>
-        </a>
-        {% endfor %}
-    </div>
 </main>

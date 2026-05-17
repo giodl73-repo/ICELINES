@@ -28,7 +28,7 @@ use icelines_core::{
 };
 use serde::Deserialize;
 
-const DASHBOARD_PREVIEW_N: usize = 3;
+const DASHBOARD_PREVIEW_N: usize = 10;
 const DASHBOARD_GOALIE_GP_REGULAR: u32 = 5;
 const DASHBOARD_GOALIE_GP_PLAYOFF: u32 = 1;
 const DEFAULT_LEFT_PANE: WorkbenchPaneBindingId = WorkbenchPaneBindingId::FavoritesLeft;

@@ -19,6 +19,7 @@ unrendered side-pane placeholders.
 | 07 | Activity rail viewport | done | Scrolled the rail viewport so selected lower room presets stay visible on short terminals. |
 | 08 | Workbench chrome labels | done | Named Admin, Docs, and Groups in MDI chrome instead of falling back to generic Screen labels. |
 | 09 | Hidden pane focus recovery | done | Moved focus back to the workspace when hiding a currently focused side pane. |
+| 10 | Serve dashboard data-first shell | done | Made the browser dashboard open on compact data previews with collapsed workspace wiring and shorter top navigation. |
 
 ## Success criteria
 
@@ -40,3 +41,5 @@ unrendered side-pane placeholders.
 - Short-terminal rail rendering keeps the selected room preset visible.
 - Admin, Docs, and Groups workbench destinations use named MDI chrome labels.
 - Hiding a focused side pane moves focus to the visible workspace.
+- The browser dashboard centers real workspace data before catalog or wiring
+  affordances, with compact top navigation that stays to a single scannable row.

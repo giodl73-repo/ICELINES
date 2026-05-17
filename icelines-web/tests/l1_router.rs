@@ -926,6 +926,9 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-expanded=\"true\""));
     assert!(body.contains("aria-label=\"Workspace\""));
     assert!(body.contains("data-workspace-url=\"/poach?availability=imported-available\""));
+    assert!(body.contains("class=\"jaw-data-table\""));
+    assert!(body.contains("Open full Poach"));
+    assert!(body.contains("Workspace wiring"));
     assert!(body.contains("aria-label=\"Right context pane\""));
     assert!(body.contains("data-dashboard-pane=\"schedule\""));
     assert!(body.contains("aria-label=\"Choose right pane\""));
@@ -996,6 +999,9 @@ async fn l1_dashboard_workspace_partial_renders_fragment_only() {
 
     assert!(body.contains("aria-label=\"Workspace\""));
     assert!(body.contains("data-workspace-url=\"/poach\""));
+    assert!(body.contains("class=\"jaw-data-table\""));
+    assert!(body.contains("<summary>More views</summary>"));
+    assert!(body.contains("<summary>Workspace wiring</summary>"));
     assert!(body.contains("href=\"/poach\""));
     assert!(body.contains("href=\"/dashboard?workspace=%2Fleaders\""));
     assert!(!body.contains("aria-label=\"Scores ribbon\""));
@@ -1023,7 +1029,7 @@ async fn l1_dashboard_career_workspace_renders_summary_shell() {
     let body = std::str::from_utf8(&bytes).expect("html is utf-8");
     assert!(body.contains("data-workspace-url=\"/career?league=OHL&amp;sort=points\""));
     assert!(body.contains("Career Cohorts"));
-    assert!(body.contains("Open the full page"));
+    assert!(body.contains("Open full Career Cohorts"));
     assert!(body.contains("href=\"/career?league=OHL&amp;sort=points\""));
 }
 
@@ -1057,7 +1063,10 @@ async fn l1_dashboard_report_workspaces_render_summary_shells() {
             .expect("body fits");
         let body = std::str::from_utf8(&bytes).expect("html is utf-8");
         assert!(body.contains(label), "{label} workspace label missing");
-        assert!(body.contains("Open the full page"));
+        assert!(
+            body.contains(&format!("Open full {label}")),
+            "{label} full-page action missing"
+        );
         assert!(
             body.contains("Candidates") || body.contains("No candidates"),
             "{label} summary should expose report candidate context, got:\n{body}"
