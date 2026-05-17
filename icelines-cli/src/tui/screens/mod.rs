@@ -272,7 +272,7 @@ fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
     // accessor and renders them as ` k action · k action · … `.
     // Switches automatically when the workspace swaps
     // (`:goalies` swaps in goalies' chrome).
-    render_mdi_screen_keybinds(f, app, chunks[2]);
+    render_mdi_screen_keybinds(f, app, mdi, chunks[2]);
 
     // Phase Adams.8 — always-visible verb cheat sheet above
     // the prompt row. Lists the canonical commands the user
@@ -303,18 +303,28 @@ fn render_mdi(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayout) {
 /// When the active screen has no chrome accessor yet (Team,
 /// Depth, Favorites — see Masterton.2 follow-up), shows a
 /// placeholder pointing to the cheat sheet below.
-fn render_mdi_screen_keybinds(f: &mut Frame, app: &App, area: Rect) {
+fn render_mdi_screen_keybinds(
+    f: &mut Frame,
+    app: &App,
+    mdi: &crate::tui::mdi::MdiLayout,
+    area: Rect,
+) {
     let cyan = Style::default().fg(Color::Cyan);
     let dim = Style::default().fg(Color::DarkGray);
     let chrome = active_chrome(app);
 
+    let room_suffix = mdi
+        .active_experience()
+        .map(active_room_field_summary)
+        .unwrap_or_default();
     if chrome.keybinds.is_empty() {
         // Screen hasn't declared keybinds yet; advertise that
         // workspace navigation is via the cmdbar verbs below.
-        let hint = format!(
+        let mut hint = format!(
             " {}: no per-screen keys yet — use cmdbar verbs below ",
             chrome_screen_label(&app.screen)
         );
+        append_truncated(&mut hint, &room_suffix, area.width as usize);
         f.render_widget(Paragraph::new(hint).style(dim), area);
         return;
     }
@@ -341,8 +351,46 @@ fn render_mdi_screen_keybinds(f: &mut Frame, app: &App, area: Rect) {
     if overflowed {
         line.push_str(" …");
     }
+    append_truncated(&mut line, &room_suffix, max);
     line.push(' ');
     f.render_widget(Paragraph::new(line).style(cyan), area);
+}
+
+fn active_room_field_summary(experience: &icelines_core::WorkbenchExperience) -> String {
+    let mut labels = experience
+        .fields
+        .iter()
+        .filter_map(|field| icelines_core::workbench_field(*field).map(|field| field.label))
+        .take(4)
+        .collect::<Vec<_>>();
+    if labels.is_empty() {
+        return String::new();
+    }
+    labels.sort_unstable();
+    format!(" | Room fields: {}", labels.join(" · "))
+}
+
+fn append_truncated(line: &mut String, suffix: &str, max_width: usize) {
+    if suffix.is_empty() {
+        return;
+    }
+    let current = line.chars().count();
+    let suffix_len = suffix.chars().count();
+    if current + suffix_len + 1 <= max_width {
+        line.push_str(suffix);
+        return;
+    }
+
+    if suffix_len + 2 >= max_width {
+        *line = suffix.chars().take(max_width).collect();
+        return;
+    }
+
+    let keep = max_width.saturating_sub(suffix_len + 2);
+    let mut truncated = line.chars().take(keep).collect::<String>();
+    truncated.push('…');
+    truncated.push_str(suffix);
+    *line = truncated;
 }
 
 /// Phase Adams.9 — short label for the active screen, used as
@@ -1256,6 +1304,26 @@ mod app_snapshot_tests {
                 "MDI rail missing bound experience label {label:?}; got:\n{text}"
             );
         }
+    }
+
+    #[test]
+    fn l0_mdi_active_room_field_summary_renders() {
+        let mut app = App::new(true);
+        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        app.handle(Action::Char(':'));
+        for c in "stats".chars() {
+            app.handle(Action::Char(c));
+        }
+        app.handle(Action::Enter);
+
+        let text = render_app_to_text(&app, 240, 30);
+        assert!(
+            text.contains("Room fields:")
+                && text.contains("Position")
+                && text.contains("Report type")
+                && text.contains("Stat key"),
+            "MDI active room field summary missing; got:\n{text}"
+        );
     }
 
     /// Render every canonical landing screen with the default empty App.

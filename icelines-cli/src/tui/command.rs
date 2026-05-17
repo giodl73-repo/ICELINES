@@ -1452,6 +1452,19 @@ pub enum ExecResult {
     Flash(String),
 }
 
+fn set_workspace_screen(app: &mut crate::tui::app::App, screen: crate::tui::app::Screen) {
+    app.screen = screen;
+    if let Some(mdi) = app.mdi.as_mut() {
+        let experience = crate::tui::workbench::workbench_for_screen(&app.screen)
+            .and_then(crate::tui::workbench::tui_experience_for_workbench);
+        if let Some(experience) = experience {
+            mdi.apply_experience(experience);
+        } else {
+            mdi.clear_active_experience();
+        }
+    }
+}
+
 /// Phase Adams.2 — run a parsed Command against `App`. Mutates
 /// `app.screen` (workspace swap), `app.mdi.show_*` (pane
 /// toggles), `app.queries.filter_text` + filter_plan (Query),
@@ -1494,26 +1507,26 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
 
         // ── Workspace swap (no args) ─────────────────────────
         Command::Stats => {
-            app.screen = Screen::Queries;
+            set_workspace_screen(app, Screen::Queries);
             ExecResult::Continue
         }
         Command::Goalies => {
-            app.screen = Screen::Goalies;
+            set_workspace_screen(app, Screen::Goalies);
             ExecResult::Continue
         }
         Command::GoaliesKv { args } => exec_goalies_kv(app, args),
         Command::Poach => {
-            app.screen = Screen::Poach;
+            set_workspace_screen(app, Screen::Poach);
             ExecResult::Continue
         }
         Command::PoachKv { args } => exec_poach_kv(app, args),
         Command::FantasyGaps => {
-            app.screen = Screen::FantasyGaps;
+            set_workspace_screen(app, Screen::FantasyGaps);
             ExecResult::Continue
         }
         Command::FantasyGapsKv { args } => exec_fantasy_gaps_kv(app, args),
         Command::FantasySim => {
-            app.screen = Screen::FantasySim;
+            set_workspace_screen(app, Screen::FantasySim);
             ExecResult::Continue
         }
         Command::FantasySimKv { args } => exec_fantasy_sim_kv(app, args),
@@ -1538,7 +1551,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         )),
         Command::FantasyRosterShape { action } => ExecResult::Flash(roster_shape_handoff(action)),
         Command::Watchlist => {
-            app.screen = Screen::GroupDetail("Watchlist".to_string());
+            set_workspace_screen(app, Screen::GroupDetail("Watchlist".to_string()));
             ExecResult::Continue
         }
         Command::WatchPlayer { needle } => ExecResult::Flash(format!(
@@ -1547,28 +1560,28 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         Command::WatchRulePlayer { player, when } => exec_watch_rule_player(&player, &when),
         Command::WatchRuleSetEnabled { id, enabled } => exec_watch_rule_set_enabled(&id, enabled),
         Command::Transactions => {
-            app.screen = Screen::Transactions;
+            set_workspace_screen(app, Screen::Transactions);
             ExecResult::Continue
         }
         Command::Playoffs => {
-            app.screen = Screen::Playoffs;
+            set_workspace_screen(app, Screen::Playoffs);
             ExecResult::Continue
         }
         Command::Depth => {
-            app.screen = Screen::Depth;
+            set_workspace_screen(app, Screen::Depth);
             ExecResult::Continue
         }
         Command::DepthKv { args } => exec_depth_kv(app, args),
         Command::Scores => {
-            app.screen = Screen::Tonight;
+            set_workspace_screen(app, Screen::Tonight);
             ExecResult::Continue
         }
         Command::Schedule => {
-            app.screen = Screen::Schedule;
+            set_workspace_screen(app, Screen::Schedule);
             ExecResult::Continue
         }
         Command::Favorites => {
-            app.screen = Screen::Favorites;
+            set_workspace_screen(app, Screen::Favorites);
             ExecResult::Continue
         }
         Command::FavoritesKv { args } => exec_favorites_kv(app, args),
@@ -1580,19 +1593,22 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             // flash with candidates (or just a "not found" hint).
             match icelines_fetch::stats_loader::resolve_player_id_by_name(&needle) {
                 Some(pid) => {
-                    app.screen = Screen::PlayerById(icelines_core::identity::PlayerId(pid));
+                    set_workspace_screen(
+                        app,
+                        Screen::PlayerById(icelines_core::identity::PlayerId(pid)),
+                    );
                     ExecResult::Continue
                 }
                 None => ExecResult::Flash(format!("player not found: {needle:?}")),
             }
         }
         Command::Team { abbrev } => {
-            app.screen = Screen::Team(abbrev);
+            set_workspace_screen(app, Screen::Team(abbrev));
             ExecResult::Continue
         }
         Command::TeamKv { abbrev, args } => exec_team_kv(app, abbrev, args),
         Command::TeamSeason { abbrev } => {
-            app.screen = Screen::ScheduleTeam(abbrev);
+            set_workspace_screen(app, Screen::ScheduleTeam(abbrev));
             ExecResult::Continue
         }
         Command::Compare { left, right } => {
@@ -1605,7 +1621,10 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             }
             match icelines_fetch::stats_loader::resolve_player_id_by_name(&left) {
                 Some(pid) => {
-                    app.screen = Screen::CompsById(icelines_core::identity::PlayerId(pid));
+                    set_workspace_screen(
+                        app,
+                        Screen::CompsById(icelines_core::identity::PlayerId(pid)),
+                    );
                     ExecResult::Continue
                 }
                 None => ExecResult::Flash(format!("player not found: {left:?}")),
@@ -1614,12 +1633,12 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         Command::Box { game } => {
             match game.parse::<u64>() {
                 Ok(game_id) => {
-                    app.screen = Screen::GameDetail(game_id);
+                    set_workspace_screen(app, Screen::GameDetail(game_id));
                     ExecResult::Continue
                 }
                 Err(_) => match resolve_matchup_game_id(app, &game) {
                     Ok(Some(game_id)) => {
-                        app.screen = Screen::GameDetail(game_id);
+                        set_workspace_screen(app, Screen::GameDetail(game_id));
                         crate::tui::tonight::maybe_fetch_boxscore(
                             app.tonight.boxscore_cache.clone(),
                             game_id,
@@ -1640,7 +1659,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                     app.queries.filter_text = filter.clone();
                     app.queries.filter_plan = Some(plan);
                     app.queries.filter_error = None;
-                    app.screen = Screen::Queries;
+                    set_workspace_screen(app, Screen::Queries);
                     ExecResult::Flash(format!("draft class applied: {filter}"))
                 }
                 Err(errs) => ExecResult::Flash(format!(
@@ -1721,7 +1740,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                             ));
                         }
                         app.prev_screen = Some(app.screen.clone());
-                        app.screen = Screen::PlayerRecordsById(player_id);
+                        set_workspace_screen(app, Screen::PlayerRecordsById(player_id));
                         ExecResult::Flash(format!(
                             "records: {}  -  CLI: icelines records player \"{}\" --metric ...",
                             args.subject, args.subject
@@ -1752,7 +1771,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                         ));
                     }
                     app.prev_screen = Some(app.screen.clone());
-                    app.screen = Screen::PlayerAwardsById(player_id);
+                    set_workspace_screen(app, Screen::PlayerAwardsById(player_id));
                     ExecResult::Flash(format!(
                         "awards: {player}  -  fetch/update with `icelines awards \"{player}\"`"
                     ))
@@ -1773,7 +1792,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                         ));
                     }
                     app.prev_screen = Some(app.screen.clone());
-                    app.screen = Screen::PlayerStreaksById(player_id);
+                    set_workspace_screen(app, Screen::PlayerStreaksById(player_id));
                     ExecResult::Flash(format!(
                         "streaks: {player}  -  CLI: icelines streaks \"{player}\""
                     ))
@@ -1800,7 +1819,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
 
         // ── Roster / fantasy ─────────────────────────────────
         Command::Roster => {
-            app.screen = Screen::FantasyGaps;
+            set_workspace_screen(app, Screen::FantasyGaps);
             ExecResult::Flash("active fantasy roster gaps".to_string())
         }
 
@@ -1819,7 +1838,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
                     app.queries.filter_text = filter.clone();
                     app.queries.filter_plan = Some(plan);
                     app.queries.filter_error = None;
-                    app.screen = Screen::Queries;
+                    set_workspace_screen(app, Screen::Queries);
                     ExecResult::Flash(format!("filter applied: {filter}"))
                 }
                 Err(errs) => ExecResult::Flash(format!(
@@ -1944,7 +1963,7 @@ fn exec_goalies_kv(
 
     app.goalies.filters.invalidate();
     app.goalies.selected = 0;
-    app.screen = Screen::Goalies;
+    set_workspace_screen(app, Screen::Goalies);
     ExecResult::Flash("goalies filters applied".to_string())
 }
 
@@ -1967,7 +1986,7 @@ fn exec_poach_kv(app: &mut crate::tui::app::App, args: PoachCommandArgs) -> Exec
         app.poach.limit = limit;
     }
     app.selected = 0;
-    app.screen = Screen::Poach;
+    set_workspace_screen(app, Screen::Poach);
     ExecResult::Flash(format!(
         "poach filters applied: {}",
         app.poach.context_label()
@@ -1993,7 +2012,7 @@ fn exec_fantasy_sim_kv(
     if let Some(drop_player) = args.drop_player {
         app.fantasy_sim.drop_player = Some(drop_player);
     }
-    app.screen = Screen::FantasySim;
+    set_workspace_screen(app, Screen::FantasySim);
     ExecResult::Flash(format!(
         "fantasy simulation: {} over {} weeks",
         app.fantasy_sim.scenario_label(),
@@ -2014,7 +2033,7 @@ fn exec_fantasy_gaps_kv(
         app.fantasy_gaps.limit = limit;
     }
     app.selected = 0;
-    app.screen = Screen::FantasyGaps;
+    set_workspace_screen(app, Screen::FantasyGaps);
     ExecResult::Flash(format!(
         "fantasy gaps filters applied: {}",
         app.fantasy_gaps.context_label()
@@ -2041,7 +2060,7 @@ fn exec_depth_kv(
     }
     app.depth_filters.invalidate();
     app.selected = 0;
-    app.screen = Screen::Depth;
+    set_workspace_screen(app, Screen::Depth);
     ExecResult::Flash("depth filters applied".to_string())
 }
 
@@ -2068,7 +2087,7 @@ fn exec_favorites_kv(
     }
     app.favorites.filters.invalidate();
     app.selected = 0;
-    app.screen = Screen::Favorites;
+    set_workspace_screen(app, Screen::Favorites);
     ExecResult::Flash("favorites filters applied".to_string())
 }
 
@@ -2220,7 +2239,7 @@ fn exec_team_kv(
     );
     app.team.filters.invalidate();
     app.selected = 0;
-    app.screen = Screen::Team(abbrev);
+    set_workspace_screen(app, Screen::Team(abbrev));
     ExecResult::Flash("team filters applied".to_string())
 }
 
@@ -3439,6 +3458,36 @@ mod tests {
                 app.screen
             );
         }
+    }
+
+    #[test]
+    fn l0_mdi_exec_workspace_swap_applies_bound_experience() {
+        let mut app = fresh_app_with_mdi();
+
+        let r = execute_command(Command::Stats, &mut app);
+
+        assert!(matches!(r, ExecResult::Continue));
+        let mdi = app.mdi.as_ref().expect("mdi attached");
+        assert_eq!(
+            mdi.active_experience,
+            Some(icelines_core::WorkbenchExperienceId::ScoringRoom)
+        );
+        assert_eq!(
+            mdi.left_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::SavedQueriesLeft
+        );
+        assert_eq!(
+            mdi.right_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::StatFilterRight
+        );
+
+        let r = execute_command(Command::Goalies, &mut app);
+
+        assert!(matches!(r, ExecResult::Continue));
+        assert!(
+            app.mdi.as_ref().unwrap().active_experience.is_none(),
+            "workspace swaps without a bound room must clear stale room context"
+        );
     }
 
     #[test]
