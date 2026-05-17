@@ -14,7 +14,9 @@
         <a href="/scores">Open scores</a>
     </header>
 
-    <nav class="jaw-workbench-nav" aria-label="Activity catalog rail" data-dashboard-nav>
+    <details class="jaw-workbench-nav" aria-label="Activity catalog rail" data-dashboard-nav>
+        <summary>Workspaces</summary>
+        <div class="jaw-workbench-list">
         {% for group in catalog_groups %}
         <section class="jaw-catalog-group" aria-label="{{ group.label }}">
             <h2>{{ group.label }}</h2>
@@ -27,7 +29,8 @@
             </div>
         </section>
         {% endfor %}
-    </nav>
+        </div>
+    </details>
 
     <details class="jaw-experience-tabs" aria-label="Bound workbench experiences">
         <summary>Rooms</summary>

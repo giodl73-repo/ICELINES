@@ -173,6 +173,7 @@ async fn l1_static_css_contains_prince_route_layout_classes() {
         ".team-banner-button",
         ".jaw-shell",
         ".jaw-workbench-nav",
+        ".jaw-workbench-list",
         ".jaw-body",
         ".jaw-workspace",
         ".jaw-data-table",

@@ -22,6 +22,7 @@ unrendered side-pane placeholders.
 | 10 | Serve dashboard data-first shell | done | Made the browser dashboard open on compact data previews with collapsed workspace wiring and shorter top navigation. |
 | 11 | Serve side panes data-first | done | Moved browser side-pane content ahead of pane selection/model controls so the columns read as data context first. |
 | 12 | Serve command jump bar | done | Turned the browser command footer into a compact jump bar with examples hidden behind help. |
+| 13 | Serve workspace catalog disclosure | done | Collapsed the browser workspace catalog behind a Workspaces disclosure so the default dashboard view starts with data. |
 
 ## Success criteria
 
@@ -49,3 +50,5 @@ unrendered side-pane placeholders.
   pane control affordances.
 - The browser command surface stays available as a compact jump bar without
   adding another always-open menu row.
+- The browser workspace catalog remains available but starts collapsed so top
+  chrome no longer competes with the center data view.

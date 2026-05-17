@@ -940,6 +940,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("data-dashboard-workspace-input"));
     assert!(body.contains("data-dashboard-nav"));
     assert!(body.contains("aria-label=\"Activity catalog rail\""));
+    assert!(body.contains("<summary>Workspaces</summary>"));
     assert!(body.contains("aria-label=\"Bound workbench experiences\""));
     assert!(body.contains("Career cohorts"));
     assert!(body.contains("Favorites"));
