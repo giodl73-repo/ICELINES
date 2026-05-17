@@ -1613,9 +1613,8 @@ impl App {
                 // Tab is a no-op. The user gets a focused single-
                 // screen experience without cycling.
                 //
-                // Phase Jack Adams.1 — when launched with --mdi, Tab
-                // is reserved for command-bar autocomplete (wired in
-                // Adams.2). For Adams.1 stub, Tab is a no-op in MDI.
+                // MDI handles Tab earlier as pane/rail focus traversal,
+                // so this legacy screen-cycling branch remains SDI-only.
                 if self.locked_screen.is_none() && self.mdi.is_none() {
                     self.cycle_screen();
                 }

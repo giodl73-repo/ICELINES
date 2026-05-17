@@ -32,7 +32,7 @@ pub fn screen_for_workbench(id: WorkbenchId) -> Option<Screen> {
     }
 }
 
-#[allow(dead_code)]
+#[cfg(test)]
 pub fn no_arg_workbench_screens() -> impl Iterator<Item = (WorkbenchId, Screen)> {
     WORKBENCH_CATALOG
         .iter()
