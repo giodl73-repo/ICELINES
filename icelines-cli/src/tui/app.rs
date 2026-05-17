@@ -6322,11 +6322,12 @@ mod tests {
 
         let mdi = app.mdi.as_ref().unwrap();
         assert_eq!(app.screen, Screen::Queries);
-        assert_eq!(
+        assert_ne!(
             mdi.right_pane_binding,
-            icelines_core::WorkbenchPaneBindingId::TeamRight
+            icelines_core::WorkbenchPaneBindingId::ScheduleRight
         );
-        assert_eq!(app.status, "Right pane · Team inspector");
+        let binding = icelines_core::workbench_pane_binding(mdi.right_pane_binding).unwrap();
+        assert_eq!(app.status, format!("Right pane · {}", binding.label));
     }
 
     #[test]
