@@ -6,6 +6,7 @@ use std::time::Duration;
 pub enum Action {
     Quit,
     Help,
+    #[allow(dead_code)]
     Back,
     Escape,
     Up,

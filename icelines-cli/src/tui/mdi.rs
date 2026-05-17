@@ -25,10 +25,11 @@
 
 #![allow(clippy::module_name_repetitions)]
 
+#[cfg(test)]
+use icelines_core::WorkbenchPaneModelId;
 use icelines_core::{
     workbench_experience, workbench_pane_binding, WorkbenchExperience, WorkbenchExperienceId,
-    WorkbenchId, WorkbenchPaneBinding, WorkbenchPaneBindingId, WorkbenchPaneModelId, WorkbenchZone,
-    WORKBENCH_CATALOG,
+    WorkbenchId, WorkbenchPaneBinding, WorkbenchPaneBindingId, WorkbenchZone, WORKBENCH_CATALOG,
 };
 
 // ── Layout state ─────────────────────────────────────────────────────────────
@@ -333,10 +334,12 @@ impl MdiLayout {
         workbench_pane_binding(self.right_pane_binding)
     }
 
+    #[cfg(test)]
     pub fn left_pane_model(&self) -> Option<WorkbenchPaneModelId> {
         self.left_pane_binding().map(|binding| binding.pane_model)
     }
 
+    #[cfg(test)]
     pub fn right_pane_model(&self) -> Option<WorkbenchPaneModelId> {
         self.right_pane_binding().map(|binding| binding.pane_model)
     }

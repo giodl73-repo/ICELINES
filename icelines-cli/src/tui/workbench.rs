@@ -1,6 +1,8 @@
+#[cfg(test)]
+use icelines_core::WORKBENCH_CATALOG;
 use icelines_core::{
     WorkbenchExperience, WorkbenchId, WorkbenchPaneBinding, WorkbenchSurface, WorkbenchZone,
-    WORKBENCH_CATALOG, WORKBENCH_EXPERIENCES, WORKBENCH_PANE_BINDINGS,
+    WORKBENCH_EXPERIENCES, WORKBENCH_PANE_BINDINGS,
 };
 
 use crate::tui::app::Screen;
