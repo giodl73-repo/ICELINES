@@ -766,7 +766,8 @@ icelines tui                             # Activity rail + Scores ribbon top
                                           # + Favorites left + swappable
                                           # Workspace middle + Schedule right
                                           # + cmdbar bottom
-icelines tui goalies                     # dashboard launching with goalies workspace
+icelines tui stats                       # dashboard launch with Scoring room preset
+icelines tui goalies                     # dashboard launch with goalies workspace
 icelines tui --mdi                       # explicit dashboard mode (same default)
 icelines tui --classic                   # older tabbed single-document UI
 # In MDI mode: Tab/Shift+Tab move focus between the activity rail, side
@@ -801,9 +802,11 @@ between workbench zones instead of cycling legacy tabs.
 Bound MDI experiences are available from the activity rail for Tonight bench,
 Scoring room, Team room, Fantasy room, and Admin room. Each preset swaps the
 workspace plus left/right context panes together, using the same shared
-workbench IDs as the web dashboard. Cycling a side pane also exposes the shared
-inspector catalog; panes without native TUI bodies render compact field and
-command summaries instead of dead placeholders.
+workbench IDs as the web dashboard. Starting the dashboard on a bound workspace
+(`icelines tui stats`, `icelines tui --start scores`, `icelines tui fantasy`)
+applies the matching room before the first frame. Cycling a side pane also
+exposes the shared inspector catalog; panes without native TUI bodies render
+compact field and command summaries instead of dead placeholders.
 
 | Verb | Effect | Example |
 |---|---|---|

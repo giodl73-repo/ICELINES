@@ -215,7 +215,7 @@ async fn run_loop(
     // Phase Jack Adams — when dashboard mode is selected, init the
     // state so the render path branches to render_mdi.
     if opts.mdi {
-        app.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        app.enable_mdi_dashboard();
     }
 
     // Synchronous boot load. ~50ms against bundled data — well below

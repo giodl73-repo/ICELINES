@@ -14,6 +14,7 @@ unrendered side-pane placeholders.
 | 02 | Activity rail room labels | done | Made bound MDI room presets visible in the TUI activity rail and centralized TUI experience lookup. |
 | 03 | Active room field strip | done | Surfaced the active room's shared workbench fields in the MDI chrome. |
 | 04 | Shared inspector pane cycling | done | Exposed the shared inspector pane catalog to TUI side-pane cycling with compact summaries. |
+| 05 | Launch-time room presets | done | Applied bound MDI room presets when launching directly into a start workspace. |
 
 ## Success criteria
 
@@ -28,3 +29,5 @@ unrendered side-pane placeholders.
   chrome.
 - Side-pane cycling reaches the shared inspector pane catalog without falling
   back to dead placeholders.
+- Launching directly into a bound workspace applies the same room preset before
+  the first dashboard frame.

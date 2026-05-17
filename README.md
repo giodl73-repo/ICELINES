@@ -380,7 +380,9 @@ a command bar. `Tab` / `Shift+Tab` moves focus across workbench zones in default
 MDI; with a side pane focused, `←` / `→` cycles the shared pane binding. The
 TUI workbench includes Tonight bench, Scoring room, Team room, Fantasy room, and
 Admin room presets that swap workspace plus context panes together; web-derived
-inspectors render as compact field/command summaries when cycled in the TUI. Use
+inspectors render as compact field/command summaries when cycled in the TUI.
+Launching directly into a bound workspace, such as `icelines tui stats` or
+`icelines tui --start scores`, applies the matching room preset immediately. Use
 `--classic` for the older tabbed single-document UI or `--standalone` for a
 locked one-screen surface. Player cards lazy-load every player's full
 historical career across all 38 bundled seasons on first open. Cross-league

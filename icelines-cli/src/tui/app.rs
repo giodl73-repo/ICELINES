@@ -447,6 +447,24 @@ impl App {
         }
     }
 
+    pub fn enable_mdi_dashboard(&mut self) {
+        self.mdi = Some(crate::tui::mdi::MdiLayout::default());
+        self.apply_mdi_experience_for_current_screen();
+    }
+
+    fn apply_mdi_experience_for_current_screen(&mut self) {
+        let Some(mdi) = self.mdi.as_mut() else {
+            return;
+        };
+        let experience = crate::tui::workbench::workbench_for_screen(&self.screen)
+            .and_then(crate::tui::workbench::tui_experience_for_workbench);
+        if let Some(experience) = experience {
+            mdi.apply_experience(experience);
+        } else {
+            mdi.clear_active_experience();
+        }
+    }
+
     // ── Hart.5c.6 Phase A — view-based accessors ─────────────────────
     //
     // Every accessor takes (active_season_typed, active_type) so the
@@ -6078,6 +6096,47 @@ mod tests {
     fn l0_adams_app_default_is_sdi() {
         let app = App::new(false);
         assert!(app.mdi.is_none(), "default App must be SDI (mdi = None)");
+    }
+
+    #[test]
+    fn l0_mdi_launch_applies_bound_experience_for_start_screen() {
+        let mut app = App::new(false);
+        app.screen = Screen::Queries;
+
+        app.enable_mdi_dashboard();
+
+        let mdi = app.mdi.as_ref().expect("mdi attached");
+        assert_eq!(
+            mdi.active_experience,
+            Some(icelines_core::WorkbenchExperienceId::ScoringRoom)
+        );
+        assert_eq!(
+            mdi.left_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::SavedQueriesLeft
+        );
+        assert_eq!(
+            mdi.right_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::StatFilterRight
+        );
+    }
+
+    #[test]
+    fn l0_mdi_launch_keeps_default_panes_for_unbound_start_screen() {
+        let mut app = App::new(false);
+        app.screen = Screen::Goalies;
+
+        app.enable_mdi_dashboard();
+
+        let mdi = app.mdi.as_ref().expect("mdi attached");
+        assert!(mdi.active_experience.is_none());
+        assert_eq!(
+            mdi.left_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::FavoritesLeft
+        );
+        assert_eq!(
+            mdi.right_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::ScheduleRight
+        );
     }
 
     /// When `app.mdi` is Some, Tab is a no-op. The screen stays
