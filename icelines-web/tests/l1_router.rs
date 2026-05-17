@@ -933,6 +933,7 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("data-workspace-url=\"/poach?availability=imported-available\""));
     assert!(body.contains("class=\"jaw-data-table\""));
     assert!(body.contains("class=\"jaw-data-row\""));
+    assert!(body.contains("href=\"/poach?availability=imported-available\""));
     assert!(body.contains("Open full Poach"));
     assert!(body.contains("Workspace wiring"));
     assert!(body.contains("aria-label=\"Right context pane\""));

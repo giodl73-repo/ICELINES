@@ -16,9 +16,9 @@
         <tbody>
         {% for row in workspace_summary %}
             <tr class="jaw-data-row">
-                <td class="rank-cell"><a href="{{ workspace_url }}">{{ row.label }}</a></td>
-                <td><a href="{{ workspace_url }}"><strong>{{ row.value }}</strong></a></td>
-                <td><a href="{{ workspace_url }}">{% if row.detail != "" %}{{ row.detail }}{% else %}—{% endif %}</a></td>
+                <td class="rank-cell"><a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}">{{ row.label }}</a></td>
+                <td><a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}"><strong>{{ row.value }}</strong></a></td>
+                <td><a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}">{% if row.detail != "" %}{{ row.detail }}{% else %}—{% endif %}</a></td>
             </tr>
         {% endfor %}
         </tbody>
