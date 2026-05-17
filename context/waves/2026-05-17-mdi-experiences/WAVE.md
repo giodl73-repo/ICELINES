@@ -38,6 +38,7 @@ unrendered side-pane placeholders.
 | 26 | TUI broad-suite cleanup | done | Made the focused pane-cycle app test follow the shared right-pane binding catalog so the broad TUI suite passes. |
 | 27 | TUI broad-suite hardening | done | Updated legacy MDI Tab tests to assert focus traversal and isolated command DB tests from process HOME races. |
 | 28 | TUI release warning cleanup | done | Scoped test-only TUI helpers/imports so the release build stays warning-clean after cleanup. |
+| 29 | TUI full CLI validation | done | Ran the full `icelines-cli` binary test target after cleanup and release hardening. |
 
 ## Success criteria
 
@@ -89,3 +90,4 @@ unrendered side-pane placeholders.
 - TUI MDI Tab tests assert focus traversal rather than legacy no-op behavior.
 - TUI command persistence tests isolate DB home state without process-wide HOME mutation.
 - TUI cleanup compiles in release mode without cleanup-related warnings.
+- The full `icelines-cli` binary test target passes after the TUI cleanup wave.
