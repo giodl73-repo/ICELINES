@@ -39,13 +39,17 @@
         ].indexOf(path) !== -1;
     }
 
-    function dashboardUrl(workspace) {
-        var url = new URL("/dashboard", window.location.origin);
-        url.searchParams.set("workspace", workspace || "/leaders");
-        ["left_workspace", "right_workspace"].forEach(function (key) {
+    function copyDashboardState(url) {
+        ["left", "right", "experience", "left_workspace", "right_workspace"].forEach(function (key) {
             var value = new URLSearchParams(window.location.search).get(key);
             if (value) url.searchParams.set(key, value);
         });
+    }
+
+    function dashboardUrl(workspace) {
+        var url = new URL("/dashboard", window.location.origin);
+        url.searchParams.set("workspace", workspace || "/leaders");
+        copyDashboardState(url);
         return url;
     }
 

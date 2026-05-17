@@ -50,6 +50,7 @@ unrendered side-pane placeholders.
 | 38 | Serve full slate workspaces | done | Embedded the full Scores and Schedule pages in dashboard slate workspaces instead of compact previews. |
 | 39 | Serve full goalie and depth workspaces | done | Embedded the full Goalies and Depth pages in dashboard stat workspaces instead of compact previews. |
 | 40 | Serve pane-target navigation | done | Added modifier-click navigation so dashboard links can pin previews into left or right panes while preserving the center workspace. |
+| 41 | Serve pane navigation state hardening | done | Preserved composed room and side-pane state when center swaps or pane pins rewrite dashboard URLs. |
 
 ## Success criteria
 
@@ -113,3 +114,4 @@ unrendered side-pane placeholders.
 - Browser dashboard Scores and Schedule workspaces show their full picker/table pages in the center workspace.
 - Browser dashboard Goalies and Depth workspaces show their full stat table pages in the center workspace.
 - Browser dashboard Ctrl-click pins link previews into the left pane, and Ctrl+Shift-click pins them into the right pane.
+- Browser dashboard center swaps and pane pins preserve selected room, left pane, right pane, and pinned pane URL state.
