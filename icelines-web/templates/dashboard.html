@@ -70,7 +70,12 @@
             {% if left_pane_workspace_url != "" %}
             <section aria-label="Pinned left workspace">
                 <h2>{{ left_pane_workspace_label }}</h2>
-                <p class="meta-line">Pinned with Ctrl-click. <a href="{{ left_pane_workspace_url }}">Open in center</a>.</p>
+                <p class="meta-line">
+                    Pinned with Ctrl-click.
+                    <a href="{{ left_pane_open_href }}">Open in center</a>
+                    · <a href="{{ left_pane_swap_href }}">Swap with center</a>
+                    · <a href="{{ left_pane_clear_href }}">Clear pin</a>
+                </p>
                 {% if left_pane_workspace_summary.is_empty() %}
                 <p class="empty-state">No preview rows for this workspace.</p>
                 {% else %}
@@ -181,7 +186,12 @@
             {% if right_pane_workspace_url != "" %}
             <section aria-label="Pinned right workspace">
                 <h2>{{ right_pane_workspace_label }}</h2>
-                <p class="meta-line">Pinned with Ctrl+Shift-click. <a href="{{ right_pane_workspace_url }}">Open in center</a>.</p>
+                <p class="meta-line">
+                    Pinned with Ctrl+Shift-click.
+                    <a href="{{ right_pane_open_href }}">Open in center</a>
+                    · <a href="{{ right_pane_swap_href }}">Swap with center</a>
+                    · <a href="{{ right_pane_clear_href }}">Clear pin</a>
+                </p>
                 {% if right_pane_workspace_summary.is_empty() %}
                 <p class="empty-state">No preview rows for this workspace.</p>
                 {% else %}

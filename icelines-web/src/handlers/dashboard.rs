@@ -106,6 +106,56 @@ pub async fn get_dashboard(
     let composition = dashboard_composition(&q, active_workbench);
     let active_fields = active_dashboard_fields(active_workbench, composition.experience);
     let active_pane_models = active_dashboard_pane_models(active_workbench);
+    let left_pane_open_href = pinned_pane_open_href(
+        &left_pane_workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &left_pane_workspace_url,
+        &right_pane_workspace_url,
+    );
+    let left_pane_swap_href = pinned_pane_swap_href(
+        &workspace_url,
+        &left_pane_workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &right_pane_workspace_url,
+        WorkbenchZone::LeftPane,
+    );
+    let left_pane_clear_href = pinned_pane_clear_href(
+        &workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &right_pane_workspace_url,
+        WorkbenchZone::LeftPane,
+    );
+    let right_pane_open_href = pinned_pane_open_href(
+        &right_pane_workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &left_pane_workspace_url,
+        &right_pane_workspace_url,
+    );
+    let right_pane_swap_href = pinned_pane_swap_href(
+        &workspace_url,
+        &right_pane_workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &left_pane_workspace_url,
+        WorkbenchZone::RightPane,
+    );
+    let right_pane_clear_href = pinned_pane_clear_href(
+        &workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &left_pane_workspace_url,
+        WorkbenchZone::RightPane,
+    );
     let show_full_leaders = workspace_route_key(&workspace_url) == "/leaders";
     let show_full_goalies = workspace_route_key(&workspace_url) == "/goalies";
     let show_full_depth = workspace_route_key(&workspace_url) == "/depth";
@@ -261,9 +311,15 @@ pub async fn get_dashboard(
         left_pane_workspace_url: left_pane_workspace_url.clone(),
         left_pane_workspace_label,
         left_pane_workspace_summary,
+        left_pane_open_href,
+        left_pane_swap_href,
+        left_pane_clear_href,
         right_pane_workspace_url: right_pane_workspace_url.clone(),
         right_pane_workspace_label,
         right_pane_workspace_summary,
+        right_pane_open_href,
+        right_pane_swap_href,
+        right_pane_clear_href,
         left_pane_binding: dashboard_pane_binding_row(
             composition.left,
             dashboard_href(
@@ -593,6 +649,77 @@ fn normalize_optional_workspace(raw: Option<&str>) -> String {
         .filter(|path| is_workspace_route(path))
         .unwrap_or("")
         .to_owned()
+}
+
+fn pinned_pane_open_href(
+    pinned_workspace: &str,
+    left: WorkbenchPaneBindingId,
+    right: WorkbenchPaneBindingId,
+    experience: Option<&WorkbenchExperience>,
+    left_workspace: &str,
+    right_workspace: &str,
+) -> String {
+    if pinned_workspace.is_empty() {
+        return String::new();
+    }
+    dashboard_href(
+        pinned_workspace,
+        left,
+        right,
+        experience,
+        left_workspace,
+        right_workspace,
+    )
+}
+
+fn pinned_pane_swap_href(
+    center_workspace: &str,
+    pinned_workspace: &str,
+    left: WorkbenchPaneBindingId,
+    right: WorkbenchPaneBindingId,
+    experience: Option<&WorkbenchExperience>,
+    other_pinned_workspace: &str,
+    zone: WorkbenchZone,
+) -> String {
+    if pinned_workspace.is_empty() {
+        return String::new();
+    }
+    let (left_workspace, right_workspace) = if zone == WorkbenchZone::LeftPane {
+        (center_workspace, other_pinned_workspace)
+    } else {
+        (other_pinned_workspace, center_workspace)
+    };
+    dashboard_href(
+        pinned_workspace,
+        left,
+        right,
+        experience,
+        left_workspace,
+        right_workspace,
+    )
+}
+
+fn pinned_pane_clear_href(
+    center_workspace: &str,
+    left: WorkbenchPaneBindingId,
+    right: WorkbenchPaneBindingId,
+    experience: Option<&WorkbenchExperience>,
+    other_pinned_workspace: &str,
+    zone: WorkbenchZone,
+) -> String {
+    let (left_workspace, right_workspace) = if zone == WorkbenchZone::LeftPane {
+        ("", other_pinned_workspace)
+    } else {
+        (other_pinned_workspace, "")
+    };
+    dashboard_href(
+        center_workspace,
+        left,
+        right,
+        experience,
+        left_workspace,
+        right_workspace,
+    )
 }
 
 fn is_workspace_route(path: &str) -> bool {

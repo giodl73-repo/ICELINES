@@ -1368,6 +1368,11 @@ async fn l1_dashboard_shell_renders_pinned_pane_workspaces() {
     assert!(body.contains("aria-label=\"Pinned right workspace\""));
     assert!(body.contains("Pinned with Ctrl-click"));
     assert!(body.contains("Pinned with Ctrl+Shift-click"));
+    assert!(body.contains("Swap with center"));
+    assert!(body.contains("Clear pin"));
+    assert!(body.contains("workspace=%2Fplayer%2F8478402"));
+    assert!(body.contains("left_workspace=%2Fleaders"));
+    assert!(body.contains("right_workspace=%2Fleaders"));
     assert!(body.contains("Connor McDavid"));
     assert!(body.contains("EDM"));
 }
