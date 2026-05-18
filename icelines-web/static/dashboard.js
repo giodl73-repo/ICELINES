@@ -262,14 +262,15 @@
             return;
         }
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.altKey) return;
-        var paneTarget = paneTargetFromClick(event);
+        var explicitTarget = link.getAttribute("data-dashboard-target");
+        var paneTarget = explicitTarget || paneTargetFromClick(event);
         if (!paneTarget && event.shiftKey) return;
 
         var workspace = link.getAttribute("data-dashboard-workspace") || appWorkspaceFromUrl(link.href);
         if (!workspace) return;
 
         event.preventDefault();
-        if (paneTarget) {
+        if (paneTarget === "left" || paneTarget === "right") {
             window.location.href = paneTargetUrl(workspace, paneTarget).toString();
             return;
         }

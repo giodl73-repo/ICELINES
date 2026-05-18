@@ -259,6 +259,7 @@ mod tests {
             "right_workspace",
             "paneTargetFromClick",
             "data-dashboard-ring",
+            "data-dashboard-target",
             "data-dashboard-pane-swap",
             "appWorkspaceFromUrl",
             "isDashboardWorkspace",

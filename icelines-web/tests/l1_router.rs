@@ -1302,6 +1302,10 @@ async fn l1_dashboard_career_workspace_renders_summary_shell() {
     assert!(body.contains("Career Cohorts"));
     assert!(body.contains("Open full Career Cohorts"));
     assert!(body.contains("href=\"/career?league=OHL&amp;sort=points\""));
+    assert!(body.contains("<th scope=\"col\">Target</th>"));
+    assert!(body.contains("data-dashboard-target=\"left\""));
+    assert!(body.contains("data-dashboard-target=\"right\""));
+    assert!(body.contains("aria-label=\"Target Career cohorts\""));
 }
 
 #[tokio::test]

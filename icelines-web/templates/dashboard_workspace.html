@@ -242,6 +242,7 @@
                 <th scope="col">Rank</th>
                 <th scope="col">{{ workspace_label }}</th>
                 <th scope="col">Detail</th>
+                <th scope="col">Target</th>
             </tr>
         </thead>
         <tbody>
@@ -250,6 +251,13 @@
                 <td class="rank-cell"><a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}">{{ row.label }}</a></td>
                 <td><a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}"><strong>{{ row.value }}</strong></a></td>
                 <td><a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}">{% if row.detail != "" %}{{ row.detail }}{% else %}—{% endif %}</a></td>
+                <td>
+                    <span class="jaw-target-actions" aria-label="Target {{ row.value }}">
+                        <a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-workspace="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}">Center</a>
+                        · <a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-workspace="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-target="left">Left</a>
+                        · <a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-workspace="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-target="right">Right</a>
+                    </span>
+                </td>
             </tr>
         {% endfor %}
         </tbody>
@@ -260,10 +268,17 @@
         <summary>More views</summary>
         <div class="jaw-workspace-grid">
             {% for row in workspace_links %}
-            <a class="jaw-workspace-card" href="{{ row.href }}">
-                <strong>{{ row.label }}</strong>
-                <span class="jaw-detail">{{ row.detail }}</span>
-            </a>
+            <div class="jaw-workspace-card">
+                <a href="{{ row.href }}">
+                    <strong>{{ row.label }}</strong>
+                    <span class="jaw-detail">{{ row.detail }}</span>
+                </a>
+                <span class="jaw-target-actions" aria-label="Target {{ row.label }}">
+                    <a href="{{ row.href }}">Center</a>
+                    · <a href="{{ row.href }}" data-dashboard-target="left">Left</a>
+                    · <a href="{{ row.href }}" data-dashboard-target="right">Right</a>
+                </span>
+            </div>
             {% endfor %}
         </div>
     </details>
