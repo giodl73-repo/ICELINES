@@ -77,7 +77,7 @@
                 <p class="meta-line">
                     Pinned with Ctrl-click.
                     <a href="{{ left_pane_open_href }}">Open in center</a>
-                    · <a href="{{ left_pane_swap_href }}">Swap with center</a>
+                    · <a href="{{ left_pane_swap_href }}" data-dashboard-pane-swap="left">Swap with center</a>
                     · <a href="{{ left_pane_clear_href }}">Clear pin</a>
                 </p>
                 {% if left_pane_workspace_summary.is_empty() %}
@@ -197,7 +197,7 @@
                 <p class="meta-line">
                     Pinned with Ctrl+Shift-click.
                     <a href="{{ right_pane_open_href }}">Open in center</a>
-                    · <a href="{{ right_pane_swap_href }}">Swap with center</a>
+                    · <a href="{{ right_pane_swap_href }}" data-dashboard-pane-swap="right">Swap with center</a>
                     · <a href="{{ right_pane_clear_href }}">Clear pin</a>
                 </p>
                 {% if right_pane_workspace_summary.is_empty() %}

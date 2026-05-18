@@ -80,6 +80,11 @@
         return url;
     }
 
+    function followDashboardComposition(href) {
+        var composedUrl = compositionUrl(href);
+        window.location.href = (composedUrl || new URL(href, window.location.origin)).toString();
+    }
+
     function partialUrl(workspace) {
         var url = dashboardUrl(workspace);
         url.searchParams.set("partial", "workspace");
@@ -251,10 +256,9 @@
         if (!link) return;
         if (link.hasAttribute("data-dashboard-composition-link")) {
             if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-            var composedUrl = compositionUrl(link.href);
-            if (!composedUrl) return;
+            if (!compositionUrl(link.href)) return;
             event.preventDefault();
-            window.location.href = composedUrl.toString();
+            followDashboardComposition(link.href);
             return;
         }
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.altKey) return;
@@ -295,6 +299,30 @@
         if (event.key === "/" && !isEditableTarget(event.target)) {
             event.preventDefault();
             focusCommandInput();
+            return;
+        }
+        if (!isEditableTarget(event.target) && event.key === "]") {
+            var rightRing = document.querySelector("[data-dashboard-ring='right']");
+            if (rightRing) {
+                event.preventDefault();
+                followDashboardComposition(rightRing.href);
+            }
+            return;
+        }
+        if (!isEditableTarget(event.target) && event.key === "[") {
+            var leftRing = document.querySelector("[data-dashboard-ring='left']");
+            if (leftRing) {
+                event.preventDefault();
+                followDashboardComposition(leftRing.href);
+            }
+            return;
+        }
+        if (!isEditableTarget(event.target) && event.key === "\\") {
+            var swap = document.querySelector("[data-dashboard-pane-swap='right'], [data-dashboard-pane-swap='left']");
+            if (swap) {
+                event.preventDefault();
+                followDashboardComposition(swap.href);
+            }
             return;
         }
         if (event.key === "Escape" && event.target === commandInput()) {

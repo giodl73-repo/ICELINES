@@ -40,6 +40,12 @@ struct DashboardComposition {
     right: &'static WorkbenchPaneBinding,
 }
 
+struct RingItem {
+    label: &'static str,
+    workspace: String,
+    detail: &'static str,
+}
+
 #[derive(Debug, Deserialize, Default)]
 pub struct DashboardQuery {
     #[serde(default)]
@@ -106,6 +112,14 @@ pub async fn get_dashboard(
     let composition = dashboard_composition(&q, active_workbench);
     let active_fields = active_dashboard_fields(active_workbench, composition.experience);
     let active_pane_models = active_dashboard_pane_models(active_workbench);
+    let left_context_ring = left_context_ring_links(
+        &workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &left_pane_workspace_url,
+        &right_pane_workspace_url,
+    );
     let right_detail_ring = right_detail_ring_links(
         &state,
         &workspace_url,
@@ -116,6 +130,22 @@ pub async fn get_dashboard(
         &right_pane_workspace_url,
     )
     .await;
+    let center_pin_left_href = dashboard_href(
+        &workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &workspace_url,
+        &right_pane_workspace_url,
+    );
+    let center_pin_right_href = dashboard_href(
+        &workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &left_pane_workspace_url,
+        &workspace_url,
+    );
     let left_pane_open_href = pinned_pane_open_href(
         &left_pane_workspace_url,
         composition.left.id,
@@ -265,7 +295,10 @@ pub async fn get_dashboard(
             scores_surface_html,
             show_full_schedule,
             schedule_surface_html,
+            left_context_ring,
             right_detail_ring,
+            center_pin_left_href,
+            center_pin_right_href,
         });
     }
 
@@ -319,7 +352,10 @@ pub async fn get_dashboard(
         scores_surface_html,
         show_full_schedule,
         schedule_surface_html,
+        left_context_ring,
         right_detail_ring,
+        center_pin_left_href,
+        center_pin_right_href,
         left_pane_workspace_url: left_pane_workspace_url.clone(),
         left_pane_workspace_label,
         left_pane_workspace_summary,
@@ -734,6 +770,44 @@ fn pinned_pane_clear_href(
     )
 }
 
+fn left_context_ring_links(
+    center_workspace: &str,
+    left: WorkbenchPaneBindingId,
+    right: WorkbenchPaneBindingId,
+    experience: Option<&WorkbenchExperience>,
+    left_workspace: &str,
+    right_workspace: &str,
+) -> Vec<DashboardLinkRow> {
+    cycle_ring_links(
+        "Cycle left context",
+        center_workspace,
+        left_workspace,
+        left,
+        right,
+        experience,
+        WorkbenchZone::LeftPane,
+        left_workspace,
+        right_workspace,
+        vec![
+            RingItem {
+                label: "Favorites",
+                workspace: "/favorites".to_owned(),
+                detail: "saved players and teams",
+            },
+            RingItem {
+                label: "Watchlist",
+                workspace: "/watchlist".to_owned(),
+                detail: "tracked player alerts",
+            },
+            RingItem {
+                label: "League leaders",
+                workspace: "/leaders".to_owned(),
+                detail: "league-wide player context",
+            },
+        ],
+    )
+}
+
 async fn right_detail_ring_links(
     state: &WebState,
     center_workspace: &str,
@@ -743,46 +817,133 @@ async fn right_detail_ring_links(
     left_workspace: &str,
     right_workspace: &str,
 ) -> Vec<DashboardLinkRow> {
-    let Some(team) = player_workspace_team(state, center_workspace).await else {
+    let items = right_detail_ring_items(state, center_workspace).await;
+    cycle_ring_links(
+        "Cycle right detail",
+        center_workspace,
+        right_workspace,
+        left,
+        right,
+        experience,
+        WorkbenchZone::RightPane,
+        left_workspace,
+        right_workspace,
+        items,
+    )
+}
+
+async fn right_detail_ring_items(state: &WebState, center_workspace: &str) -> Vec<RingItem> {
+    let route = workspace_route_key(center_workspace);
+    if let Some(team) = player_workspace_team(state, center_workspace).await {
+        return team_detail_ring_items(&team, true);
+    }
+    if let Some(team) = team_workspace_slug(route) {
+        return team_detail_ring_items(&team.to_ascii_uppercase(), route.ends_with("/season"));
+    }
+    if game_workspace_id(route).is_some() {
+        return vec![
+            RingItem {
+                label: "Scores",
+                workspace: "/scores".to_owned(),
+                detail: "current slate around this game",
+            },
+            RingItem {
+                label: "Schedule",
+                workspace: "/schedule".to_owned(),
+                detail: "nearby fixtures and results",
+            },
+            RingItem {
+                label: "Playoffs",
+                workspace: "/playoffs".to_owned(),
+                detail: "series context",
+            },
+        ];
+    }
+    Vec::new()
+}
+
+fn team_detail_ring_items(team: &str, include_depth: bool) -> Vec<RingItem> {
+    let mut items = Vec::new();
+    if include_depth {
+        items.push(RingItem {
+            label: "Team depth",
+            workspace: format!("/team/{team}"),
+            detail: "roster context",
+        });
+    }
+    items.extend([
+        RingItem {
+            label: "Team season",
+            workspace: format!("/team/{team}/season"),
+            detail: "season summary and schedule",
+        },
+        RingItem {
+            label: "Team schedule",
+            workspace: format!("/schedule?team={team}"),
+            detail: "team-specific fixtures",
+        },
+        RingItem {
+            label: "League leaders",
+            workspace: "/leaders".to_owned(),
+            detail: "league-wide comparison",
+        },
+    ]);
+    items
+}
+
+fn cycle_ring_links(
+    label: &str,
+    center_workspace: &str,
+    active_workspace: &str,
+    left: WorkbenchPaneBindingId,
+    right: WorkbenchPaneBindingId,
+    experience: Option<&WorkbenchExperience>,
+    zone: WorkbenchZone,
+    left_workspace: &str,
+    right_workspace: &str,
+    items: Vec<RingItem>,
+) -> Vec<DashboardLinkRow> {
+    let candidates = items
+        .into_iter()
+        .filter(|item| {
+            workspace_route_key(&item.workspace) != workspace_route_key(center_workspace)
+        })
+        .collect::<Vec<_>>();
+    if candidates.is_empty() {
         return Vec::new();
-    };
-    let ring = [
-        (
-            "Team depth",
-            format!("/team/{team}"),
-            "roster context for this player",
-        ),
-        (
-            "Team season",
-            format!("/team/{team}/season"),
-            "schedule and season context",
-        ),
-        (
-            "League leaders",
-            "/leaders".to_owned(),
-            "return to the leaderboard context",
-        ),
-    ];
-    let active_idx = ring.iter().position(|(_, workspace, _)| {
-        workspace_route_key(workspace) == workspace_route_key(right_workspace)
+    }
+    let active_idx = candidates.iter().position(|item| {
+        workspace_route_key(&item.workspace) == workspace_route_key(active_workspace)
     });
-    let next_idx = active_idx.map_or(0, |idx| (idx + 1) % ring.len());
-    let (label, next_workspace, detail) = &ring[next_idx];
+    let next_idx = active_idx.map_or(0, |idx| (idx + 1) % candidates.len());
+    let next = &candidates[next_idx];
     let current = active_idx
-        .map(|idx| ring[idx].0)
-        .unwrap_or("empty right pane");
+        .map(|idx| candidates[idx].label)
+        .unwrap_or("empty pane");
+    let (next_left_workspace, next_right_workspace) = if zone == WorkbenchZone::LeftPane {
+        (next.workspace.as_str(), right_workspace)
+    } else {
+        (left_workspace, next.workspace.as_str())
+    };
 
     vec![DashboardLinkRow {
-        label: "Cycle right detail".to_owned(),
+        label: label.to_owned(),
         href: dashboard_href(
             center_workspace,
             left,
             right,
             experience,
-            left_workspace,
-            next_workspace,
+            next_left_workspace,
+            next_right_workspace,
         ),
-        detail: format!("Next: {label} ({detail}) · current: {current}"),
+        detail: format!(
+            "Next {}/{}: {} ({}) · current: {}",
+            next_idx + 1,
+            candidates.len(),
+            next.label,
+            next.detail,
+            current
+        ),
     }]
 }
 

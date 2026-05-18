@@ -56,6 +56,7 @@ unrendered side-pane placeholders.
 | 44 | Serve pinned pane actions | done | Added Open in center, Swap with center, and Clear pin actions to pinned pane headers. |
 | 45 | Serve pinned pane header labels | done | Updated side-pane headers to show the pinned workspace label instead of the underlying default pane binding. |
 | 46 | Serve player right-detail ring | done | Added a center player-card action that cycles the right pane through player-adjacent detail workspaces. |
+| 47 | Serve workspace orbit controls | done | Generalized center-stable orbit controls with left/right rings, pin actions, and keyboard shortcuts. |
 
 ## Success criteria
 
@@ -125,3 +126,4 @@ unrendered side-pane placeholders.
 - Browser dashboard pinned pane headers expose Open in center, Swap with center, and Clear pin actions.
 - Browser dashboard pinned pane headers identify the pinned workspace directly.
 - Browser dashboard player workspaces can cycle the right pane through player-adjacent detail workspaces.
+- Browser dashboard player and team workspaces expose center-stable orbit controls for left context, right detail, direct pinning, and keyboard cycling.

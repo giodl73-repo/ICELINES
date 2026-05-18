@@ -1399,10 +1399,15 @@ async fn l1_dashboard_player_workspace_renders_right_detail_ring() {
         .expect("body fits");
     let body = std::str::from_utf8(&bytes).expect("html is utf-8");
 
+    assert!(body.contains("aria-label=\"Left context ring\""));
     assert!(body.contains("aria-label=\"Right detail ring\""));
+    assert!(body.contains("Pin left"));
+    assert!(body.contains("Pin right"));
     assert!(body.contains("Cycle right detail"));
+    assert!(body.contains("Cycle left context"));
     assert!(body.contains("right_workspace=%2Fteam%2FEDM"));
-    assert!(body.contains("Next: Team depth"));
+    assert!(body.contains("left_workspace=%2Ffavorites"));
+    assert!(body.contains("Next 1/4: Team depth"));
 
     let response = app
         .oneshot(
@@ -1421,7 +1426,56 @@ async fn l1_dashboard_player_workspace_renders_right_detail_ring() {
     let body = std::str::from_utf8(&bytes).expect("html is utf-8");
 
     assert!(body.contains("right_workspace=%2Fteam%2FEDM%2Fseason"));
-    assert!(body.contains("Next: Team season"));
+    assert!(body.contains("Next 2/4: Team season"));
+    assert!(body.contains("current: Team depth"));
+}
+
+#[tokio::test]
+async fn l1_dashboard_team_workspace_renders_orbit_controls() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/team/EDM")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("aria-label=\"Left context ring\""));
+    assert!(body.contains("aria-label=\"Right detail ring\""));
+    assert!(body.contains("Cycle right detail"));
+    assert!(body.contains("right_workspace=%2Fteam%2FEDM%2Fseason"));
+    assert!(body.contains("Next 1/3: Team season"));
+    assert!(body.contains("href=\"/dashboard?workspace=%2Fteam%2FEDM&amp;left="));
+    assert!(body.contains("left_workspace=%2Fteam%2FEDM"));
+    assert!(body.contains("right_workspace=%2Fteam%2FEDM"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/team/EDM/season&right_workspace=/team/EDM")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("right_workspace=%2Fschedule%3Fteam%3DEDM"));
     assert!(body.contains("current: Team depth"));
 }
 
