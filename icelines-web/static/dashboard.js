@@ -3,40 +3,59 @@
     var commandHistoryIndex = commandHistory.length;
 
     function dashboardWorkspaceFromUrl(url) {
+        var parsed = parseUrl(url);
+        if (!parsed) return null;
+        return parsed.pathname === "/dashboard" ? parsed.searchParams.get("workspace") : null;
+    }
+
+    function parseUrl(url) {
         try {
-            var parsed = new URL(url, window.location.origin);
-            if (parsed.pathname !== "/dashboard") return null;
-            return parsed.searchParams.get("workspace");
+            return new URL(url, window.location.origin);
         } catch (_) {
             return null;
         }
     }
 
+    function isSameOriginUrl(parsed) {
+        return parsed.origin === window.location.origin;
+    }
+
+    function isIgnoredAppPath(pathname) {
+        return pathname.indexOf("/api/") === 0 ||
+            pathname.indexOf("/static/") === 0 ||
+            pathname.indexOf("/season-type/") === 0 ||
+            pathname === "/seasons";
+    }
+
     function appWorkspaceFromUrl(url) {
-        try {
-            var parsed = new URL(url, window.location.origin);
-            if (parsed.origin !== window.location.origin) return null;
-            if (parsed.pathname === "/dashboard") return dashboardWorkspaceFromUrl(url);
-            if (parsed.pathname.indexOf("/api/") === 0 || parsed.pathname.indexOf("/static/") === 0) return null;
-            if (parsed.pathname.indexOf("/season-type/") === 0 || parsed.pathname === "/seasons") return null;
-            var workspace = parsed.pathname + parsed.search;
-            return isDashboardWorkspace(workspace) ? workspace : null;
-        } catch (_) {
-            return null;
-        }
+        var parsed = parseUrl(url);
+        if (!parsed) return null;
+        return appWorkspaceFromParsed(parsed, url);
+    }
+
+    function appWorkspaceFromParsed(parsed, url) {
+        if (!isSameOriginUrl(parsed)) return null;
+        if (parsed.pathname === "/dashboard") return dashboardWorkspaceFromUrl(url);
+        if (isIgnoredAppPath(parsed.pathname)) return null;
+        var workspace = parsed.pathname + parsed.search;
+        return dashboardWorkspaceOrNull(workspace);
+    }
+
+    function dashboardWorkspaceOrNull(workspace) {
+        if (isDashboardWorkspace(workspace)) return workspace;
+        return null;
     }
 
     function isDashboardWorkspace(workspace) {
         var path = String(workspace || "").split("?")[0].replace(/\/+$/, "") || "/";
-        if (/^\/player\/[0-9]+$/.test(path)) return true;
-        if (/^\/team\/[A-Za-z]{2,3}(\/season)?$/.test(path)) return true;
-        if (/^\/game\/[^/]+$/.test(path)) return true;
-        return [
+        var patterns = [/^\/player\/[0-9]+$/, /^\/team\/[A-Za-z]{2,3}(\/season)?$/, /^\/game\/[^/]+$/];
+        var knownPaths = [
             "/", "/leaders", "/goalies", "/depth", "/poach", "/fantasy",
             "/scores", "/schedule", "/transactions", "/playoffs",
             "/favorites", "/watchlist", "/career", "/reports/poach",
             "/reports/weekly", "/admin", "/docs"
-        ].indexOf(path) !== -1;
+        ];
+        return patterns.some(function (pattern) { return pattern.test(path); }) || knownPaths.indexOf(path) !== -1;
     }
 
     function copyDashboardState(url) {
@@ -60,8 +79,9 @@
     }
 
     function paneTargetFromClick(event) {
-        if (!event.ctrlKey || event.metaKey || event.altKey) return null;
-        return event.shiftKey ? "right" : "left";
+        if ([event.metaKey, event.altKey, !event.ctrlKey].some(Boolean)) return null;
+        if (event.shiftKey) return "right";
+        return "left";
     }
 
     function paneTargetUrl(workspace, pane) {
@@ -100,7 +120,10 @@
         });
         if (!response.ok) return false;
 
-        var html = await response.text();
+        return replaceWorkspaceFromResponse(current, workspace, push, await response.text());
+    }
+
+    function replaceWorkspaceFromResponse(current, workspace, push, html) {
         var template = document.createElement("template");
         template.innerHTML = html.trim();
         var next = template.content.querySelector(".jaw-workspace");
@@ -109,24 +132,35 @@
         current.replaceWith(next);
         var nextWorkspace = next.getAttribute("data-workspace-url") || workspace;
         updateCommandWorkspace(nextWorkspace);
-        if (push) {
-            window.history.pushState(
-                { workspace: nextWorkspace },
-                "",
-                dashboardUrl(nextWorkspace).toString()
-            );
-        }
+        pushWorkspaceState(push, nextWorkspace);
         return true;
+    }
+
+    function pushWorkspaceState(push, nextWorkspace) {
+        if (!push) return;
+        window.history.pushState(
+            { workspace: nextWorkspace },
+            "",
+            dashboardUrl(nextWorkspace).toString()
+        );
+    }
+
+    function commandStatusText(message, kind) {
+        var text = message || "";
+        if (kind !== "error") return text;
+        return errorStatusText(text);
+    }
+
+    function errorStatusText(text) {
+        if (!text) return text;
+        if (/^error[:\s]/i.test(text)) return text;
+        return "Error: " + text;
     }
 
     function setCommandStatus(message, kind) {
         var node = document.querySelector("[data-dashboard-command-status]");
         if (!node) return;
-        var text = message || "";
-        if (kind === "error" && text && !/^error[:\s]/i.test(text)) {
-            text = "Error: " + text;
-        }
-        node.textContent = text;
+        node.textContent = commandStatusText(message, kind);
         node.dataset.statusKind = kind || "";
     }
 
@@ -149,7 +183,7 @@
     function isEditableTarget(target) {
         if (!target) return false;
         var tag = String(target.tagName || "").toLowerCase();
-        return tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable;
+        return ["input", "textarea", "select"].indexOf(tag) !== -1 || target.isContentEditable;
     }
 
     function commandHistoryKey() {
@@ -185,9 +219,7 @@
 
     function recallCommandHistory(input, direction) {
         if (!commandHistory.length) return;
-        commandHistoryIndex += direction;
-        if (commandHistoryIndex < 0) commandHistoryIndex = 0;
-        if (commandHistoryIndex > commandHistory.length) commandHistoryIndex = commandHistory.length;
+        commandHistoryIndex = Math.min(Math.max(commandHistoryIndex + direction, 0), commandHistory.length);
         input.value = commandHistory[commandHistoryIndex] || "";
     }
 
@@ -203,19 +235,30 @@
         }
     }
 
-    function setPaneVisible(pane, visible, persist) {
-        var node = document.querySelector("[data-dashboard-pane='" + pane + "']");
-        var toggle = document.querySelector("[data-dashboard-pane-toggle='" + pane + "']");
+    function updatePaneNode(node, visible) {
         if (node) node.setAttribute("data-dashboard-pane-collapsed", visible ? "false" : "true");
-        if (toggle) {
-            toggle.setAttribute("aria-expanded", visible ? "true" : "false");
-            toggle.textContent = visible ? "Hide" : "Show";
-        }
-        if (!node) return;
-        if (persist === false) return;
+    }
+
+    function updatePaneToggle(toggle, visible) {
+        if (!toggle) return;
+        toggle.setAttribute("aria-expanded", visible ? "true" : "false");
+        toggle.textContent = visible ? "Hide" : "Show";
+    }
+
+    function persistPanePreference(pane, visible) {
         try {
             window.localStorage.setItem(paneStorageKey(pane), visible ? "show" : "hide");
         } catch (_) {}
+    }
+
+    function setPaneVisible(pane, visible, persist) {
+        var node = document.querySelector("[data-dashboard-pane='" + pane + "']");
+        var toggle = document.querySelector("[data-dashboard-pane-toggle='" + pane + "']");
+        updatePaneNode(node, visible);
+        updatePaneToggle(toggle, visible);
+        if (!node) return;
+        if (persist === false) return;
+        persistPanePreference(pane, visible);
     }
 
     function restorePanes() {
@@ -231,48 +274,91 @@
 
     function applyCommandSideEffect(command) {
         var normalized = (command || "").trim().toLowerCase();
-        if (normalized === "/hide favorites" || normalized === "/hide fav") {
-            setPaneVisible("favorites", false);
-        } else if (normalized === "/show favorites" || normalized === "/show fav") {
-            setPaneVisible("favorites", true);
-        } else if (normalized === "/hide schedule" || normalized === "/hide sched") {
-            setPaneVisible("schedule", false);
-        } else if (normalized === "/show schedule" || normalized === "/show sched") {
-            setPaneVisible("schedule", true);
+        var actions = {
+            "/hide favorites": ["favorites", false],
+            "/hide fav": ["favorites", false],
+            "/show favorites": ["favorites", true],
+            "/show fav": ["favorites", true],
+            "/hide schedule": ["schedule", false],
+            "/hide sched": ["schedule", false],
+            "/show schedule": ["schedule", true],
+            "/show sched": ["schedule", true]
+        };
+        var action = actions[normalized];
+        if (action) {
+            setPaneVisible(action[0], action[1]);
         }
     }
 
-    document.addEventListener("click", function (event) {
+    function isPlainPrimaryClick(event) {
+        return [
+            !event.defaultPrevented,
+            event.button === 0,
+            !event.metaKey,
+            !event.ctrlKey,
+            !event.altKey
+        ].every(Boolean);
+    }
+
+    function isCompositionClick(event, link) {
+        return link.hasAttribute("data-dashboard-composition-link") &&
+            isPlainPrimaryClick(event) &&
+            !event.shiftKey &&
+            compositionUrl(link.href);
+    }
+
+    function handlePaneToggleClick(event) {
         var toggle = event.target.closest("[data-dashboard-pane-toggle]");
-        if (toggle) {
-            event.preventDefault();
-            var pane = toggle.getAttribute("data-dashboard-pane-toggle");
-            var node = document.querySelector("[data-dashboard-pane='" + pane + "']");
-            if (node) setPaneVisible(pane, node.getAttribute("data-dashboard-pane-collapsed") === "true");
-            return;
-        }
+        if (!toggle) return false;
+        event.preventDefault();
+        var pane = toggle.getAttribute("data-dashboard-pane-toggle");
+        var node = document.querySelector("[data-dashboard-pane='" + pane + "']");
+        if (node) setPaneVisible(pane, node.getAttribute("data-dashboard-pane-collapsed") === "true");
+        return true;
+    }
 
+    function handleDashboardLinkClick(event) {
         var link = event.target.closest("a[href]");
-        if (!link) return;
-        if (link.hasAttribute("data-dashboard-composition-link")) {
-            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-            if (!compositionUrl(link.href)) return;
-            event.preventDefault();
-            followDashboardComposition(link.href);
-            return;
-        }
-        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.altKey) return;
-        var explicitTarget = link.getAttribute("data-dashboard-target");
-        var paneTarget = explicitTarget || paneTargetFromClick(event);
-        if (!paneTarget && event.shiftKey) return;
+        if (!link) return false;
+        if (handleCompositionLinkClick(event, link)) return true;
+        if (!isPlainPrimaryClick(event)) return false;
+        return handleWorkspaceLinkClick(event, link);
+    }
 
-        var workspace = link.getAttribute("data-dashboard-workspace") || appWorkspaceFromUrl(link.href);
-        if (!workspace) return;
+    function handleCompositionLinkClick(event, link) {
+        if (!isCompositionClick(event, link)) return false;
+        event.preventDefault();
+        followDashboardComposition(link.href);
+        return true;
+    }
+
+    function handleWorkspaceLinkClick(event, link) {
+        var paneTarget = linkPaneTarget(event, link);
+        if (isShiftWithoutPane(event, paneTarget)) return false;
+
+        var workspace = linkWorkspace(link);
+        if (!workspace) return false;
 
         event.preventDefault();
-        if (paneTarget === "left" || paneTarget === "right") {
+        return navigateWorkspaceLink(link, workspace, paneTarget);
+    }
+
+    function linkPaneTarget(event, link) {
+        return link.getAttribute("data-dashboard-target") || paneTargetFromClick(event);
+    }
+
+    function isShiftWithoutPane(event, paneTarget) {
+        return !paneTarget && event.shiftKey;
+    }
+
+    function linkWorkspace(link) {
+        return link.getAttribute("data-dashboard-workspace") || appWorkspaceFromUrl(link.href);
+    }
+
+    function navigateWorkspaceLink(link, workspace, paneTarget) {
+        if ({ left: true, right: true }[paneTarget]) {
             window.location.href = paneTargetUrl(workspace, paneTarget).toString();
-            return;
+            return true;
         }
         loadWorkspace(workspace, true)
             .then(function (loaded) {
@@ -281,6 +367,12 @@
             .catch(function () {
                 window.location.href = link.href;
             });
+        return true;
+    }
+
+    document.addEventListener("click", function (event) {
+        if (handlePaneToggleClick(event)) return;
+        handleDashboardLinkClick(event);
     });
 
     window.addEventListener("popstate", function () {
@@ -291,109 +383,154 @@
         });
     });
 
-    document.addEventListener("keydown", function (event) {
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
-            event.preventDefault();
-            focusCommandInput();
-            return;
-        }
-        if (event.key === "/" && !isEditableTarget(event.target)) {
-            event.preventDefault();
-            focusCommandInput();
-            return;
-        }
-        if (!isEditableTarget(event.target) && event.key === "]") {
-            var rightRing = document.querySelector("[data-dashboard-ring='right']");
-            if (rightRing) {
-                event.preventDefault();
-                followDashboardComposition(rightRing.href);
-            }
-            return;
-        }
-        if (!isEditableTarget(event.target) && event.key === "[") {
-            var leftRing = document.querySelector("[data-dashboard-ring='left']");
-            if (leftRing) {
-                event.preventDefault();
-                followDashboardComposition(leftRing.href);
-            }
-            return;
-        }
-        if (!isEditableTarget(event.target) && event.key === "\\") {
-            var swap = document.querySelector("[data-dashboard-pane-swap='right'], [data-dashboard-pane-swap='left']");
-            if (swap) {
-                event.preventDefault();
-                followDashboardComposition(swap.href);
-            }
-            return;
-        }
-        if (event.key === "Escape" && event.target === commandInput()) {
+    function followShortcutSelector(event, selector) {
+        var link = document.querySelector(selector);
+        if (!link) return false;
+        event.preventDefault();
+        followDashboardComposition(link.href);
+        return true;
+    }
+
+    function handleGlobalShortcut(event) {
+        if (handleCommandFocusShortcut(event)) return true;
+        if (isEditableTarget(event.target)) return false;
+        return handleNavigationShortcut(event);
+    }
+
+    function focusCommandShortcut(event) {
+        event.preventDefault();
+        focusCommandInput();
+        return true;
+    }
+
+    function handleCommandFocusShortcut(event) {
+        if (handleSlashFocusShortcut(event)) return true;
+        return handleKeyboardFocusShortcut(event);
+    }
+
+    function handleSlashFocusShortcut(event) {
+        if (event.key !== "/") return false;
+        if (isEditableTarget(event.target)) return false;
+        event.preventDefault();
+        focusCommandInput();
+        return true;
+    }
+
+    function handleKeyboardFocusShortcut(event) {
+        if (event.key.toLowerCase() !== "k") return false;
+        if (event.ctrlKey) return focusCommandShortcut(event);
+        if (event.metaKey) return focusCommandShortcut(event);
+        return false;
+    }
+
+    function handleNavigationShortcut(event) {
+        var selectors = {
+            "]": "[data-dashboard-ring='right']",
+            "[": "[data-dashboard-ring='left']",
+            "\\": "[data-dashboard-pane-swap='right'], [data-dashboard-pane-swap='left']"
+        };
+        var selector = selectors[event.key];
+        return selector ? followShortcutSelector(event, selector) : false;
+    }
+
+    function handleCommandInputKey(event) {
+        if (event.target !== commandInput()) return false;
+        if (event.key === "Escape") {
             event.preventDefault();
             event.target.value = "";
             setCommandStatus("", "");
-            return;
+            return true;
         }
-        if (event.target === commandInput() && event.key === "ArrowUp") {
+        var historyDirection = { ArrowUp: -1, ArrowDown: 1 }[event.key];
+        if (historyDirection) {
             event.preventDefault();
-            recallCommandHistory(event.target, -1);
-            return;
+            recallCommandHistory(event.target, historyDirection);
+            return true;
         }
-        if (event.target === commandInput() && event.key === "ArrowDown") {
-            event.preventDefault();
-            recallCommandHistory(event.target, 1);
-        }
+        return false;
+    }
+
+    document.addEventListener("keydown", function (event) {
+        if (handleGlobalShortcut(event)) return;
+        handleCommandInputKey(event);
     });
 
-    document.addEventListener("submit", function (event) {
-        var form = event.target;
-        if (!form) return;
-        if (!form.matches(".jaw-command form")) {
-            if (!form.closest(".jaw-workspace") || String(form.method || "get").toLowerCase() !== "get") return;
+    function workspaceFromForm(form) {
+        var formUrl = new URL(form.action || window.location.href, window.location.origin);
+        var params = new URLSearchParams(new FormData(form));
+        var query = params.toString();
+        return formUrl.pathname + (query ? "?" + query : "");
+    }
 
-            event.preventDefault();
-            var formUrl = new URL(form.action || window.location.href, window.location.origin);
-            var params = new URLSearchParams(new FormData(form));
-            var query = params.toString();
-            var workspace = formUrl.pathname + (query ? "?" + query : "");
-            if (!isDashboardWorkspace(workspace)) {
-                window.location.href = workspace;
-                return;
-            }
-            loadWorkspace(workspace, true)
-                .then(function (loaded) {
-                    if (!loaded) window.location.href = workspace;
-                })
-                .catch(function () {
-                    window.location.href = workspace;
-                });
-            return;
-        }
-
+    function handleWorkspaceFormSubmit(event, form) {
+        if (!isWorkspaceGetForm(form)) return false;
         event.preventDefault();
-        var data = new FormData(form);
-        var submittedCommand = String(data.get("command") || "");
-        fetch(form.action, {
+        var workspace = workspaceFromForm(form);
+        return submitWorkspaceFormWorkspace(workspace);
+    }
+
+    function isWorkspaceGetForm(form) {
+        if (!form.closest(".jaw-workspace")) return false;
+        return String(form.method || "get").toLowerCase() === "get";
+    }
+
+    function submitWorkspaceFormWorkspace(workspace) {
+        if (!isDashboardWorkspace(workspace)) {
+            window.location.href = workspace;
+            return true;
+        }
+        loadWorkspace(workspace, true)
+            .then(function (loaded) {
+                if (!loaded) window.location.href = workspace;
+            })
+            .catch(function () {
+                window.location.href = workspace;
+            });
+        return true;
+    }
+
+    function submitDashboardCommand(form, data) {
+        return fetch(form.action, {
             method: "POST",
             body: data,
             redirect: "manual",
             headers: { "X-Requested-With": "fetch" }
-        }).then(function (response) {
-            if (response.status >= 300 && response.status < 400) {
-                var location = response.headers.get("Location") || response.headers.get("location");
-                var workspace = location && appWorkspaceFromUrl(location);
-                if (workspace) {
-                    return loadWorkspace(workspace, true).then(function (loaded) {
-                        return loaded !== false;
-                    });
-                }
-            }
-            if (!response.ok) {
-                return response.text().then(function (text) {
-                    setCommandStatus(text || "Dashboard command failed", "error");
-                    return false;
-                });
-            }
-            return true;
-        }).then(function (handled) {
+        }).then(handleCommandResponse);
+    }
+
+    function redirectWorkspaceFromResponse(response) {
+        var location = response.headers.get("Location") || response.headers.get("location");
+        return location && appWorkspaceFromUrl(location);
+    }
+
+    function handleCommandRedirect(response) {
+        if (response.status < 300) return null;
+        if (response.status >= 400) return null;
+        var workspace = redirectWorkspaceFromResponse(response);
+        if (!workspace) return null;
+        return loadWorkspace(workspace, true).then(function (loaded) {
+            return loaded !== false;
+        });
+    }
+
+    function handleCommandError(response) {
+        return response.text().then(function (text) {
+            setCommandStatus(text || "Dashboard command failed", "error");
+            return false;
+        });
+    }
+
+    function handleCommandResponse(response) {
+        var redirect = handleCommandRedirect(response);
+        if (redirect) return redirect;
+        return response.ok ? true : handleCommandError(response);
+    }
+
+    function handleCommandFormSubmit(event, form) {
+        event.preventDefault();
+        var data = new FormData(form);
+        var submittedCommand = String(data.get("command") || "");
+        submitDashboardCommand(form, data).then(function (handled) {
             if (handled === false) return;
             pushCommandHistory(submittedCommand);
             setCommandStatus("", "");
@@ -403,6 +540,17 @@
         }).catch(function () {
             form.submit();
         });
+        return true;
+    }
+
+    document.addEventListener("submit", function (event) {
+        var form = event.target;
+        if (!form) return;
+        if (!form.matches(".jaw-command form")) {
+            handleWorkspaceFormSubmit(event, form);
+            return;
+        }
+        handleCommandFormSubmit(event, form);
     });
 
     restorePanes();
