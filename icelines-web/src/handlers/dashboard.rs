@@ -106,6 +106,16 @@ pub async fn get_dashboard(
     let composition = dashboard_composition(&q, active_workbench);
     let active_fields = active_dashboard_fields(active_workbench, composition.experience);
     let active_pane_models = active_dashboard_pane_models(active_workbench);
+    let right_detail_ring = right_detail_ring_links(
+        &state,
+        &workspace_url,
+        composition.left.id,
+        composition.right.id,
+        composition.experience,
+        &left_pane_workspace_url,
+        &right_pane_workspace_url,
+    )
+    .await;
     let left_pane_open_href = pinned_pane_open_href(
         &left_pane_workspace_url,
         composition.left.id,
@@ -255,6 +265,7 @@ pub async fn get_dashboard(
             scores_surface_html,
             show_full_schedule,
             schedule_surface_html,
+            right_detail_ring,
         });
     }
 
@@ -308,6 +319,7 @@ pub async fn get_dashboard(
         scores_surface_html,
         show_full_schedule,
         schedule_surface_html,
+        right_detail_ring,
         left_pane_workspace_url: left_pane_workspace_url.clone(),
         left_pane_workspace_label,
         left_pane_workspace_summary,
@@ -720,6 +732,84 @@ fn pinned_pane_clear_href(
         left_workspace,
         right_workspace,
     )
+}
+
+async fn right_detail_ring_links(
+    state: &WebState,
+    center_workspace: &str,
+    left: WorkbenchPaneBindingId,
+    right: WorkbenchPaneBindingId,
+    experience: Option<&WorkbenchExperience>,
+    left_workspace: &str,
+    right_workspace: &str,
+) -> Vec<DashboardLinkRow> {
+    let Some(team) = player_workspace_team(state, center_workspace).await else {
+        return Vec::new();
+    };
+    let ring = [
+        (
+            "Team depth",
+            format!("/team/{team}"),
+            "roster context for this player",
+        ),
+        (
+            "Team season",
+            format!("/team/{team}/season"),
+            "schedule and season context",
+        ),
+        (
+            "League leaders",
+            "/leaders".to_owned(),
+            "return to the leaderboard context",
+        ),
+    ];
+    let active_idx = ring.iter().position(|(_, workspace, _)| {
+        workspace_route_key(workspace) == workspace_route_key(right_workspace)
+    });
+    let next_idx = active_idx.map_or(0, |idx| (idx + 1) % ring.len());
+    let (label, next_workspace, detail) = &ring[next_idx];
+    let current = active_idx
+        .map(|idx| ring[idx].0)
+        .unwrap_or("empty right pane");
+
+    vec![DashboardLinkRow {
+        label: "Cycle right detail".to_owned(),
+        href: dashboard_href(
+            center_workspace,
+            left,
+            right,
+            experience,
+            left_workspace,
+            next_workspace,
+        ),
+        detail: format!("Next: {label} ({detail}) · current: {current}"),
+    }]
+}
+
+async fn player_workspace_team(state: &WebState, workspace_url: &str) -> Option<String> {
+    let player_id = player_workspace_id(workspace_route_key(workspace_url))?
+        .parse::<u32>()
+        .ok()
+        .map(PlayerId)?;
+    let (season, season_type) = {
+        let cfg = state.config.read().await;
+        (
+            cfg.active_season.parse::<u32>().map(Season).ok()?,
+            SeasonType::parse_lossy(&cfg.active_season_type),
+        )
+    };
+    let repo = state.repo.read().await;
+    let view = PlayerCardView::from_repository(&repo, player_id, season, season_type)?;
+    let team = view
+        .active
+        .as_ref()
+        .map(|active| active.team_display.as_str())?
+        .split('/')
+        .next()
+        .unwrap_or("")
+        .trim()
+        .to_ascii_uppercase();
+    team_workspace_slug(&format!("/team/{team}")).map(|_| team)
 }
 
 fn is_workspace_route(path: &str) -> bool {

@@ -1380,6 +1380,52 @@ async fn l1_dashboard_shell_renders_pinned_pane_workspaces() {
 }
 
 #[tokio::test]
+async fn l1_dashboard_player_workspace_renders_right_detail_ring() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/player/8478402")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("aria-label=\"Right detail ring\""));
+    assert!(body.contains("Cycle right detail"));
+    assert!(body.contains("right_workspace=%2Fteam%2FEDM"));
+    assert!(body.contains("Next: Team depth"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard?workspace=/player/8478402&right_workspace=/team/EDM")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("right_workspace=%2Fteam%2FEDM%2Fseason"));
+    assert!(body.contains("Next: Team season"));
+    assert!(body.contains("current: Team depth"));
+}
+
+#[tokio::test]
 async fn l1_dashboard_command_read_redirects_to_workspace_state() {
     let app = router(WebState::new());
     let response = app

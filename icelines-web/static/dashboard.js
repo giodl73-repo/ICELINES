@@ -75,7 +75,7 @@
         if (url.origin !== window.location.origin || url.pathname !== "/dashboard") return null;
         ["left_workspace", "right_workspace"].forEach(function (key) {
             var value = new URLSearchParams(window.location.search).get(key);
-            if (value) url.searchParams.set(key, value);
+            if (value && !url.searchParams.has(key)) url.searchParams.set(key, value);
         });
         return url;
     }

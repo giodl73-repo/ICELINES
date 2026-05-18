@@ -87,6 +87,7 @@ pub struct DashboardTemplate {
     pub scores_surface_html: String,
     pub show_full_schedule: bool,
     pub schedule_surface_html: String,
+    pub right_detail_ring: Vec<DashboardLinkRow>,
     pub left_pane_workspace_url: String,
     pub left_pane_workspace_label: String,
     pub left_pane_workspace_summary: Vec<DashboardSummaryRow>,
@@ -136,6 +137,7 @@ pub struct DashboardWorkspaceTemplate {
     pub scores_surface_html: String,
     pub show_full_schedule: bool,
     pub schedule_surface_html: String,
+    pub right_detail_ring: Vec<DashboardLinkRow>,
 }
 
 #[derive(Debug, Clone)]

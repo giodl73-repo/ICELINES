@@ -3,6 +3,15 @@
         <h1>{{ workspace_label }}</h1>
         <a class="link-button-secondary" href="{{ workspace_url }}">Open full {{ workspace_label }}</a>
     </div>
+    {% if !right_detail_ring.is_empty() %}
+    <nav class="chip-strip" aria-label="Right detail ring">
+        <span class="chip-strip-label">Right detail:</span>
+        {% for row in right_detail_ring %}
+        <a href="{{ row.href }}" class="filter-chip" data-dashboard-composition-link>{{ row.label }}</a>
+        <span class="jaw-detail">{{ row.detail }}</span>
+        {% endfor %}
+    </nav>
+    {% endif %}
     {% if show_full_leaders %}
     <div class="jaw-full-workspace" aria-label="Full Leaders workspace">
         <p class="meta-line">
