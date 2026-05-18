@@ -472,9 +472,9 @@ fn render_mdi_cmdbar(f: &mut Frame, area: Rect, mdi: &crate::tui::mdi::MdiLayout
         // emphasizes the cmdbar mechanics: how to enter, how
         // to leave, history navigation.
         let hint = if area.width >= 110 {
-            " Press : to command  |  / slash  |  Up/Down history  |  Ctrl+H favorites  |  Ctrl+L schedule  |  q quit "
+            " Press : to command  |  / slash  |  [ left  |  ] right  |  \\ swap  |  Ctrl+H favorites  |  Ctrl+L schedule  |  q quit "
         } else {
-            " : command  |  / slash  |  Up/Down history  |  q quit "
+            " : command  |  / slash  |  [ ] panes  |  \\ swap  |  q quit "
         };
         f.render_widget(Paragraph::new(hint).style(dim), area);
     }

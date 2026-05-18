@@ -59,6 +59,7 @@ unrendered side-pane placeholders.
 | 47 | Serve workspace orbit controls | done | Generalized center-stable orbit controls with left/right rings, pin actions, and keyboard shortcuts. |
 | 48 | Serve explicit target controls | done | Added discoverable Center/Left/Right controls to dashboard preview rows and workspace cards. |
 | 49 | Serve full game workspace | done | Embedded the full game detail page in dashboard game workspaces. |
+| 50 | TUI orbit key parity | done | Mapped browser orbit keys onto TUI pane cycling and center/side focus swapping. |
 
 ## Success criteria
 
@@ -131,3 +132,4 @@ unrendered side-pane placeholders.
 - Browser dashboard player and team workspaces expose center-stable orbit controls for left context, right detail, direct pinning, and keyboard cycling.
 - Browser dashboard preview rows and workspace cards expose explicit Center, Left, and Right target controls.
 - Browser dashboard Game workspaces show the full game detail page instead of the compact summary preview.
+- TUI MDI supports browser-parity orbit keys for left pane cycling, right pane cycling, and center/side focus swapping.

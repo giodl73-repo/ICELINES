@@ -754,6 +754,18 @@ impl App {
                     }
                     return false;
                 }
+                Action::Char('[') => {
+                    self.cycle_mdi_pane(crate::tui::mdi::MdiFocus::LeftPane, false);
+                    return false;
+                }
+                Action::Char(']') => {
+                    self.cycle_mdi_pane(crate::tui::mdi::MdiFocus::RightPane, false);
+                    return false;
+                }
+                Action::Char('\\') => {
+                    self.swap_mdi_workspace_focus();
+                    return false;
+                }
                 Action::Down
                     if self
                         .mdi
@@ -1859,10 +1871,17 @@ impl App {
     }
 
     fn cycle_mdi_focused_pane(&mut self, reverse: bool) {
+        let Some(focus) = self.mdi.as_ref().map(|mdi| mdi.focus) else {
+            return;
+        };
+        self.cycle_mdi_pane(focus, reverse);
+    }
+
+    fn cycle_mdi_pane(&mut self, focus: crate::tui::mdi::MdiFocus, reverse: bool) {
         let Some(mdi) = self.mdi.as_mut() else {
             return;
         };
-        let (zone, selected) = match mdi.focus {
+        let (zone, selected) = match focus {
             crate::tui::mdi::MdiFocus::LeftPane => ("Left pane", mdi.cycle_left_pane(reverse)),
             crate::tui::mdi::MdiFocus::RightPane => ("Right pane", mdi.cycle_right_pane(reverse)),
             _ => return,
@@ -1870,6 +1889,25 @@ impl App {
         self.status = selected
             .map(|binding| format!("{zone} · {}", binding.label))
             .unwrap_or_else(|| format!("{zone} · no TUI panes available"));
+    }
+
+    fn swap_mdi_workspace_focus(&mut self) {
+        let Some(mdi) = self.mdi.as_mut() else {
+            return;
+        };
+        mdi.focus = match mdi.focus {
+            crate::tui::mdi::MdiFocus::RightPane
+            | crate::tui::mdi::MdiFocus::LeftPane
+            | crate::tui::mdi::MdiFocus::ActivityRail => crate::tui::mdi::MdiFocus::Workspace,
+            crate::tui::mdi::MdiFocus::Workspace if mdi.show_schedule => {
+                crate::tui::mdi::MdiFocus::RightPane
+            }
+            crate::tui::mdi::MdiFocus::Workspace if mdi.show_favorites => {
+                crate::tui::mdi::MdiFocus::LeftPane
+            }
+            crate::tui::mdi::MdiFocus::Workspace => crate::tui::mdi::MdiFocus::Workspace,
+        };
+        self.status = format!("MDI focus swap · {}", mdi_focus_label(mdi.focus));
     }
 
     /// Phase Adams.5 — MDI-mode auto-fetch. The Scores ribbon
@@ -6197,6 +6235,48 @@ mod tests {
             app.screen,
             Screen::Home,
             "SDI multi-tab Tab must cycle the screen"
+        );
+    }
+
+    #[test]
+    fn l0_mdi_browser_parity_orbit_keys_cycle_panes_without_screen_swap() {
+        let mut app = fresh_mdi_app();
+        app.screen = Screen::PlayerById(icelines_core::identity::PlayerId(8478402));
+        let original_screen = app.screen.clone();
+
+        app.handle(Action::Char('['));
+        app.handle(Action::Char(']'));
+
+        let mdi = app.mdi.as_ref().expect("mdi attached");
+        assert_eq!(app.screen, original_screen);
+        assert_eq!(
+            mdi.left_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::WatchlistLeft
+        );
+        assert_eq!(
+            mdi.right_pane_binding,
+            icelines_core::WorkbenchPaneBindingId::PlayerRight
+        );
+        assert!(app.status.contains("Right pane"));
+    }
+
+    #[test]
+    fn l0_mdi_browser_parity_swap_key_toggles_center_side_focus() {
+        let mut app = fresh_mdi_app();
+        assert_eq!(
+            app.mdi.as_ref().unwrap().focus,
+            crate::tui::mdi::MdiFocus::Workspace
+        );
+
+        app.handle(Action::Char('\\'));
+        assert_eq!(
+            app.mdi.as_ref().unwrap().focus,
+            crate::tui::mdi::MdiFocus::RightPane
+        );
+        app.handle(Action::Char('\\'));
+        assert_eq!(
+            app.mdi.as_ref().unwrap().focus,
+            crate::tui::mdi::MdiFocus::Workspace
         );
     }
 
