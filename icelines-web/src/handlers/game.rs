@@ -12,7 +12,7 @@ use icelines_core::{
 
 #[derive(Template)]
 #[template(path = "game.html")]
-struct GameTemplate {
+pub(super) struct GameTemplate {
     active_label: String,
     view: GameDetailView,
 }
@@ -98,6 +98,15 @@ pub(super) async fn build_game_detail(state: &WebState, id: u64) -> Result<GameD
         ViewContext::new(ViewWindow::new(season, season_type)),
         boxscore_input(boxscore),
     )))
+}
+
+pub(super) async fn build_game_template(state: &WebState, id: u64) -> Result<GameTemplate, String> {
+    let active_label = {
+        let cfg = state.config.read().await;
+        cfg.active_label.clone()
+    };
+    let view = build_game_detail(state, id).await?;
+    Ok(GameTemplate { active_label, view })
 }
 
 pub async fn get_game(State(state): State<WebState>, Path(id): Path<u64>) -> Response {

@@ -233,6 +233,10 @@
     <div class="jaw-full-workspace" aria-label="Full Schedule workspace">
         {{ schedule_surface_html|safe }}
     </div>
+    {% else if show_full_game %}
+    <div class="jaw-full-workspace" aria-label="Full Game workspace">
+        {{ game_surface_html|safe }}
+    </div>
     {% else %}
     {% if !workspace_summary.is_empty() %}
     <div class="table-scroll jaw-data-preview" aria-label="{{ workspace_label }} preview">

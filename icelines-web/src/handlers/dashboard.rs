@@ -206,6 +206,7 @@ pub async fn get_dashboard(
         && workspace_route_key(&workspace_url).ends_with("/season");
     let show_full_scores = workspace_route_key(&workspace_url) == "/scores";
     let show_full_schedule = workspace_route_key(&workspace_url) == "/schedule";
+    let show_full_game = game_workspace_id(workspace_route_key(&workspace_url)).is_some();
     let (leaders_query, leaders_raw_query) = leaders_query_from_workspace(&workspace_url);
     let leaders_surface =
         match super::leaders::build_leaders_template(&state, leaders_query, &leaders_raw_query)
@@ -270,6 +271,14 @@ pub async fn get_dashboard(
     } else {
         String::new()
     };
+    let game_surface_html = if show_full_game {
+        match full_game_workspace_html(&state, &workspace_url).await {
+            Ok(html) => html,
+            Err(response) => return response,
+        }
+    } else {
+        String::new()
+    };
 
     if matches!(q.partial.as_deref(), Some("workspace")) {
         return render_template(DashboardWorkspaceTemplate {
@@ -295,6 +304,8 @@ pub async fn get_dashboard(
             scores_surface_html,
             show_full_schedule,
             schedule_surface_html,
+            show_full_game,
+            game_surface_html,
             left_context_ring,
             right_detail_ring,
             center_pin_left_href,
@@ -352,6 +363,8 @@ pub async fn get_dashboard(
         scores_surface_html,
         show_full_schedule,
         schedule_surface_html,
+        show_full_game,
+        game_surface_html,
         left_context_ring,
         right_detail_ring,
         center_pin_left_href,
@@ -673,6 +686,44 @@ async fn full_schedule_workspace_html(
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Html("schedule template did not render a main region".to_owned()),
+        )
+            .into_response()
+    })
+}
+
+async fn full_game_workspace_html(
+    state: &WebState,
+    workspace_url: &str,
+) -> Result<String, Response> {
+    let Some(game_id) = game_workspace_id(workspace_route_key(workspace_url))
+        .and_then(|raw| raw.parse::<u64>().ok())
+    else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Html("invalid game workspace".to_owned()),
+        )
+            .into_response());
+    };
+    let template = super::game::build_game_template(state, game_id)
+        .await
+        .map_err(|error| {
+            (
+                StatusCode::BAD_GATEWAY,
+                Html(format!("game detail unavailable: {error}")),
+            )
+                .into_response()
+        })?;
+    let rendered = template.render().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {e}")),
+        )
+            .into_response()
+    })?;
+    extract_main_content(&rendered).ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("game template did not render a main region".to_owned()),
         )
             .into_response()
     })
@@ -3169,6 +3220,10 @@ mod tests {
             normalize_workspace(Some("/team/EDM/season")),
             "/team/EDM/season"
         );
+        assert_eq!(
+            normalize_workspace(Some("/game/2023020001")),
+            "/game/2023020001"
+        );
         assert_eq!(normalize_workspace(Some("/team/EDM/streaks")), "/leaders");
         assert_eq!(
             normalize_workspace(Some("/records/player/8478402")),
@@ -3189,6 +3244,7 @@ mod tests {
         assert_eq!(workspace_label("/team/EDM"), "Team Depth");
         assert_eq!(workspace_label("/team/EDM/season"), "Team Season");
         assert_eq!(workspace_label("/player/8478402"), "Player Card");
+        assert_eq!(workspace_label("/game/2023020001"), "Game Detail");
         assert_eq!(workspace_label("/career?league=OHL"), "Career Cohorts");
         assert_eq!(workspace_label("/reports/poach"), "Poach Report");
         assert_eq!(
