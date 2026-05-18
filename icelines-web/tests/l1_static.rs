@@ -193,6 +193,9 @@ async fn l1_static_css_contains_prince_route_layout_classes() {
         ".jaw-command-status",
         "data-dashboard-pane-collapsed",
         "position: sticky",
+        "env(safe-area-inset-bottom)",
+        "overscroll-behavior-x: contain",
+        "touch-action: manipulation",
     ] {
         assert!(css.contains(class), "style.css missing {class}");
     }
@@ -214,6 +217,33 @@ async fn l1_static_svg_serves_image_svg_xml() {
         ct.starts_with("image/svg+xml"),
         "icelines.svg Content-Type must be image/svg+xml, got: {ct}"
     );
+}
+
+#[tokio::test]
+async fn l1_static_webmanifest_serves_pwa_metadata() {
+    let resp = fire("/static/site.webmanifest").await;
+    assert_eq!(resp.status(), StatusCode::OK);
+
+    let ct = resp
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(
+        ct.starts_with("application/manifest+json"),
+        "site.webmanifest Content-Type must be application/manifest+json, got: {ct}"
+    );
+
+    let body = body_text("/static/site.webmanifest").await;
+    for token in [
+        "\"start_url\": \"/dashboard\"",
+        "\"display\": \"standalone\"",
+        "\"theme_color\": \"#041E42\"",
+        "\"purpose\": \"any maskable\"",
+    ] {
+        assert!(body.contains(token), "site.webmanifest missing {token}");
+    }
 }
 
 /// l1_static_unknown_asset_returns_404

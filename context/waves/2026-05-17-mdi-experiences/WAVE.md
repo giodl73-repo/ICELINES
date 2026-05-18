@@ -60,6 +60,7 @@ unrendered side-pane placeholders.
 | 48 | Serve explicit target controls | done | Added discoverable Center/Left/Right controls to dashboard preview rows and workspace cards. |
 | 49 | Serve full game workspace | done | Embedded the full game detail page in dashboard game workspaces. |
 | 50 | TUI orbit key parity | done | Mapped browser orbit keys onto TUI pane cycling and center/side focus swapping. |
+| 51 | Serve iPhone PWA shell | done | Added installable mobile-web metadata and iPhone-safe dashboard layout behavior. |
 
 ## Success criteria
 
@@ -133,3 +134,4 @@ unrendered side-pane placeholders.
 - Browser dashboard preview rows and workspace cards expose explicit Center, Left, and Right target controls.
 - Browser dashboard Game workspaces show the full game detail page instead of the compact summary preview.
 - TUI MDI supports browser-parity orbit keys for left pane cycling, right pane cycling, and center/side focus swapping.
+- Browser dashboard can be saved to an iPhone home screen with standalone PWA metadata and safe-area-aware mobile chrome.

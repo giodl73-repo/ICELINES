@@ -4,6 +4,7 @@
 //! - `htmx.min.js` (~14 KB after `scripts/vendor-htmx.sh`; stub today)
 //! - `style.css`   (~5 KB hand-rolled, lockstep with glass.md palette)
 //! - `icelines.svg` (logo)
+//! - `site.webmanifest` (mobile/PWA install metadata)
 //!
 //! ## Headers
 //!
@@ -26,6 +27,7 @@ const HTMX_MIN_JS: &[u8] = include_bytes!("../static/htmx.min.js");
 const DASHBOARD_JS: &[u8] = include_bytes!("../static/dashboard.js");
 const STYLE_CSS: &[u8] = include_bytes!("../static/style.css");
 const ICELINES_SVG: &[u8] = include_bytes!("../static/icelines.svg");
+const SITE_WEBMANIFEST: &[u8] = include_bytes!("../static/site.webmanifest");
 
 /// `Cache-Control` value for all `/static/*` responses. One year +
 /// `immutable` per the spec's static-asset header policy. Safe because
@@ -50,6 +52,7 @@ pub async fn serve_static(Path(asset): Path<String>) -> Response {
         "dashboard.js" => (DASHBOARD_JS, "application/javascript; charset=utf-8"),
         "style.css" => (STYLE_CSS, "text/css; charset=utf-8"),
         "icelines.svg" => (ICELINES_SVG, "image/svg+xml; charset=utf-8"),
+        "site.webmanifest" => (SITE_WEBMANIFEST, "application/manifest+json; charset=utf-8"),
         _ => return (StatusCode::NOT_FOUND, "static asset not found").into_response(),
     };
 
@@ -158,6 +161,11 @@ mod tests {
             ICELINES_SVG.len() > 100,
             "icelines.svg bytes look empty ({} bytes)",
             ICELINES_SVG.len()
+        );
+        assert!(
+            SITE_WEBMANIFEST.len() > 100,
+            "site.webmanifest bytes look empty ({} bytes)",
+            SITE_WEBMANIFEST.len()
         );
     }
 

@@ -57,6 +57,7 @@ html {
     line-height: 1.5;
     color: var(--ice-fg);
     background: var(--ice-bg);
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -89,6 +90,14 @@ a {
     color: var(--link);
     text-decoration: underline;
     text-underline-offset: 2px;
+}
+
+a,
+button,
+summary,
+input,
+select {
+    touch-action: manipulation;
 }
 a:hover {
     color: var(--link-hover);
@@ -776,6 +785,38 @@ code {
 }
 
 @media (max-width: 720px) {
+    html {
+        scroll-padding-top: 7rem;
+    }
+
+    body {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+
+    .season-header {
+        padding-top: calc(0.45rem + env(safe-area-inset-top));
+    }
+
+    .global-nav {
+        flex-wrap: nowrap;
+        gap: 0.25rem;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .global-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .season-type-toggle {
+        flex: 0 0 auto;
+        margin-left: 0.25rem;
+    }
+
     .jaw-shell {
         margin-left: 0;
         min-height: auto;
@@ -802,7 +843,7 @@ code {
     }
 
     .jaw-command {
-        bottom: 0.5rem;
+        bottom: calc(0.5rem + env(safe-area-inset-bottom));
         position: sticky;
         z-index: 5;
     }
@@ -823,6 +864,52 @@ code {
     .jaw-workspace-heading {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .jaw-pane,
+    .jaw-workspace {
+        border-radius: 10px;
+        overflow-x: auto;
+        padding: 0.7rem;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .jaw-pane-title,
+    .jaw-pane-selector,
+    .jaw-pane-actions,
+    .jaw-workspace-targets,
+    .jaw-workspace-heading > div {
+        flex-wrap: wrap;
+    }
+
+    .jaw-score-strip,
+    .jaw-experience-tabs,
+    .jaw-pane-selector {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 480px) {
+    main {
+        padding: 0.75rem 0.4rem;
+    }
+
+    .jaw-shell {
+        gap: 0.45rem;
+    }
+
+    .jaw-ribbon,
+    .jaw-command {
+        padding: 0.45rem 0.55rem;
+    }
+
+    .jaw-score-chip {
+        min-width: 7.25rem;
+    }
+
+    .jaw-workspace-grid,
+    .jaw-affordance-grid {
+        grid-template-columns: 1fr;
     }
 }
 

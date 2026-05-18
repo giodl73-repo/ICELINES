@@ -1436,6 +1436,10 @@ mod tests {
             "every page must include viewport meta"
         );
         assert!(
+            html.contains("viewport-fit=cover"),
+            "every page must opt into iOS safe-area viewport behavior"
+        );
+        assert!(
             html.contains("skip-link"),
             "every page must include skip-to-content link"
         );
@@ -1462,5 +1466,8 @@ mod tests {
         let html = tmpl.render().unwrap();
         assert!(html.contains("/static/style.css"));
         assert!(html.contains("/static/icelines.svg"));
+        assert!(html.contains("/static/site.webmanifest"));
+        assert!(html.contains("apple-mobile-web-app-capable"));
+        assert!(html.contains("theme-color"));
     }
 }

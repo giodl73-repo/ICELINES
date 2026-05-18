@@ -2,10 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{% block title %}IceLines{% endblock %} — IceLines</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="icon" type="image/svg+xml" href="/static/icelines.svg">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <link rel="apple-touch-icon" href="/static/icelines.svg">
+    <meta name="theme-color" content="#041E42">
+    <meta name="apple-mobile-web-app-title" content="IceLines">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     {# Open Graph + Twitter card — Sasq.1. Each page-level template
        can override the og block; default carries IceLines branding
        so even routes without per-page metadata still preview cleanly. #}
