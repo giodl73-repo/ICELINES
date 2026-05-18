@@ -63,7 +63,11 @@
     <div class="jaw-body">
         <aside class="jaw-pane jaw-side-left" aria-label="Left context pane" data-dashboard-pane="favorites">
             <div class="jaw-pane-title">
+                {% if left_pane_workspace_url != "" %}
+                <h2>Pinned: {{ left_pane_workspace_label }}</h2>
+                {% else %}
                 <h2>{{ left_pane_binding.label }}</h2>
+                {% endif %}
                 <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="favorites" aria-label="Toggle favorites pane" aria-expanded="true">Hide</button>
             </div>
             <div class="jaw-pane-content">
@@ -179,7 +183,11 @@
 
         <aside class="jaw-pane jaw-side-right" aria-label="Right context pane" data-dashboard-pane="schedule">
             <div class="jaw-pane-title">
+                {% if right_pane_workspace_url != "" %}
+                <h2>Pinned: {{ right_pane_workspace_label }}</h2>
+                {% else %}
                 <h2>{{ right_pane_binding.label }}</h2>
+                {% endif %}
                 <button type="button" class="jaw-pane-toggle" data-dashboard-pane-toggle="schedule" aria-label="Toggle schedule pane" aria-expanded="true">Hide</button>
             </div>
             <div class="jaw-pane-content">

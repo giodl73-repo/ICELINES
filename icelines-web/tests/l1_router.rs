@@ -1366,6 +1366,8 @@ async fn l1_dashboard_shell_renders_pinned_pane_workspaces() {
 
     assert!(body.contains("aria-label=\"Pinned left workspace\""));
     assert!(body.contains("aria-label=\"Pinned right workspace\""));
+    assert!(body.contains("<h2>Pinned: Player Card</h2>"));
+    assert!(body.contains("<h2>Pinned: Team Depth</h2>"));
     assert!(body.contains("Pinned with Ctrl-click"));
     assert!(body.contains("Pinned with Ctrl+Shift-click"));
     assert!(body.contains("Swap with center"));
