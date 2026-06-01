@@ -183,7 +183,15 @@ pub fn router(state: WebState) -> Router {
         .route("/poach", get(handlers::poach::get_poach))
         .route("/reports/poach", get(handlers::poach::get_poach_report))
         .route("/reports/weekly", get(handlers::poach::get_weekly_report))
+        .route(
+            "/reports/analytics-cache",
+            get(handlers::analytics_cache_report::analytics_cache_report),
+        )
         .route("/api/v1/poach", get(handlers::poach::get_poach_json))
+        .route(
+            "/api/v1/reports/analytics-cache",
+            get(handlers::analytics_cache_report::analytics_cache_report_json),
+        )
         .route(
             "/api/v1/watch-rules",
             get(handlers::poach::get_watch_rules_json),
@@ -403,6 +411,7 @@ mod handlers {
     pub mod depth;
 
     pub mod admin;
+    pub mod analytics_cache_report;
     pub mod fantasy;
     /// Phase Selke.6 — fantasy poacher web board.
     pub mod poach;

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">Cache-backed analytics</p>
+  <h1>{{ title }}</h1>
+  <p>
+    This report reads a named analytics cache record and preserves its source
+    state, quality, methodology, disclosures, and non-claims. It does not
+    recompute analytics or fetch live data.
+  </p>
+  <p class="meta">Cache key: <code>{{ cache_key }}</code></p>
+  <p class="meta">Status: {{ status }} · Disposition: {{ disposition }}</p>
+  <p><a class="button secondary" href="{{ json_href }}">Open JSON twin</a></p>
+</section>
+
+{% if error != "" %}
+<section class="card warning">
+  <h2>Report unavailable</h2>
+  <p>{{ error }}</p>
+  <p>Build or restore the named analytics cache before using this report.</p>
+</section>
+{% endif %}
+
+<section class="grid cards">
+  <article class="card">
+    <h2>Source window</h2>
+    <p>{{ source_window }}</p>
+  </article>
+  <article class="card">
+    <h2>Scope</h2>
+    <p>{{ scope }}</p>
+  </article>
+  <article class="card">
+    <h2>Methodology</h2>
+    <p>{{ methodology_version }}</p>
+  </article>
+  <article class="card">
+    <h2>Quality</h2>
+    <p>{{ quality }}</p>
+    <p class="meta">Sample size: {{ sample_size }}</p>
+  </article>
+</section>
+
+<section class="card">
+  <h2>Metrics from cache</h2>
+  {% if metrics.len() == 0 %}
+  <p>No metrics are available for this cache-backed report state.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th>Value</th>
+        <th>Unit</th>
+        <th>Source state</th>
+        <th>Methodology note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for metric in metrics %}
+      <tr>
+        <td>{{ metric.label }} <span class="meta">({{ metric.key }})</span></td>
+        <td>{{ metric.value }}</td>
+        <td>{{ metric.unit }}</td>
+        <td>{{ metric.source_state }}</td>
+        <td>{{ metric.methodology_note }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Source state</h2>
+  {% if sources.len() == 0 %}
+  <p>No source-state records are available for this cache-backed report state.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Source</th>
+        <th>State</th>
+        <th>Provenance</th>
+        <th>Fetched at</th>
+        <th>Message</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for source in sources %}
+      <tr>
+        <td>{{ source.source }}</td>
+        <td>{{ source.state }}</td>
+        <td>{{ source.provenance }}</td>
+        <td>{{ source.fetched_at }}</td>
+        <td>{{ source.message }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+<section class="grid cards">
+  <article class="card">
+    <h2>Disclosures</h2>
+    {% if disclosures.len() == 0 %}
+    <p>No disclosures were recorded.</p>
+    {% else %}
+    <ul>
+      {% for disclosure in disclosures %}
+      <li>{{ disclosure }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+  <article class="card">
+    <h2>Non-claims</h2>
+    {% if non_claims.len() == 0 %}
+    <p>No non-claims were recorded.</p>
+    {% else %}
+    <ul>
+      {% for non_claim in non_claims %}
+      <li>{{ non_claim }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+  <article class="card">
+    <h2>Warnings</h2>
+    {% if warnings.len() == 0 %}
+    <p>No cache warnings were recorded.</p>
+    {% else %}
+    <ul>
+      {% for warning in warnings %}
+      <li>{{ warning }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+  <article class="card">
+    <h2>Limitations</h2>
+    {% if limitations.len() == 0 %}
+    <p>No cache limitations were recorded.</p>
+    {% else %}
+    <ul>
+      {% for limitation in limitations %}
+      <li>{{ limitation }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+</section>
+
+<section class="card">
+  <h2>Cache location</h2>
+  <p class="meta">Data root: <code>{{ data_root }}</code></p>
+</section>
+{% endblock %}

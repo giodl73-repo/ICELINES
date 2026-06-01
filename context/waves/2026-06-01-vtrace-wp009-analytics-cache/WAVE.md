@@ -7,10 +7,11 @@ for coach/scout/report/card/line/goalie/practice/postgame decision-support
 surfaces.
 
 This wave started with a specification baseline and now has partial
-implementation evidence for the core contract, strict tempdir-backed store, and
-first internal downstream consumer ViewModel fixture. It does not yet claim a
-dashboard/report surface, agent action, prediction accuracy, or autonomous
-coaching authority.
+implementation evidence for the core contract, strict tempdir-backed store,
+first internal downstream consumer ViewModel fixture, and first narrow
+product-facing named-cache Web report. It does not yet claim a full dashboard,
+scout report, player card, line explorer, agent action, prediction accuracy, or
+autonomous coaching authority.
 
 ## Entry posture
 
@@ -43,7 +44,12 @@ coaching authority.
 3. Consumer slice: prove one dashboard/report/card-style envelope preserves
    prepared analytics, provenance, freshness, quality, warnings, and disclosures.
    - Status: done for the internal ViewModel fixture in pulse 04; shipped
-     product surfaces remain pending.
+     product surfaces remain limited to the named-cache report in pulse 05.
+4. Product report slice: prove one Web HTML report and JSON twin can render an
+   existing cache record without recomputing analytics or fetching live data.
+   - Status: done for `/reports/analytics-cache` and
+     `/api/v1/reports/analytics-cache` in pulse 05; broader hockey screens and
+     reports remain pending.
 
 ## Pulse log
 
@@ -53,3 +59,4 @@ coaching authority.
 | 02 | Initial core schema/source/consumer contract | core_cache_contract_partial_passed |
 | 03 | Strict fetch-layer cache store/read/invalidation fixtures | store_read_invalidation_partial_passed |
 | 04 | Downstream consumer ViewModel fixture | consumer_viewmodel_partial_passed |
+| 05 | Product-facing named-cache Web report and JSON twin | web_report_partial_passed |

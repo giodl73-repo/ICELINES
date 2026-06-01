@@ -1,5 +1,42 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 05 Named-Cache Web Report Review
+
+**Scope:** First product-facing report surface for the major analytics cache.
+
+**Decision:** `partial_pass`
+
+Pulse 05 adds `/reports/analytics-cache` and
+`/api/v1/reports/analytics-cache` as narrow cache-key-driven surfaces. The
+handlers read an existing `AnalyticsCacheStore` record, project it through the
+consumer envelope and `AnalyticsCacheConsumerView`, and render the preserved
+metrics, source state, quality, methodology, disclosures, and non-claims without
+recomputing analytics or fetching live data.
+
+**Claims accepted**
+
+- A named cache record can render as HTML and JSON through Web routes.
+- Missing cache records produce explicit unavailable state instead of fabricated
+  data.
+- Route inventory and surface-parity records include the new report routes.
+
+**Claims not accepted**
+
+- This is not a full coach dashboard, opponent scout, player evidence card, line
+  explorer, goalie readiness screen, practice report, postgame report, or agent
+  action surface.
+- This does not add a cache builder, metric catalog UI, automatic metric
+  discovery, or broad invalidation/freshness family evidence.
+- The report does not imply prediction accuracy, betting value, injury/deployment
+  insight, line-chemistry causality, or autonomous coaching authority.
+
+**Status**
+
+- WP-009 status: `partial`.
+- VAL-011 status: `partial`.
+- Continue with broader product-facing surfaces only behind the same cache
+  envelope and copy-review constraints.
+
 ## 2026-06-01 WP-009 Pulse 04 Consumer ViewModel Review
 
 **Scope:** First downstream consumer fixture for the major analytics cache.

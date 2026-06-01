@@ -61,8 +61,8 @@ Target-only rows remain honest:
   smoke pass.
 - `REQ-CACHE-001..004` have partial WP-009 implementation evidence for the
   versioned analytics cache schema, source-state/invalidation behavior, strict
-  store/read path, and internal consumer ViewModel; shipped product surfaces
-  remain pending.
+  store/read path, internal consumer ViewModel, and first named-cache Web report;
+  broader shipped product surfaces remain pending.
 
 ## Sequencing
 

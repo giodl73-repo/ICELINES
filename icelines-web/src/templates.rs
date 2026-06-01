@@ -55,6 +55,47 @@ pub struct HomeTemplate {
     pub top_goalies: Vec<GoalieRow>,
 }
 
+#[derive(Template)]
+#[template(path = "analytics_cache_report.html")]
+pub struct AnalyticsCacheReportTemplate {
+    pub title: String,
+    pub active_label: String,
+    pub cache_key: String,
+    pub json_href: String,
+    pub status: String,
+    pub disposition: String,
+    pub source_window: String,
+    pub scope: String,
+    pub methodology_version: String,
+    pub quality: String,
+    pub sample_size: String,
+    pub data_root: String,
+    pub error: String,
+    pub metrics: Vec<AnalyticsCacheReportMetricTemplateRow>,
+    pub sources: Vec<AnalyticsCacheReportSourceTemplateRow>,
+    pub warnings: Vec<String>,
+    pub limitations: Vec<String>,
+    pub disclosures: Vec<String>,
+    pub non_claims: Vec<String>,
+}
+
+pub struct AnalyticsCacheReportMetricTemplateRow {
+    pub key: String,
+    pub label: String,
+    pub value: String,
+    pub unit: String,
+    pub source_state: String,
+    pub methodology_note: String,
+}
+
+pub struct AnalyticsCacheReportSourceTemplateRow {
+    pub source: String,
+    pub state: String,
+    pub provenance: String,
+    pub fetched_at: String,
+    pub message: String,
+}
+
 /// `dashboard.html` — Jack Adams Web shell. Server-rendered first
 /// so the dashboard is useful without JavaScript; later slices
 /// progressively enhance workspace swaps and the command palette.
