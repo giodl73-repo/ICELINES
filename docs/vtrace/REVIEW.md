@@ -1,5 +1,51 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 03 Cache Store/Read Review
+
+**Scope:** Strict `icelines-fetch::analytics_cache_store` storage/read and
+invalidation slice.
+
+**Decision:** `partial_pass`
+
+Pulse 03 adds the first production-oriented analytics cache store/read path. The
+store writes only validated `AnalyticsCacheRecord` JSON, reads through the core
+schema/metric compatibility validator, refuses missing caches without creating
+storage, preserves stale/partial/missing source state, supports explicit
+invalidation by key, and leaves the previous record intact when an invalid
+rebuild candidate is rejected.
+
+This review does not claim shipped dashboard, report, player-card, line, goalie,
+practice, postgame, or agent surfaces.
+
+### Evidence inspected
+
+- `icelines-core/src/analytics_cache.rs`
+- `icelines-fetch/src/analytics_cache_store.rs`
+- `icelines-fetch/src/lib.rs`
+- `context/waves/2026-06-01-vtrace-wp009-analytics-cache/pulses/pulse-03.md`
+- `cargo test -p icelines-core analytics_cache --quiet`
+- `cargo test -p icelines-fetch analytics_cache_store --quiet`
+- `cargo fmt --check`
+- `cargo clippy -p icelines-core --lib --tests -- -D warnings`
+- `cargo clippy -p icelines-fetch --lib --tests -- -D warnings`
+- `C:\src\proof\target\debug\proof.exe check C:\src\TRACKER\repos\applied-systems\icelines\docs\vtrace --errors-only`
+- `git diff --check`
+
+### Accepted risks
+
+- The store is available as a typed Rust contract but is not wired to a CLI/Web
+  command or product surface yet.
+- Downstream hockey surfaces must continue to treat cache-backed analytics as
+  pending until their own consumer fixtures and product-copy reviews pass.
+
+### Closeout
+
+- WP-009 status: `partial`.
+- VAL-011 status: `partial`.
+- Next action: attach the store to a selected dashboard/report/card-style
+  consumer fixture without allowing renderer-local source-state or methodology
+  recomputation.
+
 ## 2026-06-01 WP-009 Pulse 02 Initial Core Cache Contract Review
 
 **Scope:** Initial `icelines-core::analytics_cache` schema/source-state/consumer

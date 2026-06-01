@@ -1,6 +1,7 @@
 #![deny(unsafe_code)]
 
 pub mod aggregate;
+pub mod analytics_cache_store;
 pub mod atomic_write;
 pub mod boxscore_client;
 pub mod boxscore_to_night_line;
@@ -43,6 +44,9 @@ pub mod transactions;
 // all deleted. Every consumer reads StatsRepository + PlayerView<'_> via
 // `stats_loader::load_into_repo`.
 
+pub use analytics_cache_store::{
+    AnalyticsCacheRead, AnalyticsCacheStore, AnalyticsCacheStoreError,
+};
 pub use boxscore_client::{aggregate_profiles, aggregate_shift_profiles, BoxscoreClient};
 pub use bundled::{
     get_bios as get_bundled_bios, get_playoffs as get_bundled_playoffs,

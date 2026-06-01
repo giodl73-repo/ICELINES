@@ -30,10 +30,18 @@ pub enum AnalyticsCacheError {
     LiveFetchSource { source_kind: SourceKind },
     #[error("analytics cache has no metrics")]
     MissingMetrics,
+    #[error("analytics cache has no invalidation keys")]
+    MissingInvalidation,
+    #[error("analytics cache invalidation key is empty")]
+    EmptyInvalidationKey,
+    #[error("analytics cache methodology version is empty")]
+    MissingMethodology,
     #[error("analytics cache metric {key} is not in the supported metric set")]
     UnsupportedMetric { key: String },
     #[error("analytics cache has no disclosure or non-claim text")]
     MissingDisclosure,
+    #[error("analytics cache has no supported consumers")]
+    MissingConsumers,
     #[error(
         "analytics cache consumer contract version {found} is not supported; expected {expected}"
     )]
@@ -220,6 +228,14 @@ pub struct AnalyticsCacheConsumerEnvelope {
     pub non_claims: Vec<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AnalyticsCacheReadDisposition {
+    Fresh,
+    Stale,
+    RebuildRequired,
+}
+
 #[derive(Deserialize)]
 struct SchemaProbe {
     schema_version: u16,
@@ -297,6 +313,40 @@ pub fn analytics_cache_consumer_envelope(
     })
 }
 
+pub fn analytics_cache_read_disposition(
+    record: &AnalyticsCacheRecord,
+    now: DateTime<Utc>,
+) -> AnalyticsCacheReadDisposition {
+    if record
+        .invalidation
+        .rebuild_after
+        .is_some_and(|rebuild_after| now >= rebuild_after)
+    {
+        return AnalyticsCacheReadDisposition::RebuildRequired;
+    }
+
+    if record
+        .invalidation
+        .stale_after
+        .is_some_and(|stale_after| now >= stale_after)
+        || record.quality.completeness == Completeness::Stale
+        || record
+            .sources
+            .iter()
+            .chain(
+                record
+                    .metrics
+                    .iter()
+                    .flat_map(|metric| metric.source_state.iter()),
+            )
+            .any(|source| source.state == Completeness::Stale)
+    {
+        return AnalyticsCacheReadDisposition::Stale;
+    }
+
+    AnalyticsCacheReadDisposition::Fresh
+}
+
 fn validate_record(
     record: &AnalyticsCacheRecord,
     supported_metric_keys: &[StatKey],
@@ -323,6 +373,20 @@ fn validate_record(
     if record.metrics.is_empty() {
         return Err(AnalyticsCacheError::MissingMetrics);
     }
+    if record.invalidation.keys.is_empty() {
+        return Err(AnalyticsCacheError::MissingInvalidation);
+    }
+    if record
+        .invalidation
+        .keys
+        .iter()
+        .any(|key| key.trim().is_empty())
+    {
+        return Err(AnalyticsCacheError::EmptyInvalidationKey);
+    }
+    if record.methodology_version.trim().is_empty() {
+        return Err(AnalyticsCacheError::MissingMethodology);
+    }
     for metric in &record.metrics {
         if metric.source_state.is_empty() {
             return Err(AnalyticsCacheError::MissingSources);
@@ -336,6 +400,9 @@ fn validate_record(
     }
     if record.disclosures.is_empty() || record.non_claims.is_empty() {
         return Err(AnalyticsCacheError::MissingDisclosure);
+    }
+    if record.supported_consumers.is_empty() {
+        return Err(AnalyticsCacheError::MissingConsumers);
     }
 
     Ok(())
@@ -527,6 +594,56 @@ mod tests {
             AnalyticsCacheError::UnsupportedMetric {
                 key: "expected_goals_share".to_string()
             }
+        );
+    }
+
+    #[test]
+    fn l0_wp009_cache_refuses_missing_invalidation_methodology_and_consumers() {
+        let mut record = sample_record();
+        record.invalidation.keys.clear();
+        let err = validate_record(&record, &supported_metric_keys())
+            .expect_err("cache invalidation keys are required");
+        assert_eq!(err, AnalyticsCacheError::MissingInvalidation);
+
+        let mut record = sample_record();
+        record.invalidation.keys = vec![" ".to_string()];
+        let err = validate_record(&record, &supported_metric_keys())
+            .expect_err("empty invalidation keys must refuse");
+        assert_eq!(err, AnalyticsCacheError::EmptyInvalidationKey);
+
+        let mut record = sample_record();
+        record.methodology_version.clear();
+        let err = validate_record(&record, &supported_metric_keys())
+            .expect_err("methodology version is required");
+        assert_eq!(err, AnalyticsCacheError::MissingMethodology);
+
+        let mut record = sample_record();
+        record.supported_consumers.clear();
+        let err = validate_record(&record, &supported_metric_keys())
+            .expect_err("consumer contract support is required");
+        assert_eq!(err, AnalyticsCacheError::MissingConsumers);
+    }
+
+    #[test]
+    fn l0_wp009_cache_read_disposition_uses_invalidation_and_source_state() {
+        let mut record = sample_record();
+        assert_eq!(
+            analytics_cache_read_disposition(&record, t()),
+            AnalyticsCacheReadDisposition::Fresh
+        );
+
+        record.invalidation.stale_after =
+            Some(Utc.with_ymd_and_hms(2026, 5, 31, 19, 0, 0).unwrap());
+        assert_eq!(
+            analytics_cache_read_disposition(&record, t()),
+            AnalyticsCacheReadDisposition::Stale
+        );
+
+        record.invalidation.rebuild_after =
+            Some(Utc.with_ymd_and_hms(2026, 5, 31, 19, 30, 0).unwrap());
+        assert_eq!(
+            analytics_cache_read_disposition(&record, t()),
+            AnalyticsCacheReadDisposition::RebuildRequired
         );
     }
 

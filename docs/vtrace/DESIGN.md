@@ -223,10 +223,10 @@ terminal width, CSS, table borders, or card layout.
 ### Major analytics cache target design
 
 The major analytics cache is a target design baseline for future hockey decision
-surfaces. It is not implemented by this DCR. When built, it should introduce one
-versioned producer/read model that converts validated bundled, installed, or
-snapshot source state into canonical analytics records for downstream
-coach-facing consumers.
+surfaces. The first implementation slices add the versioned
+`icelines-core::analytics_cache` record/consumer-envelope types and strict
+`icelines-fetch::analytics_cache_store` JSON store/read path, but no downstream
+renderer or shipped product surface is claimed yet.
 
 Required record envelope:
 
@@ -332,9 +332,10 @@ inspection and command-surface verification pass.
   artifacts explicitly reactivate it.
 - Standalone and lean CLI are target states until `Cargo.toml` and build evidence
   prove them.
-- Major analytics cache is a target state until WP-009 implements and verifies a
-  versioned record, builder, read model, invalidation contract, and consumer
-  envelope.
+- Major analytics cache is partial until WP-009 implements and verifies
+  downstream consumer fixtures. The initial core schema/consumer fixture and
+  strict fetch-layer store/read fixtures are not enough for future screens to
+  claim cache-backed analytics before the matching evidence exists.
 - Future cache-backed consumers must carry provenance, freshness/staleness,
   quality/completeness, warnings, and disclosures through to the user-visible or
   machine-readable output.
@@ -377,10 +378,11 @@ should proceed in narrow implementation waves:
 4. Treat FLETCH/SLICE removal and lean feature gating as target implementation
    waves with rollback/refusal notes before any public compliance claim.
 5. Treat the major analytics cache as an incremental implementation wave: the
-   initial `icelines-core::analytics_cache` schema/consumer contract exists, but
-   storage/read, broad source-state/invalidation fixtures, and downstream
-   consumer demos remain pending. Do not let a dashboard/report claim
-   cache-backed analytics before the matching evidence exists.
+   initial `icelines-core::analytics_cache` schema/consumer contract and
+   `icelines-fetch::analytics_cache_store` store/read path exist, but downstream
+   consumer claims remain pending until their evidence passes. Do not let a
+   dashboard/report claim cache-backed analytics before the matching evidence
+   exists.
 6. Revisit `TRACE.md` after design review closure so design elements point to
    `DESIGN.md` rows rather than only architecture-level contracts.
 
@@ -418,4 +420,4 @@ formalize before production changes are made.
 | FLETCH/SLICE replacement scope may affect user-visible commands. | Require replacement/refusal/rollback notes before dependency removal is called complete. |
 | Validation evidence remains mostly pending. | Move to evidence rows during Gate 3; this file only defines evidence hooks. |
 | Static site status is deferred while `icelines-site` remains in the workspace. | Do not advertise static site as active user surface without a later design update. |
-| Major analytics cache implementation is partial and lacks storage migration details. | Treat the in-core schema/consumer contract as initial evidence only; keep storage/read, invalidation, and downstream consumer claims pending until their WP-009 evidence passes. |
+| Major analytics cache implementation is partial and lacks downstream product-surface evidence. | Treat the in-core schema/consumer contract and strict store/read path as initial evidence only; keep downstream consumer claims pending until their WP-009 evidence passes. |

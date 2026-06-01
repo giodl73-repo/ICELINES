@@ -6,9 +6,10 @@ Accept the major analytics cache as the next ICELINES product-direction baseline
 for coach/scout/report/card/line/goalie/practice/postgame decision-support
 surfaces.
 
-This wave starts with a specification baseline only. It does not claim a shipped
-cache implementation, production cache store, dashboard/report surface, agent
-action, prediction accuracy, or autonomous coaching authority.
+This wave started with a specification baseline and now has partial
+implementation evidence for the core contract and strict tempdir-backed store.
+It does not yet claim a dashboard/report surface, agent action, prediction
+accuracy, or autonomous coaching authority.
 
 ## Entry posture
 
@@ -29,8 +30,8 @@ action, prediction accuracy, or autonomous coaching authority.
   invalidation, methodology, disclosures, and consumer contract behavior.
 - Downstream screens/reports are constrained to consume prepared cache evidence
   and must not recompute source-state, confidence, or methodology locally.
-- All cache implementation rows remain `target_spec_pending` until future schema,
-  source-state, invalidation, no-live-read, and consumer fixtures pass.
+- Cache implementation rows remain partial until downstream hockey consumer
+  fixtures and product-copy reviews pass.
 
 ## Future implementation sequence
 
@@ -47,3 +48,4 @@ action, prediction accuracy, or autonomous coaching authority.
 |---|---|---|
 | 01 | Specification baseline and DCR acceptance | docs_passed; implementation_target_spec_pending |
 | 02 | Initial core schema/source/consumer contract | core_cache_contract_partial_passed |
+| 03 | Strict fetch-layer cache store/read/invalidation fixtures | store_read_invalidation_partial_passed |

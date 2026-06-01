@@ -782,14 +782,14 @@ Verification plan:
 
 | Level | Required | Planned Evidence | Status |
 |---|---|---|---|
-| L0 | yes | Schema/contract fixture tests for cache records, invalidation keys, version compatibility, and consumer envelopes. | partial; pulse 02 passed selected core schema serde, version compatibility, invalidation-key carriage, and consumer-envelope fixtures |
-| L1 | yes | Tempdir/source-state fixtures for missing/stale/partial/schema/unsupported/no-live paths plus affected clippy/format tests if code is touched. | partial; pulse 02 passed selected local snapshot source-state preservation, live-fetch-source refusal, unsupported-metric refusal, and formatting, while broader tempdir/store fixtures remain pending |
-| L2 | yes | At least one consumer demo or snapshot showing cache-backed decision-support envelope and non-claim disclosure. | partial; pulse 02 passed an in-core coach-dashboard envelope proof, but no production dashboard/report/card surface is claimed |
+| L0 | yes | Schema/contract fixture tests for cache records, invalidation keys, version compatibility, and consumer envelopes. | partial; pulses 02-03 passed selected core schema serde, version compatibility, invalidation-key/methodology/consumer requirements, and consumer-envelope fixtures |
+| L1 | yes | Tempdir/source-state fixtures for missing/stale/partial/schema/unsupported/no-live paths plus affected clippy/format tests if code is touched. | partial; pulse 03 adds a strict `icelines-fetch` cache store/read path with tempdir missing, stale/partial/missing-source preservation, schema/metric refusal, invalidation, and rollback fixtures |
+| L2 | yes | At least one consumer demo or snapshot showing cache-backed decision-support envelope and non-claim disclosure. | partial; pulses 02-03 passed in-core and store-backed coach-dashboard envelope proofs, but no production dashboard/report/card surface is claimed |
 
 V closure: partial. The initial core schema/source/consumer contract slice exists
-in `icelines-core::analytics_cache`; production cache storage, broader
-stale/partial/missing/invalidation fixtures, and downstream surfaces remain
-pending.
+in `icelines-core::analytics_cache`, and the first strict JSON store/read path
+exists in `icelines-fetch::analytics_cache_store`; downstream hockey surfaces and
+broader product-copy reviews remain pending.
 
 Validation impact: adds `VAL-011` for coach/analyst trust in a shared analytics
 evidence layer.
@@ -801,8 +801,9 @@ Assurance/security classification: HART, Campbell, WIRE, TAPE, SCOUT, and BENCH
 review lanes required before implementation closure.
 
 Review gate: specification baseline accepted 2026-06-01; pulse 02 accepted the
-initial core schema/consumer slice. Implementation closure requires later storage,
-broader source-state/invalidation, downstream consumer, and closeout reviews.
+initial core schema/consumer slice; pulse 03 accepted the strict store/read and
+invalidation slice. Implementation closure requires downstream consumer and
+closeout reviews.
 
 Git execution:
 
@@ -814,7 +815,7 @@ Git execution:
 - Agent stop condition: stop if a cache read path fetches live data, zero-fills
   missing hockey facts, or hides stale/partial source state.
 
-Status: target_spec_pending.
+Status: partial.
 
 ## Orphan Check
 
