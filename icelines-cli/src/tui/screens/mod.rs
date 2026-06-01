@@ -374,7 +374,7 @@ fn append_truncated(line: &mut String, suffix: &str, max_width: usize) {
     }
     let current = line.chars().count();
     let suffix_len = suffix.chars().count();
-    if current + suffix_len + 1 <= max_width {
+    if current + suffix_len < max_width {
         line.push_str(suffix);
         return;
     }
@@ -1338,11 +1338,13 @@ mod app_snapshot_tests {
     #[test]
     fn l0_mdi_activity_rail_scrolls_selected_room_into_view() {
         let mut app = App::new(true);
-        let mut mdi = crate::tui::mdi::MdiLayout::default();
-        mdi.catalog_selected = icelines_core::WORKBENCH_CATALOG
-            .iter()
-            .position(|entry| entry.id == icelines_core::WorkbenchId::Admin)
-            .unwrap();
+        let mdi = crate::tui::mdi::MdiLayout {
+            catalog_selected: icelines_core::WORKBENCH_CATALOG
+                .iter()
+                .position(|entry| entry.id == icelines_core::WorkbenchId::Admin)
+                .unwrap(),
+            ..Default::default()
+        };
         app.mdi = Some(mdi);
 
         let text = render_app_to_text(&app, 200, 14);

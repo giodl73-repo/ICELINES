@@ -22,9 +22,9 @@ use icelines_core::{
     MetricCell, MetricValue, PlayerCardView, PlayerSeasonSummary, ScheduleRecord, TeamAbbr,
     TeamDepthView, TeamSeasonView, ViewContext, ViewWindow, WatchlistView, WorkbenchEntry,
     WorkbenchExperience, WorkbenchFieldId, WorkbenchFieldSource, WorkbenchFieldSummary,
-    WorkbenchGroup, WorkbenchId, WorkbenchPaneBinding, WorkbenchPaneBindingId,
-    WorkbenchPaneInteraction, WorkbenchPaneKind, WorkbenchPaneModelId, WorkbenchValueKind,
-    WorkbenchZone, WORKBENCH_EXPERIENCES,
+    WorkbenchGroup, WorkbenchId, WorkbenchLayoutRecord, WorkbenchLayoutStore, WorkbenchPaneBinding,
+    WorkbenchPaneBindingId, WorkbenchPaneInteraction, WorkbenchPaneKind, WorkbenchPaneModelId,
+    WorkbenchValueKind, WorkbenchZone, WORKBENCH_EXPERIENCES,
 };
 use serde::Deserialize;
 
@@ -62,6 +62,8 @@ pub struct DashboardQuery {
     pub right_workspace: Option<String>,
     #[serde(default)]
     pub experience: Option<String>,
+    #[serde(default)]
+    pub layout: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -73,9 +75,25 @@ pub struct DashboardCommandForm {
 
 pub async fn get_dashboard(
     State(state): State<WebState>,
-    Query(q): Query<DashboardQuery>,
+    Query(mut q): Query<DashboardQuery>,
 ) -> Response {
-    let active_label = state.config.read().await.active_label.clone();
+    let config = state.config.read().await.clone();
+    let active_label = config.active_label.clone();
+    if let Some(name) = q.layout.as_deref() {
+        match WorkbenchLayoutStore::load_from_path(&config.layout_store_path)
+            .and_then(|store| store.get(name).cloned())
+            .and_then(|layout| apply_query_layout(&mut q, &layout))
+        {
+            Ok(()) => {}
+            Err(err) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Html(format!("invalid dashboard layout: {err}")),
+                )
+                    .into_response();
+            }
+        }
+    }
     let requested_experience = q.experience.as_deref().and_then(web_experience_by_slug);
     let workspace_url = requested_experience
         .filter(|_| q.workspace.is_none())
@@ -430,6 +448,18 @@ pub async fn get_dashboard(
     };
 
     render_template(tmpl)
+}
+
+fn apply_query_layout(
+    q: &mut DashboardQuery,
+    layout: &WorkbenchLayoutRecord,
+) -> Result<(), icelines_core::WorkbenchLayoutError> {
+    layout.validate_for_surface(icelines_core::WorkbenchSurface::Web)?;
+    q.workspace = crate::workbench::route_for_workbench(layout.center_id()?).map(ToOwned::to_owned);
+    q.left = Some(layout.left.clone());
+    q.right = Some(layout.right.clone());
+    q.experience = layout.experience.clone();
+    Ok(())
 }
 
 pub async fn post_dashboard_command(
@@ -830,15 +860,17 @@ fn left_context_ring_links(
     right_workspace: &str,
 ) -> Vec<DashboardLinkRow> {
     cycle_ring_links(
-        "Cycle left context",
-        center_workspace,
-        left_workspace,
-        left,
-        right,
-        experience,
-        WorkbenchZone::LeftPane,
-        left_workspace,
-        right_workspace,
+        RingLinkContext {
+            label: "Cycle left context",
+            center_workspace,
+            active_workspace: left_workspace,
+            left,
+            right,
+            experience,
+            zone: WorkbenchZone::LeftPane,
+            left_workspace,
+            right_workspace,
+        },
         vec![
             RingItem {
                 label: "Favorites",
@@ -870,15 +902,17 @@ async fn right_detail_ring_links(
 ) -> Vec<DashboardLinkRow> {
     let items = right_detail_ring_items(state, center_workspace).await;
     cycle_ring_links(
-        "Cycle right detail",
-        center_workspace,
-        right_workspace,
-        left,
-        right,
-        experience,
-        WorkbenchZone::RightPane,
-        left_workspace,
-        right_workspace,
+        RingLinkContext {
+            label: "Cycle right detail",
+            center_workspace,
+            active_workspace: right_workspace,
+            left,
+            right,
+            experience,
+            zone: WorkbenchZone::RightPane,
+            left_workspace,
+            right_workspace,
+        },
         items,
     )
 }
@@ -942,48 +976,49 @@ fn team_detail_ring_items(team: &str, include_depth: bool) -> Vec<RingItem> {
     items
 }
 
-fn cycle_ring_links(
-    label: &str,
-    center_workspace: &str,
-    active_workspace: &str,
+struct RingLinkContext<'a> {
+    label: &'a str,
+    center_workspace: &'a str,
+    active_workspace: &'a str,
     left: WorkbenchPaneBindingId,
     right: WorkbenchPaneBindingId,
-    experience: Option<&WorkbenchExperience>,
+    experience: Option<&'a WorkbenchExperience>,
     zone: WorkbenchZone,
-    left_workspace: &str,
-    right_workspace: &str,
-    items: Vec<RingItem>,
-) -> Vec<DashboardLinkRow> {
+    left_workspace: &'a str,
+    right_workspace: &'a str,
+}
+
+fn cycle_ring_links(ctx: RingLinkContext<'_>, items: Vec<RingItem>) -> Vec<DashboardLinkRow> {
     let candidates = items
         .into_iter()
         .filter(|item| {
-            workspace_route_key(&item.workspace) != workspace_route_key(center_workspace)
+            workspace_route_key(&item.workspace) != workspace_route_key(ctx.center_workspace)
         })
         .collect::<Vec<_>>();
     if candidates.is_empty() {
         return Vec::new();
     }
     let active_idx = candidates.iter().position(|item| {
-        workspace_route_key(&item.workspace) == workspace_route_key(active_workspace)
+        workspace_route_key(&item.workspace) == workspace_route_key(ctx.active_workspace)
     });
     let next_idx = active_idx.map_or(0, |idx| (idx + 1) % candidates.len());
     let next = &candidates[next_idx];
     let current = active_idx
         .map(|idx| candidates[idx].label)
         .unwrap_or("empty pane");
-    let (next_left_workspace, next_right_workspace) = if zone == WorkbenchZone::LeftPane {
-        (next.workspace.as_str(), right_workspace)
+    let (next_left_workspace, next_right_workspace) = if ctx.zone == WorkbenchZone::LeftPane {
+        (next.workspace.as_str(), ctx.right_workspace)
     } else {
-        (left_workspace, next.workspace.as_str())
+        (ctx.left_workspace, next.workspace.as_str())
     };
 
     vec![DashboardLinkRow {
-        label: label.to_owned(),
+        label: ctx.label.to_owned(),
         href: dashboard_href(
-            center_workspace,
-            left,
-            right,
-            experience,
+            ctx.center_workspace,
+            ctx.left,
+            ctx.right,
+            ctx.experience,
             next_left_workspace,
             next_right_workspace,
         ),
@@ -3386,6 +3421,35 @@ mod tests {
     }
 
     #[test]
+    fn l0_dashboard_named_layout_restores_bookmark_safe_state() {
+        let mut q = DashboardQuery {
+            layout: Some("tonight".to_owned()),
+            ..Default::default()
+        };
+        let layout = WorkbenchLayoutRecord::new(
+            "tonight",
+            WorkbenchId::Scores,
+            WorkbenchPaneBindingId::FavoritesLeft,
+            WorkbenchPaneBindingId::ScheduleRight,
+            Some(icelines_core::WorkbenchExperienceId::TonightBench),
+        )
+        .expect("valid layout");
+
+        apply_query_layout(&mut q, &layout).unwrap();
+        let composition = dashboard_composition(&q, workbench_id_for_workspace("/scores"));
+
+        assert_eq!(q.workspace.as_deref(), Some("/scores"));
+        assert_eq!(composition.left.id, WorkbenchPaneBindingId::FavoritesLeft);
+        assert_eq!(composition.right.id, WorkbenchPaneBindingId::ScheduleRight);
+        assert_eq!(
+            composition
+                .experience
+                .map(|experience| experience.id.slug()),
+            Some("tonight-bench")
+        );
+    }
+
+    #[test]
     fn l0_dashboard_pane_options_are_safe_get_navigation() {
         let options = dashboard_pane_options(
             WorkbenchZone::RightPane,
@@ -4001,7 +4065,7 @@ mod tests {
     fn l0_dashboard_labels_leaders_and_goalies_workspace_summaries() {
         assert_eq!(workspace_label("/leaders"), "Leaders");
         assert_eq!(workspace_label("/goalies"), "Goalies");
-        assert_eq!(DASHBOARD_PREVIEW_N, 3);
+        assert_eq!(DASHBOARD_PREVIEW_N, 10);
         assert_eq!(DASHBOARD_GOALIE_GP_REGULAR, 5);
     }
 }

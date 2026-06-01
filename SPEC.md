@@ -4,6 +4,12 @@
 > **Date**: 2026-04-28  
 > **Scope**: Navigation redesign, new screens, season time-travel, live data
 
+> **VTRACE baseline note**: This document is a historical TUI design draft. The
+> current governing specification baseline is `docs/vtrace/` plus
+> `design/specs/platform-contracts.md`, `design/specs/surface-parity.md`, and
+> `design/specs/viewmodels.md`. If this draft conflicts with those files, the
+> VTRACE baseline wins.
+
 ---
 
 ## Vision

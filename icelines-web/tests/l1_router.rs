@@ -171,6 +171,13 @@ async fn response_json(response: Response, limit: usize) -> Value {
     serde_json::from_slice(&bytes).expect("response should be valid json")
 }
 
+async fn response_text(response: Response, limit: usize) -> String {
+    let bytes = axum::body::to_bytes(response.into_body(), limit)
+        .await
+        .expect("body fits");
+    String::from_utf8(bytes.to_vec()).expect("response should be utf-8")
+}
+
 fn assert_json_object<'a>(json: &'a Value, ctx: &str) -> &'a Map<String, Value> {
     json.as_object()
         .unwrap_or_else(|| panic!("{ctx} should be a JSON object"))
@@ -1655,6 +1662,8 @@ async fn l1_dashboard_command_watch_toggle_returns_to_dashboard_workspace() {
 
 #[tokio::test]
 async fn l1_dashboard_poach_workspace_exposes_report_actions() {
+    let _guard = home_env_lock().await;
+
     let app = router(WebState::new());
     let response = app
         .oneshot(
@@ -1840,9 +1849,105 @@ async fn l1_fantasy_gaps_json_projects_seeded_league() {
 }
 
 #[tokio::test]
+async fn l1_fantasy_gaps_json_does_not_create_sqlite_sidecars() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+
+    seed_fantasy_league("Read Only Gap Route League", &[], &[]);
+
+    let db_path = home.path().join(".icelines").join("icelines.db");
+    let wal_path = home.path().join(".icelines").join("icelines.db-wal");
+    let shm_path = home.path().join(".icelines").join("icelines.db-shm");
+    let _ = std::fs::remove_file(&wal_path);
+    let _ = std::fs::remove_file(&shm_path);
+
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/gaps?category=points&top=1")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(db_path.is_file());
+    assert!(
+        !wal_path.exists(),
+        "GET fantasy gaps must not create SQLite WAL sidecar state"
+    );
+    assert!(
+        !shm_path.exists(),
+        "GET fantasy gaps must not create SQLite SHM sidecar state"
+    );
+}
+
+#[tokio::test]
+async fn l1_poach_json_imported_availability_does_not_create_sqlite_sidecars() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+
+    seed_fantasy_league(
+        "Read Only Poach Route League",
+        &["bench_forward"],
+        &["connor_mcdavid"],
+    );
+
+    let db_path = home.path().join(".icelines").join("icelines.db");
+    let wal_path = home.path().join(".icelines").join("icelines.db-wal");
+    let shm_path = home.path().join(".icelines").join("icelines.db-shm");
+    let _ = std::fs::remove_file(&wal_path);
+    let _ = std::fs::remove_file(&shm_path);
+
+    let app = router(WebState::with_repo(repo_with_mcdavid_and_bench_forward()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/poach?availability=imported-available&top=2")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(db_path.is_file());
+    assert!(
+        !wal_path.exists(),
+        "GET poach must not create SQLite WAL sidecar state"
+    );
+    assert!(
+        !shm_path.exists(),
+        "GET poach must not create SQLite SHM sidecar state"
+    );
+}
+
+#[tokio::test]
+async fn l1_fantasy_json_missing_db_does_not_create_user_state() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/gaps?category=points&top=1")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(!home.path().join(".icelines").exists());
+}
+
+#[tokio::test]
 async fn l1_fantasy_daily_json_surfaces_missing_cache_as_warning() {
     let _guard = home_env_lock().await;
-    let _home = HomeEnvFixture::new();
+    let home = HomeEnvFixture::new();
 
     seed_fantasy_league("Daily Route League", &["matty_beniers"], &[]);
 
@@ -1869,12 +1974,13 @@ async fn l1_fantasy_daily_json_surfaces_missing_cache_as_warning() {
             .as_str()
             .is_some_and(|text| text.contains("no cached boxscores"))));
     assert_eq!(json["source_state"][1]["state"], "unavailable");
+    assert!(!home.path().join(".icelines").join("data").exists());
 }
 
 #[tokio::test]
 async fn l1_fantasy_matchup_json_surfaces_missing_schedule_as_empty_state() {
     let _guard = home_env_lock().await;
-    let _home = HomeEnvFixture::new();
+    let home = HomeEnvFixture::new();
 
     seed_fantasy_league("Matchup Route League", &["matty_beniers"], &[]);
 
@@ -1903,6 +2009,7 @@ async fn l1_fantasy_matchup_json_surfaces_missing_schedule_as_empty_state() {
         .unwrap()
         .iter()
         .any(|source| { source["source"] == "schedule" && source["state"] == "unavailable" }));
+    assert!(!home.path().join(".icelines").join("data").exists());
 }
 
 #[tokio::test]
@@ -1928,7 +2035,7 @@ async fn l1_fantasy_roster_shape_json_projects_seeded_team() {
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0]["league"], "Shape Route League");
     assert_eq!(rows[0]["team"], "My Team");
-    assert!(rows[0]["slots"].as_array().expect("slot rows").len() > 0);
+    assert!(!rows[0]["slots"].as_array().expect("slot rows").is_empty());
     assert!(rows[0]["summary"].is_object());
 }
 
@@ -2428,7 +2535,7 @@ async fn l1_records_team_html_empty_state_links_json() {
 #[tokio::test]
 async fn l1_player_streaks_empty_state_loads_cache_in_web_ui() {
     let _guard = home_env_lock().await;
-    let _home = HomeEnvFixture::new();
+    let home = HomeEnvFixture::new();
     let app = router(WebState::new());
 
     let response = app
@@ -2451,12 +2558,16 @@ async fn l1_player_streaks_empty_state_loads_cache_in_web_ui() {
         !body.contains("icelines fetch boxscore"),
         "web streaks empty state should not send users to the CLI:\n{body}"
     );
+    assert!(
+        !home.path().join(".icelines").join("data").exists(),
+        "GET /player/:id/streaks must not create local data cache state"
+    );
 }
 
 #[tokio::test]
 async fn l1_team_streaks_empty_state_loads_cache_in_web_ui() {
     let _guard = home_env_lock().await;
-    let _home = HomeEnvFixture::new();
+    let home = HomeEnvFixture::new();
     let app = router(WebState::new());
 
     let response = app
@@ -2483,12 +2594,16 @@ async fn l1_team_streaks_empty_state_loads_cache_in_web_ui() {
         !body.contains("icelines fetch boxscore"),
         "team streaks empty state should not send users to the CLI:\n{body}"
     );
+    assert!(
+        !home.path().join(".icelines").join("data").exists(),
+        "GET /team/:abbrev/streaks must not create local data cache state"
+    );
 }
 
 #[tokio::test]
 async fn l1_team_streaks_json_empty_state_uses_shared_envelope() {
     let _guard = home_env_lock().await;
-    let _home = HomeEnvFixture::new();
+    let home = HomeEnvFixture::new();
     let app = router(WebState::new());
 
     let response = app
@@ -2508,6 +2623,10 @@ async fn l1_team_streaks_json_empty_state_uses_shared_envelope() {
     assert_eq!(json["data"]["games_loaded"], serde_json::json!(0));
     assert!(json["data"]["rows"].as_array().is_some_and(Vec::is_empty));
     assert_eq!(json["meta"]["team_abbrev"], serde_json::json!("EDM"));
+    assert!(
+        !home.path().join(".icelines").join("data").exists(),
+        "GET /api/v1/team/:abbrev/streaks must not create local data cache state"
+    );
 }
 
 #[tokio::test]
@@ -2702,6 +2821,56 @@ async fn l1_favorites_links_canonical_ids_but_not_ambiguous_names() {
     assert!(body.contains("favorite-player-unresolved\">smith</span>"));
     assert!(body.contains("action=\"/admin/game-cache/load-favorites\""));
     assert!(body.contains("Load Favorites cache"));
+}
+
+#[tokio::test]
+async fn l1_favorites_get_does_not_create_data_cache_when_missing() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+    let data_root = DataRootEnvFixture::new();
+    std::fs::create_dir_all(data_root.data_root()).expect("create empty data root");
+
+    let home = std::env::var_os("HOME").expect("test home set");
+    let db_dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&db_dir).expect("create db dir");
+    let conn = rusqlite::Connection::open(db_dir.join("icelines.db")).expect("open db");
+    conn.execute_batch(
+        "CREATE TABLE groups (
+            name TEXT PRIMARY KEY,
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+         );
+         CREATE TABLE group_members (
+            group_name TEXT NOT NULL,
+            entity_ref TEXT NOT NULL,
+            added_at TEXT NOT NULL,
+            PRIMARY KEY (group_name, entity_ref)
+         );
+         INSERT INTO groups VALUES ('Favorites', '', datetime('now'));
+         INSERT INTO group_members VALUES ('Favorites', 'player:8478402', datetime('now'));",
+    )
+    .expect("seed favorites db");
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/favorites")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(
+        !data_root.data_root().join("manifest").exists(),
+        "GET /favorites must not create manifest state on a read path"
+    );
+    assert!(
+        !data_root.data_root().join("boxscores").exists(),
+        "GET /favorites must not create boxscore cache state on a read path"
+    );
 }
 
 #[tokio::test]
@@ -2996,6 +3165,8 @@ async fn l1_watchlist_json_returns_watch_reason_metadata() {
 
 #[tokio::test]
 async fn l1_poach_route_returns_200_html() {
+    let _guard = home_env_lock().await;
+
     let app = router(WebState::new());
 
     let response = app
@@ -3022,6 +3193,8 @@ async fn l1_poach_route_returns_200_html() {
 
 #[tokio::test]
 async fn l1_poach_report_route_returns_report_html() {
+    let _guard = home_env_lock().await;
+
     let app = router(WebState::new());
 
     let response = app
@@ -3075,6 +3248,8 @@ async fn l1_weekly_report_route_returns_prep_sections() {
 
 #[tokio::test]
 async fn l1_poach_json_returns_view_model_contract() {
+    let _guard = home_env_lock().await;
+
     let app = router(WebState::new());
 
     let response = app
@@ -3577,6 +3752,7 @@ async fn l1_watch_rule_delete_form_redirects_and_removes_rule() {
 async fn l1_admin_data_status_json_returns_viewmodel_contract() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();
+    let data_root = _home._dir.path().join(".icelines").join("data");
     let app = router(WebState::new());
 
     let response = app
@@ -3598,12 +3774,17 @@ async fn l1_admin_data_status_json_returns_viewmodel_contract() {
     assert!(json["root"].as_str().is_some());
     assert_eq!(json["total"], 0);
     assert_eq!(json["empty_state"]["kind"], "missing_source");
+    assert!(
+        !data_root.exists(),
+        "GET /api/v1/admin/data-status must not create local data cache state"
+    );
 }
 
 #[tokio::test]
 async fn l1_admin_html_renders_operational_viewmodels() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();
+    let data_root = _home._dir.path().join(".icelines").join("data");
     let app = router(WebState::new());
 
     let response = app
@@ -3642,6 +3823,10 @@ async fn l1_admin_html_renders_operational_viewmodels() {
     assert!(
         !html.contains("/admin/reports"),
         "persistent report-toggle writes must not appear as an unfenced web admin mutation"
+    );
+    assert!(
+        !data_root.exists(),
+        "GET /admin must not create local data cache state"
     );
 }
 
@@ -5386,21 +5571,63 @@ async fn l1_unknown_route_returns_404() {
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
+#[tokio::test]
+async fn l1_html_shell_exposes_no_js_viewport_and_recovery_navigation() {
+    let app = router(WebState::new());
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/dashboard")
+                .body(Body::empty())
+                .expect("request builder should succeed"),
+        )
+        .await
+        .expect("oneshot dispatch should not fail");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response, 256 * 1024).await;
+    assert!(
+        body.contains(r#"<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">"#)
+    );
+    assert!(body.contains(r##"<a href="#main" class="skip-link">Skip to content</a>"##));
+    assert!(body.contains(r#"<noscript>"#));
+    assert!(body.contains("JavaScript is optional here"));
+    assert!(body.contains(r#"<a href="/dashboard" class="nav-dashboard">Dashboard</a>"#));
+    assert!(body.contains(r#"<a href="/leaders">Leaders</a>"#));
+    assert!(body.contains(r#"<a href="/docs">Docs</a>"#));
+    assert!(body.contains("This workspace is server-rendered and URL-addressable"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/this-route-does-not-exist")
+                .body(Body::empty())
+                .expect("request builder should succeed"),
+        )
+        .await
+        .expect("oneshot dispatch should not fail");
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let body = response_text(response, 256 * 1024).await;
+    assert!(body.contains("Couldn't find <code>/this-route-does-not-exist</code>"));
+    assert!(body.contains(r#"<form method="get" action="/compare""#));
+    assert!(body.contains(r#"<a href="/leaders">Leaders</a>"#));
+    assert!(body.contains(r#"<a href="/playoffs">Playoffs</a>"#));
+}
+
 // ── Season-type toggle (UX.E, 2026-05-04) ───────────────────────────
 //
-// `/season-type/:kind` flips `WebState.config.active_season_type` and
-// redirects back to where the user came from. The route is the
-// only writer of season-type today (the Reports overlay's PATCH
-// /api/v1/active-season is the long-term destination per the spec).
+// `POST /season-type/:kind` flips `WebState.config.active_season_type` and
+// redirects back to where the user came from. GET must not mutate browser state.
 //
 // Locked behavior:
 // - `playoff` and `playoffs` both normalize to "playoff".
 // - `regular` and anything-else (including injection attempts)
 //   normalize to "regular" — the whitelist is the security boundary
 //   so a malformed URL can't poison config.
-// - Response is 303 See Other with a Location header (per HTTP, GET
-//   handlers redirect with 303, not 302, when the result is a new
-//   resource view).
+// - Response is 303 See Other with a Location header.
 // - Location preserves the user's previous page when Referer is set
 //   to a same-origin URL; falls back to "/" otherwise.
 
@@ -5411,7 +5638,9 @@ async fn flip_season_type(
     referer: Option<&str>,
 ) -> (StatusCode, Option<String>) {
     let app = router(state);
-    let mut req = Request::builder().uri(format!("/season-type/{kind}"));
+    let mut req = Request::builder()
+        .method(axum::http::Method::POST)
+        .uri(format!("/season-type/{kind}"));
     if let Some(r) = referer {
         req = req.header(axum::http::header::REFERER, r);
     }
@@ -5427,8 +5656,29 @@ async fn flip_season_type(
     (response.status(), location)
 }
 
+#[tokio::test]
+async fn l1_season_type_get_is_read_only_and_method_not_allowed() {
+    let state = WebState::new();
+    let captured = state.config.clone();
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/season-type/playoff")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+    let cfg = captured.read().await;
+    assert_eq!(cfg.active_season_type, "regular");
+}
+
 /// l1_season_type_playoff_flips_state_and_redirects_303
-/// — happy path: `/season-type/playoff` flips state.config.active_season_type
+/// — happy path: `POST /season-type/playoff` flips state.config.active_season_type
 ///   from default ("regular") to "playoff" AND returns 303.
 #[tokio::test]
 async fn l1_season_type_playoff_flips_state_and_redirects_303() {
@@ -5579,14 +5829,14 @@ async fn l1_season_type_toggle_visible_in_global_nav() {
         .expect("body");
     let body = std::str::from_utf8(&body_bytes).expect("utf-8");
 
-    // Active option is bolded; inactive option is a link to the flip.
+    // Active option is bolded; inactive option is a POST form to the flip.
     assert!(
         body.contains("<strong>Regular</strong>"),
         "Default state has Regular active (bolded)"
     );
     assert!(
-        body.contains("/season-type/playoff"),
-        "Inactive option is a link to flip"
+        body.contains("method=\"post\" action=\"/season-type/playoff\""),
+        "Inactive option is a POST form to flip"
     );
     // Class hook for CSS — the toggle has its own class so a future
     // CSS refactor that drops the styling is detectable by other
@@ -5950,7 +6200,7 @@ async fn l1_rocket_team_streaks_json_exposes_shot_metrics() {
 #[tokio::test]
 async fn l1_rocket_team_scoring_html_offers_cache_load_when_missing() {
     let _guard = home_env_lock().await;
-    let _data_root = DataRootEnvFixture::new();
+    let data_root = DataRootEnvFixture::new();
     let app = router(WebState::new());
 
     let response = app
@@ -5976,6 +6226,49 @@ async fn l1_rocket_team_scoring_html_offers_cache_load_when_missing() {
     assert!(
         html.contains("value=\"scoring-events\""),
         "body was:\n{html}"
+    );
+    assert!(
+        !data_root.data_root().exists(),
+        "GET /team/:abbrev/scoring must not create local data cache state"
+    );
+}
+
+#[tokio::test]
+async fn l1_rocket_scoring_gets_do_not_create_data_cache_when_missing() {
+    let _guard = home_env_lock().await;
+    let data_root = DataRootEnvFixture::new();
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+
+    for uri in [
+        "/api/v1/game/2025020001/scoring",
+        "/game/2025020001/scoring",
+        "/api/v1/player/8478402/scoring",
+        "/player/8478402/scoring",
+        "/api/v1/player/8478402/outlook",
+        "/player/8478402/outlook",
+        "/api/v1/team/EDM/scoring",
+        "/team/EDM/scoring",
+        "/api/v1/team/EDM/outlook",
+        "/team/EDM/outlook",
+        "/api/v1/tonight/intel?date=2025-10-07",
+        "/tonight/intel?date=2025-10-07",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .body(Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot");
+        assert_eq!(response.status(), StatusCode::OK, "{uri} should render");
+    }
+
+    assert!(
+        !data_root.data_root().exists(),
+        "scoring GET routes must not create local data cache state"
     );
 }
 
@@ -6051,7 +6344,7 @@ async fn l1_rocket_tonight_intel_json_filters_favorites() {
 async fn l1_rocket_tonight_intel_html_offers_cache_load_when_missing() {
     let _guard = home_env_lock().await;
     let home = HomeEnvFixture::new();
-    let _data_root = DataRootEnvFixture::new();
+    let data_root = DataRootEnvFixture::new();
     seed_favorites_for_tonight(home.path());
     let app = router(WebState::new());
 
@@ -6078,6 +6371,10 @@ async fn l1_rocket_tonight_intel_html_offers_cache_load_when_missing() {
     assert!(
         html.contains("value=\"scoring-events\""),
         "body was:\n{html}"
+    );
+    assert!(
+        !data_root.data_root().exists(),
+        "GET /tonight/intel must not create local data cache state"
     );
 }
 
@@ -6150,7 +6447,7 @@ fn seed_scoring_play_by_play(data_root: &std::path::Path, game_id: u64, date: &s
         .expect("serialize"),
     )
     .expect("write play-by-play");
-    let store = DataStore::open(&data_root).expect("open data store");
+    let store = DataStore::open(data_root).expect("open data store");
     store
         .manifest()
         .upsert(

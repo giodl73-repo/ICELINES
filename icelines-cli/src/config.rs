@@ -839,6 +839,14 @@ impl Config {
             .join("snapshots")
     }
 
+    /// Durable named workbench layouts, stored next to the user's config/cache root.
+    pub fn layout_store_path(&self) -> std::path::PathBuf {
+        self.cache_dir
+            .parent()
+            .unwrap_or(&self.cache_dir)
+            .join("layouts.json")
+    }
+
     /// Phase Calder.2 — path to the multi-league career-history blob.
     /// Single global file (not per-season) because a player's pre-NHL
     /// career doesn't change with the active season.

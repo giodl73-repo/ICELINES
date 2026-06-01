@@ -210,11 +210,11 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/career", get(handlers::career::get_career_json))
         // Docs — King.8.1. Rendered COMMANDS.md.
         .route("/docs", get(handlers::docs::get_docs))
-        // Season-type flip — UX.E. Click writes WebState.config and
+        // Season-type flip — UX.E. POST writes WebState.config and
         // redirects back to the page the user came from (Referer).
         .route(
             "/season-type/:kind",
-            get(handlers::season_type::set_season_type),
+            post(handlers::season_type::set_season_type),
         )
         // Live NHL data — King.7.
         .route("/scores", get(handlers::scores::get_scores))
@@ -467,9 +467,10 @@ mod handlers {
     /// Phase Conn Smythe C.3 — `/game/:id` per-game live detail.
     pub mod game;
 
-    /// `/season-type/:kind` — UX.E. Mutates `WebState.config.active_season_type`
-    /// to "regular" or "playoff" and 303-redirects back to the page
-    /// the user came from (Referer header), defaulting to `/`.
+    /// `POST /season-type/:kind` — UX.E. Mutates
+    /// `WebState.config.active_season_type` to "regular" or "playoff" and
+    /// 303-redirects back to the page the user came from (Referer header),
+    /// defaulting to `/`.
     pub mod season_type;
 
     /// `not_found` — Sasq.7. Friendly 404 page with a player search

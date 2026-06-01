@@ -9,10 +9,11 @@ use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
     Completeness, GameScoringReportView, PlayerScoringPaceMetric, PlayerScoringPaceRow,
-    PlayerScoringPaceSampleStatus, PlayerScoringPaceView, ScoringEventInput, ScoringEventSummary,
-    ScoringShooterSummary, ScoringSplitSummary, ShotEventKind, SourceKind, SourceState,
-    TeamScoringOutlookMetric, TeamScoringOutlookRow, TeamScoringOutlookSourceStatus,
-    TeamScoringOutlookView, TeamScoringProfileView, ViewContext, ViewWindow,
+    PlayerScoringPaceSampleStatus, PlayerScoringPaceView, PlayerScoringProfileView,
+    ScoringEventInput, ScoringEventSummary, ScoringShooterSummary, ScoringSplitSummary,
+    ShotEventKind, SourceKind, SourceState, TeamScoringOutlookMetric, TeamScoringOutlookRow,
+    TeamScoringOutlookSourceStatus, TeamScoringOutlookView, TeamScoringProfileView, ViewContext,
+    ViewWindow,
 };
 
 #[derive(Template)]
@@ -366,9 +367,13 @@ async fn build_game_scoring_view(
     game_id: u64,
 ) -> Result<(String, GameScoringReportView), Box<Response>> {
     let (active_label, season, season_type) = active_window(state).await?;
-    let store = open_data_store("game-scoring")?;
     let context = ViewContext::new(ViewWindow::new(season, season_type));
-    let view = icelines_fetch::scoring_provider::load_game_scoring_report(&store, context, game_id);
+    let view = match open_existing_data_store("game-scoring")? {
+        Some(store) => {
+            icelines_fetch::scoring_provider::load_game_scoring_report(&store, context, game_id)
+        }
+        None => GameScoringReportView::from_source_events(context, game_id, false, Vec::new()),
+    };
     Ok((active_label, view))
 }
 
@@ -378,10 +383,13 @@ async fn build_team_scoring_view(
 ) -> Result<(String, Season, SeasonType, TeamScoringProfileView), Box<Response>> {
     let team = parse_team(abbrev_raw)?;
     let (active_label, season, season_type) = active_window(state).await?;
-    let store = open_data_store("team-scoring")?;
     let context = ViewContext::new(ViewWindow::new(season, season_type));
-    let view =
-        icelines_fetch::scoring_provider::load_team_scoring_profile(&store, context, &team.0);
+    let view = match open_existing_data_store("team-scoring")? {
+        Some(store) => {
+            icelines_fetch::scoring_provider::load_team_scoring_profile(&store, context, &team.0)
+        }
+        None => TeamScoringProfileView::from_source_events(context, &team.0, false, Vec::new()),
+    };
     Ok((active_label, season, season_type, view))
 }
 
@@ -391,11 +399,20 @@ async fn build_team_outlook_view(
 ) -> Result<(String, TeamScoringOutlookView), Box<Response>> {
     let team = parse_team(abbrev_raw)?;
     let (active_label, season, season_type) = active_window(state).await?;
-    let store = open_data_store("team-outlook")?;
     let context = ViewContext::new(ViewWindow::new(season, season_type));
-    let view = icelines_fetch::scoring_outlook_provider::load_team_scoring_outlook(
-        &store, context, &team.0,
-    );
+    let view = match open_existing_data_store("team-outlook")? {
+        Some(store) => icelines_fetch::scoring_outlook_provider::load_team_scoring_outlook(
+            &store, context, &team.0,
+        ),
+        None => TeamScoringOutlookView::from_schedule_games(
+            context,
+            &team.0,
+            false,
+            false,
+            Vec::new(),
+            None,
+        ),
+    };
     Ok((active_label, view))
 }
 
@@ -412,17 +429,25 @@ async fn build_player_scoring_view(
     Box<Response>,
 > {
     let (active_label, season, season_type) = active_window(state).await?;
-    let store = open_data_store("player-scoring")?;
     let context = ViewContext::new(ViewWindow::new(season, season_type));
     let player_name = icelines_fetch::stats_loader::find_player_candidate_by_id(player_id)
         .map(|candidate| candidate.full_name)
         .unwrap_or_else(|| player_id.to_string());
-    let view = icelines_fetch::scoring_provider::load_player_scoring_profile(
-        &store,
-        context,
-        player_id,
-        player_name,
-    );
+    let view = match open_existing_data_store("player-scoring")? {
+        Some(store) => icelines_fetch::scoring_provider::load_player_scoring_profile(
+            &store,
+            context,
+            player_id,
+            player_name,
+        ),
+        None => PlayerScoringProfileView::from_source_events(
+            context,
+            player_id,
+            player_name,
+            false,
+            Vec::new(),
+        ),
+    };
     Ok((active_label, season, season_type, view))
 }
 
@@ -431,7 +456,6 @@ async fn build_player_outlook_view(
     player_id: u32,
 ) -> Result<(String, PlayerScoringPaceView), Box<Response>> {
     let (active_label, season, season_type) = active_window(state).await?;
-    let store = open_data_store("player-outlook")?;
     let view = {
         let repo = state.repo.read().await;
         let player = repo
@@ -449,12 +473,14 @@ async fn build_player_outlook_view(
                         .into_response(),
                 )
             })?;
-        let (remaining_games, schedule_status) =
-            icelines_fetch::scoring_outlook_provider::schedule_remaining_for_team(
+        let (remaining_games, schedule_status) = match open_existing_data_store("player-outlook")? {
+            Some(store) => icelines_fetch::scoring_outlook_provider::schedule_remaining_for_team(
                 &store,
                 season,
                 player.team_display(),
-            );
+            ),
+            None => (None, TeamScoringOutlookSourceStatus::MissingSource),
+        };
         let mut context = ViewContext::new(ViewWindow::new(season, season_type));
         context
             .source_state
@@ -487,15 +513,42 @@ async fn build_tonight_intel_view(
         .filter(|(kind, _key)| kind == "player")
         .map(|(_kind, key)| (key.clone(), resolve_favorite_player_id(key)))
         .collect();
-    let store = open_data_store("tonight-intel")?;
     let context = ViewContext::new(ViewWindow::new(season, season_type));
-    let view = icelines_fetch::scoring_provider::load_tonight_scoring_intel(
-        &store,
-        context,
-        &date,
-        &favorite_teams,
-        &favorite_players,
-    );
+    let view = match open_existing_data_store("tonight-intel")? {
+        Some(store) => icelines_fetch::scoring_provider::load_tonight_scoring_intel(
+            &store,
+            context,
+            &date,
+            &favorite_teams,
+            &favorite_players,
+        ),
+        None => icelines_core::TonightScoringIntelView::from_favorites(
+            context,
+            date.clone(),
+            0,
+            false,
+            &[],
+            favorite_teams
+                .iter()
+                .map(|team| icelines_core::TonightFavoriteTeamScoringRow {
+                    team: team.to_ascii_uppercase(),
+                    events_loaded: 0,
+                    summary: ScoringEventSummary::default(),
+                })
+                .collect(),
+            favorite_players
+                .iter()
+                .map(
+                    |(key, player_id)| icelines_core::TonightFavoritePlayerScoringRow {
+                        player_key: key.clone(),
+                        player_id: *player_id,
+                        events_loaded: 0,
+                        summary: ScoringEventSummary::default(),
+                    },
+                )
+                .collect(),
+        ),
+    };
     Ok((active_label, view))
 }
 
@@ -517,9 +570,9 @@ async fn active_window(state: &WebState) -> Result<(String, Season, SeasonType),
     ))
 }
 
-fn open_data_store(
+fn open_existing_data_store(
     surface: &'static str,
-) -> Result<icelines_fetch::datastore::DataStore, Box<Response>> {
+) -> Result<Option<icelines_fetch::datastore::DataStore>, Box<Response>> {
     let data_root = data_root().ok_or_else(|| {
         Box::new(crate::api::json_error_meta(
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -529,15 +582,20 @@ fn open_data_store(
             "cannot determine home directory".to_string(),
         ))
     })?;
-    icelines_fetch::datastore::DataStore::open(&data_root).map_err(|err| {
-        Box::new(crate::api::json_error_meta(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            surface,
-            serde_json::json!({}),
-            serde_json::json!({ "data_root": data_root.display().to_string() }),
-            err.to_string(),
-        ))
-    })
+    if !data_root.join("manifest").is_dir() {
+        return Ok(None);
+    }
+    icelines_fetch::datastore::DataStore::open(&data_root)
+        .map_err(|err| {
+            Box::new(crate::api::json_error_meta(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                surface,
+                serde_json::json!({}),
+                serde_json::json!({ "data_root": data_root.display().to_string() }),
+                err.to_string(),
+            ))
+        })
+        .map(Some)
 }
 
 fn game_scoring_page(view: &GameScoringReportView) -> ScoringReportPage {

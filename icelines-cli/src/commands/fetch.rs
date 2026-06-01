@@ -296,6 +296,12 @@ async fn do_play_by_play(
         None => Utc::now().date_naive().format("%Y-%m-%d").to_string(),
     };
 
+    if !crate::config::live_feeds_enabled() {
+        anyhow::bail!(
+            "live feeds are disabled; `fetch play-by-play` requires live NHL schedule data"
+        );
+    }
+
     let client = NhlApiClient::production();
     let games = client
         .fetch_schedule_for_date(&anchor_str)
@@ -1010,7 +1016,8 @@ async fn do_moneypuck(season: &str, dry_run: bool) -> anyhow::Result<()> {
     .context("downloading MoneyPuck CSV through FLETCH")?;
     let csv_text = String::from_utf8(csv_bytes).context("MoneyPuck CSV is not valid UTF-8")?;
 
-    let stats_map = moneypuck::parse_csv(&csv_text);
+    let stats_map = moneypuck::parse_csv_checked(&csv_text)
+        .context("parsing MoneyPuck CSV; source schema or required columns changed")?;
     println!("  {} players parsed", stats_map.len());
 
     // Convert to Vec for JSON serialization
@@ -1340,7 +1347,7 @@ async fn do_transactions(season: &str, dry_run: bool) -> anyhow::Result<()> {
             flags.transactions_last_error = Some(e.to_string());
             flags.transactions_fetched_at = Some(today.clone());
             let _ = flags.save(&snapshots_root, season); // best-effort
-            return Err(e.into());
+            return Err(e);
         }
     };
 
@@ -1463,6 +1470,16 @@ async fn do_boxscore(
     };
     let anchor =
         chrono::NaiveDate::parse_from_str(&anchor_str, "%Y-%m-%d").context("parse anchor date")?;
+
+    if dry_run && !for_favorites && !crate::config::live_feeds_enabled() {
+        println!("Boxscore fetch — {anchor_str} · dry run (live feeds disabled)");
+        println!("(dry run — no schedule fetched, no boxscores fetched, no events written)");
+        return Ok(());
+    }
+
+    if !crate::config::live_feeds_enabled() {
+        anyhow::bail!("live feeds are disabled; `fetch boxscore` requires live NHL schedule data");
+    }
 
     // Step 1: schedule fetch (already covered by Foster.1).
     let client = NhlApiClient::production();

@@ -17,6 +17,7 @@ use icelines_core::{
     Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
     CURRENT_SEASON,
 };
+use icelines_fetch::fantasy_db::{open_existing_sqlite_read_only_path, FantasyDb};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Default)]
@@ -388,7 +389,7 @@ fn read_persisted_watch_rules() -> Vec<WatchRule> {
     if !db_path.exists() {
         return Vec::new();
     }
-    let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+    let Ok(conn) = open_existing_sqlite_read_only_path(&db_path) else {
         return Vec::new();
     };
     let latest_fired = read_watch_rule_last_fired(&conn);
@@ -461,7 +462,7 @@ pub(super) fn read_watchlist_player_keys() -> Vec<String> {
     if !db_path.exists() {
         return Vec::new();
     }
-    let Ok(conn) = rusqlite::Connection::open(&db_path) else {
+    let Ok(conn) = open_existing_sqlite_read_only_path(&db_path) else {
         return Vec::new();
     };
     let Ok(mut stmt) = conn.prepare(
@@ -734,57 +735,32 @@ fn read_fantasy_rostered_player_keys(league_name: Option<&str>) -> Option<Fantas
     if !db_path.exists() {
         return None;
     }
-    let conn = rusqlite::Connection::open(&db_path).ok()?;
-    let league_id: String = if let Some(name) = league_name {
-        conn.query_row(
-            "SELECT id FROM fl_leagues WHERE name = ?1",
-            rusqlite::params![name],
-            |row| row.get(0),
-        )
-        .ok()?
+
+    let db = FantasyDb::open_existing_read_only_path(db_path).ok()?;
+    let league = if let Some(name) = league_name {
+        db.list_leagues()
+            .ok()?
+            .into_iter()
+            .find(|league| league.name == name)?
     } else {
-        conn.query_row(
-            "SELECT id FROM fl_leagues WHERE is_active = 1 LIMIT 1",
-            [],
-            |row| row.get(0),
-        )
-        .ok()?
+        db.get_active_league().ok()??
     };
-    let mut stmt = conn
-        .prepare(
-            "SELECT r.player_normalized, t.is_user_team
-             FROM fl_roster r
-             JOIN fl_teams t ON t.id = r.team_id
-             WHERE t.league_id = ?1
-             ORDER BY r.player_normalized",
-        )
-        .ok()?;
-    stmt.query_map(rusqlite::params![league_id], |row| row.get::<_, String>(0))
-        .ok()
-        .map(|rows| {
-            let mut all_rostered = Vec::new();
-            let mut user_rostered = Vec::new();
-            for row in rows.filter_map(Result::ok) {
-                all_rostered.push(row.clone());
-            }
-            if let Ok(mut user_stmt) = conn.prepare(
-                "SELECT r.player_normalized
-                 FROM fl_roster r
-                 JOIN fl_teams t ON t.id = r.team_id
-                 WHERE t.league_id = ?1 AND t.is_user_team = 1
-                 ORDER BY r.player_normalized",
-            ) {
-                user_rostered = user_stmt
-                    .query_map(rusqlite::params![league_id], |row| row.get::<_, String>(0))
-                    .ok()
-                    .map(|rows| rows.filter_map(Result::ok).collect())
-                    .unwrap_or_default();
-            }
-            FantasyRosterKeys {
-                all_rostered,
-                user_rostered,
-            }
-        })
+
+    let user_team_id = db.get_user_team(&league.id).ok()?.map(|team| team.id);
+    let mut all_rostered = Vec::new();
+    let mut user_rostered = Vec::new();
+    for team in db.list_teams(&league.id).ok()? {
+        let roster = db.list_roster(&team.id).ok()?;
+        if Some(team.id.as_str()) == user_team_id.as_deref() {
+            user_rostered.extend(roster.iter().cloned());
+        }
+        all_rostered.extend(roster);
+    }
+
+    Some(FantasyRosterKeys {
+        all_rostered,
+        user_rostered,
+    })
 }
 
 fn parse_availability_filter(value: Option<&str>) -> Result<PoachAvailabilityFilter, String> {

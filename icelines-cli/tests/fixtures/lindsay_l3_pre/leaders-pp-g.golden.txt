@@ -1,3 +1,6 @@
+Context: 20242025 regular | source roster complete
+Result: total 905 | returned 10 | top 10 | sort pp-g | active_filters -
+
 Rank Player                   Team  Pos  GP   PP-Goals  
 ───────────────────────────────────────────────────────
 1    Jake Guentzel            TBL   C    80   17        

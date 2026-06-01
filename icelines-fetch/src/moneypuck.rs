@@ -7,6 +7,28 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use thiserror::Error;
+
+const REQUIRED_COLUMNS: &[&str] = &[
+    "playerId",
+    "situation",
+    "icetime",
+    "I_F_xGoals",
+    "onIce_xGoalsFor",
+    "onIce_xGoalsAgainst",
+    "onIce_corsiFor",
+    "onIce_corsiAgainst",
+    "onIce_fenwickFor",
+    "onIce_fenwickAgainst",
+];
+
+#[derive(Debug, Error)]
+pub enum MoneyPuckCsvError {
+    #[error("MoneyPuck CSV missing required column(s): {0}")]
+    MissingColumns(String),
+    #[error("MoneyPuck CSV parse error: {0}")]
+    Parse(#[from] csv::Error),
+}
 
 /// One row of the MoneyPuck skaters CSV (per player per situation).
 #[derive(Debug, Deserialize)]
@@ -44,14 +66,32 @@ pub struct MoneyPuckStats {
 
 /// Parse a MoneyPuck CSV string into a player_id → MoneyPuckStats map.
 pub fn parse_csv(csv_text: &str) -> HashMap<u32, MoneyPuckStats> {
+    parse_csv_checked(csv_text).unwrap_or_default()
+}
+
+/// Parse a MoneyPuck CSV string, failing explicitly on header or row drift.
+pub fn parse_csv_checked(
+    csv_text: &str,
+) -> Result<HashMap<u32, MoneyPuckStats>, MoneyPuckCsvError> {
     let mut rdr = csv::Reader::from_reader(csv_text.as_bytes());
+    let headers = rdr.headers()?;
+    let missing: Vec<_> = REQUIRED_COLUMNS
+        .iter()
+        .copied()
+        .filter(|column| !headers.iter().any(|header| header == *column))
+        .collect();
+    if !missing.is_empty() {
+        return Err(MoneyPuckCsvError::MissingColumns(missing.join(", ")));
+    }
+
     let mut by_player: HashMap<u64, Vec<MoneyPuckRow>> = HashMap::new();
 
-    for row in rdr.deserialize::<MoneyPuckRow>().flatten() {
+    for row in rdr.deserialize::<MoneyPuckRow>() {
+        let row = row?;
         by_player.entry(row.player_id).or_default().push(row);
     }
 
-    by_player
+    let stats = by_player
         .iter()
         .filter_map(|(&pid, rows)| {
             let all_sit = rows.iter().find(|r| r.situation == "all")?;
@@ -96,7 +136,8 @@ pub fn parse_csv(csv_text: &str) -> HashMap<u32, MoneyPuckStats> {
                 },
             ))
         })
-        .collect()
+        .collect();
+    Ok(stats)
 }
 
 /// Convert Vec<MoneyPuckStats> to HashMap for O(1) lookup.
@@ -140,6 +181,33 @@ mod tests {
         let csv = "playerId,situation,icetime,I_F_xGoals,onIce_xGoalsFor,onIce_xGoalsAgainst,onIce_corsiFor,onIce_corsiAgainst,onIce_fenwickFor,onIce_fenwickAgainst\n";
         let result = parse_csv(csv);
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn l0_parse_csv_checked_rejects_missing_required_column() {
+        let csv = "playerId,situation,icetime,I_F_xGoals,onIce_xGoalsFor,onIce_xGoalsAgainst,onIce_corsiFor,onIce_corsiAgainst,onIce_fenwickFor\n\
+                   8478402,all,5000,20.0,0,0,0,0,0\n";
+        let err = parse_csv_checked(csv).expect_err("missing column must fail");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("onIce_fenwickAgainst"),
+            "expected missing column name, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn l0_parse_csv_checked_rejects_bad_numeric_row() {
+        let csv = format!(
+            "{}{}",
+            csv_header(),
+            "8478402,all,not-a-number,20.0,0,0,0,0,0,0\n"
+        );
+        let err = parse_csv_checked(&csv).expect_err("malformed row must fail");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("parse error"),
+            "expected parse error, got: {msg}"
+        );
     }
 
     #[test]

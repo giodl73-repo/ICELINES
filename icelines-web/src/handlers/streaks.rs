@@ -84,18 +84,23 @@ async fn build_streaks_view(
             )
         })?;
     let data_root = home.join(".icelines").join("data");
-    let store = icelines_fetch::datastore::DataStore::open(&data_root).map_err(|err| {
-        crate::api::json_error_meta(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "player-streaks",
-            serde_json::json!({ "player_id": id }),
-            serde_json::json!({ "data_root": data_root.display().to_string() }),
-            err.to_string(),
-        )
-    })?;
-    let lines = icelines_fetch::streaks_provider::load_player_game_lines(&store, id);
-    let (shot_lines, play_by_play_source_loaded) =
-        icelines_fetch::streaks_provider::load_player_shot_lines(&store, id);
+    let (lines, shot_lines, play_by_play_source_loaded) = if data_root.join("manifest").is_dir() {
+        let store = icelines_fetch::datastore::DataStore::open(&data_root).map_err(|err| {
+            crate::api::json_error_meta(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "player-streaks",
+                serde_json::json!({ "player_id": id }),
+                serde_json::json!({ "data_root": data_root.display().to_string() }),
+                err.to_string(),
+            )
+        })?;
+        let lines = icelines_fetch::streaks_provider::load_player_game_lines(&store, id);
+        let (shot_lines, source_loaded) =
+            icelines_fetch::streaks_provider::load_player_shot_lines(&store, id);
+        (lines, shot_lines, source_loaded)
+    } else {
+        (Vec::new(), Vec::new(), false)
+    };
     let player_name = lines
         .first()
         .map(|line| line.player_name.clone())

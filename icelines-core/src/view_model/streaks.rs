@@ -38,6 +38,7 @@ pub struct PlayerShotLineInput {
 pub struct PlayerStreakRow {
     pub metric: String,
     pub current: u32,
+    pub current_status: String,
     pub longest: u32,
     pub longest_start_date: Option<String>,
     pub longest_end_date: Option<String>,
@@ -58,6 +59,7 @@ pub struct TeamPlayerStreakLeaderRow {
     pub player_id: u32,
     pub player_name: String,
     pub current: u32,
+    pub current_status: String,
     pub longest: u32,
     pub longest_start_date: Option<String>,
     pub longest_end_date: Option<String>,
@@ -326,6 +328,7 @@ fn best_team_leader(
                 player_id,
                 player_name,
                 current: row.current,
+                current_status: row.current_status,
                 longest: row.longest,
                 longest_start_date: row.longest_start_date,
                 longest_end_date: row.longest_end_date,
@@ -366,6 +369,7 @@ fn best_team_shot_leader(
                 player_id,
                 player_name,
                 current: row.current,
+                current_status: row.current_status,
                 longest: row.longest,
                 longest_start_date: row.longest_start_date,
                 longest_end_date: row.longest_end_date,
@@ -406,6 +410,7 @@ fn shot_streak_row(
     PlayerStreakRow {
         metric: metric.to_string(),
         current: current_run,
+        current_status: current_streak_status(current_run).to_string(),
         longest: best_run,
         longest_start_date: best_start,
         longest_end_date: best_end,
@@ -443,9 +448,18 @@ fn streak_row(
     PlayerStreakRow {
         metric: metric.to_string(),
         current: current_run,
+        current_status: current_streak_status(current_run).to_string(),
         longest: best_run,
         longest_start_date: best_start,
         longest_end_date: best_end,
+    }
+}
+
+fn current_streak_status(current_run: u32) -> &'static str {
+    if current_run > 0 {
+        "ongoing"
+    } else {
+        "inactive"
     }
 }
 
@@ -486,8 +500,10 @@ mod tests {
         let points = view.rows.iter().find(|row| row.metric == "points").unwrap();
         assert_eq!(points.longest, 2);
         assert_eq!(points.current, 1);
+        assert_eq!(points.current_status, "ongoing");
         let goals = view.rows.iter().find(|row| row.metric == "goals").unwrap();
         assert_eq!(goals.longest, 1);
+        assert_eq!(goals.current_status, "ongoing");
     }
 
     fn team_line(
@@ -554,6 +570,7 @@ mod tests {
         let goals = view.rows.iter().find(|row| row.metric == "goals").unwrap();
         assert_eq!(goals.player_name, "Goal Leader");
         assert_eq!(goals.longest, 2);
+        assert_eq!(goals.current_status, "inactive");
         let assists = view
             .rows
             .iter()
@@ -561,9 +578,11 @@ mod tests {
             .unwrap();
         assert_eq!(assists.player_name, "Assist Leader");
         assert_eq!(assists.longest, 3);
+        assert_eq!(assists.current_status, "ongoing");
         let points = view.rows.iter().find(|row| row.metric == "points").unwrap();
         assert_eq!(points.player_name, "Point Leader");
         assert_eq!(points.longest, 4);
+        assert_eq!(points.current_status, "ongoing");
     }
 
     #[test]
@@ -596,6 +615,7 @@ mod tests {
             .unwrap();
         assert_eq!(shots.longest, 2);
         assert_eq!(shots.current, 0);
+        assert_eq!(shots.current_status, "inactive");
         assert_eq!(shots.longest_start_date.as_deref(), Some("2025-10-01"));
         assert_eq!(shots.longest_end_date.as_deref(), Some("2025-10-02"));
         let attempts = view
@@ -605,6 +625,7 @@ mod tests {
             .unwrap();
         assert_eq!(attempts.longest, 2);
         assert_eq!(attempts.current, 1);
+        assert_eq!(attempts.current_status, "ongoing");
         assert_eq!(view.games_loaded, 4);
     }
 
@@ -676,6 +697,7 @@ mod tests {
             .unwrap();
         assert_eq!(shots.player_name, "Shot Leader");
         assert_eq!(shots.longest, 2);
+        assert_eq!(shots.current_status, "inactive");
         let attempts = view
             .rows
             .iter()
@@ -683,6 +705,7 @@ mod tests {
             .unwrap();
         assert_eq!(attempts.player_name, "Attempt Leader");
         assert_eq!(attempts.longest, 3);
+        assert_eq!(attempts.current_status, "ongoing");
         assert_eq!(view.players_loaded, 2);
     }
 }

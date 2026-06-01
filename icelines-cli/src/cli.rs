@@ -514,6 +514,9 @@ q (or Esc on a non-tab screen) to quit.
         /// slug grammar as the sugar subcommands. See --help.
         #[arg(long, value_name = "SLUG")]
         start: Option<String>,
+        /// Restore a named dashboard layout saved by `icelines layout save`.
+        #[arg(long, value_name = "NAME")]
+        layout: Option<String>,
         /// Phase Masterton.3 — lock the TUI to the chosen surface.
         /// Tab/Shift+Tab become no-ops; the tab strip is hidden.
         /// Useful for a focused single-screen experience.
@@ -547,7 +550,13 @@ q (or Esc on a non-tab screen) to quit.
             conflicts_with_all = ["standalone", "mdi"]
         )]
         classic: bool,
+        #[arg(long, hide = true)]
+        render_leaders_active_filter_snapshot: bool,
     },
+
+    /// Manage durable named workbench layouts.
+    #[command(subcommand)]
+    Layout(LayoutSubcommand),
 
     /// Print the full command reference (embedded COMMANDS.md). No
     /// internet required — the doc ships inside the binary.
@@ -984,9 +993,11 @@ mod tui_surface_tests {
                 Commands::Tui {
                     surface: Some(s),
                     start: None,
+                    layout: None,
                     standalone: false,
                     mdi: false,
                     classic: false,
+                    render_leaders_active_filter_snapshot: false,
                 } => s.into_screen_spec(),
                 other => panic!("expected Tui {{ surface: Some(_), start: None }}, got {other:?}"),
             };
@@ -999,9 +1010,11 @@ mod tui_surface_tests {
                 Commands::Tui {
                     surface: None,
                     start: Some(s),
+                    layout: None,
                     standalone: false,
                     mdi: false,
                     classic: false,
+                    render_leaders_active_filter_snapshot: false,
                 } => parse_start_slug(&s).expect("known slug"),
                 other => panic!("expected Tui {{ surface: None, start: Some(_) }}, got {other:?}"),
             };
@@ -1022,18 +1035,25 @@ mod tui_surface_tests {
             Commands::Tui {
                 surface,
                 start,
+                layout,
                 standalone,
                 mdi,
                 classic,
+                render_leaders_active_filter_snapshot,
             } => {
                 assert!(surface.is_none());
                 assert!(!standalone, "bare tui must default standalone=false");
                 assert!(!mdi, "bare tui should not require explicit --mdi");
                 assert!(!classic, "bare tui must default classic=false");
+                assert!(
+                    !render_leaders_active_filter_snapshot,
+                    "bare tui must not render a diagnostic snapshot"
+                );
                 let _ = standalone; // silence unused warning
                 let _ = mdi;
                 let _ = classic;
                 assert!(start.is_none());
+                assert!(layout.is_none());
             }
             other => panic!("expected Tui, got {other:?}"),
         }
@@ -1046,15 +1066,19 @@ mod tui_surface_tests {
             Commands::Tui {
                 surface,
                 start,
+                layout,
                 standalone,
                 mdi,
                 classic,
+                render_leaders_active_filter_snapshot,
             } => {
                 assert!(surface.is_none());
                 assert!(start.is_none());
+                assert!(layout.is_none());
                 assert!(!standalone);
                 assert!(!mdi);
                 assert!(classic);
+                assert!(!render_leaders_active_filter_snapshot);
             }
             other => panic!("expected Tui, got {other:?}"),
         }
@@ -2382,6 +2406,9 @@ OUTPUT
         /// Export as JSON
         #[arg(long)]
         json: bool,
+        /// Export a Web-compatible JSON envelope with data and meta.
+        #[arg(long)]
+        json_envelope: bool,
         /// Export as CSV
         #[arg(long)]
         csv: bool,
@@ -2886,6 +2913,56 @@ pub enum ConfigSubcommand {
     Reset { key: String },
 }
 
+#[derive(Debug, Subcommand)]
+pub enum LayoutSubcommand {
+    /// List saved layouts.
+    List,
+    /// Show one saved layout as JSON.
+    Show {
+        /// Layout name.
+        name: String,
+    },
+    /// Save or replace a named layout.
+    Save {
+        /// Layout name.
+        name: String,
+        /// Center workbench slug, e.g. league, scores, stats.
+        #[arg(long)]
+        center: String,
+        /// Left pane binding slug, e.g. favorites-left.
+        #[arg(long)]
+        left: String,
+        /// Right pane binding slug, e.g. schedule-right.
+        #[arg(long)]
+        right: String,
+        /// Optional experience slug, e.g. tonight-bench.
+        #[arg(long)]
+        experience: Option<String>,
+    },
+    /// Update an existing layout, or create it if missing.
+    Update {
+        /// Layout name.
+        name: String,
+        /// Center workbench slug, e.g. league, scores, stats.
+        #[arg(long)]
+        center: String,
+        /// Left pane binding slug, e.g. favorites-left.
+        #[arg(long)]
+        left: String,
+        /// Right pane binding slug, e.g. schedule-right.
+        #[arg(long)]
+        right: String,
+        /// Optional experience slug, e.g. tonight-bench.
+        #[arg(long)]
+        experience: Option<String>,
+    },
+    /// Delete a saved layout.
+    Delete {
+        /// Layout name.
+        name: String,
+    },
+}
+
 // ── Phase 8d: markdown export ────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
@@ -2911,12 +2988,22 @@ pub enum ExportSubcommand {
         /// Top-N for `leaders`.
         #[arg(long, default_value_t = 25)]
         top: usize,
+        /// Season for `leaders`, e.g. 20242025. Defaults to current season.
+        #[arg(long)]
+        season: Option<String>,
+        /// Season type for `leaders`.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
         /// Sort metric for `leaders`. Defaults to `pts-pace`.
         #[arg(long, default_value = "pts-pace")]
         sort: String,
         /// Min-GP filter for `leaders` (default = current MIN_GP).
         #[arg(long)]
         gp_min: Option<u32>,
+        /// Free-form filter for `leaders`. Repeatable; uses the same grammar as
+        /// `query leaders --filter`.
+        #[arg(long = "filter")]
+        filters: Vec<String>,
         /// Phase Lindsay L.5.4 — comma-separated `StatId::cli_key` list
         /// for the `leaders` shape. Replaces the canonical column set.
         /// Example: `--columns "goals,assists,points,hits,blocked-shots"`.

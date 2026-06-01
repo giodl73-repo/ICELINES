@@ -134,6 +134,14 @@ code {
     top: 0;
 }
 
+.noscript-notice {
+    background: #fff6d9;
+    border-bottom: 1px solid #e4c45a;
+    color: var(--nhl-navy);
+    padding: 0.55rem 1.1rem;
+    font-size: 0.92rem;
+}
+
 /* ── Active (season, season_type) sticky header ─────────────────── */
 .season-header {
     position: sticky;
@@ -212,13 +220,22 @@ code {
     align-items: center;
     gap: 0.4rem;
 }
-.season-type-toggle a {
+.season-type-toggle form {
+    margin: 0;
+}
+.season-type-toggle button {
+    appearance: none;
+    border: 0;
+    background: transparent;
     color: var(--ice-muted);
     padding: 0.15rem 0.5rem;
     border-radius: 3px;
     text-decoration: none;
+    font: inherit;
+    cursor: pointer;
 }
-.season-type-toggle a:hover {
+.season-type-toggle button:hover,
+.season-type-toggle button:focus-visible {
     background: var(--ice-divider);
     color: var(--nhl-navy);
 }
@@ -1674,5 +1691,9 @@ a.team-link:hover {
     }
     .global-nav a {
         padding: 0.2rem 0.4rem;
+    }
+    .noscript-notice {
+        padding: 0.45rem 0.7rem;
+        font-size: 0.82rem;
     }
 }

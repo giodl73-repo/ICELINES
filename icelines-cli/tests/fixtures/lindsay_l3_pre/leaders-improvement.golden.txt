@@ -1,3 +1,5 @@
+Context: 20242025 regular | source roster complete
+
 IMPROVEMENT LEADERS — Y/Y PPG delta (current vs prior season)
 Rank Player                   Team  Pos  GP   Curr     Prior    Δ PPG   
 ─────────────────────────────────────────────────────────────────────

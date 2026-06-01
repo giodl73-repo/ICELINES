@@ -59,7 +59,8 @@ pub async fn run(
         .unwrap_or_else(|| CURRENT_SEASON_STR.to_owned());
     // King.6 will introduce a per-user season-type setting; for
     // now everyone defaults to regular season.
-    let web_config = WebConfig::new(active_season.clone(), "regular");
+    let web_config = WebConfig::new(active_season.clone(), "regular")
+        .with_layout_store_path(cfg.layout_store_path());
 
     // King.2.1 — load the active season's skater + goalie data into
     // the repo at boot. Same code path the CLI's query commands use.
@@ -116,28 +117,25 @@ pub async fn run(
         }
     };
 
-    let url = format!("http://{addr}/");
+    let launch = build_launch_plan(addr, &web_config.active_label, no_open);
 
     // 1. Print URL FIRST — before any browser-open attempt — so users
     //    always have the URL even if open fails.
-    println!("→ {url}  (active season: {})", web_config.active_label);
-    println!("  Ctrl-C to stop.");
+    for line in &launch.stdout_lines {
+        println!("{line}");
+    }
 
     // 6. LAN-mode security banner.
-    if addr.ip() != std::net::IpAddr::from([127, 0, 0, 1]) {
-        eprintln!();
-        eprintln!("WARNING: LAN mode — no auth, no TLS.");
-        eprintln!("         Anyone on your network can read your data.");
-        eprintln!("         Bind to 127.0.0.1 (default) for localhost-only access.");
-        eprintln!();
+    for line in &launch.stderr_lines {
+        eprintln!("{line}");
     }
 
     // 2-4. Auto-open browser unless --no-open.
-    if !no_open {
+    if launch.auto_open {
         // open::that honors $BROWSER on Linux; uses Launch Services
         // on macOS; uses ShellExecute on Windows. Errors are NOT
         // failures of `serve` — print a brief note and continue.
-        if let Err(e) = open::that(&url) {
+        if let Err(e) = open::that(&launch.url) {
             eprintln!("info: browser auto-open failed ({e}). Open the URL above manually.");
         }
     }
@@ -148,6 +146,42 @@ pub async fn run(
         .await?;
 
     Ok(())
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct ServeLaunchPlan {
+    url: String,
+    stdout_lines: Vec<String>,
+    stderr_lines: Vec<&'static str>,
+    auto_open: bool,
+}
+
+fn build_launch_plan(addr: SocketAddr, active_label: &str, no_open: bool) -> ServeLaunchPlan {
+    let url = format!("http://{addr}/");
+    let mut stderr_lines = Vec::new();
+    if is_lan_bind(addr) {
+        stderr_lines.extend([
+            "",
+            "WARNING: LAN mode — no auth, no TLS.",
+            "         Anyone on your network can read your data.",
+            "         Bind to 127.0.0.1 (default) for localhost-only access.",
+            "",
+        ]);
+    }
+
+    ServeLaunchPlan {
+        stdout_lines: vec![
+            format!("→ {url}  (active season: {active_label})"),
+            "  Ctrl-C to stop.".to_owned(),
+        ],
+        url,
+        stderr_lines,
+        auto_open: !no_open,
+    }
+}
+
+fn is_lan_bind(addr: SocketAddr) -> bool {
+    addr.ip() != std::net::IpAddr::from([127, 0, 0, 1])
 }
 
 /// Resolve `--port` + `--bind` into a final SocketAddr per the spec's
@@ -230,5 +264,51 @@ mod tests {
     fn l0_resolve_bind_invalid_address_errors() {
         let err = resolve_bind(8000, Some("not-an-ip")).unwrap_err();
         assert!(err.to_string().contains("invalid --bind"));
+    }
+
+    #[test]
+    fn l0_launch_plan_prints_url_before_browser_open() {
+        let addr = resolve_bind(8000, None).unwrap();
+        let plan = build_launch_plan(addr, "2025-26 regular", false);
+
+        assert_eq!(plan.url, "http://127.0.0.1:8000/");
+        assert_eq!(
+            plan.stdout_lines.first().map(String::as_str),
+            Some("→ http://127.0.0.1:8000/  (active season: 2025-26 regular)")
+        );
+        assert_eq!(
+            plan.stdout_lines.get(1).map(String::as_str),
+            Some("  Ctrl-C to stop.")
+        );
+        assert!(plan.auto_open);
+        assert!(plan.stderr_lines.is_empty());
+    }
+
+    #[test]
+    fn l0_launch_plan_no_open_skips_browser_open() {
+        let addr = resolve_bind(8000, None).unwrap();
+        let plan = build_launch_plan(addr, "2025-26 regular", true);
+
+        assert!(!plan.auto_open);
+        assert_eq!(
+            plan.stdout_lines.first().map(String::as_str),
+            Some("→ http://127.0.0.1:8000/  (active season: 2025-26 regular)")
+        );
+    }
+
+    #[test]
+    fn l0_launch_plan_lan_bind_warns() {
+        let addr = resolve_bind(8000, Some("0.0.0.0")).unwrap();
+        let plan = build_launch_plan(addr, "2025-26 regular", true);
+
+        assert!(is_lan_bind(addr));
+        assert!(plan
+            .stderr_lines
+            .iter()
+            .any(|line| line.contains("WARNING: LAN mode")));
+        assert!(plan
+            .stderr_lines
+            .iter()
+            .any(|line| line.contains("Bind to 127.0.0.1")));
     }
 }

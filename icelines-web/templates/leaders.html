@@ -5,7 +5,19 @@
 {% block content %}
 <h1>Leaderboards</h1>
 
-<p class="meta-line">
+<p class="meta-line"
+   data-active-season="{{ active_season }}"
+   data-active-season-type="{{ active_season_type }}"
+   data-source-kind="{{ source_kind }}"
+   data-source-completeness="{{ source_completeness }}"
+   data-empty-kind="{{ empty_kind }}"
+   data-warning-count="{{ warning_count }}"
+   data-warning-kinds="{{ warning_kinds }}"
+   data-result-total="{{ total }}"
+   data-result-returned="{{ rows.len() }}"
+   data-result-top="{{ active_top }}"
+   data-result-sort="{{ active_sort }}"
+   data-result-active-filters="{{ result_active_filters }}">
     Top {{ rows.len() }} skaters by {{ active_sort_label }} · {{ active_label }}
     {% if total > rows.len() %}
         · {{ total }} total
@@ -18,7 +30,8 @@
     <span class="chip-strip-label">Position:</span>
     {% for chip in pos_chips %}
         <a href="?sort={{ active_sort }}&pos={{ chip.value }}&top={{ active_top }}{{ bio_query_suffix }}"
-           class="filter-chip{% if chip.is_active %} fit-solid{% endif %}">
+           class="filter-chip{% if chip.is_active %} fit-solid{% endif %}"
+           {% if chip.is_active %}aria-current="true"{% endif %}>
             {{ chip.label }}
         </a>
     {% endfor %}
@@ -64,6 +77,22 @@
     Active filters (AND'd):
     {% for f in active_filters %}<code class="active-filter-token">{{ f }}</code>{% endfor %}
 </p>
+{% endif %}
+
+{% if !warnings.is_empty() %}
+<section class="state-warning" data-view-warning="leaders" data-warning-count="{{ warning_count }}">
+    <strong>Warnings</strong>
+    <ul>
+        {% for warning in warnings %}
+        <li data-warning-kind="{{ warning.kind }}">
+            {{ warning.message }}
+            {% for action in warning.recovery %}
+                <a href="{{ action.href }}">{{ action.label }}</a>
+            {% endfor %}
+        </li>
+        {% endfor %}
+    </ul>
+</section>
 {% endif %}
 
 {# Sasq.9 — bio filter accordion. Open by default when any bio
@@ -130,6 +159,19 @@
     </form>
 </details>
 
+{% if rows.is_empty() %}
+<section class="empty-state" data-empty-state="leaders" data-empty-kind="{{ empty_kind }}">
+    <h2>{{ empty_title }}</h2>
+    {% if !empty_detail.is_empty() %}<p>{{ empty_detail }}</p>{% endif %}
+    {% if !empty_recovery.is_empty() %}
+    <p>
+        {% for action in empty_recovery %}
+            <a href="{{ action.href }}">{{ action.label }}</a>
+        {% endfor %}
+    </p>
+    {% endif %}
+</section>
+{% else %}
 <div class="table-scroll">
 <table>
     <thead>
@@ -152,7 +194,12 @@
     </thead>
     <tbody>
         {% for row in rows %}
-        <tr>
+        <tr data-row-rank="{{ loop.index }}"
+            data-nhl-id="{{ row.nhl_id }}"
+            data-player-name="{{ row.name }}"
+            data-team-abbrev="{{ row.team }}"
+            data-goals="{{ row.goals }}"
+            data-points="{{ row.points }}">
             <td class="rank-cell">{{ loop.index }}</td>
             <td>
                 <div class="player-cell">
@@ -193,6 +240,7 @@
     </tbody>
 </table>
 </div>
+{% endif %}
 
 <p class="page-section meta-line">
     Click any column header to sort by that stat. Click a position chip to filter.

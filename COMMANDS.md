@@ -65,13 +65,17 @@ icelines query player "Connor McDavid" --seasons 38   # full bundled career
 icelines query compare "Wayne Gretzky" "Mario Lemieux" --seasons 38
 icelines query goalies --filter "save-pct>=0.92" --top 10
 icelines tui                                          # interactive dashboard
-icelines fetch fletch-partitions --gate               # query partitions/rollups handoff
-icelines fetch fletch-quivers --gate                  # query bootstrap quiver handoff
 ```
 
 **38 seasons (1987-88 → 2025-26)** are bundled into the binary. No internet, no fetch, no setup needed.
 
-FLETCH integration commands:
+VTRACE baseline note: `docs/vtrace/` is the authoritative mission, requirement,
+design, verification, validation, and work-package baseline. This command
+reference is an operator guide and must not claim a feature beyond that baseline
+or `design/specs/surface-parity.md`.
+
+FLETCH integration gates are migration/dependency-seam commands, not normal
+quick-start steps:
 
 ```bash
 icelines fetch fletch-sources --gate
@@ -83,7 +87,9 @@ icelines fetch fletch-quivers --gate
 projects ICELINES query surfaces into FLETCH partition/rollup IDs while keeping
 activation on ICELINES sealed snapshots and active pointers. `fletch-quivers`
 groups those partition rows into query bootstrap and enrichment bundle
-candidates without exporting bytes or activating data.
+candidates without exporting bytes or activating data. VTRACE `WP-007` keeps the
+standalone/no-cross-repo-dependency target open until these seams are removed or
+explicitly replaced, refused, or rolled back.
 
 ---
 
@@ -575,9 +581,14 @@ icelines export md leaders --top 10 --out leaders.md
 icelines export md roster --pos G --out goalies.md
 icelines export md team-season --team EDM --out team-season-EDM.md
 icelines export md leaders --columns "g,a,p,blk" --out custom.md
+icelines export md leaders --season 20242025 --filter "country=CAN" --top 5 --out leaders-can.md
 ```
 
 Shapes: `leaders`, `team`, `team-season`, `depth`, `fantasy`, `compare`, `series`, `roster`.
+
+`export md leaders` accepts the same repeatable free-form `--filter` strings as
+`query leaders`, plus explicit `--season` and `--type regular|playoff` controls
+for reproducible report evidence windows.
 
 ---
 

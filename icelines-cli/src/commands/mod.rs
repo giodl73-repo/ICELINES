@@ -7,6 +7,7 @@ pub mod export;
 pub mod fantasy;
 pub mod favorites;
 pub mod fetch;
+pub mod layout;
 pub mod mates;
 pub mod menu;
 pub mod output;

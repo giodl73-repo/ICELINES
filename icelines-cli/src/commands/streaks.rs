@@ -51,7 +51,7 @@ pub async fn run(
         return Ok(());
     }
 
-    let headers = ["metric", "current", "longest", "start", "end"];
+    let headers = ["metric", "current", "status", "longest", "start", "end"];
     let rows = view
         .rows
         .iter()
@@ -59,6 +59,7 @@ pub async fn run(
             vec![
                 row.metric.clone(),
                 row.current.to_string(),
+                row.current_status.clone(),
                 row.longest.to_string(),
                 row.longest_start_date
                     .clone()

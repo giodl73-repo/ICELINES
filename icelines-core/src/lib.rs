@@ -37,6 +37,7 @@ pub mod timeframe;
 pub mod transactions;
 pub mod view_model;
 pub mod workbench;
+pub mod workbench_layout;
 
 pub use career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev, LeagueTier};
 pub use cross_team::{
@@ -141,4 +142,9 @@ pub use workbench::{
     WorkbenchPaneModel, WorkbenchPaneModelId, WorkbenchRibbonScope, WorkbenchStatusScope,
     WorkbenchSurface, WorkbenchValueKind, WorkbenchZone, WORKBENCH_CATALOG, WORKBENCH_EXPERIENCES,
     WORKBENCH_FIELDS, WORKBENCH_PANE_BINDINGS, WORKBENCH_PANE_MODELS,
+};
+pub use workbench_layout::{
+    normalize_layout_name, parse_experience_id, parse_pane_binding_id, parse_workbench_id,
+    WorkbenchLayoutContextPolicy, WorkbenchLayoutError, WorkbenchLayoutRecord,
+    WorkbenchLayoutStore, WORKBENCH_LAYOUT_SCHEMA_VERSION,
 };

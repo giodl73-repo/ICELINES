@@ -51,6 +51,7 @@ pub struct RunTuiOpts {
     ///
     /// Mutually exclusive with `standalone` (clap rejects both).
     pub mdi: bool,
+    pub layout: Option<icelines_core::WorkbenchLayoutRecord>,
 }
 
 impl RunTuiOpts {
@@ -61,6 +62,7 @@ impl RunTuiOpts {
             start_screen: Screen::Home,
             standalone: false,
             mdi: true,
+            layout: None,
         }
     }
 }
@@ -114,6 +116,37 @@ pub async fn run_tui(opts: RunTuiOpts) -> Result<()> {
 
     run_loop(&mut term, opts).await
     // _guard dropped here on happy path; restoration happens in Drop.
+}
+
+pub fn render_leaders_active_filter_snapshot() -> Result<String> {
+    let mut app = App::new(true);
+    app.screen = Screen::Queries;
+    app.active_season = "20242025".to_owned();
+    app.active_season_typed = icelines_core::model::Season(20242025);
+    app.active_type = icelines_core::season_stats::SeasonType::Regular;
+
+    let goals_idx = app.queries.fields[0]
+        .options
+        .iter()
+        .position(|value| *value == "goals")
+        .expect("TUI sort field exposes goals");
+    app.queries.fields[0].selected = goals_idx;
+    app.queries.filter_text = "country=CAN".to_owned();
+    app.queries.filter_plan = Some(
+        icelines_query::parse_query(icelines_query::FilterInput::Cli(
+            app.queries.filter_text.clone(),
+        ))
+        .map_err(|errors| anyhow::anyhow!("invalid TUI snapshot filter: {errors:?}"))?,
+    );
+
+    app.boot_load();
+    if app.views().is_empty() {
+        anyhow::bail!("TUI leaders snapshot has no loaded views: {}", app.status);
+    }
+
+    Ok(crate::tui::screens::queries::render_results_snapshot_text(
+        &app, 120, 40,
+    )?)
 }
 
 #[cfg(test)]
@@ -216,6 +249,11 @@ async fn run_loop(
     // state so the render path branches to render_mdi.
     if opts.mdi {
         app.enable_mdi_dashboard();
+        if let Some(layout) = opts.layout.as_ref() {
+            if let Some(mdi) = app.mdi.as_mut() {
+                mdi.apply_persisted_layout(layout)?;
+            }
+        }
     }
 
     // Synchronous boot load. ~50ms against bundled data — well below

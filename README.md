@@ -8,6 +8,11 @@ NHL depth charts, pace-adjusted rankings, query engine, fantasy league managemen
 [ROLES](https://github.com/giodl73-repo/ROLES), the `.roles` convention for
 repository-local review panels.
 
+**Specification baseline:** `docs/vtrace/` is the governing project baseline for
+mission, requirements, design, interfaces, verification, validation, work
+packages, and change control. The older root and design docs are supporting
+operator/developer references and should not override the VTRACE baseline.
+
 ---
 
 ## Download (no coding required)
@@ -442,9 +447,9 @@ icelines scheme show yahoo-standard # show weights
 icelines snapshot list              # data snapshots
 icelines snapshot verify            # integrity check
 
-icelines build                      # generate mkdocs site
-icelines serve                      # serve site locally
-icelines deploy                     # deploy to GitHub Pages
+icelines docs                       # print the offline command reference
+icelines export md --help           # durable Markdown/report exports
+icelines serve                      # launch the axum web dashboard/API
 ```
 
 ---
@@ -468,12 +473,18 @@ Bundled data is refreshed during release/data-prep work and ships with each rele
 icelines-core    pure domain types, filters, scheme scoring - no I/O
 icelines-query   Art Ross query parser, planner, executor
 icelines-fetch   NHL API client, snapshot store, bundled data, MoneyPuck
-icelines-site    mkdocs static site generation
 icelines-web     axum web/API surface
 icelines-cli     thin UI layer - commands, TUI, HTTP server (axum)
+icelines-site    deferred mkdocs/static-site generator; no active CLI entry point
 ```
 
 6-crate Rust workspace. Scenario coverage now includes **2,000+ persona/harness tests** plus broad L0/L1/L2 integration, system, mock NHL API, TUI, query, and web gates. See `design/notes/2026-05-09-scenario-harness-inventory.md` for the current harness map.
+
+Current product intent and evidence posture live in
+[`docs/vtrace/MISSION.md`](docs/vtrace/MISSION.md),
+[`docs/vtrace/REQUIREMENTS.md`](docs/vtrace/REQUIREMENTS.md), and
+[`docs/vtrace/WORK_PACKAGES.md`](docs/vtrace/WORK_PACKAGES.md). Public feature
+claims should align with `design/specs/surface-parity.md`.
 
 ---
 

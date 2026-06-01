@@ -1,7 +1,7 @@
 # IceLines ViewModels
 
 **Date**: 2026-05-09
-**Status**: Draft - Campbell owns first implementation
+**Status**: Accepted VTRACE baseline
 
 ViewModels are the typed boundary between hockey computation and presentation.
 Core/query code builds them. CLI, TUI, web, markdown, and JSON render them.

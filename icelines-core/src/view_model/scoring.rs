@@ -700,10 +700,10 @@ mod tests {
         event
     }
 
-    fn trend<'a>(
-        view: &'a PlayerScoringProfileView,
+    fn trend(
+        view: &PlayerScoringProfileView,
         window: PlayerScoringTrendWindow,
-    ) -> &'a PlayerScoringTrendRow {
+    ) -> &PlayerScoringTrendRow {
         view.trends
             .iter()
             .find(|row| row.window == window)

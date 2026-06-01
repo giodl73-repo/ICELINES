@@ -38,10 +38,6 @@ pub async fn run(cmd: DataSubcommand) -> anyhow::Result<()> {
 // ── install ───────────────────────────────────────────────────────────────────
 
 async fn run_install(seasons: u8, season: Option<String>, force: bool) -> anyhow::Result<()> {
-    let seasons_dir = seasons_base_dir()?;
-    std::fs::create_dir_all(&seasons_dir)
-        .with_context(|| format!("create {}", seasons_dir.display()))?;
-
     // Build the list of seasons to install.
     let to_install: Vec<&str> = if let Some(ref s) = season {
         if s == "20042005" {
@@ -64,6 +60,10 @@ async fn run_install(seasons: u8, season: Option<String>, force: bool) -> anyhow
             .copied()
             .collect()
     };
+
+    let seasons_dir = seasons_base_dir()?;
+    std::fs::create_dir_all(&seasons_dir)
+        .with_context(|| format!("create {}", seasons_dir.display()))?;
 
     for s in to_install {
         let intent = DataMutationIntent::resolve(DataMutationOperation::Install, s, force)
@@ -443,10 +443,10 @@ mod tests {
         super::to_hex(&h.finalize())
     }
 
-    fn write_bundle_manifest(dir: &std::path::Path, season: &str) -> anyhow::Result<()> {
+    fn write_bundle_manifest(dest: &std::path::Path, season: &str) -> anyhow::Result<()> {
         let mut sha256 = std::collections::BTreeMap::new();
         for file in ["bios.json", "stats.json"] {
-            if let Some(hash) = file_sha256(&dir.join(file))? {
+            if let Some(hash) = file_sha256(&dest.join(file))? {
                 sha256.insert(file.to_owned(), hash);
             }
         }
@@ -454,10 +454,10 @@ mod tests {
             season: season.to_owned(),
             sha256,
             version: default_manifest_version(),
-            written_at: "2026-05-17T00:00:00Z".to_owned(),
+            written_at: "2026-05-30T00:00:00Z".to_owned(),
         };
         std::fs::write(
-            dir.join("manifest.json"),
+            dest.join("manifest.json"),
             serde_json::to_vec_pretty(&manifest)?,
         )?;
         Ok(())
@@ -478,6 +478,16 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("nope.txt");
         assert!(file_sha256(&path).unwrap().is_none());
+    }
+
+    #[test]
+    fn l0_available_seasons_skip_full_lockout_and_keep_neighbors() {
+        assert!(
+            !AVAILABLE_SEASONS.contains(&"20042005"),
+            "full lockout season must not be offered as a fetchable historical season"
+        );
+        assert!(AVAILABLE_SEASONS.contains(&"20032004"));
+        assert!(AVAILABLE_SEASONS.contains(&"20052006"));
     }
 
     #[test]

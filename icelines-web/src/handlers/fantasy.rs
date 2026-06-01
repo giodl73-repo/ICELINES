@@ -9,6 +9,12 @@ use axum::response::{Html, IntoResponse, Response};
 use chrono::NaiveDate;
 use icelines_core::model::{Position, Season};
 use icelines_core::season_stats::SeasonType;
+use icelines_core::timeframe::Timeframe;
+use icelines_core::view_model::{
+    Completeness, FantasyDailyDeltaInput, FantasyDailyPlayerInput, FantasyDailyTeamInput,
+    FantasyMatchupScheduleInput, FantasyMatchupTeamTotalInput, FantasyMatchupWeekInput, SourceKind,
+    SourceState,
+};
 use icelines_core::{
     build_fantasy_simulation_view, resolve_fantasy_scenario_roster_details, FantasyRosterGapInput,
     FantasyRosterGapView, FantasySimulationBuildInput, FantasySimulationConfidence,
@@ -413,18 +419,22 @@ pub(super) async fn build_fantasy_daily(
     let season_u32: u32 = season_str
         .parse()
         .map_err(|e| format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"))?;
-    let db = FantasyDb::open().map_err(|e| e.to_string())?;
+    let db = open_existing_fantasy_db()?;
     let data_root = data_root().ok_or_else(|| "cannot determine home directory".to_string())?;
-    let store = DataStore::open(&data_root).map_err(|e| e.to_string())?;
-    build_fantasy_daily_delta_view(
-        &db,
-        &store,
-        date,
-        Season(season_u32),
-        season_type,
-        q.league.as_deref(),
-    )
-    .map_err(|e| e.to_string())
+    if data_root.join("manifest").is_dir() {
+        let store = DataStore::open(&data_root).map_err(|e| e.to_string())?;
+        build_fantasy_daily_delta_view(
+            &db,
+            &store,
+            date,
+            Season(season_u32),
+            season_type,
+            q.league.as_deref(),
+        )
+        .map_err(|e| e.to_string())
+    } else {
+        build_fantasy_daily_missing_cache_view(&db, date, Season(season_u32), season_type, q)
+    }
 }
 
 pub(super) async fn build_fantasy_matchup(
@@ -447,18 +457,22 @@ pub(super) async fn build_fantasy_matchup(
     let season_u32: u32 = season_str
         .parse()
         .map_err(|e| format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"))?;
-    let db = FantasyDb::open().map_err(|e| e.to_string())?;
+    let db = open_existing_fantasy_db()?;
     let data_root = data_root().ok_or_else(|| "cannot determine home directory".to_string())?;
-    let store = DataStore::open(&data_root).map_err(|e| e.to_string())?;
-    build_fantasy_matchup_week_view(
-        &db,
-        &store,
-        date,
-        Season(season_u32),
-        season_type,
-        q.league.as_deref(),
-    )
-    .map_err(|e| e.to_string())
+    if data_root.join("manifest").is_dir() {
+        let store = DataStore::open(&data_root).map_err(|e| e.to_string())?;
+        build_fantasy_matchup_week_view(
+            &db,
+            &store,
+            date,
+            Season(season_u32),
+            season_type,
+            q.league.as_deref(),
+        )
+        .map_err(|e| e.to_string())
+    } else {
+        build_fantasy_matchup_missing_cache_view(&db, date, Season(season_u32), season_type, q)
+    }
 }
 
 pub(super) async fn build_fantasy_roster_shape(
@@ -475,7 +489,7 @@ pub(super) async fn build_fantasy_roster_shape(
     let season_u32: u32 = season_str
         .parse()
         .map_err(|e| format!("active season '{season_str}' is not a valid YYYYZZZZ id: {e}"))?;
-    let db = FantasyDb::open().map_err(|e| e.to_string())?;
+    let db = open_existing_fantasy_db()?;
     let league = if let Some(name) = q.league.as_deref() {
         db.list_leagues()
             .map_err(|e| e.to_string())?
@@ -553,9 +567,170 @@ pub(super) async fn build_fantasy_gaps(
 fn read_fantasy_league_snapshot(
     league_name: Option<&str>,
 ) -> Result<icelines_fetch::fantasy_db::FantasyLeagueSnapshot, String> {
-    FantasyDb::open()
-        .and_then(|db| db.league_snapshot(league_name))
-        .map_err(|e| e.to_string())
+    open_existing_fantasy_db()
+        .and_then(|db| db.league_snapshot(league_name).map_err(|e| e.to_string()))
+}
+
+fn open_existing_fantasy_db() -> Result<FantasyDb, String> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| "cannot determine home directory".to_string())?;
+    let db_path = home.join(".icelines").join("icelines.db");
+    if !db_path.is_file() {
+        return Err(format!(
+            "no local fantasy league database found at {}; create or import a fantasy league first",
+            db_path.display()
+        ));
+    }
+    FantasyDb::open_existing_read_only_path(db_path).map_err(|e| e.to_string())
+}
+
+fn build_fantasy_daily_missing_cache_view(
+    db: &FantasyDb,
+    date: NaiveDate,
+    season: Season,
+    season_type: SeasonType,
+    q: &FantasyWebQuery,
+) -> Result<icelines_core::FantasyDailyDeltaView, String> {
+    let snapshot = db
+        .league_snapshot(q.league.as_deref())
+        .map_err(|e| e.to_string())?;
+    let scheme = Scheme::builtin_named(&snapshot.scoring_scheme).ok_or_else(|| {
+        format!(
+            "unknown fantasy scoring scheme '{}'",
+            snapshot.scoring_scheme
+        )
+    })?;
+    Ok(icelines_core::FantasyDailyDeltaView::from_input(
+        FantasyDailyDeltaInput {
+            season,
+            season_type,
+            date,
+            league: snapshot.league,
+            scoring_scheme: snapshot.scoring_scheme,
+            teams: snapshot
+                .teams
+                .iter()
+                .map(|team| FantasyDailyTeamInput {
+                    team: team.name.clone(),
+                    owner: team.owner.clone(),
+                    is_user_team: team.name == snapshot.user_team,
+                    roster: team
+                        .roster
+                        .iter()
+                        .map(|roster_key| FantasyDailyPlayerInput {
+                            display_name: display_name_from_roster_key(roster_key),
+                            roster_key: roster_key.clone(),
+                            position: "?".to_string(),
+                            line: None,
+                        })
+                        .collect(),
+                })
+                .collect(),
+            warnings: vec![format!("no cached boxscores found for {date}")],
+            source_state: vec![
+                SourceState::complete(SourceKind::FantasyImport),
+                SourceState::missing(SourceKind::Boxscore),
+            ],
+        },
+        &scheme,
+    ))
+}
+
+fn build_fantasy_matchup_missing_cache_view(
+    db: &FantasyDb,
+    date: NaiveDate,
+    season: Season,
+    season_type: SeasonType,
+    q: &FantasyWebQuery,
+) -> Result<icelines_core::FantasyMatchupWeekView, String> {
+    let league = if let Some(name) = q.league.as_deref() {
+        db.list_leagues()
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .find(|league| league.name == name)
+            .ok_or_else(|| format!("fantasy league '{name}' not found"))?
+    } else {
+        db.get_active_league()
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "no active fantasy league found".to_string())?
+    };
+    let snapshot = db
+        .league_snapshot(Some(&league.name))
+        .map_err(|e| e.to_string())?;
+    let (week_start, week_end) = Timeframe::Week.range(date);
+    let schedule_rows = db
+        .list_matchups(&league.id, week_start)
+        .map_err(|e| e.to_string())?;
+    let schedule_source = if schedule_rows.is_empty() {
+        SourceState::missing(SourceKind::Schedule)
+    } else {
+        SourceState::complete(SourceKind::Schedule)
+    };
+    Ok(icelines_core::FantasyMatchupWeekView::from_input(
+        FantasyMatchupWeekInput {
+            season,
+            season_type,
+            week_start,
+            week_end,
+            league: snapshot.league,
+            scoring_scheme: snapshot.scoring_scheme,
+            team_totals: snapshot
+                .teams
+                .iter()
+                .map(|team| FantasyMatchupTeamTotalInput {
+                    team: team.name.clone(),
+                    owner: team.owner.clone(),
+                    is_user_team: team.name == snapshot.user_team,
+                    weekly_points: 0.0,
+                    days_scored: 0,
+                    rostered_players: team.roster.len() as u16,
+                    scored_players: 0,
+                })
+                .collect(),
+            schedule: schedule_rows
+                .into_iter()
+                .map(|row| FantasyMatchupScheduleInput {
+                    matchup_id: Some(row.id),
+                    home_team: row.home_team,
+                    away_team: row.away_team,
+                })
+                .collect(),
+            warnings: vec![format!(
+                "no cached boxscores found for fantasy matchup week starting {week_start}"
+            )],
+            source_state: vec![
+                SourceState::complete(SourceKind::FantasyImport),
+                schedule_source,
+                SourceState {
+                    source: SourceKind::Boxscore,
+                    state: Completeness::Unavailable,
+                    provenance: None,
+                    fetched_at: None,
+                    stale_reason: None,
+                    message: Some(
+                        "one or more matchup-week dates are missing cached boxscores".to_string(),
+                    ),
+                },
+            ],
+        },
+    ))
+}
+
+fn display_name_from_roster_key(roster_key: &str) -> String {
+    roster_key
+        .split_whitespace()
+        .filter(|part| !part.is_empty())
+        .map(|part| {
+            let mut chars = part.chars();
+            match chars.next() {
+                Some(first) => format!("{}{}", first.to_uppercase(), chars.as_str()),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 fn split_csv(value: Option<&str>) -> Vec<String> {

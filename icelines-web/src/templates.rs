@@ -253,8 +253,20 @@ pub struct ComingSoonTemplate {
 #[template(path = "leaders.html")]
 pub struct LeadersTemplate {
     pub active_label: String,
+    pub active_season: String,
+    pub active_season_type: String,
+    pub source_kind: String,
+    pub source_completeness: String,
+    pub empty_kind: String,
+    pub warning_count: usize,
+    pub warning_kinds: String,
+    pub result_active_filters: String,
     pub rows: Vec<LeaderRow>,
     pub total: usize,
+    pub empty_title: String,
+    pub empty_detail: String,
+    pub empty_recovery: Vec<RecoveryLink>,
+    pub warnings: Vec<TemplateWarning>,
     /// Human label for the active sort, e.g. "Points/Game".
     pub active_sort_label: String,
     /// Active sort URL token (`points`/`goals`/`assists`/`gp`/`ppg`).
@@ -295,6 +307,19 @@ pub struct LeadersTemplate {
     /// changing position or sort doesn't drop the bio narrowing.
     /// Empty when no bio filters set. Pre-encoded.
     pub bio_query_suffix: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct TemplateWarning {
+    pub kind: String,
+    pub message: String,
+    pub recovery: Vec<RecoveryLink>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RecoveryLink {
+    pub label: String,
+    pub href: String,
 }
 
 /// One chip in the position-filter strip.

@@ -26,6 +26,12 @@
 </head>
 <body>
     <a href="#main" class="skip-link">Skip to content</a>
+    <noscript>
+        <div class="noscript-notice" role="note">
+            JavaScript is optional here: use the links, forms, and full-page
+            workspace URLs to navigate IceLines.
+        </div>
+    </noscript>
 
     {# Active-(season, season_type) sticky header — broadcast finding,
        l1_html_each_route_has_active_season_header fence enforces
@@ -61,13 +67,17 @@
             {% if active_label.contains("Regular") %}
                 <strong>Regular</strong>
             {% else %}
-                <a href="/season-type/regular">Regular</a>
+                <form method="post" action="/season-type/regular">
+                    <button type="submit">Regular</button>
+                </form>
             {% endif %}
             ·
             {% if active_label.contains("Playoff") %}
                 <strong>Playoffs</strong>
             {% else %}
-                <a href="/season-type/playoff">Playoffs</a>
+                <form method="post" action="/season-type/playoff">
+                    <button type="submit">Playoffs</button>
+                </form>
             {% endif %}
         </span>
     </nav>

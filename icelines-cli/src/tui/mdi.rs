@@ -29,7 +29,8 @@
 use icelines_core::WorkbenchPaneModelId;
 use icelines_core::{
     workbench_experience, workbench_pane_binding, WorkbenchExperience, WorkbenchExperienceId,
-    WorkbenchId, WorkbenchPaneBinding, WorkbenchPaneBindingId, WorkbenchZone, WORKBENCH_CATALOG,
+    WorkbenchId, WorkbenchLayoutError, WorkbenchLayoutRecord, WorkbenchPaneBinding,
+    WorkbenchPaneBindingId, WorkbenchSurface, WorkbenchZone, WORKBENCH_CATALOG,
 };
 
 // ── Layout state ─────────────────────────────────────────────────────────────
@@ -364,6 +365,26 @@ impl MdiLayout {
         self.active_experience = None;
     }
 
+    pub fn apply_persisted_layout(
+        &mut self,
+        layout: &WorkbenchLayoutRecord,
+    ) -> Result<(), WorkbenchLayoutError> {
+        layout.validate_for_surface(WorkbenchSurface::Tui)?;
+        let center = layout.center_id()?;
+        if let Some(index) = WORKBENCH_CATALOG
+            .iter()
+            .position(|entry| entry.id == center)
+        {
+            self.catalog_selected = index;
+        }
+        self.left_pane_binding = layout.left_id()?;
+        self.right_pane_binding = layout.right_id()?;
+        self.active_experience = layout.experience_id()?;
+        self.show_favorites = true;
+        self.show_schedule = true;
+        Ok(())
+    }
+
     pub fn cycle_left_pane(&mut self, reverse: bool) -> Option<&'static WorkbenchPaneBinding> {
         let id = Self::next_binding_id(WorkbenchZone::LeftPane, self.left_pane_binding, reverse)?;
         self.left_pane_binding = id;
@@ -446,6 +467,32 @@ mod tests {
         assert!(m.command_history.is_empty());
         assert!(m.command_history_cursor.is_none());
         assert!(m.flash_error.is_none());
+    }
+
+    #[test]
+    fn l0_mdi_applies_persisted_workbench_layout() {
+        let layout = WorkbenchLayoutRecord::new(
+            "tonight",
+            WorkbenchId::Scores,
+            WorkbenchPaneBindingId::FavoritesLeft,
+            WorkbenchPaneBindingId::ScheduleRight,
+            Some(WorkbenchExperienceId::TonightBench),
+        )
+        .expect("valid persisted layout");
+        let mut mdi = MdiLayout::default();
+
+        mdi.apply_persisted_layout(&layout).unwrap();
+
+        assert_eq!(mdi.selected_workbench_id(), Some(WorkbenchId::Scores));
+        assert_eq!(mdi.left_pane_binding, WorkbenchPaneBindingId::FavoritesLeft);
+        assert_eq!(
+            mdi.right_pane_binding,
+            WorkbenchPaneBindingId::ScheduleRight
+        );
+        assert_eq!(
+            mdi.active_experience,
+            Some(WorkbenchExperienceId::TonightBench)
+        );
     }
 
     // ── Phase Adams.4 — adaptive visibility ────────────────────────────────
@@ -676,9 +723,11 @@ mod tests {
 
     #[test]
     fn l0_compose_the_bench_experience_applies_bound_panes() {
-        let mut m = MdiLayout::default();
-        m.left_pane_binding = WorkbenchPaneBindingId::SavedQueriesLeft;
-        m.right_pane_binding = WorkbenchPaneBindingId::DocsHelpRight;
+        let mut m = MdiLayout {
+            left_pane_binding: WorkbenchPaneBindingId::SavedQueriesLeft,
+            right_pane_binding: WorkbenchPaneBindingId::DocsHelpRight,
+            ..Default::default()
+        };
 
         let experience =
             workbench_experience(WorkbenchExperienceId::TonightBench).expect("known experience");

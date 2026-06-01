@@ -21,6 +21,7 @@ use cli::{
     WatchSubcommand,
 };
 use config::Config;
+use icelines_core::{WorkbenchId, WorkbenchLayoutStore};
 
 /// Post-LP review fix #4 — Reset SIGPIPE to SIG_DFL on Unix so a
 /// downstream `| head` (or any consumer that closes its end) ends our
@@ -523,10 +524,17 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Tui {
             surface,
             start,
+            layout,
             standalone,
             mdi,
             classic,
+            render_leaders_active_filter_snapshot,
         } => {
+            if render_leaders_active_filter_snapshot {
+                print!("{}", tui::render_leaders_active_filter_snapshot()?);
+                return Ok(());
+            }
+
             // LB.1+LB.2+LB.3 — resolve start screen BEFORE entering raw
             // mode, so resolution failures (unknown slug / unknown player
             // name / ambiguous match / bad team abbrev) print to normal
@@ -536,11 +544,22 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             // If the user passes both, sugar wins (we could error, but
             // letting sugar win keeps `icelines tui goalies --start scores`
             // intuitive — the explicit subcommand reads first).
-            let spec: start_slug::ScreenSpec = match (surface, start.as_deref()) {
-                (Some(s), _) => s.into_screen_spec(),
-                (None, Some(slug)) => start_slug::parse_start_slug(slug)
-                    .with_context(|| format!("invalid --start {slug:?}"))?,
-                (None, None) => start_slug::ScreenSpec::nav(start_slug::NavSpec::Home),
+            let layout_record = if let Some(name) = layout.as_deref() {
+                let store = WorkbenchLayoutStore::load_from_path(cfg.layout_store_path())
+                    .with_context(|| format!("load layout {name:?}"))?;
+                Some(store.get(name)?.clone())
+            } else {
+                None
+            };
+            let spec: start_slug::ScreenSpec = if let Some(layout_record) = layout_record.as_ref() {
+                screen_spec_for_workbench(layout_record.center_id()?)?
+            } else {
+                match (surface, start.as_deref()) {
+                    (Some(s), _) => s.into_screen_spec(),
+                    (None, Some(slug)) => start_slug::parse_start_slug(slug)
+                        .with_context(|| format!("invalid --start {slug:?}"))?,
+                    (None, None) => start_slug::ScreenSpec::nav(start_slug::NavSpec::Home),
+                }
             };
             // Resolution can fail for parameterized variants (player /
             // team / goalie / comps). Errors carry the candidate listing
@@ -552,8 +571,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 start_screen,
                 standalone,
                 mdi: dashboard_mode,
+                layout: layout_record,
             })
             .await?;
+        }
+        Commands::Layout(sub) => {
+            commands::layout::run(sub, &cfg)?;
         }
         Commands::Docs => {
             // Embed COMMANDS.md at compile time. Always in lockstep
@@ -617,6 +640,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                         rate: false,
                         percentiles: false,
                         json,
+                        json_envelope: false,
                         csv,
                         filters: Vec::new(),
                     })
@@ -765,6 +789,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 rate,
                 percentiles,
                 json,
+                json_envelope,
                 csv,
                 ufa,
                 rfa,
@@ -776,6 +801,11 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 playoff,
                 explain,
             } => {
+                if json_envelope && (explain || playoff || week || month) {
+                    anyhow::bail!(
+                        "--json-envelope is only supported for standard `query leaders` output"
+                    );
+                }
                 if explain {
                     // Phase Art Ross A.5 — print the parsed plan
                     // and exit. Doesn't load player data.
@@ -840,6 +870,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     rate,
                     percentiles,
                     json,
+                    json_envelope,
                     csv,
                     filters,
                 })
@@ -1055,4 +1086,25 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         },
     }
     Ok(())
+}
+
+fn screen_spec_for_workbench(id: WorkbenchId) -> anyhow::Result<start_slug::ScreenSpec> {
+    match id {
+        WorkbenchId::League => Ok(start_slug::ScreenSpec::nav(start_slug::NavSpec::Home)),
+        WorkbenchId::Depth => Ok(start_slug::ScreenSpec::nav(start_slug::NavSpec::Depth)),
+        WorkbenchId::Stats => Ok(start_slug::ScreenSpec::nav(start_slug::NavSpec::Queries)),
+        WorkbenchId::Goalies => Ok(start_slug::ScreenSpec::nav(start_slug::NavSpec::Goalies)),
+        WorkbenchId::Scores => Ok(start_slug::ScreenSpec::nav(start_slug::NavSpec::Tonight)),
+        WorkbenchId::Schedule => Ok(start_slug::ScreenSpec::nav(start_slug::NavSpec::Schedule)),
+        WorkbenchId::Transactions => Ok(start_slug::ScreenSpec::nav(
+            start_slug::NavSpec::Transactions,
+        )),
+        WorkbenchId::Playoffs => Ok(start_slug::ScreenSpec::nav(start_slug::NavSpec::Playoffs)),
+        WorkbenchId::Poach => Ok(start_slug::ScreenSpec::nav(start_slug::NavSpec::Poach)),
+        WorkbenchId::Watchlist => Ok(start_slug::ScreenSpec::nav(start_slug::NavSpec::Watchlist)),
+        other => anyhow::bail!(
+            "layout center '{}' cannot be restored in the TUI",
+            other.slug()
+        ),
+    }
 }

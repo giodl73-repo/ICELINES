@@ -1,5 +1,5 @@
 use crate::state::WebState;
-use crate::templates::{LeaderRow, LeadersTemplate};
+use crate::templates::{LeaderRow, LeadersTemplate, RecoveryLink, TemplateWarning};
 use askama::Template;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -7,9 +7,12 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::{Position, Season};
 use icelines_core::season_stats::SeasonType;
+use icelines_core::view_model::context::RecoveryActionKind;
 use icelines_core::{
-    LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue, SemanticToken, SortDirection,
-    SortKey as VmSortKey, SortState, StatKey, TeamAbbr, ValuePrecision, ViewContext, ViewWindow,
+    Completeness, EmptyKind, EmptyState, LeaderKind, LeadersView, MetricCell, MetricUnit,
+    MetricValue, RecoveryAction, SemanticToken, SortDirection, SortKey as VmSortKey, SortState,
+    SourceKind, SourceState, StatKey, TeamAbbr, ValuePrecision, ViewContext, ViewWarning,
+    ViewWindow, WarningKind,
 };
 use serde::Deserialize;
 
@@ -212,9 +215,11 @@ impl SortKey {
 /// straightforward.
 #[derive(Debug, serde::Serialize)]
 pub struct LeaderJsonRow {
+    pub nhl_id: u32,
     pub name: String,
     pub position: String,
     pub team: String,
+    pub team_abbrev: String,
     pub games: u32,
     pub goals: u32,
     pub assists: u32,
@@ -229,9 +234,13 @@ pub struct LeadersMeta {
     pub sort: String,
     pub position_filter: Option<String>,
     pub active_filters: Vec<String>,
+    pub completeness: Completeness,
+    pub source_state: Vec<SourceState>,
     pub total: usize,
     pub returned: usize,
     pub top: usize,
+    pub empty_state: Option<EmptyState>,
+    pub warnings: Vec<ViewWarning>,
 }
 
 fn leaders_json_error(
@@ -256,9 +265,18 @@ fn leaders_json_error(
             .to_owned(),
         position_filter,
         active_filters: raw_filters,
+        completeness: Completeness::Unavailable,
+        source_state: vec![SourceState::missing(SourceKind::Roster)],
         total: 0,
         returned: 0,
         top,
+        empty_state: Some(EmptyState {
+            kind: EmptyKind::BadFilter,
+            title: "Unable to load leaders".to_owned(),
+            detail: None,
+            recovery: Vec::new(),
+        }),
+        warnings: Vec::new(),
     };
     crate::api::json_error_meta(status, "leaders", Vec::<LeaderJsonRow>::new(), meta, error)
 }
@@ -286,7 +304,7 @@ fn leaders_view_from_template_rows(
     season_type: SeasonType,
 ) -> LeadersView {
     let mut view = LeadersView::new(
-        ViewContext::new(ViewWindow::new(season, season_type)),
+        leaders_view_context(season, season_type),
         LeaderKind::Skaters,
     );
     view.sort = Some(SortState {
@@ -314,7 +332,53 @@ fn leaders_view_from_template_rows(
             tokens: vec![SemanticToken::SupportingEvidence],
         })
         .collect();
+    if view.rows.is_empty() {
+        view.empty_state = Some(EmptyState {
+            kind: EmptyKind::NoRows,
+            title: "No leaders".to_owned(),
+            detail: Some("No leaders matched the selected filters.".to_owned()),
+            recovery: Vec::new(),
+        });
+    }
     view
+}
+
+fn leaders_view_context(season: Season, season_type: SeasonType) -> ViewContext {
+    let mut context = ViewContext::new(ViewWindow::new(season, season_type));
+    context
+        .source_state
+        .push(SourceState::complete(SourceKind::Roster));
+    context
+}
+
+fn apply_leaders_warning_state(view: &mut LeadersView, pos: &str) {
+    if pos != "G" {
+        return;
+    }
+
+    let recovery = vec![RecoveryAction {
+        label: "Open goalie leaders".to_owned(),
+        action: RecoveryActionKind::OpenRoute {
+            route: "goalies".to_owned(),
+        },
+    }];
+    view.warnings.push(ViewWarning {
+        kind: WarningKind::UnsupportedFilter,
+        source: None,
+        message: "The leaders surface is skater-only; use goalies for goalie leaders.".to_owned(),
+        recovery: recovery.clone(),
+    });
+    if view.rows.is_empty() {
+        view.empty_state = Some(EmptyState {
+            kind: EmptyKind::NoRows,
+            title: "No skater leaders".to_owned(),
+            detail: Some(
+                "The leaders surface is skater-only; use the goalies surface for goalie leaders."
+                    .to_owned(),
+            ),
+            recovery,
+        });
+    }
 }
 
 fn position_from_template_row(position: &str) -> Position {
@@ -421,9 +485,11 @@ fn leader_json_rows_from_view(view: &LeadersView) -> Vec<LeaderJsonRow> {
             let games = leader_secondary_i64(row, "gp").unwrap_or_default() as u32;
             let points = leader_secondary_i64(row, "points").unwrap_or_default() as u32;
             LeaderJsonRow {
+                nhl_id: row.player_id.0,
                 name: row.display_name.clone(),
                 position: row.position.abbreviation().to_owned(),
                 team: row.team.0.clone(),
+                team_abbrev: row.team.0.clone(),
                 games,
                 goals: leader_secondary_i64(row, "goals").unwrap_or_default() as u32,
                 assists: leader_secondary_i64(row, "assists").unwrap_or_default() as u32,
@@ -436,6 +502,77 @@ fn leader_json_rows_from_view(view: &LeadersView) -> Vec<LeaderJsonRow> {
             }
         })
         .collect()
+}
+
+fn leaders_source_state_labels(view: &LeadersView) -> (&'static str, &'static str) {
+    view.context
+        .source_state
+        .first()
+        .map(|state| {
+            (
+                source_kind_label(state.source),
+                completeness_label(state.state),
+            )
+        })
+        .unwrap_or(("unknown", "unavailable"))
+}
+
+fn source_kind_label(source: SourceKind) -> &'static str {
+    match source {
+        SourceKind::Roster => "roster",
+        SourceKind::Schedule => "schedule",
+        SourceKind::Scores => "scores",
+        SourceKind::Playoffs => "playoffs",
+        SourceKind::Favorites => "favorites",
+        SourceKind::Watchlist => "watchlist",
+        SourceKind::Career => "career",
+        SourceKind::Home => "home",
+        SourceKind::Docs => "docs",
+        SourceKind::GameLog => "game-log",
+        SourceKind::Boxscore => "boxscore",
+        SourceKind::PlayByPlay => "play-by-play",
+        SourceKind::Shifts => "shifts",
+        SourceKind::Transactions => "transactions",
+        SourceKind::Contracts => "contracts",
+        SourceKind::Standings => "standings",
+        SourceKind::FantasyImport => "fantasy-import",
+        SourceKind::Snapshot => "snapshot",
+        SourceKind::Bundle => "bundle",
+        SourceKind::Cache => "cache",
+        SourceKind::Unknown => "unknown",
+    }
+}
+
+fn completeness_label(completeness: Completeness) -> &'static str {
+    match completeness {
+        Completeness::Complete => "complete",
+        Completeness::Partial => "partial",
+        Completeness::Stale => "stale",
+        Completeness::Unavailable => "unavailable",
+    }
+}
+
+fn empty_kind_label(kind: EmptyKind) -> &'static str {
+    match kind {
+        EmptyKind::NoRows => "no_rows",
+        EmptyKind::NoMatch => "no_match",
+        EmptyKind::MissingSource => "missing_source",
+        EmptyKind::UnsupportedWindow => "unsupported_window",
+        EmptyKind::BadFilter => "bad_filter",
+        EmptyKind::NotFound => "not_found",
+    }
+}
+
+fn warning_kind_label(kind: WarningKind) -> &'static str {
+    match kind {
+        WarningKind::PartialSource => "partial_source",
+        WarningKind::StaleSource => "stale_source",
+        WarningKind::MissingSource => "missing_source",
+        WarningKind::EstimatedDeployment => "estimated_deployment",
+        WarningKind::DuplicateName => "duplicate_name",
+        WarningKind::UnsupportedFilter => "unsupported_filter",
+        WarningKind::RendererProjection => "renderer_projection",
+    }
 }
 
 fn leader_template_rows_from_view(view: &LeadersView, rows: Vec<LeaderRow>) -> Vec<LeaderRow> {
@@ -456,6 +593,41 @@ fn leader_template_rows_from_view(view: &LeadersView, rows: Vec<LeaderRow>) -> V
                 String::new()
             };
             row
+        })
+        .collect()
+}
+
+fn recovery_href(action: &RecoveryActionKind) -> Option<String> {
+    match action {
+        RecoveryActionKind::OpenRoute { route } => {
+            Some(format!("/{}", route.trim_start_matches('/')))
+        }
+        RecoveryActionKind::ClearFilter { .. } => Some("/leaders".to_owned()),
+        RecoveryActionKind::ChangeWindow { .. }
+        | RecoveryActionKind::InstallData { .. }
+        | RecoveryActionKind::RefreshSource { .. } => None,
+    }
+}
+
+fn recovery_links(actions: &[RecoveryAction]) -> Vec<RecoveryLink> {
+    actions
+        .iter()
+        .filter_map(|action| {
+            recovery_href(&action.action).map(|href| RecoveryLink {
+                label: action.label.clone(),
+                href,
+            })
+        })
+        .collect()
+}
+
+fn template_warnings(warnings: &[ViewWarning]) -> Vec<TemplateWarning> {
+    warnings
+        .iter()
+        .map(|warning| TemplateWarning {
+            kind: warning_kind_label(warning.kind).to_owned(),
+            message: warning.message.clone(),
+            recovery: recovery_links(&warning.recovery),
         })
         .collect()
 }
@@ -739,12 +911,13 @@ pub async fn get_leaders_json(
         Err(resp) => return resp,
     };
 
-    let leaders_view = leaders_view_from_template_rows(
+    let mut leaders_view = leaders_view_from_template_rows(
         &result.rows,
         result.sort_key,
         result.active_season_id,
         result.active_season_type,
     );
+    apply_leaders_warning_state(&mut leaders_view, &result.pos_active_upper);
     let returned = leaders_view.rows.len();
     let data = leader_json_rows_from_view(&leaders_view);
 
@@ -758,9 +931,13 @@ pub async fn get_leaders_json(
             Some(result.pos_active_upper)
         },
         active_filters: result.raw_filters,
+        completeness: leaders_view.context.completeness,
+        source_state: leaders_view.context.source_state.clone(),
         total: result.total,
         returned,
         top: result.top_n,
+        empty_state: leaders_view.empty_state.clone(),
+        warnings: leaders_view.warnings.clone(),
     };
 
     // Suppress unused warning on active_label — the JSON
@@ -1070,30 +1247,49 @@ pub async fn build_leaders_template(
         all.truncate(top_n);
         (all, total)
     };
-    let leaders_view = leaders_view_from_template_rows(&rows, sort_key, season, season_type);
-    let rows = leader_template_rows_from_view(&leaders_view, rows);
-
-    let active_sort_token = sort_key.url_token().to_owned();
+    let mut leaders_view = leaders_view_from_template_rows(&rows, sort_key, season, season_type);
     let active_pos = q
         .pos
         .as_deref()
         .map(str::to_ascii_uppercase)
         .unwrap_or_default();
+    apply_leaders_warning_state(&mut leaders_view, &active_pos);
+    let rows = leader_template_rows_from_view(&leaders_view, rows);
+
+    let active_sort_token = sort_key.url_token().to_owned();
+    let (empty_title, empty_detail, empty_recovery) =
+        leaders_view.empty_state.as_ref().map_or_else(
+            || (String::new(), String::new(), Vec::new()),
+            |empty| {
+                (
+                    empty.title.clone(),
+                    empty.detail.clone().unwrap_or_default(),
+                    recovery_links(&empty.recovery),
+                )
+            },
+        );
+    let empty_kind = leaders_view
+        .empty_state
+        .as_ref()
+        .map(|empty| empty_kind_label(empty.kind).to_owned())
+        .unwrap_or_else(|| "-".to_owned());
+    let warning_count = leaders_view.warnings.len();
+    let warning_kinds = if leaders_view.warnings.is_empty() {
+        "-".to_owned()
+    } else {
+        leaders_view
+            .warnings
+            .iter()
+            .map(|warning| warning_kind_label(warning.kind))
+            .collect::<Vec<_>>()
+            .join(";")
+    };
+    let warnings = template_warnings(&leaders_view.warnings);
+    let (source_kind, source_completeness) = leaders_source_state_labels(&leaders_view);
 
     // Pre-compute the position chips + column headers so the
     // askama template doesn't need to compare String to &str.
-    let pos_chips = ["", "C", "LW", "RW", "F", "D"]
-        .iter()
-        .map(|p| crate::templates::PosChip {
-            label: if p.is_empty() {
-                "All".to_owned()
-            } else {
-                (*p).to_owned()
-            },
-            value: (*p).to_owned(),
-            is_active: *p == active_pos.as_str(),
-        })
-        .collect();
+    let pos_chips = leaders_position_chips(&active_pos);
 
     // UX.C — every SortKey variant lights up a header.
     // Display order matches `SortKey::ALL`. Adding a new
@@ -1193,11 +1389,28 @@ pub async fn build_leaders_template(
     if let Some(v) = &bio_shoots {
         bio_query_suffix.push_str(&format!("&shoots={v}"));
     }
+    let result_active_filters = if raw_filters.is_empty() {
+        "-".to_string()
+    } else {
+        raw_filters.join(";")
+    };
 
     Ok(LeadersTemplate {
         active_label,
+        active_season: season.0.to_string(),
+        active_season_type: season_type.label().to_owned(),
+        source_kind: source_kind.to_owned(),
+        source_completeness: source_completeness.to_owned(),
+        empty_kind,
+        warning_count,
+        warning_kinds,
+        result_active_filters,
         rows,
         total,
+        empty_title,
+        empty_detail,
+        empty_recovery,
+        warnings,
         active_sort_label: sort_key.label().to_owned(),
         active_sort: active_sort_token,
         active_pos,
@@ -1300,6 +1513,21 @@ fn error_page(msg: String) -> Response {
         .into_response()
 }
 
+fn leaders_position_chips(active_pos: &str) -> Vec<crate::templates::PosChip> {
+    ["", "C", "LW", "RW", "F", "D", "G"]
+        .iter()
+        .map(|p| crate::templates::PosChip {
+            label: if p.is_empty() {
+                "All".to_owned()
+            } else {
+                (*p).to_owned()
+            },
+            value: (*p).to_owned(),
+            is_active: *p == active_pos,
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1360,10 +1588,17 @@ mod tests {
         assert_eq!(view.rows[0].display_name, "Connor McDavid");
         assert_eq!(view.rows[0].team.0, "EDM");
         assert_eq!(view.rows[0].primary.key.0, "points");
+        assert_eq!(view.context.window.season.0, 20242025);
+        assert_eq!(view.context.window.season_type, SeasonType::Regular);
+        assert_eq!(view.context.completeness, Completeness::Complete);
+        assert_eq!(view.context.source_state[0].source, SourceKind::Roster);
+        assert_eq!(view.context.source_state[0].state, Completeness::Complete);
 
         let json_rows = leader_json_rows_from_view(&view);
+        assert_eq!(json_rows[0].nhl_id, 8478402);
         assert_eq!(json_rows[0].name, "Connor McDavid");
         assert_eq!(json_rows[0].team, "EDM");
+        assert_eq!(json_rows[0].team_abbrev, "EDM");
         assert_eq!(json_rows[0].points, 153);
         assert_eq!(json_rows[0].points_per_game, Some(153.0 / 82.0));
 
@@ -1373,5 +1608,214 @@ mod tests {
         assert_eq!(projected[0].gp, 82);
         assert_eq!(projected[0].points, 153);
         assert_eq!(projected[0].ppg_str, "1.87");
+
+        let html = LeadersTemplate {
+            active_label: "2024-25 regular".to_string(),
+            active_season: "20242025".to_string(),
+            active_season_type: "regular".to_string(),
+            source_kind: "roster".to_string(),
+            source_completeness: "complete".to_string(),
+            empty_kind: "-".to_string(),
+            warning_count: 0,
+            warning_kinds: "-".to_string(),
+            result_active_filters: "-".to_string(),
+            rows: projected,
+            total: 1,
+            empty_title: String::new(),
+            empty_detail: String::new(),
+            empty_recovery: Vec::new(),
+            warnings: Vec::new(),
+            active_sort_label: "Points".to_string(),
+            active_sort: "points".to_string(),
+            active_pos: String::new(),
+            active_top: 1,
+            pos_chips: Vec::new(),
+            col_headers: Vec::new(),
+            active_filters: Vec::new(),
+            bio_age_min_str: String::new(),
+            bio_age_max_str: String::new(),
+            bio_draft_min_str: String::new(),
+            bio_draft_max_str: String::new(),
+            bio_height_min_str: String::new(),
+            bio_height_max_str: String::new(),
+            bio_weight_min_str: String::new(),
+            bio_weight_max_str: String::new(),
+            bio_country: String::new(),
+            bio_shoots: String::new(),
+            bio_active: false,
+            bio_query_suffix: String::new(),
+        }
+        .render()
+        .expect("leaders template renders");
+        assert!(html.contains(r#"data-nhl-id="8478402""#));
+        assert!(html.contains(r#"data-team-abbrev="EDM""#));
+        assert!(html.contains(r#"data-points="153""#));
+        assert!(html.contains(r#"data-active-season="20242025""#));
+        assert!(html.contains(r#"data-active-season-type="regular""#));
+        assert!(html.contains(r#"data-source-kind="roster""#));
+        assert!(html.contains(r#"data-source-completeness="complete""#));
+        assert!(html.contains(r#"data-empty-kind="-""#));
+        assert!(html.contains(r#"data-warning-count="0""#));
+        assert!(html.contains(r#"data-warning-kinds="-""#));
+        assert!(html.contains(r#"data-result-total="1""#));
+        assert!(html.contains(r#"data-result-returned="1""#));
+        assert!(html.contains(r#"data-result-top="1""#));
+        assert!(html.contains(r#"data-result-sort="points""#));
+        assert!(html.contains(r#"data-result-active-filters="-""#));
+    }
+
+    #[test]
+    fn l0_web_leaders_template_renders_empty_warning_recovery() {
+        let mut view = leaders_view_from_template_rows(
+            &[],
+            SortKey::Points,
+            Season(20242025),
+            SeasonType::Regular,
+        );
+        apply_leaders_warning_state(&mut view, "G");
+        let empty = view.empty_state.as_ref().expect("empty state");
+
+        let html = LeadersTemplate {
+            active_label: "2024-25 regular".to_string(),
+            active_season: "20242025".to_string(),
+            active_season_type: "regular".to_string(),
+            source_kind: "roster".to_string(),
+            source_completeness: "complete".to_string(),
+            empty_kind: empty_kind_label(empty.kind).to_string(),
+            warning_count: view.warnings.len(),
+            warning_kinds: view
+                .warnings
+                .iter()
+                .map(|warning| warning_kind_label(warning.kind))
+                .collect::<Vec<_>>()
+                .join(";"),
+            result_active_filters: "-".to_string(),
+            rows: Vec::new(),
+            total: 0,
+            empty_title: empty.title.clone(),
+            empty_detail: empty.detail.clone().unwrap_or_default(),
+            empty_recovery: recovery_links(&empty.recovery),
+            warnings: template_warnings(&view.warnings),
+            active_sort_label: "Points".to_string(),
+            active_sort: "points".to_string(),
+            active_pos: "G".to_string(),
+            active_top: 5,
+            pos_chips: Vec::new(),
+            col_headers: Vec::new(),
+            active_filters: Vec::new(),
+            bio_age_min_str: String::new(),
+            bio_age_max_str: String::new(),
+            bio_draft_min_str: String::new(),
+            bio_draft_max_str: String::new(),
+            bio_height_min_str: String::new(),
+            bio_height_max_str: String::new(),
+            bio_weight_min_str: String::new(),
+            bio_weight_max_str: String::new(),
+            bio_country: String::new(),
+            bio_shoots: String::new(),
+            bio_active: false,
+            bio_query_suffix: String::new(),
+        }
+        .render()
+        .expect("leaders empty recovery template renders");
+
+        assert!(
+            html.contains("The leaders surface is skater-only; use goalies for goalie leaders.")
+        );
+        assert!(html.contains("<h2>No skater leaders</h2>"));
+        assert!(html.contains(r#"data-empty-kind="no_rows""#));
+        assert!(html.contains(r#"data-warning-count="1""#));
+        assert!(html.contains(r#"data-warning-kinds="unsupported_filter""#));
+        assert!(html.contains(r#"data-warning-kind="unsupported_filter""#));
+        assert!(html.contains(r#"<a href="/goalies""#));
+        assert!(html.contains("Open goalie leaders"));
+    }
+
+    #[test]
+    fn l0_web_leaders_goalie_filter_sets_empty_warning_state() {
+        let mut view = leaders_view_from_template_rows(
+            &[],
+            SortKey::Points,
+            Season(20242025),
+            SeasonType::Regular,
+        );
+        apply_leaders_warning_state(&mut view, "G");
+
+        assert!(view.rows.is_empty());
+        assert_eq!(view.empty_state.as_ref().unwrap().kind, EmptyKind::NoRows);
+        assert_eq!(
+            view.empty_state.as_ref().unwrap().title,
+            "No skater leaders"
+        );
+        assert_eq!(view.warnings[0].kind, WarningKind::UnsupportedFilter);
+        assert_eq!(
+            view.warnings[0].message,
+            "The leaders surface is skater-only; use goalies for goalie leaders."
+        );
+    }
+
+    #[test]
+    fn l0_web_leaders_position_chips_include_goalie_recovery_filter() {
+        let chips = leaders_position_chips("G");
+        let goalie_chip = chips
+            .iter()
+            .find(|chip| chip.value == "G")
+            .expect("leaders position chips expose goalie recovery filter");
+
+        assert_eq!(goalie_chip.label, "G");
+        assert!(goalie_chip.is_active);
+        assert_eq!(
+            chips
+                .iter()
+                .map(|chip| chip.value.as_str())
+                .collect::<Vec<_>>(),
+            vec!["", "C", "LW", "RW", "F", "D", "G"]
+        );
+    }
+
+    #[test]
+    fn l0_web_leaders_active_position_chip_exposes_current_route_state() {
+        let html = LeadersTemplate {
+            active_label: "2024-25 regular".to_string(),
+            active_season: "20242025".to_string(),
+            active_season_type: "regular".to_string(),
+            source_kind: "roster".to_string(),
+            source_completeness: "complete".to_string(),
+            empty_kind: "-".to_string(),
+            warning_count: 0,
+            warning_kinds: "-".to_string(),
+            result_active_filters: "-".to_string(),
+            rows: Vec::new(),
+            total: 0,
+            empty_title: String::new(),
+            empty_detail: String::new(),
+            empty_recovery: Vec::new(),
+            warnings: Vec::new(),
+            active_sort_label: "Points".to_string(),
+            active_sort: "points".to_string(),
+            active_pos: "G".to_string(),
+            active_top: 5,
+            pos_chips: leaders_position_chips("G"),
+            col_headers: Vec::new(),
+            active_filters: Vec::new(),
+            bio_age_min_str: String::new(),
+            bio_age_max_str: String::new(),
+            bio_draft_min_str: String::new(),
+            bio_draft_max_str: String::new(),
+            bio_height_min_str: String::new(),
+            bio_height_max_str: String::new(),
+            bio_weight_min_str: String::new(),
+            bio_weight_max_str: String::new(),
+            bio_country: String::new(),
+            bio_shoots: String::new(),
+            bio_active: false,
+            bio_query_suffix: String::new(),
+        }
+        .render()
+        .expect("leaders template renders active position chip state");
+
+        assert_eq!(html.matches(r#"aria-current="true""#).count(), 1);
+        assert!(html.contains(r#"href="?sort=points&pos=G&top=5""#));
+        assert!(html.contains(r#"class="filter-chip fit-solid""#));
     }
 }

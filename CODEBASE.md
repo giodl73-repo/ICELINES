@@ -10,17 +10,24 @@
 Adding a new data type or domain concept?
   └── icelines-core/src/
 
-Adding NHL API fetch logic or data loading?
+Adding NHL API fetch logic, cache, manifest, or data loading?
   └── icelines-fetch/src/
 
-Changing how markdown/site is generated?
-  └── icelines-site/src/
+Changing report/export generation?
+  └── icelines-cli/src/commands/export*.rs plus ViewModel/report builders
 
 Adding a new CLI command or TUI screen?
   └── icelines-cli/src/commands/ or icelines-cli/src/tui/
+
+Adding a new web HTML/API route?
+  └── icelines-web/src/handlers/ plus shared ViewModel code where possible
 ```
 
 **If you're unsure:** put it in the lowest crate that needs it. Logic that doesn't touch I/O belongs in `icelines-core`. Logic that doesn't touch the CLI belongs in `icelines-fetch` or `icelines-core`.
+
+`docs/vtrace/` is the controlling specification baseline. Use it with
+`design/specs/platform-contracts.md`, `design/specs/surface-parity.md`, and
+`design/specs/viewmodels.md` before adding or moving surface behavior.
 
 ---
 
@@ -58,7 +65,8 @@ src/icelines-fetch/src/
 ├── lib.rs                 # Re-exports
 ├── schema.rs              # SkaterBio, SkaterStats, SkaterRealtime, PlayerContract, RosterResponse
 ├── nhl_api.rs             # NhlApiClient (fetch_all_bios, fetch_all_stats, fetch_all_realtime, ...)
-├── repository.rs          # PlayerRepository — THE single data loading API for all commands
+├── stats_loader.rs        # load_into_repo(), source-state-producing repository load boundary
+├── datastore.rs           # DataStore manifest/cache/bundle read and explicit fetch/write boundary
 ├── player_builder.rs      # BuildInputs, make_player, build_players, build_players_from_bios
 ├── bundled.rs             # 5 embedded seasons via include_bytes!(), load_bios_with_fallback
 ├── aggregate.rs           # load_aggregate_players(n), load_improvement_map()
@@ -75,27 +83,53 @@ src/icelines-fetch/src/
 
 **Add here when:** new NHL API endpoint, new data source (keep silo'd if optional), new snapshot tier.
 
-**Key rule:** `PlayerRepository` is the only public data loading API. New commands call `repo.load_all()` or `repo.load_team()` — they don't touch `SnapshotStore` directly.
+**Key rule:** analytical reads route through `stats_loader::load_into_repo(...)`
+or a typed provider/ViewModel boundary that preserves `LoadOutcome.missing` and
+source state. `DataStore` is the manifest/cache/bundle boundary; browser GET
+paths must not open it just to create missing local state.
 
 **Adding a new optional data source** (like MoneyPuck):
 1. Create `src/new_source.rs` — isolated module, all types self-contained
 2. Add `Option<T>` fields to `Player` in icelines-core
-3. Add `new_source()` to `PlayerRepository` returning `HashMap<u32, T>` (empty if not fetched)
-4. Thread through `BuildInputs` → `make_player`
-5. Add `SnapshotTier::NewSource` to snapshot.rs
+3. Add a typed read/write boundary that returns missing/unavailable state rather
+   than silent empty success.
+4. Thread through the relevant loader/provider and ViewModel.
+5. Add manifest/snapshot metadata where the source becomes durable local state.
 
 ---
 
-## `icelines-site` — static site generation
+## `icelines-site` — deferred static-site generation
 
-Generates markdown from player/team data for mkdocs.
+The crate still exists for mkdocs/static-site generation support, but the active
+CLI entry points were removed. Durable Markdown/JSON/CSV exports are the
+current report artifact path.
 
 ```
 src/icelines-site/src/
 └── lib.rs                 # generate_site(), team pages, index
 ```
 
-**Add here when:** changing the generated HTML/markdown, new site page type.
+**Add here when:** intentionally touching the deferred site generator. New report
+or export behavior normally belongs in ViewModels/report projections and
+`icelines-cli/src/commands/export*.rs`.
+
+---
+
+## `icelines-web` — axum HTML and JSON surface
+
+Web handlers are thin request adapters over shared ViewModels/providers.
+
+```
+src/icelines-web/src/
+├── handlers/              # route families and JSON twins
+├── templates.rs           # template wiring
+├── state.rs               # server/request state
+└── static/ + templates/   # assets and HTML templates
+```
+
+**Add here when:** changing an HTML/API route, bookmarkable URL state, safe
+POST-backed mutation, or no-JS/recovery rendering. GET handlers are read-only;
+mutations require POST-backed routes or explicit CLI/TUI deferral.
 
 ---
 
@@ -126,8 +160,6 @@ src/icelines-cli/src/
     ├── scouting.rs        # icelines scouting
     ├── mates.rs           # icelines mates
     ├── tonight.rs         # icelines tonight, schedule, trade
-    ├── build.rs           # icelines build
-    ├── serve_deploy.rs    # icelines serve, deploy
     ├── scheme.rs          # icelines scheme
     ├── snapshot.rs        # icelines snapshot
     └── data.rs            # icelines data
@@ -166,7 +198,9 @@ src/icelines-cli/tests/
 └── system_tests.rs            # L2: binary subprocess tests
 ```
 
-**338 tests total.** Every new feature: L0. Every new command: L2.
+Every new feature needs L0 evidence. New commands need L2 evidence. Changes
+that affect shared semantics should also update VTRACE evidence rows or record
+why the affected-slice evidence is sufficient.
 
 ---
 

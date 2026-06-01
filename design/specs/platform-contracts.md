@@ -1,7 +1,7 @@
 # IceLines platform contracts
 
 **Date**: 2026-05-09
-**Status**: Draft - owned by Phase Campbell
+**Status**: Accepted VTRACE baseline
 
 This spec defines what "uniform" means for IceLines. A feature is not fully
 platform-ready until it satisfies the data, query, ViewModel, surface, report,

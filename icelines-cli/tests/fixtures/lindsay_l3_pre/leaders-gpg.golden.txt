@@ -1,3 +1,6 @@
+Context: 20242025 regular | source roster complete
+Result: total 905 | returned 10 | top 10 | sort gpg | active_filters -
+
 Rank Player                   Team  Pos  GP   GPG       
 ───────────────────────────────────────────────────────
 1    Leon Draisaitl           EDM   C    71   0.732     

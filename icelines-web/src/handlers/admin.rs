@@ -446,12 +446,16 @@ fn build_data_status_view(q: AdminDataStatusQuery) -> Result<DataStatusView, Str
         None => return Err("cannot determine home directory".to_string()),
     };
     let data_root = home.join(".icelines").join("data");
-    let store = match DataStore::open(&data_root) {
-        Ok(store) => store,
-        Err(err) => return Err(format!("open DataStore: {err}")),
-    };
     let kind_filter = q.shard.as_deref().map(parse_kind).transpose()?;
-    let rows = collect_data_status_rows(&store, kind_filter, q.stale_only);
+    let rows = if data_root.join("manifest").is_dir() {
+        let store = match DataStore::open(&data_root) {
+            Ok(store) => store,
+            Err(err) => return Err(format!("open DataStore: {err}")),
+        };
+        collect_data_status_rows(&store, kind_filter, q.stale_only)
+    } else {
+        Vec::new()
+    };
     Ok(DataStatusView::from_entries(
         default_context(),
         data_root.display().to_string(),

@@ -1251,8 +1251,8 @@ fn print_import_yahoo(view: &FantasyImportView) {
         return;
     }
     println!(
-        "{:<5} {:<28} {:<24} {:<12} {}",
-        "Row", "Player", "Team", "Status", "Message"
+        "{:<5} {:<28} {:<24} {:<12} Message",
+        "Row", "Player", "Team", "Status"
     );
     for row in diagnostic_rows {
         println!(

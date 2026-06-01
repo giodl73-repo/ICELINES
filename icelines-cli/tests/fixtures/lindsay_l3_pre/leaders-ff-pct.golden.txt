@@ -1,3 +1,6 @@
+Context: 20242025 regular | source roster complete
+Result: total 905 | returned 10 | top 10 | sort ff-pct | active_filters -
+
 Rank Player                   Team  Pos  GP   FF%       
 ───────────────────────────────────────────────────────
 1    Nikita Kucherov          TBL   RW   78   —         

@@ -838,6 +838,47 @@ mod tests {
         assert_eq!(store.get(1).unwrap().stints.len(), 1);
     }
 
+    /// Calder.2 / l0_store_partial_refresh_preserves_existing_histories
+    /// — `fetch career` merges successful results into the existing blob. A
+    /// partial refresh must not erase histories from players omitted or skipped
+    /// by the current fetch batch.
+    #[test]
+    fn l0_store_partial_refresh_preserves_existing_histories() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let path = dir.path().join("career_history.json");
+
+        let mut initial = CareerHistoryStore::new();
+        initial.upsert(
+            parse_career_history(8478402, &load_fixture("mcdavid_8478402.json"))
+                .expect("mcdavid parses"),
+        );
+        initial.save(&path).expect("initial save ok");
+
+        let mut refreshed = CareerHistoryStore::load(&path).expect("load existing store");
+        refreshed.upsert(
+            parse_career_history(8484144, &load_fixture("bedard_8484144.json"))
+                .expect("bedard parses"),
+        );
+        refreshed.stamp_now();
+        refreshed.save(&path).expect("partial refresh save ok");
+
+        let loaded = CareerHistoryStore::load(&path).expect("reload merged store");
+        assert_eq!(
+            loaded.len(),
+            2,
+            "partial refresh must preserve prior players"
+        );
+        assert!(
+            loaded.get(8478402).is_some(),
+            "existing McDavid history lost"
+        );
+        assert!(loaded.get(8484144).is_some(), "new Bedard history missing");
+        assert!(
+            loaded.fetched_at.is_some(),
+            "partial refresh must be flagged"
+        );
+    }
+
     /// Build a minimal CareerStint with all stat-fields blank — local
     /// helper for the extract_pre_nhl_stints L0s below.
     fn stint(season: u32, league: &str, _seq: u8, gt: CareerGameType) -> CareerStint {

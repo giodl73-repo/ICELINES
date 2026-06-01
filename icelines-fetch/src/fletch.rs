@@ -191,20 +191,21 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
         push_unique(
             &mut fletches,
             &mut seen,
-            source_def(
-                format!("icelines.roster.{season}.{team}"),
-                "rosters",
+            source_def(SourceDefInput {
+                id: format!("icelines.roster.{season}.{team}"),
+                fetch_surface: "rosters",
                 season,
-                "regular",
-                SourceKind::Http,
-                roster_url(team, season),
-                format!("snapshots/{season}-<date>-rosters/rosters/{team}.json"),
-                "application/json",
-                "one team roster JSON",
-                "generic-http-cacheline",
-                "fletch-acquires-source-icelines-owns-snapshot-seal-and-active-pointer",
-                "snapshot is valid only after ICELINES parses every roster and seals the rosters tier",
-            ),
+                season_type: "regular",
+                source_kind: SourceKind::Http,
+                source_url: roster_url(team, season),
+                cache_targets: format!("snapshots/{season}-<date>-rosters/rosters/{team}.json"),
+                media_type: "application/json",
+                record_shape: "one team roster JSON",
+                acquisition_mode: "generic-http-cacheline",
+                activation_rule:
+                    "fletch-acquires-source-icelines-owns-snapshot-seal-and-active-pointer",
+                validation_floor: "snapshot is valid only after ICELINES parses every roster and seals the rosters tier",
+            }),
         );
     }
 
@@ -218,23 +219,26 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             push_unique(
                 &mut fletches,
                 &mut seen,
-                source_def(
-                    format!(
+                source_def(SourceDefInput {
+                    id: format!(
                         "icelines.stats.{season}.{ty}.{}",
                         url_path.replace('/', ".")
                     ),
-                    "stats-report",
+                    fetch_surface: "stats-report",
                     season,
-                    ty,
-                    SourceKind::Http,
-                    stats_report_url(kind, season, ty),
-                    format!("snapshots/<active-stats>/{season}/{ty}/{}.json", url_path.replace('/', "-")),
-                    "application/json",
-                    "paged JSON envelope with data rows and total count",
-                    "generic-paged-json-cacheline",
-                    "FLETCH acquires and caches paged JSON bytes; ICELINES owns report parsing, lock policy, snapshot seal, and active pointer",
-                    "download success is not an analytics claim; ICELINES validates report shape, typed rows, chunk manifests, and stat catalog semantics",
-                ),
+                    season_type: ty,
+                    source_kind: SourceKind::Http,
+                    source_url: stats_report_url(kind, season, ty),
+                    cache_targets: format!(
+                        "snapshots/<active-stats>/{season}/{ty}/{}.json",
+                        url_path.replace('/', "-")
+                    ),
+                    media_type: "application/json",
+                    record_shape: "paged JSON envelope with data rows and total count",
+                    acquisition_mode: "generic-paged-json-cacheline",
+                    activation_rule: "FLETCH acquires and caches paged JSON bytes; ICELINES owns report parsing, lock policy, snapshot seal, and active pointer",
+                    validation_floor: "download success is not an analytics claim; ICELINES validates report shape, typed rows, chunk manifests, and stat catalog semantics",
+                }),
             );
         }
     }
@@ -242,21 +246,21 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
     push_unique(
         &mut fletches,
         &mut seen,
-        source_def(
-            format!("icelines.moneypuck.{season}.skaters"),
-            "moneypuck",
+        source_def(SourceDefInput {
+            id: format!("icelines.moneypuck.{season}.skaters"),
+            fetch_surface: "moneypuck",
             season,
-            "regular",
-            SourceKind::Http,
-            crate::moneypuck::csv_url(season)
+            season_type: "regular",
+            source_kind: SourceKind::Http,
+            source_url: crate::moneypuck::csv_url(season)
                 .unwrap_or_else(|| "icelines-invalid-season://moneypuck".to_string()),
-            format!("snapshots/{season}-<date>-moneypuck/moneypuck/moneypuck.json"),
-            "text/csv",
-            "MoneyPuck season skater CSV",
-            "generic-http-cacheline",
-            "fletch-acquires-source-icelines-owns-csv-parse-json-snapshot-seal",
-            "ICELINES validates CSV headers, player rows, derived percentages, snapshot metadata, and UI semantics",
-        ),
+            cache_targets: format!("snapshots/{season}-<date>-moneypuck/moneypuck/moneypuck.json"),
+            media_type: "text/csv",
+            record_shape: "MoneyPuck season skater CSV",
+            acquisition_mode: "generic-http-cacheline",
+            activation_rule: "fletch-acquires-source-icelines-owns-csv-parse-json-snapshot-seal",
+            validation_floor: "ICELINES validates CSV headers, player rows, derived percentages, snapshot metadata, and UI semantics",
+        }),
     );
 
     for (id_suffix, surface, source_url, target, acquisition, activation, validation) in [
@@ -309,20 +313,20 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
         push_unique(
             &mut fletches,
             &mut seen,
-            source_def(
-                format!("icelines.{id_suffix}.{season}"),
-                surface,
+            source_def(SourceDefInput {
+                id: format!("icelines.{id_suffix}.{season}"),
+                fetch_surface: surface,
                 season,
                 season_type,
-                SourceKind::Adapter,
+                source_kind: SourceKind::Adapter,
                 source_url,
-                target,
-                "application/json",
-                "dynamic source set",
-                acquisition,
-                activation,
-                validation,
-            ),
+                cache_targets: target,
+                media_type: "application/json",
+                record_shape: "dynamic source set",
+                acquisition_mode: acquisition,
+                activation_rule: activation,
+                validation_floor: validation,
+            }),
         );
     }
 
@@ -996,6 +1000,25 @@ fn upsert_fletch_cache_manifest_entries(
     Ok(manifest)
 }
 
+fn read_verified_fletch_cache_bytes(cache_root: &Path, fletch_id: &str) -> Result<Option<Vec<u8>>> {
+    let manifest_path = fletch_cache_manifest_path(cache_root);
+    if !manifest_path.exists() {
+        return Ok(None);
+    }
+    let manifest = read_fletch_cache_manifest(&manifest_path)?;
+    let Some(entry) = manifest
+        .entries
+        .iter()
+        .find(|entry| entry.dataset_id == fletch_id && entry.verified)
+    else {
+        return Ok(None);
+    };
+    let path = cache_root.join(&entry.relative_path);
+    let bytes = std::fs::read(&path)
+        .with_context(|| format!("reading verified FLETCH cache object {}", path.display()))?;
+    Ok(Some(bytes))
+}
+
 pub fn fetch_generic_http_bytes(
     fletch_id: impl Into<String>,
     source_url: impl Into<String>,
@@ -1015,14 +1038,24 @@ pub fn fetch_generic_http_bytes(
     plan.metadata
         .insert("adapter".to_string(), "icelines".to_string());
 
-    let outcome = fetch_to_cache(
-        &plan,
-        FetchOptions::new(cache_root)
-            .with_force(force)
-            .with_timeout_ms(30_000)
-            .with_retry_attempts(5),
-    )
-    .with_context(|| format!("fetching {fletch_id} through FLETCH"))?;
+    let options = FetchOptions::new(cache_root)
+        .with_force(force)
+        .with_timeout_ms(30_000)
+        .with_retry_attempts(5);
+    let outcome = match fetch_to_cache(&plan, options) {
+        Ok(outcome) => outcome,
+        Err(error) if !force => {
+            if let Some(bytes) = read_verified_fletch_cache_bytes(cache_root, &fletch_id)
+                .with_context(|| format!("reading cached FLETCH object for {fletch_id}"))?
+            {
+                return Ok(bytes);
+            }
+            return Err(error).with_context(|| format!("fetching {fletch_id} through FLETCH"));
+        }
+        Err(error) => {
+            return Err(error).with_context(|| format!("fetching {fletch_id} through FLETCH"));
+        }
+    };
     upsert_fletch_cache_manifest_entries(cache_root, [outcome.entry.clone()])?;
 
     std::fs::read(&outcome.path)
@@ -1605,55 +1638,66 @@ fn push_query_partition(rows: &mut Vec<FletchQueryPartitionRow>, input: QueryPar
     });
 }
 
-fn source_def(
+struct SourceDefInput<'a> {
     id: String,
-    fetch_surface: &str,
-    season: &str,
-    season_type: &str,
+    fetch_surface: &'a str,
+    season: &'a str,
+    season_type: &'a str,
     source_kind: SourceKind,
     source_url: String,
     cache_targets: String,
-    media_type: &str,
-    record_shape: &str,
-    acquisition_mode: &str,
-    activation_rule: &str,
-    validation_floor: &str,
-) -> FletchDefinition {
+    media_type: &'a str,
+    record_shape: &'a str,
+    acquisition_mode: &'a str,
+    activation_rule: &'a str,
+    validation_floor: &'a str,
+}
+
+fn source_def(input: SourceDefInput<'_>) -> FletchDefinition {
     FletchDefinition {
-        id,
+        id: input.id,
         node_kind: GraphNodeKind::Fletch,
         shafts: vec![SourceSpec {
-            kind: source_kind,
-            url: source_url,
+            kind: input.source_kind,
+            url: input.source_url,
             headers: BTreeMap::new(),
         }],
         edges: Vec::new(),
         format: Some(DataFormat {
-            media_type: Some(media_type.to_string()),
+            media_type: Some(input.media_type.to_string()),
             encoding: Some("utf-8".to_string()),
             compression: None,
             container: None,
             schema: None,
-            record_shape: Some(record_shape.to_string()),
-            preferred_local: Some(cache_targets.clone()),
+            record_shape: Some(input.record_shape.to_string()),
+            preferred_local: Some(input.cache_targets.clone()),
         }),
         tags: vec![
             "icelines".to_string(),
-            fetch_surface.to_string(),
-            season.to_string(),
-            season_type.to_string(),
+            input.fetch_surface.to_string(),
+            input.season.to_string(),
+            input.season_type.to_string(),
         ],
         metadata: BTreeMap::from([
-            ("fetch_surface".to_string(), fetch_surface.to_string()),
-            ("season".to_string(), season.to_string()),
-            ("season_type".to_string(), season_type.to_string()),
-            ("cache_targets".to_string(), cache_targets),
-            ("mutation_mode".to_string(), acquisition_mode.to_string()),
-            ("acquisition_mode".to_string(), acquisition_mode.to_string()),
-            ("activation_rule".to_string(), activation_rule.to_string()),
+            ("fetch_surface".to_string(), input.fetch_surface.to_string()),
+            ("season".to_string(), input.season.to_string()),
+            ("season_type".to_string(), input.season_type.to_string()),
+            ("cache_targets".to_string(), input.cache_targets),
+            (
+                "mutation_mode".to_string(),
+                input.acquisition_mode.to_string(),
+            ),
+            (
+                "acquisition_mode".to_string(),
+                input.acquisition_mode.to_string(),
+            ),
+            (
+                "activation_rule".to_string(),
+                input.activation_rule.to_string(),
+            ),
             (
                 "icelines_validation_floor".to_string(),
-                validation_floor.to_string(),
+                input.validation_floor.to_string(),
             ),
             (
                 "claim_validated_by_download".to_string(),
@@ -1962,6 +2006,44 @@ mod tests {
         let index = fletch_cache_index_report("20252026", "regular", &manifest);
         assert_eq!(index.source_schema, FLETCH_CACHE_INDEX_SCHEMA);
         assert_eq!(index.unexpected_index_count, 1);
+    }
+
+    #[test]
+    fn fetch_generic_http_bytes_uses_cached_object_when_source_unavailable() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET).path("/source.csv");
+            then.status(200)
+                .header("content-type", "text/csv")
+                .body("playerId,situation,icetime\n8478402,all,5000\n");
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let fletch_id = "icelines.test.cached-source";
+
+        let fetched =
+            fetch_generic_http_bytes(fletch_id, server.url("/source.csv"), dir.path(), false)
+                .expect("initial source fetch should populate FLETCH cache");
+        assert_eq!(
+            fetched,
+            b"playerId,situation,icetime\n8478402,all,5000\n".to_vec()
+        );
+        mock.assert_hits(1);
+
+        let cached = fetch_generic_http_bytes(
+            fletch_id,
+            "http://127.0.0.1:9/source.csv",
+            dir.path(),
+            false,
+        )
+        .expect("offline fallback should reuse the cached object");
+        assert_eq!(cached, fetched);
+
+        let forced =
+            fetch_generic_http_bytes(fletch_id, "http://127.0.0.1:9/source.csv", dir.path(), true);
+        assert!(
+            forced.is_err(),
+            "forced refresh must not hide unavailable source behind cached bytes"
+        );
     }
 
     #[tokio::test]

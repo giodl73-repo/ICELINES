@@ -5,11 +5,13 @@
 // (`use queries::State` in app.rs is much more ambiguous).
 #![allow(clippy::module_name_repetitions)]
 
+use icelines_core::view_model::context::RecoveryActionKind;
 use icelines_core::{
     filter::PlayerFilter, model::Position, position::PositionResolver,
-    stats_repository::PlayerView, LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue,
-    SemanticToken, SortDirection, SortKey, SortState, StatKey, ValuePrecision, ViewContext,
-    ViewWindow,
+    stats_repository::PlayerView, Completeness, EmptyKind, EmptyState, LeaderKind, LeadersView,
+    MetricCell, MetricUnit, MetricValue, RecoveryAction, SemanticToken, SortDirection, SortKey,
+    SortState, SourceKind, SourceState, StatKey, ValuePrecision, ViewContext, ViewWarning,
+    ViewWindow, WarningKind,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -207,7 +209,7 @@ pub fn default_fields() -> Vec<QueryField> {
         QueryField {
             label: "Position",
             selected: 0,
-            options: vec!["all", "C", "LW", "RW", "D", "F"],
+            options: vec!["all", "C", "LW", "RW", "D", "F", "G"],
         },
         QueryField {
             label: "Age max",
@@ -425,6 +427,23 @@ fn parse_opt<T: std::str::FromStr>(s: &str) -> Option<T> {
     }
 }
 
+fn apply_position_filter(filter: &mut PlayerFilter, pos: &str) {
+    if pos == "all" {
+        return;
+    }
+    if pos == "F" {
+        filter.positions = Some(vec![
+            Position::Center,
+            Position::LeftWing,
+            Position::RightWing,
+        ]);
+    } else if pos == "G" {
+        filter.positions = Some(vec![Position::Goalie]);
+    } else if let Ok((primary, _)) = PositionResolver::parse(pos) {
+        filter.positions = Some(vec![primary]);
+    }
+}
+
 /// Filter + sort the players by the field selections. Operates on
 /// `PlayerView<'_>` slices via `PlayerFilter::matches_view`.
 #[allow(dead_code)] // Public helper — superseded by `run_query_views_with_pick`; kept for API stability.
@@ -450,17 +469,7 @@ pub fn run_query_views_with_pick<'a>(
 
     let mut filter = PlayerFilter::new();
 
-    if pos != "all" {
-        if pos == "F" {
-            filter.positions = Some(vec![
-                Position::Center,
-                Position::LeftWing,
-                Position::RightWing,
-            ]);
-        } else if let Ok((primary, _)) = PositionResolver::parse(pos) {
-            filter.positions = Some(vec![primary]);
-        }
-    }
+    apply_position_filter(&mut filter, pos);
     filter.age_max = parse_opt(fields[2].value());
     filter.age_min = parse_opt(fields[3].value());
     filter.gp_min = parse_opt(fields[4].value());
@@ -524,23 +533,28 @@ pub fn run_query_views_with_pick_and_plan<'a>(
     plan: Option<&icelines_query::QueryPlan>,
     season: u32,
 ) -> Vec<(usize, PlayerView<'a>)> {
+    run_query_views_result_with_pick_and_plan(views, fields, sort_pick, plan, season).rows
+}
+
+struct QueryResultSet<'a> {
+    total: usize,
+    rows: Vec<(usize, PlayerView<'a>)>,
+}
+
+fn run_query_views_result_with_pick_and_plan<'a>(
+    views: &'a [PlayerView<'a>],
+    fields: &[QueryField],
+    sort_pick: Option<icelines_core::stats_catalog::StatId>,
+    plan: Option<&icelines_query::QueryPlan>,
+    season: u32,
+) -> QueryResultSet<'a> {
     let sort = fields[0].value();
     let pos = fields[1].value();
     let top: usize = fields[9].value().parse().unwrap_or(20);
 
     let mut filter = PlayerFilter::new();
 
-    if pos != "all" {
-        if pos == "F" {
-            filter.positions = Some(vec![
-                Position::Center,
-                Position::LeftWing,
-                Position::RightWing,
-            ]);
-        } else if let Ok((primary, _)) = PositionResolver::parse(pos) {
-            filter.positions = Some(vec![primary]);
-        }
-    }
+    apply_position_filter(&mut filter, pos);
     filter.age_max = parse_opt(fields[2].value());
     filter.age_min = parse_opt(fields[3].value());
     filter.gp_min = parse_opt(fields[4].value());
@@ -593,12 +607,14 @@ pub fn run_query_views_with_pick_and_plan<'a>(
         });
     }
 
-    matched
+    let total = matched.len();
+    let rows = matched
         .into_iter()
         .take(top)
         .enumerate()
         .map(|(i, v)| (i + 1, v))
-        .collect()
+        .collect();
+    QueryResultSet { total, rows }
 }
 
 fn sort_val_view(v: &PlayerView<'_>, sort: &str) -> f64 {
@@ -733,8 +749,12 @@ fn leaders_view_from_query_results(
     season: icelines_core::model::Season,
     season_type: icelines_core::season_stats::SeasonType,
 ) -> LeadersView {
+    let mut context = ViewContext::new(ViewWindow::new(season, season_type));
+    context
+        .source_state
+        .push(SourceState::complete(SourceKind::Roster));
     let mut view = LeadersView::from_player_views_with_primary(
-        ViewContext::new(ViewWindow::new(season, season_type)),
+        context,
         LeaderKind::Skaters,
         results.iter().map(|(_, view)| *view),
         |v| MetricCell {
@@ -755,6 +775,223 @@ fn leaders_view_from_query_results(
         row.rank = *rank as u32;
     }
     view
+}
+
+fn leaders_context_line(view: &LeadersView) -> String {
+    let window = view.context.window;
+    let source = view
+        .context
+        .source_state
+        .first()
+        .map(|state| {
+            format!(
+                "{} {}",
+                source_kind_label(state.source),
+                completeness_label(state.state)
+            )
+        })
+        .unwrap_or_else(|| "unknown unavailable".to_owned());
+    format!(
+        "  Context: {} {} | source {}",
+        window.season.0,
+        window.season_type.label(),
+        source
+    )
+}
+
+fn leaders_result_line(
+    total: usize,
+    returned: usize,
+    top: usize,
+    sort: &str,
+    filters: &str,
+) -> String {
+    format!("  Result: total {total} | returned {returned} | top {top} | sort {sort} | active_filters {filters}")
+}
+
+fn apply_leaders_warning_state(view: &mut LeadersView, pos: &str) {
+    if !pos.trim().eq_ignore_ascii_case("G") {
+        return;
+    }
+
+    let recovery = vec![RecoveryAction {
+        label: "Open goalie leaders".to_owned(),
+        action: RecoveryActionKind::OpenRoute {
+            route: "goalies".to_owned(),
+        },
+    }];
+    view.warnings.push(ViewWarning {
+        kind: WarningKind::UnsupportedFilter,
+        source: None,
+        message: "The leaders surface is skater-only; use goalies for goalie leaders.".to_owned(),
+        recovery: recovery.clone(),
+    });
+    if view.rows.is_empty() {
+        view.empty_state = Some(EmptyState {
+            kind: EmptyKind::NoRows,
+            title: "No skater leaders".to_owned(),
+            detail: Some(
+                "The leaders surface is skater-only; use the goalies surface for goalie leaders."
+                    .to_owned(),
+            ),
+            recovery,
+        });
+    }
+}
+
+fn leaders_warning_empty_lines(view: &LeadersView) -> Vec<String> {
+    let mut lines = Vec::new();
+    for warning in &view.warnings {
+        lines.push(format!(
+            "  Warning: {} | {}",
+            warning_kind_label(warning.kind),
+            warning.message
+        ));
+    }
+    if let Some(empty) = &view.empty_state {
+        lines.push(format!(
+            "  Empty: {} | {}",
+            empty_kind_label(empty.kind),
+            empty.title
+        ));
+        if let Some(detail) = &empty.detail {
+            lines.push(format!("  Detail: {detail}"));
+        }
+        for recovery in &empty.recovery {
+            lines.push(format!("  Recovery: {}", recovery_action_label(recovery)));
+        }
+    } else {
+        for warning in &view.warnings {
+            for recovery in &warning.recovery {
+                lines.push(format!("  Recovery: {}", recovery_action_label(recovery)));
+            }
+        }
+    }
+    lines
+}
+
+fn empty_kind_label(kind: EmptyKind) -> &'static str {
+    match kind {
+        EmptyKind::NoRows => "no_rows",
+        EmptyKind::NoMatch => "no_match",
+        EmptyKind::MissingSource => "missing_source",
+        EmptyKind::UnsupportedWindow => "unsupported_window",
+        EmptyKind::BadFilter => "bad_filter",
+        EmptyKind::NotFound => "not_found",
+    }
+}
+
+fn warning_kind_label(kind: WarningKind) -> &'static str {
+    match kind {
+        WarningKind::PartialSource => "partial_source",
+        WarningKind::StaleSource => "stale_source",
+        WarningKind::MissingSource => "missing_source",
+        WarningKind::EstimatedDeployment => "estimated_deployment",
+        WarningKind::DuplicateName => "duplicate_name",
+        WarningKind::UnsupportedFilter => "unsupported_filter",
+        WarningKind::RendererProjection => "renderer_projection",
+    }
+}
+
+fn recovery_action_label(recovery: &RecoveryAction) -> String {
+    match &recovery.action {
+        RecoveryActionKind::ClearFilter { key } => match key {
+            Some(key) => format!("{} -> clear filter {}", recovery.label, key.0),
+            None => format!("{} -> clear filters", recovery.label),
+        },
+        RecoveryActionKind::ChangeWindow { window } => format!(
+            "{} -> {} {}",
+            recovery.label,
+            window.season.0,
+            window.season_type.label()
+        ),
+        RecoveryActionKind::InstallData { source } => {
+            format!(
+                "{} -> install {}",
+                recovery.label,
+                source_kind_label(*source)
+            )
+        }
+        RecoveryActionKind::RefreshSource { source } => {
+            format!(
+                "{} -> refresh {}",
+                recovery.label,
+                source_kind_label(*source)
+            )
+        }
+        RecoveryActionKind::OpenRoute { route } => {
+            format!("{} -> /{}", recovery.label, route.trim_start_matches('/'))
+        }
+    }
+}
+
+fn active_filters_label(fields: &[QueryField], filter_text: &str) -> String {
+    let mut filters = Vec::new();
+    if fields[1].value() != "all" {
+        filters.push(format!("position={}", fields[1].value()));
+    }
+    if fields[2].value() != "any" {
+        filters.push(format!("age<={}", fields[2].value()));
+    }
+    if fields[3].value() != "any" {
+        filters.push(format!("age>={}", fields[3].value()));
+    }
+    if fields[4].value() != "any" {
+        filters.push(format!("gp>={}", fields[4].value()));
+    }
+    if fields[5].value() != "any" {
+        filters.push(format!("country={}", fields[5].value()));
+    }
+    if fields[6].value() != "any" {
+        filters.push(format!("draft_year={}", fields[6].value()));
+    }
+    if fields[7].value() != "any" {
+        filters.push(format!("draft_round={}", fields[7].value()));
+    }
+    let filter_text = filter_text.trim();
+    if !filter_text.is_empty() {
+        filters.push(filter_text.to_owned());
+    }
+    if filters.is_empty() {
+        "-".to_owned()
+    } else {
+        filters.join(";")
+    }
+}
+
+fn source_kind_label(source: SourceKind) -> &'static str {
+    match source {
+        SourceKind::Roster => "roster",
+        SourceKind::Schedule => "schedule",
+        SourceKind::Scores => "scores",
+        SourceKind::Playoffs => "playoffs",
+        SourceKind::Favorites => "favorites",
+        SourceKind::Watchlist => "watchlist",
+        SourceKind::Career => "career",
+        SourceKind::Home => "home",
+        SourceKind::Docs => "docs",
+        SourceKind::GameLog => "game-log",
+        SourceKind::Boxscore => "boxscore",
+        SourceKind::PlayByPlay => "play-by-play",
+        SourceKind::Shifts => "shifts",
+        SourceKind::Transactions => "transactions",
+        SourceKind::Contracts => "contracts",
+        SourceKind::Standings => "standings",
+        SourceKind::FantasyImport => "fantasy-import",
+        SourceKind::Snapshot => "snapshot",
+        SourceKind::Bundle => "bundle",
+        SourceKind::Cache => "cache",
+        SourceKind::Unknown => "unknown",
+    }
+}
+
+fn completeness_label(completeness: Completeness) -> &'static str {
+    match completeness {
+        Completeness::Complete => "complete",
+        Completeness::Partial => "partial",
+        Completeness::Stale => "stale",
+        Completeness::Unavailable => "unavailable",
+    }
 }
 
 fn leader_primary_text(row: &icelines_core::LeaderRow) -> String {
@@ -1307,13 +1544,14 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         return;
     }
 
-    let results = run_query_views_with_pick_and_plan(
+    let result_set = run_query_views_result_with_pick_and_plan(
         &views,
         &app.queries.fields,
         app.queries.sort_stat_pick,
         app.queries.filter_plan.as_ref(),
         app.active_season_typed.0,
     );
+    let results = &result_set.rows;
     let top: usize = app.queries.fields[9].value().parse().unwrap_or(20);
     // Phase Lindsay L.3.4 — when picker overrides legacy field, the
     // column label comes from the StatId; fall back to legacy.
@@ -1321,33 +1559,57 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         Some(stat) => stat.short_label().to_owned(),
         None => col_label(sort).to_owned(),
     };
-    let leaders_view = leaders_view_from_query_results(
-        &results,
+    let mut leaders_view = leaders_view_from_query_results(
+        results,
         sort,
         &clabel,
         app.active_season_typed,
         app.active_type,
     );
+    apply_leaders_warning_state(&mut leaders_view, app.queries.fields[1].value());
     let dim = Style::default().fg(Color::DarkGray);
 
-    let visible = inner.height.saturating_sub(4) as usize;
+    let visible = inner.height.saturating_sub(6) as usize;
     let offset = app.queries.result_scroll;
+    let active_filters = active_filters_label(&app.queries.fields, &app.queries.filter_text);
 
     let mut lines = vec![
+        Line::styled(leaders_context_line(&leaders_view), dim),
         Line::styled(
-            format!(
-                "  {:<4} {:<22} {:<5} {:<4} {:>8}",
-                "#", "Player", "Team", "Pos", clabel
+            leaders_result_line(
+                result_set.total,
+                leaders_view.rows.len(),
+                top,
+                sort,
+                &active_filters,
             ),
             dim,
         ),
-        Line::styled(format!("  {}", "─".repeat(48)), dim),
     ];
 
+    let warning_empty_lines = leaders_warning_empty_lines(&leaders_view);
+    if !warning_empty_lines.is_empty() {
+        for line in warning_empty_lines {
+            lines.push(Line::styled(line, dim));
+        }
+        lines.push(Line::from(""));
+    }
+
+    lines.push(Line::styled(
+        format!(
+            "  {:<4} {:<22} {:<5} {:<4} {:>8}",
+            "#", "Player", "Team", "Pos", clabel
+        ),
+        dim,
+    ));
+    lines.push(Line::styled(format!("  {}", "─".repeat(48)), dim));
+
+    let first_row_line = lines.len();
     for row in leaders_view.rows.iter().skip(offset).take(visible) {
         let name = row.display_name.chars().take(22).collect::<String>();
         let value = leader_primary_text(row);
-        let is_selected = offset + (lines.len() - 2)
+        let row_index = lines.len() - first_row_line;
+        let is_selected = offset + row_index
             == app.queries.result_scroll + app.selected.min(visible.saturating_sub(1));
         let style = if is_selected {
             Style::default()
@@ -1377,13 +1639,33 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         format!(
             "  Showing {} of {} (top {})",
             results.len().min(top),
-            results.len(),
+            result_set.total,
             top
         ),
         dim,
     ));
 
     f.render_widget(Paragraph::new(lines), inner);
+}
+
+pub fn render_results_snapshot_text(
+    app: &crate::tui::app::App,
+    width: u16,
+    height: u16,
+) -> std::io::Result<String> {
+    let backend = ratatui::backend::TestBackend::new(width, height);
+    let mut terminal = ratatui::Terminal::new(backend)?;
+    terminal.draw(|frame| render_results(frame, app, frame.area()))?;
+
+    let buffer = terminal.backend().buffer();
+    let mut out = String::new();
+    for y in 0..buffer.area.height {
+        for x in 0..buffer.area.width {
+            out.push_str(buffer[(x, y)].symbol());
+        }
+        out.push('\n');
+    }
+    Ok(out)
 }
 
 // ── Saved query serialization ─────────────────────────────────────────────────
@@ -1631,12 +1913,228 @@ mod tests {
         );
 
         assert_eq!(view.sort.as_ref().unwrap().key.0, "pts");
+        assert_eq!(view.context.window.season, Season(20242025));
+        assert_eq!(view.context.window.season_type, SeasonType::Regular);
+        assert_eq!(view.context.source_state.len(), 1);
+        assert_eq!(view.context.source_state[0].source, SourceKind::Roster);
+        assert_eq!(view.context.source_state[0].state, Completeness::Complete);
+        assert_eq!(
+            leaders_context_line(&view),
+            "  Context: 20242025 regular | source roster complete"
+        );
+        assert_eq!(
+            leaders_result_line(12, view.rows.len(), 5, "pts", "country=CAN"),
+            "  Result: total 12 | returned 2 | top 5 | sort pts | active_filters country=CAN"
+        );
         assert_eq!(view.rows[0].rank, 7);
         assert_eq!(view.rows[1].rank, 9);
         assert_eq!(view.rows[0].primary.label, "Pts");
         assert_eq!(leader_primary_text(&view.rows[0]), "80");
         assert_eq!(leader_team_text(&view.rows[0]), "SEA");
         assert_eq!(view.rows[0].position.abbreviation(), "RW");
+    }
+
+    #[test]
+    fn l0_tui_leaders_goalie_filter_reports_empty_warning_recovery_state() {
+        let mut view = leaders_view_from_query_results(
+            &[],
+            "pts",
+            "Pts",
+            Season(20242025),
+            SeasonType::Regular,
+        );
+        apply_leaders_warning_state(&mut view, "G");
+
+        assert_eq!(view.warnings.len(), 1);
+        assert_eq!(view.warnings[0].kind, WarningKind::UnsupportedFilter);
+        assert_eq!(
+            view.warnings[0].message,
+            "The leaders surface is skater-only; use goalies for goalie leaders."
+        );
+        assert_eq!(view.empty_state.as_ref().unwrap().kind, EmptyKind::NoRows);
+        assert_eq!(
+            leaders_warning_empty_lines(&view),
+            vec![
+                "  Warning: unsupported_filter | The leaders surface is skater-only; use goalies for goalie leaders.".to_owned(),
+                "  Empty: no_rows | No skater leaders".to_owned(),
+                "  Detail: The leaders surface is skater-only; use the goalies surface for goalie leaders.".to_owned(),
+                "  Recovery: Open goalie leaders -> /goalies".to_owned(),
+            ]
+        );
+    }
+
+    #[test]
+    fn l0_tui_leaders_active_filters_label_reports_query_intent() {
+        let mut fields = default_fields();
+        fields[1].selected = 1; // Position C
+        fields[2].selected = 4; // age <= 24
+        fields[4].selected = 1; // GP >= 10
+        fields[5].selected = 1; // country CAN
+
+        assert_eq!(
+            active_filters_label(&fields, "goals>=1"),
+            "position=C;age<=24;gp>=10;country=CAN;goals>=1"
+        );
+        assert_eq!(active_filters_label(&default_fields(), ""), "-");
+    }
+
+    fn buffer_text(buf: &ratatui::buffer::Buffer) -> String {
+        let mut out = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                out.push_str(buf[(x, y)].symbol());
+            }
+            out.push('\n');
+        }
+        out
+    }
+
+    #[test]
+    fn l0_tui_leaders_results_render_active_context_and_source_state() {
+        let mut app = crate::tui::app::App::new(true);
+        app.active_season = "20242025".to_owned();
+        app.active_season_typed = Season(20242025);
+        app.active_type = SeasonType::Regular;
+        app.repo
+            .upsert_identity(
+                fixtures::identity(1)
+                    .name("Alpha Center", "alpha center")
+                    .build(),
+            )
+            .unwrap();
+        app.repo
+            .upsert_stats(fixtures::stats(1, 20242025, "EDM").build())
+            .unwrap();
+
+        let backend = ratatui::backend::TestBackend::new(90, 18);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        terminal
+            .draw(|frame| render_results(frame, &app, frame.area()))
+            .unwrap();
+
+        let text = buffer_text(terminal.backend().buffer());
+        assert!(
+            text.contains("Context: 20242025 regular | source roster complete"),
+            "TUI leaders context/source line missing, got:\n{text}"
+        );
+        assert!(
+            text.contains(
+                "Result: total 1 | returned 1 | top 20 | sort pts-pace | active_filters -"
+            ),
+            "TUI leaders result/query metadata line missing, got:\n{text}"
+        );
+    }
+
+    #[test]
+    fn l0_tui_leaders_results_render_active_filter_result_state() {
+        let mut app = crate::tui::app::App::new(true);
+        app.active_season = "20242025".to_owned();
+        app.active_season_typed = Season(20242025);
+        app.active_type = SeasonType::Regular;
+        let goals_idx = app.queries.fields[0]
+            .options
+            .iter()
+            .position(|value| *value == "goals")
+            .expect("TUI sort field exposes goals");
+        app.queries.fields[0].selected = goals_idx;
+        app.queries.filter_text = "country=CAN".to_owned();
+        app.queries.filter_plan = Some(
+            icelines_query::parse_query(icelines_query::FilterInput::Cli(
+                app.queries.filter_text.clone(),
+            ))
+            .expect("TUI active filter parses"),
+        );
+        app.repo
+            .upsert_identity(
+                fixtures::identity(1)
+                    .name("Alpha Center", "alpha center")
+                    .build(),
+            )
+            .unwrap();
+        app.repo
+            .upsert_stats(fixtures::stats(1, 20242025, "EDM").build())
+            .unwrap();
+        let mut filtered_out = fixtures::identity(2)
+            .name("Bravo Wing", "bravo wing")
+            .build();
+        filtered_out.bio.birth_country = Some("USA".to_owned());
+        filtered_out.bio.nationality_code = Some("USA".to_owned());
+        app.repo.upsert_identity(filtered_out).unwrap();
+        app.repo
+            .upsert_stats(
+                fixtures::stats(2, 20242025, "SEA")
+                    .position(icelines_core::model::Position::RightWing)
+                    .build(),
+            )
+            .unwrap();
+
+        let backend = ratatui::backend::TestBackend::new(100, 18);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        terminal
+            .draw(|frame| render_results(frame, &app, frame.area()))
+            .unwrap();
+
+        let text = buffer_text(terminal.backend().buffer());
+        assert!(
+            text.contains(
+                "Result: total 1 | returned 1 | top 20 | sort goals | active_filters country=CAN"
+            ),
+            "TUI leaders active filter result metadata missing, got:\n{text}"
+        );
+        assert!(
+            text.contains("Alpha Center"),
+            "TUI leaders active filter should retain matching row, got:\n{text}"
+        );
+        assert!(
+            !text.contains("Bravo Wing"),
+            "TUI leaders active filter should hide non-matching row, got:\n{text}"
+        );
+    }
+
+    #[test]
+    fn l0_tui_leaders_results_render_goalie_filter_empty_warning_recovery_state() {
+        let mut app = crate::tui::app::App::new(true);
+        app.active_season = "20242025".to_owned();
+        app.active_season_typed = Season(20242025);
+        app.active_type = SeasonType::Regular;
+        let goalie_idx = app.queries.fields[1]
+            .options
+            .iter()
+            .position(|value| *value == "G")
+            .expect("TUI position field exposes goalie recovery option");
+        app.queries.fields[1].selected = goalie_idx;
+        app.repo
+            .upsert_identity(
+                fixtures::identity(1)
+                    .name("Alpha Center", "alpha center")
+                    .build(),
+            )
+            .unwrap();
+        app.repo
+            .upsert_stats(fixtures::stats(1, 20242025, "EDM").build())
+            .unwrap();
+
+        let backend = ratatui::backend::TestBackend::new(100, 20);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        terminal
+            .draw(|frame| render_results(frame, &app, frame.area()))
+            .unwrap();
+
+        let text = buffer_text(terminal.backend().buffer());
+        assert!(
+            text.contains(
+                "Warning: unsupported_filter | The leaders surface is skater-only; use goalies"
+            ),
+            "TUI leaders warning line missing, got:\n{text}"
+        );
+        assert!(
+            text.contains("Empty: no_rows | No skater leaders"),
+            "TUI leaders empty-state line missing, got:\n{text}"
+        );
+        assert!(
+            text.contains("Recovery: Open goalie leaders -> /goalies"),
+            "TUI leaders recovery line missing, got:\n{text}"
+        );
     }
 
     /// `visible_field_indices` returns only fields in expanded sections,

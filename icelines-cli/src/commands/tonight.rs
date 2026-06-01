@@ -5,6 +5,8 @@ use icelines_core::timeframe::Timeframe;
 use icelines_core::{ScheduleView, ScheduledGameInput, ScoresView, ViewContext, ViewWindow};
 use icelines_fetch::nhl_api::NhlApiClient;
 
+const LIVE_FEEDS_DISABLED_MESSAGE: &str = "Live feeds are disabled; this view requires live NHL schedule data. Re-enable live feeds by omitting --no-live, unsetting ICELINES_NO_LIVE, or setting live = true in ~/.icelines/config.toml.";
+
 /// Phase Foster.1 — strict YYYY-MM-DD parser. Returns the canonical
 /// string back so callers can hand it straight to NHL API URLs (which
 /// also expect YYYY-MM-DD). Rejects any value chrono cannot resolve
@@ -79,13 +81,19 @@ pub async fn run(
     date: Option<String>,
     widen_to_week: bool,
 ) -> anyhow::Result<()> {
-    let client = NhlApiClient::production();
-    // Phase Foster.1 — anchor on `--date` if supplied; otherwise the
-    // existing today path.
+    // Validate user input before no-live short-circuits so offline CI still
+    // catches malformed command arguments.
     let anchor = match date.as_deref() {
         Some(d) => Some(parse_iso_date(d)?),
         None => None,
     };
+
+    if !crate::config::live_feeds_enabled() {
+        println!("{LIVE_FEEDS_DISABLED_MESSAGE}");
+        return Ok(());
+    }
+
+    let client = NhlApiClient::production();
     let all_games = match anchor.as_deref() {
         Some(d) => client
             .fetch_schedule_for_date(d)
@@ -285,12 +293,23 @@ pub async fn run_schedule(
     csv: bool,
     date: Option<String>,
 ) -> anyhow::Result<()> {
-    let client = NhlApiClient::production();
-    // Phase Foster.1 — anchor on `--date` if supplied; otherwise today.
     let anchor = match date.as_deref() {
         Some(d) => Some(parse_iso_date(d)?),
         None => None,
     };
+
+    if !crate::config::live_feeds_enabled() {
+        if json {
+            return emit_schedule_json(&[], team.as_deref(), days);
+        }
+        if csv {
+            return emit_schedule_csv(&[]);
+        }
+        println!("{LIVE_FEEDS_DISABLED_MESSAGE}");
+        return Ok(());
+    }
+
+    let client = NhlApiClient::production();
     let all_games = match anchor.as_deref() {
         Some(d) => client
             .fetch_schedule_for_date(d)

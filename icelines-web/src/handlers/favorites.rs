@@ -376,32 +376,20 @@ pub(super) async fn compute_player_stat_lines(
     use std::collections::HashMap;
     let mut out = HashMap::new();
 
-    // Today's slate fetch (best-effort).
-    let client = icelines_fetch::nhl_api::NhlApiClient::production();
     let today = chrono::Utc::now()
         .date_naive()
         .format("%Y-%m-%d")
         .to_string();
-    let slate = match client.fetch_schedule_for_date(&today).await {
-        Ok(g) => g
-            .into_iter()
-            .filter(|g| g.date == today)
-            .collect::<Vec<_>>(),
-        Err(_) => Vec::new(),
+    let Some(data_root) = data_root_from_env() else {
+        return out;
     };
-    if slate.is_empty() {
+    if !data_root.exists() {
         return out;
     }
-
-    let home = match std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) {
-        Some(h) => std::path::PathBuf::from(h),
-        None => return out,
-    };
-    let data_root = home.join(".icelines").join("data");
-    let store = match icelines_fetch::datastore::DataStore::open(&data_root) {
-        Ok(s) => s,
-        Err(_) => return out,
-    };
+    let cached_boxscores = cached_boxscores_for_date(&data_root, &today);
+    if cached_boxscores.is_empty() {
+        return out;
+    }
 
     for (kind, name) in members {
         if kind != "player" {
@@ -410,78 +398,71 @@ pub(super) async fn compute_player_stat_lines(
         let Some(pid) = icelines_fetch::stats_loader::resolve_player_id_by_name(name) else {
             continue;
         };
-        // Find the player's team, then the day's game.
-        let team = match player_team(pid) {
-            Some(t) => t.to_uppercase(),
-            None => continue,
-        };
-        let game = match slate.iter().find(|g| {
-            g.away_abbrev.eq_ignore_ascii_case(&team) || g.home_abbrev.eq_ignore_ascii_case(&team)
-        }) {
-            Some(g) => g,
-            None => continue,
-        };
-        let key =
-            icelines_fetch::manifest::DataKey::Game(icelines_core::identity::GameId(game.game_id));
-        // Foster +23 — lazy-fetch the boxscore body when it's
-        // not on disk so users see real numbers without a
-        // separate `icelines fetch boxscore` step. Persists
-        // the body to the manifest as a side effect so the
-        // TUI / CLI / next page-load all benefit. Failures
-        // are non-fatal (drop to "no line").
-        let raw_opt = match store.load_boxscore_raw(key.clone()) {
-            Some(r) => Some(r),
-            None => match client.fetch_boxscore_with_raw(game.game_id).await {
-                Ok((_, raw_body)) => {
-                    // Best-effort persist so subsequent renders
-                    // don't re-hit the network. Same write
-                    // pattern as `icelines fetch boxscore`.
-                    let path = data_root
-                        .join("boxscores")
-                        .join(&today)
-                        .join(format!("{}.json", game.game_id));
-                    if let Ok(bytes) = serde_json::to_vec(&raw_body) {
-                        let _ = icelines_fetch::atomic_write::write_bytes_atomic(&path, &bytes);
-                        let _ = store.manifest().upsert(
-                            icelines_fetch::manifest::DataKind::Boxscore,
-                            icelines_fetch::manifest::ManifestEntry {
-                                key: key.clone(),
-                                path,
-                                freshness: icelines_core::Freshness {
-                                    fetched_at: chrono::Utc::now(),
-                                    source: icelines_core::FetchSource::Live,
-                                    ttl: icelines_core::Ttl::Static,
-                                },
-                            },
-                        );
-                    }
-                    Some(raw_body)
-                }
-                Err(_) => None,
-            },
-        };
-        let Some(raw) = raw_opt else { continue };
-        let parsed = icelines_fetch::nhl_api::parse_boxscore(&raw, game.game_id);
-        if let Some(line) =
-            icelines_fetch::boxscore_to_night_line::extract_skater_line(&parsed, pid)
-        {
-            out.insert(name.clone(), format_skater_line_html(&line));
+        for (game_id, raw) in &cached_boxscores {
+            let parsed = icelines_fetch::nhl_api::parse_boxscore(raw, *game_id);
+            if let Some(line) =
+                icelines_fetch::boxscore_to_night_line::extract_skater_line(&parsed, pid)
+            {
+                out.insert(name.clone(), format_skater_line_html(&line));
+                break;
+            }
         }
     }
     out
 }
 
-fn player_team(pid: u32) -> Option<String> {
-    for season in icelines_fetch::bundled::BUNDLED_SEASONS {
-        if let Some(bios) = icelines_fetch::bundled::get_bios(season) {
-            if let Some(b) = bios.iter().find(|b| b.player_id == pid) {
-                if let Some(team) = &b.current_team_abbrev {
-                    return Some(team.clone());
-                }
+fn data_root_from_env() -> Option<std::path::PathBuf> {
+    std::env::var_os("ICELINES_DATA_ROOT")
+        .map(std::path::PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("USERPROFILE").map(|home| {
+                std::path::PathBuf::from(home)
+                    .join(".icelines")
+                    .join("data")
+            })
+        })
+        .or_else(|| {
+            std::env::var_os("HOME").map(|home| {
+                std::path::PathBuf::from(home)
+                    .join(".icelines")
+                    .join("data")
+            })
+        })
+}
+
+fn cached_boxscores_for_date(
+    data_root: &std::path::Path,
+    date: &str,
+) -> Vec<(u64, serde_json::Value)> {
+    let manifest_path = data_root
+        .join("manifest")
+        .join(icelines_fetch::manifest::DataKind::Boxscore.shard_filename());
+    let Ok(bytes) = std::fs::read(&manifest_path) else {
+        return Vec::new();
+    };
+    let Ok(shard) = serde_json::from_slice::<icelines_fetch::manifest::ShardFile>(&bytes) else {
+        return Vec::new();
+    };
+    shard
+        .datasets
+        .into_iter()
+        .filter_map(|entry| {
+            let icelines_fetch::manifest::DataKey::Game(game_id) = entry.key else {
+                return None;
+            };
+            if !entry.path.components().any(|component| {
+                component
+                    .as_os_str()
+                    .to_str()
+                    .is_some_and(|part| part == date)
+            }) {
+                return None;
             }
-        }
-    }
-    None
+            let bytes = std::fs::read(&entry.path).ok()?;
+            let raw = serde_json::from_slice::<serde_json::Value>(&bytes).ok()?;
+            Some((game_id.0, raw))
+        })
+        .collect()
 }
 
 fn format_skater_line_html(line: &icelines_core::favorites::SkaterNightLine) -> String {

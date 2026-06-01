@@ -1,18 +1,18 @@
 # IceLines — Claude Code Context
 
-**Project**: IceLines NHL analytics + fantasy platform  
-**Binary**: `icelines` (Rust CLI)  
-**Repo root**: `C:/src/icelines/`  
-**Working dir: `C:/src/icelines/` (workspace root)
+**Project**: IceLines NHL analytics + fantasy/workbench platform
+**Binary**: `icelines` (Rust CLI/TUI plus web dashboard/API)
+**Repo root**: `C:/src/ICELINES/`
+**Working dir: `C:/src/ICELINES/` (workspace root)
 
 ---
 
 ## ⚠ Git identity — verify BEFORE every commit
 
-**This repo's commits go to the `gidol73-repo` GitHub account, NOT the work account.**
+**This repo's commits go to the `giodl73-repo` GitHub account, NOT the work account.**
 
 Required local config (already set):
-- `user.name = gidol73-repo`
+- `user.name = giodl73-repo`
 - `user.email = giodl73@gmail.com`
 
 **Before any `git commit`, run:**
@@ -22,7 +22,7 @@ git config user.email
 If it returns anything other than `giodl73@gmail.com` (especially anything `@microsoft.com`), STOP. Do not commit. Set it:
 ```bash
 git config user.email giodl73@gmail.com
-git config user.name "gidol73-repo"
+git config user.name "giodl73-repo"
 ```
 
 If git ever prints `Your name and email address were configured automatically based on your username and hostname` after a commit, that means the local config is missing — the commit just got authored as the auto-resolved identity (which is `giodl@microsoft.com` on this machine). Fix immediately, then `git commit --amend --reset-author --no-edit` to fix the most recent commit, or filter-branch for a chain.
@@ -37,18 +37,28 @@ This applies to **every commit, every session**. Do not assume the config persis
 |--------------------|-------|-----|
 | Data types, Player struct, filters, scheme scoring, projections | `icelines-core` | Pure logic, no I/O, no network |
 | NHL API fetch, snapshot store, bundled data, MoneyPuck, aggregate | `icelines-fetch` | All I/O and data loading |
-| Markdown site generation, mkdocs templates | `icelines-site` | Site-only concerns |
-| CLI commands, argument parsing, TUI, HTTP server | `icelines-cli` | Thin UI layer only |
+| Web HTML/API routes, templates, server state | `icelines-web` | Browser/API adapters |
+| CLI commands, argument parsing, TUI | `icelines-cli` | Thin UI layer only |
+| Deferred mkdocs/static site generator | `icelines-site` | Historical/deferred site-only concerns |
 
 **Rule**: Business logic belongs in `icelines-core` or `icelines-fetch`, never in `icelines-cli`. CLI commands call library functions — they don't compute anything themselves.
 
 **Crate dependency chain** (lower can't import higher):
 ```
-icelines-core   (no internal deps)
-icelines-fetch  (depends on icelines-core)
-icelines-site   (depends on icelines-core, icelines-fetch)
-icelines-cli    (depends on all three)
+icelines-core
+icelines-query  (depends on icelines-core)
+icelines-fetch  (depends on icelines-core, icelines-query)
+icelines-web    (depends on core/query/fetch)
+icelines-site   (deferred static-site generator)
+icelines-cli    (thin command/TUI/server launcher)
 ```
+
+## VTRACE specification baseline
+
+`docs/vtrace/` is the governing mission, requirements, design, interface,
+verification, validation, work-package, review, and change-control baseline.
+Use it before implementation work, and keep feature claims aligned with
+`design/specs/surface-parity.md`.
 
 ---
 
@@ -90,7 +100,7 @@ bash scripts/build-guides.sh --check               # validate without writing
 
 - **Current season**: `icelines_core::CURRENT_SEASON = 20_252_026` — change here each October, nowhere else
 - **Bundled data**: `src/icelines-fetch/src/bundled.rs` — **38 seasons** (1987-88 through 2025-26, except 2004-05 lockout) embedded via table-driven `include_bytes!()`. `BUNDLED_SEASONS` is the full list; `MODERN_BUNDLED_SEASONS` is the 5-season subset that carries the full Tier-1 report suite.
-- **Player loading**: always use `icelines_fetch::stats_loader::load_into_repo(season, season_type, store)` → returns `LoadOutcome { repo: StatsRepository, missing }`. Never reach into snapshot store directly from a command. (The legacy `PlayerRepository` path was deleted in Hart.5b1.)
+- **Player loading**: always use `icelines_fetch::stats_loader::load_into_repo(season, season_type, store)` → returns `LoadOutcome { repo: StatsRepository, missing }`. Never reach into snapshot store directly from a command; legacy repository loaders were deleted in Hart.5b1.
 - **Per-player career fan-out**: `icelines_fetch::stats_loader::load_player_career_into_repo(repo, pid)` walks every bundled season and merges that player's bios+stats into the repo. Used by the TUI lazy loader (UX.1) and the CLI's historical-name fallback in `query player`/`compare`.
 - **Resolve historical name**: `icelines_fetch::stats_loader::resolve_player_id_by_name(name)` walks bundled bios+goalies for a partial name match. The CLI uses this so `query player Wayne Gretzky` resolves without `--season`.
 - **Snapshot store**: `~/.icelines/snapshots/` — never hardcode paths, use `Config::load()?.snapshot_dir()`
@@ -178,7 +188,8 @@ The mock NHL API fixture is at `src/icelines-fetch/tests/mock_nhl_api.rs` — us
    - **M.2.1 — Screen trait scaffold**: `Screen` trait (`type State`, `handle/render/chrome`), `ScreenAction` enum (Continue/Quit/Push/Pop/Replace/OpenOverlay/Flash), `OverlayKind` enum (Help/Admin/SeasonPicker/Reports/Docs/DatePicker/GroupPicker — cross-screen overlays only), `AppContext<'_>` (split-borrow context), `App::dispatch` interpreter, `App::make_context` factory. Lives in `tui/screen.rs`. Module-level `#[allow(dead_code)]` because the deep per-screen migration (Masterton.2.2-2.7) is deferred — see CHANGELOG v0.22.0 for honest framing.
    - **M.3 — `--standalone` flag**: `icelines tui <surface> --standalone` locks the TUI to one screen. Tab/Shift+Tab no-op; tab strip hidden; per-screen keybinds + cross-screen overlays still work. Implemented as `App::locked_screen: Option<Screen>` (pragmatic approach — gets the user-facing feature without requiring the deep Screen-trait migration). Examples: `icelines tui goalies --standalone`, `tui scores --standalone`, `tui transactions --standalone`.
    - **Trophy fit**: Bill Masterton — perseverance, dedication to hockey, long-term unglamorous infrastructure. Same defensive character as Norris. Spec: `design/specs/phase-masterton-overview.md`. Plan: `design/plans/2026-05-08-phaseMasterton-tui-screen-trait.md`. Test growth: 763 → 803 (+40 across the phase).
-- `icelines build/serve/deploy` — mkdocs static site
+- `docs/vtrace/` — VTRACE specification baseline and work-package evidence spine
+- `icelines serve` — axum web dashboard/API; mkdocs CLI entry points were removed
 - ~2050 tests across L0/L1/L2 + 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2.rs/wave3/wave4`) plus `persona_foster.rs` (30 scenarios) including mock NHL API fixture
 
 ## Pending (see design/plans/INDEX.md)

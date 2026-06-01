@@ -1027,6 +1027,7 @@ dependencies = [
 [[package]]
 name = "fletch-core"
 version = "0.1.0"
+source = "git+https://github.com/giodl73-repo/FLETCH.git?branch=master#7c7aacd4fbc8753299e2fc3181368d2cc6d90337"
 dependencies = [
  "reqwest",
  "serde",
@@ -4318,3 +4319,11 @@ checksum = "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296"
 dependencies = [
  "zune-core",
 ]
+
+[[patch.unused]]
+name = "mdpath"
+version = "0.5.0"
+
+[[patch.unused]]
+name = "proof"
+version = "0.7.1"

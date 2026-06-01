@@ -9,7 +9,7 @@ use icelines_core::{
     model::Position, RosterShape, RosterShapePlayerInput, RosterShapeValidationInput,
     RosterShapeValidationView,
 };
-use rusqlite::Connection;
+use rusqlite::{Connection, OpenFlags};
 use std::collections::BTreeMap;
 
 pub const DEFAULT_ROSTER_SHAPE: &str = "yahoo-standard";
@@ -194,6 +194,19 @@ fn table_has_column(conn: &Connection, table: &str, column: &str) -> anyhow::Res
     Ok(columns.iter().any(|name| name == column))
 }
 
+pub fn open_existing_sqlite_read_only_path(
+    db_path: &std::path::Path,
+) -> anyhow::Result<Connection> {
+    let uri = sqlite_immutable_read_uri(db_path);
+    Connection::open_with_flags(
+        &uri,
+        OpenFlags::SQLITE_OPEN_READ_ONLY
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )
+    .with_context(|| format!("open {} read-only", db_path.display()))
+}
+
 // ── FantasyDb impl ────────────────────────────────────────────────────────────
 
 impl FantasyDb {
@@ -219,8 +232,18 @@ impl FantasyDb {
         // Enable WAL for better concurrent write performance.
         conn.execute_batch("PRAGMA journal_mode = WAL;")
             .context("set WAL mode")?;
+        conn.execute_batch("PRAGMA wal_autocheckpoint = 1;")
+            .context("set WAL autocheckpoint")?;
 
         run_migrations(&conn)?;
+        Ok(Self { conn, db_path })
+    }
+
+    /// Open an existing database for read-only surfaces without creating files,
+    /// changing journal mode, SQLite sidecars, or running migrations.
+    pub fn open_existing_read_only_path(db_path: std::path::PathBuf) -> anyhow::Result<Self> {
+        let conn = open_existing_sqlite_read_only_path(&db_path)?;
+
         Ok(Self { conn, db_path })
     }
 
@@ -735,6 +758,23 @@ impl FantasyDb {
             teams,
         })
     }
+}
+
+fn sqlite_immutable_read_uri(db_path: &std::path::Path) -> String {
+    let mut path = db_path.to_string_lossy().replace('\\', "/");
+    if path.as_bytes().get(1) == Some(&b':') {
+        path.insert(0, '/');
+    }
+    let encoded = path
+        .bytes()
+        .map(|byte| match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b'/' | b':' => {
+                (byte as char).to_string()
+            }
+            _ => format!("%{byte:02X}"),
+        })
+        .collect::<String>();
+    format!("file://{encoded}?mode=ro&immutable=1")
 }
 
 pub fn resolve_roster_shape(name: &str) -> anyhow::Result<RosterShape> {

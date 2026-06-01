@@ -1691,6 +1691,31 @@ mod tests {
     }
 
     #[test]
+    fn l0_snapshot_read_named_refuses_unsealed_snapshot() {
+        let (_dir, store) = store();
+        store
+            .create(
+                "draft",
+                "20252026",
+                SnapshotTier::Rosters,
+                None,
+                "2026-04-25",
+            )
+            .unwrap();
+        store
+            .write_file("draft", &SnapshotTier::Rosters, "ANA.json", b"{}")
+            .unwrap();
+
+        let result: Result<serde_json::Value, _> =
+            store.read("draft", &SnapshotTier::Rosters, "ANA.json");
+
+        assert!(matches!(
+            result,
+            Err(SnapshotError::NotSealed { name }) if name == "draft"
+        ));
+    }
+
+    #[test]
     fn l0_snapshot_verify_catches_corruption() {
         let (_dir, store) = store();
         store
@@ -1715,6 +1740,68 @@ mod tests {
         let failures = store.verify("snap3").unwrap();
         assert_eq!(failures.len(), 1);
         assert!(failures[0].contains("CORRUPT"));
+    }
+
+    #[test]
+    fn l0_snapshot_read_catches_integrity_mismatch() {
+        let (_dir, store) = store();
+        store
+            .create(
+                "snap-read-integrity",
+                "20252026",
+                SnapshotTier::Rosters,
+                None,
+                "2026-04-25",
+            )
+            .unwrap();
+        store
+            .write_file(
+                "snap-read-integrity",
+                &SnapshotTier::Rosters,
+                "ANA.json",
+                br#"{"team":"ANA"}"#,
+            )
+            .unwrap();
+        store.seal("snap-read-integrity").unwrap();
+
+        let path = store.root.join("snap-read-integrity/rosters/ANA.json");
+        std::fs::write(path, br#"{"team":"VGK"}"#).unwrap();
+
+        let result: Result<serde_json::Value, _> =
+            store.read("snap-read-integrity", &SnapshotTier::Rosters, "ANA.json");
+        assert!(matches!(
+            result,
+            Err(SnapshotError::IntegrityViolation { file, .. }) if file == "rosters/ANA.json"
+        ));
+    }
+
+    #[test]
+    fn l0_snapshot_verify_reports_missing_integrity_file() {
+        let (_dir, store) = store();
+        store
+            .create(
+                "snap-missing-file",
+                "20252026",
+                SnapshotTier::Rosters,
+                None,
+                "2026-04-25",
+            )
+            .unwrap();
+        store
+            .write_file(
+                "snap-missing-file",
+                &SnapshotTier::Rosters,
+                "ANA.json",
+                br#"{"team":"ANA"}"#,
+            )
+            .unwrap();
+        store.seal("snap-missing-file").unwrap();
+
+        let path = store.root.join("snap-missing-file/rosters/ANA.json");
+        std::fs::remove_file(path).unwrap();
+
+        let failures = store.verify("snap-missing-file").unwrap();
+        assert_eq!(failures, vec!["MISSING: rosters/ANA.json"]);
     }
 
     #[test]

@@ -33,7 +33,7 @@ pub async fn build_team_template(
     state: &WebState,
     abbrev_raw: &str,
 ) -> Result<TeamTemplate, Response> {
-    let team = match parse_team(&abbrev_raw) {
+    let team = match parse_team(abbrev_raw) {
         Ok(team) => team,
         Err((_abbrev_upper, message)) => {
             return Err((
@@ -367,28 +367,32 @@ async fn build_team_streaks_view(
             "cannot determine home directory".to_string(),
         )
     })?;
-    let store = icelines_fetch::datastore::DataStore::open(&data_root).map_err(|err| {
-        crate::api::json_error_meta(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "team-streaks",
-            serde_json::json!({ "team": team.0 }),
-            serde_json::json!({ "data_root": data_root.display().to_string() }),
-            err.to_string(),
-        )
-    })?;
-    let lines = icelines_fetch::streaks_provider::load_team_game_lines(
-        &store,
-        &team.0,
-        season,
-        season_type,
-    );
-    let (shot_lines, play_by_play_source_loaded) =
-        icelines_fetch::streaks_provider::load_team_shot_lines(
+    let (lines, shot_lines, play_by_play_source_loaded) = if data_root.join("manifest").is_dir() {
+        let store = icelines_fetch::datastore::DataStore::open(&data_root).map_err(|err| {
+            crate::api::json_error_meta(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "team-streaks",
+                serde_json::json!({ "team": team.0 }),
+                serde_json::json!({ "data_root": data_root.display().to_string() }),
+                err.to_string(),
+            )
+        })?;
+        let lines = icelines_fetch::streaks_provider::load_team_game_lines(
             &store,
             &team.0,
             season,
             season_type,
         );
+        let (shot_lines, source_loaded) = icelines_fetch::streaks_provider::load_team_shot_lines(
+            &store,
+            &team.0,
+            season,
+            season_type,
+        );
+        (lines, shot_lines, source_loaded)
+    } else {
+        (Vec::new(), Vec::new(), false)
+    };
     let context = ViewContext::new(ViewWindow::new(season, season_type));
     let view = TeamPlayerStreaksView::from_game_and_shot_lines(
         context,

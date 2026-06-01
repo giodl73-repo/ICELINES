@@ -730,9 +730,137 @@ fn l2_cmd_export_md_leaders_to_stdout() {
         "stdout must start with YAML front-matter"
     );
     assert!(stdout.contains("type: leaderboard"));
+    assert!(stdout.contains("season_type: regular"));
+    assert!(stdout.contains("sources:\n  - kind: roster\n    completeness: complete"));
+    assert!(stdout.contains("result:\n  total:"));
+    assert!(stdout.contains("  returned: 5"));
+    assert!(stdout.contains("  top: 5"));
+    assert!(stdout.contains("  sort: \"pts-pace\""));
+    assert!(stdout.contains("  active_filters: \"-\""));
+    assert!(stdout.contains("## Context\n"));
+    assert!(stdout.contains("- Season type: regular"));
+    assert!(stdout.contains("- Sources:\n  - roster: complete"));
+    assert!(stdout.contains("## Result\n"));
+    assert!(stdout.contains("- Top: 5"));
+    assert!(stdout.contains("- Sort: pts-pace"));
+    assert!(stdout.contains("- Active filters: -"));
     assert!(
         stdout.contains("| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |")
     );
+}
+
+#[test]
+fn l2_cmd_export_md_leaders_empty_warning_matches_query_envelope() {
+    let envelope = run(&[
+        "query",
+        "leaders",
+        "--season",
+        "20242025",
+        "--pos",
+        "G",
+        "--top",
+        "5",
+        "--json-envelope",
+    ]);
+    assert!(
+        envelope.status.success(),
+        "query leaders envelope must exit 0"
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&envelope.stdout).expect("query leaders envelope must emit JSON");
+    assert_eq!(json["meta"]["empty_state"]["kind"], "no_rows");
+    assert_eq!(json["meta"]["warnings"][0]["kind"], "unsupported_filter");
+
+    let out = run(&[
+        "export", "md", "leaders", "--out", "-", "--pos", "G", "--top", "5",
+    ]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "export md leaders --pos G must exit 0, stderr: {stderr}"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("## Warnings\n"));
+    assert!(stdout.contains(&format!(
+        "- {}: {}",
+        json["meta"]["warnings"][0]["kind"].as_str().unwrap(),
+        json["meta"]["warnings"][0]["message"].as_str().unwrap()
+    )));
+    assert!(stdout.contains("## Empty State\n"));
+    assert!(stdout.contains(&format!(
+        "- Kind: {}",
+        json["meta"]["empty_state"]["kind"].as_str().unwrap()
+    )));
+    assert!(stdout.contains(&format!(
+        "- Title: {}",
+        json["meta"]["empty_state"]["title"].as_str().unwrap()
+    )));
+    assert!(stdout.contains(&format!(
+        "- Detail: {}",
+        json["meta"]["empty_state"]["detail"].as_str().unwrap()
+    )));
+    assert!(stdout.contains("- Recovery: Open goalie leaders -> /goalies"));
+}
+
+#[test]
+fn l2_cmd_export_md_leaders_front_matter_empty_warning_matches_query_envelope() {
+    let envelope = run(&[
+        "query",
+        "leaders",
+        "--season",
+        "20242025",
+        "--pos",
+        "G",
+        "--top",
+        "5",
+        "--json-envelope",
+    ]);
+    assert!(
+        envelope.status.success(),
+        "query leaders envelope must exit 0"
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&envelope.stdout).expect("query leaders envelope must emit JSON");
+
+    let out = run(&[
+        "export", "md", "leaders", "--out", "-", "--pos", "G", "--top", "5",
+    ]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "export md leaders --pos G must exit 0, stderr: {stderr}"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let after_open = stdout
+        .strip_prefix("---\n")
+        .expect("stdout starts with YAML front matter");
+    let close = after_open
+        .find("\n---\n")
+        .expect("front matter closes with delimiter");
+    let front_matter = &after_open[..close];
+
+    assert!(front_matter.contains("state:\n  empty_state:"));
+    assert!(front_matter.contains(&format!(
+        "    kind: \"{}\"",
+        json["meta"]["empty_state"]["kind"].as_str().unwrap()
+    )));
+    assert!(front_matter.contains(&format!(
+        "    title: \"{}\"",
+        json["meta"]["empty_state"]["title"].as_str().unwrap()
+    )));
+    assert!(front_matter.contains(&format!(
+        "    detail: \"{}\"",
+        json["meta"]["empty_state"]["detail"].as_str().unwrap()
+    )));
+    assert!(front_matter.contains(&format!(
+        "    - kind: \"{}\"",
+        json["meta"]["warnings"][0]["kind"].as_str().unwrap()
+    )));
+    assert!(front_matter.contains(&format!(
+        "      message: \"{}\"",
+        json["meta"]["warnings"][0]["message"].as_str().unwrap()
+    )));
+    assert!(front_matter.contains("- \"Open goalie leaders -> /goalies\""));
 }
 
 #[test]
@@ -831,12 +959,73 @@ fn l2_cmd_team_season_json_exits_zero_and_emits_view_contract() {
 #[test]
 fn l2_cmd_no_live_flag_is_accepted_globally() {
     // The flag attaches to any subcommand because it's declared global.
-    let out = run(&["--no-live", "schedule", "--days", "1"]);
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &["--no-live", "--no-setup", "schedule", "--days", "1"],
+    );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(!stderr.contains("panicked at"));
     assert!(
         !stderr.contains("error: unexpected argument"),
         "--no-live must be accepted as a global flag, got stderr:\n{stderr}"
+    );
+    assert!(
+        out.status.success(),
+        "--no-live schedule must exit 0 without fetching live schedule data, stderr:\n{stderr}"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("Live feeds are disabled"),
+        "--no-live schedule must surface a disabled-live source-state message, got:\n{stdout}"
+    );
+    assert!(
+        !home.path().join(".icelines").join("data").exists(),
+        "--no-live schedule must not create a data cache"
+    );
+    assert!(
+        !home.path().join(".icelines").join("cache").exists(),
+        "--no-live schedule must not create a live API cache"
+    );
+}
+
+#[test]
+fn l2_cmd_no_live_query_leaders_uses_bundled_data_without_cache_writes() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &[
+            "--no-live",
+            "--no-setup",
+            "query",
+            "leaders",
+            "--top",
+            "1",
+            "--json-envelope",
+        ],
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "--no-live query leaders must use bundled data, stderr:\n{stderr}"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let envelope: serde_json::Value =
+        serde_json::from_str(&stdout).expect("query leaders envelope must emit JSON");
+    assert_eq!(envelope["route"], "leaders");
+    assert!(
+        envelope["data"]
+            .as_array()
+            .is_some_and(|rows| !rows.is_empty()),
+        "bundled leaders query should return at least one row, stdout:\n{stdout}"
+    );
+    assert!(
+        !home.path().join(".icelines").join("data").exists(),
+        "--no-live bundled query must not create a data cache"
+    );
+    assert!(
+        !home.path().join(".icelines").join("cache").exists(),
+        "--no-live bundled query must not create a live API cache"
     );
 }
 
@@ -916,12 +1105,23 @@ fn l2_cmd_tonight_no_panic() {
 
 #[test]
 fn l2_cmd_query_leaders_exits_zero() {
-    let out = run(&["query", "leaders", "--top", "10"]);
+    let out = run(&[
+        "query", "leaders", "--top", "10", "--sort", "goals", "--filter", "goals>=1",
+    ]);
     assert!(out.status.success(), "query leaders must exit 0");
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
         stdout.contains("Rank"),
         "leaders output must contain 'Rank' header"
+    );
+    assert!(
+        stdout.contains("Context: ") && stdout.contains(" regular | source roster complete"),
+        "leaders text output must disclose active context and source state"
+    );
+    assert!(
+        stdout.contains("Result: ")
+            && stdout.contains(" | returned 10 | top 10 | sort goals | active_filters goals>=1"),
+        "leaders text output must disclose query result metadata"
     );
 }
 
@@ -1022,8 +1222,48 @@ fn l2_cmd_query_leaders_json_export() {
         stdout.trim().starts_with('['),
         "JSON output must start with '['"
     );
+    assert!(
+        stdout.contains("\"nhl_id\""),
+        "JSON must contain stable row id"
+    );
+    assert!(
+        stdout.contains("\"total\"")
+            && stdout.contains("\"returned\"")
+            && stdout.contains("\"top\""),
+        "JSON must contain result-state fields"
+    );
     assert!(stdout.contains("\"name\""), "JSON must contain name field");
     assert!(stdout.contains("\"rank\""), "JSON must contain rank field");
+}
+
+#[test]
+fn l2_cmd_query_leaders_json_envelope_empty_warning_export() {
+    let out = run(&[
+        "query",
+        "leaders",
+        "--season",
+        "20242025",
+        "--pos",
+        "G",
+        "--top",
+        "5",
+        "--json-envelope",
+    ]);
+    assert!(
+        out.status.success(),
+        "query leaders --json-envelope must exit 0"
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&out.stdout).expect("query leaders envelope must emit JSON");
+
+    assert_eq!(json["route"], "leaders");
+    assert!(json["data"].as_array().unwrap().is_empty());
+    assert_eq!(json["meta"]["position_filter"], "G");
+    assert_eq!(json["meta"]["total"], 0);
+    assert_eq!(json["meta"]["returned"], 0);
+    assert_eq!(json["meta"]["top"], 5);
+    assert_eq!(json["meta"]["empty_state"]["kind"], "no_rows");
+    assert_eq!(json["meta"]["warnings"][0]["kind"], "unsupported_filter");
 }
 
 #[test]
@@ -1032,14 +1272,17 @@ fn l2_cmd_query_leaders_csv_export() {
     assert!(out.status.success(), "query leaders --csv must exit 0");
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("rank,name,team"),
-        "CSV must have header row"
+        stdout.contains("rank,name,team,pos,gp,ppg,pts_per_82,goals_per_82,pts,goals,assists,nhl_id,season,season_type,source_kind,source_completeness,total,returned,top,sort,active_filters"),
+        "CSV must have header row with identity, context, source-state, and query-result metadata"
     );
 }
 
 #[test]
 fn l2_cmd_query_leaders_json_csv_row_identity_match() {
-    let args = ["query", "leaders", "--sort", "goals", "--top", "5"];
+    let args = [
+        "query", "leaders", "--season", "20242025", "--sort", "goals", "--filter", "goals>=1",
+        "--top", "5",
+    ];
     let json_out = run(&[&args[..], &["--json"][..]].concat());
     assert!(
         json_out.status.success(),
@@ -1061,6 +1304,39 @@ fn l2_cmd_query_leaders_json_csv_row_identity_match() {
         .expect("query leaders --json should emit a JSON array");
 
     let csv_stdout = String::from_utf8_lossy(&csv_out.stdout);
+    let csv_header: Vec<&str> = csv_stdout
+        .lines()
+        .next()
+        .expect("query leaders --csv should emit a header row")
+        .split(',')
+        .collect();
+    assert_eq!(
+        csv_header,
+        vec![
+            "rank",
+            "name",
+            "team",
+            "pos",
+            "gp",
+            "ppg",
+            "pts_per_82",
+            "goals_per_82",
+            "pts",
+            "goals",
+            "assists",
+            "nhl_id",
+            "season",
+            "season_type",
+            "source_kind",
+            "source_completeness",
+            "total",
+            "returned",
+            "top",
+            "sort",
+            "active_filters"
+        ],
+        "CSV header should expose row identity, active context, source-state, and query-result columns"
+    );
     let csv_rows: Vec<Vec<&str>> = csv_stdout
         .lines()
         .skip(1)
@@ -1075,15 +1351,224 @@ fn l2_cmd_query_leaders_json_csv_row_identity_match() {
     );
     for (json_row, csv_row) in json_rows.iter().zip(csv_rows.iter()) {
         assert!(
-            csv_row.len() >= 5,
-            "CSV row should carry rank,name,team,pos,gp: {csv_row:?}"
+            csv_row.len() >= 21,
+            "CSV row should carry rank,name,team,pos,gp,identity,context,source-state,query-result metadata: {csv_row:?}"
         );
+        let json_nhl_id = json_row["nhl_id"]
+            .as_u64()
+            .expect("JSON row should expose shared ViewModel row identity");
         assert_eq!(json_row["rank"].to_string(), csv_row[0]);
         assert_eq!(json_row["name"].as_str(), Some(csv_row[1]));
         assert_eq!(json_row["team"].as_str(), Some(csv_row[2]));
+        assert_eq!(json_row["team_abbrev"].as_str(), Some(csv_row[2]));
         assert_eq!(json_row["pos"].as_str(), Some(csv_row[3]));
         assert_eq!(json_row["gp"].to_string(), csv_row[4]);
+        assert_eq!(json_nhl_id.to_string(), csv_row[11]);
+        assert_eq!(csv_row[12], "20242025");
+        assert_eq!(csv_row[13], "regular");
+        assert_eq!(csv_row[14], "roster");
+        assert_eq!(csv_row[15], "complete");
+        assert_eq!(json_row["total"].to_string(), csv_row[16]);
+        assert_eq!(json_row["returned"].to_string(), csv_row[17]);
+        assert_eq!(json_row["top"].to_string(), csv_row[18]);
+        assert_eq!(csv_row[19], "goals");
+        assert_eq!(json_row["active_filters"][0].as_str(), Some(csv_row[20]));
+        assert_eq!(csv_row[20], "goals>=1");
     }
+}
+
+#[test]
+fn l2_cmd_query_leaders_text_active_filter_result_state_matches_json_envelope() {
+    let args = [
+        "query",
+        "leaders",
+        "--season",
+        "20242025",
+        "--sort",
+        "goals",
+        "--filter",
+        "country=CAN",
+        "--top",
+        "5",
+    ];
+    let envelope_out = run(&[&args[..], &["--json-envelope"][..]].concat());
+    assert!(
+        envelope_out.status.success(),
+        "query leaders --json-envelope must exit 0, stderr: {}",
+        String::from_utf8_lossy(&envelope_out.stderr)
+    );
+    let text_out = run(&args);
+    assert!(
+        text_out.status.success(),
+        "query leaders text must exit 0, stderr: {}",
+        String::from_utf8_lossy(&text_out.stderr)
+    );
+
+    let envelope: serde_json::Value = serde_json::from_slice(&envelope_out.stdout)
+        .expect("query leaders envelope must emit valid JSON");
+    let rows = envelope["data"]
+        .as_array()
+        .expect("query leaders envelope data must be rows");
+    assert!(!rows.is_empty(), "filtered envelope should retain rows");
+    let meta = &envelope["meta"];
+    assert_eq!(meta["active_filters"], serde_json::json!(["country=CAN"]));
+
+    let text = String::from_utf8_lossy(&text_out.stdout);
+    assert!(text.contains(&format!(
+        "Result: total {} | returned {} | top {} | sort {} | active_filters country=CAN",
+        meta["total"].as_u64().expect("numeric total"),
+        meta["returned"].as_u64().expect("numeric returned"),
+        meta["top"].as_u64().expect("numeric top"),
+        meta["sort"].as_str().expect("sort string"),
+    )));
+    for row in rows {
+        let name = row["name"].as_str().expect("row name");
+        assert!(
+            text.contains(name),
+            "default text output should include filtered JSON row {name:?}; got:\n{text}"
+        );
+    }
+    assert!(
+        !text.contains("Leon Draisaitl"),
+        "default text output should exclude the unfiltered non-CAN goals leader; got:\n{text}"
+    );
+}
+
+#[test]
+fn l2_cmd_export_md_leaders_active_filter_result_state_matches_query_envelope() {
+    let envelope_out = run(&[
+        "query",
+        "leaders",
+        "--season",
+        "20242025",
+        "--filter",
+        "country=CAN",
+        "--top",
+        "5",
+        "--json-envelope",
+    ]);
+    assert!(
+        envelope_out.status.success(),
+        "query leaders --json-envelope must exit 0, stderr: {}",
+        String::from_utf8_lossy(&envelope_out.stderr)
+    );
+    let export_out = run(&[
+        "export",
+        "md",
+        "leaders",
+        "--out",
+        "-",
+        "--season",
+        "20242025",
+        "--filter",
+        "country=CAN",
+        "--top",
+        "5",
+    ]);
+    assert!(
+        export_out.status.success(),
+        "export md leaders must exit 0, stderr: {}",
+        String::from_utf8_lossy(&export_out.stderr)
+    );
+
+    let envelope: serde_json::Value = serde_json::from_slice(&envelope_out.stdout)
+        .expect("query leaders envelope must emit valid JSON");
+    let rows = envelope["data"]
+        .as_array()
+        .expect("query leaders envelope data must be rows");
+    assert!(!rows.is_empty(), "filtered envelope should retain rows");
+    let meta = &envelope["meta"];
+    assert_eq!(meta["active_filters"], serde_json::json!(["country=CAN"]));
+
+    let report = String::from_utf8_lossy(&export_out.stdout);
+    assert!(report.contains("result:\n  total:"));
+    assert!(report.contains("  active_filters: \"country=CAN\""));
+    assert!(report.contains(&format!(
+        "- Total: {}",
+        meta["total"].as_u64().expect("numeric total")
+    )));
+    assert!(report.contains(&format!(
+        "- Returned: {}",
+        meta["returned"].as_u64().expect("numeric returned")
+    )));
+    assert!(report.contains(&format!(
+        "- Top: {}",
+        meta["top"].as_u64().expect("numeric top")
+    )));
+    assert!(report.contains(&format!(
+        "- Sort: {}",
+        meta["sort"].as_str().expect("sort string")
+    )));
+    assert!(report.contains("- Active filters: country=CAN"));
+    for row in rows {
+        let name = row["name"].as_str().expect("row name");
+        assert!(
+            report.contains(name),
+            "Markdown export should include filtered JSON row {name:?}; got:\n{report}"
+        );
+    }
+    assert!(
+        !report.contains("Leon Draisaitl"),
+        "Markdown export should exclude the unfiltered non-CAN goals leader; got:\n{report}"
+    );
+}
+
+#[test]
+fn l2_cmd_tui_stats_active_filter_result_state_matches_query_envelope() {
+    let envelope_out = run(&[
+        "query",
+        "leaders",
+        "--season",
+        "20242025",
+        "--sort",
+        "goals",
+        "--filter",
+        "country=CAN",
+        "--top",
+        "20",
+        "--json-envelope",
+    ]);
+    assert!(
+        envelope_out.status.success(),
+        "query leaders --json-envelope must exit 0, stderr: {}",
+        String::from_utf8_lossy(&envelope_out.stderr)
+    );
+    let tui_out = run(&["tui", "--render-leaders-active-filter-snapshot"]);
+    assert!(
+        tui_out.status.success(),
+        "TUI leaders snapshot must exit 0, stderr: {}",
+        String::from_utf8_lossy(&tui_out.stderr)
+    );
+
+    let envelope: serde_json::Value = serde_json::from_slice(&envelope_out.stdout)
+        .expect("query leaders envelope must emit valid JSON");
+    let rows = envelope["data"]
+        .as_array()
+        .expect("query leaders envelope data must be rows");
+    assert!(!rows.is_empty(), "filtered envelope should retain rows");
+    let meta = &envelope["meta"];
+    assert_eq!(meta["active_filters"], serde_json::json!(["country=CAN"]));
+
+    let text = String::from_utf8_lossy(&tui_out.stdout);
+    assert!(text.contains(&format!(
+        "Result: total {} | returned {} | top {} | sort {} | active_filters country=CAN",
+        meta["total"].as_u64().expect("numeric total"),
+        meta["returned"].as_u64().expect("numeric returned"),
+        meta["top"].as_u64().expect("numeric top"),
+        meta["sort"].as_str().expect("sort string"),
+    )));
+    for row in rows {
+        let name = row["name"].as_str().expect("row name");
+        let rendered_name = name.chars().take(22).collect::<String>();
+        assert!(
+            text.contains(&rendered_name),
+            "TUI Stats snapshot should include filtered JSON row {name:?}; got:\n{text}"
+        );
+    }
+    assert!(
+        !text.contains("Leon Draisaitl"),
+        "TUI Stats snapshot should exclude the unfiltered non-CAN goals leader; got:\n{text}"
+    );
 }
 
 #[test]
@@ -4255,6 +4740,145 @@ fn l2_foster3_fetch_boxscore_invalid_date_clean_error() {
     assert!(
         stderr.contains("invalid date") && stderr.contains("YYYY-MM-DD"),
         "validator error must surface, stderr: {stderr}"
+    );
+}
+
+#[test]
+fn l2_wp005_fetch_boxscore_for_favorites_no_live_refuses_before_cache_writes() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &[
+            "--no-live",
+            "--no-setup",
+            "fetch",
+            "boxscore",
+            "--date",
+            "2026-01-15",
+            "--for-favorites",
+            "--dry-run",
+        ],
+    );
+    assert!(!out.status.success(), "--no-live fetch must refuse");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("live feeds are disabled") && stderr.contains("fetch boxscore"),
+        "must name disabled live source and command, stderr: {stderr}"
+    );
+    assert!(
+        !home.path().join(".icelines").join("data").exists(),
+        "--no-live refusal must not create data cache"
+    );
+    assert!(
+        !home.path().join(".icelines").join("cache").exists(),
+        "--no-live refusal must not create query cache"
+    );
+}
+
+#[test]
+fn l2_wp005_fetch_play_by_play_no_live_refuses_before_cache_writes() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &[
+            "--no-live",
+            "--no-setup",
+            "fetch",
+            "play-by-play",
+            "--date",
+            "2026-01-15",
+            "--dry-run",
+        ],
+    );
+    assert!(!out.status.success(), "--no-live fetch must refuse");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("live feeds are disabled") && stderr.contains("fetch play-by-play"),
+        "must name disabled live source and command, stderr: {stderr}"
+    );
+    assert!(
+        !home.path().join(".icelines").join("data").exists(),
+        "--no-live refusal must not create data cache"
+    );
+    assert!(
+        !home.path().join(".icelines").join("cache").exists(),
+        "--no-live refusal must not create query cache"
+    );
+}
+
+#[test]
+fn l2_wp005_data_fetch_snapshot_command_transcript_offline_boundaries() {
+    let home = tempfile::tempdir().expect("tempdir");
+
+    let lockout = run_isolated(
+        home.path(),
+        &[
+            "--no-live",
+            "--no-setup",
+            "data",
+            "install",
+            "--season",
+            "20042005",
+        ],
+    );
+    assert!(
+        lockout.status.success(),
+        "lockout install transcript should exit 0, stderr: {}",
+        String::from_utf8_lossy(&lockout.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&lockout.stdout);
+    assert!(
+        stdout.contains("lockout") && stdout.contains("no data exists"),
+        "lockout transcript must explain source state, stdout: {stdout}"
+    );
+    assert!(
+        !home.path().join(".icelines").exists(),
+        "lockout no-op must not create local data directories"
+    );
+
+    let status = run_isolated(home.path(), &["--no-live", "--no-setup", "data-status"]);
+    assert!(
+        status.status.success(),
+        "data-status transcript should exit 0, stderr: {}",
+        String::from_utf8_lossy(&status.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&status.stdout);
+    assert!(
+        stdout.contains("Manifest is empty") && stdout.contains("icelines setup"),
+        "data-status transcript must include empty-state remediation, stdout: {stdout}"
+    );
+
+    let sync = run_isolated(
+        home.path(),
+        &["--no-live", "--no-setup", "fetch", "sync", "--dry-run"],
+    );
+    assert!(
+        sync.status.success(),
+        "fetch sync dry-run transcript should exit 0, stderr: {}",
+        String::from_utf8_lossy(&sync.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&sync.stdout);
+    assert!(
+        stdout.contains("Nothing stale"),
+        "fetch sync transcript must report empty local manifest, stdout: {stdout}"
+    );
+
+    let verify = run_isolated(
+        home.path(),
+        &["--no-live", "--no-setup", "snapshot", "verify"],
+    );
+    assert!(
+        !verify.status.success(),
+        "snapshot verify without active snapshot must refuse"
+    );
+    let stderr = String::from_utf8_lossy(&verify.stderr);
+    assert!(
+        stderr.contains("no active snapshot") && stderr.contains("specify a name"),
+        "snapshot verify transcript must include remediation, stderr: {stderr}"
+    );
+    assert!(
+        !stderr.contains("panicked"),
+        "snapshot verify transcript must not panic, stderr: {stderr}"
     );
 }
 

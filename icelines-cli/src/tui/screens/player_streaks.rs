@@ -148,14 +148,15 @@ pub fn render_by_id(f: &mut Frame, app: &App, area: Rect, pid: PlayerId) {
         )));
     } else {
         items.push(ListItem::new(Line::styled(
-            " metric        current   longest   longest window",
+            " metric        current   status     longest   longest window",
             dim,
         )));
         for row in &view.rows {
             items.push(ListItem::new(Line::from(format!(
-                " {:<12} {:>7} {:>9}   {}",
+                " {:<12} {:>7}   {:<8} {:>9}   {}",
                 row.metric,
                 row.current,
+                row.current_status,
                 row.longest,
                 date_window(
                     row.longest_start_date.as_deref(),

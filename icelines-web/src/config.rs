@@ -28,6 +28,7 @@
 //! active-season slice.
 
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 /// Active-season slice the web layer needs at render time.
 ///
@@ -45,6 +46,8 @@ pub struct WebConfig {
     /// fence). Pre-formatted by the constructor so handlers don't
     /// hold the `Config` lock for a string format.
     pub active_label: String,
+    /// Durable named layout store passed in by the CLI boot layer.
+    pub layout_store_path: PathBuf,
 }
 
 impl Default for WebConfig {
@@ -58,6 +61,7 @@ impl Default for WebConfig {
             active_label: format_label(&active_season, &active_season_type),
             active_season,
             active_season_type,
+            layout_store_path: default_layout_store_path(),
         }
     }
 }
@@ -70,7 +74,13 @@ impl WebConfig {
             active_label: format_label(&active_season, &active_season_type),
             active_season,
             active_season_type,
+            layout_store_path: default_layout_store_path(),
         }
+    }
+
+    pub fn with_layout_store_path(mut self, path: PathBuf) -> Self {
+        self.layout_store_path = path;
+        self
     }
 }
 
@@ -81,6 +91,7 @@ fn format_label(season: &str, season_type: &str) -> String {
     if season.len() != 8 {
         return format!("{season} · {season_type}");
     }
+
     let yy_start = &season[2..4];
     let yy_end = &season[6..8];
     let pretty_type = match season_type {
@@ -89,6 +100,15 @@ fn format_label(season: &str, season_type: &str) -> String {
         other => other,
     };
     format!("{yy_start}-{yy_end} · {pretty_type}")
+}
+
+fn default_layout_store_path() -> PathBuf {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir)
+        .join(".icelines")
+        .join("layouts.json")
 }
 
 #[cfg(test)]

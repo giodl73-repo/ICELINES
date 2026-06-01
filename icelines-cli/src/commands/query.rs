@@ -7,6 +7,7 @@
 
 use crate::config::Config;
 use anyhow::{bail, Context};
+use icelines_core::view_model::context::RecoveryActionKind;
 use icelines_core::{
     filter::PlayerFilter,
     model::{Position, Season},
@@ -15,9 +16,10 @@ use icelines_core::{
     season_stats::SeasonType,
     stats_catalog::{StatId, StatUnit},
     stats_repository::PlayerView,
-    CompareView, LeaderKind, LeadersView, MetricCell, MetricUnit, MetricValue, PlayerCardView,
-    SemanticToken, SimilarPlayersView, SortDirection, SortKey, SortState, StatKey, ValuePrecision,
-    ViewContext, ViewWindow,
+    CompareView, Completeness, EmptyKind, EmptyState, LeaderKind, LeadersView, MetricCell,
+    MetricUnit, MetricValue, PlayerCardView, RecoveryAction, SemanticToken, SimilarPlayersView,
+    SortDirection, SortKey, SortState, SourceKind, SourceState, StatKey, ValuePrecision,
+    ViewContext, ViewWarning, ViewWindow, WarningKind,
 };
 use icelines_fetch::{aggregate, career::load_career, snapshot::SnapshotStore};
 use icelines_query::{extract_bio, BioConstraints};
@@ -37,7 +39,7 @@ use icelines_query::{extract_bio, BioConstraints};
 /// run_compare. Each call site applies the new_plans via
 /// Constraint::matches with an IcelinesProvider after the
 /// legacy filter+bio passes.
-fn partition_filter_dispatch(
+pub(crate) fn partition_filter_dispatch(
     raw_residue: &[String],
 ) -> anyhow::Result<(Vec<icelines_query::QueryPlan>, Vec<String>)> {
     let mut plans: Vec<icelines_query::QueryPlan> = Vec::new();
@@ -71,7 +73,7 @@ fn partition_filter_dispatch(
 /// Build an EvalCtx for applying new-pipeline plans against
 /// `PlayerView` retained sets in CLI handlers. Reads HOME for
 /// the IcelinesProvider's data root, uses SystemClock.
-fn build_cli_eval_ctx(
+pub(crate) fn build_cli_eval_ctx(
     season: u32,
 ) -> anyhow::Result<(
     icelines_fetch::query_provider::IcelinesProvider,
@@ -88,7 +90,7 @@ fn build_cli_eval_ctx(
     Ok((provider, clock))
 }
 
-fn extract_bio_for_cli(raw_filters: &[String]) -> (BioConstraints, Vec<String>) {
+pub(crate) fn extract_bio_for_cli(raw_filters: &[String]) -> (BioConstraints, Vec<String>) {
     let (atoms, residue) = extract_bio(raw_filters);
     let mut bc = BioConstraints::default();
     for atom in &atoms {
@@ -570,6 +572,7 @@ pub struct LeadersArgs {
     pub rate: bool,
     pub percentiles: bool,
     pub json: bool,
+    pub json_envelope: bool,
     pub csv: bool,
     /// Phase Lindsay L.3.1 — generic stat filters. Each string is parsed
     /// via `icelines_core::stats_catalog::parse_filter` and added to
@@ -967,7 +970,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         });
         let total_matched = matched.len();
         let results: Vec<PlayerView<'_>> = matched.iter().copied().take(args.top).collect();
-        let leaders_view = leaders_view_from_results(
+        let mut leaders_view = leaders_view_from_results(
             &results,
             metric,
             args.rate,
@@ -976,10 +979,31 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
             season_type,
         );
 
-        if args.json {
-            println!("{}", leaders_json(&leaders_view));
+        apply_leaders_warning_state(&mut leaders_view, args.pos.as_deref());
+
+        if args.json_envelope {
+            println!(
+                "{}",
+                leaders_json_envelope(
+                    &leaders_view,
+                    total_matched,
+                    args.top,
+                    &args.filters,
+                    args.pos.as_deref(),
+                    &args.sort
+                )
+            );
             return Ok(());
         }
+        if args.json {
+            println!(
+                "{}",
+                leaders_json(&leaders_view, total_matched, args.top, &args.filters)
+            );
+            return Ok(());
+        }
+        println!("{}", leaders_context_line(&leaders_view));
+        println!();
         print_improvement_table(&results, &imp_map, args.top, total_matched, args.seasons);
         return Ok(());
     }
@@ -1026,7 +1050,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     }
     let total_matched = matched.len();
     let results: Vec<PlayerView<'_>> = matched.into_iter().take(args.top).collect();
-    let leaders_view = leaders_view_from_results(
+    let mut leaders_view = leaders_view_from_results(
         &results,
         metric,
         args.rate,
@@ -1035,12 +1059,37 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         season_type,
     );
 
+    apply_leaders_warning_state(&mut leaders_view, args.pos.as_deref());
+
+    if args.json_envelope {
+        println!(
+            "{}",
+            leaders_json_envelope(
+                &leaders_view,
+                total_matched,
+                args.top,
+                &args.filters,
+                args.pos.as_deref(),
+                &args.sort
+            )
+        );
+        return Ok(());
+    }
     if args.json {
-        println!("{}", leaders_json(&leaders_view));
+        println!(
+            "{}",
+            leaders_json(&leaders_view, total_matched, args.top, &args.filters)
+        );
         return Ok(());
     }
     if args.csv {
-        leaders_csv(&leaders_view);
+        leaders_csv(
+            &leaders_view,
+            total_matched,
+            args.top,
+            &args.sort,
+            &args.filters,
+        );
         return Ok(());
     }
 
@@ -1053,7 +1102,14 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         vec![None; results.len()]
     };
 
-    leaders_table(&leaders_view, &percentiles, args.top, total_matched);
+    leaders_table(
+        &leaders_view,
+        &percentiles,
+        args.top,
+        total_matched,
+        &args.sort,
+        &args.filters,
+    );
     Ok(())
 }
 
@@ -1067,7 +1123,7 @@ fn leaders_view_from_results(
 ) -> LeadersView {
     let col = leader_column_label(metric, rate, seasons);
     let mut view = LeadersView::from_player_views_with_primary(
-        ViewContext::new(ViewWindow::new(season, season_type)),
+        leaders_view_context(season, season_type),
         LeaderKind::Skaters,
         views.iter().copied(),
         |v| MetricCell {
@@ -1087,6 +1143,47 @@ fn leaders_view_from_results(
     view
 }
 
+fn leaders_view_context(season: Season, season_type: SeasonType) -> ViewContext {
+    let mut context = ViewContext::new(ViewWindow::new(season, season_type));
+    context
+        .source_state
+        .push(SourceState::complete(SourceKind::Roster));
+    context
+}
+
+fn apply_leaders_warning_state(view: &mut LeadersView, pos: Option<&str>) {
+    if !matches!(
+        pos.map(|value| value.trim().to_ascii_uppercase()),
+        Some(value) if value == "G"
+    ) {
+        return;
+    }
+
+    let recovery = vec![RecoveryAction {
+        label: "Open goalie leaders".to_owned(),
+        action: RecoveryActionKind::OpenRoute {
+            route: "goalies".to_owned(),
+        },
+    }];
+    view.warnings.push(ViewWarning {
+        kind: WarningKind::UnsupportedFilter,
+        source: None,
+        message: "The leaders surface is skater-only; use goalies for goalie leaders.".to_owned(),
+        recovery: recovery.clone(),
+    });
+    if view.rows.is_empty() {
+        view.empty_state = Some(EmptyState {
+            kind: EmptyKind::NoRows,
+            title: "No skater leaders".to_owned(),
+            detail: Some(
+                "The leaders surface is skater-only; use the goalies surface for goalie leaders."
+                    .to_owned(),
+            ),
+            recovery,
+        });
+    }
+}
+
 fn leader_column_label(metric: SortDispatch, rate: bool, seasons: u8) -> String {
     if seasons > 1 {
         format!("{} ({}yr)", metric.header(rate), seasons)
@@ -1095,7 +1192,14 @@ fn leader_column_label(metric: SortDispatch, rate: bool, seasons: u8) -> String 
     }
 }
 
-fn leaders_table(view: &LeadersView, percentiles: &[Option<u8>], top: usize, total: usize) {
+fn leaders_table(
+    view: &LeadersView,
+    percentiles: &[Option<u8>],
+    top: usize,
+    total: usize,
+    sort: &str,
+    active_filters: &[String],
+) {
     let col = view
         .sort
         .as_ref()
@@ -1103,6 +1207,21 @@ fn leaders_table(view: &LeadersView, percentiles: &[Option<u8>], top: usize, tot
         .or_else(|| view.rows.first().map(|row| row.primary.label.as_str()))
         .unwrap_or("Value");
     let show_pct = percentiles.iter().any(|p| p.is_some());
+
+    println!("{}", leaders_context_line(view));
+    println!(
+        "{}",
+        leaders_result_line(view, total, top, sort, active_filters)
+    );
+    println!();
+
+    let warning_empty_lines = leaders_warning_empty_lines(view);
+    if !warning_empty_lines.is_empty() {
+        for line in warning_empty_lines {
+            println!("{line}");
+        }
+        println!();
+    }
 
     if show_pct {
         println!(
@@ -1146,6 +1265,169 @@ fn leaders_table(view: &LeadersView, percentiles: &[Option<u8>], top: usize, tot
         }
     }
     println!("\n{total} matched, showing {}.", view.rows.len().min(top));
+}
+
+fn leaders_context_line(view: &LeadersView) -> String {
+    let window = view.context.window;
+    let (source_kind, source_completeness) = leaders_source_state_labels(view);
+    format!(
+        "Context: {} {} | source {} {}",
+        window.season.0,
+        window.season_type.label(),
+        source_kind,
+        source_completeness
+    )
+}
+
+fn leaders_result_line(
+    view: &LeadersView,
+    total: usize,
+    top: usize,
+    sort: &str,
+    active_filters: &[String],
+) -> String {
+    format!(
+        "Result: total {} | returned {} | top {} | sort {} | active_filters {}",
+        total,
+        view.rows.len(),
+        top,
+        sort,
+        leaders_active_filters_label(active_filters)
+    )
+}
+
+fn leaders_warning_empty_lines(view: &LeadersView) -> Vec<String> {
+    let mut lines = Vec::new();
+    for warning in &view.warnings {
+        lines.push(format!(
+            "Warning: {} | {}",
+            warning_kind_label(warning.kind),
+            warning.message
+        ));
+    }
+    if let Some(empty) = &view.empty_state {
+        lines.push(format!(
+            "Empty: {} | {}",
+            empty_kind_label(empty.kind),
+            empty.title
+        ));
+        if let Some(detail) = &empty.detail {
+            lines.push(format!("Detail: {detail}"));
+        }
+        for recovery in &empty.recovery {
+            lines.push(format!("Recovery: {}", recovery_action_label(recovery)));
+        }
+    } else {
+        for warning in &view.warnings {
+            for recovery in &warning.recovery {
+                lines.push(format!("Recovery: {}", recovery_action_label(recovery)));
+            }
+        }
+    }
+    lines
+}
+
+fn empty_kind_label(kind: EmptyKind) -> &'static str {
+    match kind {
+        EmptyKind::NoRows => "no_rows",
+        EmptyKind::NoMatch => "no_match",
+        EmptyKind::MissingSource => "missing_source",
+        EmptyKind::UnsupportedWindow => "unsupported_window",
+        EmptyKind::BadFilter => "bad_filter",
+        EmptyKind::NotFound => "not_found",
+    }
+}
+
+fn warning_kind_label(kind: WarningKind) -> &'static str {
+    match kind {
+        WarningKind::PartialSource => "partial_source",
+        WarningKind::StaleSource => "stale_source",
+        WarningKind::MissingSource => "missing_source",
+        WarningKind::EstimatedDeployment => "estimated_deployment",
+        WarningKind::DuplicateName => "duplicate_name",
+        WarningKind::UnsupportedFilter => "unsupported_filter",
+        WarningKind::RendererProjection => "renderer_projection",
+    }
+}
+
+fn recovery_action_label(recovery: &RecoveryAction) -> String {
+    match &recovery.action {
+        RecoveryActionKind::ClearFilter { key } => match key {
+            Some(key) => format!("{} -> clear filter {}", recovery.label, key.0),
+            None => format!("{} -> clear filters", recovery.label),
+        },
+        RecoveryActionKind::ChangeWindow { window } => format!(
+            "{} -> {} {}",
+            recovery.label,
+            window.season.0,
+            window.season_type.label()
+        ),
+        RecoveryActionKind::InstallData { source } => {
+            format!(
+                "{} -> install {}",
+                recovery.label,
+                source_kind_label(*source)
+            )
+        }
+        RecoveryActionKind::RefreshSource { source } => {
+            format!(
+                "{} -> refresh {}",
+                recovery.label,
+                source_kind_label(*source)
+            )
+        }
+        RecoveryActionKind::OpenRoute { route } => {
+            format!("{} -> /{}", recovery.label, route.trim_start_matches('/'))
+        }
+    }
+}
+
+fn leaders_source_state_labels(view: &LeadersView) -> (&'static str, &'static str) {
+    view.context
+        .source_state
+        .first()
+        .map(|state| {
+            (
+                source_kind_label(state.source),
+                completeness_label(state.state),
+            )
+        })
+        .unwrap_or(("unknown", "unavailable"))
+}
+
+fn source_kind_label(source: SourceKind) -> &'static str {
+    match source {
+        SourceKind::Roster => "roster",
+        SourceKind::Schedule => "schedule",
+        SourceKind::Scores => "scores",
+        SourceKind::Playoffs => "playoffs",
+        SourceKind::Favorites => "favorites",
+        SourceKind::Watchlist => "watchlist",
+        SourceKind::Career => "career",
+        SourceKind::Home => "home",
+        SourceKind::Docs => "docs",
+        SourceKind::GameLog => "game-log",
+        SourceKind::Boxscore => "boxscore",
+        SourceKind::PlayByPlay => "play-by-play",
+        SourceKind::Shifts => "shifts",
+        SourceKind::Transactions => "transactions",
+        SourceKind::Contracts => "contracts",
+        SourceKind::Standings => "standings",
+        SourceKind::FantasyImport => "fantasy-import",
+        SourceKind::Snapshot => "snapshot",
+        SourceKind::Bundle => "bundle",
+        SourceKind::Cache => "cache",
+        SourceKind::Unknown => "unknown",
+    }
+}
+
+fn completeness_label(completeness: Completeness) -> &'static str {
+    match completeness {
+        Completeness::Complete => "complete",
+        Completeness::Partial => "partial",
+        Completeness::Stale => "stale",
+        Completeness::Unavailable => "unavailable",
+    }
 }
 
 fn leader_primary_text(row: &icelines_core::LeaderRow) -> String {
@@ -1248,15 +1530,33 @@ fn print_improvement_table(
     println!("\n{total} matched, showing {}.", views.len().min(top));
 }
 
-fn leaders_json(view: &LeadersView) -> String {
-    let rows: Vec<serde_json::Value> = view
-        .rows
+fn leaders_json(view: &LeadersView, total: usize, top: usize, active_filters: &[String]) -> String {
+    serde_json::to_string_pretty(&leaders_json_rows(view, total, top, active_filters))
+        .unwrap_or_default()
+}
+
+fn leaders_json_rows(
+    view: &LeadersView,
+    total: usize,
+    top: usize,
+    active_filters: &[String],
+) -> Vec<serde_json::Value> {
+    let returned = view.rows.len();
+    view.rows
         .iter()
         .map(|row| {
             serde_json::json!({
                 "rank": row.rank,
+                "total": total,
+                "returned": returned,
+                "top": top,
+                "active_filters": active_filters,
+                "season": view.context.window.season.0,
+                "season_type": view.context.window.season_type.label(),
+                "nhl_id": row.player_id.0,
                 "name": row.display_name,
                 "team": leader_team(row),
+                "team_abbrev": leader_team(row),
                 "pos": row.position.abbreviation(),
                 "gp": leader_metric_i64(row, "gp").unwrap_or_default(),
                 "ppg": leader_metric_f64(row, "ppg").map(round2),
@@ -1265,17 +1565,62 @@ fn leaders_json(view: &LeadersView) -> String {
                 "season_pts": leader_metric_i64(row, "points").unwrap_or_default(),
                 "season_goals": leader_metric_i64(row, "goals").unwrap_or_default(),
                 "season_assists": leader_metric_i64(row, "assists").unwrap_or_default(),
+                "source_completeness": &view.context.completeness,
+                "source_state": &view.context.source_state,
             })
         })
-        .collect();
-    serde_json::to_string_pretty(&rows).unwrap_or_default()
+        .collect()
 }
 
-fn leaders_csv(view: &LeadersView) {
-    println!("rank,name,team,pos,gp,ppg,pts_per_82,goals_per_82,pts,goals,assists");
+fn leaders_json_envelope(
+    view: &LeadersView,
+    total: usize,
+    top: usize,
+    active_filters: &[String],
+    pos: Option<&str>,
+    sort: &str,
+) -> String {
+    let position_filter = pos
+        .map(|value| value.trim().to_ascii_uppercase())
+        .filter(|value| !value.is_empty());
+    let meta = serde_json::json!({
+        "season": view.context.window.season.0.to_string(),
+        "season_type": view.context.window.season_type.label(),
+        "sort": sort,
+        "position_filter": position_filter,
+        "active_filters": active_filters,
+        "completeness": &view.context.completeness,
+        "source_state": &view.context.source_state,
+        "total": total,
+        "returned": view.rows.len(),
+        "top": top,
+        "empty_state": &view.empty_state,
+        "warnings": &view.warnings,
+    });
+    let envelope = serde_json::json!({
+        "schema_version": 1,
+        "route": "leaders",
+        "data": leaders_json_rows(view, total, top, active_filters),
+        "meta": meta,
+    });
+    serde_json::to_string_pretty(&envelope).unwrap_or_default()
+}
+
+fn leaders_csv(
+    view: &LeadersView,
+    total: usize,
+    top: usize,
+    sort: &str,
+    active_filters: &[String],
+) {
+    println!("{}", leaders_csv_header());
+    let window = view.context.window;
+    let (source_kind, source_completeness) = leaders_source_state_labels(view);
+    let returned = view.rows.len();
+    let active_filters = leaders_active_filters_label(active_filters);
     for row in &view.rows {
         println!(
-            "{},{},{},{},{},{:.3},{:.1},{:.1},{},{},{}",
+            "{},{},{},{},{},{:.3},{:.1},{:.1},{},{},{},{},{},{},{},{},{},{},{},{},{}",
             row.rank,
             row.display_name,
             leader_team(row),
@@ -1287,7 +1632,29 @@ fn leaders_csv(view: &LeadersView) {
             leader_metric_i64(row, "points").unwrap_or_default(),
             leader_metric_i64(row, "goals").unwrap_or_default(),
             leader_metric_i64(row, "assists").unwrap_or_default(),
+            row.player_id.0,
+            window.season.0,
+            window.season_type.label(),
+            source_kind,
+            source_completeness,
+            total,
+            returned,
+            top,
+            sort,
+            active_filters,
         );
+    }
+}
+
+fn leaders_csv_header() -> &'static str {
+    "rank,name,team,pos,gp,ppg,pts_per_82,goals_per_82,pts,goals,assists,nhl_id,season,season_type,source_kind,source_completeness,total,returned,top,sort,active_filters"
+}
+
+fn leaders_active_filters_label(active_filters: &[String]) -> String {
+    if active_filters.is_empty() {
+        "-".to_owned()
+    } else {
+        active_filters.join(";")
     }
 }
 
@@ -2856,6 +3223,59 @@ mod tests {
             shutouts: None,
             time_on_ice_sec: None,
         }
+    }
+
+    #[test]
+    fn l0_query_leaders_context_line_reports_context_and_source_state() {
+        let view = LeadersView::new(
+            leaders_view_context(Season(20242025), SeasonType::Regular),
+            LeaderKind::Skaters,
+        );
+
+        assert_eq!(
+            leaders_context_line(&view),
+            "Context: 20242025 regular | source roster complete"
+        );
+    }
+
+    #[test]
+    fn l0_query_leaders_result_line_reports_query_result_metadata() {
+        let view = LeadersView::new(
+            leaders_view_context(Season(20242025), SeasonType::Regular),
+            LeaderKind::Skaters,
+        );
+
+        assert_eq!(
+            leaders_result_line(&view, 12, 5, "goals", &["goals>=1".to_owned()]),
+            "Result: total 12 | returned 0 | top 5 | sort goals | active_filters goals>=1"
+        );
+    }
+
+    #[test]
+    fn l0_query_leaders_warning_empty_lines_report_recovery() {
+        let mut view = LeadersView::new(
+            leaders_view_context(Season(20242025), SeasonType::Regular),
+            LeaderKind::Skaters,
+        );
+        apply_leaders_warning_state(&mut view, Some("G"));
+
+        assert_eq!(
+            leaders_warning_empty_lines(&view),
+            vec![
+                "Warning: unsupported_filter | The leaders surface is skater-only; use goalies for goalie leaders.".to_owned(),
+                "Empty: no_rows | No skater leaders".to_owned(),
+                "Detail: The leaders surface is skater-only; use the goalies surface for goalie leaders.".to_owned(),
+                "Recovery: Open goalie leaders -> /goalies".to_owned(),
+            ]
+        );
+    }
+
+    #[test]
+    fn l0_query_leaders_csv_header_reports_identity_context_and_source_state() {
+        assert_eq!(
+            leaders_csv_header(),
+            "rank,name,team,pos,gp,ppg,pts_per_82,goals_per_82,pts,goals,assists,nhl_id,season,season_type,source_kind,source_completeness,total,returned,top,sort,active_filters"
+        );
     }
 
     /// Calder.3 / l0_render_pre_nhl_career_table_emits_header
