@@ -1,0 +1,30 @@
+# Local tracker repo map for generated Cargo dependency overrides.
+# Cargo does not read this file directly; run:
+#
+#   python tools\repo_map.py write-cargo-config
+#
+
+[standard]
+version = 1
+cargo_config = ".cargo/config.toml"
+
+[repos.this_repo]
+role = "current repository"
+relative = "."
+clone_url = "https://github.com/giodl73-repo/ICELINES.git"
+
+[repos.fletch]
+role = "tracker dependency for icelines"
+relative = "..\\..\\tools-infra\\fletch"
+clone_url = "https://github.com/giodl73-repo/FLETCH.git"
+cargo_patches = [
+  { package = "fletch-core", source = "https://github.com/giodl73-repo/FLETCH.git", path = "crates/fletch-core" },
+]
+
+[repos.slice]
+role = "tracker dependency for icelines"
+relative = "..\\..\\tools-infra\\slice"
+clone_url = "https://github.com/giodl73-repo/SLICE.git"
+cargo_patches = [
+  { package = "slice-core", source = "https://github.com/giodl73-repo/SLICE", path = "crates/slice-core" },
+]

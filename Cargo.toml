@@ -53,5 +53,5 @@ ulid        = "1"
 askama      = "0.12"
 open        = "5"
 pulldown-cmark = "0.10"
-fletch-core = { path = "../FLETCH/crates/fletch-core" }
+fletch-core = { git = "https://github.com/giodl73-repo/FLETCH.git", package = "fletch-core", branch = "master" }
 slice-core = { git = "https://github.com/giodl73-repo/SLICE", package = "slice-core", rev = "353564781f6cad53fc5a934178a7927824824e3e" }
