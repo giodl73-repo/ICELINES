@@ -782,12 +782,14 @@ Verification plan:
 
 | Level | Required | Planned Evidence | Status |
 |---|---|---|---|
-| L0 | yes | Schema/contract fixture tests for cache records, invalidation keys, version compatibility, and consumer envelopes. | target_spec_pending |
-| L1 | yes | Tempdir/source-state fixtures for missing/stale/partial/schema/unsupported/no-live paths plus affected clippy/format tests if code is touched. | target_spec_pending |
-| L2 | yes | At least one consumer demo or snapshot showing cache-backed decision-support envelope and non-claim disclosure. | target_spec_pending |
+| L0 | yes | Schema/contract fixture tests for cache records, invalidation keys, version compatibility, and consumer envelopes. | partial; pulse 02 passed selected core schema serde, version compatibility, invalidation-key carriage, and consumer-envelope fixtures |
+| L1 | yes | Tempdir/source-state fixtures for missing/stale/partial/schema/unsupported/no-live paths plus affected clippy/format tests if code is touched. | partial; pulse 02 passed selected local snapshot source-state preservation, live-fetch-source refusal, unsupported-metric refusal, and formatting, while broader tempdir/store fixtures remain pending |
+| L2 | yes | At least one consumer demo or snapshot showing cache-backed decision-support envelope and non-claim disclosure. | partial; pulse 02 passed an in-core coach-dashboard envelope proof, but no production dashboard/report/card surface is claimed |
 
-V closure: target_spec_pending. This package is opened as the next product
-direction but has not implemented cache behavior.
+V closure: partial. The initial core schema/source/consumer contract slice exists
+in `icelines-core::analytics_cache`; production cache storage, broader
+stale/partial/missing/invalidation fixtures, and downstream surfaces remain
+pending.
 
 Validation impact: adds `VAL-011` for coach/analyst trust in a shared analytics
 evidence layer.
@@ -798,8 +800,9 @@ contract must refuse or disclose degraded state before any consumer claim.
 Assurance/security classification: HART, Campbell, WIRE, TAPE, SCOUT, and BENCH
 review lanes required before implementation closure.
 
-Review gate: specification baseline accepted 2026-06-01; implementation closure
-requires a later WP-009 closeout review.
+Review gate: specification baseline accepted 2026-06-01; pulse 02 accepted the
+initial core schema/consumer slice. Implementation closure requires later storage,
+broader source-state/invalidation, downstream consumer, and closeout reviews.
 
 Git execution:
 

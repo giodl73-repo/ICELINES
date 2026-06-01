@@ -1,5 +1,50 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 02 Initial Core Cache Contract Review
+
+**Scope:** Initial `icelines-core::analytics_cache` schema/source-state/consumer
+contract slice.
+
+**Decision:** `partial_pass`
+
+Pulse 02 adds a versioned analytics cache record and consumer-envelope contract
+in `icelines-core`, reusing existing `ViewWindow`, `SourceState`, `MetricCell`,
+`ViewWarning`, and disclosure/non-claim vocabulary. The focused tests prove
+selected serde compatibility, local snapshot source-state preservation, top-level
+and metric-level live-fetch-source refusal, newer-schema refusal, unsupported metric refusal,
+coach-dashboard consumer-envelope preservation, consumer-contract mismatch
+refusal, and unsupported-consumer refusal.
+
+This review does not claim production cache storage, cache rebuild scheduling,
+downstream dashboards/reports/cards, broad stale/partial/missing source-state
+fixtures, or complete invalidation behavior.
+
+### Evidence inspected
+
+- `icelines-core/src/analytics_cache.rs`
+- `icelines-core/src/lib.rs`
+- `cargo test -p icelines-core analytics_cache --quiet`
+- `cargo fmt --check`
+- `cargo clippy -p icelines-core --lib --tests -- -D warnings`
+- `C:\src\proof\target\debug\proof.exe check C:\src\TRACKER\repos\applied-systems\icelines\docs\vtrace --errors-only`
+- `git diff --check`
+
+### Accepted risks
+
+- The initial proof is in-core and fixture-oriented; a future storage/read slice
+  must prove tempdir-backed missing, stale, partial, invalidated, and absent cache
+  behavior without live API calls.
+- Downstream hockey surfaces must continue to treat cache-backed analytics as
+  pending until their own consumer fixtures and product-copy reviews pass.
+
+### Closeout
+
+- WP-009 status: `partial`.
+- VAL-011 status: `partial`.
+- Next action: implement storage/read and broader source-state/invalidation
+  fixtures before attaching dashboard, report, card, line, goalie, practice, or
+  postgame surfaces.
+
 ## 2026-06-01 WP-009 Major Analytics Cache Specification Baseline Review
 
 **Scope:** Coach/analyst product-direction DCR for a shared major analytics cache

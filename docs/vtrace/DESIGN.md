@@ -376,10 +376,11 @@ should proceed in narrow implementation waves:
    route tests, parity checks, and demos become available.
 4. Treat FLETCH/SLICE removal and lean feature gating as target implementation
    waves with rollback/refusal notes before any public compliance claim.
-5. Treat the major analytics cache as a target implementation wave: first define
-   schema fixtures and compatibility, then build/source-state/invalidation
-   fixtures, then consumer demos. Do not let a dashboard/report claim cache-backed
-   analytics before the cache evidence exists.
+5. Treat the major analytics cache as an incremental implementation wave: the
+   initial `icelines-core::analytics_cache` schema/consumer contract exists, but
+   storage/read, broad source-state/invalidation fixtures, and downstream
+   consumer demos remain pending. Do not let a dashboard/report claim
+   cache-backed analytics before the matching evidence exists.
 6. Revisit `TRACE.md` after design review closure so design elements point to
    `DESIGN.md` rows rather than only architecture-level contracts.
 
@@ -417,4 +418,4 @@ formalize before production changes are made.
 | FLETCH/SLICE replacement scope may affect user-visible commands. | Require replacement/refusal/rollback notes before dependency removal is called complete. |
 | Validation evidence remains mostly pending. | Move to evidence rows during Gate 3; this file only defines evidence hooks. |
 | Static site status is deferred while `icelines-site` remains in the workspace. | Do not advertise static site as active user surface without a later design update. |
-| Major analytics cache lacks implementation and storage migration details. | Keep cache rows target-only until WP-009 records schema, storage/read path, invalidation, and consumer-contract evidence. |
+| Major analytics cache implementation is partial and lacks storage migration details. | Treat the in-core schema/consumer contract as initial evidence only; keep storage/read, invalidation, and downstream consumer claims pending until their WP-009 evidence passes. |

@@ -5,6 +5,7 @@
 pub const CURRENT_SEASON: u32 = 20_252_026;
 pub const CURRENT_SEASON_STR: &str = "20252026";
 
+pub mod analytics_cache;
 pub mod career_history;
 pub mod contract;
 pub mod cross_team;
@@ -39,6 +40,14 @@ pub mod view_model;
 pub mod workbench;
 pub mod workbench_layout;
 
+pub use analytics_cache::{
+    analytics_cache_consumer_envelope, build_analytics_cache_record,
+    parse_analytics_cache_record_json, AnalyticsCacheBuildInput, AnalyticsCacheConsumerEnvelope,
+    AnalyticsCacheConsumerKind, AnalyticsCacheEntity, AnalyticsCacheError, AnalyticsCacheFilter,
+    AnalyticsCacheInvalidation, AnalyticsCacheMetric, AnalyticsCacheQuality, AnalyticsCacheRecord,
+    AnalyticsCacheScope, AnalyticsCacheSourceWindow, ANALYTICS_CACHE_CONSUMER_CONTRACT_VERSION,
+    ANALYTICS_CACHE_SCHEMA_VERSION,
+};
 pub use career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev, LeagueTier};
 pub use cross_team::{
     compute_all_views as compute_cross_team_metrics_views, CrossTeamMetrics, WebFitClass,

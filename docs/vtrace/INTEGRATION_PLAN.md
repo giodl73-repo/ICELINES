@@ -21,7 +21,7 @@ an integrated product.
 | INT-006 | Fantasy read/local-state flows | Fantasy ViewModels and local-state adapters | CLI, TUI, Web, local SQLite/FantasyDb | IF-VIEW-001; IF-WEB-001 | WP-006 read/mutation-deferral evidence | closed_with_risk; pulses 01-04 selected fantasy JSON local-state/cache-read, existing-FantasyDb read-only, poach imported-availability read-only, and final VAL-007 transcript boundaries passed_with_risk |
 | INT-007 | Dependency and lean build boundary | Cargo workspace and package manifests | Maintainers, release scripts, downstream users | IF-BUILD-001 | WP-007 dependency inspection and lean build smoke | target-not-met_dispositioned; pulse 01 records blockers and release-owner revisit trigger |
 | INT-008 | End-to-end validation rehearsal | Completed or dispositioned work packages | VTRACE release/readiness gate | All touched interfaces | WP-008 validation rehearsal and trace/review alignment | closed_with_risk; pulse 01 passed broad workspace format/clippy/test gates, refreshed stale Lindsay L3 goldens, aligned VTRACE closeout rows, and keeps dependency/lean support target-not-met |
-| INT-009 | Major analytics cache evidence layer | Future cache builder/read path and schema store | Coach dashboard, opponent scout report, player evidence card, line explorer, goalie view, practice/postgame reports, and agent surfaces | IF-CACHE-001; IF-DATA-001; IF-VIEW-001; IF-REPORT-001 | WP-009 schema/source-state/invalidation/consumer contract evidence | target_spec_pending; CHG-072 accepts the specification baseline only and no downstream cache-backed product claim is made yet |
+| INT-009 | Major analytics cache evidence layer | `icelines-core::analytics_cache` initial schema/consumer contract; future cache builder/read path and schema store | Coach dashboard, opponent scout report, player evidence card, line explorer, goalie view, practice/postgame reports, and agent surfaces | IF-CACHE-001; IF-DATA-001; IF-VIEW-001; IF-REPORT-001 | WP-009 schema/source-state/invalidation/consumer contract evidence | partial; pulse 02 passes the initial core contract, but no production cache storage or downstream cache-backed product claim is made yet |
 
 ## Integration Sequence
 
@@ -44,7 +44,7 @@ an integrated product.
 | Required fixtures exist | passed_with_risk | Named by WP-001 through WP-007 before package closure or target-not-met disposition; WP-008 refreshed Lindsay L3 goldens when source/result context output changed. |
 | Expected results are documented | passed_with_risk | Expected output/disclosure recorded in `VALIDATION.md`, `VERIFICATION.md`, package details, snapshots, and WP-008 pulse 01. |
 | Verification commands are runnable | passed | Package-specific command blocks plus `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, and `cargo test --workspace --all-targets` pass in the final rehearsal state. |
-| Rollback path is known | passed_with_risk | Local-state layout, fantasy/local state, and fetch/cache risks are recorded in package closeouts; dependency surgery remains target-not-met with owner/revisit trigger; major analytics cache storage/rebuild rollback remains target_spec_pending. |
+| Rollback path is known | passed_with_risk | Local-state layout, fantasy/local state, and fetch/cache risks are recorded in package closeouts; dependency surgery remains target-not-met with owner/revisit trigger; major analytics cache storage/rebuild rollback remains pending because only the in-core schema/consumer contract exists. |
 
 ## Integration Risks
 

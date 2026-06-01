@@ -46,3 +46,4 @@ action, prediction accuracy, or autonomous coaching authority.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Specification baseline and DCR acceptance | docs_passed; implementation_target_spec_pending |
+| 02 | Initial core schema/source/consumer contract | core_cache_contract_partial_passed |

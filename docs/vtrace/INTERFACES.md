@@ -526,7 +526,8 @@ consumers can ignore them without losing required provenance/freshness/disclosur
 meaning.
 
 Evidence: CON-010; REQ-CACHE-001; REQ-CACHE-002; REQ-CACHE-003;
-REQ-CACHE-004; VAL-011; CHG-072; WP-009.
+REQ-CACHE-004; VAL-011; CHG-072; WP-009; `icelines-core::analytics_cache`
+initial schema/consumer contract.
 
 ### IF-BUILD-001: Cargo feature/dependency boundary
 
@@ -552,5 +553,6 @@ Evidence: CON-009; REQ-DEP-001; REQ-LEAN-001.
 - Exact Cargo feature names and crate boundaries for the lean CLI target.
 - Minimum non-noisy completeness disclosure for historical perspective answers
   over skeleton seasons.
-- Exact persisted storage path, rebuild command shape, and first consumer fixture
-  set for the major analytics cache implementation wave.
+- Exact persisted storage path and rebuild command shape for the major analytics
+  cache implementation wave; the first in-core coach-dashboard consumer fixture
+  exists, but production downstream surfaces remain pending.
