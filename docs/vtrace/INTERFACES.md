@@ -485,6 +485,49 @@ Versioning or compatibility: newer snapshot schema is refused by older binaries.
 
 Evidence: CON-008; VAL-008.
 
+### IF-CACHE-001: Major analytics cache contract
+
+Purpose: provide one canonical analytics evidence layer for future hockey
+decision surfaces instead of letting each dashboard/report/card recompute its own
+metrics, freshness, quality, or source-state meaning.
+
+Inputs: explicit cache build/read request with season, season type, source
+window, source manifest or snapshot generation, metric family, entity keys
+(team/player/game/line/goalie where applicable), consumer contract version, and
+requested output family.
+
+Outputs: versioned cache records or consumer envelopes containing metric values,
+canonical ordering/rank where applicable, methodology version, provenance,
+freshness/staleness, source-window, quality/completeness, warnings, omissions,
+invalidation keys, generated/source timestamps, and disclosure text. Envelopes
+are consumable by Coach Game-Day Dashboard, Opponent Scout Report, Player
+Evidence Card, Line Combination Explorer, Goalie Readiness & Workload View,
+Practice Focus Report, Postgame Review Report, and agent-facing summaries.
+
+Errors: missing source, stale source generation, partial source window,
+unsupported metric, invalid entity key, cache schema mismatch, consumer contract
+mismatch, or invalidation mismatch returns typed unavailable/stale/partial/refusal
+state. Cache reads do not call live APIs, do not zero-fill missing hockey facts,
+and do not silently drop unknown required fields.
+
+Consumer rule: consumers may format, paginate, filter visually, and add local
+navigation, but may not recompute canonical analytics, ranking, confidence,
+freshness, quality/completeness, or source-state meaning. Consumers must preserve
+disclosures and must not claim autonomous coaching authority, prediction
+accuracy, betting value, injury certainty, line-chemistry causality, or
+complete-world truth unless a later controlled requirement and validation row
+authorizes that claim.
+
+Versioning or compatibility: cache records carry `cache_schema_version`,
+`producer_version`, `methodology_version`, and `consumer_contract_version`.
+Breaking record or consumer-contract changes require change control and
+compatibility/refusal fixtures. Additive fields are allowed only when older
+consumers can ignore them without losing required provenance/freshness/disclosure
+meaning.
+
+Evidence: CON-010; REQ-CACHE-001; REQ-CACHE-002; REQ-CACHE-003;
+REQ-CACHE-004; VAL-011; CHG-072; WP-009.
+
 ### IF-BUILD-001: Cargo feature/dependency boundary
 
 Purpose: prevent standalone and lean-build targets from being claimed before they
@@ -509,3 +552,5 @@ Evidence: CON-009; REQ-DEP-001; REQ-LEAN-001.
 - Exact Cargo feature names and crate boundaries for the lean CLI target.
 - Minimum non-noisy completeness disclosure for historical perspective answers
   over skeleton seasons.
+- Exact persisted storage path, rebuild command shape, and first consumer fixture
+  set for the major analytics cache implementation wave.

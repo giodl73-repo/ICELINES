@@ -1,5 +1,63 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Major Analytics Cache Specification Baseline Review
+
+**Scope:** Coach/analyst product-direction DCR for a shared major analytics cache
+foundation before downstream hockey screens, reports, cards, line views, goalie
+views, practice/postgame reports, or agent surfaces claim cache-backed analytics.
+
+**Decision:** `target_spec_pending`
+
+CHG-072 accepts the major analytics cache as the next ICELINES product
+foundation. The accepted baseline defines required cache record fields,
+provenance/freshness/source-window/quality/invalidation semantics, no-live read
+behavior, consumer-envelope boundaries, and public non-claims. This review does
+not close implementation: no production cache, schema fixture, builder/read path,
+invalidation/rebuild fixture, or consumer demo is claimed yet.
+
+### Evidence inspected
+
+- `C:\src\proof\target\debug\proof.exe check C:\src\TRACKER\repos\applied-systems\icelines\docs\vtrace --errors-only`
+- `git -C C:\src\TRACKER\repos\applied-systems\icelines diff --check`
+- `docs/vtrace/CONOPS.md`
+- `docs/vtrace/MISSION.md`
+- `docs/vtrace/REQUIREMENTS.md`
+- `docs/vtrace/CHANGE_CONTROL.md`
+- `docs/vtrace/ARCHITECTURE.md`
+- `docs/vtrace/DESIGN.md`
+- `docs/vtrace/INTERFACES.md`
+- `docs/vtrace/VALIDATION.md`
+- `docs/vtrace/VERIFICATION.md`
+- `docs/vtrace/TRACE.md`
+- `docs/vtrace/WORK_PACKAGES.md`
+- `docs/vtrace/CODE_RIGOR.md`
+- `docs/vtrace/INTEGRATION_PLAN.md`
+- `docs/vtrace/STAGE_EXECUTION.md`
+
+### Required implementation follow-up
+
+- Select cache storage path, schema compatibility policy, first metric families,
+  and first consumer fixture before Rust implementation begins.
+- Add schema/source-state/invalidation fixtures for complete, stale, partial,
+  missing, unsupported, and schema-incompatible inputs.
+- Prove read paths do not fetch live data or zero-fill missing source state.
+- Prove a first consumer envelope preserves cache evidence instead of recomputing
+  source-state, confidence, methodology, warnings, or disclosure locally.
+
+### Accepted risks
+
+- Future screens or reports could overstate cache-backed decision support if
+  product copy outruns evidence.
+- Stale, partial, unsupported, or mismatched source state could be amplified if
+  invalidation and quality/completeness semantics are not enforced by fixtures.
+
+### Closeout
+
+- WP-009 status: `target_spec_pending`.
+- VAL-011 status: `target_spec_pending`.
+- Next action: open implementation pulses for schema/source-state/invalidation/
+  consumer evidence.
+
 ## 2026-06-01 WP-008 Integration Rehearsal Closeout Review
 
 **Scope:** Final validation rehearsal, broad workspace gates, Lindsay L3 golden

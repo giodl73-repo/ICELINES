@@ -53,6 +53,7 @@ target language as evidence.
 | CR-030 | Canonical model invariants are code-rigor gates: stint sums equal totals, stint ordering is monotonic, roster upserts preserve last-stint/all-stint indexes, LRU maps are bijective, `eligible_pos` remains singular unless redesigned, and goalie identity uses stats-backed goalie data rather than position text alone. | `StatsRepository`, identity, season stats, loaders, roster/depth builders | invariant tests, compile-fail doctests, fixture snapshots | Any new model shape requires HART/KEEL design review before implementation closure. |
 | CR-031 | External-source reliability policy must be testable: 429 honors `Retry-After` or bounded backoff, 503 and maintenance windows surface actionable errors, partial upstream writes are rejected or explicitly flagged resumable, newer snapshot/schema versions refuse clearly, and MoneyPuck/CSV encoding or column drift fails at the boundary. | fetch clients, snapshot store, MoneyPuck/ESPN/NHL loaders, sync commands | httpmock/tempdir fixtures, error snapshots, schema/encoding tests | Final display may simplify language only if structured error state remains available for review/debug output. |
 | CR-032 | Shared visual and accessibility contracts are implementation constraints: fit/color tokens come from one contract, renderer-local threshold/color tables are prohibited, active `(season, season_type)` stays visible, terminal output remains readable at standard widths where claimed, browser/report layouts keep semantic structure, and empty/loading/partial states have designed recovery paths. | TUI, CLI tables, web HTML, reports/exports, CSS/templates | renderer snapshots, accessibility/no-color review, browser/terminal inspection | Surface-specific presentation may vary, but semantic colors, labels, and context cannot drift. |
+| CR-033 | Major analytics cache records are canonical evidence, not convenience blobs: they must be versioned, scope-keyed, source-windowed, provenance/freshness/quality annotated, invalidation-aware, no-live on read, and consumed without renderer-local recomputation of source-state, confidence, or methodology meaning. | Future analytics cache builders/readers, schema store, dashboard/report/card/line/goalie/practice/postgame consumers, agent surfaces | schema fixtures, tempdir source-state fixtures, invalidation/rebuild fixtures, consumer contract demos, text review | Until evidence exists, cache rows stay `target_spec_pending`; no consumer may claim cache-backed analytics from ad hoc local calculations. |
 
 ## Tailoring
 
@@ -78,6 +79,7 @@ target language as evidence.
 | Model invariants | HART invariants are named as gates even when the changed file is not `StatsRepository`. | Prevents model drift through adapters, reports, or loaders. |
 | Upstream reliability | Retry, resumability, schema, encoding, and version policy are fixture-backed. | Prevents network/API drift from becoming plausible wrong hockey output. |
 | Visual contract | Shared color/context/accessibility rules are centralized and tested across active surfaces. | Prevents readable-but-divergent UI claims. |
+| Analytics cache | Cache-backed analytics must carry one source-state and methodology contract from builder to consumer. | Prevents future hockey screens from overclaiming stale, partial, unsupported, or locally recomputed evidence. |
 
 ## Required Review Checklist
 
@@ -105,6 +107,7 @@ any VTRACE row.
 | Model invariants | Do HART invariants, singular eligibility, goalie discrimination, roster indexes, LRU bijection, and compile-time borrow/Send fences still hold? |
 | Upstream reliability | Are 429/503, Retry-After/backoff, partial writes, newer schemas, CSV encoding, and source absence tested or explicitly pending? |
 | Visual contract | Do fit colors/tokens, active context, semantic HTML/terminal readability, no-color cues, and recovery states stay consistent? |
+| Analytics cache | If cache-backed analytics are touched, are version, scope, source window, provenance, freshness, quality, invalidation, warnings, disclosures, and consumer-contract behavior tested without query-time live fetch? |
 | Evidence | Is there repeatable command, fixture, snapshot, route/browser, demo, or explicit target-not-met evidence? |
 
 ## Verification Command Matrix
@@ -121,6 +124,7 @@ the files touched. Documentation-only changes may use `proof check` and
 | Unit/integration tests | `cargo test --workspace --all-targets` or affected package/test commands with rationale. | Core, query, fetch, web, TUI, report/export, or data changes. |
 | CLI subprocess evidence | Named CLI commands with fixed fixtures/tempdirs and captured output. | CLI behavior, reports, exports, exit status, or JSON/CSV changes. |
 | Fetch/upstream evidence | Tempdir and mock-server fixtures covering success, absence, 429, 503, schema drift, integrity mismatch, and partial write where touched. | Fetch, snapshot, cache, upstream, or install changes. |
+| Major analytics cache | Schema fixtures, source-state/no-live fixtures, invalidation/rebuild fixtures, consumer envelope demos, and public-copy text review. | Cache record, build/read, invalidation, or downstream consumer changes. |
 | Web evidence | Route tests plus no-JS/browser inspection for active context, recovery, focus/touch, CORS/host posture, MIME/cache behavior, and JSON twins where touched. | Web handlers, assets, templates, browser state, launch command. |
 | TUI evidence | Targeted state/cache tests or transcript/snapshot demo with active-window switch and source notice survival. | TUI/workbench state, command bar, panes, cache behavior. |
 | Docs/VTRACE | `C:\src\proof\target\debug\proof.exe check <docs\vtrace> --errors-only`; `git diff --check`. | VTRACE documentation updates. |
@@ -165,6 +169,7 @@ Future waivers must be recorded with:
 | EVID-CR-016 | CR-030 | HART invariant tests and compile-fail doctests for borrow/Send fences where feasible. | pending | VERIFICATION.md; VAL-002 |
 | EVID-CR-017 | CR-031 | HTTP/mock, tempdir, schema-version, CSV encoding, and partial-write/resume fixtures. | passed_with_risk: WP-005 pulse 04 covers selected HTTP/mock retry failure behavior, pulse 05 covers selected no-live fetch command refusals before live client construction, pulse 06 covers selected snapshot integrity/missing-file behavior, pulse 07 covers selected chunked snapshot schema-version behavior, pulse 08 covers selected MoneyPuck CSV required-column and malformed-row drift behavior, pulse 09 covers selected generic FLETCH HTTP cache/refresh fallback behavior, pulse 10 covers selected player landing schema-drift behavior, pulse 11 covers selected abbreviation-drift behavior, pulse 12 covers selected player landing missing-source behavior, and pulse 13 covers selected partial-refresh resume/flag behavior | VAL-005; VAL-006; VAL-008 |
 | EVID-CR-018 | CR-032 | TUI/CLI/web/report visual-token snapshots and accessibility/no-color/context review. | pending | VAL-001; VAL-003; VAL-004 |
+| EVID-CR-033 | CR-033 | Major analytics cache schema/source-state/invalidation/consumer contract evidence. | target_spec_pending: CHG-072 and WP-009 define the specification baseline only; implementation closure requires fixtures and consumer demos. | VAL-011; IF-CACHE-001; EVID-WP009-CACHE-SPEC-L0 |
 
 ## Current Open Rigor Risks
 
@@ -182,5 +187,6 @@ Future waivers must be recorded with:
 | HART invariants and compile-time fences need named test evidence. | CR-030 | Carry to model fixture and compile-fail evidence. |
 | Upstream retry/resume/schema/encoding policy needs fixture evidence. | CR-031 | Carry to fetch and snapshot verification evidence. |
 | Shared visual/accessibility contracts need cross-surface snapshots or inspection. | CR-032 | Carry to surface parity evidence. |
+| Major analytics cache is not implemented. | CR-033 | Keep REQ-CACHE-001..004, VAL-011, IF-CACHE-001, and WP-009 target_spec_pending until schema/source-state/invalidation/consumer evidence passes. |
 | FLETCH/SLICE and lean CLI are target-not-met_dispositioned. | CR-021; CR-022 | Do not claim standalone or lean compliance until dependency/build evidence passes; owner: maintainer/release lens; revisit when dependency removal and Cargo feature-gating PR is ready. |
 | Static site is deferred while workspace files still exist. | CR-023 | Do not use static-site presence as active surface evidence. |

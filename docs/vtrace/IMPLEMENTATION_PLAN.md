@@ -17,8 +17,8 @@ future code, fixture, route, browser, dependency, and validation work.
 | Artifact | Status | Notes |
 |---|---|---|
 | `MISSION.md` | accepted | Mission targets include personalized workbench layouts, descriptive public reporting, offline confidence, and lean/standalone goals. |
-| `CONOPS.md` | accepted | Nine scenarios define the operating workflows and validation intent. |
-| `REQUIREMENTS.md` | accepted with targets | Accepted requirements are implementation inputs; `REQ-WB-003` is passed_with_risk for WP-002, while `REQ-DEP-001` and `REQ-LEAN-001` remain target posture until evidence passes. |
+| `CONOPS.md` | accepted | Ten scenarios define the operating workflows and validation intent, including the target major analytics cache workflow. |
+| `REQUIREMENTS.md` | accepted with targets | Accepted requirements are implementation inputs; `REQ-WB-003` is passed_with_risk for WP-002, `REQ-DEP-001` and `REQ-LEAN-001` remain target posture, and `REQ-CACHE-001..004` are target specification rows until WP-009 evidence passes. |
 | `ARCHITECTURE.md` | accepted with risk | Architecture freezes active surfaces, source-state posture, and target/deferred claims. |
 | `INTERFACES.md` | accepted with open questions | Interfaces are controlled; `IF-LAYOUT-001` and `IF-BUILD-001` require implementation detail before closure. |
 | `DESIGN.md` | accepted with risk | Design allocates ViewModels, source-state propagation, TUI/Web state, reports, and target Cargo features. |
@@ -59,6 +59,9 @@ Target-only rows remain honest:
   replaced with command-surface evidence.
 - `REQ-LEAN-001` is target-not-met until the lean CLI feature build and offline
   smoke pass.
+- `REQ-CACHE-001..004` are target specification rows until WP-009 implements and
+  verifies the versioned analytics cache schema, source-state/invalidation
+  behavior, and consumer contract.
 
 ## Sequencing
 
@@ -72,6 +75,7 @@ Target-only rows remain honest:
 | 6 | WP-006 Fantasy read-model and local-state safety | Shares ViewModel/local-state constraints and must preserve mutation boundaries. |
 | 7 | WP-007 Standalone dependency and lean CLI target | Higher-risk Cargo/dependency work waits until command-surface inventory is ready. |
 | 8 | WP-008 Integration and validation rehearsal | Runs cross-surface L2 evidence after package-level work is closed or explicitly deferred. |
+| 9 | WP-009 Major analytics cache foundation | Defines the shared analytics evidence layer before downstream coach/scout/report/card/line/goalie/practice/postgame front ends are built. |
 
 ## Source-To-Work-Package Mapping
 
@@ -97,6 +101,7 @@ an explicit target disposition.
 | REQ-FRESH-001 / DES-012 / IF-FETCH-001 / IF-DATA-001 / CR-018 / CR-019 / CR-029 / CR-031 | WP-005 | implement | Upstream/cache failure handling is fixture-backed. |
 | REQ-DEP-001 / DES-010 / DES-011 / IF-BUILD-001 / CR-021 / CR-022 | WP-007 | target | Starts only after command-surface replacement/refusal inventory exists. |
 | REQ-LEAN-001 / DES-010 / IF-BUILD-001 / CR-021 | WP-007 | target | Remains target-not-met until feature surgery and lean build evidence pass. |
+| REQ-CACHE-001..004 / IF-CACHE-001 / CR-033 / VAL-011 | WP-009 | target | Major analytics cache is accepted as the next product direction but remains unimplemented until schema/source-state/invalidation/consumer fixtures pass. |
 | REQ-CODE-001 / CODE_RIGOR.md / VERIFICATION.md command matrix / CR-005 / CR-023 | All packages; WP-008 | implement | Code rigor is a closure gate for every package. |
 
 Disposition values: `implement`, `implement target`, and `target` are used here.
@@ -160,6 +165,12 @@ versioned records in `~/.icelines/layouts.json`, CLI layout management,
 
 `WP-008` is reserved for the integration/validation rehearsal after package-level
 evidence exists or is explicitly dispositioned.
+
+`WP-009` follows as the major analytics cache foundation. It should first close a
+schema/contract slice, then source-state and invalidation behavior, then a
+consumer-envelope demo. It must not ship downstream coach/scout/report/card
+surfaces in the same pulse unless their cache contract evidence is separately
+traceable.
 
 ## Verification Strategy
 

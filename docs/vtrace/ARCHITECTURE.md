@@ -17,7 +17,7 @@ and Web dashboard, with report/export artifacts as durable output renderers. The
 mkdocs static site remains a deferred workspace member, not an active user
 surface for this VTRACE baseline.
 
-The architecture satisfies the mission through six invariants:
+The architecture satisfies the mission through seven invariants:
 
 1. One domain spine: `DataStore`/loader output populates `StatsRepository`, which
    exposes `(player_id, season, season_type)` reads through `PlayerView` and typed
@@ -31,7 +31,10 @@ The architecture satisfies the mission through six invariants:
 5. Surface parity by artifact: any capability on more than one surface compares a
    canonical ViewModel/envelope across CLI, TUI, Web HTML, Web JSON, and exports
    where applicable.
-6. Explicit targets: standalone/no-FLETCH-SLICE and lean CLI-only builds are
+6. Cache as evidence layer: future coach/scout/report/card/line/goalie/practice
+   surfaces consume a versioned analytics cache contract rather than inventing
+   their own hockey semantics.
+7. Explicit targets: standalone/no-FLETCH-SLICE and lean CLI-only builds are
    target architecture, not current-state claims.
 
 ## Current vs Target Posture
@@ -44,6 +47,7 @@ The architecture satisfies the mission through six invariants:
 | Named layout persistence | TUI bindings and Web URL state exist, but durable named layouts are not yet proven. | Persisted layouts require a versioned shared layout model, migration/refusal behavior, and TUI/Web restore evidence before personalization is claimed complete. | REQ-WB-003 |
 | Standalone dependency posture | FLETCH/SLICE dependency seams still exist and block standalone compliance claims. | Remove or replace FLETCH/SLICE seams before any standalone claim. | REQ-DEP-001 |
 | Lean build posture | Default build remains all-surface; web/TUI/network crates are not yet gated out of a lean CLI path. | `cargo build --no-default-features --features cli` must compile and run offline before lean support is claimed. | REQ-LEAN-001 |
+| Major analytics cache posture | No production major analytics cache is implemented or claimed. | A versioned cache builder/read model supplies canonical analytics, provenance, freshness/staleness, quality/completeness, invalidation keys, and consumer contracts for future hockey decision surfaces. | REQ-CACHE-001..004 |
 | Evidence maturity | Architecture is traceable review evidence; most validation and verification rows remain pending. | Future gates must attach command, fixture, snapshot, route, or demo evidence to the ledger. | REQ-CODE-001; VAL-001..VAL-010 |
 
 ## Components
@@ -53,6 +57,7 @@ The architecture satisfies the mission through six invariants:
 | `icelines-core` | Pure domain model, `StatsRepository`, `PlayerView`, workbench catalog, ViewModels, semantic tokens, scoring/report projections. No network or file I/O should live here. | REQ-WB-002; REQ-PARITY-001; REQ-DATA-001; REQ-FANTASY-001 | IF-DATA-001; IF-VIEW-001 | `design/specs/viewmodels.md`; `design/specs/platform-contracts.md` |
 | `icelines-query` | Deterministic Art Ross grammar, parser, planner, filters, sorts, and typed query errors. | REQ-QUERY-001; REQ-WB-001; REQ-STAT-001 | IF-QUERY-001 | `COMMANDS.md`; CON-001; CON-004 |
 | `icelines-fetch` | External API clients, snapshot/cache readers and writers, manifest/install flows, integrity/schema checks, missing-source population. | REQ-DATA-001; REQ-OFFLINE-001; REQ-DATA-DEPTH-001; REQ-FRESH-001 | IF-FETCH-001; IF-DATA-001 | CON-005; CON-006; CON-008 |
+| Major analytics cache (target) | Versioned producer/read model for prepared hockey analytics with source window, provenance, freshness/staleness, quality/completeness, invalidation, warnings, and consumer envelopes. | REQ-CACHE-001; REQ-CACHE-002; REQ-CACHE-003; REQ-CACHE-004 | IF-CACHE-001; IF-DATA-001; IF-VIEW-001; IF-REPORT-001 | CON-010; CHG-072 |
 | `icelines-cli` | Binary entry point, CLI commands, TUI workbench, report/export commands, local state mutation surfaces. It adapts user intent to shared core/query/fetch boundaries. | REQ-WB-001; REQ-WB-003; REQ-STAT-001; REQ-REPORT-001; REQ-CODE-001 | IF-QUERY-001; IF-LAYOUT-001; IF-REPORT-001; IF-BUILD-001 | `COMMANDS.md`; VAL-001; VAL-002; VAL-009; VAL-010 |
 | `icelines-web` | Axum HTML dashboard, JSON twins, bookmarkable URL state, browser recovery/empty states, safe POST-backed mutation boundaries. | REQ-WEB-001; REQ-WEB-002; REQ-WB-003; REQ-PARITY-001; REQ-FANTASY-001 | IF-WEB-001; IF-VIEW-001; IF-LAYOUT-001 | VAL-003; VAL-004; VAL-010 |
 | `icelines-site` | Deferred mkdocs/static-site renderer. It remains in the workspace but is not the active surface baseline; exports remain active report artifacts. | REQ-REPORT-001; REQ-PARITY-001 | IF-REPORT-001; IF-VIEW-001 | surface-parity matrix; REVIEW.md |
@@ -93,6 +98,22 @@ path:
   absence is `MissingSource`/unavailable state.
 - live APIs: write path for `fetch` commands, not a query-time escape hatch.
 
+### Target cache flow
+
+```text
+validated bundled/installed/snapshot source state
+  -> major analytics cache builder
+  -> versioned cache records with provenance/freshness/quality/invalidation
+  -> IF-CACHE-001 consumer envelope
+  -> dashboard / scout report / player card / line explorer / goalie view /
+     practice focus / postgame review / agent summary
+```
+
+The target cache is not a second truth source. It is a reproducible evidence
+layer over explicit source windows. Cache reads may return unavailable, stale,
+partial, schema-incompatible, or unsupported-metric states, and consumer surfaces
+must render those states instead of recomputing or zero-filling.
+
 ### Source obligations
 
 | Source / Domain | Current Read Path | Absent / Failed Source Behavior | Design Obligation |
@@ -103,6 +124,7 @@ path:
 | External NHL API | `fetch` write path into validated local state. | 429/503/schema drift/integrity mismatch fail loudly or degrade explicitly. | No query path may silently call live APIs to fill missing data. |
 | ESPN transactions | Fetch/write path with season-aware team abbreviation mapping. | Unknown team maps to `LEAGUE` with warning. | Carry warning and mapped team state into transactions surfaces. |
 | Local SQLite state | Groups, fantasy, watch, and roster-local state under `~/.icelines/`. | Missing local state yields explicit setup/empty state. | Browser GET routes remain read-only; mutations require POST-backed or CLI/TUI paths. |
+| Major analytics cache (target) | Explicit build over validated source state and explicit read contract. | Missing/stale/partial/unsupported/schema mismatch returns typed cache state. | Consumers use canonical cache envelopes and disclosure fields; no autonomous coaching authority or prediction claims. |
 
 ### Surface flow
 
@@ -130,6 +152,7 @@ classification, or report facts is an architecture defect.
 | `LoadOutcome.missing` and source/completeness state must survive to renderers and reports. | Prevents wrong-but-confident output. | TAPE; WIRE; GLASS |
 | Web routes use bookmarkable GET for reads and POST-backed paths for mutations; no hidden localStorage truth. | Preserves browser safety, recoverability, and shareable state. | broadcast; CREST |
 | Public exports are ViewModel-backed and disclose descriptive scope near the top. | Keeps social/report artifacts reproducible and honest. | SCOUT; PACE; BENCH |
+| Cache consumers use `IF-CACHE-001` records and may not locally recompute rankings, confidence, freshness, or source-state meaning. | Keeps future hockey decision screens consistent and auditable. | HART; Campbell; BENCH |
 | Standalone and lean-build claims require `Cargo.toml` and feature evidence first. | Avoids claiming dependency independence before FLETCH/SLICE and feature gating are resolved. | KEEL; FORGE; BENCH |
 
 ## Dependencies
@@ -156,6 +179,8 @@ classification, or report facts is an architecture defect.
 | Missing source becomes zero or empty success. | Wrong-but-confident analytics and exports. | `MissingSource` and completeness vocabulary in IF-DATA-001. | REQ-DATA-001; VAL-005; VAL-008 |
 | External API schema drift or newer snapshot schema is silently accepted. | Corrupt or misread data. | `deny_unknown_fields`, integrity check before deserialize, version refusal. | REQ-FRESH-001; IF-FETCH-001 |
 | Historical perspective result overclaims meaning. | Public post implies era-adjusted, betting, predictive, or deployment-adjusted analysis that IceLines did not compute. | Report/export disclosure and anti-overclaim requirement. | REQ-STAT-001; REQ-REPORT-001; VAL-002 |
+| Cache record is stale, partial, or from an incompatible schema but renders as confident success. | Future screens amplify plausible wrong decisions. | Versioned cache records with freshness/staleness, source-window, quality/completeness, invalidation, and typed unavailable states. | REQ-CACHE-001; REQ-CACHE-002; IF-CACHE-001; VAL-011 |
+| Dashboard/report/card recomputes cache semantics locally. | Consumers disagree and traceability fails. | `IF-CACHE-001` consumer contract and review gate prohibit local recomputation of canonical analytics, confidence, or source-state meaning. | REQ-CACHE-003; REQ-CACHE-004 |
 | Broad historical scenario hides edge cases. | Lockout, October rollover, ambiguous names, trades, and active streaks regress unnoticed. | Split VAL-002 evidence into discrete fixture observations. | REQ-STAT-002 |
 | Web GET path mutates local state. | Unsafe browser behavior and surprising writes. | GET read-only rule; POST-backed mutation or explicit deferral. | REQ-WEB-001; REQ-FANTASY-001 |
 | Lean/standalone target is claimed before dependency work lands. | Misleading release posture; hard-to-debug external coupling. | Target-only status until Cargo inspection and lean build evidence pass. | REQ-DEP-001; REQ-LEAN-001 |
@@ -170,6 +195,7 @@ classification, or report facts is an architecture defect.
 | ADR-VT-003 | Keep live APIs out of query-time fallback. | accepted | Offline/default reads remain deterministic; `fetch` is the write path into local state. |
 | ADR-VT-004 | Mark FLETCH/SLICE removal and lean CLI build as target architecture. | accepted target | No standalone or lean compliance claim until dependencies/features prove it. |
 | ADR-VT-005 | Keep `ARCHITECTURE.md` as a VTRACE bridge and leave implementation details to `DESIGN.md`. | accepted | Architecture records the shape; design will assign file/module-level decisions. |
+| ADR-VT-006 | Treat the major analytics cache as the canonical future evidence layer for hockey decision surfaces. | accepted target | Coach-facing screens/reports consume cache envelopes with provenance/freshness/quality/invalidation and cannot claim implementation until WP-009 evidence exists. |
 
 ## Open Risks
 
@@ -180,3 +206,4 @@ classification, or report facts is an architecture defect.
 | TUI workbench state concentration remains high. | Harder to reason about cache invalidation, keyboard state, and tests. | Carry to DESIGN as a decomposition/refactor concern. |
 | Validation rows are mostly pending. | Architecture is traceable but not yet proven by evidence. | Gate 2/3 must move evidence rows from pending to verified/validated. |
 | Named/saved layout persistence is still a product target. | Mission customization promise is only partially met. | Carry as target requirement/design topic before claiming completion. |
+| Major analytics cache is specified but not implemented. | Future product copy could imply dashboards/reports are already cache-backed. | Keep REQ-CACHE rows as `target` and require WP-009 evidence before production/cache-consumer claims. |

@@ -94,6 +94,7 @@ where "as complete as the big sites, fully customizable, fully at parity" is
 | New / casual user | **Web dashboard** | Open `/dashboard`, browse leaders, scores, a player card, a bracket — no CLI, no setup | A first-time visitor navigates the workbench, finds a player and tonight's slate, and bookmarks a view via URL state |
 | Fantasy manager | TUI + Web + CLI | Roster gaps, add/drop simulation, poach targets, daily/weekly matchup deltas — offline, repeatable | Runs `:poach …` / `fantasy simulate …`, reshapes to a fantasy layout, and acts in-tool |
 | Data tracker | **Data management** | Install seasons and pull **boxscore- and (eventually) shift-level** detail without ceremony | `data` / `fetch` / `snapshot` make depth data easy to acquire, verify, and trust; the tool is honest about what shift data is and isn't available |
+| Coach / analyst | **Future analytics surfaces** | Consume one prepared evidence layer for game-day, opponent scout, player cards, line combinations, goalie readiness, practice focus, and postgame review | A future screen/report reads canonical cached analytics with provenance, freshness, quality/completeness, and explicit limits instead of recomputing or overclaiming |
 | Future agent / maintainer | n/a | Resume from intent; know crate ownership; know built vs verified vs validated | Reads `docs/vtrace/` + the trace matrix and states each capability's status against the surface-parity matrix |
 
 ## Operating Context
@@ -205,6 +206,7 @@ describe current expected behavior to be confirmed by verification.
 | **Reproducible output**: a report/JSON is byte-stable for a fixed fixture and clock | Test | Contract 5; `MockClock`; envelope `v1` |
 | **[target] Standalone, no cross-repo deps**: builds with no FLETCH/SLICE path/git dependency | Test + inspection | *Not met today* (FLETCH/SLICE still in tree). FLETCH/SLICE removal; `Cargo.toml` has no `path = "../..."` / cross-repo `git` deps |
 | **[target] Lean build**: `--no-default-features --features cli` yields a working offline binary without web/TUI/network crates | Test | *Not met today* — `icelines-cli` hard-depends on `icelines-web` + `ratatui` + `axum`; needs `web`/`tui`/`net` Cargo features + Cargo.toml surgery; offline smoke test |
+| **[target] Major analytics cache**: one versioned cache layer supplies future hockey decision screens/reports with canonical analytics, provenance, freshness, quality/completeness, invalidation keys, and consumer contracts | Design review + fixture tests | *Not implemented today* — CHG-072 / WP-009 define the specification baseline; no production cache, prediction accuracy, autonomous coaching authority, or complete-world truth is claimed |
 | Build, format, lint, and L0/L1/L2 suites pass | Test + static check | `cargo build/test`, `cargo clippy -- -D warnings`, `cargo fmt --check` — results in `VERIFICATION.md` / `REVIEW.md` |
 | Each surface row in the parity matrix is honestly `done`/`partial`/`deferred`, never advertised beyond status | Inspection + review | `../specs/surface-parity.md` carried into `TRACE.md` / `REVIEW.md` |
 

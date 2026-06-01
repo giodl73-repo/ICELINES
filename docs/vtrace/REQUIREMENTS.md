@@ -4,7 +4,7 @@
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.
 
-These requirements derive from `MISSION.md` and the nine `CONOPS.md` scenarios.
+These requirements derive from `MISSION.md` and the ten `CONOPS.md` scenarios.
 They are traceability requirements for the current IceLines platform and for
 explicit targets called out by the mission. A status of `target` means the
 requirement is intentionally not claimed as met today.
@@ -30,6 +30,10 @@ requirement is intentionally not claimed as met today.
 | REQ-FRESH-001 | Fresh-data refresh shall validate cache integrity before deserialization, fail loud on schema drift or newer bundle schemas, honor retry/backoff signals, and surface absent MoneyPuck/Realtime/Contracts sources as typed missing state. | CON-008 | Upstream failure is normal and must degrade safely. | must | WIRE / HART | integration tests + code inspection | accepted |
 | REQ-DEP-001 | The workspace shall have no FLETCH or SLICE path/git dependencies before standalone compliance is claimed; any removed command surface shall have a documented replacement, refusal, or rollback path. | CON-009; R2-CONOPS-04 | Current `Cargo.toml` still contains cross-repo dependencies, so the mission target must stay traceable. | must | KEEL / FORGE | dependency inspection | target |
 | REQ-LEAN-001 | A lean build target shall compile and run an offline CLI with `--no-default-features --features cli`, excluding web, TUI, and network crates unless explicitly opted in. | CON-009; MISSION Success Criteria | Dependency-minimal delivery is a target, not a present-tense fact. | should | FORGE / Jim Gregory | build smoke | target |
+| REQ-CACHE-001 | The platform shall define a versioned major analytics cache record that names scope, source window, producer version, provenance, freshness/staleness, quality/completeness, warnings, invalidation keys, and consumer contract version for every cached result. | CON-010; Coach / analyst | Future hockey front ends need one trusted evidence layer rather than per-screen recomputation. | must | HART / Campbell / BENCH | design inspection + fixture tests | target |
+| REQ-CACHE-002 | Cache build paths shall read only explicit local/bundled/snapshot source state, shall not perform query-time live fetches, and shall refuse missing, stale, partial, schema-incompatible, or unsupported metric inputs with typed states instead of zero-filled success. | CON-010; Contract 1; CON-005; CON-008 | A major cache amplifies wrong data unless freshness, missing-source, and rebuild semantics are controlled. | must | WIRE / TAPE / HART | source-state tests + cache build fixtures | target |
+| REQ-CACHE-003 | Cache consumers shall read canonical analytics envelopes and disclosure fields without recomputing ranking, confidence, source-state, or hockey semantics locally. | CON-010; Contract 3; Contract 4 | Coach dashboards, scout reports, player cards, line explorers, goalie views, practice reports, and postgame reports must agree on prepared evidence. | must | Campbell / Ted Lindsay / Jim Gregory | consumer contract tests + review | target |
+| REQ-CACHE-004 | Cache-driven product copy shall present analytics as decision support only and shall not claim autonomous coaching authority, prediction accuracy, betting value, injury certainty, line-chemistry causality, or complete-world truth unless a later controlled requirement and validation evidence authorizes the claim. | CON-010; MISSION Non-Goals; SCOUT/PACE limits | Hockey decision screens must help humans reason without overstating model authority. | must | SCOUT / PACE / BENCH | text review + validation demo | target |
 | REQ-CODE-001 | Repo gates shall remain green for the affected slice: formatting, clippy with warnings denied, build, and L0/L1/L2 tests appropriate to changed surfaces. | MISSION Constraints; CON-009 | Traceability is useful only if code rigor remains visible. | must | Jim Gregory / BENCH | command evidence | accepted |
 
 ## Requirement Quality Checklist
@@ -48,3 +52,4 @@ requirement is intentionally not claimed as met today.
 | REQ-WB-003 | Named layout persistence is a mission target, but no storage schema, migration rule, or cross-surface restore evidence has been recorded. | Layout schema/design and TUI/Web restore implementation are ready for review. |
 | REQ-DEP-001 | FLETCH/SLICE dependencies still exist in `Cargo.toml`; removal is a product target, not a completed fact. | Dependency replacement or removal PR is ready for review. |
 | REQ-LEAN-001 | Feature boundaries for `cli`, `web`, `tui`, and `net` are not yet implemented. | Cargo feature surgery begins or a release claims lean/offline CLI support. |
+| REQ-CACHE-001..004 | Major analytics cache is a newly accepted product direction and specification baseline, not implemented cache behavior. | WP-009 cache design/implementation begins or any coach/scout/report surface claims to consume cached analytics. |

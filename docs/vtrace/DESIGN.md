@@ -220,6 +220,59 @@ VAL-004 parity evidence compares:
 Parity evidence does not require identical text wrapping, color, pagination,
 terminal width, CSS, table borders, or card layout.
 
+### Major analytics cache target design
+
+The major analytics cache is a target design baseline for future hockey decision
+surfaces. It is not implemented by this DCR. When built, it should introduce one
+versioned producer/read model that converts validated bundled, installed, or
+snapshot source state into canonical analytics records for downstream
+coach-facing consumers.
+
+Required record envelope:
+
+```text
+AnalyticsCacheRecord
+  cache_schema_version
+  producer { crate/version/git/source_manifest_id }
+  scope { season, season_type, source_window, entity keys }
+  metric_family + metric_id + value + unit + methodology_version
+  provenance { sources, snapshot/install/cache generation, fixture/source IDs }
+  freshness { generated_at, source_as_of, stale_after, status }
+  quality { completeness, confidence_label, warnings, omissions }
+  invalidation { source_generation, dependency_keys, rebuild_reason }
+  consumer_contract_version
+  disclosures
+```
+
+Build path: cache builders read only explicit local/bundled/snapshot source state
+and fail with typed unavailable/stale/partial/schema/unsupported states when
+inputs are not sufficient. Builders do not call live APIs except through an
+explicit fetch/write command that produces validated source state before a cache
+build.
+
+Read path: consumers request a cache envelope by consumer contract and typed
+keys. The envelope carries prepared analytics and disclosure fields; downstream
+screens and reports must not recompute rankings, confidence, freshness,
+quality/completeness, or source-state meaning locally. Renderer-local sorting is
+allowed only for visual presentation when the canonical rank/order remains
+available.
+
+Consumer families:
+
+- Coach Game-Day Dashboard.
+- Opponent Scout Report.
+- Player Evidence Card.
+- Line Combination Explorer.
+- Goalie Readiness & Workload View.
+- Practice Focus Report.
+- Postgame Review Report.
+- Agent-facing summary prompts.
+
+Non-claims: the cache is decision support for humans. It does not provide
+autonomous coaching authority, validated prediction accuracy, betting value,
+injury certainty, line-chemistry causality, or complete-world truth unless a
+later controlled requirement and validation row prove that narrower claim.
+
 ### Evidence tier allocation
 
 | Design Area | Evidence Tier | Evidence Shape |
@@ -230,6 +283,7 @@ terminal width, CSS, table borders, or card layout.
 | CLI parity and reports | L2 subprocess plus snapshots | Stable command output, exit status, JSON/CSV/Markdown disclosure, anti-overclaim copy. |
 | TUI state/cache/visual context | Snapshot/demo evidence plus targeted cache tests | Active context, season switch invalidation, source notice survival, selected-row recovery, non-color state carrier. |
 | Web routes and JSON twins | Route tests plus browser/no-JS inspection | GET read-only, allowlisted params, no-JS shell, active context, 404/recovery, narrow viewport, JSON context/source state. |
+| Major analytics cache | L0 schema/contract/unit fixtures plus L1 tempdir source-state fixtures and L2 consumer demos | Cache record compatibility, provenance/freshness/invalidation, stale/partial/refusal states, no query-time live fetch, and consumer envelope preservation. |
 | Lean/standalone targets | Build/dependency inspection evidence | `cargo build --no-default-features --features cli` and dependency graph checks only after feature work exists. |
 | Cross-surface parity | Comparative fixture evidence | ViewModel version/context, row IDs/order, filters/sort, metrics, warnings, omissions, source state, empty state. |
 
@@ -278,6 +332,12 @@ inspection and command-surface verification pass.
   artifacts explicitly reactivate it.
 - Standalone and lean CLI are target states until `Cargo.toml` and build evidence
   prove them.
+- Major analytics cache is a target state until WP-009 implements and verifies a
+  versioned record, builder, read model, invalidation contract, and consumer
+  envelope.
+- Future cache-backed consumers must carry provenance, freshness/staleness,
+  quality/completeness, warnings, and disclosures through to the user-visible or
+  machine-readable output.
 
 ## Edge Cases
 
@@ -297,6 +357,8 @@ inspection and command-surface verification pass.
 | Overconstrained web filter | Show empty-state recovery preserving active context and source state. | VAL-003 |
 | Narrow viewport / color-only risk | State remains visible through text/glyph/aria/report labels, not only color. | VAL-003 |
 | Web GET mutation phrase | Reject, route to POST-backed handler, or defer to CLI/TUI with explicit guidance. | VAL-003; VAL-007 |
+| Cache requested with stale, partial, incompatible, unsupported, or missing source state | Return a typed cache unavailable/stale/partial/refusal state with source-window disclosure; do not emit zero-shaped success. | VAL-011 |
+| Cache consumer lacks a supported contract version | Refuse with an upgrade/compatibility message rather than silently dropping fields. | VAL-011 |
 | TUI season switch with cached panes | Derived caches tied to old window are cleared or rebuilt before render. | VAL-001 |
 | Lean build attempted today | Treat failure as expected target-not-met evidence, not regression against current baseline. | EVID-LEAN-001 |
 
@@ -314,7 +376,11 @@ should proceed in narrow implementation waves:
    route tests, parity checks, and demos become available.
 4. Treat FLETCH/SLICE removal and lean feature gating as target implementation
    waves with rollback/refusal notes before any public compliance claim.
-5. Revisit `TRACE.md` after design review closure so design elements point to
+5. Treat the major analytics cache as a target implementation wave: first define
+   schema fixtures and compatibility, then build/source-state/invalidation
+   fixtures, then consumer demos. Do not let a dashboard/report claim cache-backed
+   analytics before the cache evidence exists.
+6. Revisit `TRACE.md` after design review closure so design elements point to
    `DESIGN.md` rows rather than only architecture-level contracts.
 
 No user data migration is introduced by this file. Future local-state changes
@@ -338,6 +404,7 @@ formalize before production changes are made.
 | Upstream failures | 429/503/schema drift degrade as plausible output. | Integration tests cover retry/backoff, unavailable state, and loud failures. |
 | Feature gating | Lean/standalone claim lands before Cargo proof. | Dependency inspection and `cargo build --no-default-features --features cli` evidence are required before status changes. |
 | FLETCH/SLICE removal | Command behavior disappears silently. | Every removed dependency surface records replacement, refusal, compatibility shim, or rollback note. |
+| Analytics cache | Future screens compute or reinterpret metrics independently. | A cache contract test proves consumers preserve cache envelope semantics and disclosure without local source-state/confidence recomputation. |
 | Visual tokens | Color is the only state carrier. | Token adapters include text/glyph/aria/report labels and ASCII fallback where applicable. |
 | Evidence ledger | Reviews stay prose-only. | Verification rows link command output, fixture names, route tests, demos, or explicit target-not-met evidence. |
 
@@ -350,3 +417,4 @@ formalize before production changes are made.
 | FLETCH/SLICE replacement scope may affect user-visible commands. | Require replacement/refusal/rollback notes before dependency removal is called complete. |
 | Validation evidence remains mostly pending. | Move to evidence rows during Gate 3; this file only defines evidence hooks. |
 | Static site status is deferred while `icelines-site` remains in the workspace. | Do not advertise static site as active user surface without a later design update. |
+| Major analytics cache lacks implementation and storage migration details. | Keep cache rows target-only until WP-009 records schema, storage/read path, invalidation, and consumer-contract evidence. |

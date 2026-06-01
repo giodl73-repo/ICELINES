@@ -725,11 +725,100 @@ Git execution:
 
 Status: closed_with_risk.
 
+## WP-009: Major analytics cache foundation
+
+Parent IDs:
+
+- Requirements: `REQ-CACHE-001`, `REQ-CACHE-002`, `REQ-CACHE-003`,
+  `REQ-CACHE-004`, `REQ-CODE-001`
+- Interfaces: `IF-CACHE-001`, `IF-DATA-001`, `IF-VIEW-001`, `IF-REPORT-001`
+- Design/architecture: major analytics cache target design, ADR-VT-006
+- Validation: `VAL-011`
+- Integration: `INT-009`
+- Change control: `CHG-072`
+
+Scope:
+
+- Define and implement a versioned major analytics cache record and consumer
+  envelope for future hockey decision surfaces.
+- Build from explicit local/bundled/snapshot source state only; no cache read path
+  may call live APIs.
+- Carry provenance, freshness/staleness, source window, quality/completeness,
+  warnings, invalidation keys, methodology version, and disclosure fields through
+  cache records and consumer envelopes.
+- Prove stale, partial, missing, schema-incompatible, unsupported metric, invalid
+  key, and consumer-contract mismatch states refuse or degrade explicitly.
+- Demonstrate at least one coach/scout/report/card-style consumer envelope without
+  renderer-local recomputation of canonical analytics, confidence, or source-state
+  meaning.
+
+Out of scope:
+
+- Claiming production cache availability before implementation fixtures pass.
+- Autonomous coaching decisions, prediction accuracy, betting value, injury
+  certainty, line-chemistry causality, or complete-world truth.
+- Building all downstream dashboards/reports in the same package.
+
+Entry criteria:
+
+- CHG-072 target-spec baseline is accepted.
+- Cache storage path, schema compatibility rule, first metric families, and first
+  consumer fixture are selected before Rust implementation begins.
+- Source-state fixtures are identified for complete, stale, partial, missing,
+  unsupported, and schema-incompatible cache inputs.
+
+Exit criteria:
+
+- `IF-CACHE-001` record/envelope schema has compatibility fixtures.
+- Cache build/read tests prove no query-time live fetch and explicit unavailable,
+  stale, partial, unsupported, and invalidation behavior.
+- Consumer contract tests prove downstream surfaces preserve prepared analytics,
+  provenance, freshness, quality/completeness, warnings, and disclosure.
+- `VALIDATION.md`, `VERIFICATION.md`, `TRACE.md`, `REVIEW.md`,
+  `INTEGRATION_PLAN.md`, and wave pulse records point to concrete evidence.
+- Required docs/source gates pass.
+
+Verification plan:
+
+| Level | Required | Planned Evidence | Status |
+|---|---|---|---|
+| L0 | yes | Schema/contract fixture tests for cache records, invalidation keys, version compatibility, and consumer envelopes. | target_spec_pending |
+| L1 | yes | Tempdir/source-state fixtures for missing/stale/partial/schema/unsupported/no-live paths plus affected clippy/format tests if code is touched. | target_spec_pending |
+| L2 | yes | At least one consumer demo or snapshot showing cache-backed decision-support envelope and non-claim disclosure. | target_spec_pending |
+
+V closure: target_spec_pending. This package is opened as the next product
+direction but has not implemented cache behavior.
+
+Validation impact: adds `VAL-011` for coach/analyst trust in a shared analytics
+evidence layer.
+
+Risks: a cache can amplify stale or partial data across many future screens; the
+contract must refuse or disclose degraded state before any consumer claim.
+
+Assurance/security classification: HART, Campbell, WIRE, TAPE, SCOUT, and BENCH
+review lanes required before implementation closure.
+
+Review gate: specification baseline accepted 2026-06-01; implementation closure
+requires a later WP-009 closeout review.
+
+Git execution:
+
+- Branch/worktree: child-repo implementation branch or focused docs/spec branch.
+- Commit plan: keep cache implementation/evidence in ICELINES before any TRACKER
+  submodule pointer update.
+- Push/PR condition: no cache consumer claim is promoted without schema,
+  source-state, invalidation, and non-claim evidence.
+- Agent stop condition: stop if a cache read path fetches live data, zero-fills
+  missing hockey facts, or hides stale/partial source state.
+
+Status: target_spec_pending.
+
 ## Orphan Check
 
 Before implementation starts, confirm:
 
-- [x] Every accepted `REQ-*` is assigned to a work package or dispositioned.
+- [x] Every accepted `REQ-*` is assigned to a work package or dispositioned;
+  target cache requirements are assigned to WP-009.
 - [x] Every interface-changing work package names `IF-*` IDs.
 - [x] Every critical-code work package names `CR-*` IDs.
 - [x] Every work package has exit criteria and verification commands.

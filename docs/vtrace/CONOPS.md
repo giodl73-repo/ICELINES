@@ -21,6 +21,7 @@ defined in `VALIDATION.md`, **not** an existing test (BENCH).
 | New / casual user | Browse via the web dashboard with no setup | Discoverable UI, bookmarkable URL state, always-visible context |
 | Fantasy manager | Make roster/trade/poach decisions | Gaps, simulation, poach board; offline, repeatable |
 | Data tracker | Acquire and verify depth data | Easy `fetch`/`data install`/`snapshot`; honest capability matrix |
+| Coach / analyst | Consume prepared evidence for roster, matchup, game-day, and postgame decisions | Fast canonical analytics, provenance/freshness disclosure, no black-box coaching authority |
 | Operator / maintainer | Build, run, and ship the binary | Standalone build, feature-gated lean builds, green gates |
 | Future agent | Resume work from intent + trace | Readable `docs/vtrace/`, truthful status |
 
@@ -247,6 +248,43 @@ Outputs: a release binary; green CI; (target) a lean offline binary.
 Handoffs: build evidence feeds `VERIFICATION.md` and `REVIEW.md`.
 
 Validation evidence: VAL-009 (`VALIDATION.md`).
+
+### CON-010: Major analytics cache for hockey decision surfaces
+
+Trigger: a coach, analyst, or future report/screen wants the same prepared
+evidence for game-day, opponent scout, player-card, line-combination, goalie,
+practice-focus, and postgame review workflows without recomputing or inventing
+analytics in each front end.
+
+Inputs: explicit cache build/read request with season/type, source window,
+query/view family, team/player/game/line keys where applicable, source manifest
+or snapshot generation, and requested consumer contract.
+
+Normal path: a cache builder reads only validated local/bundled/snapshot source
+state, computes canonical analytics records, attaches provenance, freshness,
+source-window, quality/completeness, and invalidation metadata, and exposes a
+read model for downstream screens/reports. Consumers can ask for prepared facts
+and explanation fields, but may not silently recompute rankings, confidence, or
+source-state meaning. Cache records are evidence for human judgment, not
+autonomous coaching authority.
+
+Failure or degraded path: missing source, stale generation, partial window,
+invalid key shape, unsupported metric, or cache/schema mismatch returns typed
+unavailable/stale/partial/refusal state. The cache does not call live APIs during
+read paths, does not zero-fill missing hockey facts, and does not claim
+prediction accuracy, injury certainty, betting insight, line chemistry causality,
+or complete-world truth unless a later controlled requirement proves it.
+
+Outputs: versioned analytics cache records and consumer-ready envelopes carrying
+metric values, context, provenance, freshness/staleness, quality/completeness,
+warnings, invalidation keys, and disclosure text.
+
+Handoffs: future Coach Game-Day Dashboard, Opponent Scout Report, Player
+Evidence Card, Line Combination Explorer, Goalie Readiness & Workload View,
+Practice Focus Report, Postgame Review Report, and agent-facing summaries
+consume the cache through `IF-CACHE-001`.
+
+Validation evidence: VAL-011 (`VALIDATION.md`).
 
 ## Operational Assumptions
 
