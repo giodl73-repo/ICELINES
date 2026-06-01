@@ -1,5 +1,42 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 04 Consumer ViewModel Review
+
+**Scope:** First downstream consumer fixture for the major analytics cache.
+
+**Decision:** `partial_pass`
+
+Pulse 04 adds an internal dashboard-style ViewModel that consumes an
+`AnalyticsCacheConsumerEnvelope` and preserves the cache envelope, source state,
+freshness, quality, methodology, disclosures, non-claims, supported metrics, and
+prepared metric rows without recomputing cache meaning. A fetch-store fixture
+proves a strict JSON cache record can feed the same consumer view.
+
+This review does not claim shipped coach dashboard, scout report, player-card,
+line, goalie, practice, postgame, or agent surfaces.
+
+### Evidence inspected
+
+- `icelines-core/src/view_model/analytics_cache_consumer.rs`
+- `icelines-core/src/view_model/mod.rs`
+- `icelines-core/src/lib.rs`
+- `icelines-fetch/src/analytics_cache_store.rs`
+- `context/waves/2026-06-01-vtrace-wp009-analytics-cache/pulses/pulse-04.md`
+- `cargo test -p icelines-core analytics_cache --quiet`
+- `cargo test -p icelines-fetch analytics_cache_store --quiet`
+- `cargo fmt --check`
+- `cargo clippy -p icelines-core --lib --tests -- -D warnings`
+- `cargo clippy -p icelines-fetch --lib --tests -- -D warnings`
+- `C:\src\proof\target\debug\proof.exe check C:\src\TRACKER\repos\applied-systems\icelines\docs\vtrace --errors-only`
+- `git diff --check`
+
+### Accepted risks
+
+- The consumer ViewModel is an internal fixture, not a shipped user-facing
+  screen.
+- Public product copy for coach/scout/report/card/line/goalie/practice/postgame
+  surfaces still needs its own DCR, evidence, and review.
+
 ## 2026-06-01 WP-009 Pulse 03 Cache Store/Read Review
 
 **Scope:** Strict `icelines-fetch::analytics_cache_store` storage/read and

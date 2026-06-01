@@ -7,9 +7,10 @@ for coach/scout/report/card/line/goalie/practice/postgame decision-support
 surfaces.
 
 This wave started with a specification baseline and now has partial
-implementation evidence for the core contract and strict tempdir-backed store.
-It does not yet claim a dashboard/report surface, agent action, prediction
-accuracy, or autonomous coaching authority.
+implementation evidence for the core contract, strict tempdir-backed store, and
+first internal downstream consumer ViewModel fixture. It does not yet claim a
+dashboard/report surface, agent action, prediction accuracy, or autonomous
+coaching authority.
 
 ## Entry posture
 
@@ -41,6 +42,8 @@ accuracy, or autonomous coaching authority.
    partial, missing, unsupported, invalid-key, and schema-incompatible behavior.
 3. Consumer slice: prove one dashboard/report/card-style envelope preserves
    prepared analytics, provenance, freshness, quality, warnings, and disclosures.
+   - Status: done for the internal ViewModel fixture in pulse 04; shipped
+     product surfaces remain pending.
 
 ## Pulse log
 
@@ -49,3 +52,4 @@ accuracy, or autonomous coaching authority.
 | 01 | Specification baseline and DCR acceptance | docs_passed; implementation_target_spec_pending |
 | 02 | Initial core schema/source/consumer contract | core_cache_contract_partial_passed |
 | 03 | Strict fetch-layer cache store/read/invalidation fixtures | store_read_invalidation_partial_passed |
+| 04 | Downstream consumer ViewModel fixture | consumer_viewmodel_partial_passed |

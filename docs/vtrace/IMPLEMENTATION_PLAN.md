@@ -18,7 +18,7 @@ future code, fixture, route, browser, dependency, and validation work.
 |---|---|---|
 | `MISSION.md` | accepted | Mission targets include personalized workbench layouts, descriptive public reporting, offline confidence, and lean/standalone goals. |
 | `CONOPS.md` | accepted | Ten scenarios define the operating workflows and validation intent, including the target major analytics cache workflow. |
-| `REQUIREMENTS.md` | accepted with targets | Accepted requirements are implementation inputs; `REQ-WB-003` is passed_with_risk for WP-002, `REQ-DEP-001` and `REQ-LEAN-001` remain target posture, and `REQ-CACHE-001..004` are target specification rows until WP-009 evidence passes. |
+| `REQUIREMENTS.md` | accepted with targets | Accepted requirements are implementation inputs; `REQ-WB-003` is passed_with_risk for WP-002, `REQ-DEP-001` and `REQ-LEAN-001` remain target posture, and `REQ-CACHE-001..004` are partial until shipped product-surface evidence passes. |
 | `ARCHITECTURE.md` | accepted with risk | Architecture freezes active surfaces, source-state posture, and target/deferred claims. |
 | `INTERFACES.md` | accepted with open questions | Interfaces are controlled; `IF-LAYOUT-001` and `IF-BUILD-001` require implementation detail before closure. |
 | `DESIGN.md` | accepted with risk | Design allocates ViewModels, source-state propagation, TUI/Web state, reports, and target Cargo features. |
@@ -59,9 +59,10 @@ Target-only rows remain honest:
   replaced with command-surface evidence.
 - `REQ-LEAN-001` is target-not-met until the lean CLI feature build and offline
   smoke pass.
-- `REQ-CACHE-001..004` are target specification rows until WP-009 implements and
-  verifies the versioned analytics cache schema, source-state/invalidation
-  behavior, and consumer contract.
+- `REQ-CACHE-001..004` have partial WP-009 implementation evidence for the
+  versioned analytics cache schema, source-state/invalidation behavior, strict
+  store/read path, and internal consumer ViewModel; shipped product surfaces
+  remain pending.
 
 ## Sequencing
 
@@ -101,7 +102,7 @@ an explicit target disposition.
 | REQ-FRESH-001 / DES-012 / IF-FETCH-001 / IF-DATA-001 / CR-018 / CR-019 / CR-029 / CR-031 | WP-005 | implement | Upstream/cache failure handling is fixture-backed. |
 | REQ-DEP-001 / DES-010 / DES-011 / IF-BUILD-001 / CR-021 / CR-022 | WP-007 | target | Starts only after command-surface replacement/refusal inventory exists. |
 | REQ-LEAN-001 / DES-010 / IF-BUILD-001 / CR-021 | WP-007 | target | Remains target-not-met until feature surgery and lean build evidence pass. |
-| REQ-CACHE-001..004 / IF-CACHE-001 / CR-033 / VAL-011 | WP-009 | target | Major analytics cache is accepted as the next product direction but remains unimplemented until schema/source-state/invalidation/consumer fixtures pass. |
+| REQ-CACHE-001..004 / IF-CACHE-001 / CR-033 / VAL-011 | WP-009 | partial | Major analytics cache has initial schema/source-state/invalidation/store and internal consumer fixtures; shipped product-surface claims remain pending until copy and consumer evidence pass. |
 | REQ-CODE-001 / CODE_RIGOR.md / VERIFICATION.md command matrix / CR-005 / CR-023 | All packages; WP-008 | implement | Code rigor is a closure gate for every package. |
 
 Disposition values: `implement`, `implement target`, and `target` are used here.

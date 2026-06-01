@@ -464,4 +464,46 @@ mod tests {
         assert_eq!(envelope.metrics, record.metrics);
         assert_eq!(envelope.non_claims, record.non_claims);
     }
+
+    #[test]
+    fn l2_wp009_store_feeds_dashboard_consumer_view_without_recomputing() {
+        let dir = TempDir::new().unwrap();
+        let store = AnalyticsCacheStore::under_data_root(dir.path());
+        let mut record = sample_record("coach_dashboard:consumer-view");
+        record.quality.completeness = Completeness::Partial;
+        record.metrics[0].methodology_note = Some("prepared cache methodology".to_string());
+        record.metrics[0].source_state = vec![source_state(Completeness::Partial)];
+        store
+            .write_record(&record, &supported_metric_keys())
+            .unwrap();
+
+        let read = store
+            .read_record(&record.cache_key, &supported_metric_keys(), t())
+            .unwrap();
+        let envelope = store
+            .read_consumer_envelope(
+                &record.cache_key,
+                &supported_metric_keys(),
+                AnalyticsCacheConsumerKind::CoachDashboard,
+                t(),
+            )
+            .unwrap();
+        let view =
+            icelines_core::AnalyticsCacheConsumerView::from_envelope(&envelope, read.disposition);
+
+        assert_eq!(view.title, "Coach Game-Day Dashboard");
+        assert_eq!(view.cache_key, record.cache_key);
+        assert_eq!(view.disposition, AnalyticsCacheReadDisposition::Fresh);
+        assert_eq!(view.sources, record.sources);
+        assert_eq!(view.quality, record.quality);
+        assert_eq!(view.methodology_version, record.methodology_version);
+        assert_eq!(view.metrics[0].cell, record.metrics[0].cell);
+        assert_eq!(view.metrics[0].source_state, record.metrics[0].source_state);
+        assert_eq!(
+            view.metrics[0].methodology_note,
+            record.metrics[0].methodology_note
+        );
+        assert_eq!(view.disclosures, record.disclosures);
+        assert_eq!(view.non_claims, record.non_claims);
+    }
 }

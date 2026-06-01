@@ -528,9 +528,10 @@ meaning.
 Evidence: CON-010; REQ-CACHE-001; REQ-CACHE-002; REQ-CACHE-003;
 REQ-CACHE-004; VAL-011; CHG-072; WP-009; `icelines-core::analytics_cache`
 initial schema/consumer contract; `icelines-fetch::analytics_cache_store`
-strict store/read/invalidation contract. The first store-backed
-consumer-envelope fixture remains an internal coach-dashboard contract test, not
-a shipped screen.
+strict store/read/invalidation contract;
+`icelines-core::view_model::analytics_cache_consumer` internal consumer
+ViewModel fixture. The first store-backed consumer-envelope and ViewModel
+fixtures remain internal coach-dashboard contract tests, not a shipped screen.
 
 ### IF-BUILD-001: Cargo feature/dependency boundary
 

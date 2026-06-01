@@ -84,11 +84,12 @@ pub use transactions::{
     CURRENT_CLASSIFIER_VERSION, TRANSACTIONS_EARLIEST_SEASON,
 };
 pub use view_model::{
-    build_fantasy_simulation_view, fantasy_roster_games_played, fantasy_roster_games_remaining,
-    find_fantasy_roster_player, goalie_scheme_stats_from_view, project_fantasy_roster_score,
-    project_fantasy_scenario, resolve_fantasy_scenario_roster,
+    analytics_cache_consumer_title, build_fantasy_simulation_view, fantasy_roster_games_played,
+    fantasy_roster_games_remaining, find_fantasy_roster_player, goalie_scheme_stats_from_view,
+    project_fantasy_roster_score, project_fantasy_scenario, resolve_fantasy_scenario_roster,
     resolve_fantasy_scenario_roster_details, score_fantasy_roster, scouting_report_sections,
-    skater_scheme_stats_from_view, watch_rules_view_with_persisted, AppliedFilter, CareerRow,
+    skater_scheme_stats_from_view, watch_rules_view_with_persisted,
+    AnalyticsCacheConsumerMetricRow, AnalyticsCacheConsumerView, AppliedFilter, CareerRow,
     CareerSortKey, CareerView, CompareView, Completeness, ConfigEntryInput, ConfigEntryRow,
     ConfigMutationIntent, ConfigView, DataMutationIntent, DataMutationOperation,
     DataStatusEntryInput, DataStatusRow, DataStatusView, DepthGoalieSlot, DepthLeagueView,
