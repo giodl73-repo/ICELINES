@@ -534,14 +534,15 @@ ViewModel fixture; `icelines-web::handlers::analytics_cache_report` named-cache
 HTML/JSON report fixture, coach dashboard route fixture, opponent scout route
 fixture, player evidence-card route fixture, line-combination explorer route
 fixture, goalie readiness route fixture, practice focus route fixture, postgame
-review route fixture, and postgame adjustment-review route fixture. The first
-store-backed consumer-envelope and
+review route fixture, postgame adjustment-review route fixture, and agent
+evidence summary route fixture. The first store-backed consumer-envelope and
 ViewModel fixtures now feed a narrow named-cache report, active-context coach
 dashboard route, active-context opponent scout route, active-context player
 evidence-card route, active-context line-combination explorer route,
 active-context goalie readiness route, active-context practice focus route, and
 active-context postgame review route plus a second active-context postgame
-adjustment-review route; broader practice and postgame workflows remain pending.
+adjustment-review route plus an active-context agent evidence summary route;
+broader practice, postgame, and agent workflows remain pending.
 
 ### IF-BUILD-001: Cargo feature/dependency boundary
 

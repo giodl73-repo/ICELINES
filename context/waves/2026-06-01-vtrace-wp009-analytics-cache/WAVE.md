@@ -13,7 +13,7 @@ product-facing named-cache Web report, first coach-specific dashboard route,
 first opponent-scout cache report route, first player evidence-card route, first
 line-combination explorer route, first goalie readiness/workload route, first
 practice focus route, first postgame review route, and first postgame adjustment
-review route. It does not yet claim a
+review route, and first agent evidence summary route. It does not yet claim a
 full player-card workflow, full line-combination workflow, full goalie workflow,
 full practice workflow, full postgame workflow, agent action, prediction
 accuracy, or autonomous coaching authority.
@@ -53,7 +53,8 @@ accuracy, or autonomous coaching authority.
      dashboard and opponent scout routes in pulses 06-07, player evidence-card
      route in pulse 08, line-combination explorer route in pulse 09, goalie
      readiness/workload route in pulse 10, practice focus route in pulse 11, and
-     postgame review/adjustment-review routes in pulses 12-13.
+     postgame review/adjustment-review routes in pulses 12-13. Pulse 14 adds a
+     read-only agent evidence summary route without promoting agent action.
 4. Product report slice: prove one Web HTML report and JSON twin can render an
    existing cache record without recomputing analytics or fetching live data.
    - Status: done for `/reports/analytics-cache` and
@@ -97,6 +98,11 @@ accuracy, or autonomous coaching authority.
     - Status: done for `/postgame/review` and `/api/v1/postgame/review` in pulse
      12, plus `/postgame/adjustments` and `/api/v1/postgame/adjustments` in
      pulse 13; broader postgame workflows remain pending.
+12. Agent evidence slice: prove one active-context agent evidence route can
+    render an agent evidence consumer envelope without implying an autonomous
+    action surface.
+    - Status: done for `/agents/evidence` and `/api/v1/agents/evidence` in pulse
+      14; broader agent workflows remain pending.
 
 ## Pulse log
 
@@ -115,3 +121,4 @@ accuracy, or autonomous coaching authority.
 | 11 | Practice focus active-cache Web route and JSON twin | practice_focus_partial_passed |
 | 12 | Postgame review active-cache Web route and JSON twin | postgame_review_partial_passed |
 | 13 | Postgame adjustment-review active-cache Web route and JSON twin | postgame_adjustment_review_partial_passed |
+| 14 | Agent evidence summary active-cache Web route and JSON twin | agent_evidence_summary_partial_passed |

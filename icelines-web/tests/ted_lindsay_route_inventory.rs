@@ -55,6 +55,8 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /api/v1/postgame/review",
     "GET /postgame/adjustments",
     "GET /api/v1/postgame/adjustments",
+    "GET /agents/evidence",
+    "GET /api/v1/agents/evidence",
     "GET /scout/opponent",
     "GET /api/v1/scout/opponent",
     "GET /api/v1/watch-rules",

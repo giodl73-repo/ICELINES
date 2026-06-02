@@ -1,5 +1,44 @@
 # VTRACE Review Record
 
+## 2026-06-02 WP-009 Pulse 14 Agent Evidence Summary Cache Surface Review
+
+**Scope:** First read-only agent evidence summary route for the major analytics
+cache.
+
+**Decision:** `partial_pass`
+
+Pulse 14 adds `/agents/evidence` and `/api/v1/agents/evidence` as
+active-context agent evidence summary surfaces. The routes default to
+`agent_evidence:<season>:<season_type>` from Web config and render through the
+same `AnalyticsCacheStore`, consumer envelope, and `AnalyticsCacheConsumerView`
+path as the named-cache report, using `AnalyticsCacheConsumerKind::AgentEvidence`.
+
+**Claims accepted**
+
+- An agent evidence summary HTML route and JSON twin can read the active
+  agent-evidence cache key without requiring the generic report query contract.
+- Missing agent-evidence cache records produce explicit unavailable state and do
+  not create cache directories during read.
+- Existing agent-evidence cache records preserve metrics, source state, quality,
+  methodology, disclosure, non-claim copy, and agent evidence consumer identity
+  through the consumer ViewModel.
+
+**Claims not accepted**
+
+- This is not an autonomous agent, recommendation executor, auto-coaching
+  workflow, or deployment/action authority surface.
+- This does not add prediction, betting, injury certainty, complete-world truth,
+  or line-chemistry causality claims.
+- This does not close broader agent workflow or postgame/practice workflow
+  coverage.
+
+**Required follow-up**
+
+- Keep broader agent workflow claims pending until each shipped surface has
+  cache-read, unavailable-state, and product-copy evidence.
+- Preserve route-specific cache-key defaults in future agent surfaces instead of
+  overloading the generic named-cache route.
+
 ## 2026-06-01 WP-009 Pulse 13 Postgame Adjustment Cache Surface Review
 
 **Scope:** First postgame adjustment-review product route for the major analytics

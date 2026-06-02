@@ -34,6 +34,7 @@ const GOALIE_READINESS_JSON_PATH: &str = "/api/v1/goalies/readiness";
 const PRACTICE_FOCUS_JSON_PATH: &str = "/api/v1/practice/focus";
 const POSTGAME_REVIEW_JSON_PATH: &str = "/api/v1/postgame/review";
 const POSTGAME_ADJUSTMENTS_JSON_PATH: &str = "/api/v1/postgame/adjustments";
+const AGENT_EVIDENCE_JSON_PATH: &str = "/api/v1/agents/evidence";
 const OPPONENT_SCOUT_JSON_PATH: &str = "/api/v1/scout/opponent";
 const DEFAULT_COACH_DASHBOARD_METRICS: &str = "expected_goals_share";
 const DEFAULT_PLAYER_EVIDENCE_CARD_METRICS: &str = "expected_goals_share";
@@ -42,6 +43,7 @@ const DEFAULT_GOALIE_READINESS_METRICS: &str = "expected_goals_share";
 const DEFAULT_PRACTICE_FOCUS_METRICS: &str = "expected_goals_share";
 const DEFAULT_POSTGAME_REVIEW_METRICS: &str = "expected_goals_share";
 const DEFAULT_POSTGAME_ADJUSTMENTS_METRICS: &str = "expected_goals_share";
+const DEFAULT_AGENT_EVIDENCE_METRICS: &str = "expected_goals_share";
 const DEFAULT_OPPONENT_SCOUT_METRICS: &str = "expected_goals_share";
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -427,6 +429,46 @@ pub async fn postgame_adjustments(
     }
 }
 
+pub async fn agent_evidence(
+    State(state): State<WebState>,
+    Query(query): Query<AnalyticsCacheReportQuery>,
+) -> impl IntoResponse {
+    let config = state.config.read().await.clone();
+    let active_label = config.active_label.clone();
+    let query = surface_query(
+        query,
+        &config,
+        "agent_evidence",
+        DEFAULT_AGENT_EVIDENCE_METRICS,
+    );
+    let template =
+        match load_analytics_cache_report(&query, AnalyticsCacheConsumerKind::AgentEvidence) {
+            Ok(payload) => template_from_payload(
+                active_label,
+                payload,
+                query.metrics.as_deref(),
+                None,
+                AGENT_EVIDENCE_JSON_PATH,
+            ),
+            Err(err) => unavailable_template(
+                "Agent Evidence Summary",
+                active_label,
+                &query,
+                err,
+                AGENT_EVIDENCE_JSON_PATH,
+            ),
+        };
+
+    match template.render() {
+        Ok(body) => Html(body).into_response(),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to render agent evidence summary: {err}"),
+        )
+            .into_response(),
+    }
+}
+
 pub async fn analytics_cache_report_json(
     Query(query): Query<AnalyticsCacheReportQuery>,
 ) -> impl IntoResponse {
@@ -656,6 +698,32 @@ pub async fn postgame_adjustments_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active postgame-adjustments analytics cache before using this report.",
+            })),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn agent_evidence_json(
+    State(state): State<WebState>,
+    Query(query): Query<AnalyticsCacheReportQuery>,
+) -> impl IntoResponse {
+    let config = state.config.read().await.clone();
+    let query = surface_query(
+        query,
+        &config,
+        "agent_evidence",
+        DEFAULT_AGENT_EVIDENCE_METRICS,
+    );
+    match load_analytics_cache_report(&query, AnalyticsCacheConsumerKind::AgentEvidence) {
+        Ok(payload) => Json(json!(payload)).into_response(),
+        Err(err) => (
+            err.status,
+            Json(json!(AnalyticsCacheUnavailablePayload {
+                status: "unavailable",
+                cache_key: query.cache_key.clone(),
+                reason: err.message,
+                guidance: "Build or restore the active agent-evidence analytics cache before using this summary.",
             })),
         )
             .into_response(),

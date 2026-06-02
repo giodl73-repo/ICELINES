@@ -231,8 +231,8 @@ Web report/JSON twin, first coach dashboard route/JSON twin, first opponent scou
 route/JSON twin, first player evidence-card route/JSON twin, first
 line-combination explorer route/JSON twin, first goalie readiness route/JSON
 twin, first practice focus route/JSON twin, first postgame review route/JSON
-twin, and first postgame adjustment-review route/JSON twin. Broader shipped
-product surfaces remain pending.
+twin, first postgame adjustment-review route/JSON twin, and first agent evidence
+summary route/JSON twin. Broader shipped product surfaces remain pending.
 
 Required record envelope:
 
@@ -394,13 +394,14 @@ should proceed in narrow implementation waves:
    first opponent scout route/JSON twin, first player evidence-card route/JSON
    twin, first line-combination explorer route/JSON twin, first goalie readiness
    route/JSON twin, first practice focus route/JSON twin, first postgame review
-   route/JSON twin, and first postgame adjustment-review route/JSON twin, but
-   broader shipped consumer claims remain pending
+   route/JSON twin, first postgame adjustment-review route/JSON twin, and first
+   agent evidence summary route/JSON twin, but broader shipped consumer claims
+   remain pending
    until their evidence passes. Do not let a broader postgame workflow, broader
    practice workflow, broader goalie workflow, broader
    line-combination workflow, broader player-card workflow, broader scout
-   workflow, or broader coach dashboard claim cache-backed analytics before the
-   matching evidence exists.
+   workflow, broader agent workflow, or broader coach dashboard claim
+   cache-backed analytics before the matching evidence exists.
 6. Revisit `TRACE.md` after design review closure so design elements point to
    `DESIGN.md` rows rather than only architecture-level contracts.
 
@@ -438,4 +439,4 @@ formalize before production changes are made.
 | FLETCH/SLICE replacement scope may affect user-visible commands. | Require replacement/refusal/rollback notes before dependency removal is called complete. |
 | Validation evidence remains mostly pending. | Move to evidence rows during Gate 3; this file only defines evidence hooks. |
 | Static site status is deferred while `icelines-site` remains in the workspace. | Do not advertise static site as active user surface without a later design update. |
-| Major analytics cache implementation is partial with only the first named-cache product report, first coach dashboard route, first opponent scout route, first player evidence-card route, first line-combination explorer route, first goalie readiness route, first practice focus route, first postgame review route, and first postgame adjustment-review route. | Treat the in-core schema/consumer contract, strict store/read path, internal consumer ViewModel, named-cache Web report, coach dashboard route, opponent scout route, player evidence-card route, line-combination explorer route, goalie readiness route, practice focus route, postgame review route, and postgame adjustment-review route as foundation evidence only; keep broader shipped consumer claims pending until their WP-009 evidence passes. |
+| Major analytics cache implementation is partial with only the first named-cache product report, first coach dashboard route, first opponent scout route, first player evidence-card route, first line-combination explorer route, first goalie readiness route, first practice focus route, first postgame review route, first postgame adjustment-review route, and first agent evidence summary route. | Treat the in-core schema/consumer contract, strict store/read path, internal consumer ViewModel, named-cache Web report, coach dashboard route, opponent scout route, player evidence-card route, line-combination explorer route, goalie readiness route, practice focus route, postgame review route, postgame adjustment-review route, and agent evidence summary route as foundation evidence only; keep broader shipped consumer claims pending until their WP-009 evidence passes. |

@@ -193,6 +193,14 @@ fn postgame_adjustments_record(cache_key: &str) -> icelines_core::AnalyticsCache
     )
 }
 
+fn agent_evidence_record(cache_key: &str) -> icelines_core::AnalyticsCacheRecord {
+    sample_record(
+        cache_key,
+        "agent_evidence",
+        vec![AnalyticsCacheConsumerKind::AgentEvidence],
+    )
+}
+
 async fn response_text(response: Response) -> String {
     let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
         .await
@@ -1068,6 +1076,106 @@ async fn l2_wp009_postgame_adjustments_renders_cache_as_postgame_consumer_view()
     assert_eq!(json["consumer"], "postgame_review_report");
     assert_eq!(json["report"]["title"], "Postgame Review Report");
     assert_eq!(json["report"]["consumer"], "postgame_review_report");
+    assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
+}
+
+#[tokio::test]
+async fn l2_wp009_agent_evidence_defaults_to_active_cache_and_explicit_unavailable_state() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/agents/evidence")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Agent Evidence Summary"));
+    assert!(body.contains("Report unavailable"));
+    assert!(body.contains("agent_evidence:20252026:regular"));
+    assert!(body.contains("analytics cache entry is missing: agent_evidence:20252026:regular"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/agents/evidence")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "unavailable");
+    assert_eq!(json["cache_key"], "agent_evidence:20252026:regular");
+    assert!(json["guidance"]
+        .as_str()
+        .expect("guidance")
+        .contains("agent-evidence analytics cache"));
+    assert!(!fixture.path().join("analytics_cache").exists());
+}
+
+#[tokio::test]
+async fn l2_wp009_agent_evidence_renders_cache_as_agent_consumer_view() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let store = AnalyticsCacheStore::under_data_root(fixture.path());
+    let record = agent_evidence_record("agent_evidence:20252026:regular");
+    store
+        .write_record(&record, &supported_metric_keys())
+        .expect("write analytics cache record");
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/agents/evidence")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Agent Evidence Summary"));
+    assert!(body.contains("agent_evidence:20252026:regular"));
+    assert!(body.contains("xG Share"));
+    assert!(body.contains("55.1%"));
+    assert!(body.contains("/api/v1/agents/evidence?cache_key=agent_evidence%3A20252026%3Aregular"));
+    assert!(body.contains("Not a prediction, betting, injury, or autonomous coaching claim."));
+    assert!(!body.contains("execute recommendation"));
+    assert!(!body.contains("autonomous action"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/agents/evidence")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "ready");
+    assert_eq!(json["cache_key"], "agent_evidence:20252026:regular");
+    assert_eq!(json["consumer"], "agent_evidence");
+    assert_eq!(json["report"]["title"], "Agent Evidence Summary");
+    assert_eq!(json["report"]["consumer"], "agent_evidence");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
 }
 
