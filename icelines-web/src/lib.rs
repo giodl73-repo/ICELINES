@@ -201,6 +201,14 @@ pub fn router(state: WebState) -> Router {
             get(handlers::analytics_cache_report::coach_dashboard_json),
         )
         .route(
+            "/scout/opponent",
+            get(handlers::analytics_cache_report::opponent_scout),
+        )
+        .route(
+            "/api/v1/scout/opponent",
+            get(handlers::analytics_cache_report::opponent_scout_json),
+        )
+        .route(
             "/api/v1/watch-rules",
             get(handlers::poach::get_watch_rules_json),
         )

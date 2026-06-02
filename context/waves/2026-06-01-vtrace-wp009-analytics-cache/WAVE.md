@@ -9,10 +9,10 @@ surfaces.
 This wave started with a specification baseline and now has partial
 implementation evidence for the core contract, strict tempdir-backed store,
 first internal downstream consumer ViewModel fixture, first narrow
-product-facing named-cache Web report, and first coach-specific dashboard route.
-It does not yet claim opponent scout, player card, line explorer, goalie,
-practice, postgame, agent action, prediction accuracy, or autonomous coaching
-authority.
+product-facing named-cache Web report, first coach-specific dashboard route, and
+first opponent-scout cache report route. It does not yet claim player card, line
+explorer, goalie, practice, postgame, agent action, prediction accuracy, or
+autonomous coaching authority.
 
 ## Entry posture
 
@@ -46,7 +46,7 @@ authority.
    prepared analytics, provenance, freshness, quality, warnings, and disclosures.
    - Status: done for the internal ViewModel fixture in pulse 04; shipped
      product surfaces are limited to the named-cache report in pulse 05 and the
-     coach dashboard route in pulse 06.
+     coach dashboard and opponent scout routes in pulses 06-07.
 4. Product report slice: prove one Web HTML report and JSON twin can render an
    existing cache record without recomputing analytics or fetching live data.
    - Status: done for `/reports/analytics-cache` and
@@ -56,7 +56,11 @@ authority.
    active-season cache key without forcing operators through the generic report
    query contract.
    - Status: done for `/coach/dashboard` and `/api/v1/coach/dashboard` in pulse
-     06; scout/card/line/goalie/practice/postgame surfaces remain pending.
+     06; broader coach-dashboard expansion remains pending.
+6. Opponent scout slice: prove one active-context scout report route can render
+   a scout consumer envelope without implying a full scouting suite.
+   - Status: done for `/scout/opponent` and `/api/v1/scout/opponent` in pulse
+     07; player-card/line/goalie/practice/postgame surfaces remain pending.
 
 ## Pulse log
 
@@ -68,3 +72,4 @@ authority.
 | 04 | Downstream consumer ViewModel fixture | consumer_viewmodel_partial_passed |
 | 05 | Product-facing named-cache Web report and JSON twin | web_report_partial_passed |
 | 06 | Coach dashboard active-cache Web route and JSON twin | coach_dashboard_partial_passed |
+| 07 | Opponent scout active-cache Web route and JSON twin | opponent_scout_partial_passed |

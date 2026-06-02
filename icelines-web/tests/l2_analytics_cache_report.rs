@@ -73,7 +73,11 @@ fn source_state(state: Completeness) -> SourceState {
     }
 }
 
-fn sample_record(cache_key: &str) -> icelines_core::AnalyticsCacheRecord {
+fn sample_record(
+    cache_key: &str,
+    scope_kind: &str,
+    supported_consumers: Vec<AnalyticsCacheConsumerKind>,
+) -> icelines_core::AnalyticsCacheRecord {
     let source = source_state(Completeness::Complete);
     let mut metric = AnalyticsCacheMetric::new(
         MetricCell {
@@ -90,7 +94,7 @@ fn sample_record(cache_key: &str) -> icelines_core::AnalyticsCacheRecord {
 
     build_analytics_cache_record(AnalyticsCacheBuildInput {
         cache_key: cache_key.to_string(),
-        scope: AnalyticsCacheScope::new("coach_dashboard", Season(20252026), SeasonType::Regular),
+        scope: AnalyticsCacheScope::new(scope_kind, Season(20252026), SeasonType::Regular),
         built_at: t(),
         source_window: AnalyticsCacheSourceWindow::season(
             ViewWindow::new(Season(20252026), SeasonType::Regular),
@@ -117,12 +121,28 @@ fn sample_record(cache_key: &str) -> icelines_core::AnalyticsCacheRecord {
             "Not a prediction, betting, injury, or autonomous coaching claim.".to_string(),
         ],
         supported_metric_keys: supported_metric_keys(),
-        supported_consumers: vec![
+        supported_consumers,
+    })
+    .expect("sample analytics cache record")
+}
+
+fn coach_record(cache_key: &str) -> icelines_core::AnalyticsCacheRecord {
+    sample_record(
+        cache_key,
+        "coach_dashboard",
+        vec![
             AnalyticsCacheConsumerKind::CoachDashboard,
             AnalyticsCacheConsumerKind::PlayerEvidenceCard,
         ],
-    })
-    .expect("sample analytics cache record")
+    )
+}
+
+fn opponent_scout_record(cache_key: &str) -> icelines_core::AnalyticsCacheRecord {
+    sample_record(
+        cache_key,
+        "opponent_scout",
+        vec![AnalyticsCacheConsumerKind::OpponentScoutReport],
+    )
 }
 
 async fn response_text(response: Response) -> String {
@@ -241,7 +261,7 @@ async fn l2_wp009_coach_dashboard_renders_default_cache_without_generic_query_co
     let _guard = env_lock().await;
     let fixture = DataRootFixture::new();
     let store = AnalyticsCacheStore::under_data_root(fixture.path());
-    let record = sample_record("coach_dashboard:20252026:regular");
+    let record = coach_record("coach_dashboard:20252026:regular");
     store
         .write_record(&record, &supported_metric_keys())
         .expect("write analytics cache record");
@@ -288,11 +308,109 @@ async fn l2_wp009_coach_dashboard_renders_default_cache_without_generic_query_co
 }
 
 #[tokio::test]
+async fn l2_wp009_opponent_scout_defaults_to_active_cache_and_explicit_unavailable_state() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/scout/opponent")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Opponent Scout Report"));
+    assert!(body.contains("Report unavailable"));
+    assert!(body.contains("opponent_scout:20252026:regular"));
+    assert!(body.contains("analytics cache entry is missing: opponent_scout:20252026:regular"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/scout/opponent")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "unavailable");
+    assert_eq!(json["cache_key"], "opponent_scout:20252026:regular");
+    assert!(json["guidance"]
+        .as_str()
+        .expect("guidance")
+        .contains("opponent-scout analytics cache"));
+    assert!(!fixture.path().join("analytics_cache").exists());
+}
+
+#[tokio::test]
+async fn l2_wp009_opponent_scout_renders_cache_as_scout_consumer_view() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let store = AnalyticsCacheStore::under_data_root(fixture.path());
+    let record = opponent_scout_record("opponent_scout:20252026:regular");
+    store
+        .write_record(&record, &supported_metric_keys())
+        .expect("write analytics cache record");
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/scout/opponent")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Opponent Scout Report"));
+    assert!(body.contains("opponent_scout:20252026:regular"));
+    assert!(body.contains("xG Share"));
+    assert!(body.contains("55.1%"));
+    assert!(body.contains("/api/v1/scout/opponent?cache_key=opponent_scout%3A20252026%3Aregular"));
+    assert!(body.contains("Not a prediction, betting, injury, or autonomous coaching claim."));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/scout/opponent")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "ready");
+    assert_eq!(json["cache_key"], "opponent_scout:20252026:regular");
+    assert_eq!(json["consumer"], "opponent_scout_report");
+    assert_eq!(json["report"]["title"], "Opponent Scout Report");
+    assert_eq!(json["report"]["consumer"], "opponent_scout_report");
+    assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
+}
+
+#[tokio::test]
 async fn l2_wp009_analytics_cache_report_renders_cache_envelope_without_recomputing() {
     let _guard = env_lock().await;
     let fixture = DataRootFixture::new();
     let store = AnalyticsCacheStore::under_data_root(fixture.path());
-    let record = sample_record("coach_dashboard:20252026:regular");
+    let record = coach_record("coach_dashboard:20252026:regular");
     store
         .write_record(&record, &supported_metric_keys())
         .expect("write analytics cache record");

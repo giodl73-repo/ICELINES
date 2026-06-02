@@ -28,7 +28,9 @@ use crate::WebState;
 
 const GENERIC_REPORT_JSON_PATH: &str = "/api/v1/reports/analytics-cache";
 const COACH_DASHBOARD_JSON_PATH: &str = "/api/v1/coach/dashboard";
+const OPPONENT_SCOUT_JSON_PATH: &str = "/api/v1/scout/opponent";
 const DEFAULT_COACH_DASHBOARD_METRICS: &str = "expected_goals_share";
+const DEFAULT_OPPONENT_SCOUT_METRICS: &str = "expected_goals_share";
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct AnalyticsCacheReportQuery {
@@ -57,22 +59,23 @@ pub async fn analytics_cache_report(
     Query(query): Query<AnalyticsCacheReportQuery>,
 ) -> impl IntoResponse {
     let active_label = state.config.read().await.active_label.clone();
-    let template = match load_analytics_cache_report(&query) {
-        Ok(payload) => template_from_payload(
-            active_label,
-            payload,
-            query.metrics.as_deref(),
-            None,
-            GENERIC_REPORT_JSON_PATH,
-        ),
-        Err(err) => unavailable_template(
-            "Analytics Cache Report",
-            active_label,
-            &query,
-            err,
-            GENERIC_REPORT_JSON_PATH,
-        ),
-    };
+    let template =
+        match load_analytics_cache_report(&query, AnalyticsCacheConsumerKind::CoachDashboard) {
+            Ok(payload) => template_from_payload(
+                active_label,
+                payload,
+                query.metrics.as_deref(),
+                None,
+                GENERIC_REPORT_JSON_PATH,
+            ),
+            Err(err) => unavailable_template(
+                "Analytics Cache Report",
+                active_label,
+                &query,
+                err,
+                GENERIC_REPORT_JSON_PATH,
+            ),
+        };
 
     match template.render() {
         Ok(body) => Html(body).into_response(),
@@ -90,23 +93,29 @@ pub async fn coach_dashboard(
 ) -> impl IntoResponse {
     let config = state.config.read().await.clone();
     let active_label = config.active_label.clone();
-    let query = coach_dashboard_query(query, &config);
-    let template = match load_analytics_cache_report(&query) {
-        Ok(payload) => template_from_payload(
-            active_label,
-            payload,
-            query.metrics.as_deref(),
-            None,
-            COACH_DASHBOARD_JSON_PATH,
-        ),
-        Err(err) => unavailable_template(
-            "Coach Game-Day Dashboard",
-            active_label,
-            &query,
-            err,
-            COACH_DASHBOARD_JSON_PATH,
-        ),
-    };
+    let query = surface_query(
+        query,
+        &config,
+        "coach_dashboard",
+        DEFAULT_COACH_DASHBOARD_METRICS,
+    );
+    let template =
+        match load_analytics_cache_report(&query, AnalyticsCacheConsumerKind::CoachDashboard) {
+            Ok(payload) => template_from_payload(
+                active_label,
+                payload,
+                query.metrics.as_deref(),
+                None,
+                COACH_DASHBOARD_JSON_PATH,
+            ),
+            Err(err) => unavailable_template(
+                "Coach Game-Day Dashboard",
+                active_label,
+                &query,
+                err,
+                COACH_DASHBOARD_JSON_PATH,
+            ),
+        };
 
     match template.render() {
         Ok(body) => Html(body).into_response(),
@@ -118,10 +127,52 @@ pub async fn coach_dashboard(
     }
 }
 
+pub async fn opponent_scout(
+    State(state): State<WebState>,
+    Query(query): Query<AnalyticsCacheReportQuery>,
+) -> impl IntoResponse {
+    let config = state.config.read().await.clone();
+    let active_label = config.active_label.clone();
+    let query = surface_query(
+        query,
+        &config,
+        "opponent_scout",
+        DEFAULT_OPPONENT_SCOUT_METRICS,
+    );
+    let template = match load_analytics_cache_report(
+        &query,
+        AnalyticsCacheConsumerKind::OpponentScoutReport,
+    ) {
+        Ok(payload) => template_from_payload(
+            active_label,
+            payload,
+            query.metrics.as_deref(),
+            None,
+            OPPONENT_SCOUT_JSON_PATH,
+        ),
+        Err(err) => unavailable_template(
+            "Opponent Scout Report",
+            active_label,
+            &query,
+            err,
+            OPPONENT_SCOUT_JSON_PATH,
+        ),
+    };
+
+    match template.render() {
+        Ok(body) => Html(body).into_response(),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to render opponent scout report: {err}"),
+        )
+            .into_response(),
+    }
+}
+
 pub async fn analytics_cache_report_json(
     Query(query): Query<AnalyticsCacheReportQuery>,
 ) -> impl IntoResponse {
-    match load_analytics_cache_report(&query) {
+    match load_analytics_cache_report(&query, AnalyticsCacheConsumerKind::CoachDashboard) {
         Ok(payload) => Json(json!(payload)).into_response(),
         Err(err) => (
             err.status,
@@ -141,8 +192,13 @@ pub async fn coach_dashboard_json(
     Query(query): Query<AnalyticsCacheReportQuery>,
 ) -> impl IntoResponse {
     let config = state.config.read().await.clone();
-    let query = coach_dashboard_query(query, &config);
-    match load_analytics_cache_report(&query) {
+    let query = surface_query(
+        query,
+        &config,
+        "coach_dashboard",
+        DEFAULT_COACH_DASHBOARD_METRICS,
+    );
+    match load_analytics_cache_report(&query, AnalyticsCacheConsumerKind::CoachDashboard) {
         Ok(payload) => Json(json!(payload)).into_response(),
         Err(err) => (
             err.status,
@@ -157,6 +213,35 @@ pub async fn coach_dashboard_json(
     }
 }
 
+pub async fn opponent_scout_json(
+    State(state): State<WebState>,
+    Query(query): Query<AnalyticsCacheReportQuery>,
+) -> impl IntoResponse {
+    let config = state.config.read().await.clone();
+    let query = surface_query(
+        query,
+        &config,
+        "opponent_scout",
+        DEFAULT_OPPONENT_SCOUT_METRICS,
+    );
+    match load_analytics_cache_report(
+        &query,
+        AnalyticsCacheConsumerKind::OpponentScoutReport,
+    ) {
+        Ok(payload) => Json(json!(payload)).into_response(),
+        Err(err) => (
+            err.status,
+            Json(json!(AnalyticsCacheUnavailablePayload {
+                status: "unavailable",
+                cache_key: query.cache_key.clone(),
+                reason: err.message,
+                guidance: "Build or restore the active opponent-scout analytics cache before using this report.",
+            })),
+        )
+            .into_response(),
+    }
+}
+
 #[derive(Debug)]
 struct AnalyticsCacheReportError {
     status: StatusCode,
@@ -165,6 +250,7 @@ struct AnalyticsCacheReportError {
 
 fn load_analytics_cache_report(
     query: &AnalyticsCacheReportQuery,
+    consumer: AnalyticsCacheConsumerKind,
 ) -> Result<AnalyticsCacheReportPayload, AnalyticsCacheReportError> {
     let cache_key = normalized_cache_key(query)?;
     let supported_metric_keys = supported_metric_keys(query)?;
@@ -174,7 +260,7 @@ fn load_analytics_cache_report(
         .map_err(report_error_from_store)?;
     let envelope = analytics_cache_consumer_envelope(
         &read.record,
-        AnalyticsCacheConsumerKind::CoachDashboard,
+        consumer.clone(),
         ANALYTICS_CACHE_CONSUMER_CONTRACT_VERSION,
     )
     .map_err(|err| AnalyticsCacheReportError {
@@ -185,7 +271,7 @@ fn load_analytics_cache_report(
     Ok(AnalyticsCacheReportPayload {
         status: "ready",
         cache_key,
-        consumer: AnalyticsCacheConsumerKind::CoachDashboard,
+        consumer,
         report: AnalyticsCacheConsumerView::from_envelope(&envelope, read.disposition),
     })
 }
@@ -244,9 +330,11 @@ fn report_error_from_store(err: AnalyticsCacheStoreError) -> AnalyticsCacheRepor
     }
 }
 
-fn coach_dashboard_query(
+fn surface_query(
     mut query: AnalyticsCacheReportQuery,
     config: &WebConfig,
+    cache_prefix: &str,
+    default_metrics: &str,
 ) -> AnalyticsCacheReportQuery {
     if query
         .cache_key
@@ -254,7 +342,7 @@ fn coach_dashboard_query(
         .is_none_or(|value| value.trim().is_empty())
     {
         query.cache_key = Some(format!(
-            "coach_dashboard:{}:{}",
+            "{cache_prefix}:{}:{}",
             config.active_season, config.active_season_type
         ));
     }
@@ -263,7 +351,7 @@ fn coach_dashboard_query(
         .as_deref()
         .is_none_or(|value| value.trim().is_empty())
     {
-        query.metrics = Some(DEFAULT_COACH_DASHBOARD_METRICS.to_string());
+        query.metrics = Some(default_metrics.to_string());
     }
     query
 }

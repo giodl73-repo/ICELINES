@@ -1,5 +1,44 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 07 Opponent Scout Cache Surface Review
+
+**Scope:** First opponent-scout product route for the major analytics cache.
+
+**Decision:** `partial_pass`
+
+Pulse 07 adds `/scout/opponent` and `/api/v1/scout/opponent` as active-context
+scout surfaces. The routes default to
+`opponent_scout:<season>:<season_type>` from Web config and render through the
+same `AnalyticsCacheStore`, consumer envelope, and `AnalyticsCacheConsumerView`
+path as the named-cache report, using
+`AnalyticsCacheConsumerKind::OpponentScoutReport`.
+
+**Claims accepted**
+
+- An opponent-scout HTML route and JSON twin can read the active scout cache key
+  without requiring the generic report query contract.
+- Missing opponent-scout cache records produce explicit unavailable state and do
+  not create cache directories during read.
+- Existing opponent-scout cache records preserve metrics, source state, quality,
+  methodology, disclosure, non-claim copy, and scout consumer identity through
+  the consumer ViewModel.
+
+**Claims not accepted**
+
+- This is not a finished scouting suite, opponent-specific game plan, or player
+  evidence card.
+- This does not add line, goalie, practice, postgame, agent, or predictive
+  surfaces.
+- This does not imply betting, injury, deployment, line-chemistry, or autonomous
+  coaching authority.
+
+**Status**
+
+- WP-009 status: `partial`.
+- VAL-011 status: `partial`.
+- Continue broader hockey surfaces only behind the same cache envelope, active
+  context, no-live-read behavior, and copy-review constraints.
+
 ## 2026-06-01 WP-009 Pulse 06 Coach Dashboard Cache Surface Review
 
 **Scope:** First coach-specific product route for the major analytics cache.
