@@ -25,7 +25,9 @@ autonomous coaching claims.
    Physical Engagement Rate, Puck Management Differential, and Penalty Drag Rate.
 3. Prove missing realtime, missing/tiny TOI, and below-threshold sample size do
    not zero-fill.
-4. Document the product semantics and promotion rule before any surface consumes
+4. Add an internal ViewModel boundary before any shipped surface consumes the
+   signals.
+5. Document the product semantics and promotion rule before any surface consumes
    the signals.
 
 ## Pulse log
@@ -33,6 +35,7 @@ autonomous coaching claims.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Core signal descriptor, evidence, and formula contract | core_signals_partial_passed |
+| 02 | Internal Signals ViewModel boundary | core_signals_viewmodel_partial_passed |
 
 ## Residual risk
 

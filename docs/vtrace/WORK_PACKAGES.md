@@ -20,7 +20,7 @@ Status is evidence posture, not a promise that the behavior is already shipped.
 | WP-007 | Remove dependency seams and add lean CLI build. | REQ-DEP-001; REQ-LEAN-001; REQ-CODE-001 | workspace manifests, feature gates, command surfaces, release docs | FLETCH/SLICE command-surface inventory complete; replacement/refusal/rollback plan accepted. | Dependency graph has no FLETCH/SLICE path/git seams; lean CLI build and offline smoke pass. | L0: manifest/dependency inspection; L1: workspace checks; L2: lean build smoke | target-not-met_dispositioned; pulse 01 inventory identifies current blockers and keeps standalone/lean claims unpromoted |
 | WP-008 | Run integration and validation rehearsal. | REQ-CODE-001; VAL-001..VAL-010; TRACE.md | CLI, TUI, Web, JSON, reports, local state, build/deps, docs | Package-level evidence exists or is dispositioned. | Integration evidence, validation rehearsal, trace, and review gate are complete or accepted with risk. | L0: docs/trace checks; L1: workspace checks; L2: validation rehearsal | closed_with_risk; pulse 01 refreshed stale Lindsay L3 golden outputs, retired the broad clippy MDI test initializer lint, passed broad workspace format/clippy/test gates, and aligned VTRACE closeout rows while preserving WP-007 dependency/lean target-not-met posture |
 | WP-009 | Build the major analytics cache foundation. | REQ-CACHE-001; REQ-CACHE-002; REQ-CACHE-003; REQ-CACHE-004; REQ-CODE-001 | analytics cache records/envelopes, cache store/read path, downstream consumer ViewModels, future dashboard/report surfaces | CHG-072 target-spec baseline accepted; storage, schema compatibility, metric family, and first consumer fixture selected. | Versioned schema, no-live read behavior, invalidation/degraded-state behavior, downstream consumer preservation, first named-cache Web report evidence, first coach dashboard route evidence, first opponent scout route evidence, first player evidence-card route evidence, first line-combination explorer route evidence, first goalie readiness route evidence, first practice focus route evidence, first postgame review route evidence, first postgame adjustment-review route evidence, and first agent evidence summary route evidence recorded. | L0: schema/contract fixtures; L1: store/source-state fixtures; L2: consumer preservation and Web report fixtures | partial; pulses 02-14 passed selected core schema/envelope, strict JSON store/read/invalidation, internal consumer ViewModel, first product-facing named-cache Web report, first coach dashboard route, first opponent scout route, first player evidence-card route, first line-combination explorer route, first goalie readiness route, first practice focus route, first postgame review route, first postgame adjustment-review route, and first agent evidence summary route evidence; broader hockey product surfaces remain pending |
-| WP-010 | Define the first IceLines Signals core metric family. | REQ-SIGNAL-001; REQ-DATA-001; REQ-STAT-001; REQ-CODE-001 | `icelines-core::signal_metrics`, signal methodology spec, future stat/cache/report surfaces | CHG-073 accepted; first signal formulas, evidence tiers, and non-claim boundaries selected. | Core descriptors, formulas, required-input evidence, missing-input refusal, and methodology limitations are recorded without promoting stable `StatId` or shipped surface claims. | L0: signal formula/evidence fixtures; L1: affected core clippy/format; L2: not required until a surface consumes Signals | partial; pulse 01 passed selected core descriptor/formula/missing-input evidence for Physical Engagement Rate, Puck Management Differential, and Penalty Drag Rate |
+| WP-010 | Define the first IceLines Signals core metric family. | REQ-SIGNAL-001; REQ-DATA-001; REQ-STAT-001; REQ-CODE-001 | `icelines-core::signal_metrics`, `icelines-core::view_model::signals`, signal methodology spec, future stat/cache/report surfaces | CHG-073 and CHG-074 accepted; first signal formulas, evidence tiers, ViewModel boundary, and non-claim boundaries selected. | Core descriptors, formulas, required-input evidence, missing-input refusal, methodology limitations, and internal ViewModel preservation are recorded without promoting stable `StatId` or shipped surface claims. | L0: signal formula/evidence/ViewModel fixtures; L1: affected core clippy/format; L2: not required until a surface consumes Signals | partial; pulses 01-02 passed selected core descriptor/formula/missing-input evidence and internal ViewModel preservation for Physical Engagement Rate, Puck Management Differential, and Penalty Drag Rate |
 
 ## Work Package Details
 
@@ -846,7 +846,7 @@ Parent IDs:
 - Design/architecture: `DES-016`, signal methodology specification
 - Validation: `VAL-012`
 - Integration: `INT-010`
-- Change control: `CHG-073`
+- Change control: `CHG-073`, `CHG-074`
 
 Scope:
 
@@ -858,6 +858,9 @@ Scope:
   signal.
 - Return unavailable evidence instead of zero-filled values when realtime, sample
   size, or TOI inputs are insufficient.
+- Preserve signal descriptors, evidence, values, methodology, limitations,
+  disclosures, and non-claim copy through an internal ViewModel before user-facing
+  surfaces consume Signals.
 
 Out of scope:
 
@@ -873,9 +876,11 @@ Entry criteria:
 
 Exit criteria:
 
-- `IF-SIGNAL-001` exposes descriptors, evidence tiers, and missing-input details.
+- `IF-SIGNAL-001` exposes descriptors, evidence tiers, missing-input details, and
+  an internal ViewModel boundary.
 - L0 tests prove formulas, missing realtime refusal, missing/tiny TOI refusal,
-  sample refusal, ordering behavior, and lower-is-better penalty polarity.
+  sample refusal, ordering behavior, lower-is-better penalty polarity, and
+  ViewModel evidence preservation.
 - `design/specs/icelines-signals.md`, `VALIDATION.md`, `VERIFICATION.md`,
   `TRACE.md`, `REVIEW.md`, and wave pulse records point to concrete evidence.
 - Required docs/source gates pass.
@@ -884,14 +889,15 @@ Verification plan:
 
 | Level | Required | Planned Evidence | Status |
 |---|---|---|---|
-| L0 | yes | Signal descriptor, formula, missing-input, sample-size, TOI, and polarity fixture tests. | partial; pulse 01 passed selected core fixtures for the first three Signals |
+| L0 | yes | Signal descriptor, formula, missing-input, sample-size, TOI, polarity, and ViewModel preservation fixture tests. | partial; pulses 01-02 passed selected core fixtures and internal ViewModel preservation for the first three Signals |
 | L1 | yes | Affected core format and clippy gates. | pending final gate |
 | L2 | no for pulse 01 | Required only when Signals reach a user-facing surface or cache/report consumer. | not_required |
 
 V closure: partial. The first core-only descriptor/evidence/formula API exists in
-`icelines-core::signal_metrics`, and the product methodology spec exists in
-`design/specs/icelines-signals.md`. No surface or stable stat-catalog claim is
-accepted yet.
+`icelines-core::signal_metrics`, the first internal consumer shape exists in
+`icelines-core::view_model::signals`, and the product methodology spec exists in
+`design/specs/icelines-signals.md`. No shipped surface or stable stat-catalog
+claim is accepted yet.
 
 Validation impact: adds `VAL-012` for trustworthy descriptive signal invention.
 
@@ -901,7 +907,8 @@ prediction; every future surface must preserve methodology and limitation copy.
 Assurance/security classification: PACE, HART, BENCH, and Jim Gregory lanes are
 required before implementation closure.
 
-Review gate: pulse 01 accepted the first core-only signal family with residual
+Review gate: pulse 01 accepted the first core-only signal family, and pulse 02
+accepted the internal Signals ViewModel boundary, both with residual
 surface-promotion risk. Implementation closure requires product-surface evidence
 if Signals are rendered outside core.
 

@@ -38,6 +38,9 @@ Current outputs:
 - `SignalEvidenceTier` plus missing-input details before a value is rendered.
 - `None` for unavailable values; missing realtime, missing/tiny TOI, and
   below-threshold sample size are not numeric zeroes.
+- `PlayerSignalsView` rows that preserve player identity, active window, signal
+  value, evidence tier, missing inputs, methodology, limitations, disclosures,
+  and non-claim copy for future renderers.
 
 Compatibility rule: future consumers may add signals or descriptor fields
 additively, but any surface promotion must preserve evidence coverage and

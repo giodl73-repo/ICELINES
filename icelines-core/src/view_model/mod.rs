@@ -34,6 +34,7 @@ pub mod scores;
 pub mod scoring;
 pub mod scoring_outlook;
 pub mod scoring_pace;
+pub mod signals;
 pub mod snapshot;
 pub mod streaks;
 pub mod team_depth;
@@ -154,6 +155,7 @@ pub use scoring_pace::{
     PlayerScoringPaceMetric, PlayerScoringPaceRow, PlayerScoringPaceSampleStatus,
     PlayerScoringPaceView,
 };
+pub use signals::{PlayerSignalRow, PlayerSignalsView};
 pub use snapshot::{
     SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,
     SnapshotView,

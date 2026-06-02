@@ -7,8 +7,9 @@ are not new official NHL stats, predictive model outputs, betting edges, injury
 signals, deployment recommendations, or autonomous coaching decisions.
 
 Signals remain separate from `StatId` until methodology, consumer fit, and
-surface copy are reviewed across the product. The first core slice is exposed
-through `icelines-core::signal_metrics` only.
+surface copy are reviewed across the product. The first core slices are exposed
+through `icelines-core::signal_metrics` and the internal
+`icelines-core::view_model::signals` boundary only.
 
 ## Initial signal set
 
@@ -30,6 +31,11 @@ Each signal exposes a descriptor and a typed evidence outcome:
 Missing realtime, missing or tiny TOI, and below-threshold sample size return
 `None` instead of `0.0`. Consumers must render that as unavailable or missing
 evidence, not as a player value.
+
+`PlayerSignalsView` is the canonical internal consumer shape for future
+renderers. It carries player identity, active window, one row per Signal, typed
+evidence tiers, missing-input labels, methodology, limitations, disclosures, and
+non-claim copy so renderers do not recompute signal meaning locally.
 
 ## Promotion rule
 

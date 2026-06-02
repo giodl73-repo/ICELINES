@@ -4,29 +4,35 @@
 //! They are intentionally separate from `StatId` until their methodology and
 //! consumer fit are proven across product surfaces.
 
+use serde::{Deserialize, Serialize};
+
 use crate::model::MIN_GP;
 use crate::stats_repository::PlayerView;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum SignalMetricId {
     PhysicalEngagementRate,
     PuckManagementDifferential,
     PenaltyDragRate,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum SignalMetricUnit {
     Per60,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum SignalPolarity {
     HigherIsBetter,
     LowerIsBetter,
     Neutral,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum SignalInput {
     SampleSize,
     Realtime,
@@ -46,14 +52,15 @@ pub struct SignalMetricDescriptor {
     pub limitations: &'static str,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum SignalEvidenceTier {
     Missing,
     Partial,
     Full,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SignalEvidence {
     pub tier: SignalEvidenceTier,
     pub missing_inputs: Vec<SignalInput>,

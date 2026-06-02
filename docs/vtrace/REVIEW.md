@@ -1,5 +1,39 @@
 # VTRACE Review Record
 
+## 2026-06-02 WP-010 Pulse 02 Signals ViewModel Boundary Review
+
+**Scope:** First internal ViewModel boundary for IceLines Signals.
+
+**Decision:** `partial_pass`
+
+Pulse 02 adds `PlayerSignalsView` and `PlayerSignalRow` under
+`icelines-core::view_model::signals`. The ViewModel preserves player identity,
+active season context, signal descriptors, values, units, polarity, evidence
+tiers, missing inputs, methodology, limitations, disclosures, and non-claim copy
+without adding a shipped user-facing surface.
+
+**Claims accepted**
+
+- Future renderers have one internal row shape for Signals rather than needing to
+  recompute descriptor, value, evidence, or limitation semantics locally.
+- Missing realtime evidence remains unavailable in the ViewModel instead of
+  zero-filled.
+- Penalty Drag Rate remains available in the same ViewModel when its required
+  sample and TOI inputs are present.
+
+**Claims not accepted**
+
+- This does not add stable stat catalog entries, leaderboards, CLI, TUI, Web,
+  report/export, or analytics-cache signal surfaces.
+- This does not claim prediction, betting value, injury certainty, deployment
+  advice, line-chemistry causality, complete-world truth, or autonomous coaching
+  authority.
+
+**Required follow-up**
+
+- Any public Signals surface must consume the ViewModel or an equivalent
+  evidence-preserving envelope and add product-copy/source-state evidence.
+
 ## 2026-06-02 WP-010 Pulse 01 Core IceLines Signals Review
 
 **Scope:** First core-only IceLines Signals metric family.
