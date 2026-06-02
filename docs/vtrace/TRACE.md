@@ -22,6 +22,18 @@ pending implementation behavior is already shipped or proven.
 | Static site posture | `icelines-site` and mkdocs remain deferred/historical for this VTRACE baseline; report/export artifacts remain active evidence surfaces. |
 | Work package closure | `WP-*` rows are implementation planning and gate controls; closure still requires `EVID-*`, command, fixture, snapshot, route/browser, demo, blocked, waived, or target-not-met evidence. |
 
+## Specification Visibility
+
+| Spec ID | Source IDs | Trace Surface | Evidence |
+|---|---|---|---|
+| SPEC-ICE-001 | REQ-WB-001 / REQ-WB-002 / REQ-WB-003 | Workbench state and layouts | Workbench, active-context, and layout rows in requirement trace and WP-002 evidence |
+| SPEC-ICE-002 | REQ-QUERY-001 / REQ-PARITY-001 / REQ-DATA-001 | Query and ViewModel parity | WP-001 parity, source-state, and route/export evidence rows |
+| SPEC-ICE-003 | REQ-STAT-001 / REQ-STAT-002 / REQ-REPORT-001 | Stat-in-perspective and reports | WP-004 disclosure, edge-case, and report/export evidence |
+| SPEC-ICE-004 | REQ-WEB-001 / REQ-WEB-002 | Web dashboard safety | WP-003 route, no-JS, recovery, and serve-launch evidence |
+| SPEC-ICE-005 | REQ-OFFLINE-001 / REQ-DATA-DEPTH-001 / REQ-FRESH-001 | Source state and data-depth reliability | WP-005 snapshot, offline, fetch, schema, and missing-source evidence |
+| SPEC-ICE-006 | REQ-FANTASY-001 / REQ-CACHE-001 / REQ-CACHE-002 / REQ-CACHE-003 / REQ-CACHE-004 / REQ-SIGNAL-001 | Fantasy, analytics cache, and signals | WP-006 fantasy, WP-009 cache, and WP-010 signal evidence |
+| SPEC-ICE-007 | REQ-DEP-001 / REQ-LEAN-001 / REQ-CODE-001 | Build and dependency posture | Code-rigor, dependency, lean-build, and target-not-met evidence rows |
+
 ## Requirement Trace
 
 | Requirement | Need / Scenario | Architecture / Design Link | Interface Link | Validation Link | Verification / Evidence Link | Code Rigor Link | Status |

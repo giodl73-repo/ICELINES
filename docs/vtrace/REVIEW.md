@@ -1,5 +1,14 @@
 # VTRACE Review Record
 
+## Review Lanes
+
+| Lane | Required | Decision | Evidence / Rationale |
+|---|---|---|---|
+| Hockey analytics claim honesty | yes | accepted_with_risk | Stat, report, cache, and signal rows preserve source-state and non-claim limits. |
+| Cross-surface parity | yes | accepted_with_risk | CLI/TUI/Web/export parity is tracked through selected evidence and residual risk rows. |
+| Data/source reliability | yes | accepted_with_risk | Offline, fetch, freshness, schema, and missing-source behavior remains evidence-gated. |
+| Configuration/change control | yes | accepted | Work packages and code-rigor rows preserve validation obligations for future changes. |
+
 ## 2026-06-20 Phase Rangers Closeout Review
 
 **Scope:** Phase Rangers post-Hurricane organization round.
