@@ -12,7 +12,8 @@ first internal downstream consumer ViewModel fixture, first narrow
 product-facing named-cache Web report, first coach-specific dashboard route,
 first opponent-scout cache report route, first player evidence-card route, first
 line-combination explorer route, first goalie readiness/workload route, first
-practice focus route, and first postgame review route. It does not yet claim a
+practice focus route, first postgame review route, and first postgame adjustment
+review route. It does not yet claim a
 full player-card workflow, full line-combination workflow, full goalie workflow,
 full practice workflow, full postgame workflow, agent action, prediction
 accuracy, or autonomous coaching authority.
@@ -52,7 +53,7 @@ accuracy, or autonomous coaching authority.
      dashboard and opponent scout routes in pulses 06-07, player evidence-card
      route in pulse 08, line-combination explorer route in pulse 09, goalie
      readiness/workload route in pulse 10, practice focus route in pulse 11, and
-     postgame review route in pulse 12.
+     postgame review/adjustment-review routes in pulses 12-13.
 4. Product report slice: prove one Web HTML report and JSON twin can render an
    existing cache record without recomputing analytics or fetching live data.
    - Status: done for `/reports/analytics-cache` and
@@ -94,7 +95,8 @@ accuracy, or autonomous coaching authority.
     render a postgame consumer envelope without implying causal blame assignment
     or automatic correction authority.
     - Status: done for `/postgame/review` and `/api/v1/postgame/review` in pulse
-     12; broader postgame workflows remain pending.
+     12, plus `/postgame/adjustments` and `/api/v1/postgame/adjustments` in
+     pulse 13; broader postgame workflows remain pending.
 
 ## Pulse log
 
@@ -112,3 +114,4 @@ accuracy, or autonomous coaching authority.
 | 10 | Goalie readiness/workload active-cache Web route and JSON twin | goalie_readiness_partial_passed |
 | 11 | Practice focus active-cache Web route and JSON twin | practice_focus_partial_passed |
 | 12 | Postgame review active-cache Web route and JSON twin | postgame_review_partial_passed |
+| 13 | Postgame adjustment-review active-cache Web route and JSON twin | postgame_adjustment_review_partial_passed |

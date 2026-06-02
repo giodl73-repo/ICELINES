@@ -1,5 +1,45 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 13 Postgame Adjustment Cache Surface Review
+
+**Scope:** First postgame adjustment-review product route for the major analytics
+cache.
+
+**Decision:** `partial_pass`
+
+Pulse 13 adds `/postgame/adjustments` and `/api/v1/postgame/adjustments` as a
+second narrow active-context postgame workflow surface. The routes default to
+`postgame_adjustments:<season>:<season_type>` from Web config and render through
+the same `AnalyticsCacheStore`, consumer envelope, and `AnalyticsCacheConsumerView`
+path as the postgame review surface, using
+`AnalyticsCacheConsumerKind::PostgameReviewReport`.
+
+**Claims accepted**
+
+- A postgame adjustment-review HTML route and JSON twin can read the active
+  postgame-adjustment cache key without requiring the generic report query
+  contract.
+- Missing postgame-adjustment cache records produce explicit unavailable state
+  and do not create cache directories during read.
+- Existing postgame-adjustment cache records preserve metrics, source state,
+  quality, methodology, disclosure, non-claim copy, and postgame consumer
+  identity through the consumer ViewModel.
+
+**Claims not accepted**
+
+- This is not a finished postgame report suite, loss-cause attribution engine,
+  automatic correction planner, or autonomous coaching workflow.
+- This does not add agent, predictive, deployment-authority, or causal blame
+  surfaces.
+- This does not close broader postgame workflow or game-state coverage.
+
+**Required follow-up**
+
+- Keep broader postgame workflow claims pending until each shipped surface has
+  cache-read, unavailable-state, and product-copy evidence.
+- Preserve route-specific cache-key defaults in future postgame surfaces instead
+  of overloading the generic named-cache route.
+
 ## 2026-06-01 WP-009 Pulse 12 Postgame Review Cache Surface Review
 
 **Scope:** First postgame review product route for the major analytics cache.
@@ -431,9 +471,9 @@ fixtures, or complete invalidation behavior.
 
 - WP-009 status: `partial`.
 - VAL-011 status: `partial`.
-- Next action: implement storage/read and broader source-state/invalidation
-  fixtures before attaching dashboard, report, card, line, goalie, practice, or
-  postgame surfaces.
+- Next action: keep extending shipped dashboard, report, card, line, goalie,
+  practice, and postgame surfaces only when each route has cache-read,
+  unavailable-state, and product-copy evidence.
 
 ## 2026-06-01 WP-009 Major Analytics Cache Specification Baseline Review
 
