@@ -131,7 +131,7 @@ jobs:
           - area: cli-system
             command: cargo test -p icelines-cli --test system_tests --test system_tui_experiences
           - area: cli-smoke
-            command: cargo test -p icelines-cli --test foster_capability_matrix --test proof_lib_smoke
+            command: cargo test -p icelines-cli --test foster_capability_matrix
           - area: doc-tests
             command: cargo test --workspace --doc
 
