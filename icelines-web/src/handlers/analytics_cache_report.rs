@@ -23,9 +23,14 @@ use crate::templates::{
     AnalyticsCacheReportMetricTemplateRow, AnalyticsCacheReportSourceTemplateRow,
     AnalyticsCacheReportTemplate,
 };
+use crate::WebConfig;
 use crate::WebState;
 
-#[derive(Debug, Deserialize)]
+const GENERIC_REPORT_JSON_PATH: &str = "/api/v1/reports/analytics-cache";
+const COACH_DASHBOARD_JSON_PATH: &str = "/api/v1/coach/dashboard";
+const DEFAULT_COACH_DASHBOARD_METRICS: &str = "expected_goals_share";
+
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct AnalyticsCacheReportQuery {
     cache_key: Option<String>,
     metrics: Option<String>,
@@ -53,8 +58,20 @@ pub async fn analytics_cache_report(
 ) -> impl IntoResponse {
     let active_label = state.config.read().await.active_label.clone();
     let template = match load_analytics_cache_report(&query) {
-        Ok(payload) => template_from_payload(active_label, payload, query.metrics.as_deref(), None),
-        Err(err) => unavailable_template(active_label, &query, err),
+        Ok(payload) => template_from_payload(
+            active_label,
+            payload,
+            query.metrics.as_deref(),
+            None,
+            GENERIC_REPORT_JSON_PATH,
+        ),
+        Err(err) => unavailable_template(
+            "Analytics Cache Report",
+            active_label,
+            &query,
+            err,
+            GENERIC_REPORT_JSON_PATH,
+        ),
     };
 
     match template.render() {
@@ -62,6 +79,40 @@ pub async fn analytics_cache_report(
         Err(err) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("failed to render analytics cache report: {err}"),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn coach_dashboard(
+    State(state): State<WebState>,
+    Query(query): Query<AnalyticsCacheReportQuery>,
+) -> impl IntoResponse {
+    let config = state.config.read().await.clone();
+    let active_label = config.active_label.clone();
+    let query = coach_dashboard_query(query, &config);
+    let template = match load_analytics_cache_report(&query) {
+        Ok(payload) => template_from_payload(
+            active_label,
+            payload,
+            query.metrics.as_deref(),
+            None,
+            COACH_DASHBOARD_JSON_PATH,
+        ),
+        Err(err) => unavailable_template(
+            "Coach Game-Day Dashboard",
+            active_label,
+            &query,
+            err,
+            COACH_DASHBOARD_JSON_PATH,
+        ),
+    };
+
+    match template.render() {
+        Ok(body) => Html(body).into_response(),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to render coach dashboard: {err}"),
         )
             .into_response(),
     }
@@ -79,6 +130,27 @@ pub async fn analytics_cache_report_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the named analytics cache before using this report.",
+            })),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn coach_dashboard_json(
+    State(state): State<WebState>,
+    Query(query): Query<AnalyticsCacheReportQuery>,
+) -> impl IntoResponse {
+    let config = state.config.read().await.clone();
+    let query = coach_dashboard_query(query, &config);
+    match load_analytics_cache_report(&query) {
+        Ok(payload) => Json(json!(payload)).into_response(),
+        Err(err) => (
+            err.status,
+            Json(json!(AnalyticsCacheUnavailablePayload {
+                status: "unavailable",
+                cache_key: query.cache_key.clone(),
+                reason: err.message,
+                guidance: "Build or restore the active coach-dashboard analytics cache before using this screen.",
             })),
         )
             .into_response(),
@@ -172,17 +244,43 @@ fn report_error_from_store(err: AnalyticsCacheStoreError) -> AnalyticsCacheRepor
     }
 }
 
+fn coach_dashboard_query(
+    mut query: AnalyticsCacheReportQuery,
+    config: &WebConfig,
+) -> AnalyticsCacheReportQuery {
+    if query
+        .cache_key
+        .as_deref()
+        .is_none_or(|value| value.trim().is_empty())
+    {
+        query.cache_key = Some(format!(
+            "coach_dashboard:{}:{}",
+            config.active_season, config.active_season_type
+        ));
+    }
+    if query
+        .metrics
+        .as_deref()
+        .is_none_or(|value| value.trim().is_empty())
+    {
+        query.metrics = Some(DEFAULT_COACH_DASHBOARD_METRICS.to_string());
+    }
+    query
+}
+
 fn unavailable_template(
+    title: impl Into<String>,
     active_label: String,
     query: &AnalyticsCacheReportQuery,
     err: AnalyticsCacheReportError,
+    json_path: &str,
 ) -> AnalyticsCacheReportTemplate {
     let cache_key = query.cache_key.clone().unwrap_or_default();
     AnalyticsCacheReportTemplate {
-        title: "Analytics Cache Report".to_string(),
+        title: title.into(),
         active_label,
         cache_key: cache_key.clone(),
-        json_href: json_href(&cache_key, query.metrics.as_deref()),
+        json_href: json_href(json_path, &cache_key, query.metrics.as_deref()),
         status: "unavailable".to_string(),
         disposition: "unavailable".to_string(),
         source_window: "not loaded".to_string(),
@@ -206,6 +304,7 @@ fn template_from_payload(
     payload: AnalyticsCacheReportPayload,
     metrics_query: Option<&str>,
     error: Option<String>,
+    json_path: &str,
 ) -> AnalyticsCacheReportTemplate {
     let report = payload.report;
     let cache_key = payload.cache_key;
@@ -238,7 +337,7 @@ fn template_from_payload(
         title: report.title,
         active_label,
         cache_key: cache_key.clone(),
-        json_href: json_href(&cache_key, metrics_query),
+        json_href: json_href(json_path, &cache_key, metrics_query),
         status: payload.status.to_string(),
         disposition: format!("{:?}", report.disposition),
         source_window: report.source_window.source_window_label,
@@ -305,9 +404,9 @@ fn decimal_label(value: f64, unit: MetricUnit, precision: usize) -> String {
     }
 }
 
-fn json_href(cache_key: &str, metrics: Option<&str>) -> String {
+fn json_href(path: &str, cache_key: &str, metrics: Option<&str>) -> String {
     let encoded_key = percent_encode_query_component(cache_key);
-    let mut href = format!("/api/v1/reports/analytics-cache?cache_key={encoded_key}");
+    let mut href = format!("{path}?cache_key={encoded_key}");
     if let Some(metrics) = metrics.filter(|value| !value.trim().is_empty()) {
         href.push_str("&metrics=");
         href.push_str(&percent_encode_query_component(metrics));

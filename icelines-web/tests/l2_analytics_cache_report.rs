@@ -12,7 +12,7 @@ use icelines_core::{
     SemanticToken, SourceKind, SourceProvenance, SourceState, StatKey, ValuePrecision, ViewWindow,
 };
 use icelines_fetch::analytics_cache_store::AnalyticsCacheStore;
-use icelines_web::{router, WebState};
+use icelines_web::{router, WebConfig, WebState};
 use tempfile::TempDir;
 use tokio::sync::Mutex;
 use tower::util::ServiceExt;
@@ -132,6 +132,15 @@ async fn response_text(response: Response) -> String {
     String::from_utf8(bytes.to_vec()).expect("utf8 body")
 }
 
+async fn app_with_config(season: &str, season_type: &str) -> axum::Router {
+    let state = WebState::new();
+    {
+        let mut config = state.config.write().await;
+        *config = WebConfig::new(season, season_type);
+    }
+    router(state)
+}
+
 #[tokio::test]
 async fn l2_wp009_analytics_cache_report_missing_cache_is_explicitly_unavailable() {
     let _guard = env_lock().await;
@@ -179,6 +188,103 @@ async fn l2_wp009_analytics_cache_report_missing_cache_is_explicitly_unavailable
         .expect("reason")
         .contains("analytics cache entry is missing: missing:cache"));
     assert!(!fixture.path().join("analytics_cache").exists());
+}
+
+#[tokio::test]
+async fn l2_wp009_coach_dashboard_defaults_to_active_cache_and_explicit_unavailable_state() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/coach/dashboard")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Coach Game-Day Dashboard"));
+    assert!(body.contains("Report unavailable"));
+    assert!(body.contains("coach_dashboard:20252026:regular"));
+    assert!(body.contains("analytics cache entry is missing: coach_dashboard:20252026:regular"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/coach/dashboard")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "unavailable");
+    assert_eq!(json["cache_key"], "coach_dashboard:20252026:regular");
+    assert!(json["guidance"]
+        .as_str()
+        .expect("guidance")
+        .contains("coach-dashboard analytics cache"));
+    assert!(!fixture.path().join("analytics_cache").exists());
+}
+
+#[tokio::test]
+async fn l2_wp009_coach_dashboard_renders_default_cache_without_generic_query_contract() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let store = AnalyticsCacheStore::under_data_root(fixture.path());
+    let record = sample_record("coach_dashboard:20252026:regular");
+    store
+        .write_record(&record, &supported_metric_keys())
+        .expect("write analytics cache record");
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/coach/dashboard")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Coach Game-Day Dashboard"));
+    assert!(body.contains("coach_dashboard:20252026:regular"));
+    assert!(body.contains("xG Share"));
+    assert!(body.contains("55.1%"));
+    assert!(body.contains("/api/v1/coach/dashboard?cache_key=coach_dashboard%3A20252026%3Aregular"));
+    assert!(body.contains("Not a prediction, betting, injury, or autonomous coaching claim."));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/coach/dashboard")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "ready");
+    assert_eq!(json["cache_key"], "coach_dashboard:20252026:regular");
+    assert_eq!(json["consumer"], "coach_dashboard");
+    assert_eq!(json["report"]["title"], "Coach Game-Day Dashboard");
+    assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
 }
 
 #[tokio::test]

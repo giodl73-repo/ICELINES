@@ -193,6 +193,14 @@ pub fn router(state: WebState) -> Router {
             get(handlers::analytics_cache_report::analytics_cache_report_json),
         )
         .route(
+            "/coach/dashboard",
+            get(handlers::analytics_cache_report::coach_dashboard),
+        )
+        .route(
+            "/api/v1/coach/dashboard",
+            get(handlers::analytics_cache_report::coach_dashboard_json),
+        )
+        .route(
             "/api/v1/watch-rules",
             get(handlers::poach::get_watch_rules_json),
         )

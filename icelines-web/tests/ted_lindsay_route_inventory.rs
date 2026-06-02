@@ -41,6 +41,8 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /reports/analytics-cache",
     "GET /api/v1/poach",
     "GET /api/v1/reports/analytics-cache",
+    "GET /coach/dashboard",
+    "GET /api/v1/coach/dashboard",
     "GET /api/v1/watch-rules",
     "POST /api/v1/watch-rules/set-enabled",
     "POST /watch-rules/set-enabled",

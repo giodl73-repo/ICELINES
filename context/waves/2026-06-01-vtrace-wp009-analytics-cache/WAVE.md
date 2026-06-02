@@ -8,10 +8,11 @@ surfaces.
 
 This wave started with a specification baseline and now has partial
 implementation evidence for the core contract, strict tempdir-backed store,
-first internal downstream consumer ViewModel fixture, and first narrow
-product-facing named-cache Web report. It does not yet claim a full dashboard,
-scout report, player card, line explorer, agent action, prediction accuracy, or
-autonomous coaching authority.
+first internal downstream consumer ViewModel fixture, first narrow
+product-facing named-cache Web report, and first coach-specific dashboard route.
+It does not yet claim opponent scout, player card, line explorer, goalie,
+practice, postgame, agent action, prediction accuracy, or autonomous coaching
+authority.
 
 ## Entry posture
 
@@ -44,12 +45,18 @@ autonomous coaching authority.
 3. Consumer slice: prove one dashboard/report/card-style envelope preserves
    prepared analytics, provenance, freshness, quality, warnings, and disclosures.
    - Status: done for the internal ViewModel fixture in pulse 04; shipped
-     product surfaces remain limited to the named-cache report in pulse 05.
+     product surfaces are limited to the named-cache report in pulse 05 and the
+     coach dashboard route in pulse 06.
 4. Product report slice: prove one Web HTML report and JSON twin can render an
    existing cache record without recomputing analytics or fetching live data.
    - Status: done for `/reports/analytics-cache` and
      `/api/v1/reports/analytics-cache` in pulse 05; broader hockey screens and
      reports remain pending.
+5. Coach dashboard slice: prove one user-friendly coach route can default to the
+   active-season cache key without forcing operators through the generic report
+   query contract.
+   - Status: done for `/coach/dashboard` and `/api/v1/coach/dashboard` in pulse
+     06; scout/card/line/goalie/practice/postgame surfaces remain pending.
 
 ## Pulse log
 
@@ -60,3 +67,4 @@ autonomous coaching authority.
 | 03 | Strict fetch-layer cache store/read/invalidation fixtures | store_read_invalidation_partial_passed |
 | 04 | Downstream consumer ViewModel fixture | consumer_viewmodel_partial_passed |
 | 05 | Product-facing named-cache Web report and JSON twin | web_report_partial_passed |
+| 06 | Coach dashboard active-cache Web route and JSON twin | coach_dashboard_partial_passed |
