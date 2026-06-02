@@ -31,6 +31,7 @@ pub mod scheme;
 pub mod scoring;
 pub mod season_stats;
 pub mod series_momentum;
+pub mod signal_metrics;
 pub mod stats_catalog;
 pub mod stats_repository;
 pub mod teams;
@@ -78,6 +79,10 @@ pub use roster_shape::{
 pub use scheme::{compute_fantasy_score, FantasyScore, Scheme, SkaterStats as SchemeSkaterStats};
 pub use scoring::{classify_fit, compute_pace_score, sort_views_by_pace};
 pub use season_stats::SeasonStatsBuildError;
+pub use signal_metrics::{
+    SignalEvidence, SignalEvidenceTier, SignalInput, SignalMetricDescriptor, SignalMetricId,
+    SignalMetricUnit, SignalPolarity,
+};
 pub use teams::CANONICAL_TEAMS;
 pub use transactions::{
     classify, other_rate, sanitize_description, trade_group_id, Transaction, TransactionKind,

@@ -13,6 +13,7 @@ data-state vocabulary called out by R2.
 |---|---|---|---|---|---|---|
 | IF-DATA-001 | Source/completeness state vocabulary | schema / ViewModel | HART / Campbell | CLI, TUI, Web, JSON API, exports | Typed state is authoritative; renderer text may vary but semantics may not. | REQ-DATA-001; VER-REQ-DATA-001 |
 | IF-VIEW-001 | ViewModel envelope | schema / internal API | Campbell | Surface adapters and report/export writers | Additive fields allowed; row identity and context fields remain stable. | REQ-PARITY-001 |
+| IF-SIGNAL-001 | IceLines signal metric descriptor and evidence API | internal API | PACE / HART | Core signal consumers, future cache/report/surface builders | Signals expose descriptors, required inputs, evidence tiers, units, polarity, methodology, and limitations; missing evidence returns unavailable instead of numeric zero. | REQ-SIGNAL-001 |
 | IF-QUERY-001 | Art Ross filter/query intent | CLI / TUI / API grammar | Art Ross | CLI, TUI cmdbar, web params, AI fallback | User-facing grammar changes require explicit version/review notes. | REQ-QUERY-001 |
 | IF-WEB-001 | Dashboard routes and URL state | API / route / URL | Ted Lindsay | Browser users, bookmarks, automation | GET routes are read-only; user-controlled state is URL-visible and allowlisted. Selected WP-003 evidence now covers POST-only season-type mutation, cache-read-only `/favorites` stat-line rendering, missing-cache `/player/:id/streaks`, `/team/:abbrev/streaks`, and `/api/v1/team/:abbrev/streaks` rendering, selected scoring/outlook/tonight-intel GET/JSON rendering, selected Admin data-status GET/JSON rendering without creating local data state, selected no-JS/viewport/recovery shell route evidence, and serve URL-before-open / `--no-open` / LAN bind warning evidence. Selected WP-006 evidence now covers fantasy JSON missing-DB and missing-cache reads without creating missing local SQLite or data-cache state, existing-FantasyDb and poach imported-availability reads without creating SQLite WAL/SHM sidecar state, and dashboard fantasy import / roster-shape mutation deferrals instead of GET-backed mutation. | REQ-WEB-001; REQ-WEB-002 |
 | IF-LAYOUT-001 | Named workbench layout state | config / state schema | Jack Adams / GLASS | TUI, Web, local config, bookmarks | Durable layouts are versioned records; renderer-local state may not be the semantic source of truth. | REQ-WB-003 |
@@ -21,6 +22,26 @@ data-state vocabulary called out by R2.
 | IF-BUILD-001 | Cargo feature/dependency boundary | build interface | FORGE / KEEL | Maintainers, release scripts | Standalone/lean claims require no cross-repo deps and a passing lean build. | REQ-DEP-001; REQ-LEAN-001 |
 
 ## Interface Details
+
+### IF-SIGNAL-001: IceLines signal metric descriptor and evidence API
+
+Purpose: let future hockey-facing surfaces use descriptive composite metrics
+without hiding scorer bias, missing inputs, tiny-TOI problems, or sample-size
+limits.
+
+Current outputs:
+
+- Stable signal IDs for Physical Engagement Rate, Puck Management Differential,
+  and Penalty Drag Rate.
+- Descriptors with label, short label, CLI-safe key, unit, polarity, required
+  inputs, methodology, and limitations.
+- `SignalEvidenceTier` plus missing-input details before a value is rendered.
+- `None` for unavailable values; missing realtime, missing/tiny TOI, and
+  below-threshold sample size are not numeric zeroes.
+
+Compatibility rule: future consumers may add signals or descriptor fields
+additively, but any surface promotion must preserve evidence coverage and
+non-claim limitations from `design/specs/icelines-signals.md`.
 
 ### IF-DATA-001: Source/completeness state vocabulary
 

@@ -63,6 +63,9 @@ Target-only rows remain honest:
   versioned analytics cache schema, source-state/invalidation behavior, strict
   store/read path, internal consumer ViewModel, and first named-cache Web report;
   broader shipped product surfaces remain pending.
+- `REQ-SIGNAL-001` has partial WP-010 core-only implementation evidence for the
+  first IceLines Signals descriptors, formulas, and missing-input evidence; no
+  stable stat catalog or shipped surface claim is accepted.
 
 ## Sequencing
 
@@ -77,6 +80,7 @@ Target-only rows remain honest:
 | 7 | WP-007 Standalone dependency and lean CLI target | Higher-risk Cargo/dependency work waits until command-surface inventory is ready. |
 | 8 | WP-008 Integration and validation rehearsal | Runs cross-surface L2 evidence after package-level work is closed or explicitly deferred. |
 | 9 | WP-009 Major analytics cache foundation | Defines the shared analytics evidence layer before downstream coach/scout/report/card/line/goalie/practice/postgame front ends are built. |
+| 10 | WP-010 IceLines Signals core metric family | Starts new descriptive metric methodology behind a core evidence API before any stat catalog, cache, report, or surface promotion. |
 
 ## Source-To-Work-Package Mapping
 
@@ -103,6 +107,7 @@ an explicit target disposition.
 | REQ-DEP-001 / DES-010 / DES-011 / IF-BUILD-001 / CR-021 / CR-022 | WP-007 | target | Starts only after command-surface replacement/refusal inventory exists. |
 | REQ-LEAN-001 / DES-010 / IF-BUILD-001 / CR-021 | WP-007 | target | Remains target-not-met until feature surgery and lean build evidence pass. |
 | REQ-CACHE-001..004 / IF-CACHE-001 / CR-033 / VAL-011 | WP-009 | partial | Major analytics cache has initial schema/source-state/invalidation/store and internal consumer fixtures; shipped product-surface claims remain pending until copy and consumer evidence pass. |
+| REQ-SIGNAL-001 / IF-SIGNAL-001 / DES-016 / VAL-012 | WP-010 | partial | First core-only Signals descriptors and formula/evidence fixtures exist; shipped surfaces and stable `StatId` promotion remain pending until product-copy/source-state evidence exists. |
 | REQ-CODE-001 / CODE_RIGOR.md / VERIFICATION.md command matrix / CR-005 / CR-023 | All packages; WP-008 | implement | Code rigor is a closure gate for every package. |
 
 Disposition values: `implement`, `implement target`, and `target` are used here.

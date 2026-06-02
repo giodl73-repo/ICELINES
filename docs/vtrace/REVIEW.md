@@ -1,5 +1,43 @@
 # VTRACE Review Record
 
+## 2026-06-02 WP-010 Pulse 01 Core IceLines Signals Review
+
+**Scope:** First core-only IceLines Signals metric family.
+
+**Decision:** `partial_pass`
+
+Pulse 01 adds `icelines-core::signal_metrics` with descriptor/evidence-backed
+reads for Physical Engagement Rate, Puck Management Differential, and Penalty
+Drag Rate. The module exposes stable signal IDs, units, polarity, required
+inputs, methodology, limitations, typed evidence tiers, and missing-input
+details while staying separate from the stable `StatId` catalog.
+
+**Claims accepted**
+
+- The first three Signals can compute from existing `PlayerView` season stats
+  when required sample, realtime, and TOI evidence is present.
+- Missing realtime inputs, missing or tiny TOI, and below-threshold sample size
+  return unavailable values instead of zero-filled success.
+- Descriptor limitations disclose scorer bias and descriptive-only boundaries
+  for realtime and penalty-derived signals.
+
+**Claims not accepted**
+
+- This does not add stable stat catalog entries, leaderboards, CLI, TUI, Web,
+  report/export, or analytics-cache signal surfaces.
+- This does not claim prediction, betting value, injury certainty, deployment
+  advice, line-chemistry causality, complete-world truth, or autonomous coaching
+  authority.
+- This does not prove broader signal families such as special-teams leverage,
+  creation pressure, or evidence-card integrations.
+
+**Required follow-up**
+
+- Keep Signals core-only until each future consumer adds product-copy,
+  source/completeness, parity where applicable, and non-claim evidence.
+- Preserve typed unavailable evidence for missing signal inputs; do not render
+  missing Signals as `0.0`.
+
 ## 2026-06-02 WP-009 Pulse 14 Agent Evidence Summary Cache Surface Review
 
 **Scope:** First read-only agent evidence summary route for the major analytics
