@@ -1,5 +1,44 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 12 Postgame Review Cache Surface Review
+
+**Scope:** First postgame review product route for the major analytics cache.
+
+**Decision:** `partial_pass`
+
+Pulse 12 adds `/postgame/review` and `/api/v1/postgame/review` as
+active-context postgame review surfaces. The routes default to
+`postgame_review:<season>:<season_type>` from Web config and render through the
+same `AnalyticsCacheStore`, consumer envelope, and `AnalyticsCacheConsumerView`
+path as the named-cache report, using
+`AnalyticsCacheConsumerKind::PostgameReviewReport`.
+
+**Claims accepted**
+
+- A postgame review HTML route and JSON twin can read the active postgame cache
+  key without requiring the generic report query contract.
+- Missing postgame-review cache records produce explicit unavailable state and do
+  not create cache directories during read.
+- Existing postgame-review cache records preserve metrics, source state, quality,
+  methodology, disclosure, non-claim copy, and postgame consumer identity through
+  the consumer ViewModel.
+
+**Claims not accepted**
+
+- This is not a finished postgame report suite, loss-cause attribution engine,
+  automatic correction planner, or autonomous coaching workflow.
+- This does not add agent, predictive, or causal blame surfaces.
+- This does not imply betting, injury certainty, deployment authority,
+  line-chemistry causality, mandatory correction plans, or autonomous coaching
+  authority.
+
+**Status**
+
+- WP-009 status: `partial`.
+- VAL-011 status: `partial`.
+- Continue broader hockey surfaces only behind the same cache envelope, active
+  context, no-live-read behavior, and copy-review constraints.
+
 ## 2026-06-01 WP-009 Pulse 11 Practice Focus Cache Surface Review
 
 **Scope:** First practice focus product route for the major analytics cache.

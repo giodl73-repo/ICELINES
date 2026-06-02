@@ -233,6 +233,14 @@ pub fn router(state: WebState) -> Router {
             get(handlers::analytics_cache_report::practice_focus_json),
         )
         .route(
+            "/postgame/review",
+            get(handlers::analytics_cache_report::postgame_review),
+        )
+        .route(
+            "/api/v1/postgame/review",
+            get(handlers::analytics_cache_report::postgame_review_json),
+        )
+        .route(
             "/scout/opponent",
             get(handlers::analytics_cache_report::opponent_scout),
         )

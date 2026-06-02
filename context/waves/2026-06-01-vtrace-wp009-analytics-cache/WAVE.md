@@ -11,10 +11,11 @@ implementation evidence for the core contract, strict tempdir-backed store,
 first internal downstream consumer ViewModel fixture, first narrow
 product-facing named-cache Web report, first coach-specific dashboard route,
 first opponent-scout cache report route, first player evidence-card route, first
-line-combination explorer route, first goalie readiness/workload route, and first
-practice focus route. It does not yet claim a full player-card workflow, full
-line-combination workflow, full goalie workflow, full practice workflow,
-postgame, agent action, prediction accuracy, or autonomous coaching authority.
+line-combination explorer route, first goalie readiness/workload route, first
+practice focus route, and first postgame review route. It does not yet claim a
+full player-card workflow, full line-combination workflow, full goalie workflow,
+full practice workflow, full postgame workflow, agent action, prediction
+accuracy, or autonomous coaching authority.
 
 ## Entry posture
 
@@ -50,7 +51,8 @@ postgame, agent action, prediction accuracy, or autonomous coaching authority.
      product surfaces are limited to the named-cache report in pulse 05, coach
      dashboard and opponent scout routes in pulses 06-07, player evidence-card
      route in pulse 08, line-combination explorer route in pulse 09, goalie
-     readiness/workload route in pulse 10, and practice focus route in pulse 11.
+     readiness/workload route in pulse 10, practice focus route in pulse 11, and
+     postgame review route in pulse 12.
 4. Product report slice: prove one Web HTML report and JSON twin can render an
    existing cache record without recomputing analytics or fetching live data.
    - Status: done for `/reports/analytics-cache` and
@@ -88,6 +90,11 @@ postgame, agent action, prediction accuracy, or autonomous coaching authority.
     autonomous practice prescriptions.
     - Status: done for `/practice/focus` and `/api/v1/practice/focus` in pulse
       11; broader practice workflows and postgame surfaces remain pending.
+11. Postgame review slice: prove one active-context postgame review route can
+    render a postgame consumer envelope without implying causal blame assignment
+    or automatic correction authority.
+    - Status: done for `/postgame/review` and `/api/v1/postgame/review` in pulse
+     12; broader postgame workflows remain pending.
 
 ## Pulse log
 
@@ -104,3 +111,4 @@ postgame, agent action, prediction accuracy, or autonomous coaching authority.
 | 09 | Line-combination explorer active-cache Web route and JSON twin | line_combination_explorer_partial_passed |
 | 10 | Goalie readiness/workload active-cache Web route and JSON twin | goalie_readiness_partial_passed |
 | 11 | Practice focus active-cache Web route and JSON twin | practice_focus_partial_passed |
+| 12 | Postgame review active-cache Web route and JSON twin | postgame_review_partial_passed |
