@@ -169,6 +169,14 @@ fn goalie_readiness_record(cache_key: &str) -> icelines_core::AnalyticsCacheReco
     )
 }
 
+fn practice_focus_record(cache_key: &str) -> icelines_core::AnalyticsCacheRecord {
+    sample_record(
+        cache_key,
+        "practice_focus",
+        vec![AnalyticsCacheConsumerKind::PracticeFocusReport],
+    )
+}
+
 async fn response_text(response: Response) -> String {
     let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
         .await
@@ -740,6 +748,106 @@ async fn l2_wp009_goalie_readiness_renders_cache_as_goalie_consumer_view() {
     assert_eq!(json["consumer"], "goalie_readiness");
     assert_eq!(json["report"]["title"], "Goalie Readiness & Workload View");
     assert_eq!(json["report"]["consumer"], "goalie_readiness");
+    assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
+}
+
+#[tokio::test]
+async fn l2_wp009_practice_focus_defaults_to_active_cache_and_explicit_unavailable_state() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/practice/focus")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Practice Focus Report"));
+    assert!(body.contains("Report unavailable"));
+    assert!(body.contains("practice_focus:20252026:regular"));
+    assert!(body.contains("analytics cache entry is missing: practice_focus:20252026:regular"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/practice/focus")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "unavailable");
+    assert_eq!(json["cache_key"], "practice_focus:20252026:regular");
+    assert!(json["guidance"]
+        .as_str()
+        .expect("guidance")
+        .contains("practice-focus analytics cache"));
+    assert!(!fixture.path().join("analytics_cache").exists());
+}
+
+#[tokio::test]
+async fn l2_wp009_practice_focus_renders_cache_as_practice_consumer_view() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let store = AnalyticsCacheStore::under_data_root(fixture.path());
+    let record = practice_focus_record("practice_focus:20252026:regular");
+    store
+        .write_record(&record, &supported_metric_keys())
+        .expect("write analytics cache record");
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/practice/focus")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Practice Focus Report"));
+    assert!(body.contains("practice_focus:20252026:regular"));
+    assert!(body.contains("xG Share"));
+    assert!(body.contains("55.1%"));
+    assert!(body.contains("/api/v1/practice/focus?cache_key=practice_focus%3A20252026%3Aregular"));
+    assert!(body.contains("Not a prediction, betting, injury, or autonomous coaching claim."));
+    assert!(!body.contains("mandatory drill plan"));
+    assert!(!body.contains("autonomous practice prescription"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/practice/focus")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "ready");
+    assert_eq!(json["cache_key"], "practice_focus:20252026:regular");
+    assert_eq!(json["consumer"], "practice_focus_report");
+    assert_eq!(json["report"]["title"], "Practice Focus Report");
+    assert_eq!(json["report"]["consumer"], "practice_focus_report");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
 }
 

@@ -11,10 +11,10 @@ implementation evidence for the core contract, strict tempdir-backed store,
 first internal downstream consumer ViewModel fixture, first narrow
 product-facing named-cache Web report, first coach-specific dashboard route,
 first opponent-scout cache report route, first player evidence-card route, first
-line-combination explorer route, and first goalie readiness/workload route. It
-does not yet claim a full player-card workflow, full line-combination workflow,
-full goalie workflow, practice, postgame, agent action, prediction accuracy, or
-autonomous coaching authority.
+line-combination explorer route, first goalie readiness/workload route, and first
+practice focus route. It does not yet claim a full player-card workflow, full
+line-combination workflow, full goalie workflow, full practice workflow,
+postgame, agent action, prediction accuracy, or autonomous coaching authority.
 
 ## Entry posture
 
@@ -47,20 +47,15 @@ autonomous coaching authority.
 3. Consumer slice: prove one dashboard/report/card-style envelope preserves
    prepared analytics, provenance, freshness, quality, warnings, and disclosures.
    - Status: done for the internal ViewModel fixture in pulse 04; shipped
-     product surfaces are limited to the named-cache report in pulse 05, the
-     coach dashboard and opponent scout routes in pulses 06-07, and the player
-     evidence-card route in pulse 08, the line-combination explorer route in
-     pulse 09, and the goalie readiness/workload route in pulse 10.
+     product surfaces are limited to the named-cache report in pulse 05, coach
+     dashboard and opponent scout routes in pulses 06-07, player evidence-card
+     route in pulse 08, line-combination explorer route in pulse 09, goalie
+     readiness/workload route in pulse 10, and practice focus route in pulse 11.
 4. Product report slice: prove one Web HTML report and JSON twin can render an
    existing cache record without recomputing analytics or fetching live data.
    - Status: done for `/reports/analytics-cache` and
      `/api/v1/reports/analytics-cache` in pulse 05; broader hockey screens and
-     reports      remain pending.
-9. Goalie readiness/workload slice: prove one active-context goalie workload
-   route can render a goalie consumer envelope without implying injury certainty
-   or deployment advice.
-   - Status: done for `/goalies/readiness` and `/api/v1/goalies/readiness` in
-     pulse 10; practice/postgame surfaces remain pending.
+     reports remain pending.
 5. Coach dashboard slice: prove one user-friendly coach route can default to the
    active-season cache key without forcing operators through the generic report
    query contract.
@@ -82,6 +77,17 @@ autonomous coaching authority.
    - Status: done for `/lines/explorer` and `/api/v1/lines/explorer` in pulse
      09; broader line-combination workflows and goalie/practice/postgame
      surfaces remain pending.
+9. Goalie readiness/workload slice: prove one active-context goalie workload
+   route can render a goalie consumer envelope without implying injury certainty
+   or deployment advice.
+   - Status: done for `/goalies/readiness` and `/api/v1/goalies/readiness` in
+     pulse 10; broader goalie workflows, practice workflows, and postgame
+     surfaces remain pending.
+10. Practice focus slice: prove one active-context practice focus route can
+    render a practice consumer envelope without implying mandatory drill plans or
+    autonomous practice prescriptions.
+    - Status: done for `/practice/focus` and `/api/v1/practice/focus` in pulse
+      11; broader practice workflows and postgame surfaces remain pending.
 
 ## Pulse log
 
@@ -97,3 +103,4 @@ autonomous coaching authority.
 | 08 | Player evidence-card active-cache Web route and JSON twin | player_evidence_card_partial_passed |
 | 09 | Line-combination explorer active-cache Web route and JSON twin | line_combination_explorer_partial_passed |
 | 10 | Goalie readiness/workload active-cache Web route and JSON twin | goalie_readiness_partial_passed |
+| 11 | Practice focus active-cache Web route and JSON twin | practice_focus_partial_passed |

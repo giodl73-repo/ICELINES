@@ -1,5 +1,43 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 11 Practice Focus Cache Surface Review
+
+**Scope:** First practice focus product route for the major analytics cache.
+
+**Decision:** `partial_pass`
+
+Pulse 11 adds `/practice/focus` and `/api/v1/practice/focus` as
+active-context practice focus surfaces. The routes default to
+`practice_focus:<season>:<season_type>` from Web config and render through the
+same `AnalyticsCacheStore`, consumer envelope, and `AnalyticsCacheConsumerView`
+path as the named-cache report, using
+`AnalyticsCacheConsumerKind::PracticeFocusReport`.
+
+**Claims accepted**
+
+- A practice focus HTML route and JSON twin can read the active practice cache
+  key without requiring the generic report query contract.
+- Missing practice-focus cache records produce explicit unavailable state and do
+  not create cache directories during read.
+- Existing practice-focus cache records preserve metrics, source state, quality,
+  methodology, disclosure, non-claim copy, and practice consumer identity through
+  the consumer ViewModel.
+
+**Claims not accepted**
+
+- This is not a finished practice planner, drill prescription engine, workload
+  manager, or autonomous coaching workflow.
+- This does not add postgame, agent, or predictive surfaces.
+- This does not imply betting, injury certainty, deployment authority,
+  mandatory drill plans, or autonomous coaching authority.
+
+**Status**
+
+- WP-009 status: `partial`.
+- VAL-011 status: `partial`.
+- Continue broader hockey surfaces only behind the same cache envelope, active
+  context, no-live-read behavior, and copy-review constraints.
+
 ## 2026-06-01 WP-009 Pulse 10 Goalie Readiness Cache Surface Review
 
 **Scope:** First goalie readiness/workload product route for the major analytics
