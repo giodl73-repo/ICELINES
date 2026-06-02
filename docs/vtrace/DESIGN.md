@@ -228,8 +228,9 @@ surfaces. The first implementation slices add the versioned
 `icelines-fetch::analytics_cache_store` JSON store/read path plus the internal
 `icelines-core::view_model::analytics_cache_consumer` fixture, first named-cache
 Web report/JSON twin, first coach dashboard route/JSON twin, first opponent scout
-route/JSON twin, and first player evidence-card route/JSON twin. Broader shipped
-product surfaces remain pending.
+route/JSON twin, first player evidence-card route/JSON twin, and first
+line-combination explorer route/JSON twin. Broader shipped product surfaces
+remain pending.
 
 Required record envelope:
 
@@ -338,9 +339,9 @@ inspection and command-surface verification pass.
 - Major analytics cache has partial implementation evidence through initial core
   schema/consumer fixtures, strict fetch-layer store/read fixtures, an internal
   dashboard-style ViewModel fixture, the first named-cache Web report, and the
-  first coach dashboard, opponent scout, and player evidence-card routes. Future
-  screens still cannot claim broad cache-backed analytics before shipped-surface
-  evidence and copy review exist.
+  first coach dashboard, opponent scout, player evidence-card, and
+  line-combination explorer routes. Future screens still cannot claim broad
+  cache-backed analytics before shipped-surface evidence and copy review exist.
 - Future cache-backed consumers must carry provenance, freshness/staleness,
   quality/completeness, warnings, and disclosures through to the user-visible or
   machine-readable output.
@@ -387,11 +388,12 @@ should proceed in narrow implementation waves:
    `icelines-fetch::analytics_cache_store` store/read path, and internal
    `icelines-core::view_model::analytics_cache_consumer` fixture now feed the
    first named-cache Web report/JSON twin, first coach dashboard route/JSON twin,
-   first opponent scout route/JSON twin, and first player evidence-card route/JSON
-   twin, but broader shipped consumer claims remain pending until their evidence
-   passes. Do not let a line/goalie/practice/postgame route, broader player-card
-   workflow, broader scout workflow, or broader coach dashboard claim cache-backed
-   analytics before the matching evidence exists.
+   first opponent scout route/JSON twin, first player evidence-card route/JSON
+   twin, and first line-combination explorer route/JSON twin, but broader shipped
+   consumer claims remain pending until their evidence passes. Do not let a
+   goalie/practice/postgame route, broader line-combination workflow, broader
+   player-card workflow, broader scout workflow, or broader coach dashboard claim
+   cache-backed analytics before the matching evidence exists.
 6. Revisit `TRACE.md` after design review closure so design elements point to
    `DESIGN.md` rows rather than only architecture-level contracts.
 
@@ -429,4 +431,4 @@ formalize before production changes are made.
 | FLETCH/SLICE replacement scope may affect user-visible commands. | Require replacement/refusal/rollback notes before dependency removal is called complete. |
 | Validation evidence remains mostly pending. | Move to evidence rows during Gate 3; this file only defines evidence hooks. |
 | Static site status is deferred while `icelines-site` remains in the workspace. | Do not advertise static site as active user surface without a later design update. |
-| Major analytics cache implementation is partial with only the first named-cache product report, first coach dashboard route, first opponent scout route, and first player evidence-card route. | Treat the in-core schema/consumer contract, strict store/read path, internal consumer ViewModel, named-cache Web report, coach dashboard route, opponent scout route, and player evidence-card route as foundation evidence only; keep broader shipped consumer claims pending until their WP-009 evidence passes. |
+| Major analytics cache implementation is partial with only the first named-cache product report, first coach dashboard route, first opponent scout route, first player evidence-card route, and first line-combination explorer route. | Treat the in-core schema/consumer contract, strict store/read path, internal consumer ViewModel, named-cache Web report, coach dashboard route, opponent scout route, player evidence-card route, and line-combination explorer route as foundation evidence only; keep broader shipped consumer claims pending until their WP-009 evidence passes. |

@@ -1,5 +1,44 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 09 Line-Combination Explorer Cache Surface Review
+
+**Scope:** First line-combination explorer product route for the major analytics
+cache.
+
+**Decision:** `partial_pass`
+
+Pulse 09 adds `/lines/explorer` and `/api/v1/lines/explorer` as active-context
+line-combination explorer surfaces. The routes default to
+`line_combination_explorer:<season>:<season_type>` from Web config and render
+through the same `AnalyticsCacheStore`, consumer envelope, and
+`AnalyticsCacheConsumerView` path as the named-cache report, using
+`AnalyticsCacheConsumerKind::LineCombinationExplorer`.
+
+**Claims accepted**
+
+- A line-combination explorer HTML route and JSON twin can read the active line
+  cache key without requiring the generic report query contract.
+- Missing line-combination explorer cache records produce explicit unavailable
+  state and do not create cache directories during read.
+- Existing line-combination explorer cache records preserve metrics, source
+  state, quality, methodology, disclosure, non-claim copy, and line consumer
+  identity through the consumer ViewModel.
+
+**Claims not accepted**
+
+- This is not a finished line-combination workflow, deployment recommendation,
+  chemistry/causality model, or autonomous coaching workflow.
+- This does not add goalie, practice, postgame, agent, or predictive surfaces.
+- This does not imply betting, injury, deployment, line-chemistry causality, or
+  autonomous coaching authority.
+
+**Status**
+
+- WP-009 status: `partial`.
+- VAL-011 status: `partial`.
+- Continue broader hockey surfaces only behind the same cache envelope, active
+  context, no-live-read behavior, and copy-review constraints.
+
 ## 2026-06-01 WP-009 Pulse 08 Player Evidence-Card Cache Surface Review
 
 **Scope:** First player evidence-card product route for the major analytics
