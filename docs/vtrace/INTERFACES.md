@@ -531,12 +531,12 @@ initial schema/consumer contract; `icelines-fetch::analytics_cache_store`
 strict store/read/invalidation contract;
 `icelines-core::view_model::analytics_cache_consumer` internal consumer
 ViewModel fixture; `icelines-web::handlers::analytics_cache_report` named-cache
-HTML/JSON report fixture, coach dashboard route fixture, and opponent scout route
-fixture. The first
+HTML/JSON report fixture, coach dashboard route fixture, opponent scout route
+fixture, and player evidence-card route fixture. The first
 store-backed consumer-envelope and ViewModel fixtures now feed a narrow
 named-cache report, active-context coach dashboard route, and active-context
-opponent scout route; broader card/line/goalie/practice/postgame screens remain
-pending.
+opponent scout route, and active-context player evidence-card route; broader
+line/goalie/practice/postgame screens remain pending.
 
 ### IF-BUILD-001: Cargo feature/dependency boundary
 

@@ -1,5 +1,45 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 08 Player Evidence-Card Cache Surface Review
+
+**Scope:** First player evidence-card product route for the major analytics
+cache.
+
+**Decision:** `partial_pass`
+
+Pulse 08 adds `/player/evidence-card` and `/api/v1/player/evidence-card` as
+active-context player evidence-card surfaces. The routes default to
+`player_evidence_card:<season>:<season_type>` from Web config and render through
+the same `AnalyticsCacheStore`, consumer envelope, and
+`AnalyticsCacheConsumerView` path as the named-cache report, using
+`AnalyticsCacheConsumerKind::PlayerEvidenceCard`.
+
+**Claims accepted**
+
+- A player evidence-card HTML route and JSON twin can read the active player
+  cache key without requiring the generic report query contract.
+- Missing player evidence-card cache records produce explicit unavailable state
+  and do not create cache directories during read.
+- Existing player evidence-card cache records preserve metrics, source state,
+  quality, methodology, disclosure, non-claim copy, and player consumer identity
+  through the consumer ViewModel.
+
+**Claims not accepted**
+
+- This is not a finished player profile, player research workflow, deployment
+  recommendation, or roster-decision workflow.
+- This does not add line, goalie, practice, postgame, agent, or predictive
+  surfaces.
+- This does not imply betting, injury, deployment, line-chemistry, or autonomous
+  coaching authority.
+
+**Status**
+
+- WP-009 status: `partial`.
+- VAL-011 status: `partial`.
+- Continue broader hockey surfaces only behind the same cache envelope, active
+  context, no-live-read behavior, and copy-review constraints.
+
 ## 2026-06-01 WP-009 Pulse 07 Opponent Scout Cache Surface Review
 
 **Scope:** First opponent-scout product route for the major analytics cache.
@@ -97,9 +137,9 @@ recomputing analytics or fetching live data.
 
 **Claims not accepted**
 
-- This is not a full coach dashboard, opponent scout, player evidence card, line
-  explorer, goalie readiness screen, practice report, postgame report, or agent
-  action surface.
+- This is not a full coach dashboard, opponent scout workflow, player evidence
+  card workflow, line explorer, goalie readiness screen, practice report,
+  postgame report, or agent action surface.
 - This does not add a cache builder, metric catalog UI, automatic metric
   discovery, or broad invalidation/freshness family evidence.
 - The report does not imply prediction accuracy, betting value, injury/deployment
@@ -146,8 +186,8 @@ line, goalie, practice, postgame, or agent surfaces.
 
 - The consumer ViewModel is an internal fixture, not a shipped user-facing
   screen.
-- Public product copy for coach/scout/report/card/line/goalie/practice/postgame
-  surfaces still needs its own DCR, evidence, and review.
+- Public product copy for broader coach/scout/report/card/line/goalie/practice/
+  postgame surfaces still needs its own DCR, evidence, and review.
 
 ## 2026-06-01 WP-009 Pulse 03 Cache Store/Read Review
 

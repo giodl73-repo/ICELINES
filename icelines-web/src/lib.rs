@@ -201,6 +201,14 @@ pub fn router(state: WebState) -> Router {
             get(handlers::analytics_cache_report::coach_dashboard_json),
         )
         .route(
+            "/player/evidence-card",
+            get(handlers::analytics_cache_report::player_evidence_card),
+        )
+        .route(
+            "/api/v1/player/evidence-card",
+            get(handlers::analytics_cache_report::player_evidence_card_json),
+        )
+        .route(
             "/scout/opponent",
             get(handlers::analytics_cache_report::opponent_scout),
         )
