@@ -30,10 +30,12 @@ const GENERIC_REPORT_JSON_PATH: &str = "/api/v1/reports/analytics-cache";
 const COACH_DASHBOARD_JSON_PATH: &str = "/api/v1/coach/dashboard";
 const PLAYER_EVIDENCE_CARD_JSON_PATH: &str = "/api/v1/player/evidence-card";
 const LINE_COMBINATION_EXPLORER_JSON_PATH: &str = "/api/v1/lines/explorer";
+const GOALIE_READINESS_JSON_PATH: &str = "/api/v1/goalies/readiness";
 const OPPONENT_SCOUT_JSON_PATH: &str = "/api/v1/scout/opponent";
 const DEFAULT_COACH_DASHBOARD_METRICS: &str = "expected_goals_share";
 const DEFAULT_PLAYER_EVIDENCE_CARD_METRICS: &str = "expected_goals_share";
 const DEFAULT_LINE_COMBINATION_EXPLORER_METRICS: &str = "expected_goals_share";
+const DEFAULT_GOALIE_READINESS_METRICS: &str = "expected_goals_share";
 const DEFAULT_OPPONENT_SCOUT_METRICS: &str = "expected_goals_share";
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -255,6 +257,46 @@ pub async fn line_combination_explorer(
     }
 }
 
+pub async fn goalie_readiness(
+    State(state): State<WebState>,
+    Query(query): Query<AnalyticsCacheReportQuery>,
+) -> impl IntoResponse {
+    let config = state.config.read().await.clone();
+    let active_label = config.active_label.clone();
+    let query = surface_query(
+        query,
+        &config,
+        "goalie_readiness",
+        DEFAULT_GOALIE_READINESS_METRICS,
+    );
+    let template =
+        match load_analytics_cache_report(&query, AnalyticsCacheConsumerKind::GoalieReadiness) {
+            Ok(payload) => template_from_payload(
+                active_label,
+                payload,
+                query.metrics.as_deref(),
+                None,
+                GOALIE_READINESS_JSON_PATH,
+            ),
+            Err(err) => unavailable_template(
+                "Goalie Readiness & Workload View",
+                active_label,
+                &query,
+                err,
+                GOALIE_READINESS_JSON_PATH,
+            ),
+        };
+
+    match template.render() {
+        Ok(body) => Html(body).into_response(),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to render goalie readiness view: {err}"),
+        )
+            .into_response(),
+    }
+}
+
 pub async fn analytics_cache_report_json(
     Query(query): Query<AnalyticsCacheReportQuery>,
 ) -> impl IntoResponse {
@@ -380,6 +422,32 @@ pub async fn line_combination_explorer_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active line-combination analytics cache before using this explorer.",
+            })),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn goalie_readiness_json(
+    State(state): State<WebState>,
+    Query(query): Query<AnalyticsCacheReportQuery>,
+) -> impl IntoResponse {
+    let config = state.config.read().await.clone();
+    let query = surface_query(
+        query,
+        &config,
+        "goalie_readiness",
+        DEFAULT_GOALIE_READINESS_METRICS,
+    );
+    match load_analytics_cache_report(&query, AnalyticsCacheConsumerKind::GoalieReadiness) {
+        Ok(payload) => Json(json!(payload)).into_response(),
+        Err(err) => (
+            err.status,
+            Json(json!(AnalyticsCacheUnavailablePayload {
+                status: "unavailable",
+                cache_key: query.cache_key.clone(),
+                reason: err.message,
+                guidance: "Build or restore the active goalie-readiness analytics cache before using this workload view.",
             })),
         )
             .into_response(),

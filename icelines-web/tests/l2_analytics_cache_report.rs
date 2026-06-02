@@ -161,6 +161,14 @@ fn line_combination_explorer_record(cache_key: &str) -> icelines_core::Analytics
     )
 }
 
+fn goalie_readiness_record(cache_key: &str) -> icelines_core::AnalyticsCacheRecord {
+    sample_record(
+        cache_key,
+        "goalie_readiness",
+        vec![AnalyticsCacheConsumerKind::GoalieReadiness],
+    )
+}
+
 async fn response_text(response: Response) -> String {
     let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
         .await
@@ -630,6 +638,108 @@ async fn l2_wp009_line_combination_explorer_renders_cache_as_line_consumer_view(
     assert_eq!(json["consumer"], "line_combination_explorer");
     assert_eq!(json["report"]["title"], "Line Combination Explorer");
     assert_eq!(json["report"]["consumer"], "line_combination_explorer");
+    assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
+}
+
+#[tokio::test]
+async fn l2_wp009_goalie_readiness_defaults_to_active_cache_and_explicit_unavailable_state() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/goalies/readiness")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Goalie Readiness &amp; Workload View"));
+    assert!(body.contains("Report unavailable"));
+    assert!(body.contains("goalie_readiness:20252026:regular"));
+    assert!(body.contains("analytics cache entry is missing: goalie_readiness:20252026:regular"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/goalies/readiness")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "unavailable");
+    assert_eq!(json["cache_key"], "goalie_readiness:20252026:regular");
+    assert!(json["guidance"]
+        .as_str()
+        .expect("guidance")
+        .contains("goalie-readiness analytics cache"));
+    assert!(!fixture.path().join("analytics_cache").exists());
+}
+
+#[tokio::test]
+async fn l2_wp009_goalie_readiness_renders_cache_as_goalie_consumer_view() {
+    let _guard = env_lock().await;
+    let fixture = DataRootFixture::new();
+    let store = AnalyticsCacheStore::under_data_root(fixture.path());
+    let record = goalie_readiness_record("goalie_readiness:20252026:regular");
+    store
+        .write_record(&record, &supported_metric_keys())
+        .expect("write analytics cache record");
+    let app = app_with_config("20252026", "regular").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/goalies/readiness")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response).await;
+    assert!(body.contains("Goalie Readiness &amp; Workload View"));
+    assert!(body.contains("goalie_readiness:20252026:regular"));
+    assert!(body.contains("xG Share"));
+    assert!(body.contains("55.1%"));
+    assert!(
+        body.contains("/api/v1/goalies/readiness?cache_key=goalie_readiness%3A20252026%3Aregular")
+    );
+    assert!(body.contains("Not a prediction, betting, injury, or autonomous coaching claim."));
+    assert!(!body.contains("injury certainty"));
+    assert!(!body.contains("deployment recommendation"));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/goalies/readiness")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(response).await).expect("json payload");
+    assert_eq!(json["status"], "ready");
+    assert_eq!(json["cache_key"], "goalie_readiness:20252026:regular");
+    assert_eq!(json["consumer"], "goalie_readiness");
+    assert_eq!(json["report"]["title"], "Goalie Readiness & Workload View");
+    assert_eq!(json["report"]["consumer"], "goalie_readiness");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
 }
 

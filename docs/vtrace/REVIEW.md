@@ -1,5 +1,44 @@
 # VTRACE Review Record
 
+## 2026-06-01 WP-009 Pulse 10 Goalie Readiness Cache Surface Review
+
+**Scope:** First goalie readiness/workload product route for the major analytics
+cache.
+
+**Decision:** `partial_pass`
+
+Pulse 10 adds `/goalies/readiness` and `/api/v1/goalies/readiness` as
+active-context goalie readiness/workload surfaces. The routes default to
+`goalie_readiness:<season>:<season_type>` from Web config and render through the
+same `AnalyticsCacheStore`, consumer envelope, and `AnalyticsCacheConsumerView`
+path as the named-cache report, using
+`AnalyticsCacheConsumerKind::GoalieReadiness`.
+
+**Claims accepted**
+
+- A goalie readiness/workload HTML route and JSON twin can read the active goalie
+  cache key without requiring the generic report query contract.
+- Missing goalie-readiness cache records produce explicit unavailable state and
+  do not create cache directories during read.
+- Existing goalie-readiness cache records preserve metrics, source state,
+  quality, methodology, disclosure, non-claim copy, and goalie consumer identity
+  through the consumer ViewModel.
+
+**Claims not accepted**
+
+- This is not a finished goalie workload manager, starter recommendation, injury
+  model, or deployment workflow.
+- This does not add practice, postgame, agent, or predictive surfaces.
+- This does not imply betting, injury certainty, deployment authority, or
+  autonomous coaching authority.
+
+**Status**
+
+- WP-009 status: `partial`.
+- VAL-011 status: `partial`.
+- Continue broader hockey surfaces only behind the same cache envelope, active
+  context, no-live-read behavior, and copy-review constraints.
+
 ## 2026-06-01 WP-009 Pulse 09 Line-Combination Explorer Cache Surface Review
 
 **Scope:** First line-combination explorer product route for the major analytics

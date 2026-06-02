@@ -19,7 +19,7 @@ Status is evidence posture, not a promise that the behavior is already shipped.
 | WP-006 | Close fantasy read-model and local-state mutation safety. | REQ-FANTASY-001; REQ-WEB-001; REQ-CODE-001 | fantasy ViewModels, local SQLite state, CLI/TUI/Web read flows, mutation deferrals | Local-state preservation rule accepted; read ViewModel surfaces inventoried. | Shared fantasy read ViewModels render consistently; web mutation deferrals and local-state preservation evidence recorded. | L0: ViewModel/local-state tests; L1: workspace checks; L2: VAL-007 demo | closed_with_risk; pulses 01-04 selected fantasy JSON local-state/cache-read, existing-FantasyDb read-only, poach imported-availability read-only, and VAL-007 transcript boundaries passed_with_risk |
 | WP-007 | Remove dependency seams and add lean CLI build. | REQ-DEP-001; REQ-LEAN-001; REQ-CODE-001 | workspace manifests, feature gates, command surfaces, release docs | FLETCH/SLICE command-surface inventory complete; replacement/refusal/rollback plan accepted. | Dependency graph has no FLETCH/SLICE path/git seams; lean CLI build and offline smoke pass. | L0: manifest/dependency inspection; L1: workspace checks; L2: lean build smoke | target-not-met_dispositioned; pulse 01 inventory identifies current blockers and keeps standalone/lean claims unpromoted |
 | WP-008 | Run integration and validation rehearsal. | REQ-CODE-001; VAL-001..VAL-010; TRACE.md | CLI, TUI, Web, JSON, reports, local state, build/deps, docs | Package-level evidence exists or is dispositioned. | Integration evidence, validation rehearsal, trace, and review gate are complete or accepted with risk. | L0: docs/trace checks; L1: workspace checks; L2: validation rehearsal | closed_with_risk; pulse 01 refreshed stale Lindsay L3 golden outputs, retired the broad clippy MDI test initializer lint, passed broad workspace format/clippy/test gates, and aligned VTRACE closeout rows while preserving WP-007 dependency/lean target-not-met posture |
-| WP-009 | Build the major analytics cache foundation. | REQ-CACHE-001; REQ-CACHE-002; REQ-CACHE-003; REQ-CACHE-004; REQ-CODE-001 | analytics cache records/envelopes, cache store/read path, downstream consumer ViewModels, future dashboard/report surfaces | CHG-072 target-spec baseline accepted; storage, schema compatibility, metric family, and first consumer fixture selected. | Versioned schema, no-live read behavior, invalidation/degraded-state behavior, downstream consumer preservation, first named-cache Web report evidence, first coach dashboard route evidence, first opponent scout route evidence, first player evidence-card route evidence, and first line-combination explorer route evidence recorded. | L0: schema/contract fixtures; L1: store/source-state fixtures; L2: consumer preservation and Web report fixtures | partial; pulses 02-09 passed selected core schema/envelope, strict JSON store/read/invalidation, internal consumer ViewModel, first product-facing named-cache Web report, first coach dashboard route, first opponent scout route, first player evidence-card route, and first line-combination explorer route evidence; broader hockey product surfaces remain pending |
+| WP-009 | Build the major analytics cache foundation. | REQ-CACHE-001; REQ-CACHE-002; REQ-CACHE-003; REQ-CACHE-004; REQ-CODE-001 | analytics cache records/envelopes, cache store/read path, downstream consumer ViewModels, future dashboard/report surfaces | CHG-072 target-spec baseline accepted; storage, schema compatibility, metric family, and first consumer fixture selected. | Versioned schema, no-live read behavior, invalidation/degraded-state behavior, downstream consumer preservation, first named-cache Web report evidence, first coach dashboard route evidence, first opponent scout route evidence, first player evidence-card route evidence, first line-combination explorer route evidence, and first goalie readiness route evidence recorded. | L0: schema/contract fixtures; L1: store/source-state fixtures; L2: consumer preservation and Web report fixtures | partial; pulses 02-10 passed selected core schema/envelope, strict JSON store/read/invalidation, internal consumer ViewModel, first product-facing named-cache Web report, first coach dashboard route, first opponent scout route, first player evidence-card route, first line-combination explorer route, and first goalie readiness route evidence; broader hockey product surfaces remain pending |
 
 ## Work Package Details
 
@@ -785,7 +785,7 @@ Verification plan:
 |---|---|---|---|
 | L0 | yes | Schema/contract fixture tests for cache records, invalidation keys, version compatibility, and consumer envelopes. | partial; pulses 02-04 passed selected core schema serde, version compatibility, invalidation-key/methodology/consumer requirements, consumer-envelope fixtures, and internal consumer-ViewModel projection |
 | L1 | yes | Tempdir/source-state fixtures for missing/stale/partial/schema/unsupported/no-live paths plus affected clippy/format tests if code is touched. | partial; pulse 03 adds a strict `icelines-fetch` cache store/read path with tempdir missing, stale/partial/missing-source preservation, schema/metric refusal, invalidation, and rollback fixtures |
-| L2 | yes | At least one consumer demo or snapshot showing cache-backed decision-support envelope and non-claim disclosure. | partial; pulses 02-09 passed in-core, store-backed coach-dashboard envelope, internal dashboard-style ViewModel proofs, first named-cache Web report, first coach dashboard route, first opponent scout route, first player evidence-card route, and first line-combination explorer route evidence; broader goalie/practice/postgame surfaces are not claimed |
+| L2 | yes | At least one consumer demo or snapshot showing cache-backed decision-support envelope and non-claim disclosure. | partial; pulses 02-10 passed in-core, store-backed coach-dashboard envelope, internal dashboard-style ViewModel proofs, first named-cache Web report, first coach dashboard route, first opponent scout route, first player evidence-card route, first line-combination explorer route, and first goalie readiness route evidence; broader practice/postgame surfaces are not claimed |
 
 V closure: partial. The initial core schema/source/consumer contract slice exists
 in `icelines-core::analytics_cache`, and the first strict JSON store/read path
@@ -793,9 +793,10 @@ exists in `icelines-fetch::analytics_cache_store`; the first internal consumer
 ViewModel fixture exists in
 `icelines-core::view_model::analytics_cache_consumer`; the first named-cache Web
 report, first coach dashboard route, first opponent scout route, first player
-evidence-card route, and first line-combination explorer route exist in
-`icelines-web::handlers::analytics_cache_report`. Downstream goalie/practice/
-postgame surfaces and broader product-copy reviews remain pending.
+evidence-card route, first line-combination explorer route, and first goalie
+readiness route exist in `icelines-web::handlers::analytics_cache_report`.
+Downstream practice/postgame surfaces and broader product-copy reviews remain
+pending.
 
 Validation impact: adds `VAL-011` for coach/analyst trust in a shared analytics
 evidence layer.
@@ -812,8 +813,9 @@ invalidation slice; pulse 04 accepted the internal downstream consumer ViewModel
 fixture; pulse 05 accepted the first named-cache Web report; pulse 06 accepted
 the first coach dashboard route; pulse 07 accepted the first opponent scout
 route; pulse 08 accepted the first player evidence-card route; pulse 09 accepted
-the first line-combination explorer route. Implementation closure requires
-broader shipped-surface consumer and closeout reviews.
+the first line-combination explorer route; pulse 10 accepted the first goalie
+readiness route. Implementation closure requires broader shipped-surface
+consumer and closeout reviews.
 
 Git execution:
 

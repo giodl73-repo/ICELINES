@@ -47,6 +47,8 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /api/v1/player/evidence-card",
     "GET /lines/explorer",
     "GET /api/v1/lines/explorer",
+    "GET /goalies/readiness",
+    "GET /api/v1/goalies/readiness",
     "GET /scout/opponent",
     "GET /api/v1/scout/opponent",
     "GET /api/v1/watch-rules",
