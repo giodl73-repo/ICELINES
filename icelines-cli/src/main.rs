@@ -756,6 +756,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Scouting { player, format } => {
             commands::scouting::run(player, format).await?;
         }
+        Commands::Signals {
+            player,
+            season,
+            season_type,
+            json,
+        } => {
+            commands::signals::run_signals(player, season, season_type.to_core(), json).await?;
+        }
         Commands::Scheme(sub) => {
             commands::scheme::run(sub).await?;
         }

@@ -36,12 +36,14 @@ autonomous coaching claims.
 |---|---|---|
 | 01 | Core signal descriptor, evidence, and formula contract | core_signals_partial_passed |
 | 02 | Internal Signals ViewModel boundary | core_signals_viewmodel_partial_passed |
+| 03 | `icelines signals` CLI + `signals.v1` JSON surface (Phase Hurricane) | signals_cli_surface_passed |
 
 ## Residual risk
 
 - The first signal set is descriptive and scorer-biased where it uses realtime
   rink-recorded events.
-- Signals are not yet exposed through CLI, TUI, Web, reports, exports, or the
-  analytics cache.
+- Signals now have a CLI text + `signals.v1` JSON surface (pulse-03); they are
+  still not exposed through TUI, Web, reports, exports, the `--filter` catalog,
+  leaderboards, `StatId`, or the analytics cache. TUI/Web parity is pulse-04.
 - Broader signal families such as special-teams leverage, creation pressure, or
   evidence-card integrations require their own methodology and copy review.

@@ -507,6 +507,34 @@ Player cards are now the hub for player-specific surfaces: records, awards,
 streaks, scouting, compare, groups/favorites, and fantasy watch handoffs are
 linked from the TUI card, web `/player/:id`, or the command bar.
 
+## `signals NAME` — descriptive derived metrics
+
+IceLines Signals are descriptive derived metrics built from existing stat inputs
+(Phase Hurricane / WP-010). They are **not** predictions, betting edges, injury
+signals, deployment recommendations, or autonomous coaching decisions. Missing or
+partial evidence renders as `unavailable` (text) / `null` (JSON) with an evidence
+tier and the missing inputs — never as a `0.0` player value.
+
+```bash
+icelines signals "Connor McDavid"                      # text table
+icelines signals "McDavid" --json                      # frozen signals.v1 envelope
+icelines signals "Wayne Gretzky" --season 19881989     # historical (skeleton) season
+icelines signals "Cale Makar" --type playoff           # playoff window
+```
+
+Current signals (all per-60):
+
+| Signal | Key | Polarity | Formula |
+|---|---|---|---|
+| Physical Engagement Rate | `physical-engagement-rate` | = neutral | `(hits + blocked shots)` per 60 |
+| Puck Management Differential | `puck-management-differential` | ↑ higher better | `(takeaways − giveaways)` per 60 |
+| Penalty Drag Rate | `penalty-drag-rate` | ↓ lower better | `penalty minutes` per 60 |
+
+Legend: `↑` higher is better · `↓` lower is better · `=` neutral. Signals are a
+read-only CLI/JSON surface today; they are intentionally **not** in the `--filter`
+catalog, leaderboards, or `StatId` (see
+[`design/specs/icelines-signals.md`](design/specs/icelines-signals.md)).
+
 ## `records` — player/team individual records
 
 The first records slice uses persisted boxscore goal rows. Populate local

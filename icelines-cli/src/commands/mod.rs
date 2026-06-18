@@ -26,6 +26,7 @@ pub mod scheme_dialects;
 pub mod scouting;
 pub mod serve;
 pub mod setup;
+pub mod signals;
 pub mod snapshot;
 pub mod streaks;
 pub mod team;

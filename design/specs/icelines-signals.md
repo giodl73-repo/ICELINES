@@ -37,10 +37,23 @@ renderers. It carries player identity, active window, one row per Signal, typed
 evidence tiers, missing-input labels, methodology, limitations, disclosures, and
 non-claim copy so renderers do not recompute signal meaning locally.
 
+## Surface status
+
+- **CLI + JSON (live, Phase Hurricane / WP-010 pulse-03):** `icelines signals
+  "<player>"` renders `PlayerSignalsView` as a text table and, with `--json`, a
+  frozen `signals.v1` envelope. Both encodings carry the evidence tier, missing
+  inputs, methodology, limitations, disclosures, and non-claim copy; missing or
+  partial evidence renders as `unavailable`/`null`, never zero-fill. Product copy
+  for this surface is reviewed; Signals remain **out of** `StatId`, the `--filter`
+  catalog, and leaderboards.
+- **TUI + Web (planned, pulse-04):** must add a cross-surface parity fence proving
+  CLI/JSON/TUI/Web render identical values before shipping.
+
 ## Promotion rule
 
 Before any signal becomes a stable `StatId`, leaderboard field, report/export
-column, cache metric family, or Web/CLI/TUI surface, a later pulse must add:
+column, cache metric family, or additional Web/CLI/TUI surface, a later pulse must
+add:
 
 - product-copy review for the target surface;
 - source/completeness disclosure for unavailable and partial evidence;

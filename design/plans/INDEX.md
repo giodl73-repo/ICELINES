@@ -22,6 +22,7 @@ backlog.
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Hurricane - Signals surface + product-gap roadmap](2026-06-17-phaseHurricane-signals-surface.md) | Active | Product-analytics push named for Carolina's 2026 Cup. Deliverable 1 (WP-010 pulse-03) shipped: `icelines signals` CLI + `signals.v1` JSON surface over `PlayerSignalsView`. Roadmap follow-ons: MoneyPuck depth, projections, GSAx, season-depth honesty, viz. |
 | [Phase Jennings - Stabilization + Truth](2026-05-09-phaseJennings-stabilization-truth.md) | Implemented | Restored the measured baseline, split CI/test gates into runnable areas, and made follow-on phases depend on explicit local/CI checks. |
 | Jennings measured baseline | Recorded | `cargo check --workspace` PASS; `cargo test --workspace --no-fail-fast` PASS; test inventory 4620 `: test` entries at the original Jennings measurement; later CI slices split the gates for faster failure. |
 | [Phase Campbell - Platform contracts and ViewModels](2026-05-09-phaseCampbell-platform-viewmodels.md) | Closed | Shared typed ViewModels now back the major CLI/TUI/web/site/report product surfaces; the final closeout routed generated team pages and `tonight trade` through ViewModel contracts. Role review: [`../notes/2026-05-09-campbell-specs-roles-review.md`](../notes/2026-05-09-campbell-specs-roles-review.md). |

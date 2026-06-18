@@ -841,6 +841,40 @@ ENTRY POINTS COVERED
         #[arg(long, default_value = "terminal")]
         format: String,
     },
+    /// Show a player's descriptive Signals (derived metrics).
+    #[command(long_about = r#"
+Render a player's IceLines Signals — descriptive derived metrics built from
+existing stat inputs (Phase Hurricane / WP-010).
+
+Signals are NOT predictions, betting edges, injury signals, deployment
+recommendations, or autonomous coaching decisions. Missing or partial evidence
+renders as `unavailable`, never as a 0.0 player value.
+
+Current signals (all per-60):
+  Physical Engagement Rate  (=)  (hits + blocked shots) per 60
+  Puck Management Differential (↑)  (takeaways − giveaways) per 60
+  Penalty Drag Rate         (↓)  penalty minutes per 60
+
+Legend: ↑ higher is better · ↓ lower is better · = neutral
+
+Examples:
+  icelines signals "Connor McDavid"
+  icelines signals "McDavid" --json
+  icelines signals "Wayne Gretzky" --season 19881989
+"#)]
+    Signals {
+        /// Player name (partial match works, e.g. "McDavid").
+        player: String,
+        /// Season id (YYYYZZZZ). Defaults to the configured / current season.
+        #[arg(long)]
+        season: Option<String>,
+        /// Regular season or playoffs.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+        /// Emit the PlayerSignalsView as a frozen `signals.v1` JSON envelope.
+        #[arg(long)]
+        json: bool,
+    },
     /// Manage fantasy scoring schemes.
     #[command(subcommand)]
     Scheme(SchemeSubcommand),
