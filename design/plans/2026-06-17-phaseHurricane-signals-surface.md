@@ -108,7 +108,7 @@ This is the strategic frame. Each item below is a future work package/pulse; onl
 |---|---|---|---|
 | **1** | **Signals were not on user surfaces** | The one *differentiated* metric bet; methodology + ViewModel already built (WP-010). Pulse 03/04 shipped CLI, TUI player-card, and Web player surfaces. | **Done for CLI/TUI/Web; continue only for report/export/cache/catalog.** |
 | 2 | MoneyPuck data under-surfaced | Its CSVs already carry on-ice / deployment / shot data we fetch but don't expose. Pulse 2a wires the reserved on-ice xGF/xGA catalog keys to fetched MoneyPuck data; pulse 2b records that no additional MoneyPuck columns are verified locally yet; pulse 2c adds a committed MoneyPuck-shaped schema fixture for the currently parsed skater columns without promoting new catalog keys. | Medium — started |
-| 3 | No rest-of-season projections w/ confidence | #1 fantasy ask; today pace is descriptive-only. Pulse 3a adds shared player outlook confidence ranges while keeping the copy descriptive; pulse 3b adds the same pace outlook ranges to `icelines project` text/JSON/CSV. | Medium-Large — started |
+| 3 | No rest-of-season projections w/ confidence | #1 fantasy ask; today pace is descriptive-only. Pulse 3a adds shared player outlook confidence ranges while keeping the copy descriptive; pulse 3b adds the same pace outlook ranges to `icelines project` text/JSON/CSV; pulse 3c records team outlook confidence bands as deferred until a team-level outlook ViewModel/source contract exists. | Medium-Large — started |
 | 4 | Goalie eval shallow (SV%/GAA); GSAx only emerging | Table stakes for modern goalie analysis. Pulse 4a surfaces existing goalie advanced workload/quality fields (`QS%`, `SA/60`) in `GoaliesView` and CLI; pulse 4b exposes the same fields in Web `/goalies` HTML/JSON while keeping GSAx pending until xGA source work lands. | Medium — started |
 | 5 | "38 seasons" reads deeper than it is (~5 modern Tier-1) | Honesty gap; perspective claims over skeleton seasons. Pulses 5a/5b add CLI career-arc and leaders aggregate disclosure; pulse 5c fixes the TUI dashboard bundled-history trend label/disclosure. | Small — started |
 | 6 | No visualization (text/tables only) | Loses the "publication-grade" comparison vs HockeyViz/MoneyPuck. Pulse 6a adds compact CLI career-arc sparklines for Pts/82 and G/82; pulse 6b adds an inline SVG Pts/82 trend to `export md compare`; pulse 6c adds the same trend to Web `/compare`; pulse 6d adds a Markdown leaders Pts/82 SVG bar chart; pulse 6e adds the same chart to Web `/leaders`; pulse 6f adds a Web `/player/:id` Pts/82 career SVG below the career table; pulse 6g hardens TUI dashboard sparkline narrow-width evidence; pulse 6h adds a Web `/team/:abbrev` active-roster Pts/82 SVG; pulse 6i adds a Web `/goalies` SV% SVG; pulse 6j adds a Web scoring outlook 82-game pace SVG; pulse 6k adds a Web records count SVG; pulse 6l adds a Web poach/weekly report score SVG; pulse 6m adds a Markdown team-season quality-ledger SVG; pulse 6n adds a Markdown depth team-strength SVG; pulse 6o adds a Markdown fantasy poach-score SVG; pulse 6p adds a Markdown roster Pts/82 SVG; pulse 6q adds a Markdown team Pts/82 SVG; pulse 6r adds a Markdown series game-margin SVG; pulse 6s adds a TUI playoff series game-margin sparkline; pulse 6t adds a TUI team-season goal-differential sparkline; pulse 6u adds a TUI schedule matchup margin sparkline; pulse 6v adds TUI game-detail skater-activity bars; pulse 6w adds TUI player-records count bars; pulse 6x adds TUI goalie SV% quality bars; pulse 6y adds TUI Stats leaders primary-metric bars; pulse 6z adds TUI team roster Pts/82 bars. | Large — compact train complete |
@@ -278,8 +278,13 @@ bands. Pulse 3a moves confidence ranges into the shared
 nullable behavior below the sample floor or when remaining schedule data is
 missing. Pulse 3b wires the standalone `project` command to the same
 `PlayerScoringPaceView` for additive text/JSON/CSV pace outlook ranges while
-preserving its existing projected-points projection output. Remaining work:
-decide whether team outlooks need confidence bands.
+preserving its existing projected-points projection output. Pulse 3c decision:
+team outlook confidence bands remain deferred. Do not extend
+player pace confidence ranges to team pages or `project --team` by summing or
+averaging player bands. A future team confidence surface first needs a
+team-level outlook ViewModel/source contract that defines inputs, schedule
+window, sample floor, uncertainty semantics, and non-claim copy. Remaining work:
+scope that ViewModel/contract in a future team-outlook wave.
 
 **4. Goalie GSAx + workload.** Status: started. Pulse 4a ships the available
 workload/quality slice: `GoaliesView` now carries goalie advanced

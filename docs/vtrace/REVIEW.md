@@ -485,6 +485,33 @@ matrix.
 - Web/export SVG charts and broader visual proof remain pending under Phase
   Hurricane deliverable 6.
 
+## 2026-06-20 Phase Hurricane 3c Team Outlook Confidence Decision Review
+
+**Scope:** Team outlook confidence bands after the player outlook 3a/3b slice.
+
+**Decision:** `deferred_with_contract_required`
+
+Phase Hurricane 3c keeps team outlook confidence bands out of scope for the
+current player pace-confidence surface. The accepted player confidence ranges
+remain `PlayerScoringPaceView` rows for individual outlooks; team pages and
+`project --team` should not promote summed or averaged player bands as team
+confidence.
+
+**Claims accepted**
+
+- Player `PlayerScoringPaceView` confidence ranges remain the accepted
+  confidence-envelope surface for individual outlooks.
+- Team outlook confidence bands require a team-level ViewModel/source contract
+  before product surfacing.
+- That future contract must define inputs, schedule window, sample floor,
+  uncertainty semantics, and non-claim copy.
+
+**Accepted risks**
+
+- Team pages still show descriptive scoring/profile data without confidence
+  bands.
+- Reopen only when a team-level outlook wave is scoped.
+
 ## 2026-06-19 Phase Hurricane 3b Project Pace Outlook Review
 
 **Scope:** `icelines project` single-player text, JSON, and CSV output.
@@ -508,7 +535,8 @@ and adds `pace_outlook_*` rows for machine output plus a compact text range line
 
 - `project --team` still uses the legacy projection table without the shared
   pace-outlook rows.
-- Team outlook confidence bands remain pending.
+- Team outlook confidence bands are deferred by Phase Hurricane 3c pending a
+  team-level ViewModel/source contract.
 
 ## 2026-06-19 Phase Hurricane 4a Goalie Advanced Workload Review
 
