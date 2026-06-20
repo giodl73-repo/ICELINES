@@ -1,0 +1,39 @@
+# Phase Rangers
+
+## Scope
+
+Plan and execute the post-Hurricane organization round for ICELINES. This wave
+turns shipped analytics into discoverable, evidence-preserving, persistent, and
+leaner workflows without making new unverified source claims.
+
+## Entry posture
+
+- Phase Hurricane is wrapped as of 2026-06-20.
+- Signals have CLI, TUI player-card, Web player, and Markdown export surfaces.
+- MoneyPuck deployment expansion, goalie GSAx/high-danger SV%, team confidence,
+  and broader Signals cache/catalog/filter/leaderboard work remain gated by new
+  evidence or review.
+- REQ-WB-003, REQ-DEP-001, REQ-LEAN-001, and broad REQ-CACHE targets remain open
+  targets in VTRACE.
+
+## Goals
+
+1. Signals discovery lane with product-copy and evidence review before any broad
+   catalog/filter/leaderboard promotion.
+2. Shared evidence-card envelope for one shipped analytics family.
+3. Named workbench layout persistence contract and first restore path.
+4. Lean offline CLI feature/dependency audit and reproducible check.
+5. NYR workflow proof across existing team, roster/depth, player Signals, goalie
+   workload, and export/report surfaces.
+
+## Pulse log
+
+| Pulse | Scope | Result |
+|---|---|---|
+| 01 | Plan and inventory Phase Rangers goals | planned |
+
+## Validation posture
+
+- Planning/doc-only edits use VTRACE proof check and `git diff --check`.
+- Implementation pulses add focused Rust tests for changed surfaces.
+- Tests stay offline and fixture-backed.
