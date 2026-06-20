@@ -96,6 +96,25 @@ fn l2_cmd_help_exits_zero_and_lists_commands() {
     }
 }
 
+#[test]
+fn l2_cmd_serve_help_does_not_advertise_removed_site_serve() {
+    let out = run(&["serve", "--help"]);
+    assert!(out.status.success(), "serve --help must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("web dashboard"),
+        "serve --help must describe the active web dashboard, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("mkdocs/static-site CLI surface is removed"),
+        "serve --help must label the static-site CLI surface as removed, got: {stdout}"
+    );
+    assert!(
+        !stdout.contains("icelines site serve"),
+        "serve --help must not advertise removed `icelines site serve`, got: {stdout}"
+    );
+}
+
 // ── L2: fetch --dry-run exits 0 without making API calls ─────────────────────
 
 #[test]

@@ -5,7 +5,7 @@
 > durable deferrals without overstating browser, TUI, cache, or docs coverage.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 surface matrix refresh passed
+**Status:** Active - pulse 03 admin/docs truth pass passed
 
 ---
 
@@ -52,7 +52,7 @@ remaining gaps with runnable checks or durable deferral text.
 2. **Pulse 02 - Surface matrix refresh.** Update `surface-parity.md` so current
    status and active partials are easy to audit. Result: passed 2026-06-20.
 3. **Pulse 03 - Admin/docs truth pass.** Tighten docs/admin wording and tests or
-   deferrals for user-facing operations.
+   deferrals for user-facing operations. Result: passed 2026-06-20.
 4. **Pulse 04 - Dashboard proof/fence.** Add repeatable selected capture proof
    or record the remaining visual-capture deferral.
 5. **Pulse 05 - Cache partial rollup.** Summarize WP-009 first-route evidence

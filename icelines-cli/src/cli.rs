@@ -285,9 +285,8 @@ Examples:
     /// auto-opens your default browser. Same data as `icelines tui` —
     /// just rendered as HTML instead of a terminal UI.
     ///
-    /// Not to be confused with `icelines site serve` — that's the
-    /// mkdocs documentation-site preview. The bare `serve` is the
-    /// new web dashboard (Phase King Clancy King.1.5).
+    /// Not to be confused with the removed mkdocs/static-site preview. The
+    /// bare `serve` command is the web dashboard (Phase King Clancy King.1.5).
     #[command(long_about = r#"
 icelines serve — open the IceLines web dashboard in your browser.
 
@@ -302,12 +301,12 @@ EXAMPLES
   icelines serve --no-cache            # bypass response cache (dev mode)
 
 NOT THE SAME AS
-  icelines site serve  → mkdocs documentation-site preview (renamed in v0.13)
+  the removed mkdocs/static-site preview commands
 
 DEPRECATIONS
-  Pre-v0.13:  icelines serve  → mkdocs preview (now `icelines site serve`)
+  Pre-v0.13:  icelines serve  → mkdocs preview
   v0.13+:     icelines serve  → web dashboard (this command)
-  v0.14:      old `serve` alias for mkdocs is removed
+  v0.14:      mkdocs/static-site CLI surface is removed
 "#)]
     Serve {
         /// Port to bind. Default 8000. Shorthand for `--bind 127.0.0.1:N`.
