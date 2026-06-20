@@ -249,6 +249,16 @@ Source: IceLines · /compare?a={{ pa.nhl_id }}&b={{ pb.nhl_id }}
             <td style="text-align:right;" class="{% if winners.toi_per_game_b %}winner{% endif %}">{% match b %}{% when Some with (p) %}{{ p.toi_per_game_str }}{% when None %}—{% endmatch %}</td></tr>
     </tbody>
 </table>
+{% match career_trend_svg %}
+    {% when Some with (svg) %}
+        <section class="compare-career-chart" aria-label="Career trend" style="margin-top:1rem;">
+            {{ svg|safe }}
+            <p style="color:#616161; margin-top:0.35rem;">
+                Bundled regular-season Pts/82 trend. Historical skeleton rows may omit newer detail stats.
+            </p>
+        </section>
+    {% when None %}
+{% endmatch %}
 {% else %}
 {% if similar.is_none() %}
 <p style="color:#616161;">

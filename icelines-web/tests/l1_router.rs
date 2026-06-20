@@ -164,6 +164,28 @@ fn repo_with_mcdavid_and_bench_forward() -> icelines_core::stats_repository::Sta
     repo
 }
 
+fn repo_with_goalie_advanced() -> icelines_core::stats_repository::StatsRepository {
+    use icelines_core::model::TeamAbbr;
+    use icelines_core::season_stats::GoalieAdvancedStats;
+
+    let identity = fixtures::identity(8479979)
+        .name("Advanced Goalie", "advanced_goalie")
+        .build();
+    let stats = fixtures::solo_goalie(8479979, 20252026, TeamAbbr("WPG".to_owned()))
+        .goalie_advanced(GoalieAdvancedStats {
+            quality_starts: 32,
+            quality_starts_pct: Some(0.604),
+            regulation_wins: 28,
+            regulation_losses: 14,
+            complete_games: 48,
+            incomplete_games: 5,
+            complete_game_pct: Some(0.906),
+            shots_against_per_60: Some(29.5),
+        })
+        .build();
+    fixtures::test_repo_with_goalie(identity, stats)
+}
+
 async fn response_json(response: Response, limit: usize) -> Value {
     let bytes = axum::body::to_bytes(response.into_body(), limit)
         .await
@@ -1027,6 +1049,31 @@ async fn l1_dashboard_leaders_workspace_preserves_leaders_query_state() {
     assert!(body.contains("name=\"top\" value=\"7\""));
     assert!(body.contains("href=\"/leaders?sort=goals&pos=F&top=7"));
     assert!(body.contains("sort-link-active"));
+}
+
+#[tokio::test]
+async fn l1_leaders_html_includes_pts82_svg_chart() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/leaders?top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 256 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("html is utf-8");
+
+    assert!(body.contains("leaders-svg-chart"));
+    assert!(body.contains("Pts/82 leaders"));
+    assert!(body.contains("<svg"));
+    assert!(body.contains(r#"<rect x="190""#));
 }
 
 #[tokio::test]
@@ -2319,6 +2366,114 @@ async fn l1_player_html_renders_headshot_with_fallback() {
 }
 
 #[tokio::test]
+async fn l1_player_html_links_signals_surface() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/8478402")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    let status = response.status();
+    let body = response_text(response, 512 * 1024).await;
+    assert_eq!(status, StatusCode::OK, "body: {body}");
+    assert!(
+        body.contains("/player/8478402/signals"),
+        "player card should link to the Signals surface:\n{body}"
+    );
+}
+
+#[tokio::test]
+async fn l1_player_signals_json_renders_player_signals_view() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/player/8478402/signals")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    let status = response.status();
+    let json = response_json(response, 512 * 1024).await;
+    assert_eq!(status, StatusCode::OK, "body: {json}");
+    assert_data_meta_envelope(&json, "player-signals");
+    assert_eq!(json["meta"]["player_id"], serde_json::json!(8478402));
+    assert_eq!(json["meta"]["signal_count"], serde_json::json!(3));
+    assert_eq!(json["data"]["player_name"], "Connor McDavid");
+    assert_eq!(
+        json["data"]["rows"][0]["cli_key"],
+        "physical-engagement-rate"
+    );
+    assert!(
+        json["data"]["rows"]
+            .as_array()
+            .expect("signals rows")
+            .iter()
+            .any(|row| row["value"].is_null()),
+        "missing evidence must remain null, not zero-filled: {json}"
+    );
+}
+
+#[tokio::test]
+async fn l1_player_signals_html_renders_unavailable_not_zero() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/8478402/signals")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    let status = response.status();
+    let body = response_text(response, 512 * 1024).await;
+    assert_eq!(status, StatusCode::OK, "body: {body}");
+    assert!(body.contains("Connor McDavid Signals"), "body was:\n{body}");
+    assert!(body.contains("unavailable"), "body was:\n{body}");
+    assert!(body.contains("missing evidence"), "body was:\n{body}");
+    assert!(
+        !body.contains(">0.00</td><td>per 60</td><td>neutral"),
+        "missing signal must not be rendered as zero:\n{body}"
+    );
+}
+
+#[tokio::test]
+async fn l1_player_outlook_html_includes_pace_svg_chart() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/8478402/outlook")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response, 256 * 1024).await;
+    assert!(body.contains("outlook-pace-chart"), "body was:\n{body}");
+    assert!(
+        body.contains("Scoring outlook pace chart"),
+        "body was:\n{body}"
+    );
+    assert!(body.contains("<svg"), "body was:\n{body}");
+    assert!(body.contains("<rect"), "body was:\n{body}");
+    assert!(body.contains("82-game pace"), "body was:\n{body}");
+    assert!(body.contains("Connor McDavid"), "body was:\n{body}");
+}
+
+#[tokio::test]
 async fn l1_player_json_does_not_mutate_shared_repo_windows() {
     let season = Season(20242025);
     let season_type = SeasonType::Regular;
@@ -2401,6 +2556,37 @@ async fn l1_player_json_rows_match_player_card_view() {
         serde_json::json!(expected.career.len())
     );
     assert_eq!(json_player_snapshot(&json), expected);
+}
+
+#[tokio::test]
+async fn l1_player_html_includes_career_trend_svg() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let pid = PlayerId(8478402);
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let mut load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    load_player_career_into_repo(&mut load.repo, pid).expect("bundled career should load");
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/8478402")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response_text(response, 1024 * 1024).await;
+    assert!(body.contains("player-career-chart"), "body was:\n{body}");
+    assert!(body.contains("Pts/82 career trend"), "body was:\n{body}");
+    assert!(body.contains("<svg"), "body was:\n{body}");
+    assert_eq!(body.matches("<polyline").count(), 1, "body was:\n{body}");
+    assert!(body.contains("Connor McDavid"), "body was:\n{body}");
 }
 
 #[tokio::test]
@@ -5205,6 +5391,45 @@ async fn l1_compare_html_similarity_renders_similar_players_section() {
 }
 
 #[tokio::test]
+async fn l1_compare_html_includes_career_trend_svg() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let a_id = PlayerId(8478402);
+    let b_id = PlayerId(8477934);
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let mut load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    load_player_career_into_repo(&mut load.repo, a_id).expect("player a career should load");
+    load_player_career_into_repo(&mut load.repo, b_id).expect("player b career should load");
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/compare?a=8478402&b=8477934")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response_text(response, 1024 * 1024).await;
+    assert!(body.contains("compare-career-chart"), "body was:\n{body}");
+    assert!(
+        body.contains("Pts/82 career trend comparison"),
+        "body was:\n{body}"
+    );
+    assert!(body.contains("<svg"), "body was:\n{body}");
+    assert_eq!(body.matches("<polyline").count(), 2, "body was:\n{body}");
+    assert!(
+        body.contains("Connor McDavid") && body.contains("Leon Draisaitl"),
+        "body was:\n{body}"
+    );
+}
+
+#[tokio::test]
 async fn l1_compare_json_bad_input_uses_shared_error_envelope() {
     let app = router(WebState::new());
 
@@ -5281,6 +5506,86 @@ async fn l1_goalies_json_accepts_cli_parity_saves_sort_and_gp_min() {
     if let Some(first) = rows.first() {
         assert!(first["saves"].is_number());
     }
+}
+
+#[tokio::test]
+async fn l1_goalies_html_exposes_advanced_workload_metrics() {
+    let app = router(WebState::with_repo(repo_with_goalie_advanced()));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/goalies?include_below_threshold=true&top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response, 256 * 1024).await;
+
+    assert!(body.contains("Advanced Goalie"), "body was:\n{body}");
+    assert!(body.contains(">QS%</th>"), "body was:\n{body}");
+    assert!(body.contains(">SA/60</th>"), "body was:\n{body}");
+    assert!(body.contains(">60.4%</td>"), "body was:\n{body}");
+    assert!(body.contains(">29.5</td>"), "body was:\n{body}");
+}
+
+#[tokio::test]
+async fn l1_goalies_html_includes_save_pct_svg_chart() {
+    let app = router(WebState::with_repo(repo_with_goalie_advanced()));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/goalies?include_below_threshold=true&top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response, 256 * 1024).await;
+
+    assert!(body.contains("goalie-sv-chart"), "body was:\n{body}");
+    assert!(body.contains("Goalie SV% chart"), "body was:\n{body}");
+    assert!(body.contains("<svg"), "body was:\n{body}");
+    assert!(body.contains("<rect"), "body was:\n{body}");
+    assert!(body.contains("Advanced Goalie"), "body was:\n{body}");
+}
+
+#[tokio::test]
+async fn l1_goalies_json_exposes_advanced_workload_metrics() {
+    let app = router(WebState::with_repo(repo_with_goalie_advanced()));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/goalies?include_below_threshold=true&top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "goalies");
+    let rows = json["data"].as_array().expect("goalies data array");
+    let row = rows
+        .iter()
+        .find(|row| row["name"] == "Advanced Goalie")
+        .expect("advanced goalie row");
+    let quality_start_pct = row["quality_start_pct"]
+        .as_f64()
+        .expect("quality_start_pct numeric");
+    assert!(
+        (quality_start_pct - 0.604).abs() < 0.0001,
+        "quality_start_pct should preserve the goalie advanced value: {row}"
+    );
+    assert_eq!(row["shots_against_per_60"], serde_json::json!(29.5));
 }
 
 #[tokio::test]
@@ -5379,6 +5684,44 @@ async fn l1_team_json_rows_match_team_depth_view() {
     assert_eq!(json["meta"]["season_type"], serde_json::json!("regular"));
     assert_eq!(json_team_skater_snapshots(&json), expected_skaters);
     assert_eq!(json_team_goalie_snapshots(&json), expected_goalies);
+}
+
+#[tokio::test]
+async fn l1_team_html_includes_skater_pts82_svg_chart() {
+    let season = Season(20242025);
+    let season_type = SeasonType::Regular;
+    let team = TeamAbbr::parse("EDM").expect("known team abbrev");
+    let store = SnapshotStore::new(SnapshotStore::default_root());
+    let load = load_into_repo(season, season_type, &store)
+        .expect("bundled regular-season repo should load");
+    let expected_view =
+        TeamDepthView::from_repository(&load.repo, team.clone(), season, season_type);
+    let expected_skaters = team_depth_skater_snapshots(&expected_view);
+    assert!(
+        expected_skaters.len() >= 2,
+        "fixture should include enough EDM skaters for a roster chart"
+    );
+
+    let state = WebState::with_repo_and_config(load.repo, WebConfig::new("20242025", "regular"));
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/team/EDM")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response_text(response, 1024 * 1024).await;
+    assert!(body.contains("team-skater-chart"), "body was:\n{body}");
+    assert!(body.contains("Roster Pts/82 chart"), "body was:\n{body}");
+    assert!(body.contains("<svg"), "body was:\n{body}");
+    assert!(body.contains("<rect"), "body was:\n{body}");
+    assert!(body.contains("Connor McDavid"), "body was:\n{body}");
 }
 
 #[tokio::test]

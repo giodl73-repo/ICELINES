@@ -2,8 +2,8 @@
 //!
 //! Behind the `dashboards` feature flag (off by default — see
 //! `crate::config::dashboards_enabled`). Renders a "scout card" with
-//! identity, counting stats, and 5-season trend sparklines pulled from
-//! the bundled history.
+//! identity, counting stats, and bundled-history trend sparklines pulled
+//! from the bundled history.
 //!
 //! # Native rendering
 //!
@@ -271,7 +271,7 @@ impl CompiledPanel {
 /// pivot to this; Phase A leaves `build_panel_lines` intact for the
 /// existing `lines_for_player` callsite.
 fn build_panel_lines_view(view: &PlayerView<'_>, league: &LeagueContext) -> Vec<Line<'static>> {
-    let mut lines: Vec<Line<'static>> = Vec::with_capacity(10);
+    let mut lines: Vec<Line<'static>> = Vec::with_capacity(11);
     let dim = Style::default().fg(DIM_COLOR);
     let title = Style::default()
         .fg(TITLE_COLOR)
@@ -321,9 +321,12 @@ fn build_panel_lines_view(view: &PlayerView<'_>, league: &LeagueContext) -> Vec<
             let range = format!("{}→{}", short_year(first.season), short_year(last.season));
 
             lines.push(Line::from(vec![
-                Span::styled("Last 5 seasons ", dim),
+                Span::styled(history_trend_label(history.len()), dim),
                 Span::styled(range, accent),
             ]));
+            if let Some(note) = tui_bundled_depth_note(history.len()) {
+                lines.push(Line::styled(note, dim));
+            }
             let g_spark = colored_spark_spans(&goals_values, history.len());
             let pts_spark = colored_spark_spans(&pts_values, history.len());
             let sh_spark = colored_spark_spans(&shots_values, history.len());
@@ -405,6 +408,22 @@ const PANEL_WIDTH: usize = 28;
 // (Orphan doc comment for a previously-public `build_lines` function
 // removed in an earlier phase. Kept the placeholder note here so a
 // future reader of git blame doesn't wonder what was deleted.)
+
+fn history_trend_label(history_len: usize) -> String {
+    if history_len > icelines_fetch::bundled::MODERN_BUNDLED_SEASONS.len() {
+        "Bundled trend ".to_owned()
+    } else {
+        format!(
+            "Last {history_len} season{} ",
+            if history_len == 1 { "" } else { "s" }
+        )
+    }
+}
+
+fn tui_bundled_depth_note(history_len: usize) -> Option<&'static str> {
+    (history_len > icelines_fetch::bundled::MODERN_BUNDLED_SEASONS.len())
+        .then_some("Depth: newest 5 modern; older skeleton; missing unavailable")
+}
 
 /// Letter abbreviation used in the position-rank header.
 fn position_letter(pos: Position) -> &'static str {
@@ -626,7 +645,7 @@ fn load_goalie_history(nhl_id: u32) -> Vec<GoalieHistoryRow> {
 /// same SV%/GAA/W sparkline layout, same colour semantics (GAA
 /// inverted because lower is better).
 fn build_goalie_panel_lines_view(v: &PlayerView<'_>) -> Vec<Line<'static>> {
-    let mut lines: Vec<Line<'static>> = Vec::with_capacity(10);
+    let mut lines: Vec<Line<'static>> = Vec::with_capacity(11);
     let dim = Style::default().fg(DIM_COLOR);
     let title = Style::default()
         .fg(TITLE_COLOR)
@@ -665,9 +684,12 @@ fn build_goalie_panel_lines_view(v: &PlayerView<'_>) -> Vec<Line<'static>> {
             let last = &history[history.len() - 1];
             let range = format!("{}→{}", short_year(first.season), short_year(last.season));
             lines.push(Line::from(vec![
-                Span::styled("Last 5 seasons ", dim),
+                Span::styled(history_trend_label(history.len()), dim),
                 Span::styled(range, accent),
             ]));
+            if let Some(note) = tui_bundled_depth_note(history.len()) {
+                lines.push(Line::styled(note, dim));
+            }
             let pad = 5usize.saturating_sub(history.len());
             let sv_spark = colored_spark_spans(&sv_values, history.len());
             lines.push(goalie_spark_row(
@@ -797,6 +819,59 @@ mod tests {
     }
 
     #[test]
+    fn l0_sparkline_spans_empty_when_width_zero() {
+        let spans = colored_spark_spans(&[12.0, 18.0, 6.0], 0);
+        assert!(
+            spans.is_empty(),
+            "zero-width sparkline should not produce blocks: {spans:?}"
+        );
+
+        let line = spark_row(
+            "Pts",
+            1,
+            spans,
+            21,
+            26,
+            Style::default().fg(DIM_COLOR),
+            Style::default().fg(ACCENT_COLOR),
+        );
+        let text = line.to_string();
+        assert!(text.contains("Pts"), "label should remain: {text}");
+        assert!(text.contains("21"), "first year should remain: {text}");
+        assert!(text.contains("26"), "last year should remain: {text}");
+        assert!(
+            !text.chars().any(|ch| "▁▂▃▄▅▆▇█".contains(ch)),
+            "zero-width row should not leak sparkline blocks: {text}"
+        );
+    }
+
+    #[test]
+    fn l0_sparkline_row_preserves_one_column_width() {
+        let spans = colored_spark_spans(&[12.0, 18.0, 6.0], 1);
+        assert_eq!(spans.len(), 1, "one-column width must render one block");
+
+        let line = spark_row(
+            "Pts",
+            0,
+            spans,
+            21,
+            26,
+            Style::default().fg(DIM_COLOR),
+            Style::default().fg(ACCENT_COLOR),
+        );
+        let text = line.to_string();
+        let block_count = text.chars().filter(|ch| "▁▂▃▄▅▆▇█".contains(*ch)).count();
+        assert_eq!(
+            block_count, 1,
+            "one-column row should render exactly one spark block: {text}"
+        );
+        assert!(
+            text.contains("Pts") && text.contains("21") && text.contains("26"),
+            "label and range should stay visible: {text}"
+        );
+    }
+
+    #[test]
     fn l0_median_of_even_and_odd_series() {
         assert_eq!(median_of(&[1.0, 3.0, 5.0]), 3.0); // odd
         assert_eq!(median_of(&[1.0, 2.0, 3.0, 4.0]), 2.5); // even avg
@@ -843,6 +918,33 @@ mod tests {
         assert_eq!(short_season("20242025"), "24-25");
         assert_eq!(short_season("19931994"), "93-94");
         assert_eq!(short_season("malformed"), "malformed");
+    }
+
+    #[test]
+    fn l0_history_trend_label_keeps_modern_count() {
+        assert_eq!(history_trend_label(1), "Last 1 season ");
+        assert_eq!(history_trend_label(3), "Last 3 seasons ");
+        assert_eq!(
+            history_trend_label(icelines_fetch::bundled::MODERN_BUNDLED_SEASONS.len()),
+            "Last 5 seasons "
+        );
+    }
+
+    #[test]
+    fn l0_history_trend_label_names_full_bundled_window() {
+        let history_len = icelines_fetch::bundled::MODERN_BUNDLED_SEASONS.len() + 1;
+        assert_eq!(history_trend_label(history_len), "Bundled trend ");
+    }
+
+    #[test]
+    fn l0_tui_bundled_depth_note_marks_older_skeleton() {
+        let modern_len = icelines_fetch::bundled::MODERN_BUNDLED_SEASONS.len();
+        assert_eq!(tui_bundled_depth_note(modern_len), None);
+
+        let note = tui_bundled_depth_note(modern_len + 1).expect("long history note");
+        assert!(note.contains("newest 5 modern"));
+        assert!(note.contains("older skeleton"));
+        assert!(note.contains("missing unavailable"));
     }
 
     #[test]
@@ -1040,6 +1142,33 @@ mod tests {
         assert!(
             guard.by_view.contains_key(&(8478402, s, t)),
             "compile must populate by_view with the triple key"
+        );
+    }
+
+    #[test]
+    fn l0_compile_long_history_discloses_tui_depth() {
+        let repo = fixture_repo_with_one_skater();
+        let panel = CompiledPanel::new();
+        let ctx = LeagueContext::build(&repo, Season(20242025), SeasonType::Regular);
+        let pid = PlayerId(8478402);
+        let s = Season(20242025);
+        let t = SeasonType::Regular;
+
+        let out = panel
+            .compile(&repo, s, t, pid, &ctx, (s, t))
+            .expect("happy-path compile");
+        let text = lines_to_text(&out.lines);
+        assert!(
+            text.contains("Bundled trend "),
+            "long bundled history should not be labeled as a 5-season-only trend:\n{text}"
+        );
+        assert!(
+            text.contains("Depth: newest 5 modern; older skeleton; missing unavailable"),
+            "long bundled history should disclose the modern/skeleton boundary:\n{text}"
+        );
+        assert!(
+            !text.contains("Last 5 seasons"),
+            "long bundled history must not retain the old fixed label:\n{text}"
         );
     }
 

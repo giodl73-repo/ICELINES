@@ -1559,8 +1559,8 @@ impl StatId {
             PointsPer60_5v5 => None,
             IxG => view.xg(), // existing MoneyPuck path
             IxgPer60 => view.xg_per_60(),
-            OnIceXgFor => None, // L.6: distinct from individual xG
-            OnIceXgAgainst => None,
+            OnIceXgFor => view.on_ice_xg_for(),
+            OnIceXgAgainst => view.on_ice_xg_against(),
             XgForPct => view.xgf_pct(),
 
             // ─── Goalie (23) ────────────────────────────────────────
@@ -3319,6 +3319,20 @@ mod tests {
                 "{sid:?} OK at 2007-08"
             );
         }
+    }
+
+    #[test]
+    fn l0_moneypuck_on_ice_xg_catalog_keys_read_advanced_values() {
+        let (identity, stats) = crate::fixtures::stat_catalog_variants::skater_modern();
+        let pid = identity.id;
+        let repo = crate::fixtures::test_repo_with(identity, stats);
+        let view = repo
+            .view(pid, Season(20242025), SeasonType::Regular)
+            .expect("fixture player view should exist");
+
+        assert_eq!(StatId::OnIceXgFor.read(&view), Some(71.0));
+        assert_eq!(StatId::OnIceXgAgainst.read(&view), Some(56.0));
+        assert_eq!(StatId::XgForPct.read(&view), Some(56.0));
     }
 
     /// `available_since` — Scoring basics always available.

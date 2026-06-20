@@ -731,6 +731,15 @@ impl PlayerView<'_> {
     pub fn ff_pct(&self) -> Option<f64> {
         self.stats.advanced.as_ref().and_then(|a| a.ff_pct)
     }
+    pub fn on_ice_xg_for(&self) -> Option<f64> {
+        self.stats.advanced.as_ref().and_then(|a| a.on_ice_xg_for)
+    }
+    pub fn on_ice_xg_against(&self) -> Option<f64> {
+        self.stats
+            .advanced
+            .as_ref()
+            .and_then(|a| a.on_ice_xg_against)
+    }
     pub fn xgf_pct(&self) -> Option<f64> {
         self.stats.advanced.as_ref().and_then(|a| a.xgf_pct)
     }

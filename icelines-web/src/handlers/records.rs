@@ -418,6 +418,8 @@ struct RecordsTemplateInput<'a> {
 }
 
 fn records_template(input: RecordsTemplateInput<'_>) -> RecordsTemplate {
+    let rows: Vec<_> = input.rows.iter().map(record_row).collect();
+    let records_count_svg = render_records_count_svg(&input.subtitle, &rows);
     RecordsTemplate {
         active_label: input.active_label,
         active_season: input.active_season,
@@ -434,7 +436,8 @@ fn records_template(input: RecordsTemplateInput<'_>) -> RecordsTemplate {
         cache_return_to: input.cache_return_to,
         cache_button_label: input.cache_button_label,
         total: input.rows.len(),
-        rows: input.rows.iter().map(record_row).collect(),
+        records_count_svg,
+        rows,
     }
 }
 
@@ -479,6 +482,57 @@ fn record_row(row: &RecordsOpponentRow) -> RecordsTemplateRow {
     }
 }
 
+fn render_records_count_svg(title: &str, rows: &[RecordsTemplateRow]) -> Option<String> {
+    let mut values: Vec<_> = rows.iter().filter(|row| row.count > 0).collect();
+    if values.is_empty() {
+        return None;
+    }
+    values.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.label.cmp(&b.label)));
+    values.truncate(10);
+    let max = values.iter().map(|row| row.count).max().unwrap_or(0);
+    if max == 0 {
+        return None;
+    }
+
+    let mut bars = String::new();
+    for (idx, row) in values.iter().enumerate() {
+        let y = 46 + idx * 24;
+        let width = ((row.count as f64 / max as f64) * 390.0).max(2.0);
+        let label = escape_svg_text(&row.label);
+        bars.push_str(&format!(
+            r##"  <text x="24" y="{label_y}" fill="#334155" font-size="11">{label}</text>
+  <rect x="176" y="{bar_y}" width="{width:.1}" height="14" rx="3" fill="#7c3aed"/>
+  <text x="{value_x:.1}" y="{label_y}" fill="#0f172a" font-size="11">{count}</text>
+"##,
+            label_y = y + 11,
+            bar_y = y,
+            value_x = 184.0 + width,
+            count = row.count,
+        ));
+    }
+    let height = 72 + values.len() * 24;
+    let title = escape_svg_text(title);
+
+    Some(format!(
+        r##"<svg class="records-count-svg" viewBox="0 0 640 {height}" role="img" aria-labelledby="records-count-title records-count-desc">
+  <title id="records-count-title">Records count chart</title>
+  <desc id="records-count-desc">{title} by record count.</desc>
+  <rect x="0" y="0" width="640" height="{height}" rx="8" fill="#f8fafc"/>
+  <text x="24" y="26" fill="#334155" font-size="13">Record counts</text>
+  <line x1="176" y1="36" x2="566" y2="36" stroke="#cbd5e1"/>
+{bars}</svg>"##
+    ))
+}
+
+fn escape_svg_text(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 fn render_template(template: RecordsTemplate) -> Response {
     match template.render() {
         Ok(html) => Html(html).into_response(),
@@ -487,6 +541,58 @@ fn render_template(template: RecordsTemplate) -> Response {
             Html(format!("template render failed: {e}")),
         )
             .into_response(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn l0_records_count_svg_renders_positive_rows() {
+        let rows = vec![
+            RecordsTemplateRow {
+                key: "EDM".to_string(),
+                label: "Edmonton Oilers".to_string(),
+                count: 3,
+                first_game_id: 1,
+                first_date: "2025-10-01".to_string(),
+                last_game_id: 2,
+                last_date: "2025-10-02".to_string(),
+            },
+            RecordsTemplateRow {
+                key: "SEA".to_string(),
+                label: "Seattle Kraken".to_string(),
+                count: 1,
+                first_game_id: 3,
+                first_date: "2025-10-03".to_string(),
+                last_game_id: 3,
+                last_date: "2025-10-03".to_string(),
+            },
+        ];
+
+        let svg = render_records_count_svg("NHL teams scored against", &rows)
+            .expect("positive rows should render");
+
+        assert!(svg.contains("records-count-svg"));
+        assert!(svg.contains("Records count chart"));
+        assert!(svg.contains("Edmonton Oilers"));
+        assert!(svg.contains("<rect"));
+    }
+
+    #[test]
+    fn l0_records_count_svg_skips_empty_counts() {
+        let rows = vec![RecordsTemplateRow {
+            key: "EDM".to_string(),
+            label: "Edmonton Oilers".to_string(),
+            count: 0,
+            first_game_id: 1,
+            first_date: String::new(),
+            last_game_id: 1,
+            last_date: String::new(),
+        }];
+
+        assert!(render_records_count_svg("NHL teams scored against", &rows).is_none());
     }
 }
 

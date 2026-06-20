@@ -249,7 +249,42 @@ fn team_leader_lines(
         lines.push(row3);
     }
 
+    if let Some(activity) = format_skater_activity_bar(skaters) {
+        lines.push(Line::styled(format!("         Activity {activity}"), dim));
+    }
+
     lines
+}
+
+fn format_skater_activity_bar(skaters: &[icelines_core::GameSkaterRow]) -> Option<String> {
+    let rows = skaters
+        .iter()
+        .filter_map(|skater| {
+            let score = skater.sog
+                + skater.hits
+                + skater.blocked_shots
+                + skater.takeaways
+                + skater.giveaways;
+            (score > 0).then_some((short_name(&skater.player_name), score))
+        })
+        .take(4)
+        .collect::<Vec<_>>();
+    let max = rows.iter().map(|(_, score)| *score).max()?;
+    if max == 0 {
+        return None;
+    }
+
+    Some(
+        rows.iter()
+            .map(|(name, score)| {
+                let max = usize::try_from(max).unwrap_or(usize::MAX);
+                let score_usize = usize::try_from(*score).unwrap_or(usize::MAX);
+                let bars = ((score_usize * 4).div_ceil(max)).max(1);
+                format!("{name} {} {score}", "█".repeat(bars))
+            })
+            .collect::<Vec<_>>()
+            .join("  "),
+    )
 }
 
 /// Pick the highest-`metric` skater. Returns None when every skater's
@@ -718,6 +753,37 @@ mod tests {
             text.contains("TOI") && text.contains("SOG") && text.contains("Hits"),
             "leader-row stat labels missing, got:\n{text}"
         );
+        assert!(
+            text.contains("Activity"),
+            "activity bar missing, got:\n{text}"
+        );
+        assert!(
+            text.contains("A. Fox") && text.contains("A. Ovechkin"),
+            "activity bar should include top skater short names, got:\n{text}"
+        );
+        assert!(text.contains("10"), "activity score missing, got:\n{text}");
+    }
+
+    #[test]
+    fn l0_game_detail_activity_bar_skips_zero_activity() {
+        let skaters = vec![icelines_core::GameSkaterRow {
+            player_id: 1,
+            player_name: "Quiet Skater".to_owned(),
+            position: "C".to_owned(),
+            goals: 0,
+            assists: 0,
+            points: 0,
+            plus_minus: 0,
+            toi_seconds: 900,
+            sog: 0,
+            hits: 0,
+            blocked_shots: 0,
+            takeaways: 0,
+            giveaways: 0,
+        }];
+
+        assert!(format_skater_activity_bar(&[]).is_none());
+        assert!(format_skater_activity_bar(&skaters).is_none());
     }
 
     #[test]

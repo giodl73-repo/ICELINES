@@ -1268,6 +1268,8 @@ fn build_skater_stats(
             xg_per_60: Some(m.xg_per_60 as f64),
             cf_pct: Some(m.cf_pct_5v5 as f64),
             ff_pct: Some(m.ff_pct_5v5 as f64),
+            on_ice_xg_for: Some(m.on_ice_xg_for_5v5 as f64),
+            on_ice_xg_against: Some(m.on_ice_xg_against_5v5 as f64),
             xgf_pct: Some(m.xgf_pct_5v5 as f64),
         });
     }

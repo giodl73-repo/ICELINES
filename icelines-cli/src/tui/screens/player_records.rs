@@ -250,12 +250,20 @@ fn render_section(f: &mut Frame, area: Rect, section: &PlayerRecordSection) {
     }
 
     let max_rows = inner.height.saturating_sub(1) as usize;
+    let max_count = section
+        .view
+        .rows
+        .iter()
+        .map(|row| row.count)
+        .max()
+        .unwrap_or(0);
     let mut items = Vec::with_capacity(max_rows.saturating_add(1));
     items.push(ListItem::new(Line::styled(
         format!(
-            " {:<24} {:>5}  {:<10}  {:<10}",
+            " {:<24} {:>5} {:<4} {:<10}  {:<10}",
             section.metric.subject_label(),
             "count",
+            "bar",
             "first",
             "last"
         ),
@@ -264,7 +272,7 @@ fn render_section(f: &mut Frame, area: Rect, section: &PlayerRecordSection) {
             .add_modifier(Modifier::BOLD),
     )));
     for row in section.view.rows.iter().take(max_rows) {
-        items.push(ListItem::new(row_line(row)));
+        items.push(ListItem::new(row_line(row, max_count)));
     }
     if section.view.rows.len() > max_rows {
         items.push(ListItem::new(Line::styled(
@@ -276,16 +284,27 @@ fn render_section(f: &mut Frame, area: Rect, section: &PlayerRecordSection) {
     f.render_widget(List::new(items), inner);
 }
 
-fn row_line(row: &RecordsOpponentRow) -> Line<'static> {
+fn row_line(row: &RecordsOpponentRow, max_count: u32) -> Line<'static> {
     let first = row.first_date.as_deref().unwrap_or("-");
     let last = row.last_date.as_deref().unwrap_or("-");
     Line::from(format!(
-        " {:<24} {:>5}  {:<10}  {:<10}",
+        " {:<24} {:>5} {:<4} {:<10}  {:<10}",
         truncate(&row.label, 24),
         row.count,
+        count_bar(row.count, max_count),
         first,
         last
     ))
+}
+
+fn count_bar(count: u32, max_count: u32) -> String {
+    if count == 0 || max_count == 0 {
+        return String::new();
+    }
+    let bars = ((usize::try_from(count).unwrap_or(usize::MAX) * 4)
+        .div_ceil(usize::try_from(max_count).unwrap_or(usize::MAX)))
+    .max(1);
+    "#".repeat(bars)
 }
 
 fn truncate(s: &str, width: usize) -> String {
@@ -323,5 +342,14 @@ mod tests {
     fn truncate_preserves_short_labels_and_marks_long_labels() {
         assert_eq!(truncate("EDM", 5), "EDM");
         assert_eq!(truncate("Very Long Goalie Name", 10), "Very Long.");
+    }
+
+    #[test]
+    fn l0_player_records_count_bar_scales_and_skips_zero_counts() {
+        assert_eq!(count_bar(0, 4), "");
+        assert_eq!(count_bar(1, 4), "#");
+        assert_eq!(count_bar(2, 4), "##");
+        assert_eq!(count_bar(4, 4), "####");
+        assert_eq!(count_bar(4, 0), "");
     }
 }

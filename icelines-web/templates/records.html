@@ -59,5 +59,12 @@
     </tbody>
 </table>
 </div>
+{% match records_count_svg %}
+{% when Some with (svg) %}
+<section class="records-count-chart" aria-label="Records count chart" style="margin-top: 1rem;">
+    {{ svg|safe }}
+</section>
+{% when None %}
+{% endmatch %}
 {% endif %}
 {% endblock %}

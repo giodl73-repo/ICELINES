@@ -4,7 +4,10 @@ use anyhow::Context;
 use icelines_core::model::{Season, MIN_GP};
 use icelines_core::name::normalize_name;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::{compute_projection, ProjectionMode};
+use icelines_core::{
+    compute_projection, PlayerScoringPaceMetric, PlayerScoringPaceRow, PlayerScoringPaceView,
+    ProjectionMode, ViewContext, ViewWindow,
+};
 use icelines_fetch::career::load_career;
 use icelines_fetch::snapshot::SnapshotStore;
 use icelines_fetch::stats_loader::load_into_repo;
@@ -72,6 +75,11 @@ pub async fn run(
         let career_ppg = load_career(view.full_name(), 5, &store).map(|c| c.career_ppg as f64);
 
         let result = compute_projection(current_ppg, career_ppg, score.gp, age, remaining, mode);
+        let pace_view = PlayerScoringPaceView::from_player(
+            ViewContext::new(ViewWindow::new(Season(season_u32), SeasonType::Regular)),
+            &view,
+            Some(remaining),
+        );
 
         if format == Format::Table && out.is_none() {
             println!(
@@ -94,6 +102,10 @@ pub async fn run(
                 result.low_band,
                 result.high_band,
                 result.confidence_band_width() / 2.0
+            );
+            println!(
+                "  Pace outlook ranges: {}",
+                pace_outlook_ranges_label(&pace_view)
             );
             return Ok(());
         }
@@ -122,6 +134,8 @@ pub async fn run(
             vec!["band_low".to_owned(), format!("{:.1}", result.low_band)],
             vec!["band_high".to_owned(), format!("{:.1}", result.high_band)],
         ];
+        let mut rows = rows;
+        append_pace_outlook_rows(&mut rows, &pace_view);
         format.emit_to(headers, &rows, out.as_deref())?;
     } else if let Some(team_abbr) = team {
         // Team-wide projection
@@ -177,4 +191,66 @@ pub async fn run(
     }
 
     Ok(())
+}
+
+fn append_pace_outlook_rows(rows: &mut Vec<Vec<String>>, view: &PlayerScoringPaceView) {
+    rows.push(vec![
+        "pace_outlook_schema".to_owned(),
+        "player_scoring_pace.v1".to_owned(),
+    ]);
+    rows.push(vec![
+        "pace_outlook_sample_status".to_owned(),
+        format!("{:?}", view.sample_status),
+    ]);
+    rows.push(vec![
+        "pace_outlook_remaining_games".to_owned(),
+        view.remaining_games
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "—".to_owned()),
+    ]);
+
+    for row in &view.rows {
+        let key = pace_metric_key(row.metric);
+        rows.push(vec![
+            format!("pace_outlook_{key}_projected_finish"),
+            format_optional_one_decimal(row.projected_finish),
+        ]);
+        rows.push(vec![
+            format!("pace_outlook_{key}_band_low"),
+            format_optional_one_decimal(row.confidence_low),
+        ]);
+        rows.push(vec![
+            format!("pace_outlook_{key}_band_high"),
+            format_optional_one_decimal(row.confidence_high),
+        ]);
+    }
+}
+
+fn pace_outlook_ranges_label(view: &PlayerScoringPaceView) -> String {
+    view.rows
+        .iter()
+        .map(|row| format!("{} {}", row.label, pace_range_label(row)))
+        .collect::<Vec<_>>()
+        .join(" · ")
+}
+
+fn pace_range_label(row: &PlayerScoringPaceRow) -> String {
+    match (row.confidence_low, row.confidence_high) {
+        (Some(low), Some(high)) => format!("{low:.1}-{high:.1}"),
+        _ => "—".to_owned(),
+    }
+}
+
+fn pace_metric_key(metric: PlayerScoringPaceMetric) -> &'static str {
+    match metric {
+        PlayerScoringPaceMetric::Goals => "goals",
+        PlayerScoringPaceMetric::Points => "points",
+        PlayerScoringPaceMetric::Shots => "shots",
+    }
+}
+
+fn format_optional_one_decimal(value: Option<f64>) -> String {
+    value
+        .map(|value| format!("{value:.1}"))
+        .unwrap_or_else(|| "—".to_owned())
 }

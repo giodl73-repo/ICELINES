@@ -28,6 +28,7 @@
     <a href="/records/player/{{ nhl_id }}">Records</a>
     <a href="/player/{{ nhl_id }}/awards">Awards</a>
     <a href="/player/{{ nhl_id }}/streaks">Streaks</a>
+    <a href="/player/{{ nhl_id }}/signals">Signals</a>
     <a href="/scouting/{{ nhl_id }}">Scouting</a>
     <a href="/goalies">Goalies</a>
     <a href="/transactions?team={{ team_link }}">Transactions</a>
@@ -187,6 +188,13 @@ Source: IceLines · /player/{{ nhl_id }}
     </tbody>
 </table>
 </div>
+{% match career_trend_svg %}
+{% when Some with (svg) %}
+<section class="player-career-chart" aria-label="Player career Pts/82 chart" style="margin-top: 1rem;">
+    {{ svg|safe }}
+</section>
+{% when None %}
+{% endmatch %}
 {% endif %}
 
 {# Phase Calder.3 — pre-NHL career stints (junior / NCAA / AHL /
@@ -230,6 +238,7 @@ Source: IceLines · /player/{{ nhl_id }}
     Career table sourced from the 38-season bundle (1987-88 → 2025-26).
     {% if !pre_nhl_career.is_empty() %}Pre-NHL data via <code>icelines fetch career</code>.{% endif %}
     Records: <a href="/records/player/{{ nhl_id }}"><code>/records/player/{{ nhl_id }}</code></a>.
+    Signals: <a href="/player/{{ nhl_id }}/signals"><code>/player/{{ nhl_id }}/signals</code></a>.
     JSON twin: <a href="/api/v1/player/{{ nhl_id }}"><code>/api/v1/player/{{ nhl_id }}</code></a>.
 </p>
 {% endblock %}

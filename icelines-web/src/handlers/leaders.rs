@@ -597,6 +597,84 @@ fn leader_template_rows_from_view(view: &LeadersView, rows: Vec<LeaderRow>) -> V
         .collect()
 }
 
+fn render_leaders_pts82_svg(rows: &[LeaderRow]) -> Option<String> {
+    let bars: Vec<(&LeaderRow, f64)> = rows
+        .iter()
+        .filter_map(|row| {
+            if row.gp == 0 {
+                return None;
+            }
+            let value = row.points as f64 * 82.0 / row.gp as f64;
+            if value.is_finite() && value > 0.0 {
+                Some((row, value))
+            } else {
+                None
+            }
+        })
+        .take(10)
+        .collect();
+    if bars.is_empty() {
+        return None;
+    }
+
+    let max_value = bars.iter().map(|(_, value)| *value).fold(0.0_f64, f64::max);
+    if !max_value.is_finite() || max_value <= 0.0 {
+        return None;
+    }
+
+    let row_height = 28.0;
+    let top_pad = 48.0;
+    let bottom_pad = 28.0;
+    let height = top_pad + row_height * bars.len() as f64 + bottom_pad;
+    let chart_x = 190.0;
+    let chart_width = 460.0;
+    let label_x = 16.0;
+    let value_x = chart_x + chart_width + 14.0;
+    let mut svg = format!(
+        r##"<svg class="leaders-pts82-svg" role="img" aria-labelledby="leaders-svg-title leaders-svg-desc" viewBox="0 0 760 {:.0}" xmlns="http://www.w3.org/2000/svg">
+<title id="leaders-svg-title">Pts/82 leaders</title>
+<desc id="leaders-svg-desc">Current-window points per 82 games for the top returned skaters.</desc>
+<rect width="760" height="{:.0}" rx="8" fill="#f8fafc"/>
+<text x="16" y="28" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="18" font-weight="700" fill="#172033">Pts/82 leaders</text>
+"##,
+        height, height
+    );
+
+    for (idx, (row, value)) in bars.iter().enumerate() {
+        let y = top_pad + idx as f64 * row_height;
+        let width = ((*value / max_value) * chart_width).max(2.0);
+        let name = escape_svg_text(&row.name);
+        let team = escape_svg_text(&row.team);
+        let position = escape_svg_text(&row.position);
+        svg.push_str(&format!(
+            r##"<text x="{label_x}" y="{:.1}" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#334155">{}. {name}</text>
+<rect x="{chart_x}" y="{:.1}" width="{:.1}" height="16" rx="4" fill="#2563eb"/>
+<text x="{value_x}" y="{:.1}" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" font-weight="700" fill="#172033">{:.1}</text>
+<text x="708" y="{:.1}" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="11" text-anchor="end" fill="#64748b">{team} {position}</text>
+"##,
+            y + 14.0,
+            idx + 1,
+            y,
+            width,
+            y + 13.0,
+            value,
+            y + 13.0
+        ));
+    }
+
+    svg.push_str("</svg>");
+    Some(svg)
+}
+
+fn escape_svg_text(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 fn recovery_href(action: &RecoveryActionKind) -> Option<String> {
     match action {
         RecoveryActionKind::OpenRoute { route } => {
@@ -1394,6 +1472,7 @@ pub async fn build_leaders_template(
     } else {
         raw_filters.join(";")
     };
+    let leaders_svg = render_leaders_pts82_svg(&rows);
 
     Ok(LeadersTemplate {
         active_label,
@@ -1406,6 +1485,7 @@ pub async fn build_leaders_template(
         warning_kinds,
         result_active_filters,
         rows,
+        leaders_svg,
         total,
         empty_title,
         empty_detail,
@@ -1608,6 +1688,7 @@ mod tests {
         assert_eq!(projected[0].gp, 82);
         assert_eq!(projected[0].points, 153);
         assert_eq!(projected[0].ppg_str, "1.87");
+        let leaders_svg = render_leaders_pts82_svg(&projected);
 
         let html = LeadersTemplate {
             active_label: "2024-25 regular".to_string(),
@@ -1620,6 +1701,7 @@ mod tests {
             warning_kinds: "-".to_string(),
             result_active_filters: "-".to_string(),
             rows: projected,
+            leaders_svg,
             total: 1,
             empty_title: String::new(),
             empty_detail: String::new(),
@@ -1662,6 +1744,9 @@ mod tests {
         assert!(html.contains(r#"data-result-top="1""#));
         assert!(html.contains(r#"data-result-sort="points""#));
         assert!(html.contains(r#"data-result-active-filters="-""#));
+        assert!(html.contains("leaders-svg-chart"));
+        assert!(html.contains("Pts/82 leaders"));
+        assert!(html.contains(r#"<rect x="190""#));
     }
 
     #[test]
@@ -1691,6 +1776,7 @@ mod tests {
                 .join(";"),
             result_active_filters: "-".to_string(),
             rows: Vec::new(),
+            leaders_svg: None,
             total: 0,
             empty_title: empty.title.clone(),
             empty_detail: empty.detail.clone().unwrap_or_default(),
@@ -1786,6 +1872,7 @@ mod tests {
             warning_kinds: "-".to_string(),
             result_active_filters: "-".to_string(),
             rows: Vec::new(),
+            leaders_svg: None,
             total: 0,
             empty_title: String::new(),
             empty_detail: String::new(),

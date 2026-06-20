@@ -140,6 +140,10 @@ fn goalie_preview_from_view(row: &HomeGoalieRow, season: u32) -> GoalieRow {
             .goals_against_average
             .map(|value| format!("{value:.2}"))
             .unwrap_or_else(|| "—".to_owned()),
+        quality_start_pct: None,
+        quality_start_pct_str: "-".to_owned(),
+        shots_against_per_60: None,
+        shots_against_per_60_str: "-".to_owned(),
         headshot_url: super::shared::build_headshot_url_for_display(season, &team, row.player_id.0),
         headshot_fallback_url: format!(
             "https://assets.nhle.com/mugs/nhl/default/{}.png",

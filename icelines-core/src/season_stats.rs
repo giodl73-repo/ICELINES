@@ -119,6 +119,10 @@ pub struct AdvancedStats {
     #[serde(default)]
     pub ff_pct: Option<f64>,
     #[serde(default)]
+    pub on_ice_xg_for: Option<f64>,
+    #[serde(default)]
+    pub on_ice_xg_against: Option<f64>,
+    #[serde(default)]
     pub xgf_pct: Option<f64>,
 }
 
@@ -954,6 +958,8 @@ mod tests {
             xg_per_60: Some(1.07),
             cf_pct: Some(54.2),
             ff_pct: Some(53.8),
+            on_ice_xg_for: Some(72.0),
+            on_ice_xg_against: Some(59.0),
             xgf_pct: Some(55.0),
         })
         .with_goalie(GoalieSeasonStats {

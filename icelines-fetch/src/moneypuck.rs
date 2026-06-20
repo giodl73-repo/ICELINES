@@ -57,11 +57,13 @@ pub struct MoneyPuckRow {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoneyPuckStats {
     pub player_id: u32,
-    pub xg_all: f32,      // ixG all situations
-    pub xg_per_60: f32,   // ixG per 60 minutes
-    pub cf_pct_5v5: f32,  // CF% at 5v5 (0–100)
-    pub ff_pct_5v5: f32,  // FF% at 5v5
-    pub xgf_pct_5v5: f32, // xGF% at 5v5
+    pub xg_all: f32,                // ixG all situations
+    pub xg_per_60: f32,             // ixG per 60 minutes
+    pub cf_pct_5v5: f32,            // CF% at 5v5 (0–100)
+    pub ff_pct_5v5: f32,            // FF% at 5v5
+    pub on_ice_xg_for_5v5: f32,     // xGF at 5v5
+    pub on_ice_xg_against_5v5: f32, // xGA at 5v5
+    pub xgf_pct_5v5: f32,           // xGF% at 5v5
 }
 
 /// Parse a MoneyPuck CSV string into a player_id → MoneyPuckStats map.
@@ -132,6 +134,8 @@ pub fn parse_csv_checked(
                     xg_per_60,
                     cf_pct_5v5: cf_pct,
                     ff_pct_5v5: ff_pct,
+                    on_ice_xg_for_5v5: five_v5.on_ice_x_goals_for,
+                    on_ice_xg_against_5v5: five_v5.on_ice_x_goals_against,
                     xgf_pct_5v5: xgf_pct,
                 },
             ))
@@ -218,6 +222,8 @@ mod tests {
         let result = parse_csv(csv);
         let stats = result.get(&8478402).expect("player must be found");
         assert!((stats.xg_all - 20.0).abs() < 0.01);
+        assert!((stats.on_ice_xg_for_5v5 - 30.0).abs() < 0.01);
+        assert!((stats.on_ice_xg_against_5v5 - 20.0).abs() < 0.01);
         assert!(
             (stats.cf_pct_5v5 - 60.0).abs() < 0.1,
             "CF% should be 60/(60+40)*100=60.0, got {}",
@@ -329,6 +335,8 @@ mod tests {
                 xg_per_60: 2.0,
                 cf_pct_5v5: 55.0,
                 ff_pct_5v5: 54.0,
+                on_ice_xg_for_5v5: 31.0,
+                on_ice_xg_against_5v5: 25.0,
                 xgf_pct_5v5: 56.0,
             },
             MoneyPuckStats {
@@ -337,6 +345,8 @@ mod tests {
                 xg_per_60: 3.0,
                 cf_pct_5v5: 48.0,
                 ff_pct_5v5: 47.0,
+                on_ice_xg_for_5v5: 20.0,
+                on_ice_xg_against_5v5: 21.0,
                 xgf_pct_5v5: 49.0,
             },
         ];

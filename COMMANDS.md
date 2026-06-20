@@ -68,6 +68,9 @@ icelines tui                                          # interactive dashboard
 ```
 
 **38 seasons (1987-88 → 2025-26)** are bundled into the binary. No internet, no fetch, no setup needed.
+The newest 5 bundled seasons carry modern Tier-1 depth; older rows are
+historical/skeleton season totals. Missing modern fields render unavailable,
+not zero.
 
 VTRACE baseline note: `docs/vtrace/` is the authoritative mission, requirement,
 design, verification, validation, and work-package baseline. This command
@@ -310,6 +313,10 @@ icelines query leaders --seasons 3 --age-max 25 --filter "hits>=600" --filter "p
 ### `--seasons N` — multi-season aggregate
 
 Aggregates stats across the last N bundled seasons (1-38). Available on `query leaders`, `query player`, `query compare`. On player/compare, it controls how many seasons of career-arc rows print after the head-to-head table.
+When the rendered leaders window or career arc extends beyond the newest 5
+bundled seasons, the CLI prints a data-depth disclosure: older seasons are
+historical/skeleton season totals and missing modern fields render unavailable,
+not zero.
 
 ```bash
 icelines query leaders --seasons 5 --filter "g>=200" --top 20
@@ -339,7 +346,8 @@ icelines query leaders --json | jq '.[] | .full_name'
 - Shorthanded: `sh-g-pace`, `sh-g`
 - Other: `gwg`, `shots`/`s`, `sh-pct`, `plus-minus`/`+/-`, `toi`, `fo-pct`
 - Physical: `hits`, `blocks`/`blk`, `takeaways`/`tk`, `giveaways`/`gv`, `pim`/`pen`
-- Advanced: `xg`, `xg-per-60`, `cf-pct`, `ff-pct`, `xgf-pct` (requires `fetch money-puck`)
+- Advanced: `xg`, `xg-per-60`, `cf-pct`, `ff-pct`, `on-ice-xg-for`,
+  `on-ice-xg-against`, `xgf-pct` (requires `fetch money-puck`)
 - Trend: `improvement` — Y/Y PPG delta vs prior season
 
 **Flag-based filters**: `--pos`, `--team`, `--age-min`/`--age-max`, `--nationality`, `--draft-year`, `--draft-round`, `--draft-pick-max`, `--undrafted`, `--rookie`, `--handedness`, `--gp-min`/`--gp-max`, `--toi-min`, `--ppg-min`, `--plus-minus-min`, `--shots-pg-min`, `--birth-province`.
@@ -349,6 +357,12 @@ icelines query leaders --json | jq '.[] | .full_name'
 ### `query player NAME` — player profile
 
 Career arc, percentile rank, full stats. Searches both skater AND goalie bios. Historical players resolve without `--season` via cross-bundled name lookup.
+When multiple career seasons are shown, the text career arc includes a compact
+oldest-to-newest Pts/82 and G/82 sparkline. Windows beyond the newest five
+modern bundled seasons still print the data-depth disclosure.
+Web `/player/:id` renders an inline Pts/82 bundled regular-season career trend
+when the loaded player card has at least two bundled career rows; `/api/v1/player/:id`
+keeps the tabular JSON contract unchanged.
 
 ```bash
 icelines query player "Connor McDavid"                       # current season
@@ -372,6 +386,11 @@ icelines query compare "McDavid" --similar 5 --filter "gp>=20"   # narrowed coho
 ### `query goalies` — goalie leaderboard
 
 Same filter grammar as `query leaders`, with goalie-context rewriting: `gp` → `goalie-games`, `starts` → `goalie-starts`.
+Default text, JSON, and CSV output include the shared goalie workload/quality
+fields `QS%`/`quality_start_pct` and `SA/60`/`shots_against_per_60` when goalie
+advanced data is loaded. Web `/goalies` and `/api/v1/goalies` expose the same
+fields for rows backed by goalie advanced data. GSAx is not surfaced until a
+verified goalie xGA source exists.
 
 ```bash
 icelines query goalies --top 10
@@ -444,6 +463,11 @@ icelines compare "McDavid" "MacKinnon"       # alias for `query compare`
 icelines mates "Beniers" --top 5             # roster fallback; shift bundles parked
 ```
 
+`icelines project` preserves its legacy projected-points fields and also emits
+`PlayerScoringPaceView`-backed pace outlook ranges for goals, points, and shots.
+Text output prints a `Pace outlook ranges` line; JSON/CSV add `pace_outlook_*`
+rows with projected finish and nullable low/high bands.
+
 ## `report` — report surface map and durable decision reports
 
 Use `icelines report list` when you are not sure which command generates the
@@ -466,6 +490,10 @@ Surface rule of thumb:
 | Durable markdown packet | `icelines export md <shape>` |
 | Fantasy decision report | `icelines report poach` / `icelines report weekly` |
 | See every available/planned report family | `icelines report list` |
+
+Web `/reports/poach` and `/reports/weekly` HTML append an inline SVG bar chart
+for positive returned poach scores. The chart is descriptive report context;
+`/api/v1/poach` remains the board JSON contract.
 
 Records reports live under the canonical `records` surface and also appear in
 `report list`: player/team symmetric facts such as NHL teams a player has scored
@@ -530,9 +558,10 @@ Current signals (all per-60):
 | Puck Management Differential | `puck-management-differential` | ↑ higher better | `(takeaways − giveaways)` per 60 |
 | Penalty Drag Rate | `penalty-drag-rate` | ↓ lower better | `penalty minutes` per 60 |
 
-Legend: `↑` higher is better · `↓` lower is better · `=` neutral. Signals are a
-read-only CLI/JSON surface today; they are intentionally **not** in the `--filter`
-catalog, leaderboards, or `StatId` (see
+Legend: `↑` higher is better · `↓` lower is better · `=` neutral. Signals are
+available through the CLI, the player-card TUI block, Web HTML
+(`/player/:id/signals`), and Web JSON (`/api/v1/player/:id/signals`). They are
+intentionally **not** in the `--filter` catalog, leaderboards, or `StatId` (see
 [`design/specs/icelines-signals.md`](design/specs/icelines-signals.md)).
 
 ## `records` — player/team individual records
@@ -559,6 +588,8 @@ Fight records use explicit fighting-major participants, not aggregate PIM.
 Default web records pages live at
 `/records/player/:id`, `/records/team/:abbrev`,
 `/api/v1/records/player/:id`, and `/api/v1/records/team/:abbrev`.
+Web records HTML pages render an inline count SVG chart when record rows have
+positive counts; the JSON records routes remain unchanged.
 In the TUI, open a player card and press `r` to see the player records screen
 with teams scored against, goalies scored against, and fight opponents. In the
 MDI command bar, `:records player <name>` opens the same TUI records screen;
@@ -579,10 +610,14 @@ Web routes: `/game/:id/scoring`, `/team/:abbrev/scoring`,
 
 Scoring outlook pages are descriptive pace surfaces, not betting forecasts.
 Player outlook rows show goals, points, and shots with 82-game pace and nullable
-projected finish below the sample floor or when remaining schedule data is not
-loaded. Team outlook rows show goals for/against pace and recent pressure from
-cached regular-season schedule scores only; GET routes do not fetch live NHL
-data.
+projected finish/range below the sample floor or when remaining schedule data is
+not loaded. The player range is a descriptive confidence band around current
+pace, not a betting forecast. Team outlook rows show goals for/against pace and
+recent pressure from cached regular-season schedule scores only; GET routes do
+not fetch live NHL data.
+Web `/player/:id/outlook` and `/team/:abbrev/outlook` render an inline 82-game
+pace SVG chart when outlook rows have finite positive pace values; the JSON
+routes are unchanged.
 
 ## `x` — quick CSV/JSON export
 
@@ -610,6 +645,7 @@ icelines export md roster --pos G --out goalies.md
 icelines export md team-season --team EDM --out team-season-EDM.md
 icelines export md leaders --columns "g,a,p,blk" --out custom.md
 icelines export md leaders --season 20242025 --filter "country=CAN" --top 5 --out leaders-can.md
+icelines export md compare --p1 McDavid --p2 MacKinnon --out compare.md
 ```
 
 Shapes: `leaders`, `team`, `team-season`, `depth`, `fantasy`, `compare`, `series`, `roster`.
@@ -617,6 +653,59 @@ Shapes: `leaders`, `team`, `team-season`, `depth`, `fantasy`, `compare`, `series
 `export md leaders` accepts the same repeatable free-form `--filter` strings as
 `query leaders`, plus explicit `--season` and `--type regular|playoff` controls
 for reproducible report evidence windows.
+`export md leaders` includes an inline SVG bar chart for the top returned
+skaters by current-window Pts/82 when the rendered result has finite positive
+Pts/82 values.
+Web `/leaders` renders the same descriptive current-window Pts/82 bar chart for
+non-empty skater results; `/api/v1/leaders` is unchanged.
+`export md team-season` includes an inline SVG quality-ledger bar chart when
+quality ledger counters are positive. The chart is descriptive context over the
+rendered quality ledger table.
+`export md depth` includes an inline SVG team-strength bar chart when rendered
+team totals are positive. The chart is descriptive context over the team-strength
+table.
+`export md fantasy` includes an inline SVG poach-score bar chart when report
+candidates have positive scores. The chart is descriptive context over the
+fantasy poacher report tables.
+`export md roster` includes an inline SVG Pts/82 bar chart when rendered skater
+rows have positive rates. The chart is descriptive context over the roster table.
+`export md team` includes an inline SVG Pts/82 bar chart when rendered target-team
+skater rows have positive rates. The chart is descriptive context over the team
+roster table.
+`export md series` includes an inline SVG game-margin bar chart when rendered
+playoff games have nonzero goal margins. The chart is descriptive context over
+the series game log.
+`export md compare` includes an inline SVG Pts/82 career trend when both players
+have at least two bundled career seasons; the chart is descriptive context over
+bundled regular-season rows, not an era-adjusted player valuation.
+The Web `/compare?a=ID&b=ID` page renders the same bundled regular-season Pts/82
+career trend after the side-by-side table when both compared players have enough
+bundled career rows.
+Web `/player/:id` renders the same descriptive single-player Pts/82 career trend
+below the career table when the loaded player card has enough bundled rows.
+Web `/team/:abbrev` renders an inline active-roster skater Pts/82 bar chart when
+the team has finite positive skater rates; `/api/v1/team/:abbrev` is unchanged.
+Web `/goalies` renders an inline SV% bar chart for returned goalies with finite
+save percentages; `/api/v1/goalies` is unchanged.
+Web scoring outlook pages render an inline 82-game pace bar chart for finite
+positive outlook rows; their `/api/v1/.../outlook` routes are unchanged.
+Web records pages render an inline count bar chart for positive record rows;
+their `/api/v1/records/...` routes are unchanged.
+TUI playoff series detail adds a compact game-margin sparkline when bundled
+series game logs have nonzero margins; live/no-game playoff detail keeps the
+existing played-count fallback.
+TUI team-season detail adds a compact goal-differential sparkline for completed
+non-tied schedule rows; upcoming/live rows stay out of the visual.
+TUI schedule matchup detail adds a compact margin sparkline for completed
+non-tied head-to-head rows; no-games and upcoming-only matchups remain textual.
+TUI game detail adds compact skater-activity bars under each team's boxscore
+leader block when skater game stats are loaded.
+TUI player-records detail adds compact ASCII count bars beside each opponent
+row while keeping the numeric count as the controlling value.
+TUI goalie leaderboard rows add compact ASCII SV% quality bars beside the
+printed save percentage while keeping SV% as the controlling value.
+TUI Stats leaders rows add compact ASCII primary-metric bars beside the printed
+leader metric while preserving the numeric/text metric as the controlling value.
 
 ---
 
@@ -694,7 +783,7 @@ Built-in schemes: `yahoo-standard`, `espn-standard`, `simple-pts`.
 icelines fetch all                    # rosters + stats (~5 min)
 icelines fetch rosters                # roster source bytes via FLETCH, ICELINES snapshot seal
 icelines fetch realtime               # hits, blocks, giveaways, takeaways
-icelines fetch money-puck             # MoneyPuck CSV via FLETCH, ICELINES parses xG/CF/FF/xGF
+icelines fetch money-puck             # MoneyPuck CSV via FLETCH, ICELINES parses xG/CF/FF/xGF/xGA
 icelines fetch fletch-sources --gate  # source handoff inventory + migration gate
 icelines fetch contracts              # UFA/RFA/ELC
 icelines fetch career --bundled-seasons 5   # multi-league career history (Calder)
@@ -721,7 +810,10 @@ workbench: an activity/catalog rail, scores ribbon, swappable left/right context
 panes, central workspace, bound experience presets, active field summaries, and a
 command bar. Use `--classic` for the older tabbed single-document UI. Player
 cards lazy-load every player's full historical career across all 38 bundled
-seasons on first open.
+seasons on first open. When the card trend extends beyond the newest 5 bundled
+seasons, the TUI labels it as a bundled trend and shows a compact data-depth
+line: newest 5 modern, older seasons skeleton, missing modern fields
+unavailable.
 
 | Key | Action |
 |---|---|

@@ -237,6 +237,7 @@ pub enum GoalieRoleFilter {
 
 fn goalie_row(goalie: &PlayerView<'_>) -> GoalieRow {
     let stats = goalie.stats.goalie.as_ref();
+    let advanced = goalie.stats.goalie_advanced.as_ref();
     let starts = stats.map(|g| g.games_started).unwrap_or(0);
     let role_label = if starts >= 45 {
         "starter"
@@ -315,6 +316,20 @@ fn goalie_row(goalie: &PlayerView<'_>) -> GoalieRow {
                 stats.map(|g| g.saves).unwrap_or(0) as i64,
                 MetricUnit::Count,
             ),
+            metric_decimal(
+                "quality_start_pct",
+                "QS%",
+                advanced.and_then(|g| g.quality_starts_pct.map(|v| v as f64)),
+                MetricUnit::Percentage,
+                ValuePrecision::ThreeDecimals,
+            ),
+            metric_decimal(
+                "shots_against_per_60",
+                "SA/60",
+                advanced.and_then(|g| g.shots_against_per_60.map(|v| v as f64)),
+                MetricUnit::PerGame,
+                ValuePrecision::OneDecimal,
+            ),
         ],
         tokens: vec![SemanticToken::SupportingEvidence],
     }
@@ -355,7 +370,7 @@ mod tests {
     use super::*;
     use crate::fixtures;
     use crate::model::Position;
-    use crate::season_stats::GoalieSeasonStats;
+    use crate::season_stats::{GoalieAdvancedStats, GoalieSeasonStats};
     use crate::stats_repository::StatsRepository;
 
     fn goalie_repo() -> StatsRepository {
@@ -384,6 +399,16 @@ mod tests {
             let mut stats = fixtures::stats(id, 20242025, "WPG")
                 .position(Position::Goalie)
                 .goalie(goalie_stats)
+                .goalie_advanced(GoalieAdvancedStats {
+                    quality_starts: 12,
+                    quality_starts_pct: Some(0.600),
+                    regulation_wins: 8,
+                    regulation_losses: 6,
+                    complete_games: 18,
+                    incomplete_games: 2,
+                    complete_game_pct: Some(0.900),
+                    shots_against_per_60: Some(31.5),
+                })
                 .build();
             stats.totals.gp = 20;
             repo.upsert_identity(identity).unwrap();
@@ -407,5 +432,36 @@ mod tests {
         assert_eq!(views[0].identity.id.0, 3);
         assert_eq!(views[1].identity.id.0, 1);
         assert_eq!(views[2].identity.id.0, 2);
+    }
+
+    #[test]
+    fn goalie_row_includes_advanced_workload_metrics() {
+        let repo = goalie_repo();
+        let view = GoaliesView::from_repository(&repo, Season(20242025), SeasonType::Regular);
+        let row = &view.rows[0];
+
+        assert_decimal_close(metric_decimal_value(row, "quality_start_pct"), 0.600);
+        assert_decimal_close(metric_decimal_value(row, "shots_against_per_60"), 31.5);
+    }
+
+    fn metric_decimal_value(row: &GoalieRow, key: &str) -> Option<f64> {
+        row.metrics.iter().find_map(|metric| {
+            if metric.key.0 == key {
+                match metric.value {
+                    MetricValue::Decimal(value) => Some(value),
+                    _ => None,
+                }
+            } else {
+                None
+            }
+        })
+    }
+
+    fn assert_decimal_close(actual: Option<f64>, expected: f64) {
+        let actual = actual.expect("metric should carry decimal value");
+        assert!(
+            (actual - expected).abs() < 0.0001,
+            "expected {expected}, got {actual}"
+        );
     }
 }

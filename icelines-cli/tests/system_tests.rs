@@ -547,6 +547,79 @@ fn l2_cmd_project_invalid_mode_exits_nonzero() {
 }
 
 #[test]
+fn l2_cmd_project_table_includes_pace_outlook_ranges() {
+    let out = run(&["project", "McDavid", "--mode", "pace", "--games", "20"]);
+    assert!(
+        out.status.success(),
+        "project table must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("Pace outlook ranges:"),
+        "pace outlook ranges missing:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("Goals") && stdout.contains("Points") && stdout.contains("Shots"),
+        "pace outlook metrics missing:\n{stdout}"
+    );
+}
+
+#[test]
+fn l2_cmd_project_json_includes_pace_outlook_rows() {
+    let out = run(&[
+        "project", "McDavid", "--mode", "pace", "--games", "20", "--json",
+    ]);
+    assert!(
+        out.status.success(),
+        "project json must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("project --json must emit valid JSON");
+    let rows = parsed
+        .as_array()
+        .expect("project JSON remains long-form rows");
+    assert!(rows.iter().any(|row| row["stat"] == "projected_points"));
+    assert!(rows
+        .iter()
+        .any(|row| row["stat"] == "pace_outlook_points_projected_finish"));
+    assert!(rows
+        .iter()
+        .any(|row| row["stat"] == "pace_outlook_points_band_low"));
+    assert!(rows
+        .iter()
+        .any(|row| row["stat"] == "pace_outlook_points_band_high"));
+}
+
+#[test]
+fn l2_cmd_project_csv_includes_pace_outlook_rows() {
+    let out = run(&[
+        "project", "McDavid", "--mode", "pace", "--games", "20", "--csv",
+    ]);
+    assert!(
+        out.status.success(),
+        "project csv must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.lines().next() == Some("stat,value"),
+        "project CSV header drifted:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("pace_outlook_points_projected_finish"),
+        "pace outlook projected finish row missing:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("pace_outlook_points_band_low")
+            && stdout.contains("pace_outlook_points_band_high"),
+        "pace outlook confidence rows missing:\n{stdout}"
+    );
+}
+
+#[test]
 fn l2_cmd_schedule_exits_zero() {
     // Call without --days so this works even if binary was cached from older version
     let out = run(&["schedule"]);
@@ -747,6 +820,11 @@ fn l2_cmd_export_md_leaders_to_stdout() {
     assert!(
         stdout.contains("| Rank | Player | Team | Pos | Age | GP | G | A | Pts | PPG | Pts/82 |")
     );
+    assert!(
+        stdout.contains("## Leaders SVG") && stdout.contains("Pts/82 leaders"),
+        "leaders export must include inline Pts/82 leaders SVG, got:\n{stdout}"
+    );
+    assert!(stdout.contains("<svg"));
 }
 
 #[test]
@@ -939,6 +1017,41 @@ fn l2_cmd_team_season_text_exits_zero_and_shows_context() {
 }
 
 #[test]
+fn l2_cmd_export_md_compare_includes_career_trend_svg() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(
+        home.path(),
+        &[
+            "export",
+            "md",
+            "compare",
+            "--p1",
+            "McDavid",
+            "--p2",
+            "MacKinnon",
+            "--out",
+            "-",
+        ],
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "export md compare must exit 0, stderr: {stderr}"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("type: compare"));
+    assert!(
+        stdout.contains("## Career trend SVG") && stdout.contains("<svg"),
+        "compare export must include inline career trend SVG, got:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("Pts/82 career trend comparison")
+            && stdout.matches("<polyline").count() >= 2,
+        "compare export SVG must include accessible title and two trend paths, got:\n{stdout}"
+    );
+}
+
+#[test]
 fn l2_cmd_team_season_json_exits_zero_and_emits_view_contract() {
     let out = run(&["team-season", "EDM", "--json"]);
     let stdout = String::from_utf8_lossy(&out.stdout);
@@ -1122,6 +1235,44 @@ fn l2_cmd_query_leaders_exits_zero() {
         stdout.contains("Result: ")
             && stdout.contains(" | returned 10 | top 10 | sort goals | active_filters goals>=1"),
         "leaders text output must disclose query result metadata"
+    );
+}
+
+#[test]
+fn l2_cmd_query_leaders_full_history_discloses_depth() {
+    let out = run(&["query", "leaders", "--seasons", "38", "--top", "5"]);
+    assert!(
+        out.status.success(),
+        "query leaders --seasons 38 must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("newest 5 bundled seasons"),
+        "modern-depth disclosure missing:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("historical/skeleton season totals"),
+        "skeleton disclosure missing:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("unavailable, not zero"),
+        "missing-value disclosure missing:\n{stdout}"
+    );
+}
+
+#[test]
+fn l2_cmd_query_leaders_modern_window_skips_depth_disclosure() {
+    let out = run(&["query", "leaders", "--seasons", "5", "--top", "5"]);
+    assert!(
+        out.status.success(),
+        "query leaders --seasons 5 must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        !stdout.contains("historical/skeleton season totals"),
+        "modern window should not render skeleton disclosure:\n{stdout}"
     );
 }
 
@@ -1593,6 +1744,56 @@ fn l2_cmd_query_player_exits_zero() {
     assert!(
         stdout.contains("McDavid") || stdout.contains("Connor"),
         "output must contain player name"
+    );
+}
+
+#[test]
+fn l2_cmd_query_player_full_history_discloses_depth() {
+    let out = run(&["query", "player", "McDavid", "--seasons", "38"]);
+    assert!(
+        out.status.success(),
+        "query player --seasons 38 must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("CAREER ARC"),
+        "career arc missing:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("newest 5 bundled seasons"),
+        "modern-depth disclosure missing:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("historical/skeleton season totals"),
+        "skeleton disclosure missing:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("unavailable, not zero"),
+        "missing-value disclosure missing:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("Career trend") && stdout.contains("Pts/82") && stdout.contains("G/82"),
+        "career sparkline summary missing:\n{stdout}"
+    );
+}
+
+#[test]
+fn l2_cmd_query_player_modern_window_skips_depth_disclosure() {
+    let out = run(&["query", "player", "McDavid", "--seasons", "5"]);
+    assert!(
+        out.status.success(),
+        "query player --seasons 5 must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("CAREER ARC"),
+        "career arc missing:\n{stdout}"
+    );
+    assert!(
+        !stdout.contains("historical/skeleton season totals"),
+        "modern window should not render skeleton disclosure:\n{stdout}"
     );
 }
 
@@ -3124,6 +3325,10 @@ fn l2_cmd_query_goalies_default_table() {
         stdout.contains("Goalie") && stdout.contains("SV%") && stdout.contains("GAA"),
         "default table missing column headers, got:\n{stdout}"
     );
+    assert!(
+        stdout.contains("QS%") && stdout.contains("SA/60"),
+        "default table missing advanced workload headers, got:\n{stdout}"
+    );
     // Footer carries qualifying gate + sort label.
     assert!(
         stdout.contains("min 15 GP") && stdout.contains("sv-pct"),
@@ -3145,6 +3350,10 @@ fn l2_cmd_query_goalies_csv_includes_header() {
         first.starts_with("rank,goalie,team,gp,wins"),
         "CSV header missing, got first line: {first}"
     );
+    assert!(
+        first.ends_with(",qs_pct,sa_per_60"),
+        "CSV advanced workload header missing, got first line: {first}"
+    );
 }
 
 #[test]
@@ -3161,6 +3370,8 @@ fn l2_cmd_query_goalies_json_parses() {
     // `stats` object, so save_pct sits at the top level.
     assert!(arr[0]["save_pct"].is_number());
     assert!(arr[0]["games_played"].is_number());
+    assert!(arr[0].get("quality_start_pct").is_some());
+    assert!(arr[0].get("shots_against_per_60").is_some());
 }
 
 #[test]

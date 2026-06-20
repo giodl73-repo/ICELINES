@@ -678,6 +678,9 @@ fn render_team_schedule_loaded(
         format!("  Records: :records team {team} · /records/team/{team}?metric=..."),
         dim,
     ));
+    if let Some(form) = format_team_goal_diff_sparkline(rows) {
+        lines.push(Line::styled(format!("  Goal diff: {form}"), dim));
+    }
     if let Some(warning) = view.warnings.first() {
         lines.push(Line::styled(format!("  Warning: {}", warning.message), dim));
     }
@@ -737,6 +740,41 @@ fn team_season_line(team: &str, row: &TeamSeasonGameRow) -> (String, Color) {
             state = row.state_label,
         ),
         color,
+    )
+}
+
+fn format_team_goal_diff_sparkline(rows: &[TeamSeasonGameRow]) -> Option<String> {
+    let rows = rows
+        .iter()
+        .filter_map(|row| {
+            let gd = row.goal_differential?;
+            if gd == 0 {
+                return None;
+            }
+            Some((row.result.as_str(), row.opponent_abbrev.as_str(), gd))
+        })
+        .rev()
+        .take(8)
+        .collect::<Vec<_>>();
+    let max = rows.iter().map(|(_, _, gd)| gd.unsigned_abs()).max()?;
+    if max == 0 {
+        return None;
+    }
+
+    Some(
+        rows.iter()
+            .rev()
+            .map(|(result, opponent, gd)| {
+                let max = usize::from(max);
+                let bars = ((usize::from(gd.unsigned_abs()) * 4).div_ceil(max)).max(1);
+                format!(
+                    "{result} {opponent} {} {}",
+                    "█".repeat(bars),
+                    signed_i16(*gd)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("  "),
     )
 }
 
@@ -844,6 +882,9 @@ fn render_matchup_loaded(
         ),
         gold,
     ));
+    if let Some(form) = format_matchup_margin_sparkline(t1, &view.rows) {
+        lines.push(Line::styled(format!("  Margins: {form}"), dim));
+    }
     lines.push(Line::styled(format!("  {}", "─".repeat(64)), dim));
 
     if !view.regular_rows.is_empty() {
@@ -922,6 +963,48 @@ fn matchup_row(g: &ScheduleGameRow, t1: &str) -> Line<'static> {
     };
 
     Line::styled(body, style)
+}
+
+fn format_matchup_margin_sparkline(team: &str, rows: &[ScheduleGameRow]) -> Option<String> {
+    let rows = rows
+        .iter()
+        .filter_map(|row| {
+            if !row.is_final() {
+                return None;
+            }
+            let team_score = row.team_score(team)?;
+            let opponent_score = row.opponent_score(team)?;
+            let margin = team_score.abs_diff(opponent_score);
+            if margin == 0 {
+                return None;
+            }
+            let result = if team_score > opponent_score {
+                "W"
+            } else {
+                "L"
+            };
+            let opponent = row.opponent_abbrev_for(team)?;
+            Some((result, opponent, margin))
+        })
+        .rev()
+        .take(8)
+        .collect::<Vec<_>>();
+    let max = rows.iter().map(|(_, _, margin)| *margin).max()?;
+    if max == 0 {
+        return None;
+    }
+
+    Some(
+        rows.iter()
+            .rev()
+            .map(|(result, opponent, margin)| {
+                let max = usize::from(max);
+                let bars = ((usize::from(*margin) * 4).div_ceil(max)).max(1);
+                format!("{result} {opponent} {} +{margin}", "█".repeat(bars))
+            })
+            .collect::<Vec<_>>()
+            .join("  "),
+    )
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -1299,6 +1382,50 @@ mod tests {
             text.contains("Records:") && text.contains("/records/team/SEA"),
             "team season screen must expose team records entry point, got:\n{text}"
         );
+        assert!(text.contains("Goal diff:"), "goal-diff sparkline missing");
+        assert!(
+            text.contains("W CGY"),
+            "first completed win missing from sparkline"
+        );
+        assert!(
+            text.contains("OTL EDM"),
+            "overtime loss missing from sparkline"
+        );
+        assert!(
+            text.contains("+4"),
+            "largest goal differential missing from sparkline"
+        );
+    }
+
+    #[test]
+    fn l0_render_team_schedule_goal_diff_sparkline_skips_empty_and_tied_games() {
+        let tied = TeamSeasonGameRow {
+            game_id: 1,
+            date: "2026-01-15".to_owned(),
+            opponent_abbrev: "CGY".to_owned(),
+            venue: TeamSeasonVenue::Home,
+            result: "T".to_owned(),
+            team_score: Some(2),
+            opponent_score: Some(2),
+            goal_differential: Some(0),
+            state_label: "FINAL".to_owned(),
+            is_playoff: false,
+        };
+        let upcoming = TeamSeasonGameRow {
+            game_id: 2,
+            date: "2026-01-16".to_owned(),
+            opponent_abbrev: "VAN".to_owned(),
+            venue: TeamSeasonVenue::Away,
+            result: "UPCOMING".to_owned(),
+            team_score: None,
+            opponent_score: None,
+            goal_differential: None,
+            state_label: "Scheduled".to_owned(),
+            is_playoff: false,
+        };
+
+        assert!(format_team_goal_diff_sparkline(&[]).is_none());
+        assert!(format_team_goal_diff_sparkline(&[tied, upcoming]).is_none());
     }
 
     #[test]
@@ -1400,11 +1527,63 @@ mod tests {
             text.contains("NYR 1-0 WSH"),
             "playoffs record line missing, got:\n{text}"
         );
+        assert!(
+            text.contains("Margins:"),
+            "matchup margin sparkline missing"
+        );
+        assert!(text.contains("W WSH"), "matchup win segment missing");
+        assert!(text.contains("L WSH"), "matchup loss segment missing");
+        assert!(text.contains("+3"), "largest matchup margin missing");
         // Distractor must NOT appear (filtered to NYR vs WSH)
         assert!(
             !text.contains("VGK"),
             "distractor game must be filtered out"
         );
+    }
+
+    #[test]
+    fn l0_render_matchup_margin_sparkline_skips_empty_tied_and_upcoming_games() {
+        let tied = ScheduleGameRow {
+            game_id: 1,
+            date: "2026-01-15".to_owned(),
+            game_type: 2,
+            away_abbrev: "NYR".to_owned(),
+            home_abbrev: "WSH".to_owned(),
+            start_time_utc: "2026-01-15T23:00:00Z".to_owned(),
+            away_score: Some(2),
+            home_score: Some(2),
+            away_score_str: "2".to_owned(),
+            home_score_str: "2".to_owned(),
+            state_label: "FINAL".to_owned(),
+            last_period: Some("REG".to_owned()),
+            home_or_away: "Away".to_owned(),
+            opponent_abbrev: "WSH".to_owned(),
+            is_playoff: false,
+            series_game: None,
+            series_context: String::new(),
+        };
+        let upcoming = ScheduleGameRow {
+            game_id: 2,
+            date: "2026-01-16".to_owned(),
+            game_type: 2,
+            away_abbrev: "WSH".to_owned(),
+            home_abbrev: "NYR".to_owned(),
+            start_time_utc: "2026-01-16T23:00:00Z".to_owned(),
+            away_score: None,
+            home_score: None,
+            away_score_str: String::new(),
+            home_score_str: String::new(),
+            state_label: "SCHEDULED".to_owned(),
+            last_period: None,
+            home_or_away: "Home".to_owned(),
+            opponent_abbrev: "WSH".to_owned(),
+            is_playoff: false,
+            series_game: None,
+            series_context: String::new(),
+        };
+
+        assert!(format_matchup_margin_sparkline("NYR", &[]).is_none());
+        assert!(format_matchup_margin_sparkline("NYR", &[tied, upcoming]).is_none());
     }
 
     #[test]

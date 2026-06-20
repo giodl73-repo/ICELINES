@@ -428,8 +428,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 
     // Header row + horizontal rule.
     let header_line = format!(
-        "  {:<3}  {:<22} {:<5} {:<4}  {:<10}  {:<6}  {:<6}  {:<3}  {:<6}",
-        "#", "Goalie", "Team", "GP", "W-L-OT", "SV%", "GAA", "SO", "Saves",
+        "  {:<3}  {:<18} {:<5} {:<4} {:<9} {:<6} {:<4} {:<5} {:<3} {:<5}",
+        "#", "Goalie", "Team", "GP", "W-L-OT", "SV%", "bar", "GAA", "SO", "Saves",
     );
     let mut items: Vec<ListItem> = Vec::new();
     items.push(ListItem::new(Line::styled(header_line, gold)));
@@ -452,17 +452,19 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         let sv_pct = goalie_metric_f32(goalie, "save_pct")
             .map(|v| format!("{:.3}", v))
             .unwrap_or_else(|| "—".to_owned());
+        let sv_pct_bar = save_pct_bar(goalie_metric_f32(goalie, "save_pct"));
         let gaa = goalie_metric_f32(goalie, "gaa")
             .map(|v| format!("{:.2}", v))
             .unwrap_or_else(|| "—".to_owned());
         let row = format!(
-            "  {:<3}  {:<22} {:<5} {:<4}  {:<10}  {:<6}  {:<6}  {:<3}  {:<6}",
+            "  {:<3}  {:<18} {:<5} {:<4} {:<9} {:<6} {:<4} {:<5} {:<3} {:<5}",
             rank + 1,
             short_name(&goalie.display_name),
             goalie.team.0.as_str(),
             goalie_metric_u32(goalie, "gp"),
             record,
             sv_pct,
+            sv_pct_bar,
             gaa,
             goalie_metric_u32(goalie, "shutouts"),
             goalie_metric_u32(goalie, "saves"),
@@ -508,6 +510,18 @@ fn short_name(full: &str) -> String {
         (Some(only), _) => only.to_owned(),
         _ => full.to_owned(),
     }
+}
+
+fn save_pct_bar(save_pct: Option<f32>) -> String {
+    let Some(save_pct) = save_pct else {
+        return String::new();
+    };
+    if !save_pct.is_finite() || save_pct < 0.850 {
+        return String::new();
+    }
+    let normalized = ((save_pct - 0.850) / 0.100).clamp(0.0, 1.0);
+    let bars = ((normalized * 4.0).ceil() as usize).clamp(1, 4);
+    "#".repeat(bars)
 }
 
 #[cfg(test)]
@@ -708,6 +722,18 @@ mod tests {
     fn l0_short_name_uses_initial() {
         assert_eq!(short_name("Connor Hellebuyck"), "C. Hellebuyck");
         assert_eq!(short_name("Igor"), "Igor");
+    }
+
+    #[test]
+    fn l0_goalies_save_pct_bar_scales_and_skips_missing_values() {
+        assert_eq!(save_pct_bar(None), "");
+        assert_eq!(save_pct_bar(Some(0.849)), "");
+        assert_eq!(save_pct_bar(Some(0.850)), "#");
+        assert_eq!(save_pct_bar(Some(0.875)), "#");
+        assert_eq!(save_pct_bar(Some(0.900)), "##");
+        assert_eq!(save_pct_bar(Some(0.925)), "###");
+        assert_eq!(save_pct_bar(Some(0.950)), "####");
+        assert_eq!(save_pct_bar(Some(f32::NAN)), "");
     }
 }
 

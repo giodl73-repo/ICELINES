@@ -1,5 +1,581 @@
 # VTRACE Review Record
 
+## 2026-06-19 Phase Hurricane 6y TUI Stats Primary-Bar Review
+
+**Scope:** TUI Stats leaders result rows.
+
+**Claims accepted**
+
+- Stats leaders rows can render compact ASCII primary-metric bars from existing
+  positive leader metric values.
+- The printed leader metric remains the controlling value; the bar is
+  descriptive context only.
+- Zero, missing, and max-missing cases do not produce a bar.
+
+**Residual risk:** focused helper fixture, not broad interactive terminal review.
+
+## 2026-06-19 Phase Hurricane 6x TUI Goalie SV-Bar Review
+
+**Scope:** TUI goalie leaderboard rows.
+
+**Claims accepted**
+
+- Goalie leaderboard rows can render compact ASCII SV% quality bars from
+  existing finite save-percentage values.
+- The printed SV% remains the controlling value; the bar is descriptive context
+  only.
+- Missing, non-finite, and below-baseline values do not produce a bar.
+
+**Residual risk:** focused helper fixture, not broad interactive terminal review.
+
+## 2026-06-19 Phase Hurricane 6w TUI Player-Records Count-Bar Review
+
+**Scope:** TUI player-records detail rows.
+
+**Claims accepted**
+
+- Player-records detail rows can render compact ASCII count bars from existing
+  `RecordsOpponentRow.count` values.
+- The numeric count remains the controlling value; the bar is descriptive
+  context only.
+- Zero or missing max-count conditions do not produce a count bar.
+
+**Residual risk:** focused helper fixture, not broad interactive terminal review.
+
+## 2026-06-19 Phase Hurricane 6v TUI Game Detail Activity-Bar Review
+
+**Scope:** TUI game detail boxscore leader output.
+
+**Claims accepted**
+
+- Game detail can render compact skater-activity bars from existing
+  `GameSkaterRow` boxscore rows.
+- The existing leader rows remain the controlling source; the activity bars are
+  descriptive context only.
+- Empty or zero-activity skater sets do not produce an activity bar.
+
+**Residual risk:** focused buffer fixture, not broad interactive terminal review.
+
+## 2026-06-19 Phase Hurricane 6u TUI Schedule Matchup Sparkline Review
+
+**Scope:** TUI schedule matchup detail output.
+
+**Claims accepted**
+
+- Schedule matchup detail can render a compact margin sparkline from existing
+  completed head-to-head rows.
+- The matchup row list remains the controlling source; the sparkline is
+  descriptive context only.
+- Empty, upcoming, and tied matchup row sets do not produce a margin sparkline.
+
+**Residual risk:** focused buffer fixture, not broad interactive terminal review.
+
+## 2026-06-19 Phase Hurricane 6t TUI Team-Season Sparkline Review
+
+**Scope:** TUI team-season detail output.
+
+**Claims accepted**
+
+- Team-season detail can render a compact goal-differential sparkline from
+  existing completed schedule rows.
+- The game list remains the controlling source; the sparkline is descriptive
+  context only.
+- Empty, upcoming, and tied game sets do not produce a goal-differential
+  sparkline.
+
+**Residual risk:** focused buffer fixture, not broad interactive terminal review.
+
+## 2026-06-19 Phase Hurricane 6s TUI Playoffs Sparkline Review
+
+**Scope:** TUI playoff series detail output.
+
+**Claims accepted**
+
+- Bundled playoff series detail can render a compact game-margin sparkline from
+  existing per-game score rows.
+- The game log remains the controlling source; the sparkline is descriptive
+  context only.
+- Empty/tied game sets do not produce a margin sparkline, and live/no-game
+  detail keeps the existing played-count fallback.
+
+**Residual risk:** focused buffer fixture, not broad interactive terminal review.
+
+## 2026-06-19 Phase Hurricane 6r Markdown Series SVG Review
+
+**Scope:** `export md series` Markdown output.
+
+**Claims accepted**
+
+- `export md series` can append an inline accessible SVG bar chart for nonzero
+  playoff game goal margins.
+- The game-log table remains the controlling source; the SVG is descriptive
+  context only.
+- Empty/tied game sets do not produce misleading bars.
+
+**Residual risk:** focused renderer fixture, not broad screenshot matrix.
+
+## 2026-06-19 Phase Hurricane 6q Markdown Team SVG Review
+
+**Scope:** `export md team` Markdown output.
+
+**Claims accepted**
+
+- `export md team` can append an inline accessible SVG bar chart for positive
+  rendered target-team skater Pts/82 rates.
+- The existing target-team roster table remains the controlling tabular
+  evidence; the SVG is descriptive context only.
+- Non-target teams and zero/empty score sets do not produce misleading bars.
+
+**Residual risk:** focused renderer fixture, not broad screenshot matrix.
+
+## 2026-06-19 Phase Hurricane 6p Markdown Roster SVG Review
+
+**Scope:** `export md roster` Markdown output.
+
+**Decision:** `passed_with_risk`
+
+Claims accepted:
+- can append inline accessible SVG for positive rendered roster-row Pts/82 rates.
+- descriptive context over already-rendered roster tables; not an era-adjusted player valuation.
+- roster filtering and table row semantics unchanged.
+
+Residual risk: focused renderer fixture, not broad screenshot matrix.
+
+## 2026-06-19 Phase Hurricane 6o Markdown Fantasy SVG Review
+
+**Scope:** `export md fantasy` Markdown output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted:**
+
+- `export md fantasy` can append an inline accessible SVG bar chart for positive
+  `PoachReportView` report-row scores.
+- The chart is descriptive context over the already-rendered fantasy poacher
+  report tables; it is not a new fantasy scoring model or projection.
+- `PoachReportView` rows and report sections remain unchanged.
+
+**Residual risk:** evidence is a focused renderer fixture rather than a broad
+Markdown renderer/screenshot matrix.
+
+## 2026-06-19 Phase Hurricane 6n Markdown Depth SVG Review
+
+**Scope:** `export md depth` Markdown output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted:**
+
+- `export md depth` can append an inline accessible SVG bar chart for positive
+  `DepthLeagueView` team-strength totals.
+- The chart is descriptive context over the already-rendered Team strength
+  table; it is not a new roster-strength model or projection.
+- `DepthLeagueView` rows and line-value player detail remain unchanged.
+
+**Residual risk:** evidence is a focused renderer fixture rather than a broad
+Markdown renderer/screenshot matrix.
+
+## 2026-06-19 Phase Hurricane 6m Markdown Team-Season SVG Review
+
+**Scope:** `export md team-season` Markdown output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted:**
+
+- `export md team-season` can append an inline accessible SVG bar chart for
+  positive quality-ledger counters.
+- The chart is descriptive context over the already-rendered Quality Ledger
+  table; it is not a new season-quality model or projection.
+- `TeamSeasonView` fields remain unchanged.
+
+**Residual risk:** evidence is a focused renderer fixture rather than a broad
+Markdown renderer/screenshot matrix.
+
+## 2026-06-19 Phase Hurricane 6l Web Report SVG Review
+
+**Scope:** Web poach/weekly report HTML output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted:**
+
+- Web `/reports/poach` and `/reports/weekly` HTML can append an inline
+  accessible SVG bar chart for positive report rows by descriptive poach score.
+- The chart is descriptive context over already-rendered report rows; it is not
+  a new scoring model or predictive claim.
+- `PoachReportView` fields and `/api/v1/poach` board JSON remain unchanged.
+
+**Residual risk:** evidence is a focused renderer/helper fixture rather than a
+seeded route screenshot, touch/focus review, or broader report/export visual
+matrix.
+
+## 2026-06-19 Phase Hurricane 6k Web Records SVG Review
+
+**Scope:** Web records HTML output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Non-empty records pages can append an inline accessible SVG bar chart for
+  positive record rows by count.
+- The chart is descriptive records context over already-rendered records table
+  rows.
+- `/api/v1/records/player/:id` and `/api/v1/records/team/:abbrev` remain
+  unchanged.
+
+**Accepted risks**
+
+- This covers a focused template-helper fixture, not a full seeded route,
+  screenshot, touch, or focus proof.
+- Broader web report charts and visual hardening remain pending under Phase
+  Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 6j Web Scoring Outlook SVG Review
+
+**Scope:** Web scoring outlook HTML output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Non-empty scoring outlook pages append an inline accessible SVG bar chart for
+  returned outlook rows by descriptive 82-game pace.
+- The chart is descriptive outlook context over already-rendered outlook table
+  rows.
+- `/api/v1/player/:id/outlook` and `/api/v1/team/:abbrev/outlook` remain
+  unchanged.
+
+**Accepted risks**
+
+- This covers one focused player-outlook route fixture, not screenshot, touch,
+  or focus proof.
+- Broader web report charts and visual hardening remain pending under Phase
+  Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 6i Web Goalie SVG Review
+
+**Scope:** Web `/goalies` HTML output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Non-empty goalie leaderboard pages append an inline accessible SVG bar chart
+  for returned goalies by current-window SV%.
+- The chart is descriptive goalie context over already-rendered goalie rows.
+- `/api/v1/goalies` remains unchanged.
+
+**Accepted risks**
+
+- This covers one Web goalie chart shape, not screenshot, touch, or focus proof.
+- Broader web report charts and visual hardening remain pending under Phase
+  Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 6h Web Team SVG Review
+
+**Scope:** Web `/team/:abbrev` HTML output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Non-empty team roster pages append an inline accessible SVG bar chart for the
+  top active-roster skaters by current-window Pts/82.
+- The chart is descriptive roster context over already-rendered skater rows.
+- `/api/v1/team/:abbrev` remains unchanged.
+
+**Accepted risks**
+
+- This covers one Web team chart shape, not screenshot, touch, or focus proof.
+- Broader web report charts and visual hardening remain pending under Phase
+  Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 6g TUI Sparkline Hardening Review
+
+**Scope:** TUI dashboard sparkline helper rendering.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Zero-width sparkline budgets produce no chart blocks while preserving the
+  row label and year range.
+- One-column sparkline budgets produce exactly one chart block while preserving
+  the row label and year range.
+- This hardens the existing dashboard visualization path without changing the
+  public TUI layout contract.
+
+**Accepted risks**
+
+- This is focused unit evidence, not an interactive terminal screenshot or
+  focus/touch review.
+- Broader TUI visualization review remains future Phase Hurricane work.
+
+## 2026-06-19 Phase Hurricane 6f Web Player SVG Review
+
+**Scope:** Web `/player/:id` HTML output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Multi-season bundled player pages append an inline accessible SVG showing the
+  player's oldest-to-newest regular-season Pts/82 trend below the career table.
+- The chart is descriptive trend context over loaded `PlayerCardView.career`
+  rows.
+- `/api/v1/player/:id` remains unchanged.
+
+**Accepted risks**
+
+- This covers a focused route/template fixture, not screenshot, touch, or focus
+  proof.
+- Broader web report charts and visual hardening remain pending under Phase
+  Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 4b Web Goalie Advanced Workload Review
+
+**Scope:** Web `/goalies` HTML and `/api/v1/goalies` JSON output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Web goalie rows expose existing `GoaliesView` advanced workload/quality metrics
+  as QS% and SA/60 when goalie advanced data is loaded.
+- `/api/v1/goalies` emits nullable `quality_start_pct` and
+  `shots_against_per_60` fields for the same rows.
+- GSAx remains explicitly unclaimed until a verified goalie xGA source exists.
+
+**Accepted risks**
+
+- This is route/template evidence, not full live-browser screenshot proof.
+- High-danger SV%, GSAx, and richer goalie analytics remain pending source work.
+
+## 2026-06-19 Phase Hurricane 6e Web Leaders SVG Review
+
+**Scope:** Web `/leaders` HTML output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Non-empty leaders pages append an inline accessible SVG bar chart for the top
+  returned skaters by current-window Pts/82.
+- The chart is descriptive leaderboard context over already-rendered rows.
+- `/api/v1/leaders` remains unchanged.
+
+**Accepted risks**
+
+- This covers one Web leaders chart shape, not screenshot, touch, or focus
+  proof.
+- Broader web report charts and visual hardening remain pending under Phase
+  Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 6d Markdown Leaders SVG Review
+
+**Scope:** `export md leaders` Markdown report output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Non-empty leaders exports append an inline accessible SVG bar chart for the top
+  returned skaters by current-window Pts/82.
+- The chart is descriptive leaderboard context over already-rendered rows.
+- Empty or unavailable leaders rows skip the chart.
+
+**Accepted risks**
+
+- This covers one Markdown leaders chart shape, not a complete report chart
+  library.
+- Broader web report charts and visual screenshot proof remain pending under
+  Phase Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 6c Web Compare SVG Review
+
+**Scope:** Web `/compare` HTML output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Multi-season bundled two-player compare pages append an inline accessible SVG
+  showing both players' oldest-to-newest regular-season Pts/82 trend.
+- The chart is descriptive trend context and does not change `/api/v1/compare`.
+- The existing compare stat table remains the primary side-by-side table.
+
+**Accepted risks**
+
+- This covers a focused route/template fixture, not screenshot, touch, or focus
+  proof.
+- Broader web report charts and other export chart shapes remain pending under
+  Phase Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 6b Export Compare SVG Review
+
+**Scope:** `export md compare` Markdown report output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Multi-season bundled compare reports append an inline accessible SVG showing
+  both players' oldest-to-newest Pts/82 trend.
+- Single-season helper inputs omit the SVG.
+- The existing compare stat table and front matter remain additive-compatible.
+
+**Accepted risks**
+
+- This covers only the `export md compare` shape.
+- Broader web charts and other export chart shapes remain pending under Phase
+  Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 6a CLI Career Sparkline Review
+
+**Scope:** `query player` / `query compare` career arc text output.
+
+**Decision:** `passed_with_risk`
+
+**Claims accepted**
+
+- Multi-season career arcs render a compact oldest-to-newest Pts/82 and G/82
+  sparkline.
+- Single-season career arcs omit the sparkline.
+- Existing data-depth disclosure remains separate for windows beyond the newest
+  five modern bundled seasons.
+
+**Accepted risks**
+
+- This is compact text visualization, not a publication-grade chart.
+- Web/export SVG charts and broader visual proof remain pending under Phase
+  Hurricane deliverable 6.
+
+## 2026-06-19 Phase Hurricane 3b Project Pace Outlook Review
+
+**Scope:** `icelines project` single-player text, JSON, and CSV output.
+
+**Decision:** `passed_with_risk`
+
+Phase Hurricane 3b wires the standalone project command to
+`PlayerScoringPaceView` for additive pace outlook ranges across goals, points,
+and shots. The command preserves its existing projected-points projection fields
+and adds `pace_outlook_*` rows for machine output plus a compact text range line.
+
+**Claims accepted**
+
+- Single-player `icelines project` text output includes `Pace outlook ranges`.
+- `--json` and `--csv` keep the existing long-form `stat,value` shape and add
+  projected finish plus low/high pace outlook rows.
+- Missing/under-threshold pace rows remain nullable through the shared
+  `PlayerScoringPaceView` contract rather than zero-filled.
+
+**Accepted risks**
+
+- `project --team` still uses the legacy projection table without the shared
+  pace-outlook rows.
+- Team outlook confidence bands remain pending.
+
+## 2026-06-19 Phase Hurricane 4a Goalie Advanced Workload Review
+
+**Scope:** Existing goalie advanced workload/quality metrics surfaced through
+`GoaliesView` and `query goalies`.
+
+**Decision:** `passed_with_risk`
+
+Phase Hurricane 4a adds `quality_start_pct` and `shots_against_per_60` to the
+shared goalie row metrics and exposes them in `query goalies` text, JSON, and
+CSV as QS% and SA/60. The slice uses already-loaded goalie advanced stats and
+does not add or claim GSAx.
+
+**Claims accepted**
+
+- `GoaliesView` carries existing goalie QS% and SA/60 values when advanced goalie
+  stats are loaded.
+- `query goalies` text, JSON, and CSV expose those fields as additive output.
+- Public docs state that GSAx remains pending until a verified goalie xGA source
+  exists.
+
+**Accepted risks**
+
+- GSAx, high-danger SV%, and richer goalie analytics remain pending source work.
+- Web/TUI goalie screens still need their own surface-specific evidence before
+  this metric slice is claimed there.
+
+## 2026-06-19 WP-010 Pulse 04 Signals TUI/Web Surface Review
+
+**Scope:** TUI player-card Signals block plus Web player Signals HTML/JSON
+surfaces.
+
+**Decision:** `partial_pass`
+
+Pulse 04 renders `PlayerSignalsView` in the TUI player card and adds
+`/player/:id/signals` plus `/api/v1/player/:id/signals` Web routes. The selected
+surfaces preserve signal descriptor, value/unavailable state, unit, polarity,
+evidence tier, missing inputs, methodology, limitations, disclosures, and
+non-claim copy without recomputing Signals in the renderer.
+
+**Claims accepted**
+
+- TUI users can see a player-card Signals block sourced from
+  `PlayerSignalsView`, with handoffs to the canonical CLI command and Web
+  player route.
+- Web HTML and JSON player Signals routes can render the same ViewModel and
+  resolve active-window player data with a latest-loaded fallback.
+- Missing signal inputs remain unavailable in TUI/Web output rather than
+  becoming zero-filled values.
+
+**Claims not accepted**
+
+- This does not add stable `StatId` rows, filters, leaderboard columns,
+  report/export output, analytics-cache publication, or dashboard-panel
+  readiness.
+- This does not claim prediction, betting value, injury certainty, deployment
+  advice, line-chemistry causality, complete-world truth, or autonomous coaching
+  authority.
+
+**Required follow-up**
+
+- Any future Signals consumer must continue to consume `PlayerSignalsView` or an
+  equivalent evidence-preserving envelope and add product-copy/source-state
+  evidence for that surface.
+- Keep the Ted Lindsay route inventory updated before treating Signals as a
+  broader dashboard or API family.
+
+## 2026-06-18 WP-010 Pulse 03 Signals CLI Surface Review
+
+**Scope:** First read-only CLI text and `signals.v1` JSON surface.
+
+**Decision:** `partial_pass`
+
+Pulse 03 adds `icelines signals "<player>"` and `--json` rendering through the
+existing `PlayerSignalsView`. The command exposes the first three Signals with
+their evidence tiers, missing-input reasons, methodology, limitations,
+disclosures, and non-claim copy.
+
+**Claims accepted**
+
+- Signals have a read-only CLI text surface and a stable `signals.v1` JSON
+  envelope for the selected player context.
+- Missing realtime/sample/TOI evidence remains unavailable instead of
+  zero-filled.
+- Product copy stays descriptive and avoids prediction, betting, deployment, and
+  autonomous coaching claims.
+
+**Claims not accepted**
+
+- This does not add TUI/Web/report/export/cache, stable `StatId`, filters, or
+  leaderboard claims by itself.
+- This does not prove broader signal families beyond Physical Engagement Rate,
+  Puck Management Differential, and Penalty Drag Rate.
+
+**Required follow-up**
+
+- Add parity evidence when more than one user-facing surface renders Signals.
+- Keep report/export, cache, filter, leaderboard, and stable stat-catalog
+  promotion behind separate evidence.
+
 ## 2026-06-02 WP-010 Pulse 02 Signals ViewModel Boundary Review
 
 **Scope:** First internal ViewModel boundary for IceLines Signals.
@@ -3373,6 +3949,68 @@ WP-008 integration rehearsal remain open.
 passed for leaders CLI/Web JSON result-state parity. Broad `WP-001`, `VAL-004`,
 `EVID-VAL-004`, `EVID-CR-003`, `EVID-CR-018`, `EVID-CODE-001`, and WP-008
 integration rehearsal remain open.
+
+## 2026-06-19 Phase Hurricane 5a/5b Close Review
+
+### Scope reviewed
+
+| Item | Reviewed Evidence |
+|---|---|
+| Phase slice | Phase Hurricane deliverables 5a/5b: CLI data-depth disclosure for `query player`, `query compare`, and `query leaders --seasons N`. |
+| Code | `icelines-cli/src/commands/query.rs`; `COMMANDS.md`; `design/plans/2026-06-17-phaseHurricane-signals-surface.md`. |
+| Interface change | Additive CLI text disclosure when a rendered career arc or leaders aggregate extends beyond the newest five modern bundled seasons. |
+| Fixture | `cargo test -p icelines-cli --bin icelines bundled_depth_disclosure` asserts no disclosure for the modern window and explicit historical/skeleton plus unavailable-not-zero copy beyond it; `cargo test -p icelines-cli --test system_tests depth` asserts the selected player and leaders subprocess outputs. |
+
+### Accepted close risks
+
+| Risk | Disposition |
+|---|---|
+| The slice covers `query player`, `query compare`, and `query leaders --seasons N` text only. | Accepted for Phase Hurricane 5a/5b; streak and other seasons-aggregate depth disclosure remains future work. |
+| The check is focused L0 copy evidence, not a full subprocess golden. | Accepted because the rendering helper is the single output boundary used by both selected commands, and affected CLI clippy/format passed. |
+| WP-004 remains broader than this Phase Hurricane addendum. | Keep full report/export matrix and broader historical perspective coverage at the existing closed-with-risk posture. |
+
+### Role decision
+
+| Lane | Decision | Note |
+|---|---|---|
+| SCOUT / PACE | pass_with_risk | Copy distinguishes modern Tier-1 depth from historical/skeleton totals and avoids overclaiming missing modern fields. |
+| HART / WIRE | pass_with_risk | The disclosure is additive CLI text; no data model, schema, or JSON envelope semantics change. |
+| BENCH / FORGE | pass_with_risk | Focused L0 tests, `cargo fmt --check`, `cargo clippy -p icelines-cli --bin icelines -- -D warnings`, and `git diff --check` passed for the affected slice. |
+
+### Close outcome
+
+Phase Hurricane 5a/5b closes with risk. `EVID-WP004-CLI-CAREER-DEPTH-L0` may be
+treated as passed for selected CLI player/compare career-arc and leaders
+aggregate data-depth disclosure. Remaining streak and other seasons-aggregate
+depth surfaces stay pending future work.
+
+## 2026-06-19 Phase Hurricane 5c Close Review
+
+### Scope reviewed
+
+| Item | Reviewed Evidence |
+|---|---|
+| TUI dashboard bundled-history label/disclosure | `cargo test -p icelines-cli dashboard_panel` |
+| Affected docs / traceability | `COMMANDS.md`, Phase Hurricane plan, `CHANGE_CONTROL.md`, `TRACE.md`, `VERIFICATION.md`, `VALIDATION.md`, `WORK_PACKAGES.md` |
+
+### Accepted close risks
+
+| Risk | Disposition |
+|---|---|
+| The slice covers the TUI dashboard player-card trend panel only. | Accepted for Phase Hurricane 5c; report/export matrix breadth remains under existing WP-004 risk. |
+| The proof is focused L0 compile/output text evidence, not an interactive terminal transcript. | Accepted because the panel compiler is the renderer boundary used by the TUI card. |
+
+### Role decision
+
+| Role | Decision | Notes |
+|---|---|---|
+| SCOUT / HART | pass_with_risk | Long-history trend no longer implies only five seasons and now states newest-5 modern / older skeleton / missing-unavailable semantics. |
+| BENCH / FORGE | pass_with_risk | Focused dashboard-panel tests passed; affected-slice format/lint gates remain required before final closeout. |
+
+### Close outcome
+
+Phase Hurricane 5c closes with risk. `EVID-WP004-TUI-HISTORY-DEPTH-L0` may be
+treated as passed for selected TUI dashboard bundled-history depth disclosure.
 
 ## 2026-05-31 WP-001 Pulse 22 Close Review
 

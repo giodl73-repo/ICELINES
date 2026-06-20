@@ -1005,6 +1005,8 @@ fn l1_load_into_repo_with_populated_snapshot_moneypuck() {
         xg_per_60: 1.20,
         cf_pct_5v5: 56.3,
         ff_pct_5v5: 55.8,
+        on_ice_xg_for_5v5: 42.0,
+        on_ice_xg_against_5v5: 30.5,
         xgf_pct_5v5: 58.0,
     }];
     let bytes = serde_json::to_vec(&mp).unwrap();

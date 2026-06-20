@@ -203,6 +203,14 @@ fn goalie_template_row_from_view(row: &icelines_core::GoalieRow, season: Season)
         gaa_str: goalie_metric_f64(row, "gaa")
             .map(|v| format!("{v:.2}"))
             .unwrap_or_else(|| "—".to_owned()),
+        quality_start_pct: goalie_metric_f64(row, "quality_start_pct"),
+        quality_start_pct_str: goalie_metric_f64(row, "quality_start_pct")
+            .map(|v| format!("{:.1}%", v * 100.0))
+            .unwrap_or_else(|| "-".to_owned()),
+        shots_against_per_60: goalie_metric_f64(row, "shots_against_per_60"),
+        shots_against_per_60_str: goalie_metric_f64(row, "shots_against_per_60")
+            .map(|v| format!("{v:.1}"))
+            .unwrap_or_else(|| "-".to_owned()),
         headshot_url: super::shared::build_headshot_url_for_display(
             season.0,
             &team,
@@ -261,12 +269,76 @@ pub async fn build_goalies_template(
 ) -> Result<GoaliesTemplate, Response> {
     let r = build_goalie_result(state, q).await?;
     let _ = r.include_below_threshold;
+    let goalie_sv_pct_svg = render_goalie_sv_pct_svg(&r.rows);
     Ok(GoaliesTemplate {
         active_label: r.active_label,
         rows: r.rows,
+        goalie_sv_pct_svg,
         total: r.total,
         qualified_threshold: r.qualified_threshold,
     })
+}
+
+fn render_goalie_sv_pct_svg(rows: &[GoalieRow]) -> Option<String> {
+    let mut values: Vec<(&GoalieRow, f64)> = rows
+        .iter()
+        .filter_map(|row| {
+            row.save_pct_str
+                .parse::<f64>()
+                .ok()
+                .map(|value| (row, value))
+        })
+        .filter(|(_, value)| value.is_finite() && *value > 0.0)
+        .collect();
+    if values.is_empty() {
+        return None;
+    }
+    values.sort_by(|(_, a), (_, b)| b.total_cmp(a));
+    values.truncate(10);
+    let max = values
+        .iter()
+        .map(|(_, value)| *value)
+        .fold(0.0_f64, f64::max);
+    if max <= 0.0 {
+        return None;
+    }
+
+    let mut bars = String::new();
+    for (idx, (row, save_pct)) in values.iter().enumerate() {
+        let y = 46 + idx * 24;
+        let width = ((*save_pct / max) * 420.0).max(2.0);
+        let name = escape_svg_text(&row.name);
+        let value = format!("{save_pct:.3}");
+        bars.push_str(&format!(
+            r##"  <text x="24" y="{label_y}" fill="#334155" font-size="11">{name}</text>
+  <rect x="168" y="{bar_y}" width="{width:.1}" height="14" rx="3" fill="#0f766e"/>
+  <text x="{value_x:.1}" y="{label_y}" fill="#0f172a" font-size="11">{value}</text>
+"##,
+            label_y = y + 11,
+            bar_y = y,
+            value_x = 176.0 + width,
+        ));
+    }
+    let height = 72 + values.len() * 24;
+
+    Some(format!(
+        r##"<svg class="goalie-sv-pct-svg" viewBox="0 0 640 {height}" role="img" aria-labelledby="goalie-sv-title goalie-sv-desc">
+  <title id="goalie-sv-title">Goalie SV% chart</title>
+  <desc id="goalie-sv-desc">Returned goalies by current-window save percentage.</desc>
+  <rect x="0" y="0" width="640" height="{height}" rx="8" fill="#f8fafc"/>
+  <text x="24" y="26" fill="#334155" font-size="13">Goalie SV%</text>
+  <line x1="168" y1="36" x2="588" y2="36" stroke="#cbd5e1"/>
+{bars}</svg>"##
+    ))
+}
+
+fn escape_svg_text(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }
 
 // ── King.5.2 — JSON envelope ─────────────────────────────────
@@ -283,6 +355,8 @@ pub struct GoalieJsonRow {
     pub shutouts: u32,
     pub save_pct: Option<f64>,
     pub goals_against_average: Option<f64>,
+    pub quality_start_pct: Option<f64>,
+    pub shots_against_per_60: Option<f64>,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -320,6 +394,8 @@ pub async fn get_goalies_json(
             shutouts: row.shutouts,
             save_pct: row.save_pct_str.parse().ok(),
             goals_against_average: row.gaa_str.parse().ok(),
+            quality_start_pct: row.quality_start_pct,
+            shots_against_per_60: row.shots_against_per_60,
         })
         .collect();
 

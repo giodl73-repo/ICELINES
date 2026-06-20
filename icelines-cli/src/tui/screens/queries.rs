@@ -1003,6 +1003,25 @@ fn leader_primary_text(row: &icelines_core::LeaderRow) -> String {
     }
 }
 
+fn leader_primary_numeric(row: &icelines_core::LeaderRow) -> Option<f64> {
+    match row.primary.value {
+        MetricValue::Integer(value) if value > 0 => Some(value as f64),
+        MetricValue::Decimal(value) if value.is_finite() && value > 0.0 => Some(value),
+        _ => None,
+    }
+}
+
+fn leader_primary_bar(row: &icelines_core::LeaderRow, max_value: f64) -> String {
+    let Some(value) = leader_primary_numeric(row) else {
+        return String::new();
+    };
+    if !max_value.is_finite() || max_value <= 0.0 {
+        return String::new();
+    }
+    let bars = ((value / max_value) * 4.0).ceil() as usize;
+    "#".repeat(bars.clamp(1, 4))
+}
+
 fn leader_team_text(row: &icelines_core::LeaderRow) -> &str {
     if row.team.0 == "UNK" {
         "â€”"
@@ -1597,17 +1616,23 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
 
     lines.push(Line::styled(
         format!(
-            "  {:<4} {:<22} {:<5} {:<4} {:>8}",
-            "#", "Player", "Team", "Pos", clabel
+            "  {:<4} {:<20} {:<5} {:<4} {:>8} {:<4}",
+            "#", "Player", "Team", "Pos", clabel, "bar"
         ),
         dim,
     ));
-    lines.push(Line::styled(format!("  {}", "─".repeat(48)), dim));
+    lines.push(Line::styled(format!("  {}", "─".repeat(52)), dim));
 
     let first_row_line = lines.len();
+    let max_primary = leaders_view
+        .rows
+        .iter()
+        .filter_map(leader_primary_numeric)
+        .fold(0.0, f64::max);
     for row in leaders_view.rows.iter().skip(offset).take(visible) {
-        let name = row.display_name.chars().take(22).collect::<String>();
+        let name = row.display_name.chars().take(20).collect::<String>();
         let value = leader_primary_text(row);
+        let bar = leader_primary_bar(row, max_primary);
         let row_index = lines.len() - first_row_line;
         let is_selected = offset + row_index
             == app.queries.result_scroll + app.selected.min(visible.saturating_sub(1));
@@ -1623,12 +1648,13 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
         };
         lines.push(Line::styled(
             format!(
-                "  {:<4} {:<22} {:<5} {:<4} {:>8}",
+                "  {:<4} {:<20} {:<5} {:<4} {:>8} {:<4}",
                 row.rank,
                 name,
                 leader_team_text(row),
                 row.position.abbreviation(),
                 value,
+                bar,
             ),
             style,
         ));
@@ -1932,6 +1958,50 @@ mod tests {
         assert_eq!(leader_primary_text(&view.rows[0]), "80");
         assert_eq!(leader_team_text(&view.rows[0]), "SEA");
         assert_eq!(view.rows[0].position.abbreviation(), "RW");
+    }
+
+    #[test]
+    fn l0_tui_leaders_primary_metric_bar_scales_and_skips_missing_values() {
+        let mut repo = icelines_core::stats_repository::StatsRepository::new();
+        for (id, name, team) in [
+            (1, "Alpha Center", "EDM"),
+            (2, "Bravo Wing", "SEA"),
+            (3, "Charlie Defender", "BOS"),
+        ] {
+            repo.upsert_identity(
+                fixtures::identity(id)
+                    .name(name, &icelines_core::name::normalize_name(name))
+                    .build(),
+            )
+            .unwrap();
+            repo.upsert_stats(fixtures::stats(id, 20242025, team).build())
+                .unwrap();
+        }
+
+        let views: Vec<_> = repo
+            .skaters(Season(20242025), SeasonType::Regular)
+            .collect();
+        let results: Vec<_> = views.into_iter().enumerate().collect();
+        let mut view = leaders_view_from_query_results(
+            &results,
+            "pts",
+            "Pts",
+            Season(20242025),
+            SeasonType::Regular,
+        );
+        view.rows[0].primary.value = MetricValue::Integer(80);
+        view.rows[1].primary.value = MetricValue::Integer(40);
+        view.rows[2].primary.value = MetricValue::Integer(0);
+        let max_primary = view
+            .rows
+            .iter()
+            .filter_map(leader_primary_numeric)
+            .fold(0.0, f64::max);
+
+        assert_eq!(leader_primary_bar(&view.rows[0], max_primary), "####");
+        assert_eq!(leader_primary_bar(&view.rows[1], max_primary), "##");
+        assert_eq!(leader_primary_bar(&view.rows[2], max_primary), "");
+        assert_eq!(leader_primary_bar(&view.rows[0], 0.0), "");
     }
 
     #[test]

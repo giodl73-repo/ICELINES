@@ -26,6 +26,8 @@
             <th class="numeric">Saves</th>
             <th class="numeric">SV%</th>
             <th class="numeric">GAA</th>
+            <th class="numeric">QS%</th>
+            <th class="numeric">SA/60</th>
             <th class="numeric">SO</th>
         </tr>
     </thead>
@@ -48,12 +50,22 @@
             <td class="numeric">{{ row.saves }}</td>
             <td class="numeric"><strong>{{ row.save_pct_str }}</strong></td>
             <td class="numeric">{{ row.gaa_str }}</td>
+            <td class="numeric">{{ row.quality_start_pct_str }}</td>
+            <td class="numeric">{{ row.shots_against_per_60_str }}</td>
             <td class="numeric">{{ row.shutouts }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 </div>
+
+{% match goalie_sv_pct_svg %}
+{% when Some with (svg) %}
+<section class="goalie-sv-chart" aria-label="Goalie save percentage chart" style="margin-top: 1rem;">
+    {{ svg|safe }}
+</section>
+{% when None %}
+{% endmatch %}
 
 <p class="page-section meta-line">
     Sorted by save percentage with a {{ qualified_threshold }}-GP qualified threshold

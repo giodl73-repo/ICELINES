@@ -552,6 +552,10 @@ fn render_series_body(
             };
             lines.push(Line::styled(row, style));
         }
+        if let Some(margins) = format_game_margin_sparkline(view_games) {
+            lines.push(Line::from(""));
+            lines.push(Line::styled(format!("  Margin: {margins}"), dim));
+        }
     }
 
     lines.push(Line::from(""));
@@ -572,6 +576,39 @@ fn format_game_row(g: &PlayoffsGameRow) -> String {
         as_ = g.away_score,
         away = g.away_abbrev,
         after = g.series_after,
+    )
+}
+
+fn format_game_margin_sparkline(games: &[PlayoffsGameRow]) -> Option<String> {
+    let rows = games
+        .iter()
+        .filter_map(|game| {
+            let margin = game.home_score.abs_diff(game.away_score);
+            if margin == 0 {
+                return None;
+            }
+            let winner = if game.home_score > game.away_score {
+                game.home_abbrev.as_str()
+            } else {
+                game.away_abbrev.as_str()
+            };
+            Some((game.game_number, winner, margin))
+        })
+        .collect::<Vec<_>>();
+    let max = rows.iter().map(|(_, _, margin)| *margin).max()?;
+    if max == 0 {
+        return None;
+    }
+
+    Some(
+        rows.iter()
+            .map(|(game, winner, margin)| {
+                let max = usize::from(max);
+                let bars = ((usize::from(*margin) * 4).div_ceil(max)).max(1);
+                format!("G{game} {winner} {} +{margin}", "█".repeat(bars))
+            })
+            .collect::<Vec<_>>()
+            .join("  "),
     )
 }
 
@@ -906,11 +943,31 @@ mod tests {
             text.contains("NYR wins 4-3"),
             "Cup-clinching series_after missing"
         );
+        assert!(text.contains("Margin:"), "margin sparkline missing");
+        assert!(text.contains("G1 VAN"), "game 1 margin winner missing");
+        assert!(text.contains("G2 NYR"), "game 2 margin winner missing");
+        assert!(text.contains("+1"), "goal margin labels missing");
         // The v2 placeholder / "X game(s) played so far" line is gone for this path.
         assert!(
             !text.contains("game(s) played so far"),
             "non-placeholder branch shouldn't show fallback count, got:\n{text}"
         );
+    }
+
+    #[test]
+    fn l0_render_series_detail_margin_sparkline_skips_tied_games() {
+        let tied = vec![PlayoffsGameRow {
+            game_number: 1,
+            date: "1994-05-31".to_owned(),
+            home_abbrev: "NYR".to_owned(),
+            away_abbrev: "VAN".to_owned(),
+            home_score: 2,
+            away_score: 2,
+            series_after: "Tied".to_owned(),
+        }];
+
+        assert!(format_game_margin_sparkline(&[]).is_none());
+        assert!(format_game_margin_sparkline(&tied).is_none());
     }
 
     #[test]

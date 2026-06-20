@@ -2,8 +2,12 @@ use crate::tui::app::App;
 use crate::tui::headshot;
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Position;
+use icelines_core::signal_metrics::{
+    SignalEvidenceTier, SignalInput, SignalMetricUnit, SignalPolarity,
+};
 use icelines_core::stats_catalog::{StatCategory, StatId};
 use icelines_core::stats_repository::PlayerView;
+use icelines_core::view_model::signals::PlayerSignalsView;
 use icelines_core::{
     MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow,
     PlayerSeasonSummary,
@@ -340,6 +344,82 @@ pub(crate) fn pre_nhl_career_lines(
     out
 }
 
+pub(crate) fn player_signals_lines(
+    view: &PlayerSignalsView,
+    dim: ratatui::style::Style,
+) -> Vec<Line<'static>> {
+    let mut out = Vec::new();
+    out.push(Line::styled(
+        format!(
+            " Signals  ·  icelines signals \"{}\"  ·  /player/{}/signals",
+            view.player_name, view.player_id
+        ),
+        dim,
+    ));
+    out.push(Line::styled(
+        " Signal                         Value       Evidence       Missing",
+        dim,
+    ));
+    for row in &view.rows {
+        let value = row
+            .value
+            .map(|value| format!("{value:.2} {}", unit_label(row.unit)))
+            .unwrap_or_else(|| "unavailable".to_owned());
+        let missing = if row.missing_inputs.is_empty() {
+            "none".to_owned()
+        } else {
+            row.missing_inputs
+                .iter()
+                .map(|input| input_label(*input))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        out.push(Line::from(format!(
+            " {} {:<28} {:<11} {:<13} {}",
+            polarity_symbol(row.polarity),
+            row.short_label,
+            value,
+            tier_label(row.evidence_tier),
+            missing
+        )));
+    }
+    out.push(Line::styled(
+        " Signals are descriptive only; unavailable is missing evidence, not zero value truth.",
+        dim,
+    ));
+    out
+}
+
+fn unit_label(unit: SignalMetricUnit) -> &'static str {
+    match unit {
+        SignalMetricUnit::Per60 => "per60",
+    }
+}
+
+fn polarity_symbol(polarity: SignalPolarity) -> &'static str {
+    match polarity {
+        SignalPolarity::HigherIsBetter => "^",
+        SignalPolarity::LowerIsBetter => "v",
+        SignalPolarity::Neutral => "=",
+    }
+}
+
+fn tier_label(tier: SignalEvidenceTier) -> &'static str {
+    match tier {
+        SignalEvidenceTier::Full => "full",
+        SignalEvidenceTier::Partial => "partial",
+        SignalEvidenceTier::Missing => "missing",
+    }
+}
+
+fn input_label(input: SignalInput) -> &'static str {
+    match input {
+        SignalInput::SampleSize => "sample",
+        SignalInput::Realtime => "realtime",
+        SignalInput::IceTime => "ice time",
+    }
+}
+
 /// Phase Lindsay L.4.5 — fit career-table columns to panel width.
 ///
 /// Each data column reserves 8 cells (1 leading space + 7-char right-aligned
@@ -617,7 +697,7 @@ fn render_stats_view(
     // visible.
     lines.extend(active_season_summary_lines(card.active.as_ref(), dim));
     lines.push(Line::styled(
-        " Hub      ·  r Records  ·  a Awards  ·  s Streaks  ·  c Compare  ·  g Group  ·  f Favorite",
+        " Hub      ·  r Records  ·  a Awards  ·  s Streaks  ·  i Signals  ·  c Compare  ·  g Group  ·  f Favorite",
         dim,
     ));
     lines.push(Line::styled(
@@ -639,6 +719,10 @@ fn render_stats_view(
             " Streaks  ·  icelines streaks \"{}\"  ·  /player/{}/streaks",
             card.display_name, card.player_id.0
         ),
+        dim,
+    ));
+    lines.extend(player_signals_lines(
+        &PlayerSignalsView::from_player(PlayerSignalsView::context_for_player(v), v),
         dim,
     ));
     lines.push(Line::styled(
@@ -1429,5 +1513,48 @@ mod calder_pre_nhl_tests {
             pos_14 < pos_13 && pos_13 < pos_12,
             "newest-first order violated: 14-15@{pos_14} 13-14@{pos_13} 12-13@{pos_12}"
         );
+    }
+}
+
+#[cfg(test)]
+mod hurricane_signals_tests {
+    use super::player_signals_lines;
+    use icelines_core::fixtures::{identity, stats, test_repo_with};
+    use icelines_core::identity::PlayerId;
+    use icelines_core::model::Season;
+    use icelines_core::season_stats::SeasonType;
+    use icelines_core::view_model::signals::PlayerSignalsView;
+    use ratatui::style::Style;
+
+    fn lines_to_text(lines: &[ratatui::text::Line<'_>]) -> String {
+        lines
+            .iter()
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.as_ref())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    #[test]
+    fn l0_player_signals_lines_preserve_unavailable_evidence() {
+        let identity = identity(8478402).build();
+        let stats = stats(8478402, 20252026, "EDM").build();
+        let repo = test_repo_with(identity, stats);
+        let player = repo
+            .view(PlayerId(8478402), Season(20252026), SeasonType::Regular)
+            .expect("player view");
+        let view =
+            PlayerSignalsView::from_player(PlayerSignalsView::context_for_player(&player), &player);
+
+        let text = lines_to_text(&player_signals_lines(&view, Style::default()));
+        assert!(text.contains("Signals"));
+        assert!(text.contains("/player/8478402/signals"));
+        assert!(text.contains("unavailable"));
+        assert!(text.contains("realtime"));
+        assert!(!text.contains("0.00 per60   partial"));
     }
 }

@@ -17,13 +17,16 @@ use anyhow::{bail, Context};
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
+use icelines_core::history::{CareerSummary, SeasonLine};
 use icelines_core::view_model::context::RecoveryActionKind;
 use icelines_core::{
     cross_team::{compute_all_views, ScoringMode},
     filter::PlayerFilter,
     scoring::sort_views_by_pace,
     stats_repository::PlayerView,
-    view_model::{poach_report_from_board, PoachBoardView, PoachQuery, PoachReportView},
+    view_model::{
+        poach_report_from_board, PoachBoardView, PoachPlayerRow, PoachQuery, PoachReportView,
+    },
     Completeness, DepthLeagueView, EmptyKind, EmptyState, LeaderKind, LeadersView,
     PlayoffsSeriesRow, PlayoffsView, RecoveryAction, ScheduleRecord, SortDirection, SortKey,
     SortState, SourceKind, SourceState, TeamAbbr, TeamDepthView, TeamSeasonGameRow,
@@ -33,6 +36,7 @@ use icelines_fetch::nhl_api::NhlApiClient;
 
 use crate::cli::{ExportSubcommand, MdShape};
 use crate::commands::players::load_repo_for_season;
+use crate::config::Config;
 
 pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
     match cmd {
@@ -318,6 +322,10 @@ fn render_leaders_from_views_with_window(
     } else {
         write_leaders_view_table(&mut out, &leaders_view);
     }
+    if let Some(svg) = render_leaders_pts82_svg(&leaders_view) {
+        let _ = writeln!(out);
+        out.push_str(&svg);
+    }
 
     Ok(out)
 }
@@ -576,6 +584,87 @@ fn write_leaders_view_table(out: &mut String, view: &LeadersView) {
     }
 }
 
+fn render_leaders_pts82_svg(view: &LeadersView) -> Option<String> {
+    let rows: Vec<_> = view
+        .rows
+        .iter()
+        .filter_map(|row| leader_primary_f64(row).map(|value| (row, value)))
+        .filter(|(_, value)| value.is_finite() && *value > 0.0)
+        .take(10)
+        .collect();
+    if rows.is_empty() {
+        return None;
+    }
+
+    let max = rows
+        .iter()
+        .map(|(_, value)| *value)
+        .fold(f64::NEG_INFINITY, f64::max);
+    if !max.is_finite() || max <= 0.0 {
+        return None;
+    }
+
+    let height = 82 + rows.len() * 28;
+    let mut out = String::new();
+    let _ = writeln!(out, "## Leaders SVG\n");
+    let _ = writeln!(
+        out,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 {height}\" role=\"img\" aria-labelledby=\"leaders-svg-title leaders-svg-desc\">"
+    );
+    let _ = writeln!(
+        out,
+        "<title id=\"leaders-svg-title\">Pts/82 leaders</title>"
+    );
+    let _ = writeln!(
+        out,
+        "<desc id=\"leaders-svg-desc\">Top returned skaters by current-window points per 82 games. Bars are descriptive context over the rendered leaderboard rows.</desc>"
+    );
+    let _ = writeln!(
+        out,
+        "<rect x=\"0\" y=\"0\" width=\"640\" height=\"{height}\" rx=\"8\" fill=\"#f8fafc\"/>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"28\" font-family=\"Arial, sans-serif\" font-size=\"14\" font-weight=\"700\" fill=\"#111827\">Pts/82 leaders</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"616\" y=\"28\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#374151\" text-anchor=\"end\">current window</text>"
+    );
+
+    for (idx, (row, value)) in rows.iter().enumerate() {
+        let y = 54 + idx * 28;
+        let bar_width = (*value / max * 360.0).max(1.0);
+        let name = escape_svg_text(&truncate(&row.display_name, 22));
+        let team = escape_svg_text(&row.team.0);
+        let pos = row.position.abbreviation();
+        let _ = writeln!(
+            out,
+            "<text x=\"24\" y=\"{}\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#111827\">{}. {name}</text>",
+            y + 13,
+            row.rank
+        );
+        let _ = writeln!(
+            out,
+            "<rect x=\"190\" y=\"{}\" width=\"{bar_width:.1}\" height=\"14\" rx=\"3\" fill=\"#0f766e\"/>",
+            y + 2
+        );
+        let _ = writeln!(
+            out,
+            "<text x=\"{}\" y=\"{}\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#111827\">{value:.1}</text>",
+            198.0 + bar_width,
+            y + 14
+        );
+        let _ = writeln!(
+            out,
+            "<text x=\"616\" y=\"{}\" font-family=\"Arial, sans-serif\" font-size=\"11\" fill=\"#64748b\" text-anchor=\"end\">{team} {pos}</text>",
+            y + 13
+        );
+    }
+    let _ = writeln!(out, "</svg>");
+    Some(out)
+}
+
 /// Phase Lindsay L.5.4 — render leaders table with custom StatId columns.
 /// Headers come from `StatId::short_label()`; cells route through the
 /// same per-StatUnit formatting (Count → integer, Pct → `XX.X%`,
@@ -779,8 +868,83 @@ pub(crate) fn render_team_from_views(
             pts = totals.points,
         );
     }
+    if let Some(svg) = render_team_pts82_svg(&team_up, &roster) {
+        let _ = writeln!(out);
+        out.push_str(&svg);
+    }
 
     Ok(out)
+}
+
+fn render_team_pts82_svg(team: &str, rows: &[PlayerView<'_>]) -> Option<String> {
+    let mut rows = rows
+        .iter()
+        .filter_map(|row| {
+            row.pace_82()
+                .filter(|pace| pace.is_finite() && *pace > 0.0)
+                .map(|pace| (*row, pace))
+        })
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        return None;
+    }
+    rows.sort_by(|(a, a_pace), (b, b_pace)| {
+        b_pace
+            .total_cmp(a_pace)
+            .then_with(|| a.position().abbreviation().cmp(b.position().abbreviation()))
+            .then_with(|| a.identity.full_name.cmp(&b.identity.full_name))
+            .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
+    });
+    rows.truncate(10);
+
+    let max = rows.iter().map(|(_, pace)| *pace).fold(0.0_f64, f64::max);
+    if max <= 0.0 {
+        return None;
+    }
+
+    let height = 82 + rows.len() * 34;
+    let team = escape_svg_text(team);
+    let mut out = String::new();
+    let _ = writeln!(out, "## Team roster Pts/82 SVG\n");
+    let _ = writeln!(
+        out,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 {height}\" role=\"img\" aria-labelledby=\"team-roster-pts82-title team-roster-pts82-desc\">"
+    );
+    let _ = writeln!(
+        out,
+        "<title id=\"team-roster-pts82-title\">{team} Pts/82 leaders</title>"
+    );
+    let _ = writeln!(
+        out,
+        "<desc id=\"team-roster-pts82-desc\">Top rendered {team} skaters by current-window points per 82 games. Bars are descriptive context over the team roster table.</desc>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"28\" font-size=\"18\" font-weight=\"700\" fill=\"#111827\">{team} Pts/82 leaders</text>"
+    );
+
+    for (idx, (row, pace)) in rows.iter().enumerate() {
+        let y = 54 + idx * 34;
+        let width = (pace / max * 360.0).max(2.0);
+        let label = escape_svg_text(&truncate(&row.identity.full_name, 24));
+        let pos = escape_svg_text(row.position().abbreviation());
+        let _ = writeln!(
+            out,
+            "<text x=\"24\" y=\"{y}\" font-size=\"13\" fill=\"#111827\">{label} <tspan fill=\"#6b7280\">{pos}</tspan></text>"
+        );
+        let _ = writeln!(
+            out,
+            "<rect x=\"220\" y=\"{}\" width=\"{width:.1}\" height=\"16\" rx=\"2\" fill=\"#2563eb\"></rect>",
+            y - 13
+        );
+        let _ = writeln!(
+            out,
+            "<text x=\"{:.1}\" y=\"{y}\" font-size=\"12\" fill=\"#374151\">{pace:.1}</text>",
+            228.0 + width
+        );
+    }
+    let _ = writeln!(out, "</svg>");
+    Some(out)
 }
 
 // ── team-season ───────────────────────────────────────────────────────────────
@@ -979,6 +1143,70 @@ fn write_team_season_strength_and_ledger(out: &mut String, view: &TeamSeasonView
         view.quality_ledger.bottom_opponent_games
     );
     let _ = writeln!(out);
+    if let Some(svg) = render_team_season_quality_svg(view) {
+        out.push_str(&svg);
+    }
+}
+
+fn render_team_season_quality_svg(view: &TeamSeasonView) -> Option<String> {
+    let rows = [
+        ("Quality wins", view.quality_ledger.quality_wins),
+        ("Expected wins", view.quality_ledger.expected_wins),
+        ("Bad losses", view.quality_ledger.bad_losses),
+        ("Missed points", view.quality_ledger.missed_points),
+        ("Top-opponent games", view.quality_ledger.top_opponent_games),
+        (
+            "Bottom-opponent games",
+            view.quality_ledger.bottom_opponent_games,
+        ),
+    ];
+    let max = rows.iter().map(|(_, value)| *value).max().unwrap_or(0);
+    if max == 0 {
+        return None;
+    }
+
+    let height = 82 + rows.len() * 28;
+    let mut out = String::new();
+    let _ = writeln!(out, "## Quality ledger SVG\n");
+    let _ = writeln!(
+        out,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 {height}\" role=\"img\" aria-labelledby=\"team-season-quality-title team-season-quality-desc\">"
+    );
+    let _ = writeln!(
+        out,
+        "<title id=\"team-season-quality-title\">{} quality ledger</title>",
+        escape_svg_text(&view.team)
+    );
+    let _ = writeln!(
+        out,
+        "<desc id=\"team-season-quality-desc\">Team-season quality ledger counts from the rendered report table. Bars are descriptive context, not a projection.</desc>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"30\" font-size=\"18\" font-weight=\"700\" fill=\"#111827\">Quality ledger</text>"
+    );
+
+    for (idx, (label, value)) in rows.iter().enumerate() {
+        let y = 56 + idx * 28;
+        let width = (*value as f64 / max as f64 * 340.0).max(2.0);
+        let _ = writeln!(
+            out,
+            "<text x=\"24\" y=\"{y}\" font-size=\"12\" fill=\"#111827\">{}</text>",
+            escape_svg_text(label)
+        );
+        let _ = writeln!(
+            out,
+            "<rect x=\"190\" y=\"{}\" width=\"{width:.1}\" height=\"14\" rx=\"2\" fill=\"#2563eb\"></rect>",
+            y - 12
+        );
+        let _ = writeln!(
+            out,
+            "<text x=\"{:.1}\" y=\"{y}\" font-size=\"12\" fill=\"#374151\">{value}</text>",
+            198.0 + width
+        );
+    }
+    let _ = writeln!(out, "</svg>\n");
+    Some(out)
 }
 
 fn write_team_season_game_log(out: &mut String, view: &TeamSeasonView) {
@@ -1201,6 +1429,9 @@ pub(crate) fn render_depth_from_views(
         opts.height,
     );
     write_depth_league_view_markdown(&mut out, &league_view);
+    if let Some(svg) = render_depth_team_strength_svg(&league_view) {
+        out.push_str(&svg);
+    }
     let _ = writeln!(out);
 
     let _ = writeln!(
@@ -1262,6 +1493,69 @@ fn write_depth_league_view_markdown(out: &mut String, view: &DepthLeagueView) {
             d_top = truncate(&row.d_top, 18),
         );
     }
+}
+
+fn render_depth_team_strength_svg(view: &DepthLeagueView) -> Option<String> {
+    let rows = view
+        .rows
+        .iter()
+        .filter(|row| row.total.is_finite() && row.total > 0.0)
+        .take(10)
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        return None;
+    }
+    let max = rows
+        .iter()
+        .map(|row| row.total)
+        .fold(f64::NEG_INFINITY, f64::max);
+    if !max.is_finite() || max <= 0.0 {
+        return None;
+    }
+
+    let height = 82 + rows.len() * 28;
+    let mut out = String::new();
+    let _ = writeln!(out, "\n## Team strength SVG\n");
+    let _ = writeln!(
+        out,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 {height}\" role=\"img\" aria-labelledby=\"depth-strength-title depth-strength-desc\">"
+    );
+    let _ = writeln!(
+        out,
+        "<title id=\"depth-strength-title\">Team strength ranking</title>"
+    );
+    let _ = writeln!(
+        out,
+        "<desc id=\"depth-strength-desc\">Top teams by rendered depth total in {} mode. Bars are descriptive context over the team strength table.</desc>",
+        escape_svg_text(&view.scoring_mode)
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"30\" font-size=\"18\" font-weight=\"700\" fill=\"#111827\">Team strength</text>"
+    );
+
+    for (idx, row) in rows.iter().enumerate() {
+        let y = 56 + idx * 28;
+        let width = (row.total / max * 360.0).max(2.0);
+        let team = escape_svg_text(&row.team.0);
+        let _ = writeln!(
+            out,
+            "<text x=\"24\" y=\"{y}\" font-size=\"12\" fill=\"#111827\">{team}</text>"
+        );
+        let _ = writeln!(
+            out,
+            "<rect x=\"90\" y=\"{}\" width=\"{width:.1}\" height=\"14\" rx=\"2\" fill=\"#7c3aed\"></rect>",
+            y - 12
+        );
+        let _ = writeln!(
+            out,
+            "<text x=\"{:.1}\" y=\"{y}\" font-size=\"12\" fill=\"#374151\">{:.0}</text>",
+            98.0 + width,
+            row.total
+        );
+    }
+    let _ = writeln!(out, "</svg>\n");
+    Some(out)
 }
 
 // ── compare ──────────────────────────────────────────────────────────────────
@@ -1364,7 +1658,167 @@ pub(crate) fn render_compare_from_views(
         "| PPG | {ppg_a:.3} | {ppg_b:.3} | {:+.3} |",
         ppg_a - ppg_b
     );
+    if let Some(svg) = compare_career_svg_for_players(&a.identity.full_name, &b.identity.full_name)
+    {
+        let _ = writeln!(out);
+        out.push_str(&svg);
+    }
     Ok(out)
+}
+
+fn compare_career_svg_for_players(p1: &str, p2: &str) -> Option<String> {
+    let cfg = Config::load().ok()?;
+    let store = icelines_fetch::snapshot::SnapshotStore::new(cfg.snapshot_dir());
+    let n = icelines_fetch::BUNDLED_SEASONS.len();
+    let a = icelines_fetch::career::load_career(p1, n, &store)?;
+    let b = icelines_fetch::career::load_career(p2, n, &store)?;
+    render_compare_career_svg(&a, &b)
+}
+
+fn render_compare_career_svg(a: &CareerSummary, b: &CareerSummary) -> Option<String> {
+    let a_points = career_points_per_82_chronological(&a.seasons);
+    let b_points = career_points_per_82_chronological(&b.seasons);
+    if a_points.len() < 2 || b_points.len() < 2 {
+        return None;
+    }
+    let mut values = a_points.clone();
+    values.extend_from_slice(&b_points);
+    let (min, max) = min_max(&values)?;
+    let a_path = svg_polyline_points(&a_points, min, max, 520.0, 160.0, 24.0, 20.0);
+    let b_path = svg_polyline_points(&b_points, min, max, 520.0, 160.0, 24.0, 20.0);
+    let first = season_label(
+        a.seasons
+            .last()
+            .map(|line| line.season.as_str())
+            .unwrap_or_default(),
+    );
+    let last = season_label(
+        a.seasons
+            .first()
+            .map(|line| line.season.as_str())
+            .unwrap_or_default(),
+    );
+
+    let mut out = String::new();
+    let _ = writeln!(out, "## Career trend SVG\n");
+    let _ = writeln!(
+        out,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 568 220\" role=\"img\" aria-labelledby=\"career-trend-title career-trend-desc\">"
+    );
+    let _ = writeln!(
+        out,
+        "<title id=\"career-trend-title\">Pts/82 career trend comparison</title>"
+    );
+    let _ = writeln!(
+        out,
+        "<desc id=\"career-trend-desc\">Bundled regular-season Pts/82 trend from {first} to {last}; older seasons may be historical skeleton rows.</desc>"
+    );
+    let _ = writeln!(
+        out,
+        "<rect x=\"0\" y=\"0\" width=\"568\" height=\"220\" fill=\"#ffffff\"/>"
+    );
+    let _ = writeln!(
+        out,
+        "<line x1=\"24\" y1=\"180\" x2=\"544\" y2=\"180\" stroke=\"#6b7280\" stroke-width=\"1\"/>"
+    );
+    let _ = writeln!(
+        out,
+        "<line x1=\"24\" y1=\"20\" x2=\"24\" y2=\"180\" stroke=\"#6b7280\" stroke-width=\"1\"/>"
+    );
+    let _ = writeln!(
+        out,
+        "<polyline points=\"{a_path}\" fill=\"none\" stroke=\"#0f766e\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"
+    );
+    let _ = writeln!(
+        out,
+        "<polyline points=\"{b_path}\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"202\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#374151\">{first}</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"544\" y=\"202\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#374151\" text-anchor=\"end\">{last}</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"544\" y=\"18\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#374151\" text-anchor=\"end\">Pts/82</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"18\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#0f766e\">{}</text>",
+        escape_svg_text(&a.full_name)
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"36\" font-family=\"Arial, sans-serif\" font-size=\"12\" fill=\"#b45309\">{}</text>",
+        escape_svg_text(&b.full_name)
+    );
+    let _ = writeln!(out, "</svg>");
+    Some(out)
+}
+
+fn career_points_per_82_chronological(lines: &[SeasonLine]) -> Vec<f64> {
+    lines
+        .iter()
+        .rev()
+        .map(|line| line.pts_per_82() as f64)
+        .collect()
+}
+
+fn min_max(values: &[f64]) -> Option<(f64, f64)> {
+    let mut iter = values.iter().copied().filter(|v| v.is_finite());
+    let first = iter.next()?;
+    let (mut min, mut max) = (first, first);
+    for value in iter {
+        min = min.min(value);
+        max = max.max(value);
+    }
+    if (max - min).abs() < f64::EPSILON {
+        Some((min - 1.0, max + 1.0))
+    } else {
+        Some((min, max))
+    }
+}
+
+fn svg_polyline_points(
+    values: &[f64],
+    min: f64,
+    max: f64,
+    width: f64,
+    height: f64,
+    x0: f64,
+    y0: f64,
+) -> String {
+    let denom_x = (values.len().saturating_sub(1)).max(1) as f64;
+    let denom_y = (max - min).max(1.0);
+    values
+        .iter()
+        .enumerate()
+        .map(|(idx, value)| {
+            let x = x0 + (idx as f64 / denom_x) * width;
+            let y = y0 + height - (((*value - min) / denom_y) * height);
+            format!("{x:.1},{y:.1}")
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn season_label(season: &str) -> String {
+    if season.len() == 8 {
+        format!("{}-{}", &season[2..4], &season[6..8])
+    } else {
+        season.to_owned()
+    }
+}
+
+fn escape_svg_text(input: &str) -> String {
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 // ── roster ───────────────────────────────────────────────────────────────────
@@ -1440,7 +1894,82 @@ pub(crate) fn render_roster_from_views(
             pts = totals.points,
         );
     }
+    if let Some(svg) = render_roster_pts82_svg(&filtered) {
+        let _ = writeln!(out);
+        out.push_str(&svg);
+    }
     Ok(out)
+}
+
+fn render_roster_pts82_svg(rows: &[PlayerView<'_>]) -> Option<String> {
+    let mut rows = rows
+        .iter()
+        .filter_map(|row| {
+            row.pace_82()
+                .filter(|pace| pace.is_finite() && *pace > 0.0)
+                .map(|pace| (*row, pace))
+        })
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        return None;
+    }
+    rows.sort_by(|(a, a_pace), (b, b_pace)| {
+        b_pace
+            .total_cmp(a_pace)
+            .then_with(|| a.team_display().cmp(b.team_display()))
+            .then_with(|| a.identity.full_name.cmp(&b.identity.full_name))
+            .then_with(|| a.identity.id.0.cmp(&b.identity.id.0))
+    });
+    rows.truncate(10);
+
+    let max = rows.iter().map(|(_, pace)| *pace).fold(0.0_f64, f64::max);
+    if max <= 0.0 {
+        return None;
+    }
+
+    let height = 82 + rows.len() * 34;
+    let mut out = String::new();
+    let _ = writeln!(out, "## Roster Pts/82 SVG\n");
+    let _ = writeln!(
+        out,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 {height}\" role=\"img\" aria-labelledby=\"roster-pts82-title roster-pts82-desc\">"
+    );
+    let _ = writeln!(
+        out,
+        "<title id=\"roster-pts82-title\">Roster Pts/82 leaders</title>"
+    );
+    let _ = writeln!(
+        out,
+        "<desc id=\"roster-pts82-desc\">Top rendered roster skaters by current-window points per 82 games. Bars are descriptive context over the roster table.</desc>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"28\" font-size=\"18\" font-weight=\"700\" fill=\"#111827\">Roster Pts/82 leaders</text>"
+    );
+
+    for (idx, (row, pace)) in rows.iter().enumerate() {
+        let y = 54 + idx * 34;
+        let width = (pace / max * 360.0).max(2.0);
+        let label = escape_svg_text(&truncate(&row.identity.full_name, 24));
+        let team = escape_svg_text(row.team_display());
+        let pos = escape_svg_text(row.position().abbreviation());
+        let _ = writeln!(
+            out,
+            "<text x=\"24\" y=\"{y}\" font-size=\"13\" fill=\"#111827\">{label} <tspan fill=\"#6b7280\">{team} {pos}</tspan></text>"
+        );
+        let _ = writeln!(
+            out,
+            "<rect x=\"220\" y=\"{}\" width=\"{width:.1}\" height=\"16\" rx=\"2\" fill=\"#2563eb\"></rect>",
+            y - 13
+        );
+        let _ = writeln!(
+            out,
+            "<text x=\"{:.1}\" y=\"{y}\" font-size=\"12\" fill=\"#374151\">{pace:.1}</text>",
+            228.0 + width
+        );
+    }
+    let _ = writeln!(out, "</svg>");
+    Some(out)
 }
 
 // ── shared helpers ───────────────────────────────────────────────────────────
@@ -1478,7 +2007,91 @@ pub(crate) fn render_fantasy_from_report(
         opts.height,
     );
     out.push_str(&crate::commands::poach::render_report_markdown(report));
+    if let Some(svg) = render_fantasy_poach_score_svg(report) {
+        let _ = writeln!(out);
+        out.push_str(&svg);
+    }
     Ok(out)
+}
+
+fn render_fantasy_poach_score_svg(report: &PoachReportView) -> Option<String> {
+    let mut rows = report
+        .sections
+        .iter()
+        .flat_map(|section| section.rows.iter())
+        .filter(|row| row.score.final_score.is_finite() && row.score.final_score > 0.0)
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        return None;
+    }
+    rows.sort_by(|a, b| {
+        b.score
+            .final_score
+            .total_cmp(&a.score.final_score)
+            .then_with(|| a.display_name.cmp(&b.display_name))
+            .then_with(|| a.player_id.0.cmp(&b.player_id.0))
+    });
+    rows.dedup_by_key(|row| row.player_id);
+    rows.truncate(10);
+    render_fantasy_poach_score_svg_for_rows(&report.context.title, &rows)
+}
+
+fn render_fantasy_poach_score_svg_for_rows(
+    title: &str,
+    rows: &[&PoachPlayerRow],
+) -> Option<String> {
+    let max = rows
+        .iter()
+        .map(|row| row.score.final_score)
+        .fold(0.0_f64, f64::max);
+    if max <= 0.0 {
+        return None;
+    }
+
+    let height = 82 + rows.len() * 34;
+    let mut out = String::new();
+    let _ = writeln!(out, "## Fantasy poach score SVG\n");
+    let _ = writeln!(
+        out,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 {height}\" role=\"img\" aria-labelledby=\"fantasy-poach-score-title fantasy-poach-score-desc\">"
+    );
+    let _ = writeln!(
+        out,
+        "<title id=\"fantasy-poach-score-title\">{} score chart</title>",
+        escape_svg_text(title)
+    );
+    let _ = writeln!(
+        out,
+        "<desc id=\"fantasy-poach-score-desc\">Top fantasy report candidates by descriptive poach score. Bars summarize rows already rendered in the report tables.</desc>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"28\" font-size=\"18\" font-weight=\"700\" fill=\"#111827\">Fantasy poach score leaders</text>"
+    );
+
+    for (idx, row) in rows.iter().enumerate() {
+        let y = 54 + idx * 34;
+        let width = (row.score.final_score / max * 360.0).max(2.0);
+        let label = escape_svg_text(&truncate(&row.display_name, 24));
+        let team = escape_svg_text(row.team.as_str());
+        let _ = writeln!(
+            out,
+            "<text x=\"24\" y=\"{y}\" font-size=\"13\" fill=\"#111827\">{label} <tspan fill=\"#6b7280\">{team}</tspan></text>"
+        );
+        let _ = writeln!(
+            out,
+            "<rect x=\"220\" y=\"{}\" width=\"{width:.1}\" height=\"16\" rx=\"2\" fill=\"#0f766e\"></rect>",
+            y - 13
+        );
+        let _ = writeln!(
+            out,
+            "<text x=\"{:.1}\" y=\"{y}\" font-size=\"12\" fill=\"#374151\">{:.1}</text>",
+            228.0 + width,
+            row.score.final_score
+        );
+    }
+    let _ = writeln!(out, "</svg>");
+    Some(out)
 }
 
 pub(crate) struct SeriesOpts {
@@ -1556,7 +2169,88 @@ pub(crate) fn render_series_from_view(
             after = game.series_after,
         );
     }
+    if let Some(svg) = render_series_goal_margin_svg(series) {
+        let _ = writeln!(out);
+        out.push_str(&svg);
+    }
     Ok(out)
+}
+
+fn render_series_goal_margin_svg(series: &PlayoffsSeriesRow) -> Option<String> {
+    let rows = series
+        .games
+        .iter()
+        .filter_map(|game| {
+            let margin = game.home_score.abs_diff(game.away_score);
+            if margin == 0 {
+                return None;
+            }
+            let winner = if game.home_score > game.away_score {
+                game.home_abbrev.as_str()
+            } else {
+                game.away_abbrev.as_str()
+            };
+            let top_won = winner == series.top_abbrev;
+            Some((game, margin, top_won, winner))
+        })
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        return None;
+    }
+    let max = rows.iter().map(|(_, margin, _, _)| *margin).max()?;
+    if max == 0 {
+        return None;
+    }
+
+    let height = 82 + rows.len() * 34;
+    let matchup = format!("{} vs {}", series.top_abbrev, series.bottom_abbrev);
+    let matchup = escape_svg_text(&matchup);
+    let mut out = String::new();
+    let _ = writeln!(out, "## Series goal margin SVG\n");
+    let _ = writeln!(
+        out,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 {height}\" role=\"img\" aria-labelledby=\"series-margin-title series-margin-desc\">"
+    );
+    let _ = writeln!(
+        out,
+        "<title id=\"series-margin-title\">{matchup} game goal margins</title>"
+    );
+    let _ = writeln!(
+        out,
+        "<desc id=\"series-margin-desc\">Game-by-game playoff series goal margins. Bars summarize the game log already rendered in the report table.</desc>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"28\" font-size=\"18\" font-weight=\"700\" fill=\"#111827\">{matchup} game margins</text>"
+    );
+
+    for (idx, (game, margin, top_won, winner)) in rows.iter().enumerate() {
+        let y = 54 + idx * 34;
+        let width = (f64::from(*margin) / f64::from(max) * 360.0).max(2.0);
+        let color = if *top_won { "#2563eb" } else { "#0f766e" };
+        let result = format!(
+            "G{} {} {}-{} {}",
+            game.game_number, game.away_abbrev, game.away_score, game.home_score, game.home_abbrev
+        );
+        let label = escape_svg_text(&result);
+        let winner = escape_svg_text(winner);
+        let _ = writeln!(
+            out,
+            "<text x=\"24\" y=\"{y}\" font-size=\"13\" fill=\"#111827\">{label} <tspan fill=\"#6b7280\">{winner}</tspan></text>"
+        );
+        let _ = writeln!(
+            out,
+            "<rect x=\"220\" y=\"{}\" width=\"{width:.1}\" height=\"16\" rx=\"2\" fill=\"{color}\"></rect>",
+            y - 13
+        );
+        let _ = writeln!(
+            out,
+            "<text x=\"{:.1}\" y=\"{y}\" font-size=\"12\" fill=\"#374151\">+{margin}</text>",
+            228.0 + width
+        );
+    }
+    let _ = writeln!(out, "</svg>");
+    Some(out)
 }
 
 fn find_series<'a>(
@@ -1787,8 +2481,13 @@ mod tests {
         identity::PlayerId,
         model::{Position, Season},
         season_stats::{SeasonStatsBuilder, SeasonType, StatTotals, TeamStint},
-        PaceScore, ScheduledGameInput, TeamAbbr, TeamSeasonView, TeamStandingInput, ViewContext,
-        ViewWindow,
+        view_model::{
+            AvailabilityState, ComponentStatus, DeploymentSignal, ExplanationImpact,
+            PoachComponentKind, PoachConfidence, PoachExplanation, PoachReportSection, PoachScore,
+            PoachWindow, RecommendationKind,
+        },
+        PaceScore, ScheduledGameInput, SemanticToken, TeamAbbr, TeamSeasonView, TeamStandingInput,
+        ViewContext, ViewWindow,
     };
 
     /// Build a one-row repo at the given (id, name, team, pos, pace_82)
@@ -2187,6 +2886,37 @@ mod tests {
         assert!(out.contains("Solo"));
         assert!(out.contains("EDM"));
         assert!(out.contains("109.0"));
+    }
+
+    #[test]
+    fn l0_export_leaders_pts82_svg_renders_top_rows() {
+        let repo = fixture_repo(&[
+            (1, "Top One", "EDM", Position::Center, 120.0),
+            (2, "Second Two", "COL", Position::LeftWing, 100.0),
+            (3, "Third Three", "SEA", Position::Defense, 80.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_leaders_from_views(
+            &views,
+            &LeadersOpts {
+                pos: None,
+                top: 3,
+                sort: "pts-pace".into(),
+                gp_min: None,
+                filters: Vec::new(),
+                columns: None,
+                width: 80,
+                height: 30,
+            },
+        )
+        .unwrap();
+
+        assert!(out.contains("## Leaders SVG"));
+        assert!(out.contains("Pts/82 leaders"));
+        assert!(out.contains("<svg"));
+        assert_eq!(out.matches("<rect x=\"190\"").count(), 3);
+        assert!(out.contains("Top One"));
+        assert!(out.find("| Rank | Player").unwrap() < out.find("## Leaders SVG").unwrap());
     }
 
     #[test]
@@ -2675,8 +3405,23 @@ mod tests {
         assert!(out.contains("## Splits"));
         assert!(out.contains("## Schedule Strength"));
         assert!(out.contains("## Quality Ledger"));
+        assert!(out.contains("## Quality ledger SVG"));
+        assert!(out.contains("<svg"));
+        assert!(out.contains("SEA quality ledger"));
         assert!(out.contains("## Game Log"));
         assert!(out.contains("| 2024-10-01 | A | COL | W | 4-2 | +2 | FINAL |"));
+    }
+
+    #[test]
+    fn l0_export_team_season_quality_svg_skips_zero_ledger() {
+        let view = TeamSeasonView::from_games(
+            ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Regular)),
+            "20242025".to_string(),
+            "SEA".to_string(),
+            Vec::new(),
+        );
+
+        assert!(render_team_season_quality_svg(&view).is_none());
     }
 
     #[test]
@@ -2810,6 +3555,49 @@ mod tests {
     }
 
     #[test]
+    fn l0_export_team_pts82_svg_renders_target_team_skaters() {
+        let repo = fixture_repo(&[
+            (1, "Edm & One", "EDM", Position::Center, 100.0),
+            (2, "Col Two", "COL", Position::Center, 95.0),
+            (3, "Edm Tre", "EDM", Position::Defense, 70.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_team_from_views(
+            &views,
+            &TeamOpts {
+                team: "EDM".into(),
+                width: 100,
+                height: 30,
+            },
+        )
+        .unwrap();
+
+        assert!(out.contains("## Team roster Pts/82 SVG"));
+        assert!(out.contains("EDM Pts/82 leaders"));
+        assert!(out.contains("<svg"));
+        assert_eq!(out.matches("<rect x=\"220\"").count(), 2);
+        assert!(out.contains("Edm &amp; One"));
+        assert!(!out.contains("Col Two"));
+        assert!(
+            out.find("## All skaters").unwrap() < out.find("## Team roster Pts/82 SVG").unwrap()
+        );
+    }
+
+    #[test]
+    fn l0_export_team_pts82_svg_skips_empty_scores() {
+        let repo = fixture_repo_with_gp(&[(1, "Zero", "EDM", Position::Center, 0.0, 60)]);
+        let views = fixture_views(&repo);
+        let roster = views
+            .iter()
+            .filter(|row| row.team_display() == "EDM")
+            .copied()
+            .collect::<Vec<_>>();
+
+        assert!(render_team_pts82_svg("EDM", &[]).is_none());
+        assert!(render_team_pts82_svg("EDM", &roster).is_none());
+    }
+
+    #[test]
     fn l0_export_depth_emits_cross_team_table() {
         let repo = fixture_repo(&[
             (1, "EdmC1", "EDM", Position::Center, 109.0),
@@ -2831,9 +3619,25 @@ mod tests {
         assert!(out.contains("Cross-team line value rankings"));
         assert!(out.contains("## Team strength"));
         assert!(out.contains("| Rank | Team | C | LW | RW | D | Total |"));
+        assert!(out.contains("## Team strength SVG"));
+        assert!(out.contains("<svg"));
+        assert!(out.contains("Team strength ranking"));
         assert!(out.contains("## Line-value players"));
         assert!(out.contains("| Rank | Player | Team | Pos | Own line | Avg other | Delta | Fit |"));
         assert!(out.matches("| EDM ").count() + out.matches("| COL ").count() >= 1);
+    }
+
+    #[test]
+    fn l0_export_depth_team_strength_svg_skips_empty_rows() {
+        let view = DepthLeagueView::from_player_views(
+            Season(20242025),
+            SeasonType::Regular,
+            true,
+            &[],
+            ScoringMode::Pace,
+        );
+
+        assert!(render_depth_team_strength_svg(&view).is_none());
     }
 
     #[test]
@@ -2916,6 +3720,58 @@ mod tests {
     }
 
     #[test]
+    fn l0_export_compare_career_svg_renders_two_paths_and_labels() {
+        let a = CareerSummary::from_seasons(
+            Some(1),
+            "Alpha & One",
+            vec![
+                SeasonLine::new("20232024", "EDM", 82, 50, 70),
+                SeasonLine::new("20222023", "EDM", 82, 40, 60),
+                SeasonLine::new("20212022", "EDM", 82, 30, 50),
+            ],
+        );
+        let b = CareerSummary::from_seasons(
+            Some(2),
+            "Bravo <Two>",
+            vec![
+                SeasonLine::new("20232024", "COL", 82, 30, 50),
+                SeasonLine::new("20222023", "COL", 82, 35, 55),
+                SeasonLine::new("20212022", "COL", 82, 25, 45),
+            ],
+        );
+
+        let svg = render_compare_career_svg(&a, &b).expect("multi-season svg");
+
+        assert!(svg.contains("## Career trend SVG"));
+        assert!(svg.contains("<svg"));
+        assert_eq!(svg.matches("<polyline").count(), 2);
+        assert!(svg.contains("Pts/82 career trend comparison"));
+        assert!(svg.contains("Alpha &amp; One"));
+        assert!(svg.contains("Bravo &lt;Two&gt;"));
+        assert!(svg.contains("21-22"));
+        assert!(svg.contains("23-24"));
+    }
+
+    #[test]
+    fn l0_export_compare_career_svg_skips_single_season() {
+        let a = CareerSummary::from_seasons(
+            Some(1),
+            "Alpha",
+            vec![SeasonLine::new("20232024", "EDM", 82, 50, 70)],
+        );
+        let b = CareerSummary::from_seasons(
+            Some(2),
+            "Bravo",
+            vec![
+                SeasonLine::new("20232024", "COL", 82, 30, 50),
+                SeasonLine::new("20222023", "COL", 82, 35, 55),
+            ],
+        );
+
+        assert!(render_compare_career_svg(&a, &b).is_none());
+    }
+
+    #[test]
     fn l0_export_compare_unknown_player_errors() {
         let repo = fixture_repo(&[(1, "Alpha", "EDM", Position::Center, 100.0)]);
         let views = fixture_views(&repo);
@@ -2958,6 +3814,41 @@ mod tests {
     }
 
     #[test]
+    fn l0_export_roster_pts82_svg_renders_top_skaters() {
+        let repo = fixture_repo(&[
+            (1, "Alpha & One", "EDM", Position::Center, 120.0),
+            (2, "Bravo Two", "COL", Position::LeftWing, 100.0),
+            (3, "Charlie Three", "SEA", Position::Defense, 80.0),
+        ]);
+        let views = fixture_views(&repo);
+        let out = render_roster_from_views(
+            &views,
+            &RosterOpts {
+                pos: None,
+                width: 100,
+                height: 30,
+            },
+        )
+        .unwrap();
+
+        assert!(out.contains("## Roster Pts/82 SVG"));
+        assert!(out.contains("Roster Pts/82 leaders"));
+        assert!(out.contains("<svg"));
+        assert_eq!(out.matches("<rect x=\"220\"").count(), 3);
+        assert!(out.contains("Alpha &amp; One"));
+        assert!(out.find("| Team | Player |").unwrap() < out.find("## Roster Pts/82 SVG").unwrap());
+    }
+
+    #[test]
+    fn l0_export_roster_pts82_svg_skips_empty_scores() {
+        let repo = fixture_repo_with_gp(&[(1, "Zero", "EDM", Position::Center, 0.0, 60)]);
+        let views = fixture_views(&repo);
+
+        assert!(render_roster_pts82_svg(&[]).is_none());
+        assert!(render_roster_pts82_svg(&views).is_none());
+    }
+
+    #[test]
     fn l0_export_roster_pos_filter_excludes_others() {
         let repo = fixture_repo(&[
             (1, "Cee", "EDM", Position::Center, 100.0),
@@ -2987,14 +3878,14 @@ mod tests {
             context: icelines_core::view_model::poach_report_context(context, "fantasy-export"),
             scoring_scheme: "yahoo-standard".to_string(),
             scoring_categories: vec!["hits".to_string(), "blocks".to_string()],
-            window: icelines_core::view_model::PoachWindow::Days14,
+            window: PoachWindow::Days14,
             source_state: Vec::new(),
             warnings: Vec::new(),
             omissions: vec!["fantasy_import: unavailable".to_string()],
-            sections: vec![icelines_core::view_model::PoachReportSection {
+            sections: vec![PoachReportSection {
                 id: "top_adds".to_string(),
                 title: "Top Adds".to_string(),
-                rows: Vec::new(),
+                rows: vec![fixture_poach_row(1, "Alpha & One", 72.5)],
             }],
         };
 
@@ -3013,10 +3904,93 @@ mod tests {
         assert!(out.contains("scheme: \"yahoo-standard\""));
         assert!(out.contains("# Fantasy Poacher"));
         assert!(out.contains("fantasy_import: unavailable"));
+        assert!(out.contains("## Fantasy poach score SVG"));
+        assert!(out.contains("Fantasy poach score leaders"));
+        assert!(out.contains("Alpha &amp; One"));
+        assert!(
+            out.find("| Rank | Player |").unwrap()
+                < out.find("## Fantasy poach score SVG").unwrap()
+        );
     }
 
     #[test]
-    fn l0_export_series_emits_game_log_from_playoffs_view() {
+    fn l0_export_fantasy_poach_score_svg_skips_empty_scores() {
+        let context = icelines_core::ViewContext::new(icelines_core::ViewWindow::new(
+            icelines_core::Season(20252026),
+            icelines_core::season_stats::SeasonType::Regular,
+        ));
+        let empty = PoachReportView {
+            context: icelines_core::view_model::poach_report_context(context.clone(), "empty"),
+            scoring_scheme: "yahoo-standard".to_string(),
+            scoring_categories: vec!["hits".to_string()],
+            window: PoachWindow::Days14,
+            source_state: Vec::new(),
+            warnings: Vec::new(),
+            omissions: Vec::new(),
+            sections: vec![PoachReportSection {
+                id: "top_adds".to_string(),
+                title: "Top Adds".to_string(),
+                rows: Vec::new(),
+            }],
+        };
+        let zero = PoachReportView {
+            context: icelines_core::view_model::poach_report_context(context, "zero"),
+            scoring_scheme: "yahoo-standard".to_string(),
+            scoring_categories: vec!["hits".to_string()],
+            window: PoachWindow::Days14,
+            source_state: Vec::new(),
+            warnings: Vec::new(),
+            omissions: Vec::new(),
+            sections: vec![PoachReportSection {
+                id: "top_adds".to_string(),
+                title: "Top Adds".to_string(),
+                rows: vec![fixture_poach_row(1, "Zero Score", 0.0)],
+            }],
+        };
+
+        assert!(render_fantasy_poach_score_svg(&empty).is_none());
+        assert!(render_fantasy_poach_score_svg(&zero).is_none());
+    }
+
+    fn fixture_poach_row(player_id: u32, name: &str, score: f64) -> PoachPlayerRow {
+        PoachPlayerRow {
+            player_id: PlayerId(player_id),
+            display_name: name.to_string(),
+            team: TeamAbbr("EDM".to_string()),
+            position: Position::Center,
+            availability: AvailabilityState::Unknown,
+            recommendation_kinds: vec![RecommendationKind::CategoryFit],
+            score: PoachScore {
+                final_score: score,
+                opportunity_delta: score,
+                deployment_trend: 0.0,
+                category_fit: 0.0,
+                schedule_value: 0.0,
+                availability_gap: 0.0,
+                roster_need_fit: 0.0,
+                risk_discount: 0.0,
+            },
+            confidence: PoachConfidence::Medium,
+            components: Vec::new(),
+            deployment: DeploymentSignal::Unknown,
+            schedule_summary: "4 games".to_string(),
+            category_fit_summary: "hits".to_string(),
+            risk_summary: None,
+            explanations: vec![PoachExplanation {
+                component: PoachComponentKind::CategoryFit,
+                status: ComponentStatus::Measured,
+                impact: ExplanationImpact::Positive,
+                token: SemanticToken::CategoryFit,
+                message: "Category fit".to_string(),
+                source: Some(icelines_core::SourceKind::Roster),
+                freshness: None,
+            }],
+            tokens: vec![SemanticToken::CategoryFit],
+        }
+    }
+
+    #[test]
+    fn l0_export_series_goal_margin_svg_renders_game_log_from_playoffs_view() {
         let view = PlayoffsView::from_bracket(
             ViewContext::new(ViewWindow::new(Season(20242025), SeasonType::Playoff)),
             "20242025".to_owned(),
@@ -3037,14 +4011,24 @@ mod tests {
                         bottom_seed_rank: Some("WC1".to_owned()),
                         winner_abbrev: None,
                         conference: Some("East".to_owned()),
-                        games: vec![icelines_core::PlayoffsGameInput {
-                            date: "2025-04-19".to_owned(),
-                            home_abbrev: "FLA".to_owned(),
-                            away_abbrev: "TBL".to_owned(),
-                            home_score: 4,
-                            away_score: 2,
-                            series_after: "FLA leads 1-0".to_owned(),
-                        }],
+                        games: vec![
+                            icelines_core::PlayoffsGameInput {
+                                date: "2025-04-19".to_owned(),
+                                home_abbrev: "FLA".to_owned(),
+                                away_abbrev: "TBL".to_owned(),
+                                home_score: 4,
+                                away_score: 2,
+                                series_after: "FLA leads 1-0".to_owned(),
+                            },
+                            icelines_core::PlayoffsGameInput {
+                                date: "2025-04-21".to_owned(),
+                                home_abbrev: "FLA".to_owned(),
+                                away_abbrev: "TBL".to_owned(),
+                                home_score: 1,
+                                away_score: 3,
+                                series_after: "Series tied 1-1".to_owned(),
+                            },
+                        ],
                     }],
                 }],
             },
@@ -3063,6 +4047,44 @@ mod tests {
         assert!(out.contains("series: \"A\""));
         assert!(out.contains("## Game Log"));
         assert!(out.contains("|    1 | 2025-04-19 | TBL 2-4 FLA | FLA leads 1-0 |"));
+        assert!(out.contains("|    2 | 2025-04-21 | TBL 3-1 FLA | Series tied 1-1 |"));
+        assert!(out.contains("## Series goal margin SVG"));
+        assert!(out.contains("FLA vs TBL game margins"));
+        assert_eq!(out.matches("<rect x=\"220\"").count(), 2);
+        assert!(out.contains("fill=\"#2563eb\""));
+        assert!(out.contains("fill=\"#0f766e\""));
+        assert!(out.find("## Game Log").unwrap() < out.find("## Series goal margin SVG").unwrap());
+    }
+
+    #[test]
+    fn l0_export_series_goal_margin_svg_skips_empty_or_tied_games() {
+        let series = PlayoffsSeriesRow {
+            letter: "A".to_owned(),
+            top_abbrev: "FLA".to_owned(),
+            top_name: "Florida Panthers".to_owned(),
+            top_wins: 0,
+            top_seed_rank: "1".to_owned(),
+            bottom_abbrev: "TBL".to_owned(),
+            bottom_name: "Tampa Bay Lightning".to_owned(),
+            bottom_wins: 0,
+            bottom_seed_rank: "WC1".to_owned(),
+            winner_abbrev: None,
+            games_played: 1,
+            summary: "FLA 0-0 TBL".to_owned(),
+            is_complete: false,
+            conference: "East".to_owned(),
+            games: vec![icelines_core::PlayoffsGameRow {
+                game_number: 1,
+                date: "2025-04-19".to_owned(),
+                home_abbrev: "FLA".to_owned(),
+                away_abbrev: "TBL".to_owned(),
+                home_score: 2,
+                away_score: 2,
+                series_after: "Tied".to_owned(),
+            }],
+        };
+
+        assert!(render_series_goal_margin_svg(&series).is_none());
     }
 
     #[test]

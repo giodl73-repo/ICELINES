@@ -184,6 +184,7 @@ fn player_template_from_view(
     let (points_delta, points_delta_class) = delta_int(points as i64, prior_points, prior_exists);
 
     let pre_nhl_career = crate::templates::project_pre_nhl_html_rows(&pre_nhl_stints);
+    let career_trend_svg = render_player_career_trend_svg(&view);
 
     PlayerTemplate {
         active_label,
@@ -229,6 +230,7 @@ fn player_template_from_view(
         gp_delta_class,
         prior_season_label,
         career_rows,
+        career_trend_svg,
         pre_nhl_career,
         compare_suggestions,
     }
@@ -276,6 +278,95 @@ fn career_row_from_view_for_html(row: &PlayerCareerSummary) -> CareerRow {
             String::new()
         },
     }
+}
+
+fn render_player_career_trend_svg(view: &PlayerCardView) -> Option<String> {
+    let points = career_points_per_82_chronological(&view.career);
+    if points.len() < 2 {
+        return None;
+    }
+
+    let mut values: Vec<f64> = points.iter().map(|(_, value)| *value).collect();
+    values.sort_by(f64::total_cmp);
+    let min = *values.first()?;
+    let max = *values.last()?;
+    let range = if (max - min).abs() < f64::EPSILON {
+        1.0
+    } else {
+        max - min
+    };
+
+    let path = svg_polyline_points(&points, min, range);
+    let first = points.first()?.0.as_str();
+    let last = points.last()?.0.as_str();
+    let latest = points.last()?.1;
+    let name = escape_svg_text(&view.display_name);
+
+    Some(format!(
+        r##"<svg class="player-career-trend-svg" viewBox="0 0 640 240" role="img" aria-labelledby="player-career-trend-title player-career-trend-desc">
+  <title id="player-career-trend-title">Pts/82 career trend</title>
+  <desc id="player-career-trend-desc">{name} regular-season career trend from {first} to {last}. Values are bundled points per 82 games.</desc>
+  <rect x="0" y="0" width="640" height="240" rx="8" fill="#f8fafc"/>
+  <line x1="58" y1="188" x2="600" y2="188" stroke="#cbd5e1"/>
+  <line x1="58" y1="40" x2="58" y2="188" stroke="#cbd5e1"/>
+  <text x="58" y="26" fill="#334155" font-size="13">Pts/82 career trend</text>
+  <text x="58" y="212" fill="#64748b" font-size="11">older</text>
+  <text x="560" y="212" fill="#64748b" font-size="11">latest</text>
+  <polyline points="{path}" fill="none" stroke="#0f766e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="600" cy="58" r="5" fill="#0f766e"/>
+  <text x="612" y="63" fill="#0f172a" font-size="12">{name} {latest:.1}</text>
+</svg>"##
+    ))
+}
+
+fn career_points_per_82_chronological(career: &[PlayerCareerSummary]) -> Vec<(String, f64)> {
+    let mut rows: Vec<(u32, String, f64)> = career
+        .iter()
+        .filter(|row| row.season_type == SeasonType::Regular)
+        .filter_map(|row| {
+            let gp = metric_u32(&row.metrics, "gp")?;
+            if gp == 0 {
+                return None;
+            }
+            let points = metric_u32(&row.metrics, "points")?;
+            Some((
+                row.season.0,
+                pretty_season(row.season),
+                f64::from(points) * 82.0 / f64::from(gp),
+            ))
+        })
+        .collect();
+    rows.sort_by_key(|(season, _, _)| *season);
+    rows.into_iter()
+        .map(|(_, label, points)| (label, points))
+        .collect()
+}
+
+fn svg_polyline_points(points: &[(String, f64)], min: f64, range: f64) -> String {
+    let width = 542.0;
+    let height = 148.0;
+    let x0 = 58.0;
+    let y0 = 188.0;
+    let denom = (points.len() - 1) as f64;
+    points
+        .iter()
+        .enumerate()
+        .map(|(idx, (_, value))| {
+            let x = x0 + (idx as f64 / denom) * width;
+            let y = y0 - ((*value - min) / range) * height;
+            format!("{x:.1},{y:.1}")
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn escape_svg_text(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }
 
 fn team_link_for_display(team: &str) -> String {

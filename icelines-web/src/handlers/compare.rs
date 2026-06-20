@@ -7,7 +7,9 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::{CompareView, MetricCell, MetricValue, PlayerCardView, SimilarPlayersView};
+use icelines_core::{
+    CompareView, MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary, SimilarPlayersView,
+};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Default)]
@@ -34,6 +36,7 @@ struct CompareResult {
     similar: Option<SimilarPlayersView>,
     error: Option<String>,
     winners: crate::templates::CompareWinners,
+    career_trend_svg: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -222,6 +225,7 @@ async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResu
                     "Active season '{season_str}' is not a valid YYYYZZZZ id"
                 )),
                 winners: crate::templates::CompareWinners::default(),
+                career_trend_svg: None,
             };
         }
     };
@@ -271,6 +275,10 @@ async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResu
         .b
         .as_ref()
         .map(|card| compare_card_from_view(card, season));
+    let career_trend_svg = match (compare_view.a.as_ref(), compare_view.b.as_ref()) {
+        (Some(a), Some(b)) => render_compare_career_trend_svg(a, b),
+        _ => None,
+    };
     let similar = if let (Some(limit), Some(target_id)) = (q.similar, a_id) {
         let limit = limit.clamp(1, 50);
         let repo = state.repo.read().await;
@@ -345,6 +353,7 @@ async fn build_compare_result(state: &WebState, q: &CompareQuery) -> CompareResu
         similar,
         error,
         winners,
+        career_trend_svg,
     }
 }
 
@@ -357,6 +366,7 @@ pub async fn get_compare(State(state): State<WebState>, Query(q): Query<CompareQ
         similar: result.similar,
         error: result.error,
         winners: result.winners,
+        career_trend_svg: result.career_trend_svg,
     };
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),
@@ -461,4 +471,116 @@ fn build_compare_winners(
     (w.toi_per_game_a, w.toi_per_game_b) =
         cmp_strs(&pa.toi_per_game_str, &pb.toi_per_game_str, true);
     w
+}
+
+fn render_compare_career_trend_svg(a: &PlayerCardView, b: &PlayerCardView) -> Option<String> {
+    let a_points = career_points_per_82_chronological(&a.career);
+    let b_points = career_points_per_82_chronological(&b.career);
+    if a_points.len() < 2 || b_points.len() < 2 {
+        return None;
+    }
+
+    let mut values: Vec<f64> = a_points
+        .iter()
+        .chain(b_points.iter())
+        .map(|(_, value)| *value)
+        .collect();
+    values.sort_by(f64::total_cmp);
+    let min = *values.first()?;
+    let max = *values.last()?;
+    let range = if (max - min).abs() < f64::EPSILON {
+        1.0
+    } else {
+        max - min
+    };
+
+    let a_path = svg_polyline_points(&a_points, min, range);
+    let b_path = svg_polyline_points(&b_points, min, range);
+    let a_first = a_points.first()?.0.as_str();
+    let a_last = a_points.last()?.0.as_str();
+    let b_first = b_points.first()?.0.as_str();
+    let b_last = b_points.last()?.0.as_str();
+    let a_latest = a_points.last()?.1;
+    let b_latest = b_points.last()?.1;
+    let a_name = escape_svg_text(&a.display_name);
+    let b_name = escape_svg_text(&b.display_name);
+
+    Some(format!(
+        r##"<svg class="compare-career-svg" viewBox="0 0 640 260" role="img" aria-labelledby="career-trend-title career-trend-desc">
+  <title id="career-trend-title">Pts/82 career trend comparison</title>
+  <desc id="career-trend-desc">{a_name} regular-season career trend from {a_first} to {a_last}; {b_name} regular-season career trend from {b_first} to {b_last}. Values are bundled points per 82 games.</desc>
+  <rect x="0" y="0" width="640" height="260" rx="8" fill="#f8fafc"/>
+  <line x1="58" y1="204" x2="600" y2="204" stroke="#cbd5e1"/>
+  <line x1="58" y1="42" x2="58" y2="204" stroke="#cbd5e1"/>
+  <text x="58" y="28" fill="#334155" font-size="13">Pts/82 career trend</text>
+  <text x="58" y="226" fill="#64748b" font-size="11">older</text>
+  <text x="560" y="226" fill="#64748b" font-size="11">latest</text>
+  <polyline points="{a_path}" fill="none" stroke="#0f766e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="{b_path}" fill="none" stroke="#b45309" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="606" cy="62" r="5" fill="#0f766e"/>
+  <text x="616" y="67" fill="#0f172a" font-size="12">{a_name} {a_latest:.1}</text>
+  <circle cx="606" cy="88" r="5" fill="#b45309"/>
+  <text x="616" y="93" fill="#0f172a" font-size="12">{b_name} {b_latest:.1}</text>
+</svg>"##
+    ))
+}
+
+fn career_points_per_82_chronological(career: &[PlayerCareerSummary]) -> Vec<(String, f64)> {
+    let mut rows: Vec<(u32, String, f64)> = career
+        .iter()
+        .filter(|row| row.season_type == SeasonType::Regular)
+        .filter_map(|row| {
+            let gp = metric_u32(&row.metrics, "gp")?;
+            if gp == 0 {
+                return None;
+            }
+            let points = metric_u32(&row.metrics, "points")?;
+            Some((
+                row.season.0,
+                season_label(row.season),
+                f64::from(points) * 82.0 / f64::from(gp),
+            ))
+        })
+        .collect();
+    rows.sort_by_key(|(season, _, _)| *season);
+    rows.into_iter()
+        .map(|(_, label, points)| (label, points))
+        .collect()
+}
+
+fn svg_polyline_points(points: &[(String, f64)], min: f64, range: f64) -> String {
+    let width = 542.0;
+    let height = 162.0;
+    let x0 = 58.0;
+    let y0 = 204.0;
+    let denom = (points.len() - 1) as f64;
+    points
+        .iter()
+        .enumerate()
+        .map(|(idx, (_, value))| {
+            let x = x0 + (idx as f64 / denom) * width;
+            let y = y0 - ((*value - min) / range) * height;
+            format!("{x:.1},{y:.1}")
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn season_label(season: Season) -> String {
+    let raw = season.0;
+    if raw < 10_000_000 {
+        return raw.to_string();
+    }
+    let start = raw / 10_000;
+    let end = raw % 100;
+    format!("{start:04}-{end:02}")
+}
+
+fn escape_svg_text(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }

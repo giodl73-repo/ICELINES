@@ -11,8 +11,8 @@ use icelines_core::{
     view_model::{
         poach_report_from_board, watch_rules_view_with_persisted,
         weekly_poach_report_from_board_with_watched, AvailabilityState, PoachAvailabilityFilter,
-        PoachBoardView, PoachQuery, PoachReportView, WatchRule, WatchRuleMutationIntent,
-        WatchRuleTrigger,
+        PoachBoardView, PoachPlayerRow, PoachQuery, PoachReportView, WatchRule,
+        WatchRuleMutationIntent, WatchRuleTrigger,
     },
     Completeness, EmptyKind, EmptyState, SourceKind, SourceState, ViewContext, ViewWindow,
     CURRENT_SEASON,
@@ -342,6 +342,14 @@ fn render_poach_report_html(report: &PoachReportView, active_label: &str) -> Str
         body.push_str("</ul></section>");
     }
 
+    if let Some(svg) = render_poach_report_score_svg(report) {
+        body.push_str(
+            "<section class=\"poach-report-score-chart\" aria-label=\"Poach report score chart\">",
+        );
+        body.push_str(&svg);
+        body.push_str("</section>");
+    }
+
     for section in &report.sections {
         body.push_str(&format!(
             "<section><h2>{}</h2>",
@@ -373,6 +381,73 @@ fn render_poach_report_html(report: &PoachReportView, active_label: &str) -> Str
     }
     body.push_str("</main></body></html>");
     body
+}
+
+fn render_poach_report_score_svg(report: &PoachReportView) -> Option<String> {
+    let mut rows = report
+        .sections
+        .iter()
+        .flat_map(|section| section.rows.iter())
+        .filter(|row| row.score.final_score > 0.0)
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        return None;
+    }
+    rows.sort_by(|a, b| {
+        b.score
+            .final_score
+            .total_cmp(&a.score.final_score)
+            .then_with(|| a.display_name.cmp(&b.display_name))
+    });
+    rows.dedup_by_key(|row| row.player_id);
+    rows.truncate(10);
+    render_poach_score_svg_for_rows(&report.context.title, &rows)
+}
+
+fn render_poach_score_svg_for_rows(title: &str, rows: &[&PoachPlayerRow]) -> Option<String> {
+    let max = rows
+        .iter()
+        .map(|row| row.score.final_score)
+        .fold(0.0_f64, f64::max);
+    if max <= 0.0 {
+        return None;
+    }
+
+    let height = 82 + rows.len() * 34;
+    let mut bars = String::new();
+    for (idx, row) in rows.iter().enumerate() {
+        let y = 54 + idx * 34;
+        let width = (row.score.final_score / max * 360.0).max(2.0);
+        let label = html_escape(&truncate_label(&row.display_name, 24));
+        let team = html_escape(row.team.as_str());
+        bars.push_str(&format!(
+            r##"<text x="24" y="{y}" font-size="13" fill="#111827">{label} <tspan fill="#6b7280">{team}</tspan></text>
+<rect x="220" y="{}" width="{:.1}" height="16" rx="2" fill="#0f766e"></rect>
+<text x="{:.1}" y="{y}" font-size="12" fill="#374151">{:.1}</text>
+"##,
+            y - 13,
+            width,
+            228.0 + width,
+            row.score.final_score,
+        ));
+    }
+
+    let title = html_escape(title);
+    Some(format!(
+        r##"<svg class="poach-score-svg" viewBox="0 0 640 {height}" role="img" aria-labelledby="poach-score-title poach-score-desc">
+  <title id="poach-score-title">{title} score chart</title>
+  <desc id="poach-score-desc">Top report candidates by descriptive poach score. Bars summarize rows already rendered in the report tables.</desc>
+  <text x="24" y="28" font-size="18" font-weight="700" fill="#111827">Poach score leaders</text>
+{bars}</svg>"##
+    ))
+}
+
+fn truncate_label(value: &str, max_chars: usize) -> String {
+    let mut out = value.chars().take(max_chars).collect::<String>();
+    if value.chars().count() > max_chars {
+        out.push_str("...");
+    }
+    out
 }
 
 fn html_escape(s: &str) -> String {
@@ -846,5 +921,96 @@ fn source_note(source_state: &[SourceState]) -> String {
             "Missing source data is disclosed, not scored as negative evidence: {}.",
             missing.join(", ")
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use icelines_core::identity::PlayerId;
+    use icelines_core::model::{Position, Season, TeamAbbr};
+    use icelines_core::view_model::{
+        poach_report_context, ComponentStatus, ExplanationImpact, PoachComponentKind,
+        PoachConfidence, PoachExplanation, PoachReportSection, PoachScore, PoachWindow,
+        RecommendationKind,
+    };
+    use icelines_core::{SemanticToken, ViewContext, ViewWindow};
+
+    #[test]
+    fn l0_poach_report_score_svg_renders_positive_rows() {
+        let report = fixture_report(vec![fixture_row(1, "Alpha & One", 72.5)]);
+
+        let svg = render_poach_report_score_svg(&report).expect("positive score chart");
+
+        assert!(svg.contains("poach-score-svg"));
+        assert!(svg.contains("Poach score leaders"));
+        assert!(svg.contains("Alpha &amp; One"));
+        assert!(svg.contains("<rect"));
+        assert!(render_poach_report_html(&report, "2025-26 Regular")
+            .contains("poach-report-score-chart"));
+    }
+
+    #[test]
+    fn l0_poach_report_score_svg_skips_empty_scores() {
+        let empty = fixture_report(Vec::new());
+        let zero = fixture_report(vec![fixture_row(1, "Zero Score", 0.0)]);
+
+        assert!(render_poach_report_score_svg(&empty).is_none());
+        assert!(render_poach_report_score_svg(&zero).is_none());
+    }
+
+    fn fixture_report(rows: Vec<PoachPlayerRow>) -> PoachReportView {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        PoachReportView {
+            context: poach_report_context(context, "poach-report-svg-fixture"),
+            scoring_scheme: "yahoo-standard".to_string(),
+            scoring_categories: vec!["hits".to_string()],
+            window: PoachWindow::Days14,
+            source_state: Vec::new(),
+            warnings: Vec::new(),
+            omissions: Vec::new(),
+            sections: vec![PoachReportSection {
+                id: "top_adds".to_string(),
+                title: "Top Adds".to_string(),
+                rows,
+            }],
+        }
+    }
+
+    fn fixture_row(player_id: u32, name: &str, score: f64) -> PoachPlayerRow {
+        PoachPlayerRow {
+            player_id: PlayerId(player_id),
+            display_name: name.to_string(),
+            team: TeamAbbr("EDM".to_string()),
+            position: Position::Center,
+            availability: AvailabilityState::Unknown,
+            recommendation_kinds: vec![RecommendationKind::CategoryFit],
+            score: PoachScore {
+                final_score: score,
+                opportunity_delta: score,
+                deployment_trend: 0.0,
+                category_fit: 0.0,
+                schedule_value: 0.0,
+                availability_gap: 0.0,
+                roster_need_fit: 0.0,
+                risk_discount: 0.0,
+            },
+            confidence: PoachConfidence::Medium,
+            components: Vec::new(),
+            deployment: DeploymentSignal::Unknown,
+            schedule_summary: "4 games".to_string(),
+            category_fit_summary: "hits".to_string(),
+            risk_summary: None,
+            explanations: vec![PoachExplanation {
+                component: PoachComponentKind::CategoryFit,
+                status: ComponentStatus::Measured,
+                impact: ExplanationImpact::Positive,
+                token: SemanticToken::CategoryFit,
+                message: "Category fit".to_string(),
+                source: Some(SourceKind::Roster),
+                freshness: None,
+            }],
+            tokens: vec![SemanticToken::CategoryFit],
+        }
     }
 }

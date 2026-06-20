@@ -26,6 +26,7 @@
                 <th class="numeric">Per game</th>
                 <th class="numeric">82-game pace</th>
                 <th class="numeric">Projected finish</th>
+                <th class="numeric">Range</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -38,13 +39,21 @@
                 <td class="numeric">{{ row.per_game }}</td>
                 <td class="numeric">{{ row.pace_82 }}</td>
                 <td class="numeric">{{ row.projected_finish }}</td>
+                <td class="numeric">{{ row.confidence_range }}</td>
                 <td>{{ row.status_label }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     </div>
-    <p class="help-text">Pace is descriptive: (current total / games played) × 82. Projected finish is nullable when the remaining schedule is unavailable or the sample is below the floor.</p>
+    {% match page.outlook_pace_svg %}
+    {% when Some with (svg) %}
+    <section class="outlook-pace-chart" aria-label="Scoring outlook pace chart" style="margin-top: 1rem;">
+        {{ svg|safe }}
+    </section>
+    {% when None %}
+    {% endmatch %}
+    <p class="help-text">Pace is descriptive: (current total / games played) × 82. Projected finish and range are nullable when the remaining schedule is unavailable or the sample is below the floor.</p>
 </section>
 
 {% if page.has_recent_form %}

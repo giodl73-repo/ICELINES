@@ -104,6 +104,7 @@ struct ScoringOutlookPage {
     back_label: String,
     api_href: String,
     source_label: String,
+    outlook_pace_svg: Option<String>,
     rows: Vec<ScoringOutlookTemplateRow>,
     has_recent_form: bool,
     recent_label: String,
@@ -123,6 +124,7 @@ struct ScoringOutlookTemplateRow {
     per_game: String,
     pace_82: String,
     projected_finish: String,
+    confidence_range: String,
     status_label: String,
 }
 
@@ -680,6 +682,8 @@ fn player_scoring_page(
 }
 
 fn player_outlook_page(view: &PlayerScoringPaceView) -> ScoringOutlookPage {
+    let rows: Vec<_> = view.rows.iter().map(player_outlook_row).collect();
+    let outlook_pace_svg = render_outlook_pace_svg("Scoring outlook pace chart", &rows);
     ScoringOutlookPage {
         title: format!("{} Scoring Outlook", view.player_name),
         subtitle: format!(
@@ -691,7 +695,8 @@ fn player_outlook_page(view: &PlayerScoringPaceView) -> ScoringOutlookPage {
         back_label: "player card".to_string(),
         api_href: format!("/api/v1/player/{}/outlook", view.player_id),
         source_label: player_outlook_source_label(view),
-        rows: view.rows.iter().map(player_outlook_row).collect(),
+        outlook_pace_svg,
+        rows,
         has_recent_form: false,
         recent_label: String::new(),
         recent_games_loaded: 0,
@@ -704,6 +709,8 @@ fn player_outlook_page(view: &PlayerScoringPaceView) -> ScoringOutlookPage {
 }
 
 fn team_outlook_page(view: &TeamScoringOutlookView) -> ScoringOutlookPage {
+    let rows: Vec<_> = view.rows.iter().map(team_outlook_row).collect();
+    let outlook_pace_svg = render_outlook_pace_svg("Scoring outlook pace chart", &rows);
     ScoringOutlookPage {
         title: format!("{} Scoring Outlook", view.team),
         subtitle: format!(
@@ -715,7 +722,8 @@ fn team_outlook_page(view: &TeamScoringOutlookView) -> ScoringOutlookPage {
         back_label: "team page".to_string(),
         api_href: format!("/api/v1/team/{}/outlook", view.team),
         source_label: team_outlook_source_label(view.source_status),
-        rows: view.rows.iter().map(team_outlook_row).collect(),
+        outlook_pace_svg,
+        rows,
         has_recent_form: true,
         recent_label: view.recent_form.label.clone(),
         recent_games_loaded: view.recent_form.games_loaded,
@@ -789,6 +797,7 @@ fn player_outlook_row(row: &PlayerScoringPaceRow) -> ScoringOutlookTemplateRow {
         per_game: format_opt_two_decimal(row.per_game),
         pace_82: format_opt_one_decimal(row.pace_82),
         projected_finish: format_opt_one_decimal(row.projected_finish),
+        confidence_range: format_confidence_range(row.confidence_low, row.confidence_high),
         status_label: status_label.to_string(),
     }
 }
@@ -809,8 +818,65 @@ fn team_outlook_row(row: &TeamScoringOutlookRow) -> ScoringOutlookTemplateRow {
         per_game: format_opt_two_decimal(row.per_game),
         pace_82: format_opt_one_decimal(row.pace_82),
         projected_finish: format_opt_one_decimal(row.projected_finish),
+        confidence_range: "—".to_string(),
         status_label: status_label.to_string(),
     }
+}
+
+fn render_outlook_pace_svg(title: &str, rows: &[ScoringOutlookTemplateRow]) -> Option<String> {
+    let values: Vec<(&ScoringOutlookTemplateRow, f64)> = rows
+        .iter()
+        .filter_map(|row| row.pace_82.parse::<f64>().ok().map(|value| (row, value)))
+        .filter(|(_, value)| value.is_finite() && *value > 0.0)
+        .collect();
+    if values.is_empty() {
+        return None;
+    }
+    let max = values
+        .iter()
+        .map(|(_, value)| *value)
+        .fold(0.0_f64, f64::max);
+    if max <= 0.0 {
+        return None;
+    }
+
+    let mut bars = String::new();
+    for (idx, (row, pace)) in values.iter().enumerate() {
+        let y = 46 + idx * 28;
+        let width = ((*pace / max) * 390.0).max(2.0);
+        let label = escape_svg_text(&row.label);
+        let value = format!("{pace:.1}");
+        bars.push_str(&format!(
+            r##"  <text x="24" y="{label_y}" fill="#334155" font-size="11">{label}</text>
+  <rect x="176" y="{bar_y}" width="{width:.1}" height="16" rx="3" fill="#2563eb"/>
+  <text x="{value_x:.1}" y="{label_y}" fill="#0f172a" font-size="11">{value}</text>
+"##,
+            label_y = y + 12,
+            bar_y = y,
+            value_x = 184.0 + width,
+        ));
+    }
+    let height = 74 + values.len() * 28;
+    let title = escape_svg_text(title);
+
+    Some(format!(
+        r##"<svg class="outlook-pace-svg" viewBox="0 0 640 {height}" role="img" aria-labelledby="outlook-pace-title outlook-pace-desc">
+  <title id="outlook-pace-title">{title}</title>
+  <desc id="outlook-pace-desc">Returned outlook rows by descriptive 82-game pace.</desc>
+  <rect x="0" y="0" width="640" height="{height}" rx="8" fill="#f8fafc"/>
+  <text x="24" y="26" fill="#334155" font-size="13">82-game pace</text>
+  <line x1="176" y1="36" x2="566" y2="36" stroke="#cbd5e1"/>
+{bars}</svg>"##
+    ))
+}
+
+fn escape_svg_text(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
 
 fn player_outlook_source_label(view: &PlayerScoringPaceView) -> String {
@@ -844,7 +910,14 @@ fn team_outlook_source_label(status: TeamScoringOutlookSourceStatus) -> String {
 fn format_opt_one_decimal(value: Option<f64>) -> String {
     value
         .map(|value| format!("{value:.1}"))
-        .unwrap_or_else(|| "-".to_string())
+        .unwrap_or_else(|| "—".to_string())
+}
+
+fn format_confidence_range(low: Option<f64>, high: Option<f64>) -> String {
+    match (low, high) {
+        (Some(low), Some(high)) => format!("{low:.1}–{high:.1}"),
+        _ => "—".to_string(),
+    }
 }
 
 fn format_opt_two_decimal(value: Option<f64>) -> String {
@@ -1050,11 +1123,25 @@ mod tests {
         let json = serde_json::to_value(&view).expect("view json");
 
         assert_eq!(page.rows[0].status_label, "below sample floor");
-        assert_eq!(page.rows[0].pace_82, "-");
+        assert_eq!(page.rows[0].pace_82, "—");
+        assert_eq!(page.rows[0].confidence_range, "—");
         assert!(page.source_label.contains("schedule missing"));
         assert_eq!(
             json["context"]["source_state"][0]["source"],
             serde_json::json!("schedule")
+        );
+    }
+
+    #[test]
+    fn l0_player_outlook_row_formats_confidence_range() {
+        let row = PlayerScoringPaceRow::new(PlayerScoringPaceMetric::Points, 30, 30, Some(52));
+        let projected = player_outlook_row(&row);
+
+        assert_ne!(projected.projected_finish, "—");
+        assert!(
+            projected.confidence_range.contains('–'),
+            "expected formatted confidence range, got {}",
+            projected.confidence_range
         );
     }
 

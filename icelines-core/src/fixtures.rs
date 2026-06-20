@@ -244,6 +244,8 @@ impl StatsFixture {
             xg_per_60: None,
             cf_pct: Some(cf_pct),
             ff_pct: None,
+            on_ice_xg_for: None,
+            on_ice_xg_against: None,
             xgf_pct: None,
         });
         self
@@ -251,6 +253,11 @@ impl StatsFixture {
 
     pub fn goalie(mut self, g: GoalieSeasonStats) -> Self {
         self.builder = self.builder.with_goalie(g);
+        self
+    }
+
+    pub fn goalie_advanced(mut self, g: GoalieAdvancedStats) -> Self {
+        self.builder = self.builder.with_goalie_advanced(g);
         self
     }
 
@@ -687,6 +694,8 @@ pub mod stat_catalog_variants {
             xg_per_60: Some(1.42),
             cf_pct: Some(54.2),
             ff_pct: Some(53.8),
+            on_ice_xg_for: Some(71.0),
+            on_ice_xg_against: Some(56.0),
             xgf_pct: Some(56.0),
         })
         .with_time_on_ice(TimeOnIceStats {

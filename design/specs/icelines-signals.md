@@ -46,8 +46,12 @@ non-claim copy so renderers do not recompute signal meaning locally.
   partial evidence renders as `unavailable`/`null`, never zero-fill. Product copy
   for this surface is reviewed; Signals remain **out of** `StatId`, the `--filter`
   catalog, and leaderboards.
-- **TUI + Web (planned, pulse-04):** must add a cross-surface parity fence proving
-  CLI/JSON/TUI/Web render identical values before shipping.
+- **TUI + Web (live, Phase Hurricane / WP-010 pulse-04):** the player-card TUI
+  block renders the same `PlayerSignalsView` rows and links to the Web surface.
+  Web HTML lives at `/player/:id/signals`, and Web JSON lives at
+  `/api/v1/player/:id/signals` with the `player-signals` data/meta envelope. L0
+  and L1 fences prove unavailable evidence remains `unavailable`/`null`, not
+  zero-filled.
 
 ## Promotion rule
 

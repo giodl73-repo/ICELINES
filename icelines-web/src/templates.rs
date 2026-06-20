@@ -303,6 +303,7 @@ pub struct LeadersTemplate {
     pub warning_kinds: String,
     pub result_active_filters: String,
     pub rows: Vec<LeaderRow>,
+    pub leaders_svg: Option<String>,
     pub total: usize,
     pub empty_title: String,
     pub empty_detail: String,
@@ -649,6 +650,9 @@ pub struct CompareTemplate {
     /// `winner` CSS class on the bolded side. Defaults to all-false
     /// (no bolding) when one or both players are missing.
     pub winners: CompareWinners,
+    /// Phase Hurricane.6c — optional inline SVG comparing bundled
+    /// regular-season career Pts/82 trends.
+    pub career_trend_svg: Option<String>,
 }
 
 /// Per-stat "which side has the better value" flags. `_a` is true
@@ -756,6 +760,9 @@ pub struct TeamTemplate {
     pub active_label: String,
     pub team_abbrev: String,
     pub skaters: Vec<LeaderRow>,
+    /// Phase Hurricane 6h — optional inline active-roster Pts/82 SVG.
+    /// HTML-only; `/api/v1/team/:abbrev` remains the tabular contract.
+    pub skater_pts82_svg: Option<String>,
     pub goalies: Vec<GoalieRow>,
 }
 
@@ -838,6 +845,9 @@ pub struct RecordsTemplate {
     pub cache_return_to: String,
     pub cache_button_label: String,
     pub total: usize,
+    /// Phase Hurricane 6k — optional inline records count SVG.
+    /// HTML-only; records JSON routes remain the stable ViewModel contract.
+    pub records_count_svg: Option<String>,
     pub rows: Vec<RecordsTemplateRow>,
 }
 
@@ -858,6 +868,9 @@ pub struct RecordsTemplateRow {
 pub struct GoaliesTemplate {
     pub active_label: String,
     pub rows: Vec<GoalieRow>,
+    /// Phase Hurricane 6i — optional inline goalie SV% SVG.
+    /// HTML-only; `/api/v1/goalies` remains the tabular contract.
+    pub goalie_sv_pct_svg: Option<String>,
     pub total: usize,
     pub qualified_threshold: u32,
 }
@@ -1110,6 +1123,10 @@ pub struct GoalieRow {
     pub shutouts: u32,
     pub save_pct_str: String,
     pub gaa_str: String,
+    pub quality_start_pct: Option<f64>,
+    pub quality_start_pct_str: String,
+    pub shots_against_per_60: Option<f64>,
+    pub shots_against_per_60_str: String,
     pub headshot_url: String,
     pub headshot_fallback_url: String,
 }
@@ -1176,6 +1193,10 @@ pub struct PlayerTemplate {
     /// for. King.3.2 lands this; the row count for a 10-year veteran
     /// is ~10-20 (regular only) or ~15-30 (regular + playoff).
     pub career_rows: Vec<CareerRow>,
+    /// Phase Hurricane 6f — optional inline regular-season Pts/82 SVG
+    /// trend for loaded bundled career rows. HTML-only; JSON remains
+    /// the tabular contract.
+    pub career_trend_svg: Option<String>,
     /// Phase Calder.3 — pre-NHL career stints (junior / NCAA / AHL /
     /// European pro) loaded from `~/.icelines/career_history.json`.
     /// Empty Vec when the local store hasn't been populated; the
@@ -1459,6 +1480,10 @@ mod tests {
                 shutouts: 4,
                 save_pct_str: "0.925".to_owned(),
                 gaa_str: "2.20".to_owned(),
+                quality_start_pct: Some(0.604),
+                quality_start_pct_str: "60.4%".to_owned(),
+                shots_against_per_60: Some(29.5),
+                shots_against_per_60_str: "29.5".to_owned(),
                 headshot_url: "https://assets.nhle.com/mugs/nhl/20252026/WPG/8476945.png"
                     .to_owned(),
                 headshot_fallback_url: "https://assets.nhle.com/mugs/nhl/default/8476945.png"

@@ -1004,6 +1004,10 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         }
         println!("{}", leaders_context_line(&leaders_view));
         println!();
+        if let Some(disclosure) = bundled_depth_disclosure(args.seasons as usize) {
+            println!("{disclosure}");
+            println!();
+        }
         print_improvement_table(&results, &imp_map, args.top, total_matched, args.seasons);
         return Ok(());
     }
@@ -1109,6 +1113,7 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         total_matched,
         &args.sort,
         &args.filters,
+        args.seasons,
     );
     Ok(())
 }
@@ -1199,6 +1204,7 @@ fn leaders_table(
     total: usize,
     sort: &str,
     active_filters: &[String],
+    seasons: u8,
 ) {
     let col = view
         .sort
@@ -1220,6 +1226,11 @@ fn leaders_table(
         for line in warning_empty_lines {
             println!("{line}");
         }
+        println!();
+    }
+
+    if let Some(disclosure) = bundled_depth_disclosure(seasons as usize) {
+        println!("{disclosure}");
         println!();
     }
 
@@ -2064,6 +2075,12 @@ async fn print_career(v: &PlayerView<'_>, seasons: usize) {
     match load_career(&v.identity.full_name, n, &store) {
         Some(career) => {
             println!("CAREER ARC — {} seasons", career.seasons.len());
+            if let Some(disclosure) = bundled_depth_disclosure(career.seasons.len()) {
+                println!("{disclosure}");
+            }
+            if let Some(summary) = career_arc_sparkline_summary(&career.seasons) {
+                println!("{summary}");
+            }
             println!(
                 "{:<10} {:<6} {:<4} {:<4} {:<4} {:<8} {:<8}",
                 "Season", "Team", "GP", "G", "A", "PPG", "Pts/82"
@@ -2092,6 +2109,39 @@ async fn print_career(v: &PlayerView<'_>, seasons: usize) {
         None => {
             println!("Career history: not available (bundled season data required).");
         }
+    }
+}
+
+fn career_arc_sparkline_summary(lines: &[icelines_core::history::SeasonLine]) -> Option<String> {
+    if lines.len() < 2 {
+        return None;
+    }
+    let chronological: Vec<_> = lines.iter().rev().collect();
+    let first = season_label(&chronological.first()?.season);
+    let last = season_label(&chronological.last()?.season);
+    let pts_per_82: Vec<f64> = chronological
+        .iter()
+        .map(|line| line.pts_per_82() as f64)
+        .collect();
+    let goals_per_82: Vec<f64> = chronological
+        .iter()
+        .map(|line| line.goals_per_82 as f64)
+        .collect();
+    Some(format!(
+        "Career trend ({first} → {last}): Pts/82 {}  G/82 {}",
+        crate::tui::sparkline::render(&pts_per_82, 24),
+        crate::tui::sparkline::render(&goals_per_82, 24)
+    ))
+}
+
+fn bundled_depth_disclosure(seasons_rendered: usize) -> Option<String> {
+    let modern = icelines_fetch::bundled::MODERN_BUNDLED_SEASONS.len();
+    if seasons_rendered <= modern {
+        None
+    } else {
+        Some(format!(
+            "Data depth: newest {modern} bundled seasons carry modern Tier-1 depth; older seasons in this window are historical/skeleton season totals. Missing modern fields render unavailable, not zero."
+        ))
     }
 }
 
@@ -2133,6 +2183,8 @@ struct GoalieRow {
     goals_against_average: Option<f32>,
     shutouts: u32,
     saves: u32,
+    quality_start_pct: Option<f32>,
+    shots_against_per_60: Option<f32>,
 }
 
 pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
@@ -2314,10 +2366,10 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
         return Ok(());
     }
     if args.csv {
-        println!("rank,goalie,team,gp,wins,losses,ot_losses,sv_pct,gaa,so,saves");
+        println!("rank,goalie,team,gp,wins,losses,ot_losses,sv_pct,gaa,so,saves,qs_pct,sa_per_60");
         for (i, row) in rows.iter().enumerate() {
             println!(
-                "{},\"{}\",{},{},{},{},{},{:.4},{:.3},{},{}",
+                "{},\"{}\",{},{},{},{},{},{:.4},{:.3},{},{},{:.4},{:.1}",
                 i + 1,
                 row.full_name,
                 row.team,
@@ -2329,16 +2381,18 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
                 row.goals_against_average.unwrap_or(0.0),
                 row.shutouts,
                 row.saves,
+                row.quality_start_pct.unwrap_or(0.0),
+                row.shots_against_per_60.unwrap_or(0.0),
             );
         }
         return Ok(());
     }
 
     println!(
-        "{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6}",
-        "Rank", "Goalie", "Team", "GP", "W-L-OT", "SV%", "GAA", "SO", "Saves"
+        "{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6} {:<6} {:<6}",
+        "Rank", "Goalie", "Team", "GP", "W-L-OT", "SV%", "GAA", "SO", "Saves", "QS%", "SA/60"
     );
-    println!("{}", "─".repeat(80));
+    println!("{}", "─".repeat(94));
     for (i, row) in rows.iter().enumerate() {
         let record = match row.ot_losses {
             Some(otl) => format!("{}-{}-{}", row.wins, row.losses, otl),
@@ -2352,8 +2406,16 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
             .goals_against_average
             .map(|v| format!("{v:.2}"))
             .unwrap_or_else(|| "—".to_owned());
+        let quality_start_pct = row
+            .quality_start_pct
+            .map(|v| format!("{v:.3}"))
+            .unwrap_or_else(|| "—".to_owned());
+        let shots_against_per_60 = row
+            .shots_against_per_60
+            .map(|v| format!("{v:.1}"))
+            .unwrap_or_else(|| "—".to_owned());
         println!(
-            "{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6}",
+            "{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6} {:<6} {:<6}",
             i + 1,
             row.full_name.chars().take(24).collect::<String>(),
             row.team,
@@ -2363,6 +2425,8 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
             gaa,
             row.shutouts,
             row.saves,
+            quality_start_pct,
+            shots_against_per_60,
         );
     }
     println!(
@@ -2392,6 +2456,8 @@ fn goalie_output_rows_from_view(view: &icelines_core::GoaliesView) -> Vec<Goalie
             goals_against_average: metric_optional_f32(row, "gaa"),
             shutouts: metric_u32(row, "shutouts"),
             saves: metric_u32(row, "saves"),
+            quality_start_pct: metric_optional_f32(row, "quality_start_pct"),
+            shots_against_per_60: metric_optional_f32(row, "shots_against_per_60"),
         })
         .collect()
 }
@@ -3177,6 +3243,7 @@ fn ordinal(n: u8) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use icelines_core::history::SeasonLine;
     use icelines_core::{fixtures, identity::PlayerId, model::Season};
 
     // Phase Calder.3 — pre-NHL career table renderer tests.
@@ -3327,6 +3394,46 @@ mod tests {
         // The full name is too long; only the prefix should appear.
         assert!(out.contains("Massachusetts-Lowell R"));
         assert!(!out.contains("Riverhawks XYZ"));
+    }
+
+    #[test]
+    fn l0_bundled_depth_disclosure_skips_modern_window() {
+        let modern = icelines_fetch::bundled::MODERN_BUNDLED_SEASONS.len();
+        assert!(bundled_depth_disclosure(modern).is_none());
+    }
+
+    #[test]
+    fn l0_bundled_depth_disclosure_names_skeleton_and_missing_semantics() {
+        let modern = icelines_fetch::bundled::MODERN_BUNDLED_SEASONS.len();
+        let disclosure = bundled_depth_disclosure(modern + 1).expect("older arc needs disclosure");
+        assert!(disclosure.contains("newest 5 bundled seasons"));
+        assert!(disclosure.contains("historical/skeleton season totals"));
+        assert!(disclosure.contains("unavailable, not zero"));
+    }
+
+    #[test]
+    fn l0_career_arc_sparkline_summary_renders_chronological_metrics() {
+        let lines = vec![
+            SeasonLine::new("20232024", "EDM", 82, 50, 90),
+            SeasonLine::new("20222023", "EDM", 82, 40, 70),
+            SeasonLine::new("20212022", "EDM", 82, 30, 60),
+        ];
+        let summary = career_arc_sparkline_summary(&lines).expect("multi-season arc");
+
+        assert!(summary.contains("Career trend (21-22 → 23-24)"));
+        assert!(summary.contains("Pts/82"));
+        assert!(summary.contains("G/82"));
+        assert!(
+            summary.contains('▁') || summary.contains('█'),
+            "spark blocks missing: {summary}"
+        );
+    }
+
+    #[test]
+    fn l0_career_arc_sparkline_summary_skips_single_season() {
+        let lines = vec![SeasonLine::new("20232024", "EDM", 82, 50, 90)];
+
+        assert!(career_arc_sparkline_summary(&lines).is_none());
     }
 
     #[test]

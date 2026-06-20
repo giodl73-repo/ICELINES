@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::model::{GpStatus, MIN_GP};
+use crate::projection::per_game_sigma;
 use crate::stats_repository::PlayerView;
 use crate::view_model::{ViewContext, ViewWindow};
 
@@ -56,6 +57,8 @@ pub struct PlayerScoringPaceRow {
     pub per_game: Option<f64>,
     pub pace_82: Option<f64>,
     pub projected_finish: Option<f64>,
+    pub confidence_low: Option<f64>,
+    pub confidence_high: Option<f64>,
     pub remaining_games: Option<u32>,
 }
 
@@ -74,6 +77,12 @@ impl PlayerScoringPaceRow {
         let projected_finish = per_game
             .zip(remaining_games)
             .map(|(value, remaining)| current_total as f64 + value * remaining as f64);
+        let confidence_band = projected_finish.zip(per_game).zip(remaining_games).map(
+            |((projected, value), remaining)| {
+                let band = per_game_sigma(value, games_played) * remaining as f64;
+                ((projected - band).max(0.0), projected + band)
+            },
+        );
         Self {
             metric,
             label: metric.label().to_string(),
@@ -83,6 +92,8 @@ impl PlayerScoringPaceRow {
             per_game,
             pace_82,
             projected_finish,
+            confidence_low: confidence_band.map(|(low, _)| low),
+            confidence_high: confidence_band.map(|(_, high)| high),
             remaining_games,
         }
     }
@@ -170,6 +181,10 @@ mod tests {
 
         assert_close(goals.pace_82, 41.0);
         assert_close(goals.projected_finish, 41.0);
+        assert!(goals.confidence_low.is_some());
+        assert!(goals.confidence_high.is_some());
+        assert!(goals.confidence_low.unwrap() < goals.projected_finish.unwrap());
+        assert!(goals.confidence_high.unwrap() > goals.projected_finish.unwrap());
         assert_close(goals.per_game, 0.5);
         assert_eq!(goals.sample_status, PlayerScoringPaceSampleStatus::Eligible);
         assert_close(view.shot_pct, 0.2);
@@ -203,6 +218,8 @@ mod tests {
             assert_eq!(row.per_game, None);
             assert_eq!(row.pace_82, None);
             assert_eq!(row.projected_finish, None);
+            assert_eq!(row.confidence_low, None);
+            assert_eq!(row.confidence_high, None);
         }
     }
 
@@ -224,6 +241,8 @@ mod tests {
             assert_eq!(row.per_game, None);
             assert_eq!(row.pace_82, None);
             assert_eq!(row.projected_finish, None);
+            assert_eq!(row.confidence_low, None);
+            assert_eq!(row.confidence_high, None);
         }
         assert_eq!(view.shot_pct, None);
     }
@@ -235,7 +254,22 @@ mod tests {
 
         assert_close(goals.pace_82, 41.0);
         assert_eq!(goals.projected_finish, None);
+        assert_eq!(goals.confidence_low, None);
+        assert_eq!(goals.confidence_high, None);
         assert_eq!(goals.remaining_games, None);
+    }
+
+    #[test]
+    fn l0_player_scoring_pace_confidence_band_widens_for_small_samples() {
+        let high_gp = fixture_view(60, 30, 30, 60, 180, Some(22));
+        let low_gp = fixture_view(10, 5, 5, 10, 30, Some(72));
+        let high = row(&high_gp, PlayerScoringPaceMetric::Points);
+        let low = row(&low_gp, PlayerScoringPaceMetric::Points);
+
+        assert!(
+            band_width(low) > band_width(high),
+            "low-sample projection should carry wider confidence band"
+        );
     }
 
     #[test]
@@ -313,5 +347,9 @@ mod tests {
             (actual - expected).abs() < 0.001,
             "expected {expected}, got {actual}"
         );
+    }
+
+    fn band_width(row: &PlayerScoringPaceRow) -> f64 {
+        row.confidence_high.expect("high band") - row.confidence_low.expect("low band")
     }
 }

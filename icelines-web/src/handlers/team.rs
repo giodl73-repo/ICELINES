@@ -94,10 +94,13 @@ pub async fn build_team_template(
         (skaters, goalies)
     };
 
+    let skater_pts82_svg = render_team_pts82_svg(&team.0, &skaters);
+
     Ok(TeamTemplate {
         active_label,
         team_abbrev: team.0.to_string(),
         skaters,
+        skater_pts82_svg,
         goalies,
     })
 }
@@ -791,6 +794,10 @@ fn goalie_row_from_depth_slot(slot: &DepthGoalieSlot, season: Season) -> GoalieR
         shutouts: metric_u32(&slot.metrics, "shutouts").unwrap_or(0),
         save_pct_str,
         gaa_str,
+        quality_start_pct: None,
+        quality_start_pct_str: "-".to_owned(),
+        shots_against_per_60: None,
+        shots_against_per_60_str: "-".to_owned(),
         headshot_url: super::shared::build_headshot_url_for_display(
             season.0,
             &team,
@@ -824,6 +831,64 @@ fn team_skater_row_from_depth_slot(slot: &DepthPlayerSlot) -> TeamSkaterRow {
         points,
         points_per_game,
     }
+}
+
+fn render_team_pts82_svg(team_abbrev: &str, rows: &[LeaderRow]) -> Option<String> {
+    let mut values: Vec<(&LeaderRow, f64)> = rows
+        .iter()
+        .filter(|row| row.gp > 0)
+        .map(|row| (row, f64::from(row.points) * 82.0 / f64::from(row.gp)))
+        .filter(|(_, value)| value.is_finite() && *value > 0.0)
+        .collect();
+    if values.is_empty() {
+        return None;
+    }
+    values.sort_by(|(_, a), (_, b)| b.total_cmp(a));
+    values.truncate(10);
+    let max = values
+        .iter()
+        .map(|(_, value)| *value)
+        .fold(0.0_f64, f64::max);
+    if max <= 0.0 {
+        return None;
+    }
+
+    let mut bars = String::new();
+    for (idx, (row, pts82)) in values.iter().enumerate() {
+        let y = 46 + idx * 24;
+        let width = ((*pts82 / max) * 420.0).max(2.0);
+        let name = escape_svg_text(&row.name);
+        bars.push_str(&format!(
+            r##"  <text x="24" y="{label_y}" fill="#334155" font-size="11">{name}</text>
+  <rect x="168" y="{bar_y}" width="{width:.1}" height="14" rx="3" fill="#0f766e"/>
+  <text x="{value_x:.1}" y="{label_y}" fill="#0f172a" font-size="11">{pts82:.1}</text>
+"##,
+            label_y = y + 11,
+            bar_y = y,
+            value_x = 176.0 + width,
+        ));
+    }
+    let height = 72 + values.len() * 24;
+    let team = escape_svg_text(team_abbrev);
+
+    Some(format!(
+        r##"<svg class="team-pts82-svg" viewBox="0 0 640 {height}" role="img" aria-labelledby="team-pts82-title team-pts82-desc">
+  <title id="team-pts82-title">Roster Pts/82 chart</title>
+  <desc id="team-pts82-desc">{team} active-roster skaters by current-window points per 82 games.</desc>
+  <rect x="0" y="0" width="640" height="{height}" rx="8" fill="#f8fafc"/>
+  <text x="24" y="26" fill="#334155" font-size="13">{team} roster Pts/82</text>
+  <line x1="168" y1="36" x2="588" y2="36" stroke="#cbd5e1"/>
+{bars}</svg>"##
+    ))
+}
+
+fn escape_svg_text(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }
 
 fn team_goalie_row_from_depth_slot(slot: &DepthGoalieSlot) -> TeamGoalieRow {

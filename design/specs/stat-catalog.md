@@ -258,6 +258,15 @@ inherit DI-11: `read()` returns `None` when `view.was_traded_in_window()`.)
 - `OnIceXgFor` / `OnIceXgAgainst`
 - `XgForPct`
 
+Phase Hurricane pulse 2a wires `OnIceXgFor` and `OnIceXgAgainst` to the
+MoneyPuck 5v5 `onIce_xGoalsFor` / `onIce_xGoalsAgainst` columns. The keys remain
+unavailable until `fetch money-puck` has populated the optional MoneyPuck
+snapshot tier. The follow-up 2b audit found no additional verified MoneyPuck
+schema columns in the repo beyond the parser's current required set: individual
+xG, on-ice xGF/xGA, Corsi for/against, Fenwick for/against, situation, player ID,
+and ice time. Add new MoneyPuck catalog keys only after committing a checked CSV
+fixture or pinned schema evidence for the new source columns.
+
 ### `Goalie` — 22 stats (from goalie reports + xG family)
 
 `GoalieGames`, `GoalieStarts`,

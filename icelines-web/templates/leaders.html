@@ -240,6 +240,16 @@
     </tbody>
 </table>
 </div>
+{% match leaders_svg %}
+    {% when Some with (svg) %}
+    <section class="leaders-svg-chart" aria-label="Leaders Pts/82 chart" style="margin-top:1rem;">
+        {{ svg|safe }}
+        <p style="color:#616161; margin-top:0.35rem;">
+            Current-window Pts/82 for the top returned skaters.
+        </p>
+    </section>
+    {% when None %}
+{% endmatch %}
 {% endif %}
 
 <p class="page-section meta-line">

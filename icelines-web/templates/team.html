@@ -79,6 +79,13 @@
     </tbody>
 </table>
 </div>
+{% match skater_pts82_svg %}
+{% when Some with (svg) %}
+<section class="team-skater-chart" aria-label="Team skater Pts/82 chart" style="margin-top: 1rem;">
+    {{ svg|safe }}
+</section>
+{% when None %}
+{% endmatch %}
 {% endif %}
 
 <h2 class="page-section">Goalies</h2>
