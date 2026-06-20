@@ -1,5 +1,16 @@
 # VTRACE Review Record
 
+## 2026-06-19 Phase Hurricane 6z TUI Team Roster Pts/82-Bar Review
+
+**Scope:** TUI team roster rows.
+
+**Claims accepted:**
+- Team roster rows can render compact ASCII Pts/82 bars from existing finite positive pace values.
+- Printed Pts/82 remains the controlling value; the bar is descriptive context only.
+- Missing, non-finite, zero, and max-missing cases do not produce a bar.
+
+**Residual risk:** This is selected helper and static render-path evidence, not a full interactive terminal screenshot/focus review. Broader interactive TUI visualization review remains accepted residual risk.
+
 ## 2026-06-19 Phase Hurricane 6y TUI Stats Primary-Bar Review
 
 **Scope:** TUI Stats leaders result rows.

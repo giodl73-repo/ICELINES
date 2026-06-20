@@ -154,6 +154,11 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
     if show_hits {
         header_extra.push_str("  Hits");
     }
+    let max_p82 = filtered
+        .iter()
+        .filter_map(|v| v.pace_82())
+        .filter(|p| p.is_finite() && *p > 0.0)
+        .fold(0.0, f64::max);
     let mut lines: Vec<Line> = vec![
         Line::from(format!(
             "  {} of {} players  ·  sort: {}  ·  pos: {}  ·  country: {}  ·  s/p/c/h cycle",
@@ -165,12 +170,12 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         )),
         Line::from(""),
         Line::from(format!(
-            "  {:<22} {:<4}  {:>6}  {:>7}{}",
-            "Player", "Pos", "PPG", "Pts/82", header_extra
+            "  {:<20} {:<4}  {:>6}  {:>7} {:<4}{}",
+            "Player", "Pos", "PPG", "Pts/82", "bar", header_extra
         )),
         Line::from(format!(
             "  {}",
-            "─".repeat(46 + header_extra.chars().count())
+            "─".repeat(51 + header_extra.chars().count())
         )),
     ];
 
@@ -182,7 +187,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         let proj = p82
             .map(|p| format!("{:.1}", p))
             .unwrap_or_else(|| "—".to_owned());
-        let name = v.full_name().chars().take(22).collect::<String>();
+        let bar = pace_bar(p82, max_p82);
+        let name = v.full_name().chars().take(20).collect::<String>();
         let mut extra = String::new();
         if show_goals {
             extra.push_str(&format!("  {:>4}", v.goals()));
@@ -197,11 +203,12 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, abbrev: &str) {
         }
 
         let text = format!(
-            "  {:<22} {:<4}  {:>6}  {:>7}{}",
+            "  {:<20} {:<4}  {:>6}  {:>7} {:<4}{}",
             name,
             v.position().abbreviation(),
             ppg,
             proj,
+            bar,
             extra,
         );
 
@@ -326,6 +333,18 @@ fn position_order(p: &str) -> u8 {
     }
 }
 
+fn pace_bar(pace_82: Option<f64>, max_pace_82: f64) -> String {
+    let Some(value) = pace_82 else {
+        return String::new();
+    };
+    if !value.is_finite() || value <= 0.0 || !max_pace_82.is_finite() || max_pace_82 <= 0.0 {
+        return String::new();
+    }
+
+    let filled = ((value / max_pace_82) * 4.0).ceil() as usize;
+    "#".repeat(filled.clamp(1, 4))
+}
+
 /// View-based goalie collection for a team.
 pub(crate) fn collect_team_goalie_views<'a, 'v: 'a>(
     goalie_views: &'a [icelines_core::stats_repository::PlayerView<'v>],
@@ -342,6 +361,17 @@ pub(crate) fn collect_team_goalie_views<'a, 'v: 'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn l0_team_pace_bar_scales_and_skips_missing_values() {
+        assert_eq!(pace_bar(None, 80.0), "");
+        assert_eq!(pace_bar(Some(0.0), 80.0), "");
+        assert_eq!(pace_bar(Some(f64::NAN), 80.0), "");
+        assert_eq!(pace_bar(Some(20.0), 80.0), "#");
+        assert_eq!(pace_bar(Some(40.0), 80.0), "##");
+        assert_eq!(pace_bar(Some(80.0), 80.0), "####");
+        assert_eq!(pace_bar(Some(80.0), 0.0), "");
+    }
 
     #[test]
     fn l0_team_sort_cycles_through_all() {

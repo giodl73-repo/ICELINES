@@ -706,6 +706,8 @@ TUI goalie leaderboard rows add compact ASCII SV% quality bars beside the
 printed save percentage while keeping SV% as the controlling value.
 TUI Stats leaders rows add compact ASCII primary-metric bars beside the printed
 leader metric while preserving the numeric/text metric as the controlling value.
+TUI team roster rows add compact ASCII Pts/82 bars beside the printed rate while
+keeping Pts/82 as the controlling value.
 
 ---
 
