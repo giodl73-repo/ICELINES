@@ -5,7 +5,7 @@
 > overstating browser breadth, touch behavior, focus order, or full accessibility.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 artifact validation passed
+**Status:** Active - pulse 04 responsive/focus decision passed
 
 ---
 
@@ -59,7 +59,10 @@ repeatable dashboard visual QA harness before changing surface claims.
    with dashboard shell readiness, exact PNG dimension checks, and sampled
    nonblank pixel checks in `scripts/web-dashboard-capture.ps1`.
 4. **Pulse 04 - Responsive/focus decision.** Add focused keyboard/mobile checks
-   if feasible, or keep them explicitly deferred.
+   if feasible, or keep them explicitly deferred. Result: passed 2026-06-20;
+   Devils retains representative desktop/tablet/mobile capture evidence and
+   keeps keyboard focus order, pointer/touch interaction, and screen-reader
+   behavior deferred until a browser automation gate exists.
 5. **Pulse 05 - Closeout.** Update the wave, plan, surface matrix, and
    validation notes with the final browser-proof claim.
 
