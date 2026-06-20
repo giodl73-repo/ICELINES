@@ -1,5 +1,24 @@
 # VTRACE Review Record
 
+## 2026-06-20 Phase Hurricane Closeout Review
+
+**Scope:** Phase Hurricane product-analytics roadmap.
+
+**Claims accepted:**
+- Phase Hurricane is wrapped: no additional implementation pulse remains in this
+  phase.
+- The shipped scope includes Signals CLI/TUI/Web/Markdown export, MoneyPuck
+  on-ice xGF/xGA plus committed parser schema fixture, player outlook confidence
+  ranges, goalie QS%/SA/60, season-depth honesty copy, and compact visualization
+  through 6z.
+- Remaining analytics gaps are future-wave work, not active Hurricane work.
+
+**Residual risk:** MoneyPuck deployment expansion needs pinned upstream schema
+evidence; GSAx/high-danger SV% needs a verified goalie xGA/danger source; team
+confidence needs a team-level ViewModel/source contract; Signals
+cache/catalog/filter/leaderboard promotion needs separate evidence; broader
+interactive TUI/browser and future secondary chart-shape proof remains deferred.
+
 ## 2026-06-19 Phase Hurricane 2c MoneyPuck Schema-Fixture Review
 
 **Scope:** Committed MoneyPuck-shaped skater CSV schema fixture and checked parser boundary.

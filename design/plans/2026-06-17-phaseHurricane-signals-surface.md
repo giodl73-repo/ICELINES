@@ -6,7 +6,9 @@
 > bet into a shipped surface, then close the modern-analytics gaps.
 
 **Created:** 2026-06-17
-**Status:** Deliverable 1 SHIPPED (WP-010 pulse-03, 2026-06-18) — `icelines signals`
+**Status:** WRAPPED (2026-06-20) — Phase Hurricane shipped the planned
+implementation-ready slices and records the remaining analytics gaps as blocked
+or deferred follow-up. Deliverable 1 SHIPPED (WP-010 pulse-03, 2026-06-18) — `icelines signals`
 CLI + `signals.v1` JSON live, L0+L2 green, docs/parity/wave updated. Deliverable 1b
 SHIPPED (WP-010 pulse-04, 2026-06-19) — TUI player-card Signals block plus Web
 HTML `/player/:id/signals` and Web JSON `/api/v1/player/:id/signals`.
@@ -96,9 +98,9 @@ Pts/82 bars beside the printed rate.
 **Frame:** product evaluation found IceLines is a great *offline/scriptable/fantasy*
 tool but is missing the modern public-analytics layer. The highest-leverage,
 most-tractable next step was to **ship the already-built Signals metric family to
-real surfaces**. WP-010 now has CLI, TUI player-card, and Web player surfaces;
-this doc records that deliverable and sketches the rest of the roadmap as
-follow-on pulses.
+real surfaces**. WP-010 now has CLI, TUI player-card, Web player, and Markdown
+export surfaces; this doc records that deliverable and the bounded analytics
+roadmap closeout.
 
 ---
 
@@ -109,16 +111,37 @@ This is the strategic frame. Each item below is a future work package/pulse; onl
 
 | # | Gap | Why it matters | Tractability |
 |---|---|---|---|
-| **1** | **Signals were not on user surfaces** | The one *differentiated* metric bet; methodology + ViewModel already built (WP-010). Pulse 03/04 shipped CLI, TUI player-card, and Web player surfaces; pulse 05 adds Markdown report/export. | **Done for CLI/TUI/Web/report-export; continue only for cache/catalog/filter/leaderboard.** |
-| 2 | MoneyPuck data under-surfaced | Its CSVs already carry on-ice / deployment / shot data we fetch but don't expose. Pulse 2a wires the reserved on-ice xGF/xGA catalog keys to fetched MoneyPuck data; pulse 2b records that no additional MoneyPuck columns are verified locally yet; pulse 2c adds a committed MoneyPuck-shaped schema fixture for the currently parsed skater columns without promoting new catalog keys. | Medium — started |
-| 3 | No rest-of-season projections w/ confidence | #1 fantasy ask; today pace is descriptive-only. Pulse 3a adds shared player outlook confidence ranges while keeping the copy descriptive; pulse 3b adds the same pace outlook ranges to `icelines project` text/JSON/CSV; pulse 3c records team outlook confidence bands as deferred until a team-level outlook ViewModel/source contract exists. | Medium-Large — started |
-| 4 | Goalie eval shallow (SV%/GAA); GSAx only emerging | Table stakes for modern goalie analysis. Pulse 4a surfaces existing goalie advanced workload/quality fields (`QS%`, `SA/60`) in `GoaliesView` and CLI; pulse 4b exposes the same fields in Web `/goalies` HTML/JSON while keeping GSAx pending until xGA source work lands. | Medium — started |
-| 5 | "38 seasons" reads deeper than it is (~5 modern Tier-1) | Honesty gap; perspective claims over skeleton seasons. Pulses 5a/5b add CLI career-arc and leaders aggregate disclosure; pulse 5c fixes the TUI dashboard bundled-history trend label/disclosure. | Small — started |
+| **1** | **Signals were not on user surfaces** | The one *differentiated* metric bet; methodology + ViewModel already built (WP-010). Pulse 03/04 shipped CLI, TUI player-card, and Web player surfaces; pulse 05 adds Markdown report/export. | **Closed for Hurricane; future cache/catalog/filter/leaderboard requires a new wave.** |
+| 2 | MoneyPuck data under-surfaced | Its CSVs already carry on-ice / deployment / shot data we fetch but don't expose. Pulse 2a wires the reserved on-ice xGF/xGA catalog keys to fetched MoneyPuck data; pulse 2b records that no additional MoneyPuck columns are verified locally yet; pulse 2c adds a committed MoneyPuck-shaped schema fixture for the currently parsed skater columns without promoting new catalog keys. | Closed for Hurricane; additional deployment columns blocked on pinned upstream schema evidence |
+| 3 | No rest-of-season projections w/ confidence | #1 fantasy ask; today pace is descriptive-only. Pulse 3a adds shared player outlook confidence ranges while keeping the copy descriptive; pulse 3b adds the same pace outlook ranges to `icelines project` text/JSON/CSV; pulse 3c records team outlook confidence bands as deferred until a team-level outlook ViewModel/source contract exists. | Closed for Hurricane; team confidence deferred |
+| 4 | Goalie eval shallow (SV%/GAA); GSAx only emerging | Table stakes for modern goalie analysis. Pulse 4a surfaces existing goalie advanced workload/quality fields (`QS%`, `SA/60`) in `GoaliesView` and CLI; pulse 4b exposes the same fields in Web `/goalies` HTML/JSON while keeping GSAx pending until xGA source work lands. | Closed for Hurricane; GSAx/high-danger SV% blocked on verified source |
+| 5 | "38 seasons" reads deeper than it is (~5 modern Tier-1) | Honesty gap; perspective claims over skeleton seasons. Pulses 5a/5b add CLI career-arc and leaders aggregate disclosure; pulse 5c fixes the TUI dashboard bundled-history trend label/disclosure. | Closed for Hurricane; future aggregate surfaces inherit the disclosure rule |
 | 6 | No visualization (text/tables only) | Loses the "publication-grade" comparison vs HockeyViz/MoneyPuck. Pulse 6a adds compact CLI career-arc sparklines for Pts/82 and G/82; pulse 6b adds an inline SVG Pts/82 trend to `export md compare`; pulse 6c adds the same trend to Web `/compare`; pulse 6d adds a Markdown leaders Pts/82 SVG bar chart; pulse 6e adds the same chart to Web `/leaders`; pulse 6f adds a Web `/player/:id` Pts/82 career SVG below the career table; pulse 6g hardens TUI dashboard sparkline narrow-width evidence; pulse 6h adds a Web `/team/:abbrev` active-roster Pts/82 SVG; pulse 6i adds a Web `/goalies` SV% SVG; pulse 6j adds a Web scoring outlook 82-game pace SVG; pulse 6k adds a Web records count SVG; pulse 6l adds a Web poach/weekly report score SVG; pulse 6m adds a Markdown team-season quality-ledger SVG; pulse 6n adds a Markdown depth team-strength SVG; pulse 6o adds a Markdown fantasy poach-score SVG; pulse 6p adds a Markdown roster Pts/82 SVG; pulse 6q adds a Markdown team Pts/82 SVG; pulse 6r adds a Markdown series game-margin SVG; pulse 6s adds a TUI playoff series game-margin sparkline; pulse 6t adds a TUI team-season goal-differential sparkline; pulse 6u adds a TUI schedule matchup margin sparkline; pulse 6v adds TUI game-detail skater-activity bars; pulse 6w adds TUI player-records count bars; pulse 6x adds TUI goalie SV% quality bars; pulse 6y adds TUI Stats leaders primary-metric bars; pulse 6z adds TUI team roster Pts/82 bars. | Large — compact train complete |
 
 Conceded out of scope (keep conceded): NHL Edge skating speed, shot-location
 heatmaps, predictive "value over replacement", salary-cap value. Revisit only as
 deliberate scope expansions.
+
+---
+
+## Phase Hurricane closeout (2026-06-20)
+
+Phase Hurricane is wrapped. The implementation-ready product-analytics slices
+landed: Signals on CLI/TUI/Web/Markdown export, MoneyPuck on-ice xGF/xGA plus a
+committed parser schema fixture, player outlook confidence ranges in Web and
+`icelines project`, goalie QS%/SA/60 in CLI/Web, season-depth honesty copy, and
+the compact visualization train through 6z.
+
+No additional Hurricane implementation pulse remains. Follow-up work requires
+new evidence or a new targeted wave:
+
+- MoneyPuck deployment catalog expansion needs pinned upstream schema evidence.
+- Goalie GSAx/high-danger SV% needs a verified goalie xGA/danger source.
+- Team outlook confidence needs a team-level ViewModel/source contract.
+- Signals cache/catalog/filter/leaderboard promotion needs separate product-copy
+  and evidence review.
+- Broader live-browser, interactive TUI, and future secondary chart-shape proof
+  stays deferred outside Hurricane.
 
 ---
 
