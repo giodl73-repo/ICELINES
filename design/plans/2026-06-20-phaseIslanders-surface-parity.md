@@ -5,7 +5,7 @@
 > durable deferrals without overstating browser, TUI, cache, or docs coverage.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 admin/docs truth pass passed
+**Status:** Active - pulse 04 dashboard selected capture proof passed
 
 ---
 
@@ -54,7 +54,9 @@ remaining gaps with runnable checks or durable deferral text.
 3. **Pulse 03 - Admin/docs truth pass.** Tighten docs/admin wording and tests or
    deferrals for user-facing operations. Result: passed 2026-06-20.
 4. **Pulse 04 - Dashboard proof/fence.** Add repeatable selected capture proof
-   or record the remaining visual-capture deferral.
+   or record the remaining visual-capture deferral. Result: passed 2026-06-20
+   with selected desktop/mobile capture evidence; full live-browser, touch/focus,
+   and exhaustive responsive proof remain outside the claim.
 5. **Pulse 05 - Cache partial rollup.** Summarize WP-009 first-route evidence
    versus broader workflow claims.
 6. **Pulse 06 - Closeout.** Wrap Islanders with validation and tracker snapshot.

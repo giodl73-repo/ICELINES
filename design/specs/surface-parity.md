@@ -55,7 +55,7 @@ workflows.
 | Analytics cache Web/API consumers | Named cache report plus coach, scout, player-card, line, goalie, practice, postgame, adjustment, and agent routes have first-route evidence. | Keep partial until broader shipped workflow evidence and product-copy review exist for each workflow family. |
 | Admin operations | Safe runtime config, data verify, snapshot activate/delete, and game-cache warmer paths are POST-backed and tested; web install/remove and persistent report-toggle writes remain deferred. | Promote only with a scoped confirmation/persistence contract; otherwise keep durable deferral copy. |
 | Docs/reference | `/docs`, TUI docs overlay, and menu docs paths use the docs ViewModel/command reference. | Pulse 03 verifies wording does not revive stale mkdocs/static-site or unimplemented operation claims. |
-| Dashboard workspace partials | Route-level fragment and workspace tests exist; desktop/mobile capture command is available. | Pulse 04 must record selected capture evidence before claiming live visual/browser breadth. |
+| Dashboard workspace partials | Route-level fragment and workspace tests exist; pulse 04 recorded selected desktop/mobile captures for leaders, poach, fantasy, and team-season workspaces. | Selected capture evidence exists, but full live-browser, touch/focus, and exhaustive responsive proof remain future visual QA claims. |
 | Favorites/watch/watch-rules | Read/mutation paths are useful and tested, but richer group/rule dimensions remain intentionally narrow. | Keep partial unless a shared contract adds the missing dimensions without GET mutation or ambiguous persistence. |
 
 Closed phases set important boundaries for this rollup: Phase Hurricane and
@@ -354,4 +354,7 @@ responsive/accessibility tokens, and command redirect safety. Responsive visual
 capture is available through
 `scripts/test-slice.ps1 web-captures`, which writes desktop and mobile dashboard
 screenshots under `dist/web-dashboard-captures/` using installed Edge/Chrome
-headless.
+headless. Phase Islanders pulse 04 records selected captures for leaders and
+poach desktop workspaces plus fantasy and team-season mobile workspaces; treat
+that as selected browser-render evidence, not full touch/focus or exhaustive
+responsive coverage.
