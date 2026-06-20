@@ -72,3 +72,14 @@ add:
 - cache-envelope methodology if the signal is cached; and
 - explicit refusal of predictive, betting, injury, deployment, and autonomous
   coaching claims.
+
+## Phase Rangers discovery gate
+
+Phase Rangers pulse 03 accepts one narrow discovery lane: a team-scoped roster
+matrix that helps users find which player Signals cards deserve inspection. This
+is not a leaderboard and does not promote Signals into `StatId`, `--filter`,
+analytics cache, or public cross-team ranking surfaces.
+
+Any implementation of this matrix must preserve evidence tiers, missing-input
+summaries, unavailable values, and non-claim copy. Missing or partial evidence
+must render as unavailable/missing evidence, never as `0.0` player truth.

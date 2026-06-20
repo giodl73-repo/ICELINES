@@ -32,7 +32,7 @@ requirement and validation record.
 
 | # | Goal | Why it matters | Acceptance signal |
 |---|---|---|---|
-| 1 | **Rangers Goal 1 - Signals discovery lane** | Hurricane shipped Signals, but they remain mostly player-card/export driven. Users need a controlled path to find and compare them. | A small Signals discovery surface exists with methodology/non-claim copy, unavailable evidence states, and tests proving no zero-filled missing values. Any catalog/filter/leaderboard promotion is explicitly gated by product-copy and evidence review. |
+| 1 | **Rangers Goal 1 - Signals discovery lane** | Hurricane shipped Signals, but they remain mostly player-card/export driven. Users need a controlled path to find inspectable roster evidence. | Pulse 03 accepted a roster discovery matrix gate. Implementation may add a team-scoped matrix with methodology/non-claim copy, unavailable evidence states, and no zero-filled missing values; catalog/filter/leaderboard/cache promotion remains explicitly disallowed. |
 | 2 | **Rangers Goal 2 - Evidence card envelope reuse** | WP-009 already has selected analytics cache/evidence-card consumers. Rangers should reuse that contract instead of creating a second evidence model. | One Rangers slice either consumes the existing `AnalyticsCacheConsumerView` path or records why Signals/NYR workflow evidence should remain outside the cache envelope. |
 | 3 | **Rangers Goal 3 - Workbench layout hardening** | WP-002 already shipped named layout persistence with accepted risk. Rangers should use or harden it, not rebuild it. | A Rangers workflow uses existing layout persistence or closes one residual WP-002 risk with focused evidence while keeping stable workbench pane IDs and context fields. |
 | 4 | **Rangers Goal 4 - Lean offline CLI path** | REQ-DEP-001 and REQ-LEAN-001 remain target states. A lean CLI gives the repo a cleaner distributable story. | Cargo feature boundaries are inspected and narrowed in one safe slice, with a documented command for an offline CLI check. Any remaining FLETCH/SLICE dependency or feature blocker is recorded precisely. |
@@ -62,10 +62,11 @@ requirement and validation record.
 2. **Pulse 02 - NYR workflow proof.** Build the smallest repeatable script or
    docs-backed workflow that exercises existing surfaces and reveals gaps.
    Result: passed 2026-06-20; see `scripts/rangers-workflow.ps1`.
-3. **Pulse 03 - Evidence card contract.** Define one shared envelope and wire a
-   low-risk consumer.
-4. **Pulse 04 - Signals discovery lane.** Add controlled discovery after copy
-   and evidence review.
+3. **Pulse 03 - Signals discovery design gate.** Decide the allowed discovery
+   shape before implementation. Result: passed 2026-06-20; use a roster matrix,
+   not a leaderboard.
+4. **Pulse 04 - Signals roster matrix.** Add controlled team-scoped discovery
+   after copy and evidence review.
 5. **Pulse 05 - Layout persistence slice.** Land a versioned named-layout
    storage contract and one restore path.
 6. **Pulse 06 - Lean CLI audit/fence.** Narrow or document feature/dependency

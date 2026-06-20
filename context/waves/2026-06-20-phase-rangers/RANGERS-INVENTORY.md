@@ -34,7 +34,8 @@ keeps Phase Rangers from reopening shipped work or promoting blocked claims.
    semantics. Status: passed in pulse 02.
 2. **Signals discovery design gate.** Decide whether discovery is a report,
    route, command, or cache consumer. Require product-copy and evidence review
-   before implementation.
+   before implementation. Status: passed in pulse 03; use a roster discovery
+   matrix, not a leaderboard or `StatId` promotion.
 3. **Evidence-envelope bridge.** If the NYR workflow needs a shared evidence
    card, reuse `AnalyticsCacheConsumerView` or explicitly document why Signals
    need a different envelope.
