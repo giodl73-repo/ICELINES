@@ -564,7 +564,43 @@ does not add or claim GSAx.
 - Web/TUI goalie screens still need their own surface-specific evidence before
   this metric slice is claimed there.
 
+## 2026-06-20 WP-010 Pulse 05 Signals Markdown Export Review
+
+**Scope:** `export md signals --player <name>` Markdown report/export surface.
+
+**Decision:** `partial_pass`
+
+Pulse 05 renders `PlayerSignalsView` through `export md signals` as a
+disclosure-first Markdown report packet. The export preserves player context,
+signal descriptors, values/unavailable state, evidence tiers, missing inputs,
+methodology, limitations, disclosures, and non-claim copy without recomputing
+Signals in the report renderer.
+
+**Claims accepted**
+
+- `export md signals --player <name>` can emit a durable Markdown packet for a
+  selected player.
+- Missing or partial evidence renders as `unavailable` with missing-input labels,
+  not as zero-filled values.
+- The report packet keeps Signals outside `StatId`, leaderboards, the `--filter`
+  catalog, and analytics-cache publication.
+
+**Claims not accepted**
+
+- This does not add stable `StatId` rows, filters, leaderboard columns,
+  analytics-cache publication, dashboard-panel readiness, or broader Signals
+  families.
+- This does not claim prediction, betting value, injury certainty, deployment
+  advice, line-chemistry causality, complete-world truth, or autonomous coaching
+  authority.
+
+**Required follow-up**
+
+- Any future Signals cache/catalog/filter/leaderboard promotion must add its own
+  evidence and product-copy review.
+
 ## 2026-06-19 WP-010 Pulse 04 Signals TUI/Web Surface Review
+
 
 **Scope:** TUI player-card Signals block plus Web player Signals HTML/JSON
 surfaces.
@@ -634,8 +670,8 @@ disclosures, and non-claim copy.
 **Required follow-up**
 
 - Add parity evidence when more than one user-facing surface renders Signals.
-- Keep report/export, cache, filter, leaderboard, and stable stat-catalog
-  promotion behind separate evidence.
+- Keep cache, filter, leaderboard, stable stat-catalog, and any additional
+  report/export promotion behind separate evidence.
 
 ## 2026-06-02 WP-010 Pulse 02 Signals ViewModel Boundary Review
 

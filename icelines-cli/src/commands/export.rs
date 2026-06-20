@@ -54,6 +54,7 @@ pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
             columns,
             p1,
             p2,
+            player,
             series,
             width,
             height,
@@ -98,6 +99,15 @@ pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
                     p2: p2
                         .clone()
                         .context("--p2 is required for `export md compare`")?,
+                    width,
+                    height,
+                })?,
+                MdShape::Signals => render_signals(SignalsOpts {
+                    player: player
+                        .clone()
+                        .context("--player is required for `export md signals`")?,
+                    season: season.clone(),
+                    season_type: season_type.to_core(),
                     width,
                     height,
                 })?,
@@ -1821,6 +1831,157 @@ fn escape_svg_text(input: &str) -> String {
         .replace('"', "&quot;")
 }
 
+// ── signals ──────────────────────────────────────────────────────────────────
+
+pub(crate) struct SignalsOpts {
+    pub player: String,
+    pub season: Option<String>,
+    pub season_type: icelines_core::season_stats::SeasonType,
+    pub width: u16,
+    pub height: u16,
+}
+
+pub(crate) fn render_signals(opts: SignalsOpts) -> anyhow::Result<String> {
+    let view = crate::commands::signals::build_view(
+        &opts.player,
+        opts.season.as_deref(),
+        opts.season_type,
+    )?;
+    render_signals_from_view(&view, &opts)
+}
+
+pub(crate) fn render_signals_from_view(
+    view: &icelines_core::view_model::signals::PlayerSignalsView,
+    opts: &SignalsOpts,
+) -> anyhow::Result<String> {
+    let mut out = String::new();
+    write_front_matter_with_context(
+        &mut out,
+        "signals",
+        &format!("{} Signals", view.player_name),
+        &[
+            ("player", view.player_name.clone()),
+            ("team", view.team.clone()),
+            ("position", view.position.clone()),
+        ],
+        (opts.width, opts.height),
+        FrontMatterMetadata {
+            context: Some(&view.context),
+            result: None,
+            leaders_state: None,
+        },
+    );
+
+    let _ = writeln!(out, "## Signals Scope\n");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
+    }
+    for non_claim in &view.non_claims {
+        let _ = writeln!(out, "- {non_claim}");
+    }
+    let _ = writeln!(
+        out,
+        "- Signals remain outside `StatId`, leaderboards, and the `--filter` catalog."
+    );
+    let _ = writeln!(out);
+
+    let _ = writeln!(out, "## Context\n");
+    let _ = writeln!(out, "- Player: {}", view.player_name);
+    let _ = writeln!(out, "- Team: {}", view.team);
+    let _ = writeln!(out, "- Position: {}", view.position);
+    let _ = writeln!(out, "- Games played: {}", view.games_played);
+    let _ = writeln!(out, "- Season: {}", view.context.window.season.0);
+    let _ = writeln!(
+        out,
+        "- Season type: {}",
+        view.context.window.season_type.label()
+    );
+    let _ = writeln!(out);
+
+    let _ = writeln!(out, "## Signals\n");
+    let _ = writeln!(
+        out,
+        "| Signal | Value | Unit | Polarity | Evidence | Missing inputs |"
+    );
+    let _ = writeln!(out, "|---|---:|---|---|---|---|");
+    for row in &view.rows {
+        let value = row
+            .value
+            .map(|value| format!("{value:.2}"))
+            .unwrap_or_else(|| "unavailable".to_owned());
+        let _ = writeln!(
+            out,
+            "| {} | {} | {} | {} | {} | {} |",
+            md_cell(&row.label),
+            value,
+            signal_unit_label(row.unit),
+            signal_polarity_label(row.polarity),
+            signal_tier_label(row.evidence_tier),
+            md_cell(&signal_missing_inputs_label(&row.missing_inputs)),
+        );
+    }
+    let _ = writeln!(out);
+
+    let _ = writeln!(out, "## Methodology\n");
+    for row in &view.rows {
+        let _ = writeln!(out, "- **{}:** {}", row.short_label, row.methodology);
+    }
+    let _ = writeln!(out);
+
+    let _ = writeln!(out, "## Limitations\n");
+    for row in &view.rows {
+        let _ = writeln!(out, "- **{}:** {}", row.short_label, row.limitations);
+    }
+    let _ = writeln!(out);
+
+    Ok(out)
+}
+
+fn signal_unit_label(unit: icelines_core::signal_metrics::SignalMetricUnit) -> &'static str {
+    match unit {
+        icelines_core::signal_metrics::SignalMetricUnit::Per60 => "per 60",
+    }
+}
+
+fn signal_polarity_label(polarity: icelines_core::signal_metrics::SignalPolarity) -> &'static str {
+    match polarity {
+        icelines_core::signal_metrics::SignalPolarity::HigherIsBetter => "higher is better",
+        icelines_core::signal_metrics::SignalPolarity::LowerIsBetter => "lower is better",
+        icelines_core::signal_metrics::SignalPolarity::Neutral => "neutral",
+    }
+}
+
+fn signal_tier_label(tier: icelines_core::signal_metrics::SignalEvidenceTier) -> &'static str {
+    match tier {
+        icelines_core::signal_metrics::SignalEvidenceTier::Full => "full",
+        icelines_core::signal_metrics::SignalEvidenceTier::Partial => "partial",
+        icelines_core::signal_metrics::SignalEvidenceTier::Missing => "missing",
+    }
+}
+
+fn signal_input_label(input: icelines_core::signal_metrics::SignalInput) -> &'static str {
+    match input {
+        icelines_core::signal_metrics::SignalInput::SampleSize => "sample size",
+        icelines_core::signal_metrics::SignalInput::Realtime => "realtime",
+        icelines_core::signal_metrics::SignalInput::IceTime => "ice time",
+    }
+}
+
+fn signal_missing_inputs_label(inputs: &[icelines_core::signal_metrics::SignalInput]) -> String {
+    if inputs.is_empty() {
+        return "none".to_owned();
+    }
+    inputs
+        .iter()
+        .map(|input| signal_input_label(*input))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn md_cell(input: &str) -> String {
+    input.replace('|', "\\|")
+}
+
 // ── roster ───────────────────────────────────────────────────────────────────
 
 pub(crate) struct RosterOpts {
@@ -2717,6 +2878,42 @@ mod tests {
                 "missing disclosure term: {expected}"
             );
         }
+    }
+
+    #[test]
+    fn l0_export_signals_discloses_non_claims_before_signal_table() {
+        let repo = fixture_repo(&[(8478402, "Connor McDavid", "EDM", Position::Center, 109.0)]);
+        let views = fixture_views(&repo);
+        let player = views.first().expect("fixture player");
+        let view = icelines_core::view_model::signals::PlayerSignalsView::from_player(
+            icelines_core::view_model::signals::PlayerSignalsView::context_for_player(player),
+            player,
+        );
+        let out = render_signals_from_view(
+            &view,
+            &SignalsOpts {
+                player: "Connor McDavid".to_owned(),
+                season: None,
+                season_type: SeasonType::Regular,
+                width: 100,
+                height: 30,
+            },
+        )
+        .unwrap();
+
+        assert!(out.contains("type: signals"));
+        assert!(out.contains("## Disclosure"));
+        assert!(out.contains("## Signals Scope"));
+        assert!(out.contains("## Signals\n"));
+        assert!(
+            out.find("## Signals Scope").unwrap() < out.find("## Signals\n").unwrap(),
+            "Signals non-claim copy must precede the table"
+        );
+        assert!(out.contains("Not a prediction"));
+        assert!(out.contains("not zero value truth"));
+        assert!(out.contains("outside `StatId`, leaderboards, and the `--filter` catalog"));
+        assert!(out.contains("| Physical Engagement Rate | unavailable | per 60 | neutral | partial | realtime, ice time |"));
+        assert!(!out.contains("| Physical Engagement Rate | 0.00 |"));
     }
 
     #[test]

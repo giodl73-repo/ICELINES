@@ -90,3 +90,35 @@ fn l2_signals_text_surface_prints_disclaimer() {
     // missing signal is not the concern here since McDavid has full evidence.
     assert!(text.contains("evidence:"));
 }
+
+#[test]
+fn l2_export_md_signals_writes_markdown_report_to_stdout() {
+    let home = tempfile::TempDir::new().expect("temp home");
+    let output = Command::new(icelines_bin())
+        .env("HOME", home.path())
+        .env("USERPROFILE", home.path())
+        .env("ICELINES_NO_LIVE", "1")
+        .env("ICELINES_TEST_MODE", "1")
+        .args([
+            "export",
+            "md",
+            "signals",
+            "--player",
+            "Connor McDavid",
+            "--out",
+            "-",
+        ])
+        .output()
+        .expect("run icelines export md signals");
+    assert!(
+        output.status.success(),
+        "export md signals failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("type: signals"));
+    assert!(text.contains("## Signals Scope"));
+    assert!(text.contains("| Physical Engagement Rate |"));
+    assert!(text.contains("Not a prediction"));
+    assert!(text.contains("outside `StatId`, leaderboards, and the `--filter` catalog"));
+}

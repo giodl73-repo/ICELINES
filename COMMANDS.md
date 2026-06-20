@@ -546,6 +546,7 @@ tier and the missing inputs — never as a `0.0` player value.
 ```bash
 icelines signals "Connor McDavid"                      # text table
 icelines signals "McDavid" --json                      # frozen signals.v1 envelope
+icelines export md signals --player "McDavid" --out -  # markdown report packet
 icelines signals "Wayne Gretzky" --season 19881989     # historical (skeleton) season
 icelines signals "Cale Makar" --type playoff           # playoff window
 ```
@@ -560,8 +561,9 @@ Current signals (all per-60):
 
 Legend: `↑` higher is better · `↓` lower is better · `=` neutral. Signals are
 available through the CLI, the player-card TUI block, Web HTML
-(`/player/:id/signals`), and Web JSON (`/api/v1/player/:id/signals`). They are
-intentionally **not** in the `--filter` catalog, leaderboards, or `StatId` (see
+(`/player/:id/signals`), Web JSON (`/api/v1/player/:id/signals`), and
+`export md signals --player <name>`. They are intentionally **not** in the
+`--filter` catalog, leaderboards, or `StatId` (see
 [`design/specs/icelines-signals.md`](design/specs/icelines-signals.md)).
 
 ## `records` — player/team individual records
@@ -646,9 +648,10 @@ icelines export md team-season --team EDM --out team-season-EDM.md
 icelines export md leaders --columns "g,a,p,blk" --out custom.md
 icelines export md leaders --season 20242025 --filter "country=CAN" --top 5 --out leaders-can.md
 icelines export md compare --p1 McDavid --p2 MacKinnon --out compare.md
+icelines export md signals --player McDavid --out mcdavid-signals.md
 ```
 
-Shapes: `leaders`, `team`, `team-season`, `depth`, `fantasy`, `compare`, `series`, `roster`.
+Shapes: `leaders`, `team`, `team-season`, `depth`, `fantasy`, `compare`, `signals`, `series`, `roster`.
 
 `export md leaders` accepts the same repeatable free-form `--filter` strings as
 `query leaders`, plus explicit `--season` and `--type regular|playoff` controls
@@ -678,6 +681,10 @@ the series game log.
 `export md compare` includes an inline SVG Pts/82 career trend when both players
 have at least two bundled career seasons; the chart is descriptive context over
 bundled regular-season rows, not an era-adjusted player valuation.
+`export md signals` renders the same `PlayerSignalsView` rows as the CLI/Web
+Signals surfaces with disclosure, non-claim copy, methodology, limitations,
+evidence tiers, and missing-input labels before the table; unavailable evidence
+prints as `unavailable`, never a zero-filled signal value.
 The Web `/compare?a=ID&b=ID` page renders the same bundled regular-season Pts/82
 career trend after the side-by-side table when both compared players have enough
 bundled career rows.

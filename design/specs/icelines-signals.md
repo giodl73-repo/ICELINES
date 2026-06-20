@@ -52,11 +52,18 @@ non-claim copy so renderers do not recompute signal meaning locally.
   `/api/v1/player/:id/signals` with the `player-signals` data/meta envelope. L0
   and L1 fences prove unavailable evidence remains `unavailable`/`null`, not
   zero-filled.
+- **Report/export (live, Phase Hurricane / WP-010 pulse-05):** `export md
+  signals --player "<player>"` renders a disclosure-first Markdown packet from
+  the same `PlayerSignalsView`, including evidence tiers, missing inputs,
+  methodology, limitations, disclosures, and non-claim copy. Signals still remain
+  out of `StatId`, the `--filter` catalog, leaderboards, and analytics cache
+  publication.
 
 ## Promotion rule
 
-Before any signal becomes a stable `StatId`, leaderboard field, report/export
-column, cache metric family, or additional Web/CLI/TUI surface, a later pulse must
+Before any signal becomes a stable `StatId`, leaderboard field, additional
+report/export field beyond the selected `export md signals` packet, cache metric
+family, or additional Web/CLI/TUI surface, a later pulse must
 add:
 
 - product-copy review for the target surface;

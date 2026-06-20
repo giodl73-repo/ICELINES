@@ -3050,6 +3050,9 @@ pub enum ExportSubcommand {
         /// Second player for `compare`.
         #[arg(long)]
         p2: Option<String>,
+        /// Player for `signals`.
+        #[arg(long)]
+        player: Option<String>,
         /// Series letter for `series` (e.g. `A`).
         #[arg(long)]
         series: Option<String>,
@@ -3078,6 +3081,8 @@ pub enum MdShape {
     Fantasy,
     /// Two-player head-to-head.
     Compare,
+    /// Single-player Signals report.
+    Signals,
     /// One playoff series — game log + scorers.
     Series,
     /// All teams' rosters in one big table.
@@ -3094,6 +3099,7 @@ impl MdShape {
             MdShape::Depth => "depth",
             MdShape::Fantasy => "fantasy",
             MdShape::Compare => "compare",
+            MdShape::Signals => "signals",
             MdShape::Series => "series",
             MdShape::Roster => "roster",
         }

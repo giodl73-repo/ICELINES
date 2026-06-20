@@ -36,7 +36,7 @@ pub async fn run_signals(
 /// Resolve a player in the active `(season, season_type)` window, falling back to
 /// a bundled-season name lookup + lazy career fan-out for historical players —
 /// the same resolution path as `query player` (see `commands::query::run_player`).
-fn build_view(
+pub(crate) fn build_view(
     name: &str,
     season: Option<&str>,
     season_type: SeasonType,

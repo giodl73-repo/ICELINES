@@ -9,7 +9,10 @@
 **Status:** Deliverable 1 SHIPPED (WP-010 pulse-03, 2026-06-18) — `icelines signals`
 CLI + `signals.v1` JSON live, L0+L2 green, docs/parity/wave updated. Deliverable 1b
 SHIPPED (WP-010 pulse-04, 2026-06-19) — TUI player-card Signals block plus Web
-HTML `/player/:id/signals` and Web JSON `/api/v1/player/:id/signals`. Deliverables
+HTML `/player/:id/signals` and Web JSON `/api/v1/player/:id/signals`.
+Deliverable 1c SHIPPED (WP-010 pulse-05, 2026-06-20) — `export md signals`
+renders `PlayerSignalsView` as a disclosure-first Markdown report without
+promoting Signals into `StatId`, filters, leaderboards, or analytics cache. Deliverables
 2a SHIPPED (2026-06-19) — MoneyPuck-backed `on-ice-xg-for` and
 `on-ice-xg-against` catalog reads now surface the already-parsed 5v5 xGF/xGA
 columns. Deliverable 2b AUDITED (2026-06-19) — local schema evidence shows every
@@ -106,7 +109,7 @@ This is the strategic frame. Each item below is a future work package/pulse; onl
 
 | # | Gap | Why it matters | Tractability |
 |---|---|---|---|
-| **1** | **Signals were not on user surfaces** | The one *differentiated* metric bet; methodology + ViewModel already built (WP-010). Pulse 03/04 shipped CLI, TUI player-card, and Web player surfaces. | **Done for CLI/TUI/Web; continue only for report/export/cache/catalog.** |
+| **1** | **Signals were not on user surfaces** | The one *differentiated* metric bet; methodology + ViewModel already built (WP-010). Pulse 03/04 shipped CLI, TUI player-card, and Web player surfaces; pulse 05 adds Markdown report/export. | **Done for CLI/TUI/Web/report-export; continue only for cache/catalog/filter/leaderboard.** |
 | 2 | MoneyPuck data under-surfaced | Its CSVs already carry on-ice / deployment / shot data we fetch but don't expose. Pulse 2a wires the reserved on-ice xGF/xGA catalog keys to fetched MoneyPuck data; pulse 2b records that no additional MoneyPuck columns are verified locally yet; pulse 2c adds a committed MoneyPuck-shaped schema fixture for the currently parsed skater columns without promoting new catalog keys. | Medium — started |
 | 3 | No rest-of-season projections w/ confidence | #1 fantasy ask; today pace is descriptive-only. Pulse 3a adds shared player outlook confidence ranges while keeping the copy descriptive; pulse 3b adds the same pace outlook ranges to `icelines project` text/JSON/CSV; pulse 3c records team outlook confidence bands as deferred until a team-level outlook ViewModel/source contract exists. | Medium-Large — started |
 | 4 | Goalie eval shallow (SV%/GAA); GSAx only emerging | Table stakes for modern goalie analysis. Pulse 4a surfaces existing goalie advanced workload/quality fields (`QS%`, `SA/60`) in `GoaliesView` and CLI; pulse 4b exposes the same fields in Web `/goalies` HTML/JSON while keeping GSAx pending until xGA source work lands. | Medium — started |
@@ -239,8 +242,20 @@ Status: shipped 2026-06-19.
   career row, mirroring the player-card behavior.
 - Fences: TUI L0 checks unavailable evidence text and route handoff; Web L0/L1
   checks unavailable/null evidence, route envelope, player-card link, and route
-  inventory. Signals still do not enter `StatId`, filters, leaderboards, reports,
-  exports, or analytics cache.
+  inventory. Signals still do not enter `StatId`, filters, leaderboards, or
+  analytics cache.
+
+## Deliverable 1c (pulse-05) — Markdown export
+
+Status: shipped 2026-06-20.
+
+- `export md signals --player "<player>"` renders `PlayerSignalsView` as a
+  disclosure-first Markdown report packet with context, evidence tiers, missing
+  inputs, methodology, limitations, disclosures, and non-claim copy.
+- Missing or partial evidence renders as `unavailable`, never as zero-filled
+  Signals.
+- Signals still do not enter `StatId`, filters, leaderboards, or analytics
+  cache.
 
 ---
 

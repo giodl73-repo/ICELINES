@@ -66,7 +66,7 @@ Target-only rows remain honest:
 - `REQ-SIGNAL-001` has partial WP-010 implementation evidence for the first
   IceLines Signals descriptors, formulas, missing-input evidence, CLI text/JSON,
   TUI player-card, and Web HTML/JSON player surfaces; no stable stat catalog,
-  leaderboard, filter, cache, or report/export claim is accepted.
+  leaderboard, filter, cache, or additional report/export claim is accepted.
 
 ## Sequencing
 
@@ -81,7 +81,7 @@ Target-only rows remain honest:
 | 7 | WP-007 Standalone dependency and lean CLI target | Higher-risk Cargo/dependency work waits until command-surface inventory is ready. |
 | 8 | WP-008 Integration and validation rehearsal | Runs cross-surface L2 evidence after package-level work is closed or explicitly deferred. |
 | 9 | WP-009 Major analytics cache foundation | Defines the shared analytics evidence layer before downstream coach/scout/report/card/line/goalie/practice/postgame front ends are built. |
-| 10 | WP-010 IceLines Signals core metric family | Starts new descriptive metric methodology behind a core evidence API, then promotes selected CLI/TUI/Web surfaces before any stable stat catalog, cache, report/export, filter, or leaderboard promotion. |
+| 10 | WP-010 IceLines Signals core metric family | Starts new descriptive metric methodology behind a core evidence API, then promotes selected CLI/TUI/Web/export surfaces before any stable stat catalog, cache, filter, or leaderboard promotion. |
 
 ## Source-To-Work-Package Mapping
 
@@ -108,7 +108,7 @@ an explicit target disposition.
 | REQ-DEP-001 / DES-010 / DES-011 / IF-BUILD-001 / CR-021 / CR-022 | WP-007 | target | Starts only after command-surface replacement/refusal inventory exists. |
 | REQ-LEAN-001 / DES-010 / IF-BUILD-001 / CR-021 | WP-007 | target | Remains target-not-met until feature surgery and lean build evidence pass. |
 | REQ-CACHE-001..004 / IF-CACHE-001 / CR-033 / VAL-011 | WP-009 | partial | Major analytics cache has initial schema/source-state/invalidation/store and internal consumer fixtures; shipped product-surface claims remain pending until copy and consumer evidence pass. |
-| REQ-SIGNAL-001 / IF-SIGNAL-001 / DES-016 / VAL-012 | WP-010 | partial | First Signals descriptors, formula/evidence fixtures, internal ViewModel, CLI text/JSON, TUI player-card, and Web HTML/JSON player surfaces exist; stable `StatId`, filter, leaderboard, cache, and report/export promotion remain pending until product-copy/source-state evidence exists. |
+| REQ-SIGNAL-001 / IF-SIGNAL-001 / DES-016 / VAL-012 | WP-010 | partial | First Signals descriptors, formula/evidence fixtures, internal ViewModel, CLI text/JSON, TUI player-card, Web HTML/JSON, and Markdown export surfaces exist; stable `StatId`, filter, leaderboard, cache, and additional report/export promotion remain pending until product-copy/source-state evidence exists. |
 | REQ-CODE-001 / CODE_RIGOR.md / VERIFICATION.md command matrix / CR-005 / CR-023 | All packages; WP-008 | implement | Code rigor is a closure gate for every package. |
 
 Disposition values: `implement`, `implement target`, and `target` are used here.
