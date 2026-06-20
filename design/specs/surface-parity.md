@@ -1,7 +1,7 @@
 # IceLines surface parity matrix
 
 **Date**: 2026-05-09
-**Status**: Draft - Campbell seed, Ted Lindsay owns web verification
+**Status**: Active source of truth - refreshed by Phase Islanders pulse 02 on 2026-06-20
 
 This is the source-of-truth matrix for whether a platform feature is reachable
 through each user surface and whether it renders from a shared engine/ViewModel
@@ -38,6 +38,30 @@ has a `done` or clearly qualified `partial` row for it.
 Static site and export coverage may live in the row notes while the matrix is
 still compact, but Ted Lindsay/Jim Gregory must make it explicit before calling
 a feature fully shipped.
+
+---
+
+## Phase Islanders active partial rollup
+
+Phase Islanders pulse 02 keeps this matrix as the active surface-truth ledger.
+Rows marked `partial` are not all equal: some are deliberate handoffs, some are
+safe operational deferrals, and some are first-route evidence for broader future
+workflows.
+
+| Area | Current matrix posture | Promotion rule |
+|---|---|---|
+| Career/cohort leaders | CLI, Web HTML/JSON, and dashboard summaries use `CareerView`; TUI remains intentionally handoff-only. | Keep partial unless a dedicated TUI board adds value beyond the one-shot CLI/Web cohort table. |
+| Player Signals | CLI/TUI/Web/Markdown surfaces preserve `PlayerSignalsView`; Signals stay out of `StatId`, filters, leaderboards, and analytics cache. | Requires a separate Signals promotion/cache gate, not an Islanders cleanup pulse. |
+| Analytics cache Web/API consumers | Named cache report plus coach, scout, player-card, line, goalie, practice, postgame, adjustment, and agent routes have first-route evidence. | Keep partial until broader shipped workflow evidence and product-copy review exist for each workflow family. |
+| Admin operations | Safe runtime config, data verify, snapshot activate/delete, and game-cache warmer paths are POST-backed and tested; web install/remove and persistent report-toggle writes remain deferred. | Promote only with a scoped confirmation/persistence contract; otherwise keep durable deferral copy. |
+| Docs/reference | `/docs`, TUI docs overlay, and menu docs paths use the docs ViewModel/command reference. | Pulse 03 verifies wording does not revive stale mkdocs/static-site or unimplemented operation claims. |
+| Dashboard workspace partials | Route-level fragment and workspace tests exist; desktop/mobile capture command is available. | Pulse 04 must record selected capture evidence before claiming live visual/browser breadth. |
+| Favorites/watch/watch-rules | Read/mutation paths are useful and tested, but richer group/rule dimensions remain intentionally narrow. | Keep partial unless a shared contract adds the missing dimensions without GET mutation or ambiguous persistence. |
+
+Closed phases set important boundaries for this rollup: Phase Hurricane and
+Phase Rangers are wrapped; Islanders must not use this matrix refresh to promote
+MoneyPuck deployment, GSAx/high-danger save percentage, team confidence,
+Signals cache/catalog/filter/leaderboard, or lean CLI support.
 
 ---
 

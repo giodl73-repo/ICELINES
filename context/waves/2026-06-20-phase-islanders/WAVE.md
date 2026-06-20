@@ -32,6 +32,7 @@ cache-backed partial rollups without promoting new analytics claims.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Inventory and plan Phase Islanders goals | passed; see `ISLANDERS-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Surface parity matrix refresh | passed; see `design/specs/surface-parity.md` and `pulses/pulse-02.md` |
 
 ## Validation posture
 
