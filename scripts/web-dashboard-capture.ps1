@@ -77,11 +77,23 @@ try {
         throw "Timed out waiting for $baseUrl/dashboard"
     }
 
+    $viewports = @{
+        Desktop = "1440,900"
+        Tablet = "900,1100"
+        Mobile = "390,844"
+    }
+
     $captures = @(
-        @{ Name = "dashboard-leaders-desktop"; Url = "$baseUrl/dashboard?workspace=/leaders"; Size = "1440,900" },
-        @{ Name = "dashboard-poach-desktop"; Url = "$baseUrl/dashboard?workspace=/poach"; Size = "1440,900" },
-        @{ Name = "dashboard-fantasy-mobile"; Url = "$baseUrl/dashboard?workspace=/fantasy"; Size = "390,844" },
-        @{ Name = "dashboard-team-season-mobile"; Url = "$baseUrl/dashboard?workspace=/team/EDM/season"; Size = "390,844" }
+        @{ Name = "dashboard-home-desktop"; Url = "$baseUrl/dashboard"; Size = $viewports.Desktop },
+        @{ Name = "dashboard-leaders-desktop"; Url = "$baseUrl/dashboard?workspace=/leaders"; Size = $viewports.Desktop },
+        @{ Name = "dashboard-goalies-desktop"; Url = "$baseUrl/dashboard?workspace=/goalies"; Size = $viewports.Desktop },
+        @{ Name = "dashboard-poach-desktop"; Url = "$baseUrl/dashboard?workspace=/poach"; Size = $viewports.Desktop },
+        @{ Name = "dashboard-favorites-tablet"; Url = "$baseUrl/dashboard?workspace=/favorites"; Size = $viewports.Tablet },
+        @{ Name = "dashboard-watchlist-tablet"; Url = "$baseUrl/dashboard?workspace=/watchlist"; Size = $viewports.Tablet },
+        @{ Name = "dashboard-schedule-tablet"; Url = "$baseUrl/dashboard?workspace=/schedule"; Size = $viewports.Tablet },
+        @{ Name = "dashboard-fantasy-mobile"; Url = "$baseUrl/dashboard?workspace=/fantasy"; Size = $viewports.Mobile },
+        @{ Name = "dashboard-team-season-mobile"; Url = "$baseUrl/dashboard?workspace=/team/EDM/season"; Size = $viewports.Mobile },
+        @{ Name = "dashboard-player-mobile"; Url = "$baseUrl/dashboard?workspace=/player/8478402"; Size = $viewports.Mobile }
     )
 
     foreach ($capture in $captures) {

@@ -5,7 +5,7 @@
 > overstating browser breadth, touch behavior, focus order, or full accessibility.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 01 planning opened
+**Status:** Active - pulse 02 capture matrix harness passed
 
 ---
 
@@ -50,7 +50,10 @@ repeatable dashboard visual QA harness before changing surface claims.
 1. **Pulse 01 - Plan and inventory.** Record current capture harness coverage,
    dashboard workspace families, and visual QA gaps.
 2. **Pulse 02 - Capture matrix harness.** Expand or wrap the existing capture
-   script with an explicit workspace and viewport matrix.
+   script with an explicit workspace and viewport matrix. Result: passed
+   2026-06-20 with desktop captures for home, leaders, goalies, and poach;
+   tablet captures for favorites, watchlist, and schedule; and mobile captures
+   for fantasy, team-season, and player workspaces.
 3. **Pulse 03 - Artifact validation.** Add automated checks for expected files,
    dimensions, nonblank pixels, and route readiness.
 4. **Pulse 04 - Responsive/focus decision.** Add focused keyboard/mobile checks

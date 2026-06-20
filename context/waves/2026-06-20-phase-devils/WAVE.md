@@ -31,6 +31,7 @@ touch, focus, or accessibility breadth.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Devils goals | passed; see `DEVILS-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Dashboard capture matrix harness | passed with representative desktop/tablet/mobile workspace captures; see `scripts/web-dashboard-capture.ps1` and `pulses/pulse-02.md` |
 
 ## Validation posture
 
