@@ -1,5 +1,16 @@
 # VTRACE Review Record
 
+## 2026-06-19 Phase Hurricane Compact Visualization Train Closeout Review
+
+**Scope:** Phase Hurricane deliverable 6 compact visualization pulses 6a through 6z.
+
+**Claims accepted:**
+- The planned compact visualization train is complete through 6z: CLI career-arc sparklines, Markdown/Web SVG chart additions, TUI sparkline hardening, and selected TUI detail/list bars are all recorded with focused evidence.
+- The final TUI slice covers dashboard, playoff detail, team-season detail, schedule matchup detail, game detail, player-records detail, goalie leaderboard, Stats leaders rows, and team roster rows.
+- No planned compact visualization implementation phase remains after 6z.
+
+**Residual risk:** This closeout does not claim exhaustive interactive terminal screenshot/focus proof or every possible future SVG/report shape. Those remain deferred future work and require a new targeted wave before promotion.
+
 ## 2026-06-19 Phase Hurricane 6z TUI Team Roster Pts/82-Bar Review
 
 **Scope:** TUI team roster rows.

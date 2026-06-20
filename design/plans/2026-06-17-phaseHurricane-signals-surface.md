@@ -109,7 +109,7 @@ This is the strategic frame. Each item below is a future work package/pulse; onl
 | 3 | No rest-of-season projections w/ confidence | #1 fantasy ask; today pace is descriptive-only. Pulse 3a adds shared player outlook confidence ranges while keeping the copy descriptive; pulse 3b adds the same pace outlook ranges to `icelines project` text/JSON/CSV. | Medium-Large — started |
 | 4 | Goalie eval shallow (SV%/GAA); GSAx only emerging | Table stakes for modern goalie analysis. Pulse 4a surfaces existing goalie advanced workload/quality fields (`QS%`, `SA/60`) in `GoaliesView` and CLI; pulse 4b exposes the same fields in Web `/goalies` HTML/JSON while keeping GSAx pending until xGA source work lands. | Medium — started |
 | 5 | "38 seasons" reads deeper than it is (~5 modern Tier-1) | Honesty gap; perspective claims over skeleton seasons. Pulses 5a/5b add CLI career-arc and leaders aggregate disclosure; pulse 5c fixes the TUI dashboard bundled-history trend label/disclosure. | Small — started |
-| 6 | No visualization (text/tables only) | Loses the "publication-grade" comparison vs HockeyViz/MoneyPuck. Pulse 6a adds compact CLI career-arc sparklines for Pts/82 and G/82; pulse 6b adds an inline SVG Pts/82 trend to `export md compare`; pulse 6c adds the same trend to Web `/compare`; pulse 6d adds a Markdown leaders Pts/82 SVG bar chart; pulse 6e adds the same chart to Web `/leaders`; pulse 6f adds a Web `/player/:id` Pts/82 career SVG below the career table; pulse 6g hardens TUI dashboard sparkline narrow-width evidence; pulse 6h adds a Web `/team/:abbrev` active-roster Pts/82 SVG; pulse 6i adds a Web `/goalies` SV% SVG; pulse 6j adds a Web scoring outlook 82-game pace SVG; pulse 6k adds a Web records count SVG; pulse 6l adds a Web poach/weekly report score SVG; pulse 6m adds a Markdown team-season quality-ledger SVG; pulse 6n adds a Markdown depth team-strength SVG; pulse 6o adds a Markdown fantasy poach-score SVG; pulse 6p adds a Markdown roster Pts/82 SVG; pulse 6q adds a Markdown team Pts/82 SVG; pulse 6r adds a Markdown series game-margin SVG; pulse 6s adds a TUI playoff series game-margin sparkline; pulse 6t adds a TUI team-season goal-differential sparkline; pulse 6u adds a TUI schedule matchup margin sparkline; pulse 6v adds TUI game-detail skater-activity bars; pulse 6w adds TUI player-records count bars; pulse 6x adds TUI goalie SV% quality bars; pulse 6y adds TUI Stats leaders primary-metric bars; pulse 6z adds TUI team roster Pts/82 bars. | Large — started |
+| 6 | No visualization (text/tables only) | Loses the "publication-grade" comparison vs HockeyViz/MoneyPuck. Pulse 6a adds compact CLI career-arc sparklines for Pts/82 and G/82; pulse 6b adds an inline SVG Pts/82 trend to `export md compare`; pulse 6c adds the same trend to Web `/compare`; pulse 6d adds a Markdown leaders Pts/82 SVG bar chart; pulse 6e adds the same chart to Web `/leaders`; pulse 6f adds a Web `/player/:id` Pts/82 career SVG below the career table; pulse 6g hardens TUI dashboard sparkline narrow-width evidence; pulse 6h adds a Web `/team/:abbrev` active-roster Pts/82 SVG; pulse 6i adds a Web `/goalies` SV% SVG; pulse 6j adds a Web scoring outlook 82-game pace SVG; pulse 6k adds a Web records count SVG; pulse 6l adds a Web poach/weekly report score SVG; pulse 6m adds a Markdown team-season quality-ledger SVG; pulse 6n adds a Markdown depth team-strength SVG; pulse 6o adds a Markdown fantasy poach-score SVG; pulse 6p adds a Markdown roster Pts/82 SVG; pulse 6q adds a Markdown team Pts/82 SVG; pulse 6r adds a Markdown series game-margin SVG; pulse 6s adds a TUI playoff series game-margin sparkline; pulse 6t adds a TUI team-season goal-differential sparkline; pulse 6u adds a TUI schedule matchup margin sparkline; pulse 6v adds TUI game-detail skater-activity bars; pulse 6w adds TUI player-records count bars; pulse 6x adds TUI goalie SV% quality bars; pulse 6y adds TUI Stats leaders primary-metric bars; pulse 6z adds TUI team roster Pts/82 bars. | Large — compact train complete |
 
 Conceded out of scope (keep conceded): NHL Edge skating speed, shot-location
 heatmaps, predictive "value over replacement", salary-cap value. Revisit only as
@@ -296,7 +296,7 @@ newest-5-modern / older-skeleton / missing-unavailable note for long histories.
 Remaining work: add the same completeness line to any future seasons-aggregate
 outputs that render or summarize data beyond the modern tier.
 
-**6. Minimal visualization.** Status: started. Pulse 6a adds compact
+**6. Minimal visualization.** Status: compact train complete. Pulse 6a adds compact
 oldest-to-newest CLI career-arc sparklines for Pts/82 and G/82 on multi-season
 `query player` / `query compare` output, reusing the native sparkline renderer.
 Pulse 6b adds an inline SVG Pts/82 bundled-career trend to `export md compare`
@@ -354,9 +354,10 @@ Pulse 6y adds compact ASCII primary-metric bars to TUI Stats leaders rows,
 preserving the printed leader metric as the controlling value.
 Pulse 6z adds compact ASCII Pts/82 bars to TUI team roster rows, preserving the
 printed Pts/82 rate as the controlling value.
-Remaining work: broader interactive TUI visualization review and any future
-secondary SVG/report shapes; the planned compact visualization train is complete
-through 6z.
+Residual work: no planned compact visualization pulses remain. Broader
+interactive TUI terminal screenshot/focus review and future secondary SVG/report
+shapes are deferred; the planned compact visualization train is complete through
+6z.
 
 ---
 
