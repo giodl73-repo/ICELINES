@@ -31,7 +31,7 @@ keeps Phase Rangers from reopening shipped work or promoting blocked claims.
 
 1. **NYR workflow proof.** Add a repeatable Rangers workflow that exercises
    existing surfaces and reveals any product gaps without changing analytics
-   semantics.
+   semantics. Status: passed in pulse 02.
 2. **Signals discovery design gate.** Decide whether discovery is a report,
    route, command, or cache consumer. Require product-copy and evidence review
    before implementation.
