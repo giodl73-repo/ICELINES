@@ -5,7 +5,7 @@
 > durable deferrals without overstating browser, TUI, cache, or docs coverage.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 04 dashboard selected capture proof passed
+**Status:** Active - pulse 05 cache partial rollup passed
 
 ---
 
@@ -58,7 +58,9 @@ remaining gaps with runnable checks or durable deferral text.
    with selected desktop/mobile capture evidence; full live-browser, touch/focus,
    and exhaustive responsive proof remain outside the claim.
 5. **Pulse 05 - Cache partial rollup.** Summarize WP-009 first-route evidence
-   versus broader workflow claims.
+   versus broader workflow claims. Result: passed 2026-06-20 with the active
+   surface matrix separating named Web/API route evidence from coach, scout,
+   player, line, goalie, practice, postgame, and agent workflow completion.
 6. **Pulse 06 - Closeout.** Wrap Islanders with validation and tracker snapshot.
 
 ---

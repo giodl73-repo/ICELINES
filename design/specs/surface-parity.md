@@ -52,7 +52,7 @@ workflows.
 |---|---|---|
 | Career/cohort leaders | CLI, Web HTML/JSON, and dashboard summaries use `CareerView`; TUI remains intentionally handoff-only. | Keep partial unless a dedicated TUI board adds value beyond the one-shot CLI/Web cohort table. |
 | Player Signals | CLI/TUI/Web/Markdown surfaces preserve `PlayerSignalsView`; Signals stay out of `StatId`, filters, leaderboards, and analytics cache. | Requires a separate Signals promotion/cache gate, not an Islanders cleanup pulse. |
-| Analytics cache Web/API consumers | Named cache report plus coach, scout, player-card, line, goalie, practice, postgame, adjustment, and agent routes have first-route evidence. | Keep partial until broader shipped workflow evidence and product-copy review exist for each workflow family. |
+| Analytics cache Web/API consumers | Named cache report plus coach, scout, player-card, line, goalie, practice, postgame, adjustment, and agent routes have WP-009 first-route Web/API evidence. | Keep partial until broader shipped workflow evidence and product-copy review exist for each workflow family; first-route evidence is not a workflow-completion claim. |
 | Admin operations | Safe runtime config, data verify, snapshot activate/delete, and game-cache warmer paths are POST-backed and tested; web install/remove and persistent report-toggle writes remain deferred. | Promote only with a scoped confirmation/persistence contract; otherwise keep durable deferral copy. |
 | Docs/reference | `/docs`, TUI docs overlay, and menu docs paths use the docs ViewModel/command reference. | Pulse 03 verifies wording does not revive stale mkdocs/static-site or unimplemented operation claims. |
 | Dashboard workspace partials | Route-level fragment and workspace tests exist; pulse 04 recorded selected desktop/mobile captures for leaders, poach, fantasy, and team-season workspaces. | Selected capture evidence exists, but full live-browser, touch/focus, and exhaustive responsive proof remain future visual QA claims. |
@@ -62,6 +62,28 @@ Closed phases set important boundaries for this rollup: Phase Hurricane and
 Phase Rangers are wrapped; Islanders must not use this matrix refresh to promote
 MoneyPuck deployment, GSAx/high-danger save percentage, team confidence,
 Signals cache/catalog/filter/leaderboard, or lean CLI support.
+
+### WP-009 cache-backed route rollup
+
+Phase Islanders pulse 05 keeps the WP-009 cache-backed surfaces intentionally
+partial. The evidence proves selected Web HTML and JSON routes can read prepared
+analytics cache records through `AnalyticsCacheConsumerView`, preserve
+source-state/freshness/quality/methodology/disclosure/non-claim fields, and
+render explicit unavailable states without creating cache storage. It does not
+prove full coaching, scouting, player research, line deployment, goalie,
+practice, postgame, or agent workflows.
+
+| Consumer family | First-route evidence | Still not claimed |
+|---|---|---|
+| Named analytics cache report | `/reports/analytics-cache` and `/api/v1/reports/analytics-cache`, covered by `l2_wp009_analytics_cache_report_*`. | Any specific hockey workflow beyond rendering a named prepared cache record. |
+| Coach dashboard | `/coach/dashboard` and `/api/v1/coach/dashboard`, covered by `l2_wp009_coach_dashboard_*`. | Broader coach-dashboard expansion, live analytics recomputation, or coaching authority. |
+| Opponent scout | `/scout/opponent` and `/api/v1/scout/opponent`, covered by `l2_wp009_opponent_scout_*`. | A full scouting suite or opponent game-plan workflow. |
+| Player evidence card | `/player/evidence-card` and `/api/v1/player/evidence-card`, covered by `l2_wp009_player_evidence_card_*`. | Full player-card research, deployment, or transaction workflow. |
+| Line combinations | `/lines/explorer` and `/api/v1/lines/explorer`, covered by `l2_wp009_line_combination_explorer_*`. | Deployment advice or line-chemistry causality. |
+| Goalie readiness | `/goalies/readiness` and `/api/v1/goalies/readiness`, covered by `l2_wp009_goalie_readiness_*`. | Injury certainty, start/sit authority, or broader goalie workflow completion. |
+| Practice focus | `/practice/focus` and `/api/v1/practice/focus`, covered by `l2_wp009_practice_focus_*`. | Mandatory drill plans or autonomous practice prescriptions. |
+| Postgame review and adjustments | `/postgame/review`, `/api/v1/postgame/review`, `/postgame/adjustments`, and `/api/v1/postgame/adjustments`, covered by `l2_wp009_postgame_review_*` and `l2_wp009_postgame_adjustments_*`. | Causal blame assignment, automatic correction plans, or full postgame workflow completion. |
+| Agent evidence | `/agents/evidence` and `/api/v1/agents/evidence`, covered by `l2_wp009_agent_evidence_*`. | Autonomous agent action or broader agent workflow completion. |
 
 ---
 
