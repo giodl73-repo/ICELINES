@@ -15,7 +15,10 @@ HTML `/player/:id/signals` and Web JSON `/api/v1/player/:id/signals`. Deliverabl
 columns. Deliverable 2b AUDITED (2026-06-19) — local schema evidence shows every
 currently parsed MoneyPuck value column is now either surfaced or used to compute
 a surfaced catalog stat; broader deployment surfacing remains blocked on adding
-verified CSV schema columns/fixtures. Deliverable 5a SHIPPED (2026-06-19) —
+verified CSV schema columns/fixtures. Deliverable 2c SHIPPED (2026-06-19) —
+a committed MoneyPuck-shaped skater CSV schema fixture now locks the currently
+parsed MoneyPuck columns and parser computation boundary without adding new
+catalog claims. Deliverable 5a SHIPPED (2026-06-19) —
 `query player` / `query compare` career arcs now disclose the newest-5 modern
 Tier-1 boundary when rendering older bundled historical/skeleton rows.
 Deliverable 5b SHIPPED (2026-06-19) — `query leaders --seasons N` text output
@@ -44,8 +47,7 @@ Pts/82 bundled-career trend for two-player comparisons. Deliverable 6d SHIPPED
 bar chart. Deliverable 6e SHIPPED (2026-06-19) — Web `/leaders` adds the same
 descriptive inline SVG current-window Pts/82 bar chart for non-empty skater
 results. Deliverable 6f SHIPPED (2026-06-19) — Web `/player/:id` adds an inline SVG
-Pts/82 bundled-career trend below the player career table. Remaining Deliverable
-2c and broader 6 work continue as follow-on pulses.
+Pts/82 bundled-career trend below the player career table.
 Deliverable 6g HARDENED (2026-06-19) — TUI dashboard sparkline renderer now
 has focused narrow-width evidence for zero- and one-column chart budgets.
 Deliverable 6h SHIPPED (2026-06-19) — Web `/team/:abbrev` adds an inline SVG
@@ -105,7 +107,7 @@ This is the strategic frame. Each item below is a future work package/pulse; onl
 | # | Gap | Why it matters | Tractability |
 |---|---|---|---|
 | **1** | **Signals were not on user surfaces** | The one *differentiated* metric bet; methodology + ViewModel already built (WP-010). Pulse 03/04 shipped CLI, TUI player-card, and Web player surfaces. | **Done for CLI/TUI/Web; continue only for report/export/cache/catalog.** |
-| 2 | MoneyPuck data under-surfaced | Its CSVs already carry on-ice / deployment / shot data we fetch but don't expose. Pulse 2a wires the reserved on-ice xGF/xGA catalog keys to fetched MoneyPuck data; pulse 2b records that no additional MoneyPuck columns are verified locally yet. | Medium — started |
+| 2 | MoneyPuck data under-surfaced | Its CSVs already carry on-ice / deployment / shot data we fetch but don't expose. Pulse 2a wires the reserved on-ice xGF/xGA catalog keys to fetched MoneyPuck data; pulse 2b records that no additional MoneyPuck columns are verified locally yet; pulse 2c adds a committed MoneyPuck-shaped schema fixture for the currently parsed skater columns without promoting new catalog keys. | Medium — started |
 | 3 | No rest-of-season projections w/ confidence | #1 fantasy ask; today pace is descriptive-only. Pulse 3a adds shared player outlook confidence ranges while keeping the copy descriptive; pulse 3b adds the same pace outlook ranges to `icelines project` text/JSON/CSV. | Medium-Large — started |
 | 4 | Goalie eval shallow (SV%/GAA); GSAx only emerging | Table stakes for modern goalie analysis. Pulse 4a surfaces existing goalie advanced workload/quality fields (`QS%`, `SA/60`) in `GoaliesView` and CLI; pulse 4b exposes the same fields in Web `/goalies` HTML/JSON while keeping GSAx pending until xGA source work lands. | Medium — started |
 | 5 | "38 seasons" reads deeper than it is (~5 modern Tier-1) | Honesty gap; perspective claims over skeleton seasons. Pulses 5a/5b add CLI career-arc and leaders aggregate disclosure; pulse 5c fixes the TUI dashboard bundled-history trend label/disclosure. | Small — started |
@@ -260,9 +262,13 @@ The repo has no committed MoneyPuck fixture with verified additional deployment
 columns; `tests/fixtures/sample_skaters.csv` is a fantasy benchmark fixture, not
 a MoneyPuck source fixture. Do not add more MoneyPuck catalog keys until a
 checked CSV fixture or pinned schema evidence is committed.
+Pulse 2c adds `tests/fixtures/moneypuck/skaters_schema_sample.csv` as a compact
+MoneyPuck-shaped schema fixture and parser test for the currently supported
+skater columns. It does not verify or surface additional deployment columns.
 
-Remaining work: add a verified MoneyPuck schema fixture, then surface any
-unused on-ice/deployment columns as catalog stats with `fetch money-puck` gating.
+Remaining work: add a pinned upstream schema fixture for any additional
+MoneyPuck deployment columns, then surface verified unused columns as catalog
+stats with `fetch money-puck` gating.
 Cheapest path to real on-ice depth; no new data source.
 
 **3. Rest-of-season projections w/ confidence.** Status: started. The existing

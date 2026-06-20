@@ -1,0 +1,5 @@
+playerId,season,name,team,position,situation,games_played,icetime,I_F_xGoals,onIce_xGoalsFor,onIce_xGoalsAgainst,onIce_corsiFor,onIce_corsiAgainst,onIce_fenwickFor,onIce_fenwickAgainst,onIce_shotsOnGoalFor,onIce_shotsOnGoalAgainst
+8480001,2025,Connor McPlayer,EDM,C,all,82,5000,20.0,0,0,0,0,0,0,0,0
+8480001,2025,Connor McPlayer,EDM,C,5on5,82,3000,0,30.0,20.0,60.0,40.0,45.0,35.0,50.0,32.0
+8480002,2025,Solid Skater,SEA,LW,all,74,4200,12.0,0,0,0,0,0,0,0,0
+8480002,2025,Solid Skater,SEA,LW,5on5,74,2600,0,24.0,26.0,44.0,56.0,36.0,44.0,34.0,38.0

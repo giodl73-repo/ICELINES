@@ -237,6 +237,28 @@ mod tests {
         assert!((stats.xg_per_60 - 20.0 / 5000.0 * 3600.0).abs() < 0.01);
     }
 
+    #[test]
+    fn l0_parse_committed_moneypuck_schema_fixture() {
+        let csv = include_str!("../../tests/fixtures/moneypuck/skaters_schema_sample.csv");
+        let result = parse_csv_checked(csv).expect("schema fixture must parse");
+        assert_eq!(result.len(), 2);
+
+        let elite = result.get(&8480001).expect("fixture player must parse");
+        assert!((elite.xg_all - 20.0).abs() < 0.01);
+        assert!((elite.on_ice_xg_for_5v5 - 30.0).abs() < 0.01);
+        assert!((elite.on_ice_xg_against_5v5 - 20.0).abs() < 0.01);
+        assert!((elite.cf_pct_5v5 - 60.0).abs() < 0.1);
+        assert!((elite.ff_pct_5v5 - 56.25).abs() < 0.1);
+        assert!((elite.xgf_pct_5v5 - 60.0).abs() < 0.1);
+
+        let solid = result
+            .get(&8480002)
+            .expect("second fixture player must parse");
+        assert!((solid.cf_pct_5v5 - 44.0).abs() < 0.1);
+        assert!((solid.ff_pct_5v5 - 45.0).abs() < 0.1);
+        assert!((solid.xgf_pct_5v5 - 48.0).abs() < 0.1);
+    }
+
     fn csv_header() -> &'static str {
         "playerId,situation,icetime,I_F_xGoals,onIce_xGoalsFor,onIce_xGoalsAgainst,onIce_corsiFor,onIce_corsiAgainst,onIce_fenwickFor,onIce_fenwickAgainst\n"
     }

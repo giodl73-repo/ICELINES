@@ -1,5 +1,16 @@
 # VTRACE Review Record
 
+## 2026-06-19 Phase Hurricane 2c MoneyPuck Schema-Fixture Review
+
+**Scope:** Committed MoneyPuck-shaped skater CSV schema fixture and checked parser boundary.
+
+**Claims accepted:**
+- `tests/fixtures/moneypuck/skaters_schema_sample.csv` locks the currently parsed MoneyPuck skater columns in a committed fixture.
+- `parse_csv_checked` can read the committed fixture while preserving xG, xG/60, CF%, FF%, on-ice xGF/xGA, and xGF% computations.
+- Extra ignored source columns in the fixture do not create new catalog or deployment claims.
+
+**Residual risk:** This is a compact schema fixture, not a pinned full upstream season CSV. Additional MoneyPuck deployment-column surfacing still requires pinned upstream schema evidence before adding catalog keys.
+
 ## 2026-06-19 Phase Hurricane Compact Visualization Train Closeout Review
 
 **Scope:** Phase Hurricane deliverable 6 compact visualization pulses 6a through 6z.

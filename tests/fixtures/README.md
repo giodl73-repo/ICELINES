@@ -49,6 +49,8 @@ exercise every code path in IceLines.
 fixtures/
 ├── README.md                          # This file
 ├── sample_skaters.csv                 # Yahoo-format CSV with 9 archetypes
+├── moneypuck/
+│   └── skaters_schema_sample.csv       # MoneyPuck-shaped skater CSV schema fixture
 └── api/
     ├── bios_page1.json                # NHL /skater/bios response, 9 players, total=9
     ├── stats_page1.json               # NHL /skater/summary response, 9 players
@@ -61,6 +63,11 @@ fixtures/
 
 Files marked TODO are needed for Phase 2+ tests. Add them as the corresponding
 commands are implemented.
+
+The MoneyPuck fixture is a compact schema fixture, not a full upstream data
+snapshot. It locks the currently parsed skater CSV columns plus a few ignored
+source columns so parser tests can distinguish required-column drift from
+unsupported future deployment surfacing.
 
 ## Mock Server
 

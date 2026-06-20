@@ -457,7 +457,7 @@ Validation levels:
 
 | Level | Required | Commands / Evidence | Result |
 |---|---|---|---|
-| L0 | yes | Tempdir/httpmock/source-state fixtures for touched paths. | pulses 01-02 and 04-13 passed: selected `SnapshotStore::read` evidence refuses named unsealed snapshots with `NotSealed` before trusting existing file bytes; selected no-live schedule and bundled leaders isolated-home smoke evidence avoids data/cache writes; selected httpmock retry evidence covers 429, 503, generic 5xx, non-retryable 4xx, retry budget, and backoff cap; selected no-live fetch refusals avoid data/cache writes; selected snapshot integrity and missing-file fixtures reject changed or incomplete source state; selected chunked snapshot schema fixtures promote v1, round-trip v2, and reject v3/newer manifests; selected MoneyPuck CSV fixtures reject missing required columns and malformed rows; selected FLETCH cache/refresh, player landing schema-drift, abbreviation mapper, missing-source, and partial-refresh resume/flag fixtures pass |
+| L0 | yes | Tempdir/httpmock/source-state fixtures for touched paths. | pulses 01-02 and 04-13 passed: selected `SnapshotStore::read` evidence refuses named unsealed snapshots with `NotSealed` before trusting existing file bytes; selected no-live schedule and bundled leaders isolated-home smoke evidence avoids data/cache writes; selected httpmock retry evidence covers 429, 503, generic 5xx, non-retryable 4xx, retry budget, and backoff cap; selected no-live fetch refusals avoid data/cache writes; selected snapshot integrity and missing-file fixtures reject changed or incomplete source state; selected chunked snapshot schema fixtures promote v1, round-trip v2, and reject v3/newer manifests; selected MoneyPuck CSV fixtures reject missing required columns and malformed rows; Phase Hurricane 2c adds a committed MoneyPuck-shaped schema fixture for currently parsed skater columns; selected FLETCH cache/refresh, player landing schema-drift, abbreviation mapper, missing-source, and partial-refresh resume/flag fixtures pass |
 | L1 | yes | Workspace checks or affected-slice equivalent. | pulses 02-03, 05, and 10-13 affected CLI/fetch evidence passed; pulse 01 affected fetch slice passed_with_risk with the existing `icelines-fetch/src/fletch.rs` clippy blocker recorded |
 | L2 | yes | Data/fetch command transcript and offline smoke evidence. | partial: pulse 02 selected offline smoke passed, pulse 03 selected shift capability refusal passed, and pulse 05 selected data/fetch/status/snapshot command transcript evidence passed; broader transcript breadth remains pending |
 
@@ -498,7 +498,8 @@ selected upstream retry/failure evidence passed_with_risk, pulse 05 selected
 data/fetch command transcript evidence passed_with_risk, and pulse 06 selected
 snapshot integrity mismatch and missing-file evidence passed_with_risk, pulse 07
 selected chunked snapshot schema drift/newer-schema evidence passed_with_risk,
-pulse 08 selected MoneyPuck CSV drift evidence passed_with_risk, pulse 09
+pulse 08 selected MoneyPuck CSV drift evidence passed_with_risk, Phase Hurricane
+2c selected committed MoneyPuck schema-fixture evidence passed_with_risk, pulse 09
 selected FLETCH cache/refresh fallback evidence passed_with_risk, and pulse 10
 selected player landing schema-drift evidence passed_with_risk, pulse 11
 selected abbreviation-drift evidence passed_with_risk, pulse 12 selected
