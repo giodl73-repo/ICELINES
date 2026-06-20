@@ -15,10 +15,11 @@ For the final forward-roadmap role review, see
 Jennings restored the measured baseline, Campbell established the shared
 ViewModel contract path, the Messier/Lester/Ted/Selke parity wave moved the
 major product surfaces onto that path, Prince closed the shared visual-system
-pass, and Jim Gregory closed release hardening. The next forward work is now the
-explicitly partial UX/admin/doc surfaces tracked in
-`design/specs/surface-parity.md`, plus any new feature phase we choose from the
-backlog.
+pass, Jim Gregory closed release hardening, Hurricane shipped the current
+analytics surface push, Rangers organized the post-Hurricane workflow, and
+Islanders closed the surface-truth cleanup. The next forward work should be a
+new scoped wave from the remaining promotion gates in
+`design/specs/surface-parity.md` or a new feature phase from the backlog.
 
 | Plan | Status | Summary |
 |------|--------|---------|
