@@ -1,7 +1,7 @@
 # IceLines surface parity matrix
 
 **Date**: 2026-05-09
-**Status**: Active source of truth - refreshed by Phase Islanders pulse 02 on 2026-06-20
+**Status**: Active source of truth - Phase Islanders closeout on 2026-06-20
 
 This is the source-of-truth matrix for whether a platform feature is reachable
 through each user surface and whether it renders from a shared engine/ViewModel
@@ -41,11 +41,11 @@ a feature fully shipped.
 
 ---
 
-## Phase Islanders active partial rollup
+## Active partial rollup
 
-Phase Islanders pulse 02 keeps this matrix as the active surface-truth ledger.
-Rows marked `partial` are not all equal: some are deliberate handoffs, some are
-safe operational deferrals, and some are first-route evidence for broader future
+Phase Islanders closed with this matrix as the active surface-truth ledger. Rows
+marked `partial` are not all equal: some are deliberate handoffs, some are safe
+operational deferrals, and some are first-route evidence for broader future
 workflows.
 
 | Area | Current matrix posture | Promotion rule |

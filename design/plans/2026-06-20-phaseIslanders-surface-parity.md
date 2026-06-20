@@ -5,7 +5,7 @@
 > durable deferrals without overstating browser, TUI, cache, or docs coverage.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 05 cache partial rollup passed
+**Status:** Closed - Phase Islanders wrapped on 2026-06-20
 
 ---
 
@@ -62,6 +62,21 @@ remaining gaps with runnable checks or durable deferral text.
    surface matrix separating named Web/API route evidence from coach, scout,
    player, line, goalie, practice, postgame, and agent workflow completion.
 6. **Pulse 06 - Closeout.** Wrap Islanders with validation and tracker snapshot.
+   Result: passed 2026-06-20; no active Islanders pulse remains.
+
+---
+
+## Closeout
+
+Phase Islanders is complete. `design/specs/surface-parity.md` remains the active
+surface-truth ledger with current partials and promotion gates for admin/docs,
+dashboard capture evidence, WP-009 cache-backed routes, Signals promotion, and
+favorites/watch rules.
+
+The phase intentionally does not claim full live-browser or interactive TUI
+coverage, web install/remove safety, persistent web report-toggle writes,
+Signals cache/catalog/filter/leaderboard promotion, or broad WP-009 workflow
+completion. Those require new scoped waves.
 
 ---
 

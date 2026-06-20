@@ -36,6 +36,7 @@ cache-backed partial rollups without promoting new analytics claims.
 | 03 | Admin/docs truth pass | passed; see `design/specs/surface-parity.md`, `icelines serve --help`, and `pulses/pulse-03.md` |
 | 04 | Dashboard selected capture proof/fence | passed with selected capture evidence; see `scripts/web-dashboard-capture.ps1`, `dist/web-dashboard-captures/`, and `pulses/pulse-04.md` |
 | 05 | Cache-backed partial rollup | passed with WP-009 first-route evidence fenced from broader workflow claims; see `design/specs/surface-parity.md` and `pulses/pulse-05.md` |
+| 06 | Phase closeout | passed; see `design/plans/2026-06-20-phaseIslanders-surface-parity.md`, `design/specs/surface-parity.md`, and `pulses/pulse-06.md` |
 
 ## Validation posture
 
@@ -43,3 +44,23 @@ cache-backed partial rollups without promoting new analytics claims.
   always use `git diff --check`.
 - Implementation pulses add focused tests or scripts for changed behavior.
 - No live network dependency in tests.
+
+## Phase Islanders closeout (2026-06-20)
+
+Phase Islanders is wrapped. The phase delivered the planned post-Rangers surface
+truth cleanup: a refreshed active partial rollup, explicit admin/docs deferrals,
+selected dashboard desktop/mobile capture evidence, a WP-009 cache-backed route
+rollup that keeps first-route evidence separate from workflow completion, and a
+closeout record with no active Islanders pulse remaining.
+
+No new analytics source claim was promoted. Future work requires new waves:
+
+- Full live-browser, touch/focus, and exhaustive responsive dashboard proof
+  remains a visual QA wave.
+- Web admin data install/remove and persistent report-toggle writes require a
+  scoped confirmation/persistence contract.
+- WP-009 cache-backed coach, scout, player, line, goalie, practice, postgame,
+  and agent surfaces remain partial until workflow evidence and product-copy
+  review promote each family.
+- Signals cache/catalog/filter/leaderboard promotion remains outside Islanders
+  and requires a separate Signals cache-promotion gate.
