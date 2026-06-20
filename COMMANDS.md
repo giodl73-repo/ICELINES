@@ -566,6 +566,20 @@ available through the CLI, the player-card TUI block, Web HTML
 `--filter` catalog, leaderboards, or `StatId` (see
 [`design/specs/icelines-signals.md`](design/specs/icelines-signals.md)).
 
+### `signals-roster` — team-scoped Signals discovery
+
+```bash
+icelines signals-roster --team NYR
+icelines signals-roster --team NYR --json
+```
+
+`signals-roster` renders a roster matrix over the existing `PlayerSignalsView`
+rows for one team. It is an inspection aid, not a Signal leaderboard, `StatId`
+promotion, filter key, analytics-cache metric family, prediction, betting edge,
+injury signal, deployment recommendation, player-quality grade, or autonomous
+coaching decision. Missing Signals render as `unavailable`, never as zero-filled
+player values. JSON uses the additive `signals-roster.v1` envelope.
+
 ## `records` — player/team individual records
 
 The first records slice uses persisted boxscore goal rows. Populate local

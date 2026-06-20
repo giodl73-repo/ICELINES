@@ -10,6 +10,7 @@
 //! `unavailable`, never as a 0.0 player value (see `design/specs/icelines-signals.md`).
 
 use anyhow::Context;
+use icelines_core::model::TeamAbbr;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::signal_metrics::{
     SignalEvidenceTier, SignalInput, SignalMetricUnit, SignalPolarity,
@@ -29,6 +30,23 @@ pub async fn run_signals(
         println!("{}", signals_json_envelope(&view));
     } else {
         print_signals_text(&view);
+    }
+    Ok(())
+}
+
+/// Render a team-scoped Signals roster matrix. This is intentionally not a
+/// leaderboard: rows are sorted by player name and no Signal controls rank.
+pub async fn run_signals_roster(
+    team: String,
+    season: Option<String>,
+    season_type: SeasonType,
+    json: bool,
+) -> anyhow::Result<()> {
+    let view = build_roster_view(&team, season.as_deref(), season_type)?;
+    if json {
+        println!("{}", signals_roster_json_envelope(&view));
+    } else {
+        print_signals_roster_text(&view);
     }
     Ok(())
 }
@@ -93,6 +111,73 @@ fn find_signal_view<'a, 'r>(views: &'a [PlayerView<'r>], name: &str) -> Option<&
         .find(|v| v.identity.full_name.to_lowercase().contains(&needle))
 }
 
+#[derive(Debug, serde::Serialize)]
+struct SignalsRosterView {
+    schema_note: &'static str,
+    team: String,
+    season: u32,
+    season_type: String,
+    rows: Vec<PlayerSignalsView>,
+    disclosures: Vec<String>,
+    non_claims: Vec<String>,
+}
+
+fn build_roster_view(
+    team: &str,
+    season: Option<&str>,
+    season_type: SeasonType,
+) -> anyhow::Result<SignalsRosterView> {
+    let team_abbr = TeamAbbr::parse(team)
+        .map_err(|_| anyhow::anyhow!("'{team}' is not a valid NHL team abbreviation"))?;
+    let (outcome, season_key, season_type) =
+        crate::commands::players::load_repo_for_season(season, Some(season_type))?;
+
+    let mut rows: Vec<PlayerSignalsView> = outcome
+        .repo
+        .skaters(season_key, season_type)
+        .filter(|player| player.team_display() == team_abbr.0)
+        .map(|player| {
+            PlayerSignalsView::from_player(PlayerSignalsView::context_for_player(&player), &player)
+        })
+        .collect();
+    rows.sort_by(|a, b| {
+        a.player_name
+            .cmp(&b.player_name)
+            .then_with(|| a.player_id.cmp(&b.player_id))
+    });
+
+    if rows.is_empty() {
+        anyhow::bail!(
+            "no skaters found for {} in {} {}",
+            team_abbr.0,
+            season_key.0,
+            season_type.label()
+        );
+    }
+
+    Ok(SignalsRosterView {
+        schema_note: "Team-scoped Signals discovery matrix; not a leaderboard.",
+        team: team_abbr.0,
+        season: season_key.0,
+        season_type: season_type.label().to_string(),
+        rows,
+        disclosures: vec![
+            "Signals are descriptive derived metrics built from existing stat inputs."
+                .to_string(),
+            "Unavailable Signals mean required evidence is missing or below threshold, not zero value truth."
+                .to_string(),
+            "This matrix is an inspection aid; open a player Signals card or Markdown packet for full methodology and limitations."
+                .to_string(),
+        ],
+        non_claims: vec![
+            "Not a prediction, betting edge, injury signal, deployment recommendation, player-quality grade, or autonomous coaching decision."
+                .to_string(),
+            "Not a Signal leaderboard, StatId promotion, filter key, or analytics-cache metric family."
+                .to_string(),
+        ],
+    })
+}
+
 // ── text rendering ────────────────────────────────────────────────────────────
 
 fn print_signals_text(view: &PlayerSignalsView) {
@@ -150,6 +235,96 @@ fn print_signals_text(view: &PlayerSignalsView) {
     }
     println!();
     println!("Legend: ↑ higher is better · ↓ lower is better · = neutral");
+}
+
+fn print_signals_roster_text(view: &SignalsRosterView) {
+    println!(
+        "SIGNALS ROSTER — {} ({} {})",
+        view.team, view.season, view.season_type
+    );
+    println!("{}", "=".repeat(96));
+    println!("{}", view.schema_note);
+    for disclosure in &view.disclosures {
+        println!("Note: {disclosure}");
+    }
+    for non_claim in &view.non_claims {
+        println!("Disclaimer: {non_claim}");
+    }
+    println!();
+    println!(
+        "{:<26} {:<4} {:>3} {:>16} {:>16} {:>16} Evidence",
+        "Player", "Pos", "GP", "Phys/60", "PMD/60", "PIM/60"
+    );
+    println!("{}", "-".repeat(112));
+    for row in &view.rows {
+        let phys = signal_cell(row, "physical-engagement-rate");
+        let pmd = signal_cell(row, "puck-management-differential");
+        let pim = signal_cell(row, "penalty-drag-rate");
+        println!(
+            "{:<26} {:<4} {:>3} {:>16} {:>16} {:>16} {}",
+            truncate(&row.player_name, 26),
+            row.position,
+            row.games_played,
+            phys.value,
+            pmd.value,
+            pim.value,
+            row_evidence_summary(row)
+        );
+    }
+    println!();
+    println!("Legend: unavailable means missing/below-threshold evidence, never zero value truth.");
+}
+
+struct SignalCell {
+    value: String,
+}
+
+fn signal_cell(view: &PlayerSignalsView, key: &str) -> SignalCell {
+    let row = view
+        .rows
+        .iter()
+        .find(|row| row.cli_key == key)
+        .expect("current signal key");
+    SignalCell {
+        value: match row.value {
+            Some(value) => format!(
+                "{} {}",
+                format_value(Some(value)),
+                tier_label(row.evidence_tier)
+            ),
+            None => format!("unavailable {}", tier_label(row.evidence_tier)),
+        },
+    }
+}
+
+fn row_evidence_summary(view: &PlayerSignalsView) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    for row in &view.rows {
+        if row.evidence_tier != SignalEvidenceTier::Full || !row.missing_inputs.is_empty() {
+            parts.push(format!(
+                "{}: {} missing {}",
+                row.short_label,
+                tier_label(row.evidence_tier),
+                missing_inputs_label(&row.missing_inputs)
+            ));
+        }
+    }
+    if parts.is_empty() {
+        "all full".to_string()
+    } else {
+        parts.join("; ")
+    }
+}
+
+fn truncate(value: &str, width: usize) -> String {
+    let count = value.chars().count();
+    if count <= width {
+        value.to_string()
+    } else {
+        let mut out: String = value.chars().take(width.saturating_sub(1)).collect();
+        out.push('…');
+        out
+    }
 }
 
 /// Format a Signal value to two decimals, or `unavailable` for missing evidence.
@@ -222,6 +397,24 @@ fn signals_json_envelope(view: &PlayerSignalsView) -> String {
     serde_json::to_string_pretty(&envelope).unwrap_or_default()
 }
 
+fn signals_roster_json_envelope(view: &SignalsRosterView) -> String {
+    let data = serde_json::to_value(view).unwrap_or(serde_json::Value::Null);
+    let envelope = serde_json::json!({
+        "schema": "signals-roster.v1",
+        "schema_version": 1,
+        "route": "signals-roster",
+        "data": data,
+        "meta": {
+            "season": view.season.to_string(),
+            "season_type": view.season_type,
+            "team": view.team,
+            "player_count": view.rows.len(),
+            "non_promotion": "team-scoped discovery matrix; not a leaderboard, StatId, filter, or cache metric family",
+        },
+    });
+    serde_json::to_string_pretty(&envelope).unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -256,5 +449,29 @@ mod tests {
             missing_inputs_label(&[SignalInput::Realtime, SignalInput::IceTime]),
             "realtime, ice time"
         );
+    }
+
+    #[test]
+    fn l0_signals_roster_row_evidence_names_missing_inputs() {
+        let repo = icelines_core::fixtures::test_repo_with(
+            icelines_core::fixtures::identity(8478402).build(),
+            icelines_core::fixtures::stats(8478402, 20252026, "EDM").build(),
+        );
+        let player = repo
+            .view(
+                icelines_core::identity::PlayerId(8478402),
+                icelines_core::model::Season(20252026),
+                SeasonType::Regular,
+            )
+            .expect("player view");
+        let view =
+            PlayerSignalsView::from_player(PlayerSignalsView::context_for_player(&player), &player);
+
+        let summary = row_evidence_summary(&view);
+        assert!(summary.contains("Phys/60: partial missing realtime"));
+        assert!(summary.contains("PMD/60: partial missing realtime"));
+        assert!(signal_cell(&view, "physical-engagement-rate")
+            .value
+            .contains("unavailable partial"));
     }
 }

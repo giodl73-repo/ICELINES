@@ -76,9 +76,11 @@ add:
 ## Phase Rangers discovery gate
 
 Phase Rangers pulse 03 accepts one narrow discovery lane: a team-scoped roster
-matrix that helps users find which player Signals cards deserve inspection. This
-is not a leaderboard and does not promote Signals into `StatId`, `--filter`,
-analytics cache, or public cross-team ranking surfaces.
+matrix that helps users find which player Signals cards deserve inspection.
+Pulse 04 ships that lane as `icelines signals-roster --team <ABBR>` with a
+`signals-roster.v1` JSON twin. This is not a leaderboard and does not promote
+Signals into `StatId`, `--filter`, analytics cache, or public cross-team ranking
+surfaces.
 
 Any implementation of this matrix must preserve evidence tiers, missing-input
 summaries, unavailable values, and non-claim copy. Missing or partial evidence

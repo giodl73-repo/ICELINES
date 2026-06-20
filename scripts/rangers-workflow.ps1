@@ -80,6 +80,13 @@ Assert-Contains $signals "Note: Signals are descriptive derived metrics" "signal
 Assert-Contains $signals "Disclaimer: Not a prediction" "signals"
 Assert-Contains $signals "Unavailable Signals" "signals"
 
+$signalsRoster = Invoke-Icelines -Name "signals-roster" -Args @("signals-roster", "--team", $Team)
+Assert-Contains $signalsRoster "SIGNALS ROSTER" "signals-roster"
+Assert-Contains $signalsRoster $Team "signals-roster"
+Assert-Contains $signalsRoster "Team-scoped Signals discovery matrix" "signals-roster"
+Assert-Contains $signalsRoster "Not a Signal leaderboard" "signals-roster"
+Assert-Contains $signalsRoster $Player "signals-roster"
+
 $teamExport = Invoke-Icelines -Name "export-team" -Args @("export", "md", "team", "--team", $Team, "--out", "-")
 Assert-Contains $teamExport "## Disclosure" "export-team"
 Assert-Contains $teamExport "not era-adjusted, predictive" "export-team"

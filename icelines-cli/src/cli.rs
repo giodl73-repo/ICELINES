@@ -875,6 +875,36 @@ Examples:
         #[arg(long)]
         json: bool,
     },
+    /// Show a team-scoped Signals roster matrix without leaderboard promotion.
+    #[command(
+        name = "signals-roster",
+        long_about = r#"
+Render a team-scoped IceLines Signals roster matrix.
+
+This is a discovery aid for finding player Signals cards to inspect. It is not a
+Signal leaderboard, StatId promotion, filter key, cache metric family, prediction,
+betting edge, injury signal, deployment recommendation, player-quality grade, or
+autonomous coaching decision.
+
+Examples:
+  icelines signals-roster --team NYR
+  icelines signals-roster --team NYR --json
+"#
+    )]
+    SignalsRoster {
+        /// Team abbreviation (e.g. NYR, EDM, TOR).
+        #[arg(long)]
+        team: String,
+        /// Season id (YYYYZZZZ). Defaults to the configured / current season.
+        #[arg(long)]
+        season: Option<String>,
+        /// Regular season or playoffs.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+        /// Emit a `signals-roster.v1` JSON envelope.
+        #[arg(long)]
+        json: bool,
+    },
     /// Manage fantasy scoring schemes.
     #[command(subcommand)]
     Scheme(SchemeSubcommand),

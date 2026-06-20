@@ -29,6 +29,20 @@ fn run_signals(args: &[&str]) -> serde_json::Value {
     serde_json::from_slice(&output.stdout).expect("signals --json parses")
 }
 
+fn run_signals_roster(args: &[&str]) -> std::process::Output {
+    let home = tempfile::TempDir::new().expect("temp home");
+    let mut full = vec!["signals-roster"];
+    full.extend_from_slice(args);
+    Command::new(icelines_bin())
+        .env("HOME", home.path())
+        .env("USERPROFILE", home.path())
+        .env("ICELINES_NO_LIVE", "1")
+        .env("ICELINES_TEST_MODE", "1")
+        .args(&full)
+        .output()
+        .expect("run icelines signals-roster")
+}
+
 #[test]
 fn l2_signals_json_envelope_is_signals_v1_with_three_rows() {
     let json = run_signals(&["Connor McDavid", "--json"]);
@@ -121,4 +135,47 @@ fn l2_export_md_signals_writes_markdown_report_to_stdout() {
     assert!(text.contains("| Physical Engagement Rate |"));
     assert!(text.contains("Not a prediction"));
     assert!(text.contains("outside `StatId`, leaderboards, and the `--filter` catalog"));
+}
+
+#[test]
+fn l2_signals_roster_text_is_team_scoped_discovery_not_leaderboard() {
+    let output = run_signals_roster(&["--team", "NYR"]);
+    assert!(
+        output.status.success(),
+        "signals-roster failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("SIGNALS ROSTER — NYR"), "{text}");
+    assert!(
+        text.contains("Team-scoped Signals discovery matrix"),
+        "{text}"
+    );
+    assert!(text.contains("Not a Signal leaderboard"), "{text}");
+    assert!(text.contains("Mika Zibanejad"), "{text}");
+    assert!(text.contains("Phys/60"), "{text}");
+    assert!(text.contains("Evidence"), "{text}");
+}
+
+#[test]
+fn l2_signals_roster_json_envelope_preserves_non_promotion_copy() {
+    let output = run_signals_roster(&["--team", "NYR", "--json"]);
+    assert!(
+        output.status.success(),
+        "signals-roster --json failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("signals-roster json parses");
+    assert_eq!(json["schema"], "signals-roster.v1");
+    assert_eq!(json["route"], "signals-roster");
+    assert_eq!(json["data"]["team"], "NYR");
+    assert!(json["data"]["rows"].as_array().unwrap().len() > 5);
+    assert!(
+        json["meta"]["non_promotion"]
+            .as_str()
+            .unwrap()
+            .contains("not a leaderboard"),
+        "{json}"
+    );
 }
