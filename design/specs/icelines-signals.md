@@ -85,3 +85,8 @@ surfaces.
 Any implementation of this matrix must preserve evidence tiers, missing-input
 summaries, unavailable values, and non-claim copy. Missing or partial evidence
 must render as unavailable/missing evidence, never as `0.0` player truth.
+
+Phase Rangers pulse 05 keeps the roster matrix outside the analytics cache
+envelope. A future bridge to `AnalyticsCacheConsumerView` requires accepted
+Signal cache metric keys or an accepted cache-contract extension, plus
+source-state, invalidation, methodology-version, and non-claim evidence.

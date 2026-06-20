@@ -38,7 +38,8 @@ keeps Phase Rangers from reopening shipped work or promoting blocked claims.
    matrix, not a leaderboard or `StatId` promotion.
 3. **Evidence-envelope bridge.** If the NYR workflow needs a shared evidence
    card, reuse `AnalyticsCacheConsumerView` or explicitly document why Signals
-   need a different envelope.
+   need a different envelope. Status: passed in pulse 05; keep `signals-roster`
+   outside analytics cache until a separate Signals cache-promotion gate.
 4. **Layout persistence hardening.** Use existing WP-002 layout save/restore in
    the workflow or close one residual risk with focused tests/docs.
 5. **Lean CLI audit/fence.** Refresh WP-007 blocker evidence and add a
