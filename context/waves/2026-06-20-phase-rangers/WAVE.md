@@ -36,6 +36,7 @@ leaner workflows without making new unverified source claims.
 | 03 | Signals discovery design gate | passed; see `SIGNALS-DISCOVERY-GATE.md` and `pulses/pulse-03.md` |
 | 04 | Signals roster matrix CLI surface | passed; see `signals-roster` and `pulses/pulse-04.md` |
 | 05 | Evidence-envelope bridge decision | passed; see `EVIDENCE-BRIDGE.md` and `pulses/pulse-05.md` |
+| 06 | Layout persistence hardening proof | passed; see `scripts/rangers-layout-proof.ps1` and `pulses/pulse-06.md` |
 
 ## Validation posture
 

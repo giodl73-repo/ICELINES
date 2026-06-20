@@ -41,7 +41,8 @@ keeps Phase Rangers from reopening shipped work or promoting blocked claims.
    need a different envelope. Status: passed in pulse 05; keep `signals-roster`
    outside analytics cache until a separate Signals cache-promotion gate.
 4. **Layout persistence hardening.** Use existing WP-002 layout save/restore in
-   the workflow or close one residual risk with focused tests/docs.
+   the workflow or close one residual risk with focused tests/docs. Status:
+   passed in pulse 06 with an isolated temp-home layout CLI proof.
 5. **Lean CLI audit/fence.** Refresh WP-007 blocker evidence and add a
    reproducible no-claim check command only after the workflow proof lands.
 
