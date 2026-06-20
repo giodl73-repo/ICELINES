@@ -37,6 +37,7 @@ leaner workflows without making new unverified source claims.
 | 04 | Signals roster matrix CLI surface | passed; see `signals-roster` and `pulses/pulse-04.md` |
 | 05 | Evidence-envelope bridge decision | passed; see `EVIDENCE-BRIDGE.md` and `pulses/pulse-05.md` |
 | 06 | Layout persistence hardening proof | passed; see `scripts/rangers-layout-proof.ps1` and `pulses/pulse-06.md` |
+| 07 | Lean CLI audit/fence | passed as target-not-met audit; see `scripts/rangers-lean-audit.ps1`, `LEAN-AUDIT.md`, and `pulses/pulse-07.md` |
 
 ## Validation posture
 

@@ -45,6 +45,7 @@ keeps Phase Rangers from reopening shipped work or promoting blocked claims.
    passed in pulse 06 with an isolated temp-home layout CLI proof.
 5. **Lean CLI audit/fence.** Refresh WP-007 blocker evidence and add a
    reproducible no-claim check command only after the workflow proof lands.
+   Status: passed in pulse 07 as target-not-met audit.
 
 ## Pulse 02 candidate
 

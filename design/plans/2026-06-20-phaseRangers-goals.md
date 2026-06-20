@@ -35,7 +35,7 @@ requirement and validation record.
 | 1 | **Rangers Goal 1 - Signals discovery lane** | Hurricane shipped Signals, but they remain mostly player-card/export driven. Users need a controlled path to find inspectable roster evidence. | Shipped in pulse 04: `icelines signals-roster --team NYR` and `--json` render a team-scoped matrix with methodology/non-claim copy, unavailable evidence states, and no zero-filled missing values; catalog/filter/leaderboard/cache promotion remains explicitly disallowed. |
 | 2 | **Rangers Goal 2 - Evidence card envelope reuse** | WP-009 already has selected analytics cache/evidence-card consumers. Rangers should reuse that contract instead of creating a second evidence model. | Passed in pulse 05: `signals-roster` remains outside analytics cache because Signals have no accepted cache metric keys; future bridge work requires a separate Signals cache-promotion gate. |
 | 3 | **Rangers Goal 3 - Workbench layout hardening** | WP-002 already shipped named layout persistence with accepted risk. Rangers should use or harden it, not rebuild it. | Passed in pulse 06: `scripts/rangers-layout-proof.ps1` saves, lists, shows, and deletes a temp-home `rangers-stats` layout while asserting stable pane IDs and preserve-active-context policy. |
-| 4 | **Rangers Goal 4 - Lean offline CLI path** | REQ-DEP-001 and REQ-LEAN-001 remain target states. A lean CLI gives the repo a cleaner distributable story. | Cargo feature boundaries are inspected and narrowed in one safe slice, with a documented command for an offline CLI check. Any remaining FLETCH/SLICE dependency or feature blocker is recorded precisely. |
+| 4 | **Rangers Goal 4 - Lean offline CLI path** | REQ-DEP-001 and REQ-LEAN-001 remain target states. A lean CLI gives the repo a cleaner distributable story. | Passed in pulse 07 as a target-not-met audit: `scripts/rangers-lean-audit.ps1` verifies FLETCH/SLICE seams, FLETCH command surfaces, SLICE selector usage, and missing `cli` feature without claiming lean support. |
 | 5 | **Rangers Goal 5 - Rangers team workflow proof** | The round needs one concrete user workflow instead of abstract platform cleanup. NYR can serve as a representative team path using existing bundled data. | Shipped in pulse 02: `scripts/rangers-workflow.ps1` runs team depth, leaders, goalie workload, player Signals, team export, and Signals export offline with disclosure assertions and no team-specific hardcoded claims. |
 
 ---
@@ -74,7 +74,8 @@ requirement and validation record.
 6. **Pulse 06 - Layout persistence hardening proof.** Use existing WP-002 layout
    persistence in an isolated Rangers proof. Result: passed 2026-06-20.
 7. **Pulse 07 - Lean CLI audit/fence.** Narrow or document feature/dependency
-   boundaries and add a reproducible check command.
+   boundaries and add a reproducible check command. Result: passed 2026-06-20
+   as target-not-met audit; no lean support claimed.
 
 This order starts with proof and inventory, then promotes surfaces only after the
 evidence contract is in place.
