@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Devils - Dashboard visual QA gate](2026-06-20-phaseDevils-dashboard-visual-qa.md) | Active | Post-Islanders browser-proof wave for `/dashboard`: capture matrix expansion, automated screenshot artifact checks, and an exact surface-matrix claim without overstating browser, touch, focus, or accessibility coverage. |
 | [Phase Islanders - Surface parity cleanup](2026-06-20-phaseIslanders-surface-parity.md) | Closed | Wrapped the post-Rangers surface-truth cleanup: refreshed the surface-parity matrix, tightened admin/docs claims, recorded selected dashboard capture evidence, and rolled up cache-backed partial surfaces without promoting new analytics claims. |
 | [Phase Rangers - Post-Hurricane goals](2026-06-20-phaseRangers-goals.md) | Wrapped | Closed the post-Hurricane organization round: NYR workflow proof, gated Signals roster matrix, evidence-bridge decision, layout persistence proof, and lean CLI target-not-met audit without reopening blocked Hurricane source claims. |
 | [Phase Hurricane - Signals surface + product-gap roadmap](2026-06-17-phaseHurricane-signals-surface.md) | Wrapped | Product-analytics push named for Carolina's 2026 Cup. Shipped Signals CLI/TUI/Web/Markdown export, MoneyPuck on-ice/schema fixture, player confidence ranges, goalie QS%/SA/60, season-depth honesty, and compact visualization through 6z. |
