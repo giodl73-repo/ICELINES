@@ -6,7 +6,7 @@
 > unless the missing evidence is added first.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 01 inventory passed
+**Status:** Wrapped 2026-06-20
 
 ---
 
@@ -77,8 +77,26 @@ requirement and validation record.
    boundaries and add a reproducible check command. Result: passed 2026-06-20
    as target-not-met audit; no lean support claimed.
 
-This order starts with proof and inventory, then promotes surfaces only after the
-evidence contract is in place.
+This order started with proof and inventory, then promoted surfaces only after
+the evidence contract was in place.
+
+---
+
+## Closeout
+
+Phase Rangers is wrapped. All planned post-Hurricane goals have been dispositioned:
+
+- The NYR workflow proof shipped through `scripts/rangers-workflow.ps1`.
+- Signals discovery shipped as the gated, team-scoped `signals-roster` matrix.
+- The evidence bridge decision keeps Signals roster discovery outside the
+  analytics cache until a separate Signals cache-promotion gate exists.
+- Layout persistence has an isolated temp-home save/list/show/delete proof.
+- Lean CLI support remains target-not-met, with a reproducible audit rather than
+  an unsupported standalone claim.
+
+No additional Rangers implementation pulse remains. Follow-on work should start
+a new phase or wave for Signals cache/catalog/filter/leaderboard promotion,
+dependency surgery for lean CLI support, or live browser/interactive TUI proof.
 
 ---
 

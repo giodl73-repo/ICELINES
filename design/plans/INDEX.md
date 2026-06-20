@@ -22,7 +22,7 @@ backlog.
 
 | Plan | Status | Summary |
 |------|--------|---------|
-| [Phase Rangers - Post-Hurricane goals](2026-06-20-phaseRangers-goals.md) | Draft goals | Post-Hurricane organization round: Signals discovery, evidence-card envelope, workbench layout persistence, lean offline CLI path, and an NYR workflow proof without reopening blocked Hurricane source claims. |
+| [Phase Rangers - Post-Hurricane goals](2026-06-20-phaseRangers-goals.md) | Wrapped | Closed the post-Hurricane organization round: NYR workflow proof, gated Signals roster matrix, evidence-bridge decision, layout persistence proof, and lean CLI target-not-met audit without reopening blocked Hurricane source claims. |
 | [Phase Hurricane - Signals surface + product-gap roadmap](2026-06-17-phaseHurricane-signals-surface.md) | Wrapped | Product-analytics push named for Carolina's 2026 Cup. Shipped Signals CLI/TUI/Web/Markdown export, MoneyPuck on-ice/schema fixture, player confidence ranges, goalie QS%/SA/60, season-depth honesty, and compact visualization through 6z. |
 | [Phase Jennings - Stabilization + Truth](2026-05-09-phaseJennings-stabilization-truth.md) | Implemented | Restored the measured baseline, split CI/test gates into runnable areas, and made follow-on phases depend on explicit local/CI checks. |
 | Jennings measured baseline | Recorded | `cargo check --workspace` PASS; `cargo test --workspace --no-fail-fast` PASS; test inventory 4620 `: test` entries at the original Jennings measurement; later CI slices split the gates for faster failure. |

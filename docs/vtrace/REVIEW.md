@@ -1,5 +1,23 @@
 # VTRACE Review Record
 
+## 2026-06-20 Phase Rangers Closeout Review
+
+**Scope:** Phase Rangers post-Hurricane organization round.
+
+**Claims accepted:**
+- Phase Rangers is wrapped: no additional Rangers implementation pulse remains.
+- The shipped/dispositioned scope includes the NYR workflow proof, Signals
+  discovery gate, `signals-roster` team matrix, evidence-bridge no-cache
+  decision, named-layout persistence proof, and lean CLI target-not-met audit.
+- Rangers did not reopen blocked Hurricane source claims or promote Signals into
+  cache, catalog, filter, leaderboard, or stable `StatId` surfaces.
+
+**Residual risk:** Signals cache promotion needs a separate gate; lean or
+standalone CLI support needs dependency surgery and feature/build evidence;
+live browser and interactive TUI proof remains deferred; MoneyPuck deployment,
+GSAx/high-danger save percentage, and team confidence gaps remain blocked by
+their previously recorded source or ViewModel contracts.
+
 ## 2026-06-20 Phase Hurricane Closeout Review
 
 **Scope:** Phase Hurricane product-analytics roadmap.

@@ -44,3 +44,22 @@ leaner workflows without making new unverified source claims.
 - Planning/doc-only edits use VTRACE proof check and `git diff --check`.
 - Implementation pulses add focused Rust tests for changed surfaces.
 - Tests stay offline and fixture-backed.
+
+## Phase Rangers closeout (2026-06-20)
+
+Phase Rangers is wrapped. The phase delivered the planned post-Hurricane
+organization round: a repeatable NYR workflow proof, a Signals discovery gate,
+a team-scoped Signals roster matrix, an explicit evidence-bridge decision, an
+isolated named-layout persistence proof, and a lean CLI dependency audit that
+records the current target-not-met posture without claiming lean support.
+
+No active Rangers implementation pulse remains. Future work requires new waves:
+
+- Signals cache, catalog, filter, leaderboard, or stable `StatId` promotion
+  requires a separate Signals cache-promotion gate.
+- Lean or standalone CLI support requires dependency surgery and a passing
+  feature/build boundary.
+- Live browser or interactive TUI proof remains outside Rangers.
+- MoneyPuck deployment columns, GSAx/high-danger save percentage, and team
+  confidence bands remain blocked by the evidence/source contracts recorded
+  during Phase Hurricane.
