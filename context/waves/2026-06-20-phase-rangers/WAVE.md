@@ -30,7 +30,7 @@ leaner workflows without making new unverified source claims.
 
 | Pulse | Scope | Result |
 |---|---|---|
-| 01 | Plan and inventory Phase Rangers goals | planned |
+| 01 | Plan and inventory Phase Rangers goals | passed; see `RANGERS-INVENTORY.md` and `pulses/pulse-01.md` |
 
 ## Validation posture
 

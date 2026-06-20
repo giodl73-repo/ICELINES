@@ -6,7 +6,7 @@
 > unless the missing evidence is added first.
 
 **Created:** 2026-06-20
-**Status:** Draft goals
+**Status:** Active - pulse 01 inventory passed
 
 ---
 
@@ -33,8 +33,8 @@ requirement and validation record.
 | # | Goal | Why it matters | Acceptance signal |
 |---|---|---|---|
 | 1 | **Rangers Goal 1 - Signals discovery lane** | Hurricane shipped Signals, but they remain mostly player-card/export driven. Users need a controlled path to find and compare them. | A small Signals discovery surface exists with methodology/non-claim copy, unavailable evidence states, and tests proving no zero-filled missing values. Any catalog/filter/leaderboard promotion is explicitly gated by product-copy and evidence review. |
-| 2 | **Rangers Goal 2 - Evidence card envelope** | The next analytics layer should not recompute meaning per surface. A shared evidence card gives CLI/Web/export the same source, freshness, completeness, warning, and limitation copy. | A versioned evidence-card ViewModel/envelope is defined for one shipped analytics family, with fixture tests and at least one consumer that renders disclosures from the shared contract. |
-| 3 | **Rangers Goal 3 - Workbench layout persistence** | REQ-WB-003 is still a target. Power users should be able to save and restore a layout without renderer-local hockey state. | A named layout schema, migration/version rule, and first save/restore path exist for the workbench. The stored data references stable workbench pane IDs and context fields, not terminal/browser-only state. |
+| 2 | **Rangers Goal 2 - Evidence card envelope reuse** | WP-009 already has selected analytics cache/evidence-card consumers. Rangers should reuse that contract instead of creating a second evidence model. | One Rangers slice either consumes the existing `AnalyticsCacheConsumerView` path or records why Signals/NYR workflow evidence should remain outside the cache envelope. |
+| 3 | **Rangers Goal 3 - Workbench layout hardening** | WP-002 already shipped named layout persistence with accepted risk. Rangers should use or harden it, not rebuild it. | A Rangers workflow uses existing layout persistence or closes one residual WP-002 risk with focused evidence while keeping stable workbench pane IDs and context fields. |
 | 4 | **Rangers Goal 4 - Lean offline CLI path** | REQ-DEP-001 and REQ-LEAN-001 remain target states. A lean CLI gives the repo a cleaner distributable story. | Cargo feature boundaries are inspected and narrowed in one safe slice, with a documented command for an offline CLI check. Any remaining FLETCH/SLICE dependency or feature blocker is recorded precisely. |
 | 5 | **Rangers Goal 5 - Rangers team workflow proof** | The round needs one concrete user workflow instead of abstract platform cleanup. NYR can serve as a representative team path using existing bundled data. | A scripted or documented NYR workflow runs through team page, roster/depth, player Signals, goalie workload, and export/report output with source/completeness disclosures visible. No team-specific hardcoded claims are added. |
 
@@ -57,7 +57,8 @@ requirement and validation record.
 
 1. **Pulse 01 - Plan and inventory.** Confirm the exact surfaces and current
    blockers for Signals discovery, evidence cards, layouts, lean CLI, and the
-   NYR workflow. Update VTRACE trace rows before implementation.
+   NYR workflow. Result: passed 2026-06-20; see
+   `context/waves/2026-06-20-phase-rangers/RANGERS-INVENTORY.md`.
 2. **Pulse 02 - NYR workflow proof.** Build the smallest repeatable script or
    docs-backed workflow that exercises existing surfaces and reveals gaps.
 3. **Pulse 03 - Evidence card contract.** Define one shared envelope and wire a
