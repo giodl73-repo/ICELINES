@@ -8,6 +8,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+Add-Type -AssemblyName System.Drawing
+
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 if ([string]::IsNullOrWhiteSpace($BinaryPath)) {
     $BinaryPath = Join-Path $RepoRoot "target\release\icelines.exe"
@@ -29,6 +31,60 @@ function Resolve-Browser {
         }
     }
     throw "No supported headless browser found. Install Microsoft Edge or Google Chrome, then rerun this script."
+}
+
+function Assert-DashboardReady {
+    param([string]$Url)
+
+    $response = Invoke-WebRequest -UseBasicParsing -Uri $Url -TimeoutSec 10
+    if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
+        throw "dashboard route readiness failed for ${Url}: HTTP $($response.StatusCode)"
+    }
+    if (-not ($response.Content -like '*class="jaw-shell"*')) {
+        throw "dashboard route readiness failed for ${Url}: dashboard shell marker missing"
+    }
+}
+
+function Assert-Screenshot {
+    param(
+        [string]$Path,
+        [string]$Size
+    )
+
+    if (-not (Test-Path $Path)) {
+        throw "browser capture did not create $Path"
+    }
+
+    $parts = $Size.Split(",")
+    if ($parts.Length -ne 2) {
+        throw "invalid capture size '$Size'"
+    }
+    $expectedWidth = [int]$parts[0]
+    $expectedHeight = [int]$parts[1]
+
+    $bitmap = [System.Drawing.Bitmap]::new($Path)
+    try {
+        if ($bitmap.Width -ne $expectedWidth -or $bitmap.Height -ne $expectedHeight) {
+            throw "browser capture dimensions mismatch for ${Path}: expected ${expectedWidth}x${expectedHeight}, got $($bitmap.Width)x$($bitmap.Height)"
+        }
+
+        $colors = [System.Collections.Generic.HashSet[string]]::new()
+        $stepX = [Math]::Max(1, [int][Math]::Floor($bitmap.Width / 24))
+        $stepY = [Math]::Max(1, [int][Math]::Floor($bitmap.Height / 24))
+        for ($y = 0; $y -lt $bitmap.Height; $y += $stepY) {
+            for ($x = 0; $x -lt $bitmap.Width; $x += $stepX) {
+                $pixel = $bitmap.GetPixel($x, $y)
+                [void]$colors.Add("$($pixel.R),$($pixel.G),$($pixel.B),$($pixel.A)")
+            }
+        }
+
+        if ($colors.Count -lt 8) {
+            throw "browser capture appears blank for ${Path}: sampled only $($colors.Count) distinct colors"
+        }
+    }
+    finally {
+        $bitmap.Dispose()
+    }
 }
 
 if (-not $SkipBuild) {
@@ -99,6 +155,7 @@ try {
     foreach ($capture in $captures) {
         $path = Join-Path $OutputDir "$($capture.Name).png"
         Write-Host "capture: $($capture.Name) $($capture.Size)" -ForegroundColor Cyan
+        Assert-DashboardReady -Url $capture.Url
         & $Browser `
             "--headless=new" `
             "--disable-gpu" `
@@ -109,9 +166,7 @@ try {
         if ($LASTEXITCODE -ne 0) {
             throw "browser capture failed for $($capture.Url)"
         }
-        if (-not (Test-Path $path)) {
-            throw "browser capture did not create $path"
-        }
+        Assert-Screenshot -Path $path -Size $capture.Size
     }
 
     Write-Host "web dashboard captures written to $OutputDir" -ForegroundColor Green

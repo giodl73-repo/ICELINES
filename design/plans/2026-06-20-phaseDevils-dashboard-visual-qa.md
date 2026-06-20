@@ -5,7 +5,7 @@
 > overstating browser breadth, touch behavior, focus order, or full accessibility.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 capture matrix harness passed
+**Status:** Active - pulse 03 artifact validation passed
 
 ---
 
@@ -55,7 +55,9 @@ repeatable dashboard visual QA harness before changing surface claims.
    tablet captures for favorites, watchlist, and schedule; and mobile captures
    for fantasy, team-season, and player workspaces.
 3. **Pulse 03 - Artifact validation.** Add automated checks for expected files,
-   dimensions, nonblank pixels, and route readiness.
+   dimensions, nonblank pixels, and route readiness. Result: passed 2026-06-20
+   with dashboard shell readiness, exact PNG dimension checks, and sampled
+   nonblank pixel checks in `scripts/web-dashboard-capture.ps1`.
 4. **Pulse 04 - Responsive/focus decision.** Add focused keyboard/mobile checks
    if feasible, or keep them explicitly deferred.
 5. **Pulse 05 - Closeout.** Update the wave, plan, surface matrix, and
