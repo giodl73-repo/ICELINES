@@ -5,7 +5,7 @@
 > whether it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 practice evidence gate passed
+**Status:** Closed - Phase Kraken complete
 
 ---
 
@@ -53,7 +53,10 @@ copy and workflow evidence remain precise.
 3. **Pulse 03 - Workflow evidence gate.** Result: focused practice-focus L2
    evidence and surface-matrix wording support a bounded prepared-cache practice
    focus report claim while keeping broader practice workflow claims deferred.
-4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
+4. **Pulse 04 - Closeout.** Result: Phase Kraken closed. Only practice focus is
+   promoted to a bounded prepared-cache report claim; named report, postgame,
+   adjustment, and agent cache route families remain first-route evidence with
+   explicit non-claims.
 
 ---
 

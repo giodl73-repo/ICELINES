@@ -37,6 +37,21 @@ should remain only first-route evidence.
 | 01 | Plan and inventory Phase Kraken goals | passed; see `KRAKEN-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Practice-focus product-copy gate | passed for bounded prepared-cache practice focus report claim; see `KRAKEN-COPY-GATE.md` and `pulses/pulse-02.md` |
 | 03 | Practice-focus workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache practice focus report claim, see `pulses/pulse-03.md` |
+| 04 | Close Phase Kraken | passed; phase closed with practice focus promoted only to a bounded prepared-cache report claim, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Kraken is closed. The phase promotes only practice focus from WP-009
+first-route evidence to a bounded prepared-cache practice focus report claim:
+active-context cache reads, ready/unavailable HTML and JSON, no cache creation
+on missing reads, preserved source, quality, methodology, disclosure, and
+non-claim copy, and no mandatory-drill-plan or autonomous-practice-prescription
+copy.
+
+Named cache report, postgame review, postgame adjustments, and agent evidence
+remain bounded first-route evidence. Practice focus is still not mandatory drill
+plans, autonomous practice prescriptions, coaching authority, live
+recomputation, prediction certainty, or deployment authority.
 
 ## Validation Posture
 
