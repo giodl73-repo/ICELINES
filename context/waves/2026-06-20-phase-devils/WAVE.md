@@ -34,9 +34,23 @@ touch, focus, or accessibility breadth.
 | 02 | Dashboard capture matrix harness | passed with representative desktop/tablet/mobile workspace captures; see `scripts/web-dashboard-capture.ps1` and `pulses/pulse-02.md` |
 | 03 | Dashboard artifact validation | passed with route readiness, dimension, and sampled nonblank checks; see `scripts/web-dashboard-capture.ps1` and `pulses/pulse-03.md` |
 | 04 | Responsive/focus decision | passed with responsive capture claim retained and focus/touch deferred; see `pulses/pulse-04.md` |
+| 05 | Phase closeout | passed; see `design/specs/surface-parity.md` and `pulses/pulse-05.md` |
 
 ## Validation posture
 
 - Planning/doc-only edits use `git diff --check`.
 - Script or browser-gate changes run offline through `icelines --no-live serve`.
 - No live network dependency in tests.
+
+## Phase Devils closeout (2026-06-20)
+
+Phase Devils is wrapped. The phase upgraded `/dashboard` browser proof from
+selected screenshot evidence to a representative desktop/tablet/mobile capture
+matrix with automated route-readiness, exact-dimension, and sampled nonblank
+artifact checks.
+
+The final claim remains bounded: installed Edge/Chrome headless browser
+captures prove representative dashboard rendering and screenshot artifact
+sanity. Keyboard focus order, pointer/touch behavior, screen-reader behavior,
+every browser engine, and exhaustive responsive overflow coverage remain future
+browser-automation or manual QA claims.

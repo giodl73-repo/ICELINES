@@ -5,7 +5,7 @@
 > overstating browser breadth, touch behavior, focus order, or full accessibility.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 04 responsive/focus decision passed
+**Status:** Closed - Phase Devils wrapped on 2026-06-20
 
 ---
 
@@ -64,7 +64,22 @@ repeatable dashboard visual QA harness before changing surface claims.
    keeps keyboard focus order, pointer/touch interaction, and screen-reader
    behavior deferred until a browser automation gate exists.
 5. **Pulse 05 - Closeout.** Update the wave, plan, surface matrix, and
-   validation notes with the final browser-proof claim.
+   validation notes with the final browser-proof claim. Result: passed
+   2026-06-20; no active Devils pulse remains.
+
+---
+
+## Closeout
+
+Phase Devils is complete. The dashboard proof claim is now representative
+browser-render evidence for the configured desktop/tablet/mobile matrix in
+`scripts/web-dashboard-capture.ps1`, with automated route readiness, screenshot
+dimension, and sampled nonblank artifact validation.
+
+The phase intentionally does not claim keyboard focus order, pointer/touch
+behavior, screen-reader behavior, every browser engine, or exhaustive responsive
+overflow coverage for every dashboard workspace. Those require a future browser
+automation or manual visual QA wave.
 
 ---
 

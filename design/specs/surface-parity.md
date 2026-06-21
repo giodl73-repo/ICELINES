@@ -55,7 +55,7 @@ workflows.
 | Analytics cache Web/API consumers | Named cache report plus coach, scout, player-card, line, goalie, practice, postgame, adjustment, and agent routes have WP-009 first-route Web/API evidence. | Keep partial until broader shipped workflow evidence and product-copy review exist for each workflow family; first-route evidence is not a workflow-completion claim. |
 | Admin operations | Safe runtime config, data verify, snapshot activate/delete, and game-cache warmer paths are POST-backed and tested; web install/remove and persistent report-toggle writes remain deferred. | Promote only with a scoped confirmation/persistence contract; otherwise keep durable deferral copy. |
 | Docs/reference | `/docs`, TUI docs overlay, and menu docs paths use the docs ViewModel/command reference. | Pulse 03 verifies wording does not revive stale mkdocs/static-site or unimplemented operation claims. |
-| Dashboard workspace partials | Route-level fragment and workspace tests exist; pulse 04 recorded selected desktop/mobile captures for leaders, poach, fantasy, and team-season workspaces. | Selected capture evidence exists, but full live-browser, touch/focus, and exhaustive responsive proof remain future visual QA claims. |
+| Dashboard workspace partials | Route-level fragment and workspace tests exist; Phase Devils records representative desktop/tablet/mobile dashboard captures for home, leaders, goalies, poach, favorites, watchlist, schedule, fantasy, team-season, and player workspaces with route-readiness, dimension, and sampled nonblank artifact checks. | Representative browser-render evidence exists for installed Edge/Chrome headless captures, but keyboard focus order, pointer/touch behavior, screen-reader behavior, every browser engine, and exhaustive responsive overflow coverage remain future browser-automation or manual QA claims. |
 | Favorites/watch/watch-rules | Read/mutation paths are useful and tested, but richer group/rule dimensions remain intentionally narrow. | Keep partial unless a shared contract adds the missing dimensions without GET mutation or ambiguous persistence. |
 
 Closed phases set important boundaries for this rollup: Phase Hurricane and
@@ -374,9 +374,13 @@ projection tests live in `handlers::dashboard::tests::*`, while `l1_dashboard_*`
 route tests fence shell rendering, URL allowlisting, fragment behavior,
 responsive/accessibility tokens, and command redirect safety. Responsive visual
 capture is available through
-`scripts/test-slice.ps1 web-captures`, which writes desktop and mobile dashboard
-screenshots under `dist/web-dashboard-captures/` using installed Edge/Chrome
-headless. Phase Islanders pulse 04 records selected captures for leaders and
-poach desktop workspaces plus fantasy and team-season mobile workspaces; treat
-that as selected browser-render evidence, not full touch/focus or exhaustive
-responsive coverage.
+`scripts/test-slice.ps1 web-captures`, which writes representative
+desktop/tablet/mobile dashboard screenshots under
+`dist/web-dashboard-captures/` using installed Edge/Chrome headless. Phase
+Devils records captures for home, leaders, goalies, poach, favorites,
+watchlist, schedule, fantasy, team-season, and player workspaces, and the
+capture harness validates dashboard shell readiness, PNG dimensions, and
+sampled nonblank pixels. Treat that as representative browser-render and
+artifact-sanity evidence, not keyboard focus order, pointer/touch behavior,
+screen-reader behavior, every browser engine, or exhaustive responsive overflow
+coverage.
