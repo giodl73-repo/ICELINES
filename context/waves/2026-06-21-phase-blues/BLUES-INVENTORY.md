@@ -31,4 +31,5 @@ wording into scoped route-row wording.
    scoped read/product route wording.
 3. Matrix wording. Result: passed; the six Fantasy route rows now carry scoped
    read/product wording while preserving mutation and local-state deferrals.
-4. Closeout. Record final claims and non-claims.
+4. Closeout. Result: passed; Phase Blues is closed with final route-row claims
+   and non-claims recorded.

@@ -36,10 +36,21 @@ already captured in the Fantasy family row.
 | 01 | Plan and inventory Phase Blues goals | passed; see `BLUES-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Fantasy route evidence gate | passed; focused Fantasy route tests support scoped read/product wording, see `pulses/pulse-02.md` |
 | 03 | Fantasy route wording gate | passed; route rows now carry scoped read/product claims, see `pulses/pulse-03.md` |
-| 04 | Close Phase Blues | pending |
+| 04 | Close Phase Blues | passed; final scoped claims and non-claims recorded, see `pulses/pulse-04.md` |
 
 ## Validation Posture
 
 - Planning/doc-only edits use `git diff --check`.
 - Evidence gates use focused Fantasy Web route tests.
 - No live network dependency in tests.
+
+## Closeout
+
+Phase Blues is closed. The Fantasy route rows now carry scoped read/product
+claims over shared Fantasy ViewModels: roster gaps, simulation, daily delta,
+weekly matchup, and roster-shape validation.
+
+The claim remains bounded. It does not include browser league/team setup, Yahoo
+roster import, matchup schedule mutation, roster-shape mutation, persisted
+add/drop mutation, local state creation on missing reads, or SQLite WAL/SHM
+sidecar creation on read-only Web paths.

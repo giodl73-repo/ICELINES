@@ -4,7 +4,7 @@
 > scoped wording, using the boundaries already in the Fantasy family row.
 
 **Created:** 2026-06-21
-**Status:** Active - route wording passed
+**Status:** Closed - Phase Blues complete
 
 ---
 
@@ -50,8 +50,19 @@ state changes.
    and support scoped read/product wording.
 3. **Pulse 03 - Matrix wording.** Result: route rows now carry scoped
    read/product wording while preserving mutation and local-state deferrals.
-4. **Pulse 04 - Closeout.** Close Phase Blues with exact route claims and
-   non-claims.
+4. **Pulse 04 - Closeout.** Result: Phase Blues is closed with final route-row
+   claims and non-claims recorded.
+
+---
+
+## Closeout
+
+Phase Blues closed the Fantasy route wording gate. `/fantasy` and the five
+`/api/v1/fantasy/*` rows now carry scoped read/product claims aligned with the
+Fantasy family row, while preserving explicit non-claims around browser
+league/team setup, Yahoo roster import, matchup schedule mutation, roster-shape
+mutation, persisted add/drop mutation, missing-state creation, and read-only
+SQLite sidecar creation.
 
 ---
 
