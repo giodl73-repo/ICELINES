@@ -5,7 +5,7 @@
 > install/remove and persistent report-toggle boundaries should remain durable.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 report-toggle decision passed
+**Status:** Active - pulse 04 regression gate passed
 
 ---
 
@@ -58,8 +58,9 @@ deferrals.
 3. **Pulse 03 - Persistent report-toggle decision.** Result: persistent
    report-toggle writes stay deferred to the TUI Reports overlay and CLI config
    until the durable config contract moves to a shared crate or explicit bridge.
-4. **Pulse 04 - Regression gate.** Run or add focused admin safety checks for
-   the chosen decisions.
+4. **Pulse 04 - Regression gate.** Result: focused `l1_admin_` route tests
+   cover the chosen install/remove deferrals, report-toggle rejection, runtime
+   web config, data verify, game-cache, and snapshot mutation fences.
 5. **Pulse 05 - Closeout.** Update the wave, plan, and surface matrix.
 
 ---

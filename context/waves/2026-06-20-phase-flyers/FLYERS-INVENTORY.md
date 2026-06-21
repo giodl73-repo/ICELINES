@@ -36,5 +36,5 @@
 1. Plan and inventory.
 2. Data install/remove decision. Result: passed; install/remove stay deferred and unmounted.
 3. Persistent report-toggle decision. Result: passed; writes stay deferred to CLI/TUI durable config.
-4. Admin safety regression gate.
+4. Admin safety regression gate. Result: passed; focused `l1_admin_` route family covers chosen boundaries.
 5. Closeout and surface-matrix claim.
