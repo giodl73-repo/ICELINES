@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Flyers - Admin operation safety gate](2026-06-20-phaseFlyers-admin-safety.md) | Active | Post-Devils admin safety wave: refresh implemented/deferred admin operation truth, decide web data install/remove and persistent report-toggle boundaries, and preserve focused route fences. |
 | [Phase Devils - Dashboard visual QA gate](2026-06-20-phaseDevils-dashboard-visual-qa.md) | Closed | Closed the post-Islanders browser-proof wave for `/dashboard`: representative desktop/tablet/mobile capture matrix, automated route/artifact checks, and exact surface-matrix wording without overstating browser, touch, focus, or accessibility coverage. |
 | [Phase Islanders - Surface parity cleanup](2026-06-20-phaseIslanders-surface-parity.md) | Closed | Wrapped the post-Rangers surface-truth cleanup: refreshed the surface-parity matrix, tightened admin/docs claims, recorded selected dashboard capture evidence, and rolled up cache-backed partial surfaces without promoting new analytics claims. |
 | [Phase Rangers - Post-Hurricane goals](2026-06-20-phaseRangers-goals.md) | Wrapped | Closed the post-Hurricane organization round: NYR workflow proof, gated Signals roster matrix, evidence-bridge decision, layout persistence proof, and lean CLI target-not-met audit without reopening blocked Hurricane source claims. |
