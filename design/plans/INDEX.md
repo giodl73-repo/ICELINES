@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Blackhawks - Playoff bracket/detail gate](2026-06-21-phaseBlackhawks-playoff-detail-gate.md) | Active | Decide whether Playoff bracket/detail can promote from partial to a bounded `PlayoffsView` detail/export claim. |
 | [Phase Red Wings - Favorites/watch boundary gate](2026-06-21-phaseRedWings-favorites-watch-gate.md) | Closed | Closed the Favorites/watch boundary gate: read-only named groups, POST-backed canonical Favorites mutations, and player watch-rule create/toggle/delete stay supported, while richer group/rule editing remains blocked on shared mutation contracts. |
 | [Phase Maple Leafs - Career/cohort leaders gate](2026-06-20-phaseMapleLeafs-career-cohort-gate.md) | Closed | Closed the Career/cohort leaders gate: CareerView-backed CLI/Web/JSON/dashboard surfaces stay canonical, while TUI remains a tested command-bar handoff by design. |
 | [Phase Oilers - Named analytics-cache report promotion gate](2026-06-20-phaseOilers-named-cache-report-promotion.md) | Closed | Closed the WP-009 named analytics-cache report gate: named report is now bounded generic prepared-cache inspection only; workflow-family route claims remain bounded by their phase-specific non-claims. |
