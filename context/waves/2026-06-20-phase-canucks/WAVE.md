@@ -35,6 +35,7 @@ should remain only first-route evidence.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Canucks goals | passed; see `CANUCKS-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Agent-evidence product-copy gate | passed for bounded prepared-cache agent evidence summary claim; see `CANUCKS-COPY-GATE.md` and `pulses/pulse-02.md` |
 
 ## Validation Posture
 
