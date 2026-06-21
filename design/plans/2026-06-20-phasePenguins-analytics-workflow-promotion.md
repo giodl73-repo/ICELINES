@@ -5,7 +5,7 @@
 > bounded prepared-cache consumer.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 04 coach evidence gate passed
+**Status:** Closed - Phase Penguins complete
 
 ---
 
@@ -65,7 +65,10 @@ copy are strong enough.
 4. **Pulse 04 - Workflow evidence gate.** Result: focused coach-dashboard L2
    evidence and surface-matrix wording support a bounded prepared-cache dashboard
    claim while keeping broader coaching workflow claims deferred.
-5. **Pulse 05 - Closeout.** Update the wave, plan, and surface matrix.
+5. **Pulse 05 - Closeout.** Result: Phase Penguins closed. Only the coach
+   dashboard is promoted to a bounded prepared-cache dashboard claim; all other
+   WP-009 cache route families remain first-route evidence with explicit
+   non-claims.
 
 ---
 
