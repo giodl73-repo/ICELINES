@@ -5,7 +5,7 @@
 > bounded prepared-cache consumer.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 coach copy gate passed
+**Status:** Active - pulse 04 coach evidence gate passed
 
 ---
 
@@ -62,8 +62,9 @@ copy are strong enough.
    sufficient for a bounded prepared-cache dashboard claim. It preserves
    source/methodology/non-claim framing and does not imply live recomputation or
    coaching authority.
-4. **Pulse 04 - Workflow evidence gate.** Add or run focused evidence for the
-   selected family, or record durable deferral.
+4. **Pulse 04 - Workflow evidence gate.** Result: focused coach-dashboard L2
+   evidence and surface-matrix wording support a bounded prepared-cache dashboard
+   claim while keeping broader coaching workflow claims deferred.
 5. **Pulse 05 - Closeout.** Update the wave, plan, and surface matrix.
 
 ---
