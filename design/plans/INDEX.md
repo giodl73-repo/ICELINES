@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Senators - Admin row wording gate](2026-06-21-phaseSenators-admin-row-wording-gate.md) | Active | Convert the individual admin operation rows from plain partial wording to explicit safe partial-by-design claims, preserving Flyers deferrals for web install/remove and persistent report-toggle writes. |
 | [Phase Blackhawks - Playoff bracket/detail gate](2026-06-21-phaseBlackhawks-playoff-detail-gate.md) | Closed | Closed the Playoff bracket/detail gate: bundled `PlayoffsView` bracket and game-log detail now has a bounded CLI/TUI/Web/API/Markdown detail-export claim without live fetch, prediction, or new Web series-drilldown claims. |
 | [Phase Red Wings - Favorites/watch boundary gate](2026-06-21-phaseRedWings-favorites-watch-gate.md) | Closed | Closed the Favorites/watch boundary gate: read-only named groups, POST-backed canonical Favorites mutations, and player watch-rule create/toggle/delete stay supported, while richer group/rule editing remains blocked on shared mutation contracts. |
 | [Phase Maple Leafs - Career/cohort leaders gate](2026-06-20-phaseMapleLeafs-career-cohort-gate.md) | Closed | Closed the Career/cohort leaders gate: CareerView-backed CLI/Web/JSON/dashboard surfaces stay canonical, while TUI remains a tested command-bar handoff by design. |
