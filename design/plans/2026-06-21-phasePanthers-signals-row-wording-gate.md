@@ -4,7 +4,7 @@
 > boundaries already closed by Phase Capitals.
 
 **Created:** 2026-06-21
-**Status:** Active - surface-row wording passed
+**Status:** Closed - Phase Panthers complete
 
 ---
 
@@ -51,8 +51,18 @@ row to partial by design while preserving the Capitals non-promotion decision.
    and support partial-by-design wording.
 3. **Pulse 03 - Matrix wording.** Result: the Player Signals row now carries
    partial-by-design wording while preserving Capitals non-claims.
-4. **Pulse 04 - Closeout.** Close Phase Panthers with exact row claims and
-   non-claims.
+4. **Pulse 04 - Closeout.** Result: Phase Panthers is closed with final row
+   claims and non-claims recorded.
+
+---
+
+## Closeout
+
+Phase Panthers closed the Player Signals row wording gate. The row now carries
+partial-by-design wording aligned with Phase Capitals, while keeping explicit
+non-claims around analytics cache, `StatId`, filters, catalog sorting, public
+leaderboards, ranking, prediction, betting, injury, deployment, player-grade,
+and coaching authority.
 
 ---
 

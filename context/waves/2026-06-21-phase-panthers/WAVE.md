@@ -35,10 +35,21 @@ design to match Phase Capitals.
 | 01 | Plan and inventory Phase Panthers goals | passed; see `PANTHERS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Signals route evidence gate | passed; focused Signals route tests support partial-by-design wording, see `pulses/pulse-02.md` |
 | 03 | Signals surface-row wording gate | passed; surface row now carries partial-by-design wording, see `pulses/pulse-03.md` |
-| 04 | Close Phase Panthers | pending |
+| 04 | Close Phase Panthers | passed; final scoped claims and non-claims recorded, see `pulses/pulse-04.md` |
 
 ## Validation Posture
 
 - Planning/doc-only edits use `git diff --check`.
 - Evidence gates use focused Signals Web route tests.
 - No live network dependency in tests.
+
+## Closeout
+
+Phase Panthers is closed. The Player Signals surface row now matches the Phase
+Capitals posture: direct `PlayerSignalsView` inspection surfaces remain partial
+by design, `signals-roster` remains a team-scoped inspection matrix, and missing
+evidence remains unavailable/null rather than zero-filled.
+
+The claim remains bounded. It does not include analytics-cache publication,
+`StatId`, filters, catalog sorting, public leaderboards, ranking authority,
+prediction, betting, injury, deployment, player-grade, or coaching authority.

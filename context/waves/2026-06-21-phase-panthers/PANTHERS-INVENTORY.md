@@ -30,4 +30,5 @@ wording into partial-by-design wording.
    partial-by-design surface-row wording.
 3. Matrix wording. Result: passed; the Player Signals row now carries
    partial-by-design wording while preserving Capitals non-claims.
-4. Closeout. Record final claims and non-claims.
+4. Closeout. Result: passed; Phase Panthers is closed with final surface-row
+   claims and non-claims recorded.
