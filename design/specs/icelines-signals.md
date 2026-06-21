@@ -7,9 +7,12 @@ are not new official NHL stats, predictive model outputs, betting edges, injury
 signals, deployment recommendations, or autonomous coaching decisions.
 
 Signals remain separate from `StatId` until methodology, consumer fit, and
-surface copy are reviewed across the product. The first core slices are exposed
-through `icelines-core::signal_metrics` and the internal
-`icelines-core::view_model::signals` boundary only.
+surface copy are reviewed across the product. Phase Capitals performed the first
+promotion review and kept Signals outside analytics cache, `StatId`, filters,
+and public leaderboards until stronger cache/source-state and bounded ranking
+contracts exist. The current core slices are exposed through
+`icelines-core::signal_metrics` and the internal
+`icelines-core::view_model::signals` boundary.
 
 ## Initial signal set
 
@@ -90,3 +93,25 @@ Phase Rangers pulse 05 keeps the roster matrix outside the analytics cache
 envelope. A future bridge to `AnalyticsCacheConsumerView` requires accepted
 Signal cache metric keys or an accepted cache-contract extension, plus
 source-state, invalidation, methodology-version, and non-claim evidence.
+
+## Phase Capitals promotion gate
+
+Phase Capitals opened the later promotion gate and decided that Signals are not
+eligible yet for:
+
+- WP-009 analytics-cache publication;
+- `StatId` rows;
+- `--filter` keys;
+- catalog-driven sort keys;
+- public cross-team Signal leaderboards.
+
+Signals stay on direct `PlayerSignalsView` inspection surfaces. The accepted
+future prerequisites are:
+
+- supported Signal cache metric keys and metric-level source-state;
+- invalidation keys for roster/stat/realtime inputs;
+- methodology versioning tied to the Signal formula set;
+- fixtures proving unavailable Signal values remain missing, not zero-filled;
+- product-copy review preserving scorer-bias, missing-input, non-prediction,
+  non-betting, non-injury, non-deployment, and non-coaching language;
+- bounded catalog/leaderboard semantics if any Signal subset is promoted later.

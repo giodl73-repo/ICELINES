@@ -4,7 +4,7 @@
 > surfaces into durable shared cache, catalog, filter, or leaderboard surfaces.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 catalog/filter/leaderboard gate passed
+**Status:** Active - pulse 04 durable deferral docs passed
 
 ---
 
@@ -62,8 +62,9 @@ shared surface prematurely.
    eligible for `StatId`, `--filter`, or public leaderboard promotion yet.
    `signals-roster` remains a team-scoped inspection matrix, not a ranking
    surface.
-4. **Pulse 04 - Promotion or durable deferral implementation.** Add the accepted
-   contract and focused tests, or record the durable no-promotion fence.
+4. **Pulse 04 - Promotion or durable deferral implementation.** Result: public
+   docs, the Signals spec, and the surface matrix record the durable
+   no-promotion fence for cache, catalog, filters, and leaderboards.
 5. **Pulse 05 - Closeout.** Update the wave, plan, and surface matrix.
 
 ---

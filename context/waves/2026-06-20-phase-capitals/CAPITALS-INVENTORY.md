@@ -33,5 +33,5 @@ not a blanket approval to cache, rank, or catalog every Signal.
 1. Plan and inventory. Result: passed.
 2. Cache eligibility gate. Result: passed as not eligible yet; Signals remain uncached.
 3. Catalog/filter/leaderboard gate. Result: passed as not eligible yet; Signals remain outside `StatId`, filters, and public leaderboards.
-4. Promotion or durable deferral implementation.
+4. Promotion or durable deferral implementation. Result: passed; docs/specs record durable no-promotion wording.
 5. Closeout and surface-matrix claim.

@@ -563,7 +563,10 @@ Legend: `↑` higher is better · `↓` lower is better · `=` neutral. Signals 
 available through the CLI, the player-card TUI block, Web HTML
 (`/player/:id/signals`), Web JSON (`/api/v1/player/:id/signals`), and
 `export md signals --player <name>`. They are intentionally **not** in the
-`--filter` catalog, leaderboards, or `StatId` (see
+`--filter` catalog, leaderboards, `StatId`, or analytics cache. Phase Capitals
+reviewed the promotion gate and kept those deferrals until accepted cache metric
+keys, invalidation/source-state rules, and bounded catalog/leaderboard copy exist
+(see
 [`design/specs/icelines-signals.md`](design/specs/icelines-signals.md)).
 
 ### `signals-roster` — team-scoped Signals discovery
@@ -578,7 +581,8 @@ rows for one team. It is an inspection aid, not a Signal leaderboard, `StatId`
 promotion, filter key, analytics-cache metric family, prediction, betting edge,
 injury signal, deployment recommendation, player-quality grade, or autonomous
 coaching decision. Missing Signals render as `unavailable`, never as zero-filled
-player values. JSON uses the additive `signals-roster.v1` envelope.
+player values. JSON uses the additive `signals-roster.v1` envelope. Phase
+Capitals keeps this surface uncached and team-scoped.
 
 ## `records` — player/team individual records
 
