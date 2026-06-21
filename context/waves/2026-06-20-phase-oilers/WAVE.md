@@ -38,6 +38,7 @@ hockey workflow.
 |---|---|---|
 | 01 | Plan and inventory Phase Oilers goals | passed; see `OILERS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Named report product-copy gate | passed for bounded generic prepared-cache inspection claim; see `OILERS-COPY-GATE.md` and `pulses/pulse-02.md` |
+| 03 | Named report evidence and matrix update | passed; focused L2 evidence supports bounded generic prepared-cache inspection claim, see `pulses/pulse-03.md` |
 
 ## Validation Posture
 

@@ -5,7 +5,7 @@
 > claim, while remaining explicitly outside any specific hockey workflow.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 copy gate passed
+**Status:** Active - pulse 03 named report evidence gate passed
 
 ---
 
@@ -50,7 +50,9 @@ copy and evidence remain generic and precise.
    sufficient for a bounded generic prepared-cache inspection claim. It
    preserves source/methodology/non-claim framing and does not imply any
    specific hockey workflow.
-3. **Pulse 03 - Evidence gate.** Run focused evidence for the route pair.
+3. **Pulse 03 - Evidence gate.** Result: focused named-report L2 evidence and
+   surface-matrix wording support a bounded generic prepared-cache inspection
+   claim while keeping every specific hockey workflow claim outside this route.
 4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
 
 ---
