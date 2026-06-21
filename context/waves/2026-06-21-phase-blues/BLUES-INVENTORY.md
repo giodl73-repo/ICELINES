@@ -29,6 +29,6 @@ wording into scoped route-row wording.
 1. Plan and inventory. Result: passed.
 2. Evidence gate. Result: passed; focused Fantasy Web route tests support
    scoped read/product route wording.
-3. Matrix wording. Convert the six Fantasy route rows to scoped read/product
-   wording if evidence passes.
+3. Matrix wording. Result: passed; the six Fantasy route rows now carry scoped
+   read/product wording while preserving mutation and local-state deferrals.
 4. Closeout. Record final claims and non-claims.
