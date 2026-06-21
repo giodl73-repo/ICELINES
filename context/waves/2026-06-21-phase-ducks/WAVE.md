@@ -39,7 +39,20 @@ design.
 | 01 | Plan and inventory Phase Ducks goals | passed; see `DUCKS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Favorites/watch route evidence gate | passed; focused route evidence supports scoped partial-by-design wording, see `pulses/pulse-02.md` |
 | 03 | Favorites/watch route wording gate | passed; route rows now read as partial by design, see `pulses/pulse-03.md` |
-| 04 | Close Phase Ducks | pending |
+| 04 | Close Phase Ducks | passed; phase closed with route rows recorded as scoped partials by design, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Ducks is closed. The Favorites/watch feature rows and route rows now carry
+the same boundary: read-only named group views, POST-backed canonical
+`Favorites` add/remove, watchlist/watch-rule reads, and player-rule
+create/toggle/delete are supported and tested as a scoped partial by design.
+
+Richer group create/rename/delete/member editing and arbitrary team/deployment
+watch-rule editing remain deferred until shared mutation contracts carry
+validated fields. Browser/dashboard/TUI commands must continue rejecting
+unsupported edits rather than mutating through GET or reinterpreting the request
+as a narrower player-rule action.
 
 ## Validation Posture
 

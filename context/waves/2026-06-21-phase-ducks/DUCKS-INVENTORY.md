@@ -35,4 +35,5 @@ wording into explicit partial-by-design wording.
    scoped route claims and Red Wings deferrals.
 3. Matrix wording. Result: passed; Favorites/watch route rows now say partial
    by design while preserving Red Wings deferrals.
-4. Closeout. Record final claims and non-claims.
+4. Closeout. Result: passed; Phase Ducks closed with route rows recorded as
+   scoped partials by design.

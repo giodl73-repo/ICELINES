@@ -4,7 +4,7 @@
 > by design, using the product boundary already closed by Phase Red Wings.
 
 **Created:** 2026-06-21
-**Status:** Active - route wording passed
+**Status:** Closed - Phase Ducks complete
 
 ---
 
@@ -52,8 +52,8 @@ route drift.
    passed and support scoped route wording.
 3. **Pulse 03 - Matrix wording.** Result: Favorites/watch route rows now say
    partial by design while preserving Red Wings deferrals.
-4. **Pulse 04 - Closeout.** Close Phase Ducks with exact route claims and
-   non-claims.
+4. **Pulse 04 - Closeout.** Result: Phase Ducks closed with exact route claims
+   and non-claims.
 
 ---
 
