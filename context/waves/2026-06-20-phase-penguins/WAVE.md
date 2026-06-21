@@ -31,6 +31,7 @@ or should remain bounded first-route evidence.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Penguins goals | passed; see `PENGUINS-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Select analytics workflow promotion lane | passed; coach dashboard selected for copy/workflow gate, see `PROMOTION-LANE.md` and `pulses/pulse-02.md` |
 
 ## Validation Posture
 

@@ -10,7 +10,7 @@ family has enough evidence for broader workflow promotion.
 | Family | First-route evidence | Penguins posture |
 |---|---|---|
 | Named cache report | `/reports/analytics-cache`, `/api/v1/reports/analytics-cache`, `l2_wp009_analytics_cache_report_*`. | Keep as generic prepared-cache inspection unless a specific workflow is selected. |
-| Coach dashboard | `/coach/dashboard`, `/api/v1/coach/dashboard`, `l2_wp009_coach_dashboard_*`. | Candidate lane, but must not imply coaching authority or live recomputation. |
+| Coach dashboard | `/coach/dashboard`, `/api/v1/coach/dashboard`, `l2_wp009_coach_dashboard_*`. | Pulse 02 selected this as the promotion-lane candidate for stricter copy/workflow evidence; no broad promotion yet. |
 | Opponent scout | `/scout/opponent`, `/api/v1/scout/opponent`, `l2_wp009_opponent_scout_*`. | Candidate lane, but must not imply a full game-plan workflow. |
 | Player evidence card | `/player/evidence-card`, `/api/v1/player/evidence-card`, `l2_wp009_player_evidence_card_*`. | Candidate lane, but must not imply full research, deployment, or transaction workflow. |
 | Line combinations | `/lines/explorer`, `/api/v1/lines/explorer`, `l2_wp009_line_combination_explorer_*`. | Keep cautious; deployment advice and line-chemistry causality remain blocked. |
@@ -31,7 +31,7 @@ family has enough evidence for broader workflow promotion.
 ## Recommended Pulse Map
 
 1. Plan and inventory. Result: passed.
-2. Promotion lane selection.
+2. Promotion lane selection. Result: passed; coach dashboard selected as candidate lane.
 3. Product-copy gate.
 4. Workflow evidence gate.
 5. Closeout and surface-matrix claim.

@@ -5,7 +5,7 @@
 > bounded prepared-cache consumer.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 01 planning opened
+**Status:** Active - pulse 02 promotion lane selected
 
 ---
 
@@ -55,8 +55,9 @@ copy are strong enough.
 
 1. **Pulse 01 - Plan and inventory.** Record route families, tests, first-route
    evidence, non-claims, and blockers.
-2. **Pulse 02 - Promotion lane selection.** Choose a single family to test for
-   workflow promotion or decide all families remain bounded.
+2. **Pulse 02 - Promotion lane selection.** Result: coach dashboard is selected
+   as the candidate lane for product-copy and workflow-evidence review. This is
+   not a broad workflow promotion yet.
 3. **Pulse 03 - Product-copy gate.** Verify or update copy for the selected
    family, including explicit non-claims.
 4. **Pulse 04 - Workflow evidence gate.** Add or run focused evidence for the
