@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Kraken - Practice focus promotion gate](2026-06-20-phaseKraken-practice-focus-promotion.md) | Active | Decide whether the WP-009 practice-focus Web/API first-route evidence can become a bounded prepared-cache practice focus report claim, or remain first-route evidence only. |
 | [Phase Avalanche - Goalie readiness promotion gate](2026-06-20-phaseAvalanche-goalie-readiness-promotion.md) | Closed | Closed the WP-009 goalie-readiness promotion gate: goalie readiness is now a bounded prepared-cache workload claim, while named report, practice, postgame, adjustment, and agent routes remain first-route evidence with explicit non-claims. |
 | [Phase Wild - Line-combination promotion gate](2026-06-20-phaseWild-line-combination-promotion.md) | Closed | Closed the WP-009 line-combination promotion gate: line-combination explorer is now a bounded prepared-cache line-combination explorer claim, while named report, goalie, practice, postgame, adjustment, and agent routes remain first-route evidence with explicit non-claims. |
 | [Phase Stars - Player evidence-card promotion gate](2026-06-20-phaseStars-player-evidence-card-promotion.md) | Closed | Closed the WP-009 player evidence-card promotion gate: player evidence card is now a bounded prepared-cache player evidence-card claim, while named report, line, goalie, practice, postgame, adjustment, and agent routes remain first-route evidence with explicit non-claims. |
