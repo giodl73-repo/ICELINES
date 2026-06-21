@@ -29,5 +29,5 @@ explorer claim.
 
 1. Plan and inventory. Result: passed.
 2. Product-copy gate. Result: passed for bounded prepared-cache line-combination explorer claim.
-3. Workflow evidence gate.
+3. Workflow evidence gate. Result: passed for bounded prepared-cache line-combination explorer claim.
 4. Surface-matrix closeout.
