@@ -30,7 +30,7 @@ without reviving removed mkdocs/static-site CLI or `/site/*` claims.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Sabres goals | passed; see `SABRES-INVENTORY.md` and `pulses/pulse-01.md` |
-| 02 | Docs/reference evidence gate | pending |
+| 02 | Docs/reference evidence gate | passed; focused docs/reference evidence supports final wording, see `pulses/pulse-02.md` |
 | 03 | Docs/static-site matrix wording gate | pending |
 | 04 | Close Phase Sabres | pending |
 

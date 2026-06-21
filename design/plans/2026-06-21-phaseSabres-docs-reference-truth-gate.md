@@ -5,7 +5,7 @@
 > removed mkdocs/static-site surface out of active claims.
 
 **Created:** 2026-06-21
-**Status:** Active
+**Status:** Active - evidence gate passed
 
 ---
 
@@ -46,7 +46,7 @@ placeholder with final wording.
 ## Recommended Pulse Order
 
 1. **Pulse 01 - Plan and inventory.** Result: passed.
-2. **Pulse 02 - Evidence gate.** Run focused docs/reference tests.
+2. **Pulse 02 - Evidence gate.** Result: focused docs/reference tests passed.
 3. **Pulse 03 - Matrix wording.** Replace placeholder rollup wording and keep
    the static-site row deferred.
 4. **Pulse 04 - Closeout.** Close Phase Sabres with exact docs/reference

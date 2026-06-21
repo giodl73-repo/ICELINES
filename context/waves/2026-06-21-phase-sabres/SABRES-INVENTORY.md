@@ -31,7 +31,8 @@ docs/reference placeholder wording in the active partial rollup.
 ## Recommended Pulse Map
 
 1. Plan and inventory. Result: passed.
-2. Evidence gate. Run focused docs/reference tests.
+2. Evidence gate. Result: passed; focused docs/reference tests cover `DocsView`,
+   Web `/docs`, TUI docs overlay, and removed static-site CLI help wording.
 3. Matrix wording. Replace placeholder rollup wording and preserve the
    deferred static-site artifact row.
 4. Closeout. Record final claims and non-claims.
