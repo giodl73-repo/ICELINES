@@ -1090,7 +1090,7 @@ watch Connor McDavid                       -> POST /watch-rules/create
 watch player Connor McDavid when=available -> save player watch rule
 watch enable player-connor-mcdavid         -> toggle persisted watch rule on
 watch disable player-connor-mcdavid        -> toggle persisted watch rule off
-watch deployment TOR                       -> deferred; use CLI preview, not dashboard mutation
+watch deployment TOR                       -> deferred; use CLI preview or `/watchlist` player rules
 ```
 
 `/favorites` can select any SQLite group with `?group=<name>`. The page exposes

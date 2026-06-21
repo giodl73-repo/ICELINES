@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Stags - Watch deployment docs truth gate](2026-06-21-phaseStags-watch-deployment-docs.md) | Closed | Aligned `COMMANDS.md` and `/docs` with dashboard watch deployment recovery: CLI preview or `/watchlist` player rules, while arbitrary deployment editing remains deferred. |
 | [Phase Americans - Dashboard group docs truth gate](2026-06-21-phaseAmericans-dashboard-group-docs.md) | Closed | Aligned `COMMANDS.md` and `/docs` with Maroons: dashboard group mutation commands are not GET-backed and recover through `/favorites` POST forms or `icelines group`. |
 | [Phase Maroons - Dashboard group copy truth gate](2026-06-21-phaseMaroons-dashboard-group-copy.md) | Closed | Updated dashboard command group-mutation recovery copy to preserve GET non-mutation while pointing users to `/favorites` POST forms or `icelines group`. |
 | [Phase Barons - Admin docs truth gate](2026-06-21-phaseBarons-admin-docs-truth.md) | Closed | Aligned the embedded command reference and `/docs` route with Phase Seals: web admin install is bundled-season only with exact confirmation, and remove is scoped installed-season deletion with exact confirmation. |

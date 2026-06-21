@@ -983,6 +983,29 @@ async fn l1_docs_route_includes_dashboard_group_command_recovery() {
 }
 
 #[tokio::test]
+async fn l1_docs_route_includes_watch_deployment_recovery() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/docs")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("docs html is utf-8");
+    assert!(body.contains("watch deployment TOR"));
+    assert!(body.contains("CLI preview or"));
+    assert!(body.contains("/watchlist"));
+}
+
+#[tokio::test]
 async fn l1_dashboard_shell_renders_no_js_regions() {
     let app = router(WebState::new());
     let response = app
