@@ -4,7 +4,7 @@
 > shared-ViewModel wording.
 
 **Created:** 2026-06-21
-**Status:** Active - route wording passed
+**Status:** Closed - Phase Golden Knights complete
 
 ---
 
@@ -50,8 +50,18 @@ API envelope behavior where it does not exist.
 3. **Pulse 03 - Matrix wording.** Result: route rows now carry scoped
    shared-ViewModel wording while preserving API-envelope and read-only SQLite
    boundaries.
-4. **Pulse 04 - Closeout.** Close Phase Golden Knights with exact route claims
-   and non-claims.
+4. **Pulse 04 - Closeout.** Result: Phase Golden Knights is closed with final
+   route-row claims and non-claims recorded.
+
+---
+
+## Closeout
+
+Phase Golden Knights closed the Poach route wording gate. `/poach`,
+`/reports/poach`, `/reports/weekly`, and `/api/v1/poach` now carry scoped
+shared-ViewModel claims while preserving the `/api/v1/poach` non-envelope
+boundary, report non-persistence boundaries, read-only imported-availability
+SQLite sidecar guards, and browser league/team mutation deferral.
 
 ---
 

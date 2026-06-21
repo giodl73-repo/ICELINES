@@ -23,7 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
-| [Phase Golden Knights - Poach route wording gate](2026-06-21-phaseGoldenKnights-poach-route-wording-gate.md) | Active | Convert Poach board/report route rows from terse done wording to scoped shared-ViewModel claims while preserving API-envelope and read-only SQLite boundaries. |
+| [Phase Golden Knights - Poach route wording gate](2026-06-21-phaseGoldenKnights-poach-route-wording-gate.md) | Closed | Closed the Poach route wording gate: board/report route rows now carry scoped shared-ViewModel claims while preserving API-envelope and read-only SQLite boundaries. |
 | [Phase Blues - Fantasy route wording gate](2026-06-21-phaseBlues-fantasy-route-wording-gate.md) | Closed | Closed the Fantasy route wording gate: `/fantasy` and `/api/v1/fantasy/*` rows now carry scoped read/product claims while preserving browser mutation, missing-state, and read-only SQLite deferrals. |
 | [Phase Panthers - Signals row wording gate](2026-06-21-phasePanthers-signals-row-wording-gate.md) | Closed | Closed the Player Signals row wording gate: Signals now carry partial-by-design wording while preserving Capitals non-claims around cache, catalog, filter, leaderboard, ranking, and recommendation authority. |
 | [Phase Lightning - Career route wording gate](2026-06-21-phaseLightning-career-route-wording-gate.md) | Closed | Closed the Career/cohort route wording gate: `/career` and `/api/v1/career` now carry partial-by-design wording while preserving Maple Leafs non-claims around TUI handoff, optional local career-history data, and no live read fetch. |

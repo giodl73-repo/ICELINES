@@ -30,4 +30,5 @@ wording into scoped shared-ViewModel wording.
 3. Matrix wording. Result: passed; the four Poach route rows now carry scoped
    shared-ViewModel wording while preserving API-envelope and read-only SQLite
    boundaries.
-4. Closeout. Record final claims and non-claims.
+4. Closeout. Result: passed; Phase Golden Knights is closed with final route-row
+   claims and non-claims recorded.
