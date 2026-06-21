@@ -35,6 +35,7 @@ only first-route evidence.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Bruins goals | passed; see `BRUINS-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Opponent scout product-copy gate | passed for bounded prepared-cache scout report claim; see `BRUINS-COPY-GATE.md` and `pulses/pulse-02.md` |
 
 ## Validation Posture
 
