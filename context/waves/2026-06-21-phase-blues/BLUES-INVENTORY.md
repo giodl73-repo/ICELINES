@@ -27,7 +27,8 @@ wording into scoped route-row wording.
 ## Recommended Pulse Map
 
 1. Plan and inventory. Result: passed.
-2. Evidence gate. Run focused Fantasy Web route tests.
+2. Evidence gate. Result: passed; focused Fantasy Web route tests support
+   scoped read/product route wording.
 3. Matrix wording. Convert the six Fantasy route rows to scoped read/product
    wording if evidence passes.
 4. Closeout. Record final claims and non-claims.

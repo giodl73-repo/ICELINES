@@ -4,7 +4,7 @@
 > scoped wording, using the boundaries already in the Fantasy family row.
 
 **Created:** 2026-06-21
-**Status:** Active - planning complete
+**Status:** Active - evidence gate passed
 
 ---
 
@@ -46,7 +46,8 @@ state changes.
 ## Recommended Pulse Order
 
 1. **Pulse 01 - Plan and inventory.** Result: passed.
-2. **Pulse 02 - Evidence gate.** Run focused Fantasy Web route tests.
+2. **Pulse 02 - Evidence gate.** Result: focused Fantasy Web route tests passed
+   and support scoped read/product wording.
 3. **Pulse 03 - Matrix wording.** Convert route rows to scoped read/product
    wording only if evidence passes.
 4. **Pulse 04 - Closeout.** Close Phase Blues with exact route claims and

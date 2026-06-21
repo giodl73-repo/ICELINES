@@ -34,7 +34,7 @@ already captured in the Fantasy family row.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Blues goals | passed; see `BLUES-INVENTORY.md` and `pulses/pulse-01.md` |
-| 02 | Fantasy route evidence gate | pending |
+| 02 | Fantasy route evidence gate | passed; focused Fantasy route tests support scoped read/product wording, see `pulses/pulse-02.md` |
 | 03 | Fantasy route wording gate | pending |
 | 04 | Close Phase Blues | pending |
 
