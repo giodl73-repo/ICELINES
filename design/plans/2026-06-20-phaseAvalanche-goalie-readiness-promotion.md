@@ -5,7 +5,7 @@
 > or whether it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 01 inventory complete
+**Status:** Active - pulse 02 copy gate passed
 
 ---
 
@@ -46,9 +46,11 @@ copy and workflow evidence remain precise.
 ## Recommended Pulse Order
 
 1. **Pulse 01 - Plan and inventory.** Result: passed.
-2. **Pulse 02 - Product-copy gate.** Audit current route/template copy and
-   decide whether it supports a bounded prepared-cache goalie readiness workload
-   claim.
+2. **Pulse 02 - Product-copy gate.** Result: existing goalie-readiness copy is
+   sufficient for a bounded prepared-cache goalie readiness workload claim. It
+   preserves source/methodology/non-claim framing and does not imply injury
+   certainty, start/sit authority, medical advice, or autonomous coaching
+   authority.
 3. **Pulse 03 - Workflow evidence gate.** Run or add focused evidence for the
    route pair.
 4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
