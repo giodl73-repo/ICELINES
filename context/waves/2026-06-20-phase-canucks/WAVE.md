@@ -36,6 +36,7 @@ should remain only first-route evidence.
 |---|---|---|
 | 01 | Plan and inventory Phase Canucks goals | passed; see `CANUCKS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Agent-evidence product-copy gate | passed for bounded prepared-cache agent evidence summary claim; see `CANUCKS-COPY-GATE.md` and `pulses/pulse-02.md` |
+| 03 | Agent-evidence workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache agent evidence summary claim, see `pulses/pulse-03.md` |
 
 ## Validation Posture
 

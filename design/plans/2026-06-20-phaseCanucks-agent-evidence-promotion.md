@@ -5,7 +5,7 @@
 > whether it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 copy gate passed
+**Status:** Active - pulse 03 agent evidence gate passed
 
 ---
 
@@ -49,8 +49,9 @@ copy and workflow evidence remain precise.
    sufficient for a bounded prepared-cache agent evidence summary claim. It
    preserves source/methodology/non-claim framing and does not imply autonomous
    action, recommendation authority, or workflow completion.
-3. **Pulse 03 - Workflow evidence gate.** Run or add focused evidence for the
-   route pair.
+3. **Pulse 03 - Workflow evidence gate.** Result: focused agent-evidence L2
+   evidence and surface-matrix wording support a bounded prepared-cache agent
+   evidence summary claim while keeping broader agent workflow claims deferred.
 4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
 
 ---
