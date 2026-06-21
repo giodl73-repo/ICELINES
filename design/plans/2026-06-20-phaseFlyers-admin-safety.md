@@ -5,7 +5,7 @@
 > install/remove and persistent report-toggle boundaries should remain durable.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 01 planning opened
+**Status:** Active - pulse 02 install/remove decision passed
 
 ---
 
@@ -51,8 +51,10 @@ deferrals.
 
 1. **Pulse 01 - Plan and inventory.** Record current admin routes, tests,
    implemented safe mutations, and remaining deferrals.
-2. **Pulse 02 - Install/remove decision.** Decide whether to keep web data
-   install/remove deferred or define a small safe contract.
+2. **Pulse 02 - Install/remove decision.** Result: web data install/remove stay
+   deferred and unmounted. Install belongs to intentional CLI use until a
+   dry-run/local-only browser contract exists; remove needs scoped confirmation
+   and target fencing before any web route is added.
 3. **Pulse 03 - Persistent report-toggle decision.** Decide whether web can
    share durable report config or should keep using TUI/CLI handoff.
 4. **Pulse 04 - Regression gate.** Run or add focused admin safety checks for

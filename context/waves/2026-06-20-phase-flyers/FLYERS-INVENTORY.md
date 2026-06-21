@@ -9,8 +9,8 @@
 | Game-cache warmers | HTML and JSON POST routes warm game-cache artifacts and reject invalid requests before network work. | Keep as cache warmers only, not release bundle install/remove. |
 | Snapshot activate/delete | HTML and JSON POST routes use `SnapshotMutationIntent`; activate requires sealed snapshots and delete rejects active snapshots. | Keep implemented safe mutations. |
 | Runtime web config | HTML and JSON POST routes set/reset `web.active_season` and `web.active_season_type` for the running server only. | Keep runtime-only copy unless a durable config contract is added. |
-| Data install | CLI exists, but web install routes are unmounted and `/admin` labels install deferred because it can perform live/network release downloads. | Decide whether a safe dry-run/local-only browser contract is worth opening; default is durable deferral. |
-| Data remove | CLI exists, but web remove routes are unmounted and `/admin` labels remove deferred because it is destructive filesystem mutation. | Decide whether a scoped confirmation contract is worth opening; default is durable deferral. |
+| Data install | CLI exists, but web install routes are unmounted and `/admin` labels install deferred because it can perform live/network release downloads. | Pulse 02 keeps install deferred and unmounted; no browser contract until a dry-run/local-only design exists. |
+| Data remove | CLI exists, but web remove routes are unmounted and `/admin` labels remove deferred because it is destructive filesystem mutation. | Pulse 02 keeps remove deferred and unmounted; no browser contract until scoped confirmation and target fencing exist. |
 | Persistent report toggles | TUI Reports overlay and CLI config persist `~/.icelines/config.toml`; web admin exposes warning copy and rejects unknown report-toggle keys. | Decide whether web should remain a handoff or share a durable config contract. |
 
 ## Existing focused checks
@@ -34,7 +34,7 @@
 ## Pulse map
 
 1. Plan and inventory.
-2. Data install/remove decision.
+2. Data install/remove decision. Result: passed; install/remove stay deferred and unmounted.
 3. Persistent report-toggle decision.
 4. Admin safety regression gate.
 5. Closeout and surface-matrix claim.

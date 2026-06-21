@@ -32,6 +32,7 @@ mutations safe.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Flyers goals | passed; see `FLYERS-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Decide web data install/remove boundary | passed; install/remove stay deferred and unmounted, see `pulses/pulse-02.md` |
 
 ## Validation posture
 
