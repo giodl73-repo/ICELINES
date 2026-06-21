@@ -23,7 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
-| [Phase Canucks - Agent evidence promotion gate](2026-06-20-phaseCanucks-agent-evidence-promotion.md) | Active | Decide whether the WP-009 agent-evidence Web/API first-route evidence can become a bounded prepared-cache agent evidence summary claim, or remain first-route evidence only. |
+| [Phase Canucks - Agent evidence promotion gate](2026-06-20-phaseCanucks-agent-evidence-promotion.md) | Closed | Closed the WP-009 agent-evidence promotion gate: agent evidence is now a bounded prepared-cache evidence summary claim, while named analytics cache report remains generic prepared-cache inspection evidence. |
 | [Phase Predators - Postgame promotion gate](2026-06-20-phasePredators-postgame-promotion.md) | Closed | Closed the WP-009 postgame promotion gate: postgame review and adjustments are now bounded prepared-cache report claims, while named report and agent routes remain first-route evidence with explicit non-claims. |
 | [Phase Kraken - Practice focus promotion gate](2026-06-20-phaseKraken-practice-focus-promotion.md) | Closed | Closed the WP-009 practice-focus promotion gate: practice focus is now a bounded prepared-cache report claim, while named report, postgame, adjustment, and agent routes remain first-route evidence with explicit non-claims. |
 | [Phase Avalanche - Goalie readiness promotion gate](2026-06-20-phaseAvalanche-goalie-readiness-promotion.md) | Closed | Closed the WP-009 goalie-readiness promotion gate: goalie readiness is now a bounded prepared-cache workload claim, while named report, practice, postgame, adjustment, and agent routes remain first-route evidence with explicit non-claims. |

@@ -5,7 +5,7 @@
 > whether it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 agent evidence gate passed
+**Status:** Closed - Phase Canucks complete
 
 ---
 
@@ -52,7 +52,9 @@ copy and workflow evidence remain precise.
 3. **Pulse 03 - Workflow evidence gate.** Result: focused agent-evidence L2
    evidence and surface-matrix wording support a bounded prepared-cache agent
    evidence summary claim while keeping broader agent workflow claims deferred.
-4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
+4. **Pulse 04 - Closeout.** Result: Phase Canucks closed. Only agent evidence
+   is promoted to a bounded prepared-cache evidence summary claim; named
+   analytics cache report remains generic prepared-cache inspection evidence.
 
 ---
 
