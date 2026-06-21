@@ -5,7 +5,7 @@
 > or whether they remain first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 postgame evidence gate passed
+**Status:** Closed - Phase Predators complete
 
 ---
 
@@ -52,7 +52,10 @@ copy and workflow evidence remain precise.
 3. **Pulse 03 - Workflow evidence gate.** Result: focused postgame L2 evidence
    and surface-matrix wording support bounded prepared-cache postgame report
    claims while keeping broader postgame workflow claims deferred.
-4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
+4. **Pulse 04 - Closeout.** Result: Phase Predators closed. Only postgame
+   review and adjustments are promoted to bounded prepared-cache report claims;
+   named report and agent cache route families remain first-route evidence with
+   explicit non-claims.
 
 ---
 

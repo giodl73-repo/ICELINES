@@ -37,6 +37,21 @@ or whether they should remain only first-route evidence.
 | 01 | Plan and inventory Phase Predators goals | passed; see `PREDATORS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Postgame product-copy gate | passed for bounded prepared-cache postgame report claims; see `PREDATORS-COPY-GATE.md` and `pulses/pulse-02.md` |
 | 03 | Postgame workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache postgame report claims, see `pulses/pulse-03.md` |
+| 04 | Close Phase Predators | passed; phase closed with postgame review and adjustments promoted only to bounded prepared-cache report claims, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Predators is closed. The phase promotes only postgame review and postgame
+adjustments from WP-009 first-route evidence to bounded prepared-cache postgame
+report claims: active-context cache reads, ready/unavailable HTML and JSON, no
+cache creation on missing reads, preserved source, quality, methodology,
+disclosure, and non-claim copy, and no causal-win, blame-assignment, or
+automatic-correction-plan copy.
+
+Named cache report and agent evidence remain bounded first-route evidence.
+Postgame reports are still not causal blame assignment, automatic correction
+plans, full postgame workflow completion, live recomputation, prediction
+certainty, or autonomous coaching authority.
 
 ## Validation Posture
 
