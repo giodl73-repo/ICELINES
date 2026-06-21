@@ -33,5 +33,6 @@ board.
    handoff remains sufficient. Result: passed; focused evidence supports
    deliberate TUI handoff.
 3. Surface-matrix wording. Tighten partial wording if evidence shows the
-   deliberate handoff needs clearer boundaries.
+   deliberate handoff needs clearer boundaries. Result: passed; matrix now
+   names Phase Maple Leafs and the tested TUI handoff boundary.
 4. Closeout. Record the final Career/cohort leaders decision.

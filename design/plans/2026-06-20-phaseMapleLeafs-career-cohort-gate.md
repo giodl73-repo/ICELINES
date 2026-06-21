@@ -5,7 +5,7 @@
 > board.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 career evidence passed
+**Status:** Active - pulse 03 matrix wording passed
 
 ---
 
@@ -51,7 +51,9 @@ TUI board has evidence-backed value beyond duplicating the canonical table.
    keeping Career/cohort leaders partial by design, with TUI as a precise
    handoff to canonical CLI/Web cohort tables.
 3. **Pulse 03 - TUI board decision and matrix wording.** Keep partial by design
-   or promote only if the evidence justifies it.
+   or promote only if the evidence justifies it. Result: matrix keeps
+   Career/cohort leaders partial by design, with tested TUI handoff and explicit
+   cold-store/read-surface boundaries.
 4. **Pulse 04 - Closeout.** Update wave, plan, and indexes.
 
 ---

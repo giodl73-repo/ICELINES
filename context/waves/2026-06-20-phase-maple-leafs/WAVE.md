@@ -34,6 +34,7 @@ canonical CLI/Web surfaces or become a dedicated TUI board.
 |---|---|---|
 | 01 | Plan and inventory Phase Maple Leafs goals | passed; see `MAPLE-LEAFS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Career evidence gate | passed; focused CLI/TUI/Web evidence supports deliberate TUI handoff, see `pulses/pulse-02.md` |
+| 03 | TUI board decision and matrix wording | passed; matrix keeps Career/cohort leaders partial by design, see `pulses/pulse-03.md` |
 
 ## Validation Posture
 
