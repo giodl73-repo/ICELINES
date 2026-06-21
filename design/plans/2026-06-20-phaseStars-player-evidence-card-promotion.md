@@ -5,7 +5,7 @@
 > whether it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 player evidence gate passed
+**Status:** Closed - Phase Stars complete
 
 ---
 
@@ -55,7 +55,10 @@ and workflow evidence remain precise.
    L2 evidence and surface-matrix wording support a bounded prepared-cache
    player evidence-card claim while keeping broader player workflow claims
    deferred.
-4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
+4. **Pulse 04 - Closeout.** Result: Phase Stars closed. Only player evidence
+   card is promoted to a bounded prepared-cache player evidence-card claim;
+   named report, line, goalie, practice, postgame, adjustment, and agent cache
+   route families remain first-route evidence with explicit non-claims.
 
 ---
 
