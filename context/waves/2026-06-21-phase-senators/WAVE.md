@@ -34,7 +34,7 @@ already proves safe operational behavior.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Senators goals | passed; see `SENATORS-INVENTORY.md` and `pulses/pulse-01.md` |
-| 02 | Admin route evidence gate | pending |
+| 02 | Admin route evidence gate | passed; focused `l1_admin_` route evidence supports scoped safe-operation wording, see `pulses/pulse-02.md` |
 | 03 | Admin row wording gate | pending |
 | 04 | Close Phase Senators | pending |
 
