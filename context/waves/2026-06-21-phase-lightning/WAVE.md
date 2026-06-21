@@ -33,7 +33,7 @@ Leafs.
 |---|---|---|
 | 01 | Plan and inventory Phase Lightning goals | passed; see `LIGHTNING-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Career route evidence gate | passed; focused Career route tests support partial-by-design wording, see `pulses/pulse-02.md` |
-| 03 | Career route wording gate | pending |
+| 03 | Career route wording gate | passed; route rows now carry partial-by-design claims, see `pulses/pulse-03.md` |
 | 04 | Close Phase Lightning | pending |
 
 ## Validation Posture

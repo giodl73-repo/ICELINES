@@ -28,6 +28,6 @@ wording into partial-by-design wording.
 1. Plan and inventory. Result: passed.
 2. Evidence gate. Result: passed; focused Career Web route tests support
    partial-by-design route wording.
-3. Matrix wording. Convert the two route rows to partial-by-design wording if
-   evidence passes.
+3. Matrix wording. Result: passed; the two route rows now carry
+   partial-by-design wording while preserving Maple Leafs non-claims.
 4. Closeout. Record final claims and non-claims.

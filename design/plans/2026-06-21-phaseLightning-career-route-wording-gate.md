@@ -4,7 +4,7 @@
 > using the boundaries already closed by Phase Maple Leafs.
 
 **Created:** 2026-06-21
-**Status:** Active - evidence gate passed
+**Status:** Active - route wording passed
 
 ---
 
@@ -47,8 +47,8 @@ without implying a dedicated TUI board or live career-history fetch.
 1. **Pulse 01 - Plan and inventory.** Result: passed.
 2. **Pulse 02 - Evidence gate.** Result: focused Career Web route tests passed
    and support partial-by-design wording.
-3. **Pulse 03 - Matrix wording.** Convert route rows to partial-by-design
-   wording only if evidence passes.
+3. **Pulse 03 - Matrix wording.** Result: route rows now carry
+   partial-by-design wording while preserving Maple Leafs non-claims.
 4. **Pulse 04 - Closeout.** Close Phase Lightning with exact route claims and
    non-claims.
 
