@@ -32,7 +32,19 @@ without reviving removed mkdocs/static-site CLI or `/site/*` claims.
 | 01 | Plan and inventory Phase Sabres goals | passed; see `SABRES-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Docs/reference evidence gate | passed; focused docs/reference evidence supports final wording, see `pulses/pulse-02.md` |
 | 03 | Docs/static-site matrix wording gate | passed; rollup and rows now preserve active docs surfaces without reviving static-site claims, see `pulses/pulse-03.md` |
-| 04 | Close Phase Sabres | pending |
+| 04 | Close Phase Sabres | passed; phase closed with final docs/reference wording and static-site non-claims, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Sabres is closed. The docs/reference rollup now has final wording:
+`icelines docs`, the TUI docs overlay, Web `/docs`, and dashboard/menu docs
+handoffs use embedded `COMMANDS.md` through the `DocsView` command reference.
+
+The static-site boundary remains explicit. Removed mkdocs/static-site CLI
+commands and `/site/*` are not active docs/reference surfaces. `icelines-site`,
+`docs/`, and `mkdocs.yml` remain supporting/generated artifacts unless a future
+scoped contract reintroduces build/serve/deploy or `/site/*` behavior with
+tests.
 
 ## Validation Posture
 

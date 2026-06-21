@@ -5,7 +5,7 @@
 > removed mkdocs/static-site surface out of active claims.
 
 **Created:** 2026-06-21
-**Status:** Active - matrix wording passed
+**Status:** Closed - Phase Sabres complete
 
 ---
 
@@ -49,8 +49,8 @@ placeholder with final wording.
 2. **Pulse 02 - Evidence gate.** Result: focused docs/reference tests passed.
 3. **Pulse 03 - Matrix wording.** Result: rollup and rows now preserve active
    docs/reference surfaces without reviving static-site claims.
-4. **Pulse 04 - Closeout.** Close Phase Sabres with exact docs/reference
-   claims and static-site non-claims.
+4. **Pulse 04 - Closeout.** Result: Phase Sabres closed with exact
+   docs/reference claims and static-site non-claims.
 
 ---
 

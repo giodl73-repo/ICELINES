@@ -35,4 +35,5 @@ docs/reference placeholder wording in the active partial rollup.
    Web `/docs`, TUI docs overlay, and removed static-site CLI help wording.
 3. Matrix wording. Result: passed; rollup and rows now preserve active docs
    surfaces without reviving static-site claims.
-4. Closeout. Record final claims and non-claims.
+4. Closeout. Result: passed; Phase Sabres closed with final docs/reference
+   wording and static-site non-claims.
