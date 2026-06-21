@@ -4,7 +4,7 @@
 > by design, using the safety boundary already closed by Phase Flyers.
 
 **Created:** 2026-06-21
-**Status:** Active - evidence gate passed
+**Status:** Active - matrix wording passed
 
 ---
 
@@ -49,8 +49,8 @@ can tell intentional durable deferrals from unresolved admin drift.
 1. **Pulse 01 - Plan and inventory.** Result: passed.
 2. **Pulse 02 - Evidence gate.** Result: focused admin route tests passed and
    support scoped safe-operation wording.
-3. **Pulse 03 - Matrix wording.** Convert admin rows to explicit partial by
-   design wording only if evidence passes.
+3. **Pulse 03 - Matrix wording.** Result: admin feature rows and route rows now
+   say partial by design while preserving Flyers deferrals.
 4. **Pulse 04 - Closeout.** Close Phase Senators with exact claims and
    non-claims.
 

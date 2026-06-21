@@ -31,6 +31,6 @@ partial wording into explicit safe partial-by-design wording.
 1. Plan and inventory. Result: passed.
 2. Evidence gate. Result: passed; focused `l1_admin_` route tests cover the
    scoped safe-operation claims and durable deferrals.
-3. Matrix wording. Convert the individual admin rows to explicit partial by
-   design wording if evidence passes.
+3. Matrix wording. Result: passed; individual admin feature rows and route rows
+   now say partial by design while preserving Flyers deferrals.
 4. Closeout. Record final claims and non-claims.
