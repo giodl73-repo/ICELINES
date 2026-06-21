@@ -37,4 +37,4 @@ group/rule editing.
 3. Matrix wording. Tighten partial wording if evidence supports a deliberate
    narrow-contract claim. Result: passed; matrix now names Phase Red Wings and
    the shared-contract blockers.
-4. Closeout. Record the final Favorites/watch/watch-rules decision.
+4. Closeout. Result: passed; Phase Red Wings closed.

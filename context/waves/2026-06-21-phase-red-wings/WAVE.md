@@ -37,6 +37,20 @@ whether shared contracts are ready for richer group/rule editing.
 | 01 | Plan and inventory Phase Red Wings goals | passed; see `RED-WINGS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Favorites/watch evidence gate | passed; focused CLI/Web evidence supports deliberate narrow partial, see `pulses/pulse-02.md` |
 | 03 | Contract decision and matrix wording | passed; matrix keeps favorites/watch partial by design, see `pulses/pulse-03.md` |
+| 04 | Close Phase Red Wings | passed; phase closed with Favorites/watch/watch-rules kept partial by design, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Red Wings is closed. Favorites/watch/watch-rules remain partial by design:
+read-only named group views, POST-backed canonical `Favorites` add/remove,
+watchlist/watch-rule reads, and POST-backed player-rule create/toggle/delete
+are supported and tested.
+
+Richer group create/rename/delete/member editing and arbitrary team/deployment
+watch-rule editing remain deferred until shared mutation contracts carry
+validated fields for those dimensions. Browser/dashboard commands must continue
+to reject unsupported edits rather than mutate through GET or reinterpret the
+request as a narrower player-rule action.
 
 ## Validation Posture
 

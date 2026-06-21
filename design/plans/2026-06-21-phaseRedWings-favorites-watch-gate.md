@@ -4,7 +4,7 @@
 > deliberate narrow partial or expand into richer group/rule editing.
 
 **Created:** 2026-06-21
-**Status:** Active - pulse 03 matrix wording passed
+**Status:** Closed - Phase Red Wings complete
 
 ---
 
@@ -52,7 +52,9 @@ reinterpretation.
    or promote only if the evidence justifies it. Result: matrix keeps
    Favorites/watch/watch-rules partial by design, with richer editing blocked on
    shared mutation contracts.
-4. **Pulse 04 - Closeout.** Update wave, plan, and indexes.
+4. **Pulse 04 - Closeout.** Result: Phase Red Wings closed.
+   Favorites/watch/watch-rules remain partial by design until richer group and
+   non-player watch-rule editing have shared validated mutation contracts.
 
 ---
 
