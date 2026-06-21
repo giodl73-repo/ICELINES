@@ -4,7 +4,7 @@
 > surfaces into durable shared cache, catalog, filter, or leaderboard surfaces.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 04 durable deferral docs passed
+**Status:** Closed - Phase Capitals complete
 
 ---
 
@@ -65,7 +65,10 @@ shared surface prematurely.
 4. **Pulse 04 - Promotion or durable deferral implementation.** Result: public
    docs, the Signals spec, and the surface matrix record the durable
    no-promotion fence for cache, catalog, filters, and leaderboards.
-5. **Pulse 05 - Closeout.** Update the wave, plan, and surface matrix.
+5. **Pulse 05 - Closeout.** Result: Phase Capitals closed. Signals remain
+   direct `PlayerSignalsView` inspection surfaces, and future promotion requires
+   accepted cache metric keys, source-state, invalidation, methodology
+   versioning, unavailable-state fixtures, and bounded catalog/leaderboard copy.
 
 ---
 

@@ -23,7 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
-| [Phase Capitals - Signals cache promotion gate](2026-06-20-phaseCapitals-signals-cache-promotion.md) | Active | Decide whether Signals can move into analytics cache, `StatId`, filters, or leaderboards, or remain durable `PlayerSignalsView` inspection surfaces. |
+| [Phase Capitals - Signals cache promotion gate](2026-06-20-phaseCapitals-signals-cache-promotion.md) | Closed | Closed the Signals promotion gate: Signals remain direct `PlayerSignalsView` inspection surfaces and stay out of analytics cache, `StatId`, filters, and public leaderboards until future contracts prove cache/source-state and bounded ranking semantics. |
 | [Phase Flyers - Admin operation safety gate](2026-06-20-phaseFlyers-admin-safety.md) | Closed | Closed the post-Devils admin safety wave: web data install/remove stay deferred and unmounted, persistent report-toggle writes stay a CLI/TUI durable config handoff, and focused admin route tests cover safe mutations. |
 | [Phase Devils - Dashboard visual QA gate](2026-06-20-phaseDevils-dashboard-visual-qa.md) | Closed | Closed the post-Islanders browser-proof wave for `/dashboard`: representative desktop/tablet/mobile capture matrix, automated route/artifact checks, and exact surface-matrix wording without overstating browser, touch, focus, or accessibility coverage. |
 | [Phase Islanders - Surface parity cleanup](2026-06-20-phaseIslanders-surface-parity.md) | Closed | Wrapped the post-Rangers surface-truth cleanup: refreshed the surface-parity matrix, tightened admin/docs claims, recorded selected dashboard capture evidence, and rolled up cache-backed partial surfaces without promoting new analytics claims. |

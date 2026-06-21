@@ -37,6 +37,21 @@ cache, `StatId`, filters, or leaderboards, or whether they remain durable
 | 02 | Decide Signals analytics-cache eligibility | passed as not eligible yet; see `CACHE-ELIGIBILITY.md` and `pulses/pulse-02.md` |
 | 03 | Decide Signals catalog/filter/leaderboard eligibility | passed as not eligible yet; see `CATALOG-LEADERBOARD-GATE.md` and `pulses/pulse-03.md` |
 | 04 | Implement durable Signals deferral docs | passed; public docs and surface matrix carry the Capitals non-promotion decision, see `pulses/pulse-04.md` |
+| 05 | Close Phase Capitals | passed; Signals remain direct inspection surfaces with explicit future promotion prerequisites, see `pulses/pulse-05.md` |
+
+## Phase Capitals Closeout
+
+Phase Capitals is closed. The phase opened the post-Rangers Signals promotion
+gate and decided that Signals are not yet eligible for analytics cache,
+`StatId`, filters, catalog-driven sorting, or public cross-team leaderboards.
+
+Signals remain direct `PlayerSignalsView` inspection surfaces: CLI text/JSON,
+TUI player-card handoff, Web player HTML/JSON, Markdown export, and team-scoped
+`signals-roster`.
+
+Future promotion requires new work with accepted cache metric keys,
+source-state, invalidation, methodology versioning, unavailable-state fixtures,
+and bounded catalog/leaderboard product copy.
 
 ## Validation Posture
 
