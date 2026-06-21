@@ -23,7 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
-| [Phase Maple Leafs - Career/cohort leaders gate](2026-06-20-phaseMapleLeafs-career-cohort-gate.md) | Active | Decide whether Career/cohort leaders should remain a deliberate TUI handoff to canonical CLI/Web surfaces or become a dedicated TUI board. |
+| [Phase Maple Leafs - Career/cohort leaders gate](2026-06-20-phaseMapleLeafs-career-cohort-gate.md) | Closed | Closed the Career/cohort leaders gate: CareerView-backed CLI/Web/JSON/dashboard surfaces stay canonical, while TUI remains a tested command-bar handoff by design. |
 | [Phase Oilers - Named analytics-cache report promotion gate](2026-06-20-phaseOilers-named-cache-report-promotion.md) | Closed | Closed the WP-009 named analytics-cache report gate: named report is now bounded generic prepared-cache inspection only; workflow-family route claims remain bounded by their phase-specific non-claims. |
 | [Phase Canucks - Agent evidence promotion gate](2026-06-20-phaseCanucks-agent-evidence-promotion.md) | Closed | Closed the WP-009 agent-evidence promotion gate: agent evidence is now a bounded prepared-cache evidence summary claim, while named analytics cache report remains generic prepared-cache inspection evidence. |
 | [Phase Predators - Postgame promotion gate](2026-06-20-phasePredators-postgame-promotion.md) | Closed | Closed the WP-009 postgame promotion gate: postgame review and adjustments are now bounded prepared-cache report claims, while named report and agent routes remain first-route evidence with explicit non-claims. |

@@ -35,4 +35,4 @@ board.
 3. Surface-matrix wording. Tighten partial wording if evidence shows the
    deliberate handoff needs clearer boundaries. Result: passed; matrix now
    names Phase Maple Leafs and the tested TUI handoff boundary.
-4. Closeout. Record the final Career/cohort leaders decision.
+4. Closeout. Result: passed; Phase Maple Leafs closed.

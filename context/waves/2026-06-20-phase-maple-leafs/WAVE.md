@@ -35,6 +35,19 @@ canonical CLI/Web surfaces or become a dedicated TUI board.
 | 01 | Plan and inventory Phase Maple Leafs goals | passed; see `MAPLE-LEAFS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Career evidence gate | passed; focused CLI/TUI/Web evidence supports deliberate TUI handoff, see `pulses/pulse-02.md` |
 | 03 | TUI board decision and matrix wording | passed; matrix keeps Career/cohort leaders partial by design, see `pulses/pulse-03.md` |
+| 04 | Close Phase Maple Leafs | passed; phase closed with Career/cohort leaders kept partial by design, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Maple Leafs is closed. Career/cohort leaders remain partial by design:
+CLI `query career`, Web `/career`, JSON `/api/v1/career`, and dashboard
+workspace summaries use `CareerView`, while TUI remains a tested command-bar
+handoff to the canonical CLI/Web cohort table.
+
+The closeout does not add a native TUI board, does not imply career-history data
+is bundled on cold install, and does not add live career-history fetches to read
+surfaces. A future phase can reopen this only if it adds TUI-specific fields or
+workflows beyond duplicating the one-shot local-store cohort table.
 
 ## Validation Posture
 

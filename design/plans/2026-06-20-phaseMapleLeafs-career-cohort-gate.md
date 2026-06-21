@@ -5,7 +5,7 @@
 > board.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 matrix wording passed
+**Status:** Closed - Phase Maple Leafs complete
 
 ---
 
@@ -54,7 +54,9 @@ TUI board has evidence-backed value beyond duplicating the canonical table.
    or promote only if the evidence justifies it. Result: matrix keeps
    Career/cohort leaders partial by design, with tested TUI handoff and explicit
    cold-store/read-surface boundaries.
-4. **Pulse 04 - Closeout.** Update wave, plan, and indexes.
+4. **Pulse 04 - Closeout.** Result: Phase Maple Leafs closed. Career/cohort
+   leaders remain partial by design with TUI as a tested command-bar handoff to
+   canonical CLI/Web cohort surfaces.
 
 ---
 
