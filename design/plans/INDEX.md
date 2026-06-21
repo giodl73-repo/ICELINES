@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Stars - Player evidence-card promotion gate](2026-06-20-phaseStars-player-evidence-card-promotion.md) | Active | Decide whether the WP-009 player evidence-card Web/API first-route evidence can become a bounded prepared-cache player evidence-card claim, or remain first-route evidence only. |
 | [Phase Bruins - Opponent scout promotion gate](2026-06-20-phaseBruins-opponent-scout-promotion.md) | Closed | Closed the WP-009 opponent-scout promotion gate: opponent scout is now a bounded prepared-cache scout report claim, while named report, player-card, line, goalie, practice, postgame, adjustment, and agent routes remain first-route evidence with explicit non-claims. |
 | [Phase Penguins - Analytics workflow promotion gate](2026-06-20-phasePenguins-analytics-workflow-promotion.md) | Closed | Closed the WP-009 analytics workflow promotion gate: coach dashboard is now a bounded prepared-cache dashboard claim, while named report, scout, player-card, line, goalie, practice, postgame, adjustment, and agent routes remain first-route evidence with explicit non-claims. |
 | [Phase Capitals - Signals cache promotion gate](2026-06-20-phaseCapitals-signals-cache-promotion.md) | Closed | Closed the Signals promotion gate: Signals remain direct `PlayerSignalsView` inspection surfaces and stay out of analytics cache, `StatId`, filters, and public leaderboards until future contracts prove cache/source-state and bounded ranking semantics. |
