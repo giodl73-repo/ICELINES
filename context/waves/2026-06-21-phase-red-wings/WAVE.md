@@ -36,6 +36,7 @@ whether shared contracts are ready for richer group/rule editing.
 |---|---|---|
 | 01 | Plan and inventory Phase Red Wings goals | passed; see `RED-WINGS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Favorites/watch evidence gate | passed; focused CLI/Web evidence supports deliberate narrow partial, see `pulses/pulse-02.md` |
+| 03 | Contract decision and matrix wording | passed; matrix keeps favorites/watch partial by design, see `pulses/pulse-03.md` |
 
 ## Validation Posture
 

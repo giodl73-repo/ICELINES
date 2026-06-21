@@ -4,7 +4,7 @@
 > deliberate narrow partial or expand into richer group/rule editing.
 
 **Created:** 2026-06-21
-**Status:** Active - pulse 02 evidence passed
+**Status:** Active - pulse 03 matrix wording passed
 
 ---
 
@@ -49,7 +49,9 @@ reinterpretation.
 2. **Pulse 02 - Evidence gate.** Result: focused CLI/Web favorites/watch
    evidence supports keeping the partial narrow by design.
 3. **Pulse 03 - Contract decision and matrix wording.** Keep partial by design
-   or promote only if the evidence justifies it.
+   or promote only if the evidence justifies it. Result: matrix keeps
+   Favorites/watch/watch-rules partial by design, with richer editing blocked on
+   shared mutation contracts.
 4. **Pulse 04 - Closeout.** Update wave, plan, and indexes.
 
 ---

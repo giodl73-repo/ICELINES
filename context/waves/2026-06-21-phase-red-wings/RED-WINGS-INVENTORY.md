@@ -35,5 +35,6 @@ group/rule editing.
    read/mutation/refusal boundary. Result: passed; focused CLI/Web evidence
    supports the deliberate narrow partial.
 3. Matrix wording. Tighten partial wording if evidence supports a deliberate
-   narrow-contract claim.
+   narrow-contract claim. Result: passed; matrix now names Phase Red Wings and
+   the shared-contract blockers.
 4. Closeout. Record the final Favorites/watch/watch-rules decision.
