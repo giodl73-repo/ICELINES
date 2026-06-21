@@ -28,6 +28,6 @@ wording into partial-by-design wording.
 1. Plan and inventory. Result: passed.
 2. Evidence gate. Result: passed; focused Signals Web route tests support
    partial-by-design surface-row wording.
-3. Matrix wording. Convert the Player Signals row to partial-by-design wording
-   if evidence passes.
+3. Matrix wording. Result: passed; the Player Signals row now carries
+   partial-by-design wording while preserving Capitals non-claims.
 4. Closeout. Record final claims and non-claims.

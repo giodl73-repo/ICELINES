@@ -4,7 +4,7 @@
 > boundaries already closed by Phase Capitals.
 
 **Created:** 2026-06-21
-**Status:** Active - evidence gate passed
+**Status:** Active - surface-row wording passed
 
 ---
 
@@ -49,8 +49,8 @@ row to partial by design while preserving the Capitals non-promotion decision.
 1. **Pulse 01 - Plan and inventory.** Result: passed.
 2. **Pulse 02 - Evidence gate.** Result: focused Signals Web route tests passed
    and support partial-by-design wording.
-3. **Pulse 03 - Matrix wording.** Convert the Player Signals row to
-   partial-by-design wording only if evidence passes.
+3. **Pulse 03 - Matrix wording.** Result: the Player Signals row now carries
+   partial-by-design wording while preserving Capitals non-claims.
 4. **Pulse 04 - Closeout.** Close Phase Panthers with exact row claims and
    non-claims.
 

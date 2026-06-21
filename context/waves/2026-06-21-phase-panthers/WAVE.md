@@ -34,7 +34,7 @@ design to match Phase Capitals.
 |---|---|---|
 | 01 | Plan and inventory Phase Panthers goals | passed; see `PANTHERS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Signals route evidence gate | passed; focused Signals route tests support partial-by-design wording, see `pulses/pulse-02.md` |
-| 03 | Signals surface-row wording gate | pending |
+| 03 | Signals surface-row wording gate | passed; surface row now carries partial-by-design wording, see `pulses/pulse-03.md` |
 | 04 | Close Phase Panthers | pending |
 
 ## Validation Posture
