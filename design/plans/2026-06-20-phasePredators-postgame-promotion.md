@@ -5,7 +5,7 @@
 > or whether they remain first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 01 inventory complete
+**Status:** Active - pulse 02 copy gate passed
 
 ---
 
@@ -45,8 +45,10 @@ copy and workflow evidence remain precise.
 ## Recommended Pulse Order
 
 1. **Pulse 01 - Plan and inventory.** Result: passed.
-2. **Pulse 02 - Product-copy gate.** Audit current route/template copy and
-   decide whether it supports bounded prepared-cache postgame report claims.
+2. **Pulse 02 - Product-copy gate.** Result: existing postgame copy is
+   sufficient for bounded prepared-cache postgame report claims. It preserves
+   source/methodology/non-claim framing and does not imply causal blame,
+   automatic correction plans, or coaching authority.
 3. **Pulse 03 - Workflow evidence gate.** Run or add focused evidence for both
    postgame route pairs.
 4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
