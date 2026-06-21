@@ -4,7 +4,7 @@
 > by design, using the product boundary already closed by Phase Red Wings.
 
 **Created:** 2026-06-21
-**Status:** Active - evidence gate passed
+**Status:** Active - route wording passed
 
 ---
 
@@ -50,8 +50,8 @@ route drift.
 1. **Pulse 01 - Plan and inventory.** Result: passed.
 2. **Pulse 02 - Evidence gate.** Result: focused Favorites/watch route tests
    passed and support scoped route wording.
-3. **Pulse 03 - Matrix wording.** Convert route rows to explicit partial by
-   design wording only if evidence passes.
+3. **Pulse 03 - Matrix wording.** Result: Favorites/watch route rows now say
+   partial by design while preserving Red Wings deferrals.
 4. **Pulse 04 - Closeout.** Close Phase Ducks with exact route claims and
    non-claims.
 

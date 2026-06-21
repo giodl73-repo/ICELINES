@@ -33,6 +33,6 @@ wording into explicit partial-by-design wording.
 1. Plan and inventory. Result: passed.
 2. Evidence gate. Result: passed; focused Favorites/watch route tests cover
    scoped route claims and Red Wings deferrals.
-3. Matrix wording. Convert route rows to explicit partial-by-design wording if
-   evidence passes.
+3. Matrix wording. Result: passed; Favorites/watch route rows now say partial
+   by design while preserving Red Wings deferrals.
 4. Closeout. Record final claims and non-claims.

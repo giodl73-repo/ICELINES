@@ -38,7 +38,7 @@ design.
 |---|---|---|
 | 01 | Plan and inventory Phase Ducks goals | passed; see `DUCKS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Favorites/watch route evidence gate | passed; focused route evidence supports scoped partial-by-design wording, see `pulses/pulse-02.md` |
-| 03 | Favorites/watch route wording gate | pending |
+| 03 | Favorites/watch route wording gate | passed; route rows now read as partial by design, see `pulses/pulse-03.md` |
 | 04 | Close Phase Ducks | pending |
 
 ## Validation Posture
