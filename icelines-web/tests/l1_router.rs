@@ -1006,6 +1006,31 @@ async fn l1_docs_route_includes_watch_deployment_recovery() {
 }
 
 #[tokio::test]
+async fn l1_docs_route_includes_fantasy_mutation_recovery() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/docs")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("docs html is utf-8");
+    assert!(body.contains("fantasy roster-shape set yahoo-standard"));
+    assert!(body.contains("fantasy import file=rosters.csv league=Office"));
+    assert!(body.contains("not GET-backed"));
+    assert!(body.contains("icelines fantasy roster-shape-set"));
+    assert!(body.contains("icelines fantasy import-yahoo --dry-run"));
+}
+
+#[tokio::test]
 async fn l1_dashboard_shell_renders_no_js_regions() {
     let app = router(WebState::new());
     let response = app

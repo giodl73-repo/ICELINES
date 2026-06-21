@@ -1066,9 +1066,9 @@ fantasy simulate add Connor_McDavid drop Bench_Forward
 fantasy daily date=2026-01-15              -> /api/v1/fantasy/daily?date=2026-01-15
 fantasy roster-shape validate team="My Team"
                                            -> /api/v1/fantasy/roster-shape?team=My+Team
-fantasy roster-shape set yahoo-standard    -> deferred; use `icelines fantasy roster-shape-set`
+fantasy roster-shape set yahoo-standard    -> not GET-backed; use `icelines fantasy roster-shape-set`
 fantasy import file=rosters.csv league=Office
-                                           -> deferred; use `icelines fantasy import-yahoo --dry-run`
+                                           -> not GET-backed; use `icelines fantasy import-yahoo --dry-run`
 report weekly cats=shots,hits top=12       -> /reports/weekly?category=shots%2Chits&top=12
 report poach availability=imported-available
                                            -> /reports/poach?availability=imported-available
