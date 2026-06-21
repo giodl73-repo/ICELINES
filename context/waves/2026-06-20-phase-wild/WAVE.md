@@ -39,6 +39,7 @@ whether it should remain only first-route evidence.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Wild goals | passed; see `WILD-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Line-combination product-copy gate | passed for bounded prepared-cache line-combination explorer claim; see `WILD-COPY-GATE.md` and `pulses/pulse-02.md` |
 
 ## Validation Posture
 
