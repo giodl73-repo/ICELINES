@@ -5,7 +5,7 @@
 > install/remove and persistent report-toggle boundaries should remain durable.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 04 regression gate passed
+**Status:** Closed - Phase Flyers complete
 
 ---
 
@@ -61,7 +61,10 @@ deferrals.
 4. **Pulse 04 - Regression gate.** Result: focused `l1_admin_` route tests
    cover the chosen install/remove deferrals, report-toggle rejection, runtime
    web config, data verify, game-cache, and snapshot mutation fences.
-5. **Pulse 05 - Closeout.** Update the wave, plan, and surface matrix.
+5. **Pulse 05 - Closeout.** Result: Phase Flyers closed. The surface matrix
+   records safe POST-backed admin operations as implemented and marks web data
+   install/remove plus persistent report-toggle writes as intentional durable
+   deferrals.
 
 ---
 

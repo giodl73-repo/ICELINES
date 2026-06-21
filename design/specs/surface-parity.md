@@ -53,7 +53,7 @@ workflows.
 | Career/cohort leaders | CLI, Web HTML/JSON, and dashboard summaries use `CareerView`; TUI remains intentionally handoff-only. | Keep partial unless a dedicated TUI board adds value beyond the one-shot CLI/Web cohort table. |
 | Player Signals | CLI/TUI/Web/Markdown surfaces preserve `PlayerSignalsView`; Signals stay out of `StatId`, filters, leaderboards, and analytics cache. | Requires a separate Signals promotion/cache gate, not an Islanders cleanup pulse. |
 | Analytics cache Web/API consumers | Named cache report plus coach, scout, player-card, line, goalie, practice, postgame, adjustment, and agent routes have WP-009 first-route Web/API evidence. | Keep partial until broader shipped workflow evidence and product-copy review exist for each workflow family; first-route evidence is not a workflow-completion claim. |
-| Admin operations | Safe runtime config, data verify, snapshot activate/delete, and game-cache warmer paths are POST-backed and tested; web install/remove and persistent report-toggle writes remain deferred. | Promote only with a scoped confirmation/persistence contract; otherwise keep durable deferral copy. |
+| Admin operations | Phase Flyers closed the admin operation safety gate: runtime active-season config, data verify, snapshot activate/delete, and game-cache warmer paths are POST-backed and covered by the focused `l1_admin_` route family; web data install/remove remain deferred and unmounted, and persistent report-toggle writes remain a CLI/TUI durable config handoff. | Keep partial by design unless a future scoped install/remove confirmation contract or shared persistent report config contract is implemented and tested. |
 | Docs/reference | `/docs`, TUI docs overlay, and menu docs paths use the docs ViewModel/command reference. | Pulse 03 verifies wording does not revive stale mkdocs/static-site or unimplemented operation claims. |
 | Dashboard workspace partials | Route-level fragment and workspace tests exist; Phase Devils records representative desktop/tablet/mobile dashboard captures for home, leaders, goalies, poach, favorites, watchlist, schedule, fantasy, team-season, and player workspaces with route-readiness, dimension, and sampled nonblank artifact checks. | Representative browser-render evidence exists for installed Edge/Chrome headless captures, but keyboard focus order, pointer/touch behavior, screen-reader behavior, every browser engine, and exhaustive responsive overflow coverage remain future browser-automation or manual QA claims. |
 | Favorites/watch/watch-rules | Read/mutation paths are useful and tested, but richer group/rule dimensions remain intentionally narrow. | Keep partial unless a shared contract adds the missing dimensions without GET mutation or ambiguous persistence. |
@@ -315,13 +315,13 @@ runtime web config set/reset, data verify, sealed snapshot activate, and
 inactive snapshot delete. Dangerous or incomplete operations remain explicit
 deferrals: web data install is deferred because it performs live/network release
 downloads; web data remove is deferred because it is destructive filesystem
-mutation without a scoped confirmation contract; `/admin` now labels both
+mutation without a scoped confirmation contract; `/admin` labels both
 deferrals and fences game-cache forms as cache warmers only; persistent
-report-toggle web UI
-is explicitly labeled as deferred on `/admin` and in `ConfigView.warnings` until
-it can share the CLI/TUI `~/.icelines/config.toml` report contract. The durable
-decision table is
-`design/waves/2026-05-13-backcheck-the-phases/ADMIN-OPERATIONS-INVENTORY.md`.
+report-toggle writes are explicitly labeled as deferred on `/admin` and in
+`ConfigView.warnings` until they can share the CLI/TUI
+`~/.icelines/config.toml` report contract. Phase Flyers validated these
+boundaries with the focused `l1_admin_` route family. The durable decision
+table is `design/waves/2026-05-13-backcheck-the-phases/ADMIN-OPERATIONS-INVENTORY.md`.
 
 TedLindsay.3 should use this table as the route-by-route checklist for parity,
 not `design/specs/web-dashboard.md` claims.

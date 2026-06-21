@@ -35,6 +35,17 @@ mutations safe.
 | 02 | Decide web data install/remove boundary | passed; install/remove stay deferred and unmounted, see `pulses/pulse-02.md` |
 | 03 | Decide persistent report-toggle boundary | passed; report-toggle writes stay deferred to CLI/TUI durable config, see `pulses/pulse-03.md` |
 | 04 | Run focused admin safety regression gate | passed; `l1_admin_` route family covers deferrals and safe mutations, see `pulses/pulse-04.md` |
+| 05 | Close Phase Flyers and update surface matrix | passed; admin operations stay partial with explicit durable deferrals, see `pulses/pulse-05.md` |
+
+## Closeout
+
+Phase Flyers is closed. Web admin keeps its implemented safe mutation surface:
+runtime active-season config, data verify, game-cache warmers, and snapshot
+activate/delete. Web data install/remove remain deferred and unmounted, and
+persistent report-toggle writes remain a CLI/TUI durable config handoff.
+
+The active surface matrix now names these as intentional durable deferrals rather
+than ambiguous missing admin work.
 
 ## Validation posture
 
