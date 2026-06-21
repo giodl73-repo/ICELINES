@@ -827,6 +827,12 @@ icelines data remove 19921993
 icelines data verify --all            # verify installed data manifests
 ```
 
+The web Admin page also exposes scoped data install/remove forms. Web install
+writes only embedded bundled seasons to `~/.icelines/seasons/<season>/bundle-<season>`
+after exact `INSTALL <season>` confirmation; it does not fetch live source data.
+Web remove deletes only `~/.icelines/seasons/<season>` after exact
+`REMOVE <season>` confirmation.
+
 The bundled-data cap is 38 seasons because `BUNDLED_SEASONS` is the canonical source. The 2004-05 lockout has no data and never will.
 
 ---

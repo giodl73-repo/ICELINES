@@ -480,6 +480,22 @@ pub fn router(state: WebState) -> Router {
             post(handlers::admin::post_data_verify_form),
         )
         .route(
+            "/api/v1/admin/data/install",
+            post(handlers::admin::post_data_install_json),
+        )
+        .route(
+            "/admin/data/install",
+            post(handlers::admin::post_data_install_form),
+        )
+        .route(
+            "/api/v1/admin/data/remove",
+            post(handlers::admin::post_data_remove_json),
+        )
+        .route(
+            "/admin/data/remove",
+            post(handlers::admin::post_data_remove_form),
+        )
+        .route(
             "/api/v1/admin/game-cache/load",
             post(handlers::admin::post_game_cache_load_json),
         )

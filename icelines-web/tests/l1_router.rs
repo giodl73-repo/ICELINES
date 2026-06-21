@@ -4128,8 +4128,11 @@ async fn l1_admin_html_renders_operational_viewmodels() {
     assert!(html.contains("Scoring events / play-by-play"));
     assert!(html.contains("POST-backed cache warmers"));
     assert!(html.contains("do not install release data bundles or remove local data"));
-    assert!(html.contains("Web data install is deferred"));
-    assert!(html.contains("Web data remove is deferred"));
+    assert!(html.contains("action=\"/admin/data/install\""));
+    assert!(html.contains("action=\"/admin/data/remove\""));
+    assert!(html.contains("Install bundled season"));
+    assert!(html.contains("Remove installed season"));
+    assert!(html.contains("does not perform live source fetches"));
     assert!(html.contains("web.active_season"));
     assert!(html.contains("action=\"/admin/config/set\""));
     assert!(html.contains("action=\"/admin/config/reset\""));
@@ -4219,45 +4222,145 @@ async fn l1_admin_html_renders_data_verify_form_for_manifest_rows() {
 
     assert!(html.contains("action=\"/admin/data/verify\""));
     assert!(html.contains("name=\"target\" value=\"20252026\""));
-    assert!(html.contains("Web data install is deferred"));
-    assert!(html.contains("Web data remove is deferred"));
+    assert!(html.contains("action=\"/admin/data/install\""));
+    assert!(html.contains("action=\"/admin/data/remove\""));
+    assert!(html.contains("placeholder=\"INSTALL 20252026\""));
+    assert!(html.contains("placeholder=\"REMOVE 20252026\""));
+}
+
+#[tokio::test]
+async fn l1_admin_data_install_rejects_bad_confirmation_before_mutation() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/data/install")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"season":"20252026","confirm":"install please"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let json = response_json(response, 64 * 1024).await;
     assert!(
-        !html.contains("/admin/data/install"),
-        "live data install must stay out of the web admin mutation surface"
+        json["error"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("INSTALL 20252026"),
+        "json was {json}"
     );
     assert!(
-        !html.contains("/admin/data/remove"),
-        "destructive data remove must stay out of the web admin mutation surface"
+        !home.path().join(".icelines").join("seasons").exists(),
+        "bad confirmation must not create installed season state"
     );
 }
 
 #[tokio::test]
-async fn l1_admin_data_install_remove_routes_remain_unmounted() {
+async fn l1_admin_data_install_and_remove_json_apply_with_confirmation() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
     let app = router(WebState::new());
 
-    for uri in [
-        "/admin/data/install",
-        "/admin/data/remove",
-        "/api/v1/admin/data/install",
-        "/api/v1/admin/data/remove",
-    ] {
-        let response = app
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri(uri)
-                    .body(Body::empty())
-                    .expect("request builder ok"),
-            )
-            .await
-            .expect("oneshot dispatch ok");
-        assert_eq!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "{uri} must stay unmounted until a scoped safety contract exists"
-        );
-    }
+    let install = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/data/install")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"season":"20252026","confirm":"INSTALL 20252026"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(install.status(), StatusCode::OK);
+    let json = response_json(install, 64 * 1024).await;
+    assert_eq!(json["operation"], "data_install");
+    assert_eq!(json["status"], "applied");
+    let bundle_dir = home
+        .path()
+        .join(".icelines")
+        .join("seasons")
+        .join("20252026")
+        .join("bundle-20252026");
+    assert!(bundle_dir.join("bios.json").exists());
+    assert!(bundle_dir.join("stats.json").exists());
+    assert!(bundle_dir.join("goalie-stats.json").exists());
+    assert!(bundle_dir.join("manifest.json").exists());
+
+    let remove = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/data/remove")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"season":"20252026","confirm":"REMOVE 20252026"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(remove.status(), StatusCode::OK);
+    let json = response_json(remove, 64 * 1024).await;
+    assert_eq!(json["operation"], "data_remove");
+    assert_eq!(json["status"], "applied");
+    assert!(
+        !home
+            .path()
+            .join(".icelines")
+            .join("seasons")
+            .join("20252026")
+            .exists(),
+        "confirmed remove must delete only the requested season dir"
+    );
+}
+
+#[tokio::test]
+async fn l1_admin_data_remove_rejects_path_traversal_before_mutation() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/admin/data/remove")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"season":"../20252026","confirm":"REMOVE ../20252026"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let json = response_json(response, 64 * 1024).await;
+    assert!(
+        json["error"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("YYYYZZZZ"),
+        "json was {json}"
+    );
+    assert!(
+        !home.path().join(".icelines").join("seasons").exists(),
+        "rejected remove must not create or delete installed season state"
+    );
 }
 
 #[tokio::test]

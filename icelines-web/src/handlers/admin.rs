@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 use axum::extract::{Form, Json, Query, State};
 use axum::http::StatusCode;
@@ -16,6 +19,7 @@ use icelines_fetch::game_cache::{
 use icelines_fetch::manifest::{DataKey, DataKind};
 use icelines_fetch::snapshot::SnapshotStore;
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 
 use super::favorites_data::read_group_members;
 use crate::state::WebState;
@@ -55,6 +59,24 @@ pub struct AdminSnapshotMutationRequest {
 #[derive(Debug, Deserialize)]
 pub struct AdminDataVerifyRequest {
     pub target: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminDataInstallRequest {
+    pub season: String,
+    pub confirm: String,
+    #[serde(default)]
+    pub force: bool,
+    #[serde(default)]
+    pub return_to: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminDataRemoveRequest {
+    pub season: String,
+    pub confirm: String,
+    #[serde(default)]
+    pub return_to: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -306,6 +328,54 @@ pub async fn post_data_verify_form(Form(req): Form<AdminDataVerifyRequest>) -> R
     }
 }
 
+pub async fn post_data_install_json(Json(req): Json<AdminDataInstallRequest>) -> Response {
+    match install_bundled_season(req) {
+        Ok((intent, changed)) => {
+            axum::Json(intent.result_view(default_context(), changed)).into_response()
+        }
+        Err(AdminDataMutationError::BadRequest(message)) => admin_bad_request(message),
+        Err(AdminDataMutationError::Internal(message)) => admin_error(message),
+    }
+}
+
+pub async fn post_data_install_form(Form(req): Form<AdminDataInstallRequest>) -> Response {
+    let return_to = safe_return_to(req.return_to.as_deref())
+        .unwrap_or("/admin")
+        .to_string();
+    match install_bundled_season(req) {
+        Ok((intent, changed)) => {
+            let _result = intent.result_view(default_context(), changed);
+            Redirect::to(&return_to).into_response()
+        }
+        Err(AdminDataMutationError::BadRequest(message)) => admin_bad_request_html(message),
+        Err(AdminDataMutationError::Internal(message)) => admin_error_html(message),
+    }
+}
+
+pub async fn post_data_remove_json(Json(req): Json<AdminDataRemoveRequest>) -> Response {
+    match remove_installed_season(req) {
+        Ok((intent, changed)) => {
+            axum::Json(intent.result_view(default_context(), changed)).into_response()
+        }
+        Err(AdminDataMutationError::BadRequest(message)) => admin_bad_request(message),
+        Err(AdminDataMutationError::Internal(message)) => admin_error(message),
+    }
+}
+
+pub async fn post_data_remove_form(Form(req): Form<AdminDataRemoveRequest>) -> Response {
+    let return_to = safe_return_to(req.return_to.as_deref())
+        .unwrap_or("/admin")
+        .to_string();
+    match remove_installed_season(req) {
+        Ok((intent, changed)) => {
+            let _result = intent.result_view(default_context(), changed);
+            Redirect::to(&return_to).into_response()
+        }
+        Err(AdminDataMutationError::BadRequest(message)) => admin_bad_request_html(message),
+        Err(AdminDataMutationError::Internal(message)) => admin_error_html(message),
+    }
+}
+
 pub async fn post_game_cache_load_json(Json(req): Json<AdminGameCacheLoadRequest>) -> Response {
     match load_game_cache(req).await {
         Ok(summary) => axum::Json(summary).into_response(),
@@ -390,6 +460,227 @@ async fn load_game_cache(
         return Err(summary.errors.join("; "));
     }
     Ok(summary)
+}
+
+#[derive(Debug)]
+enum AdminDataMutationError {
+    BadRequest(String),
+    Internal(String),
+}
+
+impl AdminDataMutationError {
+    fn bad(message: impl Into<String>) -> Self {
+        Self::BadRequest(message.into())
+    }
+
+    fn internal(message: impl Into<String>) -> Self {
+        Self::Internal(message.into())
+    }
+}
+
+#[derive(Debug, serde::Serialize)]
+struct WebBundleManifest {
+    season: String,
+    sha256: BTreeMap<String, String>,
+    version: u32,
+    written_at: String,
+}
+
+fn install_bundled_season(
+    req: AdminDataInstallRequest,
+) -> Result<(DataMutationIntent, bool), AdminDataMutationError> {
+    let season = validate_bundled_data_season(&req.season).map_err(AdminDataMutationError::bad)?;
+    require_data_confirmation("INSTALL", &season, &req.confirm)
+        .map_err(AdminDataMutationError::bad)?;
+    let intent = DataMutationIntent::resolve(DataMutationOperation::Install, &season, req.force)
+        .map_err(AdminDataMutationError::bad)?;
+    let (base, target) = scoped_season_dir(&season).map_err(AdminDataMutationError::bad)?;
+    let bundle_dir = target.join(format!("bundle-{season}"));
+    if bundle_dir.join("bios.json").exists() && !req.force {
+        return Ok((intent, false));
+    }
+    if target.exists() && req.force {
+        assert_scoped_season_target(&base, &target, &season)
+            .map_err(AdminDataMutationError::bad)?;
+        std::fs::remove_dir_all(&target).map_err(|err| {
+            AdminDataMutationError::internal(format!("remove {}: {err}", target.display()))
+        })?;
+    }
+    std::fs::create_dir_all(&bundle_dir).map_err(|err| {
+        AdminDataMutationError::internal(format!("create {}: {err}", bundle_dir.display()))
+    })?;
+    write_bundled_season_files(&bundle_dir, &season).map_err(AdminDataMutationError::internal)?;
+    Ok((intent, true))
+}
+
+fn remove_installed_season(
+    req: AdminDataRemoveRequest,
+) -> Result<(DataMutationIntent, bool), AdminDataMutationError> {
+    let season = validate_data_season_id(&req.season).map_err(AdminDataMutationError::bad)?;
+    require_data_confirmation("REMOVE", &season, &req.confirm)
+        .map_err(AdminDataMutationError::bad)?;
+    let intent = DataMutationIntent::resolve(DataMutationOperation::Remove, &season, false)
+        .map_err(AdminDataMutationError::bad)?;
+    let (base, target) = scoped_season_dir(&season).map_err(AdminDataMutationError::bad)?;
+    assert_scoped_season_target(&base, &target, &season).map_err(AdminDataMutationError::bad)?;
+    if !target.exists() {
+        return Ok((intent, false));
+    }
+    std::fs::remove_dir_all(&target).map_err(|err| {
+        AdminDataMutationError::internal(format!("remove {}: {err}", target.display()))
+    })?;
+    Ok((intent, true))
+}
+
+fn write_bundled_season_files(bundle_dir: &Path, season: &str) -> Result<(), String> {
+    let mut sha256 = BTreeMap::new();
+    write_json_bundle_file(
+        bundle_dir,
+        "bios.json",
+        &icelines_fetch::bundled::get_bios(season)
+            .ok_or_else(|| format!("bundled bios missing for {season}"))?,
+        &mut sha256,
+    )?;
+    write_json_bundle_file(
+        bundle_dir,
+        "stats.json",
+        &icelines_fetch::bundled::get_stats(season)
+            .ok_or_else(|| format!("bundled stats missing for {season}"))?,
+        &mut sha256,
+    )?;
+    write_json_bundle_file(
+        bundle_dir,
+        "goalie-stats.json",
+        &icelines_fetch::bundled::get_goalie_stats(season)
+            .ok_or_else(|| format!("bundled goalie stats missing for {season}"))?,
+        &mut sha256,
+    )?;
+    write_json_bundle_file(
+        bundle_dir,
+        "playoff-bios.json",
+        &icelines_fetch::bundled::get_playoff_bios(season)
+            .ok_or_else(|| format!("bundled playoff bios missing for {season}"))?,
+        &mut sha256,
+    )?;
+    write_json_bundle_file(
+        bundle_dir,
+        "playoff-stats.json",
+        &icelines_fetch::bundled::get_playoff_stats(season)
+            .ok_or_else(|| format!("bundled playoff stats missing for {season}"))?,
+        &mut sha256,
+    )?;
+    write_json_bundle_file(
+        bundle_dir,
+        "playoff-goalie-stats.json",
+        &icelines_fetch::bundled::get_playoff_goalie_stats(season)
+            .ok_or_else(|| format!("bundled playoff goalie stats missing for {season}"))?,
+        &mut sha256,
+    )?;
+    if let Some(transactions) = icelines_fetch::bundled::get_transactions(season) {
+        write_json_bundle_file(bundle_dir, "transactions.json", &transactions, &mut sha256)?;
+    }
+    if let Some(playoffs) = icelines_fetch::bundled::get_playoffs(season) {
+        write_json_bundle_file(bundle_dir, "playoffs.json", &playoffs, &mut sha256)?;
+    }
+    let manifest = WebBundleManifest {
+        season: season.to_string(),
+        sha256,
+        version: 1,
+        written_at: chrono::Utc::now().to_rfc3339(),
+    };
+    let bytes = serde_json::to_vec_pretty(&manifest).map_err(|err| err.to_string())?;
+    std::fs::write(bundle_dir.join("manifest.json"), bytes).map_err(|err| {
+        format!(
+            "write {}: {err}",
+            bundle_dir.join("manifest.json").display()
+        )
+    })?;
+    Ok(())
+}
+
+fn write_json_bundle_file<T: serde::Serialize>(
+    bundle_dir: &Path,
+    filename: &str,
+    value: &T,
+    sha256: &mut BTreeMap<String, String>,
+) -> Result<(), String> {
+    let bytes = serde_json::to_vec_pretty(value).map_err(|err| err.to_string())?;
+    std::fs::write(bundle_dir.join(filename), &bytes)
+        .map_err(|err| format!("write {}: {err}", bundle_dir.join(filename).display()))?;
+    sha256.insert(filename.to_string(), sha256_hex(&bytes));
+    Ok(())
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    let digest = hasher.finalize();
+    let mut out = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        out.push(HEX[(byte >> 4) as usize] as char);
+        out.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    out
+}
+
+fn validate_bundled_data_season(value: &str) -> Result<String, String> {
+    let season = validate_data_season_id(value)?;
+    if !icelines_fetch::bundled::BUNDLED_SEASONS.contains(&season.as_str()) {
+        return Err(format!(
+            "season {season} is not bundled; web admin install only writes embedded bundled seasons"
+        ));
+    }
+    Ok(season)
+}
+
+fn validate_data_season_id(value: &str) -> Result<String, String> {
+    let season = value.trim();
+    if !(season.len() == 8 && season.chars().all(|ch| ch.is_ascii_digit())) {
+        return Err("data season must use YYYYZZZZ form, for example 20252026".to_string());
+    }
+    let start = season[..4]
+        .parse::<u32>()
+        .map_err(|_| "data season must use YYYYZZZZ form, for example 20252026".to_string())?;
+    let end = season[4..]
+        .parse::<u32>()
+        .map_err(|_| "data season must use YYYYZZZZ form, for example 20252026".to_string())?;
+    if end != start + 1 {
+        return Err("data season must span consecutive years, for example 20252026".to_string());
+    }
+    if season == "20042005" {
+        return Err("season 20042005 was the NHL lockout and has no game data".to_string());
+    }
+    Ok(season.to_string())
+}
+
+fn require_data_confirmation(action: &str, season: &str, confirm: &str) -> Result<(), String> {
+    let expected = format!("{action} {season}");
+    if confirm.trim() == expected {
+        Ok(())
+    } else {
+        Err(format!("confirmation must exactly match '{expected}'"))
+    }
+}
+
+fn scoped_season_dir(season: &str) -> Result<(PathBuf, PathBuf), String> {
+    let base = home_dir()
+        .ok_or_else(|| "cannot determine home directory".to_string())?
+        .join(".icelines")
+        .join("seasons");
+    let target = base.join(season);
+    assert_scoped_season_target(&base, &target, season)?;
+    Ok((base, target))
+}
+
+fn assert_scoped_season_target(base: &Path, target: &Path, season: &str) -> Result<(), String> {
+    if target.file_name().and_then(|name| name.to_str()) != Some(season) {
+        return Err("data season target did not resolve to the requested season".to_string());
+    }
+    if !target.starts_with(base) {
+        return Err("data season target escaped the IceLines seasons directory".to_string());
+    }
+    Ok(())
 }
 
 async fn load_favorites_game_cache(
@@ -812,7 +1103,7 @@ fn render_data_status_section(html: &mut String, view: &DataStatusView) {
                 .as_ref()
                 .map(|state| (&state.title, &state.detail)),
         );
-        render_data_install_remove_deferral(html);
+        render_data_install_remove_controls(html);
         html.push_str("</section>");
         return;
     }
@@ -828,14 +1119,28 @@ fn render_data_status_section(html: &mut String, view: &DataStatusView) {
         ));
     }
     html.push_str("</tbody></table>");
-    render_data_install_remove_deferral(html);
+    render_data_install_remove_controls(html);
     html.push_str("</section>");
 }
 
-fn render_data_install_remove_deferral(html: &mut String) {
+fn render_data_install_remove_controls(html: &mut String) {
     html.push_str("<div class=\"muted\">");
-    html.push_str("Web data install is deferred because it performs live source fetches; use <code>icelines data install</code> from the CLI when you intentionally want that operation. ");
-    html.push_str("Web data remove is deferred because it is destructive filesystem mutation and needs a scoped confirmation contract.");
+    html.push_str("<p>Data install writes embedded bundled season files to <code>~/.icelines/seasons/&lt;season&gt;/bundle-&lt;season&gt;</code>; it does not perform live source fetches. Remove is scoped to the same season directory. Type the exact confirmation text before submitting.</p>");
+    html.push_str("<form method=\"post\" action=\"/admin/data/install\">");
+    html.push_str("<label>Season <input name=\"season\" value=\"20252026\" pattern=\"[0-9]{8}\" required aria-label=\"Season to install\"></label> ");
+    html.push_str("<label>Confirm <input name=\"confirm\" placeholder=\"INSTALL 20252026\" required aria-label=\"Install confirmation\"></label> ");
+    html.push_str(
+        "<label><input type=\"checkbox\" name=\"force\" value=\"true\"> Force overwrite</label> ",
+    );
+    html.push_str("<input type=\"hidden\" name=\"return_to\" value=\"/admin\">");
+    html.push_str("<button type=\"submit\">Install bundled season</button>");
+    html.push_str("</form>");
+    html.push_str("<form method=\"post\" action=\"/admin/data/remove\">");
+    html.push_str("<label>Season <input name=\"season\" value=\"20252026\" pattern=\"[0-9]{8}\" required aria-label=\"Season to remove\"></label> ");
+    html.push_str("<label>Confirm <input name=\"confirm\" placeholder=\"REMOVE 20252026\" required aria-label=\"Remove confirmation\"></label> ");
+    html.push_str("<input type=\"hidden\" name=\"return_to\" value=\"/admin\">");
+    html.push_str("<button type=\"submit\">Remove installed season</button>");
+    html.push_str("</form>");
     html.push_str("</div>");
 }
 
