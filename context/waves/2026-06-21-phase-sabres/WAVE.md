@@ -31,7 +31,7 @@ without reviving removed mkdocs/static-site CLI or `/site/*` claims.
 |---|---|---|
 | 01 | Plan and inventory Phase Sabres goals | passed; see `SABRES-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Docs/reference evidence gate | passed; focused docs/reference evidence supports final wording, see `pulses/pulse-02.md` |
-| 03 | Docs/static-site matrix wording gate | pending |
+| 03 | Docs/static-site matrix wording gate | passed; rollup and rows now preserve active docs surfaces without reviving static-site claims, see `pulses/pulse-03.md` |
 | 04 | Close Phase Sabres | pending |
 
 ## Validation Posture
