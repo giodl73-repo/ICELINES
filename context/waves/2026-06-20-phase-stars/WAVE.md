@@ -38,6 +38,7 @@ whether it should remain only first-route evidence.
 |---|---|---|
 | 01 | Plan and inventory Phase Stars goals | passed; see `STARS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Player evidence-card product-copy gate | passed for bounded prepared-cache player evidence-card claim; see `STARS-COPY-GATE.md` and `pulses/pulse-02.md` |
+| 03 | Player evidence-card workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache player evidence-card claim, see `pulses/pulse-03.md` |
 
 ## Validation Posture
 
