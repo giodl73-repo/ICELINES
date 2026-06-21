@@ -976,6 +976,7 @@ pub struct FavoritesTemplate {
     pub active_label: String,
     pub group: String,
     pub can_mutate: bool,
+    pub can_edit_group: bool,
     pub groups: Vec<FavoriteGroupOptionRow>,
     pub active_season: String,
     pub active_season_type: String,

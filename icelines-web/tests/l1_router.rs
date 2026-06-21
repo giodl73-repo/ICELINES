@@ -3143,7 +3143,7 @@ async fn l1_favorites_json_returns_group_members() {
 }
 
 #[tokio::test]
-async fn l1_favorites_html_supports_read_only_group_selection() {
+async fn l1_favorites_html_supports_named_group_editing() {
     let _guard = home_env_lock().await;
     let _home = HomeEnvFixture::new();
 
@@ -3189,11 +3189,138 @@ async fn l1_favorites_html_supports_read_only_group_selection() {
     assert!(body.contains("<h1>Prospects</h1>"));
     assert!(body.contains("class=\"group-chip active\""));
     assert!(body.contains("href=\"/team/EDM\""));
-    assert!(body.contains("Read-only group view"));
-    assert!(body.contains("icelines group add"));
-    assert!(!body.contains("action=\"/favorites/add\""));
-    assert!(!body.contains("action=\"/favorites/remove\""));
+    assert!(body.contains("action=\"/favorites/groups/create\""));
+    assert!(body.contains("action=\"/favorites/groups/rename\""));
+    assert!(body.contains("action=\"/favorites/groups/delete\""));
+    assert!(body.contains("action=\"/favorites/groups/members/add\""));
+    assert!(body.contains("action=\"/favorites/groups/members/remove\""));
+    assert!(!body.contains("Read-only group view"));
     assert!(!body.contains("action=\"/admin/game-cache/load-favorites\""));
+}
+
+#[tokio::test]
+async fn l1_favorites_group_json_mutations_create_rename_add_remove_delete() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let app = router(WebState::new());
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/favorites/groups/create")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"name":"Prospects","description":"Kids"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_eq!(json["operation"], "group.create");
+    assert_eq!(json["status"], "applied");
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/favorites/groups/members/add")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"group":"Prospects","key":"EDM","kind":"team"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/favorites/groups/rename")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"old_name":"Prospects","new_name":"Future"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/favorites?group=Future")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_eq!(json["meta"]["group"], "Future");
+    assert_eq!(json["meta"]["team_count"], 1);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/favorites/groups/members/remove")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"group":"Future","key":"EDM","kind":"team"}"#,
+                ))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/favorites/groups/delete")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"name":"Future"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn l1_favorites_group_json_rejects_favorites_delete() {
+    let _guard = home_env_lock().await;
+    let _home = HomeEnvFixture::new();
+
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/favorites/groups/delete")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"name":"Favorites"}"#))
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let json = response_json(response, 256 * 1024).await;
+    assert!(json["error"]
+        .as_str()
+        .expect("error string")
+        .contains("cannot be deleted"));
 }
 
 #[tokio::test]

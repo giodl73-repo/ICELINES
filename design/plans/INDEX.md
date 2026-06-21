@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Whalers - Favorites group editor](2026-06-21-phaseWhalers-favorites-group-editor.md) | Implemented | Added POST-backed web and JSON mutation routes for named Favorites group create/rename/delete and selected-group member add/remove, while keeping GET navigation read-only and protecting canonical Favorites rename/delete. |
 | [Phase Nordiques - Historical MoneyPuck xG](2026-06-21-phaseNordiques-historical-moneypuck-xg.md) | Implemented | Added bounded multi-season MoneyPuck fetch with `fetch money-puck --seasons N`, plus season-aware MoneyPuck snapshot reads so historical xG queries use the requested season's sealed snapshot. |
 | [Phase Golden Knights - Poach route wording gate](2026-06-21-phaseGoldenKnights-poach-route-wording-gate.md) | Closed | Closed the Poach route wording gate: board/report route rows now carry scoped shared-ViewModel claims while preserving API-envelope and read-only SQLite boundaries. |
 | [Phase Blues - Fantasy route wording gate](2026-06-21-phaseBlues-fantasy-route-wording-gate.md) | Closed | Closed the Fantasy route wording gate: `/fantasy` and `/api/v1/fantasy/*` rows now carry scoped read/product claims while preserving browser mutation, missing-state, and read-only SQLite deferrals. |

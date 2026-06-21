@@ -349,12 +349,52 @@ pub fn router(state: WebState) -> Router {
         .route("/favorites/add", post(handlers::favorites::post_add))
         .route("/favorites/remove", post(handlers::favorites::post_remove))
         .route(
+            "/favorites/groups/create",
+            post(handlers::favorites::post_group_create_form),
+        )
+        .route(
+            "/favorites/groups/rename",
+            post(handlers::favorites::post_group_rename_form),
+        )
+        .route(
+            "/favorites/groups/delete",
+            post(handlers::favorites::post_group_delete_form),
+        )
+        .route(
+            "/favorites/groups/members/add",
+            post(handlers::favorites::post_group_member_add_form),
+        )
+        .route(
+            "/favorites/groups/members/remove",
+            post(handlers::favorites::post_group_member_remove_form),
+        )
+        .route(
             "/api/v1/favorites/add",
             post(handlers::favorites::post_add_json),
         )
         .route(
             "/api/v1/favorites/remove",
             post(handlers::favorites::post_remove_json),
+        )
+        .route(
+            "/api/v1/favorites/groups/create",
+            post(handlers::favorites::post_group_create_json),
+        )
+        .route(
+            "/api/v1/favorites/groups/rename",
+            post(handlers::favorites::post_group_rename_json),
+        )
+        .route(
+            "/api/v1/favorites/groups/delete",
+            post(handlers::favorites::post_group_delete_json),
+        )
+        .route(
+            "/api/v1/favorites/groups/members/add",
+            post(handlers::favorites::post_group_member_add_json),
+        )
+        .route(
+            "/api/v1/favorites/groups/members/remove",
+            post(handlers::favorites::post_group_member_remove_json),
         )
         // Transactions feed — King.8.2.
         .route(

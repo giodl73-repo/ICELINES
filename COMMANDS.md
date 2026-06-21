@@ -1070,7 +1070,7 @@ records team EDM                           -> /records/team/EDM
 records player 8478402                     -> /records/player/8478402
 favorites group=Prospects                  -> /favorites?group=Prospects
 group show Prospects                        -> /favorites?group=Prospects
-group create Prospects                      -> deferred; use TUI Groups or `icelines group`
+group create Prospects                      -> deferred in command bar; use `/favorites` POST forms or `icelines group`
 team EDM                                   -> /team/EDM
 team EDM season                            -> /team/EDM/season
 team EDM schedule                          -> /schedule?team=EDM
@@ -1087,10 +1087,10 @@ watch disable player-connor-mcdavid        -> toggle persisted watch rule off
 watch deployment TOR                       -> deferred; use CLI preview, not dashboard mutation
 ```
 
-`/favorites` can select any SQLite group in read-only mode with
-`?group=<name>`. Web add/remove controls remain scoped to the canonical
-`Favorites` group; create, rename, delete, and arbitrary group membership edits
-stay on `icelines group ...` or the TUI Groups screen.
+`/favorites` can select any SQLite group with `?group=<name>`. The page exposes
+POST-backed create, rename, delete, and selected-group member add/remove forms;
+dashboard command text still opens read views instead of turning group edits into
+GET mutations.
 
 Fantasy screen shortcuts prefill the same command bar grammar: `g` on Fantasy
 Gaps starts `gaps `, `p` on Poach starts `poach `, `w` on Poach toggles the
@@ -1236,6 +1236,10 @@ The schedule, playoffs, and transactions commands all share the same data source
 icelines group create "Watchlist"
 icelines group add "Watchlist" "McDavid"
 icelines group show "Watchlist"
+
+# Browser group editor
+/favorites                              # create groups and edit Favorites
+/favorites?group=Watchlist              # rename/delete selected group; add/remove members
 # Poach `w` also stores the current score/explanation as a watch reason.
 icelines watch list
 icelines watch note "Matthew Knies" "PP1 promotion and strong hits fit"

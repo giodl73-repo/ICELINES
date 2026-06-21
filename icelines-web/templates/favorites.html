@@ -61,6 +61,12 @@
         background: #0b3d91;
         color: #fff;
     }
+    .group-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+        gap: 0.75rem;
+        margin: 0.75rem 0 1rem;
+    }
 </style>
 {% endblock %}
 
@@ -80,15 +86,39 @@
             {% endif %}
         {% endfor %}
     </div>
-    <p style="font-size: 0.9em; color: #616161; margin-top: 0;">
-        Web group selection is read-only. Create, rename, delete, and arbitrary group membership edits remain on the CLI/TUI group surfaces.
-    </p>
+    <div class="group-actions">
+        <form method="POST" action="/favorites/groups/create">
+            <div class="row">
+                <input type="text" name="name" placeholder="New group name">
+                <input type="text" name="description" placeholder="Description">
+                <button type="submit">Create group</button>
+            </div>
+        </form>
+        {% if can_edit_group %}
+        <form method="POST" action="/favorites/groups/rename">
+            <input type="hidden" name="old_name" value="{{ group }}">
+            <div class="row">
+                <input type="text" name="new_name" value="{{ group }}">
+                <button type="submit">Rename</button>
+            </div>
+        </form>
+        <form method="POST" action="/favorites/groups/delete">
+            <input type="hidden" name="name" value="{{ group }}">
+            <button type="submit">Delete group</button>
+        </form>
+        {% endif %}
+    </div>
 </section>
 
 {% if can_mutate %}
 <section class="fav-form">
-    <h3 style="margin: 0 0 0.5rem 0;">Add to Favorites</h3>
+    <h3 style="margin: 0 0 0.5rem 0;">Add to {{ group }}</h3>
+    {% if can_edit_group %}
+    <form method="POST" action="/favorites/groups/members/add">
+        <input type="hidden" name="group" value="{{ group }}">
+    {% else %}
     <form method="POST" action="/favorites/add">
+    {% endif %}
         <div class="row">
             <label for="key">Player name or team abbrev:</label>
             <input type="text" id="key" name="key" placeholder="e.g. Connor McDavid · EDM · TOR" autofocus>
@@ -103,16 +133,11 @@
             <label><input type="radio" name="kind" value="player"> player</label>
             <label><input type="radio" name="kind" value="team"> team</label>
         </div>
+        {% if can_edit_group %}
+        {% else %}
         <input type="hidden" name="return_to" value="/favorites">
+        {% endif %}
     </form>
-</section>
-{% else %}
-<section class="fav-form">
-    <h3 style="margin: 0 0 0.5rem 0;">Read-only group view</h3>
-    <p style="margin: 0;">
-        This page can inspect <strong>{{ group }}</strong>, but web add/remove is intentionally limited to the canonical Favorites group.
-        Use <code>icelines group add "{{ group }}" &lt;player-or-team&gt;</code> or the TUI Groups screen for edits.
-    </p>
 </section>
 {% endif %}
 
@@ -123,7 +148,7 @@
 icelines group add "{{ group }}" EDM</code></pre>
 </section>
 {% else %}
-    {% if can_mutate %}
+    {% if !can_edit_group %}
     <section class="fav-form">
         <h3 style="margin: 0 0 0.5rem 0;">Cache Favorites data</h3>
         <p style="font-size: 0.9em; margin: 0 0 0.6rem 0;">
@@ -155,12 +180,21 @@ icelines group add "{{ group }}" EDM</code></pre>
                 {% endif %}
             </div>
             {% if can_mutate %}
+            {% if can_edit_group %}
+            <form method="POST" action="/favorites/groups/members/remove" style="display:inline;">
+                <input type="hidden" name="group" value="{{ group }}">
+                <input type="hidden" name="key" value="{{ player.key }}">
+                <input type="hidden" name="kind" value="player">
+                <button type="submit" class="remove-btn" title="Remove from {{ group }}">x</button>
+            </form>
+            {% else %}
             <form method="POST" action="/favorites/remove" style="display:inline;">
                 <input type="hidden" name="key" value="{{ player.key }}">
                 <input type="hidden" name="kind" value="player">
                 <input type="hidden" name="return_to" value="/favorites">
                 <button type="submit" class="remove-btn" title="Remove from Favorites">x</button>
             </form>
+            {% endif %}
             {% endif %}
         </li>
         {% endfor %}
@@ -174,12 +208,21 @@ icelines group add "{{ group }}" EDM</code></pre>
         <li>
             <a href="/team/{{ team.key }}">{{ team.key }}</a>
             {% if can_mutate %}
+            {% if can_edit_group %}
+            <form method="POST" action="/favorites/groups/members/remove" style="display:inline;">
+                <input type="hidden" name="group" value="{{ group }}">
+                <input type="hidden" name="key" value="{{ team.key }}">
+                <input type="hidden" name="kind" value="team">
+                <button type="submit" class="remove-btn" title="Remove from {{ group }}">x</button>
+            </form>
+            {% else %}
             <form method="POST" action="/favorites/remove" style="display:inline;">
                 <input type="hidden" name="key" value="{{ team.key }}">
                 <input type="hidden" name="kind" value="team">
                 <input type="hidden" name="return_to" value="/favorites">
                 <button type="submit" class="remove-btn" title="Remove from Favorites">x</button>
             </form>
+            {% endif %}
             {% endif %}
         </li>
         {% endfor %}

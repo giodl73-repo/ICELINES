@@ -11,6 +11,30 @@ pub(crate) enum MutateOp {
     Remove,
 }
 
+pub(crate) enum GroupMutateOp {
+    Create {
+        name: String,
+        description: String,
+    },
+    Rename {
+        old_name: String,
+        new_name: String,
+    },
+    Delete {
+        name: String,
+    },
+    AddMember {
+        group: String,
+        key: String,
+        kind_hint: Option<String>,
+    },
+    RemoveMember {
+        group: String,
+        key: String,
+        kind_hint: Option<String>,
+    },
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct WatchNote {
     pub(crate) reason: String,
@@ -314,6 +338,211 @@ pub(crate) fn mutate_favorites(
     let context = ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular));
 
     Ok(intent.result_view(context, operation, changed_rows > 0))
+}
+
+pub(crate) fn mutate_group(op: GroupMutateOp) -> Result<MutationResultView, String> {
+    let conn = open_group_conn()?;
+    let (operation, target, changed) = match op {
+        GroupMutateOp::Create { name, description } => {
+            let name = clean_group_name(&name)?;
+            conn.execute(
+                "INSERT INTO groups (name, description, created_at) VALUES (?1, ?2, datetime('now'))",
+                rusqlite::params![name, description.trim()],
+            )
+            .map_err(|e| format!("create group: {e}"))?;
+            ("group.create".to_owned(), name, true)
+        }
+        GroupMutateOp::Rename { old_name, new_name } => {
+            let old_name = clean_group_name(&old_name)?;
+            let new_name = clean_group_name(&new_name)?;
+            if old_name == "Favorites" {
+                return Err("Favorites cannot be renamed.".to_owned());
+            }
+            if old_name == new_name {
+                ("group.rename".to_owned(), old_name, false)
+            } else {
+                require_group(&conn, &old_name)?;
+                let exists: bool = conn
+                    .query_row(
+                        "SELECT EXISTS(SELECT 1 FROM groups WHERE name = ?1)",
+                        rusqlite::params![new_name],
+                        |row| row.get(0),
+                    )
+                    .map_err(|e| format!("check group: {e}"))?;
+                if exists {
+                    return Err(format!("group '{new_name}' already exists"));
+                }
+                conn.execute(
+                    "INSERT INTO groups (name, description, created_at) \
+                     SELECT ?1, description, datetime('now') FROM groups WHERE name = ?2",
+                    rusqlite::params![new_name, old_name],
+                )
+                .map_err(|e| format!("create renamed group: {e}"))?;
+                conn.execute(
+                    "UPDATE group_members SET group_name = ?1 WHERE group_name = ?2",
+                    rusqlite::params![new_name, old_name],
+                )
+                .map_err(|e| format!("rename group members: {e}"))?;
+                conn.execute(
+                    "DELETE FROM groups WHERE name = ?1",
+                    rusqlite::params![old_name],
+                )
+                .map_err(|e| format!("delete renamed group source: {e}"))?;
+                ("group.rename".to_owned(), new_name, true)
+            }
+        }
+        GroupMutateOp::Delete { name } => {
+            let name = clean_group_name(&name)?;
+            if name == "Favorites" {
+                return Err("Favorites cannot be deleted.".to_owned());
+            }
+            conn.execute(
+                "DELETE FROM group_members WHERE group_name = ?1",
+                rusqlite::params![name],
+            )
+            .map_err(|e| format!("delete group members: {e}"))?;
+            let rows = conn
+                .execute(
+                    "DELETE FROM groups WHERE name = ?1",
+                    rusqlite::params![name],
+                )
+                .map_err(|e| format!("delete group: {e}"))?;
+            ("group.delete".to_owned(), name, rows > 0)
+        }
+        GroupMutateOp::AddMember {
+            group,
+            key,
+            kind_hint,
+        } => {
+            let group = clean_group_name(&group)?;
+            require_group(&conn, &group)?;
+            let entity_ref = resolve_entity_ref(&key, kind_hint.as_deref())?;
+            let rows = conn
+                .execute(
+                    "INSERT OR IGNORE INTO group_members (group_name, entity_ref, added_at) \
+                     VALUES (?1, ?2, datetime('now'))",
+                    rusqlite::params![group, entity_ref],
+                )
+                .map_err(|e| format!("add group member: {e}"))?;
+            ("group.member.add".to_owned(), entity_ref, rows > 0)
+        }
+        GroupMutateOp::RemoveMember {
+            group,
+            key,
+            kind_hint,
+        } => {
+            let group = clean_group_name(&group)?;
+            require_group(&conn, &group)?;
+            let entity_ref = resolve_entity_ref(&key, kind_hint.as_deref())?;
+            let rows = conn
+                .execute(
+                    "DELETE FROM group_members WHERE group_name = ?1 AND entity_ref = ?2",
+                    rusqlite::params![group, entity_ref],
+                )
+                .map_err(|e| format!("remove group member: {e}"))?;
+            ("group.member.remove".to_owned(), entity_ref, rows > 0)
+        }
+    };
+
+    let context = ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular));
+    if changed {
+        Ok(MutationResultView::applied(
+            context,
+            operation,
+            target,
+            "Group mutation applied",
+            None,
+        ))
+    } else {
+        Ok(MutationResultView::noop(
+            context,
+            operation,
+            target,
+            "No group mutation needed",
+            None,
+        ))
+    }
+}
+
+fn open_group_conn() -> Result<rusqlite::Connection, String> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .ok_or_else(|| "HOME / USERPROFILE not set.".to_owned())?;
+    let dir = std::path::PathBuf::from(home).join(".icelines");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
+    let db_path = dir.join("icelines.db");
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| format!("open db: {e}"))?;
+    conn.busy_timeout(Duration::from_secs(5))
+        .map_err(|e| format!("set db busy timeout: {e}"))?;
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS groups (
+            name        TEXT PRIMARY KEY,
+            description TEXT NOT NULL DEFAULT '',
+            created_at  TEXT NOT NULL
+         );
+         INSERT OR IGNORE INTO groups (name, description, created_at)
+            VALUES ('Favorites', '', datetime('now'));
+         CREATE TABLE IF NOT EXISTS group_members (
+            group_name TEXT NOT NULL,
+            entity_ref TEXT NOT NULL,
+            added_at   TEXT NOT NULL,
+            PRIMARY KEY (group_name, entity_ref),
+            FOREIGN KEY (group_name) REFERENCES groups(name) ON DELETE CASCADE
+         );",
+    )
+    .map_err(|e| format!("initialize group tables: {e}"))?;
+    Ok(conn)
+}
+
+fn clean_group_name(name: &str) -> Result<String, String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err("group name is required".to_owned());
+    }
+    if name.len() > 80 {
+        return Err("group name must be 80 characters or fewer".to_owned());
+    }
+    Ok(name.to_owned())
+}
+
+fn require_group(conn: &rusqlite::Connection, group: &str) -> Result<(), String> {
+    let exists: bool = conn
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM groups WHERE name = ?1)",
+            rusqlite::params![group],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("check group: {e}"))?;
+    if exists {
+        Ok(())
+    } else {
+        Err(format!("group '{group}' not found"))
+    }
+}
+
+fn resolve_entity_ref(key: &str, kind_hint: Option<&str>) -> Result<String, String> {
+    let key = key.trim();
+    if key.is_empty() {
+        return Err("member key is required".to_owned());
+    }
+    match kind_hint.map(str::trim).filter(|s| !s.is_empty()) {
+        Some("team") => {
+            let abbr = icelines_core::TeamAbbr::parse(key).map_err(|e| e.to_string())?;
+            Ok(format!("team:{}", abbr.0))
+        }
+        Some("player") => Ok(format!(
+            "player:{}",
+            icelines_core::name::normalize_name(key)
+        )),
+        Some(other) => Err(format!("unknown kind '{other}' - expected player or team")),
+        None => match icelines_core::TeamAbbr::parse(key) {
+            Ok(abbr) => Ok(format!("team:{}", abbr.0)),
+            Err(_) => Ok(format!(
+                "player:{}",
+                icelines_core::name::normalize_name(key)
+            )),
+        },
+    }
 }
 
 fn referer_path(headers: &HeaderMap) -> Option<&str> {

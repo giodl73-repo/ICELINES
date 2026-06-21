@@ -1,7 +1,8 @@
 use super::favorites_data::{
-    group_api_rows_from_view, mutate_favorites, read_group_members, read_group_options,
-    read_watch_alert_events, read_watch_notes, watchlist_api_rows, GroupApiMeta, GroupApiResponse,
-    MutateOp, WatchAlertEvent, WatchlistApiMeta, WatchlistApiResponse,
+    group_api_rows_from_view, mutate_favorites, mutate_group, read_group_members,
+    read_group_options, read_watch_alert_events, read_watch_notes, watchlist_api_rows,
+    GroupApiMeta, GroupApiResponse, GroupMutateOp, MutateOp, WatchAlertEvent, WatchlistApiMeta,
+    WatchlistApiResponse,
 };
 use crate::templates::{
     FavoriteGroupOptionRow, FavoritePlayerRow, FavoriteTeamRow, FavoritesTemplate,
@@ -25,12 +26,39 @@ pub struct FavoritesQuery {
     group: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct GroupCreateMutation {
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GroupRenameMutation {
+    pub old_name: String,
+    pub new_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GroupDeleteMutation {
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GroupMemberMutation {
+    pub group: String,
+    pub key: String,
+    #[serde(default)]
+    pub kind: Option<String>,
+}
+
 pub async fn get_favorites(
     State(state): State<crate::WebState>,
     Query(query): Query<FavoritesQuery>,
 ) -> Response {
     let group = selected_group(query.group.as_deref());
-    let can_mutate = group == "Favorites";
+    let can_mutate = true;
+    let can_edit_group = group != "Favorites";
     let members = read_group_members(&group);
     let (active_label, context) = match favorites_context(&state, "favorites").await {
         Ok(context) => context,
@@ -54,6 +82,7 @@ pub async fn get_favorites(
         active_label,
         group: group.clone(),
         can_mutate,
+        can_edit_group,
         groups: favorite_group_options(&group),
         active_season: view.context.window.season.as_str(),
         active_season_type: view.context.window.season_type.label().to_string(),
@@ -286,6 +315,116 @@ pub async fn get_watchlist_json() -> Response {
         meta,
     })
     .into_response()
+}
+
+pub async fn post_group_create_form(Form(req): Form<GroupCreateMutation>) -> Response {
+    match mutate_group(GroupMutateOp::Create {
+        name: req.name.clone(),
+        description: req.description,
+    }) {
+        Ok(_) => Redirect::to(&favorites_group_path(&req.name)).into_response(),
+        Err(msg) => error_response(&msg),
+    }
+}
+
+pub async fn post_group_rename_form(Form(req): Form<GroupRenameMutation>) -> Response {
+    match mutate_group(GroupMutateOp::Rename {
+        old_name: req.old_name,
+        new_name: req.new_name.clone(),
+    }) {
+        Ok(_) => Redirect::to(&favorites_group_path(&req.new_name)).into_response(),
+        Err(msg) => error_response(&msg),
+    }
+}
+
+pub async fn post_group_delete_form(Form(req): Form<GroupDeleteMutation>) -> Response {
+    match mutate_group(GroupMutateOp::Delete { name: req.name }) {
+        Ok(_) => Redirect::to("/favorites").into_response(),
+        Err(msg) => error_response(&msg),
+    }
+}
+
+pub async fn post_group_member_add_form(Form(req): Form<GroupMemberMutation>) -> Response {
+    match mutate_group(GroupMutateOp::AddMember {
+        group: req.group.clone(),
+        key: req.key,
+        kind_hint: req.kind,
+    }) {
+        Ok(_) => Redirect::to(&favorites_group_path(&req.group)).into_response(),
+        Err(msg) => error_response(&msg),
+    }
+}
+
+pub async fn post_group_member_remove_form(Form(req): Form<GroupMemberMutation>) -> Response {
+    match mutate_group(GroupMutateOp::RemoveMember {
+        group: req.group.clone(),
+        key: req.key,
+        kind_hint: req.kind,
+    }) {
+        Ok(_) => Redirect::to(&favorites_group_path(&req.group)).into_response(),
+        Err(msg) => error_response(&msg),
+    }
+}
+
+pub async fn post_group_create_json(axum::Json(req): axum::Json<GroupCreateMutation>) -> Response {
+    match mutate_group(GroupMutateOp::Create {
+        name: req.name,
+        description: req.description,
+    }) {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(msg) => json_error_response(&msg),
+    }
+}
+
+pub async fn post_group_rename_json(axum::Json(req): axum::Json<GroupRenameMutation>) -> Response {
+    match mutate_group(GroupMutateOp::Rename {
+        old_name: req.old_name,
+        new_name: req.new_name,
+    }) {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(msg) => json_error_response(&msg),
+    }
+}
+
+pub async fn post_group_delete_json(axum::Json(req): axum::Json<GroupDeleteMutation>) -> Response {
+    match mutate_group(GroupMutateOp::Delete { name: req.name }) {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(msg) => json_error_response(&msg),
+    }
+}
+
+pub async fn post_group_member_add_json(
+    axum::Json(req): axum::Json<GroupMemberMutation>,
+) -> Response {
+    match mutate_group(GroupMutateOp::AddMember {
+        group: req.group,
+        key: req.key,
+        kind_hint: req.kind,
+    }) {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(msg) => json_error_response(&msg),
+    }
+}
+
+pub async fn post_group_member_remove_json(
+    axum::Json(req): axum::Json<GroupMemberMutation>,
+) -> Response {
+    match mutate_group(GroupMutateOp::RemoveMember {
+        group: req.group,
+        key: req.key,
+        kind_hint: req.kind,
+    }) {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(msg) => json_error_response(&msg),
+    }
+}
+
+fn favorites_group_path(group: &str) -> String {
+    if group.trim() == "Favorites" {
+        "/favorites".to_owned()
+    } else {
+        format!("/favorites?group={}", url_component(group.trim()))
+    }
 }
 
 fn watch_note_inputs(
