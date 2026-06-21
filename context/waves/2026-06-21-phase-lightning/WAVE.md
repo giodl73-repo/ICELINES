@@ -34,10 +34,21 @@ Leafs.
 | 01 | Plan and inventory Phase Lightning goals | passed; see `LIGHTNING-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Career route evidence gate | passed; focused Career route tests support partial-by-design wording, see `pulses/pulse-02.md` |
 | 03 | Career route wording gate | passed; route rows now carry partial-by-design claims, see `pulses/pulse-03.md` |
-| 04 | Close Phase Lightning | pending |
+| 04 | Close Phase Lightning | passed; final scoped claims and non-claims recorded, see `pulses/pulse-04.md` |
 
 ## Validation Posture
 
 - Planning/doc-only edits use `git diff --check`.
 - Evidence gates use focused Career Web route tests.
 - No live network dependency in tests.
+
+## Closeout
+
+Phase Lightning is closed. The Career/cohort route rows now match the Phase
+Maple Leafs family-level posture: `/career` and `/api/v1/career` are partial by
+design, project through `CareerView`, preserve the shared shell and JSON
+envelope behavior, and keep the missing-store fetch instruction explicit.
+
+The claim remains bounded. It does not include a dedicated TUI cohort board,
+bundled career-history availability, live career-history fetch from read
+surfaces, or local-store creation from read navigation.

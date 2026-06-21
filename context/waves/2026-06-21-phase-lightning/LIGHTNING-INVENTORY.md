@@ -30,4 +30,5 @@ wording into partial-by-design wording.
    partial-by-design route wording.
 3. Matrix wording. Result: passed; the two route rows now carry
    partial-by-design wording while preserving Maple Leafs non-claims.
-4. Closeout. Record final claims and non-claims.
+4. Closeout. Result: passed; Phase Lightning is closed with final route-row
+   claims and non-claims recorded.

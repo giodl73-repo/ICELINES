@@ -4,7 +4,7 @@
 > using the boundaries already closed by Phase Maple Leafs.
 
 **Created:** 2026-06-21
-**Status:** Active - route wording passed
+**Status:** Closed - Phase Lightning complete
 
 ---
 
@@ -49,8 +49,18 @@ without implying a dedicated TUI board or live career-history fetch.
    and support partial-by-design wording.
 3. **Pulse 03 - Matrix wording.** Result: route rows now carry
    partial-by-design wording while preserving Maple Leafs non-claims.
-4. **Pulse 04 - Closeout.** Close Phase Lightning with exact route claims and
-   non-claims.
+4. **Pulse 04 - Closeout.** Result: Phase Lightning is closed with final
+   route-row claims and non-claims recorded.
+
+---
+
+## Closeout
+
+Phase Lightning closed the Career/cohort route wording gate. `/career` and
+`/api/v1/career` now carry partial-by-design wording aligned with Phase Maple
+Leafs, while keeping explicit non-claims around a dedicated TUI cohort board,
+bundled career-history availability, live read fetch, and local-store creation
+from read navigation.
 
 ---
 
