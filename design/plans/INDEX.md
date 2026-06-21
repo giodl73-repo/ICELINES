@@ -23,7 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
-| [Phase Oilers - Named analytics-cache report promotion gate](2026-06-20-phaseOilers-named-cache-report-promotion.md) | Active | Decide whether the WP-009 named analytics-cache Web/API report can become a bounded generic prepared-cache inspection claim without becoming a specific hockey workflow. |
+| [Phase Oilers - Named analytics-cache report promotion gate](2026-06-20-phaseOilers-named-cache-report-promotion.md) | Closed | Closed the WP-009 named analytics-cache report gate: named report is now bounded generic prepared-cache inspection only; workflow-family route claims remain bounded by their phase-specific non-claims. |
 | [Phase Canucks - Agent evidence promotion gate](2026-06-20-phaseCanucks-agent-evidence-promotion.md) | Closed | Closed the WP-009 agent-evidence promotion gate: agent evidence is now a bounded prepared-cache evidence summary claim, while named analytics cache report remains generic prepared-cache inspection evidence. |
 | [Phase Predators - Postgame promotion gate](2026-06-20-phasePredators-postgame-promotion.md) | Closed | Closed the WP-009 postgame promotion gate: postgame review and adjustments are now bounded prepared-cache report claims, while named report and agent routes remain first-route evidence with explicit non-claims. |
 | [Phase Kraken - Practice focus promotion gate](2026-06-20-phaseKraken-practice-focus-promotion.md) | Closed | Closed the WP-009 practice-focus promotion gate: practice focus is now a bounded prepared-cache report claim, while named report, postgame, adjustment, and agent routes remain first-route evidence with explicit non-claims. |
