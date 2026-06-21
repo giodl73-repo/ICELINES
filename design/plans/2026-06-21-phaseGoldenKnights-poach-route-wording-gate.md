@@ -4,7 +4,7 @@
 > shared-ViewModel wording.
 
 **Created:** 2026-06-21
-**Status:** Active - evidence gate passed
+**Status:** Active - route wording passed
 
 ---
 
@@ -47,8 +47,9 @@ API envelope behavior where it does not exist.
 1. **Pulse 01 - Plan and inventory.** Result: passed.
 2. **Pulse 02 - Evidence gate.** Result: focused Poach Web route tests passed
    and support scoped shared-ViewModel wording.
-3. **Pulse 03 - Matrix wording.** Convert route rows to scoped wording only if
-   evidence passes.
+3. **Pulse 03 - Matrix wording.** Result: route rows now carry scoped
+   shared-ViewModel wording while preserving API-envelope and read-only SQLite
+   boundaries.
 4. **Pulse 04 - Closeout.** Close Phase Golden Knights with exact route claims
    and non-claims.
 

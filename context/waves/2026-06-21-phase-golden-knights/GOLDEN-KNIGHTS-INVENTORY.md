@@ -27,6 +27,7 @@ wording into scoped shared-ViewModel wording.
 1. Plan and inventory. Result: passed.
 2. Evidence gate. Result: passed; focused Poach Web route tests support scoped
    shared-ViewModel route wording.
-3. Matrix wording. Convert the four Poach route rows to scoped wording if
-   evidence passes.
+3. Matrix wording. Result: passed; the four Poach route rows now carry scoped
+   shared-ViewModel wording while preserving API-envelope and read-only SQLite
+   boundaries.
 4. Closeout. Record final claims and non-claims.
