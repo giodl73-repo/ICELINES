@@ -26,7 +26,8 @@ wording into partial-by-design wording.
 ## Recommended Pulse Map
 
 1. Plan and inventory. Result: passed.
-2. Evidence gate. Run focused Signals Web route tests.
+2. Evidence gate. Result: passed; focused Signals Web route tests support
+   partial-by-design surface-row wording.
 3. Matrix wording. Convert the Player Signals row to partial-by-design wording
    if evidence passes.
 4. Closeout. Record final claims and non-claims.

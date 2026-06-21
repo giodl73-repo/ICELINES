@@ -33,7 +33,7 @@ design to match Phase Capitals.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Panthers goals | passed; see `PANTHERS-INVENTORY.md` and `pulses/pulse-01.md` |
-| 02 | Signals route evidence gate | pending |
+| 02 | Signals route evidence gate | passed; focused Signals route tests support partial-by-design wording, see `pulses/pulse-02.md` |
 | 03 | Signals surface-row wording gate | pending |
 | 04 | Close Phase Panthers | pending |
 
