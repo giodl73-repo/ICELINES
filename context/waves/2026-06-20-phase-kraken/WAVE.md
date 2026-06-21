@@ -35,6 +35,7 @@ should remain only first-route evidence.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Kraken goals | passed; see `KRAKEN-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Practice-focus product-copy gate | passed for bounded prepared-cache practice focus report claim; see `KRAKEN-COPY-GATE.md` and `pulses/pulse-02.md` |
 
 ## Validation Posture
 
