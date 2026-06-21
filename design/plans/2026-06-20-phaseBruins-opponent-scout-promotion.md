@@ -5,7 +5,7 @@
 > it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 copy gate passed
+**Status:** Active - pulse 03 scout evidence gate passed
 
 ---
 
@@ -50,8 +50,9 @@ copy and workflow evidence remain precise.
    sufficient for a bounded prepared-cache scout report claim. It preserves
    source/methodology/non-claim framing and does not imply a game-plan workflow
    or autonomous coaching authority.
-3. **Pulse 03 - Workflow evidence gate.** Run or add focused evidence for the
-   route pair.
+3. **Pulse 03 - Workflow evidence gate.** Result: focused opponent-scout L2
+   evidence and surface-matrix wording support a bounded prepared-cache scout
+   report claim while keeping broader scouting workflow claims deferred.
 4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
 
 ---
