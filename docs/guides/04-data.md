@@ -133,10 +133,12 @@ root: NHL Eras
 
 ## MoneyPuck integration
 
-MoneyPuck publishes free season CSVs. Fetch once per season:
+MoneyPuck publishes free regular-season CSVs. Fetch one season, or fetch a
+bounded historical window ending at the selected season:
 
 ```bash
 icelines fetch money-puck
+icelines fetch money-puck --season 20252026 --seasons 5
 ```
 
 After fetching, these metrics appear in `query leaders`:
@@ -148,6 +150,8 @@ icelines query leaders --sort xg-per-60 --pos F --top 10      # shot quality cre
 ```
 
 If MoneyPuck data hasn't been fetched, these metrics return "—" gracefully.
+Historical season queries read the sealed MoneyPuck snapshot matching the
+requested season when one exists; they do not reuse the active season's xG rows.
 
 ---
 

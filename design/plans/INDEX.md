@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Nordiques - Historical MoneyPuck xG](2026-06-21-phaseNordiques-historical-moneypuck-xg.md) | Implemented | Added bounded multi-season MoneyPuck fetch with `fetch money-puck --seasons N`, plus season-aware MoneyPuck snapshot reads so historical xG queries use the requested season's sealed snapshot. |
 | [Phase Golden Knights - Poach route wording gate](2026-06-21-phaseGoldenKnights-poach-route-wording-gate.md) | Closed | Closed the Poach route wording gate: board/report route rows now carry scoped shared-ViewModel claims while preserving API-envelope and read-only SQLite boundaries. |
 | [Phase Blues - Fantasy route wording gate](2026-06-21-phaseBlues-fantasy-route-wording-gate.md) | Closed | Closed the Fantasy route wording gate: `/fantasy` and `/api/v1/fantasy/*` rows now carry scoped read/product claims while preserving browser mutation, missing-state, and read-only SQLite deferrals. |
 | [Phase Panthers - Signals row wording gate](2026-06-21-phasePanthers-signals-row-wording-gate.md) | Closed | Closed the Player Signals row wording gate: Signals now carry partial-by-design wording while preserving Capitals non-claims around cache, catalog, filter, leaderboard, ranking, and recommendation authority. |
@@ -124,8 +125,12 @@ Cleared in Clear the Unblocks:
 | NHL Edge skating speed (Phase Maurice Richard) | ⭐⭐ | **Parked** — no public JSON endpoint discovered |
 | Strength-state 5v5/PP/PK splits (`query-engine` Phase 5C) | ⭐⭐ | Tier 3 shifts + play-by-play join |
 | Tier 4 advanced metrics (NST, Evolving Hockey RAPM) | ⭐ | External scraping; large lift |
-| MoneyPuck historical xG (multi-season) | ⭐ | Nothing — backlog |
 | Historical shift-data bundles | ⭐⭐ | Parked — no supported `fetch shifts` command, fixtures, or source/bundle policy; `sync.capabilities.shifts=off` is enforced |
+
+Cleared in Phase Nordiques:
+- MoneyPuck historical xG — shipped bounded multi-season regular-season CSV
+  fetch through `icelines fetch money-puck --seasons N`, with season-aware
+  snapshot reads for historical xG metrics.
 
 Cleared in Score the Day:
 - Fantasy daily delta scoring — shipped via `FantasyDailyDeltaView`,

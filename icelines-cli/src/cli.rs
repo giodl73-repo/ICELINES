@@ -1933,6 +1933,9 @@ pub enum FetchSubcommand {
     MoneyPuck {
         #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
         season: String,
+        /// Fetch this season plus N-1 prior regular seasons.
+        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..=38))]
+        seasons: u8,
         #[arg(long)]
         dry_run: bool,
     },

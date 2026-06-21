@@ -1050,6 +1050,137 @@ fn l1_load_into_repo_with_populated_snapshot_moneypuck() {
     assert!(other.xg().is_none());
 }
 
+#[test]
+fn l1_load_into_repo_reads_moneypuck_for_requested_historical_season() {
+    use icelines_fetch::moneypuck::MoneyPuckStats;
+    use icelines_fetch::snapshot::SnapshotTier;
+
+    let dir = tempfile::TempDir::new().unwrap();
+    let store = SnapshotStore::new(dir.path());
+
+    let historical = vec![MoneyPuckStats {
+        player_id: 8478402,
+        xg_all: 12.5,
+        xg_per_60: 0.80,
+        cf_pct_5v5: 51.0,
+        ff_pct_5v5: 50.0,
+        on_ice_xg_for_5v5: 20.0,
+        on_ice_xg_against_5v5: 19.0,
+        xgf_pct_5v5: 51.28,
+    }];
+    store
+        .create(
+            "20232024-mp",
+            "20232024",
+            SnapshotTier::MoneyPuck,
+            None,
+            "2026-06-21",
+        )
+        .unwrap();
+    store
+        .write_file(
+            "20232024-mp",
+            &SnapshotTier::MoneyPuck,
+            "moneypuck.json",
+            &serde_json::to_vec(&historical).unwrap(),
+        )
+        .unwrap();
+    store.seal("20232024-mp").unwrap();
+
+    let active = vec![MoneyPuckStats {
+        player_id: 8478402,
+        xg_all: 30.5,
+        xg_per_60: 1.20,
+        cf_pct_5v5: 56.3,
+        ff_pct_5v5: 55.8,
+        on_ice_xg_for_5v5: 42.0,
+        on_ice_xg_against_5v5: 30.5,
+        xgf_pct_5v5: 58.0,
+    }];
+    store
+        .create(
+            "20242025-mp",
+            "20242025",
+            SnapshotTier::MoneyPuck,
+            None,
+            "2026-06-21",
+        )
+        .unwrap();
+    store
+        .write_file(
+            "20242025-mp",
+            &SnapshotTier::MoneyPuck,
+            "moneypuck.json",
+            &serde_json::to_vec(&active).unwrap(),
+        )
+        .unwrap();
+    store.seal("20242025-mp").unwrap();
+
+    let outcome = load_into_repo(Season(20232024), SeasonType::Regular, &store).unwrap();
+    let view = outcome
+        .repo
+        .view(PlayerId(8478402), Season(20232024), SeasonType::Regular)
+        .unwrap();
+    assert_eq!(
+        view.xg(),
+        Some(12.5),
+        "loader must pick the MoneyPuck snapshot matching the requested season"
+    );
+}
+
+#[test]
+fn l1_load_into_repo_does_not_reuse_active_moneypuck_for_missing_historical_season() {
+    use icelines_fetch::moneypuck::MoneyPuckStats;
+    use icelines_fetch::snapshot::SnapshotTier;
+
+    let dir = tempfile::TempDir::new().unwrap();
+    let store = SnapshotStore::new(dir.path());
+
+    let active = vec![MoneyPuckStats {
+        player_id: 8478402,
+        xg_all: 30.5,
+        xg_per_60: 1.20,
+        cf_pct_5v5: 56.3,
+        ff_pct_5v5: 55.8,
+        on_ice_xg_for_5v5: 42.0,
+        on_ice_xg_against_5v5: 30.5,
+        xgf_pct_5v5: 58.0,
+    }];
+    store
+        .create(
+            "20242025-mp",
+            "20242025",
+            SnapshotTier::MoneyPuck,
+            None,
+            "2026-06-21",
+        )
+        .unwrap();
+    store
+        .write_file(
+            "20242025-mp",
+            &SnapshotTier::MoneyPuck,
+            "moneypuck.json",
+            &serde_json::to_vec(&active).unwrap(),
+        )
+        .unwrap();
+    store.seal("20242025-mp").unwrap();
+
+    let outcome = load_into_repo(Season(20232024), SeasonType::Regular, &store).unwrap();
+    assert!(outcome
+        .missing
+        .iter()
+        .any(|m| matches!(m, MissingSource::MoneyPuck { season, .. } if season == "20232024")));
+    let view = outcome
+        .repo
+        .view(PlayerId(8478402), Season(20232024), SeasonType::Regular)
+        .unwrap();
+    assert_eq!(
+        view.xg(),
+        None,
+        "historical season must not reuse the active season's MoneyPuck row"
+    );
+}
+
 /// Gap C #3: snapshot-populated contracts path.
 #[test]
 fn l1_load_into_repo_with_populated_snapshot_contracts() {

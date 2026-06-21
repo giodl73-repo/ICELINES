@@ -93,7 +93,11 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
         }
         FetchSubcommand::Positions { season, dry_run } => do_positions(&season, dry_run).await,
         FetchSubcommand::Realtime { season, dry_run } => do_realtime(&season, dry_run).await,
-        FetchSubcommand::MoneyPuck { season, dry_run } => do_moneypuck(&season, dry_run).await,
+        FetchSubcommand::MoneyPuck {
+            season,
+            seasons,
+            dry_run,
+        } => do_moneypuck(&season, seasons, dry_run).await,
         FetchSubcommand::Contracts { season, dry_run } => do_contracts(&season, dry_run).await,
         FetchSubcommand::Career {
             dry_run,
@@ -989,7 +993,24 @@ async fn run_goalies_pass(
     Ok(())
 }
 
-async fn do_moneypuck(season: &str, dry_run: bool) -> anyhow::Result<()> {
+async fn do_moneypuck(season: &str, seasons: u8, dry_run: bool) -> anyhow::Result<()> {
+    let season_window = moneypuck_season_window(season, seasons)?;
+    if season_window.len() > 1 {
+        println!(
+            "MoneyPuck historical xG fetch — {} season(s), latest {}",
+            season_window.len(),
+            season
+        );
+    }
+
+    for season in season_window {
+        do_moneypuck_one(&season, dry_run).await?;
+    }
+
+    Ok(())
+}
+
+async fn do_moneypuck_one(season: &str, dry_run: bool) -> anyhow::Result<()> {
     let url = moneypuck::csv_url(season).with_context(|| {
         format!("invalid season format '{season}' — expected 8 digits like 20252026")
     })?;
@@ -1039,6 +1060,25 @@ async fn do_moneypuck(season: &str, dry_run: bool) -> anyhow::Result<()> {
     store.seal(&snap).context("sealing moneypuck snapshot")?;
     println!("Snapshot '{snap}' sealed and set as active.");
     Ok(())
+}
+
+fn moneypuck_season_window(latest_season: &str, count: u8) -> anyhow::Result<Vec<String>> {
+    if latest_season.len() != 8 || !latest_season.chars().all(|c| c.is_ascii_digit()) {
+        anyhow::bail!("invalid season format '{latest_season}' — expected 8 digits like 20252026");
+    }
+    let start: i32 = latest_season[..4].parse()?;
+    let end: i32 = latest_season[4..].parse()?;
+    if end != start + 1 {
+        anyhow::bail!(
+            "invalid season format '{latest_season}' — expected consecutive years like 20252026"
+        );
+    }
+    Ok((0..count)
+        .map(|offset| {
+            let y = start - i32::from(offset);
+            format!("{y}{next}", next = y + 1)
+        })
+        .collect())
 }
 
 async fn do_contracts(season: &str, dry_run: bool) -> anyhow::Result<()> {
@@ -1900,5 +1940,22 @@ mod tests {
                 "{kind:?} filename `{f}` must have `/` replaced"
             );
         }
+    }
+
+    #[test]
+    fn l0_moneypuck_season_window_counts_back_from_latest() {
+        assert_eq!(
+            moneypuck_season_window("20252026", 3).unwrap(),
+            vec!["20252026", "20242025", "20232024"]
+        );
+    }
+
+    #[test]
+    fn l0_moneypuck_season_window_rejects_non_consecutive_years() {
+        let err = moneypuck_season_window("20252027", 1).expect_err("bad season must fail");
+        assert!(
+            err.to_string().contains("consecutive years"),
+            "unexpected error: {err}"
+        );
     }
 }

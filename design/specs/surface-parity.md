@@ -60,7 +60,7 @@ workflows.
 
 Closed phases set important boundaries for this rollup: Phase Hurricane and
 Phase Rangers are wrapped; Islanders must not use this matrix refresh to promote
-MoneyPuck deployment, GSAx/high-danger save percentage, team confidence,
+broader MoneyPuck deployment, GSAx/high-danger save percentage, team confidence,
 Signals cache/catalog/filter/leaderboard, or lean CLI support.
 
 ### WP-009 cache-backed route rollup

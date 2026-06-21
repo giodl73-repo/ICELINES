@@ -811,6 +811,7 @@ icelines fetch all                    # rosters + stats (~5 min)
 icelines fetch rosters                # roster source bytes via FLETCH, ICELINES snapshot seal
 icelines fetch realtime               # hits, blocks, giveaways, takeaways
 icelines fetch money-puck             # MoneyPuck CSV via FLETCH, ICELINES parses xG/CF/FF/xGF/xGA
+icelines fetch money-puck --seasons 5 # current season plus 4 prior regular seasons
 icelines fetch fletch-sources --gate  # source handoff inventory + migration gate
 icelines fetch contracts              # UFA/RFA/ELC
 icelines fetch career --bundled-seasons 5   # multi-league career history (Calder)

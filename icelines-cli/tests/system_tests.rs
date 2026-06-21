@@ -2907,6 +2907,31 @@ fn l2_cmd_fetch_moneypuck_dry_run_exits_zero() {
 }
 
 #[test]
+fn l2_cmd_fetch_moneypuck_seasons_dry_run_lists_historical_urls() {
+    let out = run(&[
+        "fetch",
+        "money-puck",
+        "--season",
+        "20252026",
+        "--seasons",
+        "3",
+        "--dry-run",
+    ]);
+    assert!(
+        out.status.success(),
+        "fetch money-puck --seasons dry-run must exit 0, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    for year in ["2025", "2024", "2023"] {
+        assert!(
+            stdout.contains(&format!("seasonSummary/{year}/regular/skaters.csv")),
+            "missing MoneyPuck URL for {year}, got: {stdout}"
+        );
+    }
+}
+
+#[test]
 fn l2_cmd_fetch_realtime_dry_run_exits_zero() {
     let out = run(&["fetch", "realtime", "--dry-run"]);
     assert!(

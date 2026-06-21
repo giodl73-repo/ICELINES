@@ -423,9 +423,11 @@ pub fn load_into_repo(
     // MoneyPuck `MissingSource` with an explanatory reason rather than
     // attempting a read that always fails.
     let moneypuck: Vec<MoneyPuckStats> = match season_type {
-        SeasonType::Regular => match store
-            .read_tier::<Vec<MoneyPuckStats>>(&SnapshotTier::MoneyPuck, "moneypuck.json")
-        {
+        SeasonType::Regular => match store.read_tier_any_for_season::<Vec<MoneyPuckStats>>(
+            &SnapshotTier::MoneyPuck,
+            "moneypuck.json",
+            &season_str,
+        ) {
             Ok(m) if !m.is_empty() => m,
             Ok(_empty) => {
                 missing.push(MissingSource::MoneyPuck {
