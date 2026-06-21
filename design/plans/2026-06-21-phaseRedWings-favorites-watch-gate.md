@@ -4,7 +4,7 @@
 > deliberate narrow partial or expand into richer group/rule editing.
 
 **Created:** 2026-06-21
-**Status:** Active - pulse 01 planned
+**Status:** Active - pulse 02 evidence passed
 
 ---
 
@@ -46,7 +46,8 @@ reinterpretation.
 ## Recommended Pulse Order
 
 1. **Pulse 01 - Plan and inventory.** Result: passed.
-2. **Pulse 02 - Evidence gate.** Run focused favorites/watch tests.
+2. **Pulse 02 - Evidence gate.** Result: focused CLI/Web favorites/watch
+   evidence supports keeping the partial narrow by design.
 3. **Pulse 03 - Contract decision and matrix wording.** Keep partial by design
    or promote only if the evidence justifies it.
 4. **Pulse 04 - Closeout.** Update wave, plan, and indexes.

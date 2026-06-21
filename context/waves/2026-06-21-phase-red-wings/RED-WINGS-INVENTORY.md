@@ -32,7 +32,8 @@ group/rule editing.
 
 1. Plan and inventory. Result: passed.
 2. Evidence gate. Run focused favorites/watch tests and record the supported
-   read/mutation/refusal boundary.
+   read/mutation/refusal boundary. Result: passed; focused CLI/Web evidence
+   supports the deliberate narrow partial.
 3. Matrix wording. Tighten partial wording if evidence supports a deliberate
    narrow-contract claim.
 4. Closeout. Record the final Favorites/watch/watch-rules decision.
