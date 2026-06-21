@@ -28,6 +28,6 @@ evidence-card claim.
 ## Recommended Pulse Map
 
 1. Plan and inventory. Result: passed.
-2. Product-copy gate.
+2. Product-copy gate. Result: passed for bounded prepared-cache player evidence-card claim.
 3. Workflow evidence gate.
 4. Surface-matrix closeout.
