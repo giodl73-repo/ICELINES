@@ -4,7 +4,7 @@
 > shared-ViewModel wording.
 
 **Created:** 2026-06-21
-**Status:** Active - planning complete
+**Status:** Active - evidence gate passed
 
 ---
 
@@ -45,7 +45,8 @@ API envelope behavior where it does not exist.
 ## Recommended Pulse Order
 
 1. **Pulse 01 - Plan and inventory.** Result: passed.
-2. **Pulse 02 - Evidence gate.** Run focused Poach Web route tests.
+2. **Pulse 02 - Evidence gate.** Result: focused Poach Web route tests passed
+   and support scoped shared-ViewModel wording.
 3. **Pulse 03 - Matrix wording.** Convert route rows to scoped wording only if
    evidence passes.
 4. **Pulse 04 - Closeout.** Close Phase Golden Knights with exact route claims

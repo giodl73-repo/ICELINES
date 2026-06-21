@@ -33,7 +33,7 @@ shared-ViewModel wording.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Golden Knights goals | passed; see `GOLDEN-KNIGHTS-INVENTORY.md` and `pulses/pulse-01.md` |
-| 02 | Poach route evidence gate | pending |
+| 02 | Poach route evidence gate | passed; focused Poach route tests support scoped shared-ViewModel wording, see `pulses/pulse-02.md` |
 | 03 | Poach route wording gate | pending |
 | 04 | Close Phase Golden Knights | pending |
 
