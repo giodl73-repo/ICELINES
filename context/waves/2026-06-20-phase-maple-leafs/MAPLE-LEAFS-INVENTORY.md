@@ -30,7 +30,8 @@ board.
 
 1. Plan and inventory. Result: passed.
 2. Evidence gate. Run focused CLI/TUI/Web career tests and record whether the
-   handoff remains sufficient.
+   handoff remains sufficient. Result: passed; focused evidence supports
+   deliberate TUI handoff.
 3. Surface-matrix wording. Tighten partial wording if evidence shows the
    deliberate handoff needs clearer boundaries.
 4. Closeout. Record the final Career/cohort leaders decision.
