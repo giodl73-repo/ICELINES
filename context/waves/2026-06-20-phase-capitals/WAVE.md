@@ -34,6 +34,7 @@ cache, `StatId`, filters, or leaderboards, or whether they remain durable
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Capitals goals | passed; see `CAPITALS-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Decide Signals analytics-cache eligibility | passed as not eligible yet; see `CACHE-ELIGIBILITY.md` and `pulses/pulse-02.md` |
 
 ## Validation Posture
 

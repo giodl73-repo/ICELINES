@@ -4,7 +4,7 @@
 > surfaces into durable shared cache, catalog, filter, or leaderboard surfaces.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 01 planning opened
+**Status:** Active - pulse 02 cache eligibility gate passed
 
 ---
 
@@ -54,8 +54,10 @@ shared surface prematurely.
 
 1. **Pulse 01 - Plan and inventory.** Record current Signals surfaces, prior
    non-promotions, and promotion questions.
-2. **Pulse 02 - Cache eligibility gate.** Decide whether Signals can become
-   WP-009 cache metrics or should remain uncached ViewModel projections.
+2. **Pulse 02 - Cache eligibility gate.** Result: Signals are not eligible for
+   WP-009 analytics cache publication yet. They remain uncached
+   `PlayerSignalsView` projections until accepted Signal cache metric keys,
+   source-state, invalidation, and methodology versioning exist.
 3. **Pulse 03 - Catalog/filter/leaderboard gate.** Decide whether any Signal can
    enter `StatId`, `--filter`, or public ranking surfaces.
 4. **Pulse 04 - Promotion or durable deferral implementation.** Add the accepted
