@@ -5,7 +5,7 @@
 > bounded prepared-cache consumer.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 promotion lane selected
+**Status:** Active - pulse 03 coach copy gate passed
 
 ---
 
@@ -58,8 +58,10 @@ copy are strong enough.
 2. **Pulse 02 - Promotion lane selection.** Result: coach dashboard is selected
    as the candidate lane for product-copy and workflow-evidence review. This is
    not a broad workflow promotion yet.
-3. **Pulse 03 - Product-copy gate.** Verify or update copy for the selected
-   family, including explicit non-claims.
+3. **Pulse 03 - Product-copy gate.** Result: existing coach dashboard copy is
+   sufficient for a bounded prepared-cache dashboard claim. It preserves
+   source/methodology/non-claim framing and does not imply live recomputation or
+   coaching authority.
 4. **Pulse 04 - Workflow evidence gate.** Add or run focused evidence for the
    selected family, or record durable deferral.
 5. **Pulse 05 - Closeout.** Update the wave, plan, and surface matrix.

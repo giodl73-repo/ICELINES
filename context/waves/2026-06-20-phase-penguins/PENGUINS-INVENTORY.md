@@ -32,6 +32,6 @@ family has enough evidence for broader workflow promotion.
 
 1. Plan and inventory. Result: passed.
 2. Promotion lane selection. Result: passed; coach dashboard selected as candidate lane.
-3. Product-copy gate.
+3. Product-copy gate. Result: passed for bounded prepared-cache coach dashboard claim.
 4. Workflow evidence gate.
 5. Closeout and surface-matrix claim.
