@@ -11,7 +11,7 @@
 | Runtime web config | HTML and JSON POST routes set/reset `web.active_season` and `web.active_season_type` for the running server only. | Keep runtime-only copy unless a durable config contract is added. |
 | Data install | CLI exists, but web install routes are unmounted and `/admin` labels install deferred because it can perform live/network release downloads. | Pulse 02 keeps install deferred and unmounted; no browser contract until a dry-run/local-only design exists. |
 | Data remove | CLI exists, but web remove routes are unmounted and `/admin` labels remove deferred because it is destructive filesystem mutation. | Pulse 02 keeps remove deferred and unmounted; no browser contract until scoped confirmation and target fencing exist. |
-| Persistent report toggles | TUI Reports overlay and CLI config persist `~/.icelines/config.toml`; web admin exposes warning copy and rejects unknown report-toggle keys. | Decide whether web should remain a handoff or share a durable config contract. |
+| Persistent report toggles | TUI Reports overlay and CLI config persist `~/.icelines/config.toml`; web admin exposes warning copy and rejects unknown report-toggle keys. | Pulse 03 keeps writes deferred to CLI/TUI until the durable config contract is shared outside the CLI crate. |
 
 ## Existing focused checks
 
@@ -35,6 +35,6 @@
 
 1. Plan and inventory.
 2. Data install/remove decision. Result: passed; install/remove stay deferred and unmounted.
-3. Persistent report-toggle decision.
+3. Persistent report-toggle decision. Result: passed; writes stay deferred to CLI/TUI durable config.
 4. Admin safety regression gate.
 5. Closeout and surface-matrix claim.

@@ -5,7 +5,7 @@
 > install/remove and persistent report-toggle boundaries should remain durable.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 install/remove decision passed
+**Status:** Active - pulse 03 report-toggle decision passed
 
 ---
 
@@ -55,8 +55,9 @@ deferrals.
    deferred and unmounted. Install belongs to intentional CLI use until a
    dry-run/local-only browser contract exists; remove needs scoped confirmation
    and target fencing before any web route is added.
-3. **Pulse 03 - Persistent report-toggle decision.** Decide whether web can
-   share durable report config or should keep using TUI/CLI handoff.
+3. **Pulse 03 - Persistent report-toggle decision.** Result: persistent
+   report-toggle writes stay deferred to the TUI Reports overlay and CLI config
+   until the durable config contract moves to a shared crate or explicit bridge.
 4. **Pulse 04 - Regression gate.** Run or add focused admin safety checks for
    the chosen decisions.
 5. **Pulse 05 - Closeout.** Update the wave, plan, and surface matrix.
