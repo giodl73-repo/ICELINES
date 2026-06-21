@@ -956,6 +956,33 @@ async fn l1_docs_route_includes_admin_install_remove_safety_contract() {
 }
 
 #[tokio::test]
+async fn l1_docs_route_includes_dashboard_group_command_recovery() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/docs")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("docs html is utf-8");
+    assert!(body.contains("group create Prospects"));
+    assert!(body.contains("not GET-backed"));
+    assert!(body.contains("/favorites"));
+    assert!(
+        !body.contains("deferred in command bar"),
+        "docs must point dashboard group edits to the active POST form recovery"
+    );
+}
+
+#[tokio::test]
 async fn l1_dashboard_shell_renders_no_js_regions() {
     let app = router(WebState::new());
     let response = app

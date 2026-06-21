@@ -1076,7 +1076,7 @@ records team EDM                           -> /records/team/EDM
 records player 8478402                     -> /records/player/8478402
 favorites group=Prospects                  -> /favorites?group=Prospects
 group show Prospects                        -> /favorites?group=Prospects
-group create Prospects                      -> deferred in command bar; use `/favorites` POST forms or `icelines group`
+group create Prospects                      -> not GET-backed; use `/favorites` POST forms or `icelines group`
 team EDM                                   -> /team/EDM
 team EDM season                            -> /team/EDM/season
 team EDM schedule                          -> /schedule?team=EDM
