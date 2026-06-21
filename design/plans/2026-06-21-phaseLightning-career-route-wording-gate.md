@@ -4,7 +4,7 @@
 > using the boundaries already closed by Phase Maple Leafs.
 
 **Created:** 2026-06-21
-**Status:** Active - planning complete
+**Status:** Active - evidence gate passed
 
 ---
 
@@ -45,7 +45,8 @@ without implying a dedicated TUI board or live career-history fetch.
 ## Recommended Pulse Order
 
 1. **Pulse 01 - Plan and inventory.** Result: passed.
-2. **Pulse 02 - Evidence gate.** Run focused Career Web route tests.
+2. **Pulse 02 - Evidence gate.** Result: focused Career Web route tests passed
+   and support partial-by-design wording.
 3. **Pulse 03 - Matrix wording.** Convert route rows to partial-by-design
    wording only if evidence passes.
 4. **Pulse 04 - Closeout.** Close Phase Lightning with exact route claims and

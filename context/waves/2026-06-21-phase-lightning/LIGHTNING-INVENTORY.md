@@ -26,7 +26,8 @@ wording into partial-by-design wording.
 ## Recommended Pulse Map
 
 1. Plan and inventory. Result: passed.
-2. Evidence gate. Run focused Career Web route tests.
+2. Evidence gate. Result: passed; focused Career Web route tests support
+   partial-by-design route wording.
 3. Matrix wording. Convert the two route rows to partial-by-design wording if
    evidence passes.
 4. Closeout. Record final claims and non-claims.
