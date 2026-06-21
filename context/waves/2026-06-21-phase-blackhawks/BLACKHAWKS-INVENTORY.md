@@ -33,4 +33,4 @@ promoted from partial to a bounded detail/export claim.
 3. Matrix wording. Promote only to bounded `PlayoffsView` detail/export if
    evidence supports it. Result: passed; matrix promotes bounded detail/export
    with explicit non-claims.
-4. Closeout. Record the final Playoff bracket/detail decision.
+4. Closeout. Result: passed; Phase Blackhawks closed.

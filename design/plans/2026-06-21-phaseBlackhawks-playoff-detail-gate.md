@@ -4,7 +4,7 @@
 > partial row to a bounded `PlayoffsView` detail/export claim.
 
 **Created:** 2026-06-21
-**Status:** Active - pulse 03 matrix wording passed
+**Status:** Closed - Phase Blackhawks complete
 
 ---
 
@@ -48,7 +48,8 @@ evidence supports a bounded claim over bundled playoff game-log detail.
 3. **Pulse 03 - Matrix wording.** Promote to bounded detail/export only if
    evidence supports it. Result: surface matrix promotes Playoff bracket/detail
    to bounded `PlayoffsView` detail/export with explicit non-claims.
-4. **Pulse 04 - Closeout.** Update wave, plan, and indexes.
+4. **Pulse 04 - Closeout.** Result: Phase Blackhawks closed. Playoff
+   bracket/detail is promoted to bounded `PlayoffsView` detail/export.
 
 ---
 

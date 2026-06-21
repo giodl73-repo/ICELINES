@@ -34,6 +34,19 @@ promoted to a bounded detail/export claim.
 | 01 | Plan and inventory Phase Blackhawks goals | passed; see `BLACKHAWKS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Playoff detail/export evidence gate | passed; focused evidence supports bounded `PlayoffsView` detail/export claim, see `pulses/pulse-02.md` |
 | 03 | Playoff detail/export matrix wording | passed; surface matrix promotes bounded detail/export claim, see `pulses/pulse-03.md` |
+| 04 | Close Phase Blackhawks | passed; phase closed with Playoff bracket/detail promoted to bounded detail/export, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Blackhawks is closed. Playoff bracket/detail is promoted to bounded
+`PlayoffsView` detail/export: CLI bracket and series detail, TUI bracket and
+series detail, Web `/playoffs` and `/api/v1/playoffs`, and Markdown
+`export md series` render bundled playoff bracket and game-log rows from the
+shared playoff contract.
+
+The claim remains bounded. It does not include live playoff fetch/recompute
+behavior, predictive momentum, betting analysis, causal series analysis,
+inferred missing game logs, or new Web series-drilldown routes.
 
 ## Validation Posture
 
