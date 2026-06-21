@@ -5,7 +5,7 @@
 > or whether it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 copy gate passed
+**Status:** Active - pulse 03 goalie evidence gate passed
 
 ---
 
@@ -51,8 +51,10 @@ copy and workflow evidence remain precise.
    preserves source/methodology/non-claim framing and does not imply injury
    certainty, start/sit authority, medical advice, or autonomous coaching
    authority.
-3. **Pulse 03 - Workflow evidence gate.** Run or add focused evidence for the
-   route pair.
+3. **Pulse 03 - Workflow evidence gate.** Result: focused goalie-readiness L2
+   evidence and surface-matrix wording support a bounded prepared-cache goalie
+   readiness workload claim while keeping broader goalie workflow claims
+   deferred.
 4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
 
 ---

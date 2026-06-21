@@ -36,6 +36,7 @@ it should remain only first-route evidence.
 |---|---|---|
 | 01 | Plan and inventory Phase Avalanche goals | passed; see `AVALANCHE-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Goalie-readiness product-copy gate | passed for bounded prepared-cache goalie readiness workload claim; see `AVALANCHE-COPY-GATE.md` and `pulses/pulse-02.md` |
+| 03 | Goalie-readiness workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache goalie readiness workload claim, see `pulses/pulse-03.md` |
 
 ## Validation Posture
 
