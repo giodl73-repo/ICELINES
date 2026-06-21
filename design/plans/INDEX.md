@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Ducks - Favorites/watch route wording gate](2026-06-21-phaseDucks-favorites-watch-route-wording-gate.md) | Active | Convert individual Favorites/watch route rows from plain partial wording to explicit partial-by-design claims, preserving Red Wings deferrals for richer group and watch-rule editing. |
 | [Phase Sabres - Docs/reference truth gate](2026-06-21-phaseSabres-docs-reference-truth-gate.md) | Closed | Closed the docs/reference truth gate: CLI docs, TUI docs overlay, Web `/docs`, and dashboard/menu docs handoffs use embedded `COMMANDS.md`/`DocsView`, while removed mkdocs/static-site commands and `/site/*` stay outside active claims. |
 | [Phase Senators - Admin row wording gate](2026-06-21-phaseSenators-admin-row-wording-gate.md) | Closed | Closed the admin row wording gate: Data install/list/remove, Snapshot operations, Config/report toggles, and admin route rows now read as safe partials by design while preserving Flyers deferrals for web install/remove and persistent report-toggle writes. |
 | [Phase Blackhawks - Playoff bracket/detail gate](2026-06-21-phaseBlackhawks-playoff-detail-gate.md) | Closed | Closed the Playoff bracket/detail gate: bundled `PlayoffsView` bracket and game-log detail now has a bounded CLI/TUI/Web/API/Markdown detail-export claim without live fetch, prediction, or new Web series-drilldown claims. |
