@@ -36,6 +36,7 @@ or whether they should remain only first-route evidence.
 |---|---|---|
 | 01 | Plan and inventory Phase Predators goals | passed; see `PREDATORS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Postgame product-copy gate | passed for bounded prepared-cache postgame report claims; see `PREDATORS-COPY-GATE.md` and `pulses/pulse-02.md` |
+| 03 | Postgame workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache postgame report claims, see `pulses/pulse-03.md` |
 
 ## Validation Posture
 

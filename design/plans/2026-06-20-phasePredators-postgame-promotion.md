@@ -5,7 +5,7 @@
 > or whether they remain first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 copy gate passed
+**Status:** Active - pulse 03 postgame evidence gate passed
 
 ---
 
@@ -49,8 +49,9 @@ copy and workflow evidence remain precise.
    sufficient for bounded prepared-cache postgame report claims. It preserves
    source/methodology/non-claim framing and does not imply causal blame,
    automatic correction plans, or coaching authority.
-3. **Pulse 03 - Workflow evidence gate.** Run or add focused evidence for both
-   postgame route pairs.
+3. **Pulse 03 - Workflow evidence gate.** Result: focused postgame L2 evidence
+   and surface-matrix wording support bounded prepared-cache postgame report
+   claims while keeping broader postgame workflow claims deferred.
 4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
 
 ---
