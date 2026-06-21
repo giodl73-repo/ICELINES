@@ -5,7 +5,7 @@
 > or whether it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 line evidence gate passed
+**Status:** Closed - Phase Wild complete
 
 ---
 
@@ -56,7 +56,10 @@ and workflow evidence remain precise.
    evidence and surface-matrix wording support a bounded prepared-cache
    line-combination explorer claim while keeping broader lineup workflow claims
    deferred.
-4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
+4. **Pulse 04 - Closeout.** Result: Phase Wild closed. Only line-combination
+   explorer is promoted to a bounded prepared-cache line-combination explorer
+   claim; named report, goalie, practice, postgame, adjustment, and agent cache
+   route families remain first-route evidence with explicit non-claims.
 
 ---
 

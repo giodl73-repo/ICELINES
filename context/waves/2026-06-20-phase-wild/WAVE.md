@@ -41,6 +41,22 @@ whether it should remain only first-route evidence.
 | 01 | Plan and inventory Phase Wild goals | passed; see `WILD-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Line-combination product-copy gate | passed for bounded prepared-cache line-combination explorer claim; see `WILD-COPY-GATE.md` and `pulses/pulse-02.md` |
 | 03 | Line-combination workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache line-combination explorer claim, see `pulses/pulse-03.md` |
+| 04 | Close Phase Wild | passed; phase closed with line-combination explorer promoted only to a bounded prepared-cache line-combination explorer claim, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Wild is closed. The phase promotes only line-combination explorer from
+WP-009 first-route evidence to a bounded prepared-cache line-combination
+explorer claim: active-context cache reads, ready/unavailable HTML and JSON, no
+cache creation on missing reads, preserved source, quality, methodology,
+disclosure, and non-claim copy, and no guaranteed-chemistry or deployment
+recommendation copy.
+
+Named cache report, goalie readiness, practice focus, postgame review, postgame
+adjustments, and agent evidence remain bounded first-route evidence.
+Line-combination explorer is still not deployment advice, roster authority,
+line-chemistry causality, live recomputation, prediction certainty, or
+autonomous coaching authority.
 
 ## Validation Posture
 
