@@ -4,7 +4,7 @@
 > surfaces into durable shared cache, catalog, filter, or leaderboard surfaces.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 cache eligibility gate passed
+**Status:** Active - pulse 03 catalog/filter/leaderboard gate passed
 
 ---
 
@@ -58,8 +58,10 @@ shared surface prematurely.
    WP-009 analytics cache publication yet. They remain uncached
    `PlayerSignalsView` projections until accepted Signal cache metric keys,
    source-state, invalidation, and methodology versioning exist.
-3. **Pulse 03 - Catalog/filter/leaderboard gate.** Decide whether any Signal can
-   enter `StatId`, `--filter`, or public ranking surfaces.
+3. **Pulse 03 - Catalog/filter/leaderboard gate.** Result: Signals are not
+   eligible for `StatId`, `--filter`, or public leaderboard promotion yet.
+   `signals-roster` remains a team-scoped inspection matrix, not a ranking
+   surface.
 4. **Pulse 04 - Promotion or durable deferral implementation.** Add the accepted
    contract and focused tests, or record the durable no-promotion fence.
 5. **Pulse 05 - Closeout.** Update the wave, plan, and surface matrix.
