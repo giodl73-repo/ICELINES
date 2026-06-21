@@ -33,6 +33,7 @@ promoted to a bounded detail/export claim.
 |---|---|---|
 | 01 | Plan and inventory Phase Blackhawks goals | passed; see `BLACKHAWKS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Playoff detail/export evidence gate | passed; focused evidence supports bounded `PlayoffsView` detail/export claim, see `pulses/pulse-02.md` |
+| 03 | Playoff detail/export matrix wording | passed; surface matrix promotes bounded detail/export claim, see `pulses/pulse-03.md` |
 
 ## Validation Posture
 

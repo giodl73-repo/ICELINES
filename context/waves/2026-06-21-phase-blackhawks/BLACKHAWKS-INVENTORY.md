@@ -31,5 +31,6 @@ promoted from partial to a bounded detail/export claim.
 2. Evidence gate. Run focused playoff CLI/TUI/Web/export tests. Result: passed;
    focused evidence supports a bounded `PlayoffsView` detail/export claim.
 3. Matrix wording. Promote only to bounded `PlayoffsView` detail/export if
-   evidence supports it.
+   evidence supports it. Result: passed; matrix promotes bounded detail/export
+   with explicit non-claims.
 4. Closeout. Record the final Playoff bracket/detail decision.
