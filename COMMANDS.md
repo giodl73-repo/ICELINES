@@ -1276,14 +1276,16 @@ icelines serve --bind 0.0.0.0          # LAN-accessible (warning prints)
 
 # Web admin operations are at /admin while the server is running.
 # Safe POST-backed mutations: runtime web config set/reset, data verify,
-# inactive snapshot delete, sealed snapshot activate, and game-cache warmers.
+# bundled data install, scoped data remove, inactive snapshot delete,
+# sealed snapshot activate, and game-cache warmers.
 # Runtime web config controls only the running server's active season context.
 # Persistent report toggles are intentionally deferred on web admin; use
 # `icelines tui` then press R to persist them to ~/.icelines/config.toml.
 # Web game-cache forms may fetch official game rows for records/streaks/scoring,
-# but they do not install release bundles or remove local data. Web data
-# install/remove remains deferred to avoid live-network or destructive admin
-# operations without an explicit local-only/confirmation contract.
+# but they do not install release bundles or remove local data. Web data install
+# writes only embedded bundled seasons after exact `INSTALL <season>`
+# confirmation; web data remove deletes only ~/.icelines/seasons/<season> after
+# exact `REMOVE <season>` confirmation.
 
 # Selke fantasy poacher web/API surfaces:
 # /poach, /reports/poach, /reports/weekly, /watchlist, /api/v1/poach,

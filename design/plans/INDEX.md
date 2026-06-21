@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Barons - Admin docs truth gate](2026-06-21-phaseBarons-admin-docs-truth.md) | Closed | Aligned the embedded command reference and `/docs` route with Phase Seals: web admin install is bundled-season only with exact confirmation, and remove is scoped installed-season deletion with exact confirmation. |
 | [Phase Seals - Admin install/remove safety](2026-06-21-phaseSeals-admin-install-remove-safety.md) | Closed | Mounted scoped web admin data install/remove routes: bundled-season install with exact confirmation and no live fetch, plus installed-season remove constrained to `~/.icelines/seasons/<season>` with exact confirmation. |
 | [Phase Whalers - Favorites group editor](2026-06-21-phaseWhalers-favorites-group-editor.md) | Implemented | Added POST-backed web and JSON mutation routes for named Favorites group create/rename/delete and selected-group member add/remove, while keeping GET navigation read-only and protecting canonical Favorites rename/delete. |
 | [Phase Nordiques - Historical MoneyPuck xG](2026-06-21-phaseNordiques-historical-moneypuck-xg.md) | Implemented | Added bounded multi-season MoneyPuck fetch with `fetch money-puck --seasons N`, plus season-aware MoneyPuck snapshot reads so historical xG queries use the requested season's sealed snapshot. |
