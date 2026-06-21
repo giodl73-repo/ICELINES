@@ -32,6 +32,7 @@ promoted to a bounded detail/export claim.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Blackhawks goals | passed; see `BLACKHAWKS-INVENTORY.md` and `pulses/pulse-01.md` |
+| 02 | Playoff detail/export evidence gate | passed; focused evidence supports bounded `PlayoffsView` detail/export claim, see `pulses/pulse-02.md` |
 
 ## Validation Posture
 

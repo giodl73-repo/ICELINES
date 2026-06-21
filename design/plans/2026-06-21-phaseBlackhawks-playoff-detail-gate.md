@@ -4,7 +4,7 @@
 > partial row to a bounded `PlayoffsView` detail/export claim.
 
 **Created:** 2026-06-21
-**Status:** Active - pulse 01 planned
+**Status:** Active - pulse 02 evidence passed
 
 ---
 
@@ -43,7 +43,8 @@ evidence supports a bounded claim over bundled playoff game-log detail.
 ## Recommended Pulse Order
 
 1. **Pulse 01 - Plan and inventory.** Result: passed.
-2. **Pulse 02 - Evidence gate.** Run focused playoff CLI/TUI/Web/export tests.
+2. **Pulse 02 - Evidence gate.** Result: focused CLI/TUI/Web/export evidence
+   supports a bounded `PlayoffsView` detail/export claim.
 3. **Pulse 03 - Matrix wording.** Promote to bounded detail/export only if
    evidence supports it.
 4. **Pulse 04 - Closeout.** Update wave, plan, and indexes.
