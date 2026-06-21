@@ -159,7 +159,7 @@ fn parse_group_workspace(args: &str) -> Result<DashboardCommand, DashboardComman
         }),
         "create" | "delete" | "remove" | "rename" | "add" => {
             Err(DashboardCommandError::UnsupportedMutation(
-                "Web dashboard group create/delete/rename/member edits are deferred; use the TUI Groups screen or `icelines group`.".to_owned(),
+                "Web dashboard group create/delete/rename/member edits are not GET-backed; use `/favorites` POST forms or `icelines group`.".to_owned(),
             ))
         }
         group => workspace(&format!("/favorites?group={}", url_component(group))),
@@ -801,7 +801,11 @@ mod tests {
             .expect_err("group create is deferred");
         assert!(
             err.to_string()
-                .contains("group create/delete/rename/member edits are deferred"),
+                .contains("group create/delete/rename/member edits are not GET-backed"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            err.to_string().contains("/favorites"),
             "unexpected error: {err}"
         );
     }

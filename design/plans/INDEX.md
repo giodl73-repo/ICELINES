@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Maroons - Dashboard group copy truth gate](2026-06-21-phaseMaroons-dashboard-group-copy.md) | Closed | Updated dashboard command group-mutation recovery copy to preserve GET non-mutation while pointing users to `/favorites` POST forms or `icelines group`. |
 | [Phase Barons - Admin docs truth gate](2026-06-21-phaseBarons-admin-docs-truth.md) | Closed | Aligned the embedded command reference and `/docs` route with Phase Seals: web admin install is bundled-season only with exact confirmation, and remove is scoped installed-season deletion with exact confirmation. |
 | [Phase Seals - Admin install/remove safety](2026-06-21-phaseSeals-admin-install-remove-safety.md) | Closed | Mounted scoped web admin data install/remove routes: bundled-season install with exact confirmation and no live fetch, plus installed-season remove constrained to `~/.icelines/seasons/<season>` with exact confirmation. |
 | [Phase Whalers - Favorites group editor](2026-06-21-phaseWhalers-favorites-group-editor.md) | Implemented | Added POST-backed web and JSON mutation routes for named Favorites group create/rename/delete and selected-group member add/remove, while keeping GET navigation read-only and protecting canonical Favorites rename/delete. |
