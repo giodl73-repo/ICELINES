@@ -5,7 +5,7 @@
 > it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 03 scout evidence gate passed
+**Status:** Closed - Phase Bruins complete
 
 ---
 
@@ -53,7 +53,10 @@ copy and workflow evidence remain precise.
 3. **Pulse 03 - Workflow evidence gate.** Result: focused opponent-scout L2
    evidence and surface-matrix wording support a bounded prepared-cache scout
    report claim while keeping broader scouting workflow claims deferred.
-4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
+4. **Pulse 04 - Closeout.** Result: Phase Bruins closed. Only opponent scout
+   is promoted to a bounded prepared-cache scout report claim; named report,
+   player-card, line, goalie, practice, postgame, adjustment, and agent cache
+   route families remain first-route evidence with explicit non-claims.
 
 ---
 

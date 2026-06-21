@@ -37,6 +37,21 @@ only first-route evidence.
 | 01 | Plan and inventory Phase Bruins goals | passed; see `BRUINS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Opponent scout product-copy gate | passed for bounded prepared-cache scout report claim; see `BRUINS-COPY-GATE.md` and `pulses/pulse-02.md` |
 | 03 | Opponent scout workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache scout report claim, see `pulses/pulse-03.md` |
+| 04 | Close Phase Bruins | passed; phase closed with opponent scout promoted only to a bounded prepared-cache scout report claim, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Bruins is closed. The phase promotes only opponent scout from WP-009
+first-route evidence to a bounded prepared-cache scout report claim:
+active-context cache reads, ready/unavailable HTML and JSON, no cache creation
+on missing reads, and preserved source, quality, methodology, disclosure, and
+non-claim copy.
+
+Named cache report, player evidence card, line combinations, goalie readiness,
+practice focus, postgame review, postgame adjustments, and agent evidence remain
+bounded first-route evidence. Opponent scout is still not a full scouting suite,
+opponent game-plan workflow, live recomputation surface, prediction-certainty
+surface, or autonomous coaching authority.
 
 ## Validation Posture
 
