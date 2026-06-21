@@ -36,6 +36,7 @@ should remain only first-route evidence.
 |---|---|---|
 | 01 | Plan and inventory Phase Kraken goals | passed; see `KRAKEN-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Practice-focus product-copy gate | passed for bounded prepared-cache practice focus report claim; see `KRAKEN-COPY-GATE.md` and `pulses/pulse-02.md` |
+| 03 | Practice-focus workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache practice focus report claim, see `pulses/pulse-03.md` |
 
 ## Validation Posture
 

@@ -5,7 +5,7 @@
 > whether it remains first-route evidence only.
 
 **Created:** 2026-06-20
-**Status:** Active - pulse 02 copy gate passed
+**Status:** Active - pulse 03 practice evidence gate passed
 
 ---
 
@@ -50,8 +50,9 @@ copy and workflow evidence remain precise.
    sufficient for a bounded prepared-cache practice focus report claim. It
    preserves source/methodology/non-claim framing and does not imply mandatory
    drill plans, autonomous practice prescriptions, or coaching authority.
-3. **Pulse 03 - Workflow evidence gate.** Run or add focused evidence for the
-   route pair.
+3. **Pulse 03 - Workflow evidence gate.** Result: focused practice-focus L2
+   evidence and surface-matrix wording support a bounded prepared-cache practice
+   focus report claim while keeping broader practice workflow claims deferred.
 4. **Pulse 04 - Closeout.** Update the wave, plan, and surface matrix.
 
 ---
