@@ -36,10 +36,22 @@ claims instead of plain partial rows.
 | 01 | Plan and inventory Phase Sharks goals | passed; see `SHARKS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Analytics-cache route evidence gate | passed; focused route evidence supports bounded prepared-cache wording, see `pulses/pulse-02.md` |
 | 03 | Analytics-cache route wording gate | passed; route rows now carry bounded prepared-cache claims, see `pulses/pulse-03.md` |
-| 04 | Close Phase Sharks | pending |
+| 04 | Close Phase Sharks | passed; final scoped claims and non-claims recorded, see `pulses/pulse-04.md` |
 
 ## Validation Posture
 
 - Planning/doc-only edits use `git diff --check`.
 - Evidence gates use focused analytics-cache Web route tests.
 - No live network dependency in tests.
+
+## Closeout
+
+Phase Sharks is closed. The player evidence-card and opponent-scout route rows
+now match their Stars/Bruins feature-level promotions: bounded prepared-cache
+player evidence-card and scout report claims over active-context cache reads,
+ready/unavailable HTML and JSON, preserved source/quality/methodology/disclosure
+and non-claim copy, and no cache creation on missing GET reads.
+
+The claim remains bounded. It does not include full player research, scouting
+suite, deployment, transaction, opponent game-plan, prediction certainty,
+matchup advice, live recomputation, live fetch, or autonomous coaching behavior.

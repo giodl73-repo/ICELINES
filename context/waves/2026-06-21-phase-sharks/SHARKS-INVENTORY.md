@@ -30,4 +30,5 @@ converting their plain partial wording into bounded prepared-cache wording.
    opponent-scout Web route tests support bounded prepared-cache route wording.
 3. Matrix wording. Result: passed; the four route rows now carry bounded
    prepared-cache wording while preserving Stars/Bruins non-claims.
-4. Closeout. Record final claims and non-claims.
+4. Closeout. Result: passed; Phase Sharks is closed with final route-row claims
+   and non-claims recorded.
