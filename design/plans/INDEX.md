@@ -23,6 +23,7 @@ new scoped wave from the remaining promotion gates in
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Cougars - Watch editor boundary docs truth gate](2026-06-21-phaseCougars-watch-editor-boundary-docs.md) | Closed | Clarified `COMMANDS.md` and `/docs`: web/TUI watch editors stay player-rule-only while team/deployment preview/save remains CLI-backed. |
 | [Phase Quakers - Fantasy command docs truth gate](2026-06-21-phaseQuakers-fantasy-command-docs.md) | Closed | Aligned `COMMANDS.md` and `/docs` with dashboard fantasy mutation recovery: roster-shape set and CSV import are not GET-backed and recover through CLI commands. |
 | [Phase Stags - Watch deployment docs truth gate](2026-06-21-phaseStags-watch-deployment-docs.md) | Closed | Aligned `COMMANDS.md` and `/docs` with dashboard watch deployment recovery: CLI preview or `/watchlist` player rules, while arbitrary deployment editing remains deferred. |
 | [Phase Americans - Dashboard group docs truth gate](2026-06-21-phaseAmericans-dashboard-group-docs.md) | Closed | Aligned `COMMANDS.md` and `/docs` with Maroons: dashboard group mutation commands are not GET-backed and recover through `/favorites` POST forms or `icelines group`. |

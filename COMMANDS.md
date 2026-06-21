@@ -1299,9 +1299,9 @@ icelines serve --bind 0.0.0.0          # LAN-accessible (warning prints)
 ```
 
 The web/TUI watch-rule editors intentionally support player-rule create,
-enable/disable, and web delete only. Arbitrary team/deployment editing remains a
-CLI preview/save shortcut until the shared mutation intent carries validated
-team/deployment dimensions.
+enable/disable, and web delete only. Arbitrary team/deployment editing is a CLI
+preview/save path (`icelines watch deployment ... --save`) until the shared
+mutation intent carries validated team/deployment dimensions.
 
 ---
 
