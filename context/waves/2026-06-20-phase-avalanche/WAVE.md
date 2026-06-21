@@ -37,6 +37,20 @@ it should remain only first-route evidence.
 | 01 | Plan and inventory Phase Avalanche goals | passed; see `AVALANCHE-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Goalie-readiness product-copy gate | passed for bounded prepared-cache goalie readiness workload claim; see `AVALANCHE-COPY-GATE.md` and `pulses/pulse-02.md` |
 | 03 | Goalie-readiness workflow evidence and matrix update | passed; focused L2 evidence supports bounded prepared-cache goalie readiness workload claim, see `pulses/pulse-03.md` |
+| 04 | Close Phase Avalanche | passed; phase closed with goalie readiness promoted only to a bounded prepared-cache workload claim, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Avalanche is closed. The phase promotes only goalie readiness from WP-009
+first-route evidence to a bounded prepared-cache goalie readiness workload
+claim: active-context cache reads, ready/unavailable HTML and JSON, no cache
+creation on missing reads, preserved source, quality, methodology, disclosure,
+and non-claim copy, and no injury-certainty or deployment-recommendation copy.
+
+Named cache report, practice focus, postgame review, postgame adjustments, and
+agent evidence remain bounded first-route evidence. Goalie readiness is still
+not injury certainty, medical advice, start/sit authority, live recomputation,
+prediction certainty, or autonomous coaching authority.
 
 ## Validation Posture
 
