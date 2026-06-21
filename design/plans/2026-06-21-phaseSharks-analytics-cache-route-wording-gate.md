@@ -5,7 +5,7 @@
 > Stars and Phase Bruins.
 
 **Created:** 2026-06-21
-**Status:** Active - evidence gate passed
+**Status:** Active - route wording passed
 
 ---
 
@@ -50,8 +50,8 @@ implying full workflow completion.
 1. **Pulse 01 - Plan and inventory.** Result: passed.
 2. **Pulse 02 - Evidence gate.** Result: focused analytics-cache route tests
    passed and support bounded prepared-cache wording.
-3. **Pulse 03 - Matrix wording.** Convert route rows to bounded prepared-cache
-   wording only if evidence passes.
+3. **Pulse 03 - Matrix wording.** Result: route rows now carry bounded
+   prepared-cache wording while preserving Stars/Bruins non-claims.
 4. **Pulse 04 - Closeout.** Close Phase Sharks with exact route claims and
    non-claims.
 
