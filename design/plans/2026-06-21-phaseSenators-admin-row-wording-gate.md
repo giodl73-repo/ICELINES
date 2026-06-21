@@ -4,7 +4,7 @@
 > by design, using the safety boundary already closed by Phase Flyers.
 
 **Created:** 2026-06-21
-**Status:** Active - matrix wording passed
+**Status:** Closed - Phase Senators complete
 
 ---
 
@@ -51,8 +51,8 @@ can tell intentional durable deferrals from unresolved admin drift.
    support scoped safe-operation wording.
 3. **Pulse 03 - Matrix wording.** Result: admin feature rows and route rows now
    say partial by design while preserving Flyers deferrals.
-4. **Pulse 04 - Closeout.** Close Phase Senators with exact claims and
-   non-claims.
+4. **Pulse 04 - Closeout.** Result: Phase Senators closed with exact
+   partial-by-design admin wording and preserved non-claims.
 
 ---
 

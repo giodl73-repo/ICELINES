@@ -36,7 +36,21 @@ already proves safe operational behavior.
 | 01 | Plan and inventory Phase Senators goals | passed; see `SENATORS-INVENTORY.md` and `pulses/pulse-01.md` |
 | 02 | Admin route evidence gate | passed; focused `l1_admin_` route evidence supports scoped safe-operation wording, see `pulses/pulse-02.md` |
 | 03 | Admin row wording gate | passed; admin feature and route rows now read as partial by design, see `pulses/pulse-03.md` |
-| 04 | Close Phase Senators | pending |
+| 04 | Close Phase Senators | passed; phase closed with admin rows recorded as scoped partials by design, see `pulses/pulse-04.md` |
+
+## Closeout
+
+Phase Senators is closed. The admin operation rows now match the Flyers safety
+closeout at row level: Data install/list/remove, Snapshot operations,
+Config/report toggles, and the admin route inventory are explicit partials by
+design.
+
+The supported web admin surface remains narrow and tested: runtime active-season
+config, data verify, snapshot activate/delete, and game-cache warmer paths are
+POST-backed and covered by the focused `l1_admin_` route family. Web data
+install/remove remain deferred and unmounted, persistent report-toggle writes
+remain a CLI/TUI durable config handoff, runtime web config is not durable user
+config, and game-cache warmers are not release bundle install/remove.
 
 ## Validation Posture
 

@@ -33,4 +33,5 @@ partial wording into explicit safe partial-by-design wording.
    scoped safe-operation claims and durable deferrals.
 3. Matrix wording. Result: passed; individual admin feature rows and route rows
    now say partial by design while preserving Flyers deferrals.
-4. Closeout. Record final claims and non-claims.
+4. Closeout. Result: passed; Phase Senators closed with admin rows recorded as
+   scoped safe partials by design.
