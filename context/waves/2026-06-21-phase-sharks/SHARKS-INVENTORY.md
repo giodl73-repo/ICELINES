@@ -26,8 +26,8 @@ converting their plain partial wording into bounded prepared-cache wording.
 ## Recommended Pulse Map
 
 1. Plan and inventory. Result: passed.
-2. Evidence gate. Run focused player evidence-card and opponent-scout Web route
-   tests.
+2. Evidence gate. Result: passed; focused player evidence-card and
+   opponent-scout Web route tests support bounded prepared-cache route wording.
 3. Matrix wording. Convert the four route rows to bounded prepared-cache
    wording if evidence passes.
 4. Closeout. Record final claims and non-claims.

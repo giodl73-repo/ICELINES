@@ -34,7 +34,7 @@ claims instead of plain partial rows.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Sharks goals | passed; see `SHARKS-INVENTORY.md` and `pulses/pulse-01.md` |
-| 02 | Analytics-cache route evidence gate | pending |
+| 02 | Analytics-cache route evidence gate | passed; focused route evidence supports bounded prepared-cache wording, see `pulses/pulse-02.md` |
 | 03 | Analytics-cache route wording gate | pending |
 | 04 | Close Phase Sharks | pending |
 
