@@ -6798,6 +6798,10 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
         json["data"]["situation_summaries"][0]["label"],
         serde_json::Value::from("5v5 (1551)")
     );
+    assert_eq!(
+        json["data"]["events"][0]["event_owner_side"],
+        serde_json::Value::from("away")
+    );
 }
 
 #[tokio::test]

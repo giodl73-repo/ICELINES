@@ -139,6 +139,7 @@ pub struct ScoringEventInput {
     pub situation_code: Option<String>,
     pub event_owner_team_id: Option<u32>,
     pub event_owner_team_abbrev: Option<String>,
+    pub event_owner_side: Option<TeamSide>,
     pub shooting_player_id: Option<u32>,
     pub scoring_player_id: Option<u32>,
     pub blocking_player_id: Option<u32>,
@@ -149,6 +150,13 @@ pub struct ScoringEventInput {
     pub home_team_defending_side: Option<String>,
     pub away_score: Option<u8>,
     pub home_score: Option<u8>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TeamSide {
+    Away,
+    Home,
 }
 
 impl ScoringEventInput {
@@ -669,6 +677,7 @@ mod tests {
             situation_code: Some("1551".to_string()),
             event_owner_team_id: Some(16),
             event_owner_team_abbrev: Some("CHI".to_string()),
+            event_owner_side: Some(TeamSide::Away),
             shooting_player_id: Some(8483493),
             scoring_player_id: if kind == ShotEventKind::Goal {
                 Some(8483493)

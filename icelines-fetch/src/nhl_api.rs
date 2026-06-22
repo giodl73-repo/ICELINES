@@ -4,7 +4,8 @@ use crate::schema::{
 };
 use crate::teams::ALL_NHL_TEAMS as TEAMS;
 use icelines_core::{
-    season_stats::SeasonType, ScoringEventInput, ShotEventKind, ShotLocation, TeamStandingInput,
+    season_stats::SeasonType, ScoringEventInput, ShotEventKind, ShotLocation, TeamSide,
+    TeamStandingInput,
 };
 use std::time::Duration;
 
@@ -1220,6 +1221,7 @@ pub fn parse_play_by_play(raw: &serde_json::Value, fallback_game_id: u64) -> Pla
     }
 }
 
+#[derive(Clone, Copy)]
 struct TeamLookup<'a> {
     away_team_id: Option<u32>,
     away_abbrev: &'a str,
@@ -1249,6 +1251,7 @@ fn parse_play_by_play_scoring_event(
         situation_code: play["situationCode"].as_str().map(str::to_owned),
         event_owner_team_id,
         event_owner_team_abbrev: team_abbrev_for_event_owner_id(event_owner_team_id, teams),
+        event_owner_side: team_side_for_event_owner_id(event_owner_team_id, teams),
         shooting_player_id,
         scoring_player_id,
         blocking_player_id: play_u32(details, "blockingPlayerId"),
@@ -1263,6 +1266,17 @@ fn parse_play_by_play_scoring_event(
         home_team_defending_side: play["homeTeamDefendingSide"].as_str().map(str::to_owned),
         away_score: play_u8(details, "awayScore"),
         home_score: play_u8(details, "homeScore"),
+    }
+}
+
+fn team_side_for_event_owner_id(
+    event_owner_team_id: Option<u32>,
+    teams: TeamLookup<'_>,
+) -> Option<TeamSide> {
+    match event_owner_team_id {
+        Some(id) if Some(id) == teams.away_team_id => Some(TeamSide::Away),
+        Some(id) if Some(id) == teams.home_team_id => Some(TeamSide::Home),
+        _ => None,
     }
 }
 
@@ -1723,7 +1737,7 @@ fn parse_series(s: &serde_json::Value) -> PlayoffSeries {
 #[cfg(test)]
 mod boxscore_tests {
     use super::{parse_boxscore, parse_play_by_play};
-    use icelines_core::ShotEventKind;
+    use icelines_core::{ShotEventKind, TeamSide};
     use serde_json::json;
 
     #[test]
@@ -1876,6 +1890,10 @@ mod boxscore_tests {
             parsed.scoring_events[0].event_owner_team_abbrev.as_deref(),
             Some("CHI")
         );
+        assert_eq!(
+            parsed.scoring_events[0].event_owner_side,
+            Some(TeamSide::Away)
+        );
         assert_eq!(parsed.scoring_events[0].shooting_player_id, Some(8483493));
         assert_eq!(parsed.scoring_events[0].goalie_in_net_id, Some(8475683));
         assert_eq!(parsed.scoring_events[0].location.x_coord, Some(66));
@@ -1894,6 +1912,10 @@ mod boxscore_tests {
         assert_eq!(
             parsed.scoring_events[1].event_owner_team_abbrev.as_deref(),
             Some("LAK")
+        );
+        assert_eq!(
+            parsed.scoring_events[1].event_owner_side,
+            Some(TeamSide::Home)
         );
         assert_eq!(
             parsed.scoring_events[1].reason.as_deref(),

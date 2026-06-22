@@ -144,8 +144,8 @@ pub use scoring::{
     GameScoringReportView, InsideShotBucket, InsideShotBucketCounts, InsideShotProxy,
     PlayerScoringProfileView, PlayerScoringTrendRow, PlayerScoringTrendWindow, ScoringEventInput,
     ScoringEventSummary, ScoringShooterSummary, ScoringSplitSummary, ShotEventKind, ShotLocation,
-    TeamScoringProfileView, TonightFavoritePlayerScoringRow, TonightFavoriteTeamScoringRow,
-    TonightScoringIntelView,
+    TeamScoringProfileView, TeamSide, TonightFavoritePlayerScoringRow,
+    TonightFavoriteTeamScoringRow, TonightScoringIntelView,
 };
 pub use scoring_outlook::{
     TeamScoringOutlookMetric, TeamScoringOutlookRecentForm, TeamScoringOutlookRow,

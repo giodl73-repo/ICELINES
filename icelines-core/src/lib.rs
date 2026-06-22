@@ -141,7 +141,7 @@ pub use view_model::{
     TeamScoringOutlookRecentForm, TeamScoringOutlookRow, TeamScoringOutlookSampleStatus,
     TeamScoringOutlookSourceStatus, TeamScoringOutlookView, TeamScoringProfileView,
     TeamSeasonGameRow, TeamSeasonHeadline, TeamSeasonSplit, TeamSeasonSplits, TeamSeasonVenue,
-    TeamSeasonView, TeamStandingInput, TeamStandingsContext, TeamTradeImpactView,
+    TeamSeasonView, TeamSide, TeamStandingInput, TeamStandingsContext, TeamTradeImpactView,
     TonightFavoritePlayerScoringRow, TonightFavoriteTeamScoringRow, TonightScoringIntelView,
     TradeImpactLine, TradeImpactPair, TradeImpactPlayer, TradeImpactSlot, TransactionViewRow,
     TransactionsView, ValuePrecision, ViewContext, ViewWarning, ViewWindow, WarningKind,
