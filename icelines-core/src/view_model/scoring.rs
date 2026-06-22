@@ -345,6 +345,7 @@ pub struct GameScoringReportView {
     pub summary: ScoringEventSummary,
     pub team_summaries: Vec<ScoringSplitSummary>,
     pub period_summaries: Vec<ScoringSplitSummary>,
+    pub strength_summaries: Vec<ScoringSplitSummary>,
     pub situation_summaries: Vec<ScoringSplitSummary>,
     pub top_shooters: Vec<ScoringShooterSummary>,
 }
@@ -366,6 +367,7 @@ impl GameScoringReportView {
         let summary = ScoringEventSummary::from_events(&events);
         let team_summaries = split_summaries(&events, team_label);
         let period_summaries = split_summaries(&events, period_label);
+        let strength_summaries = split_summaries(&events, strength_label);
         let situation_summaries = split_summaries(&events, situation_label);
         let top_shooters = top_shooter_summaries(&events);
         Self {
@@ -375,6 +377,7 @@ impl GameScoringReportView {
             summary,
             team_summaries,
             period_summaries,
+            strength_summaries,
             situation_summaries,
             top_shooters,
         }
@@ -388,6 +391,7 @@ pub struct TeamScoringProfileView {
     pub events: Vec<ScoringEventInput>,
     pub summary: ScoringEventSummary,
     pub period_summaries: Vec<ScoringSplitSummary>,
+    pub strength_summaries: Vec<ScoringSplitSummary>,
     pub situation_summaries: Vec<ScoringSplitSummary>,
     pub top_shooters: Vec<ScoringShooterSummary>,
 }
@@ -412,6 +416,7 @@ impl TeamScoringProfileView {
             .push(play_by_play_source_state(source_loaded));
         let summary = ScoringEventSummary::from_events(&events);
         let period_summaries = split_summaries(&events, period_label);
+        let strength_summaries = split_summaries(&events, strength_label);
         let situation_summaries = split_summaries(&events, situation_label);
         let top_shooters = top_shooter_summaries(&events);
         Self {
@@ -420,6 +425,7 @@ impl TeamScoringProfileView {
             events,
             summary,
             period_summaries,
+            strength_summaries,
             situation_summaries,
             top_shooters,
         }
@@ -435,6 +441,7 @@ pub struct PlayerScoringProfileView {
     pub summary: ScoringEventSummary,
     pub trends: Vec<PlayerScoringTrendRow>,
     pub period_summaries: Vec<ScoringSplitSummary>,
+    pub strength_summaries: Vec<ScoringSplitSummary>,
     pub situation_summaries: Vec<ScoringSplitSummary>,
 }
 
@@ -466,6 +473,7 @@ impl PlayerScoringProfileView {
             &events,
         );
         let period_summaries = split_summaries(&events, period_label);
+        let strength_summaries = split_summaries(&events, strength_label);
         let situation_summaries = split_summaries(&events, situation_label);
         Self {
             context,
@@ -475,6 +483,7 @@ impl PlayerScoringProfileView {
             summary,
             trends,
             period_summaries,
+            strength_summaries,
             situation_summaries,
         }
     }
@@ -692,6 +701,18 @@ fn period_label(event: &ScoringEventInput) -> ScoringSplitDescriptor {
     } else {
         format!("{}{}", event.period_type, event.period)
     })
+}
+
+fn strength_label(event: &ScoringEventInput) -> ScoringSplitDescriptor {
+    match event.owner_strength_state() {
+        Some(state) => ScoringSplitDescriptor {
+            label: state.label().to_string(),
+            situation_code: None,
+            skater_state: None,
+            owner_strength_state: Some(state),
+        },
+        None => ScoringSplitDescriptor::label("unknown strength".to_string()),
+    }
 }
 
 fn situation_label(event: &ScoringEventInput) -> ScoringSplitDescriptor {
@@ -1106,6 +1127,18 @@ mod tests {
         assert_eq!(view.team_summaries[0].label, "EDM");
         assert_eq!(view.team_summaries[0].owner_strength_state, None);
         assert_eq!(view.period_summaries[0].label, "P1");
+        assert_eq!(view.strength_summaries[0].label, "even strength");
+        assert_eq!(
+            view.strength_summaries[0].owner_strength_state,
+            Some(StrengthState::EvenStrength)
+        );
+        assert_eq!(view.strength_summaries[0].summary.goals, 1);
+        assert_eq!(view.strength_summaries[1].label, "penalty kill");
+        assert_eq!(
+            view.strength_summaries[1].owner_strength_state,
+            Some(StrengthState::PenaltyKill)
+        );
+        assert_eq!(view.strength_summaries[1].summary.shots_on_goal, 1);
         assert_eq!(view.situation_summaries[0].label, "penalty kill 4v5 (1451)");
         assert_eq!(
             view.situation_summaries[0].situation_code.as_deref(),

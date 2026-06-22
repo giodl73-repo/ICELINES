@@ -6795,6 +6795,14 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
         serde_json::Value::from("CHI")
     );
     assert_eq!(
+        json["data"]["strength_summaries"][0]["label"],
+        serde_json::Value::from("even strength")
+    );
+    assert_eq!(
+        json["data"]["strength_summaries"][0]["owner_strength_state"],
+        serde_json::Value::from("even-strength")
+    );
+    assert_eq!(
         json["data"]["situation_summaries"][0]["label"],
         serde_json::Value::from("even strength 5v5 (1551)")
     );
@@ -6835,6 +6843,7 @@ async fn l1_rocket_game_scoring_html_marks_strength_state_rows() {
 
     assert_eq!(response.status(), StatusCode::OK);
     let html = response_text(response, 256 * 1024).await;
+    assert!(html.contains("<h2>By strength</h2>"));
     assert!(html.contains("even strength 5v5 (1551)"));
     assert!(html.contains("data-situation-code=\"1551\""));
     assert!(html.contains("data-skater-state=\"5v5\""));
@@ -6843,7 +6852,7 @@ async fn l1_rocket_game_scoring_html_marks_strength_state_rows() {
     assert!(
         html.matches("data-owner-strength-state=\"even-strength\"")
             .count()
-            >= 2
+            >= 3
     );
 }
 

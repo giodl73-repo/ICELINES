@@ -625,6 +625,8 @@ Situation splits render event-owner strength labels such as
 `even strength 5v5 (1551)`, `power play 5v4 (1541)`, and
 `penalty kill 4v5 (1451)`, preserving the raw NHL `situationCode` for
 auditability while making the first strength-state read surface human-readable.
+The same reports also include aggregate By strength rows for even-strength,
+power-play, and penalty-kill totals across raw NHL situation codes.
 JSON scoring split rows also expose structured `situation_code`, `skater_state`,
 and `owner_strength_state` fields for downstream consumers.
 

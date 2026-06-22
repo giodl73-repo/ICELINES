@@ -82,6 +82,24 @@
 </section>
 {% endif %}
 
+{% if !page.strength_summaries.is_empty() %}
+<section>
+    <h2>By strength</h2>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Split</th><th class="numeric">G</th><th class="numeric">SOG</th><th class="numeric">Attempts</th><th class="numeric">Unblocked</th><th class="numeric">Missed</th><th class="numeric">Blocked</th><th class="numeric">Shot %</th></tr>
+        </thead>
+        <tbody>
+            {% for row in page.strength_summaries %}
+            <tr data-owner-strength-state="{{ row.owner_strength_state }}"><td>{{ row.label }}</td><td class="numeric">{{ row.summary.goals }}</td><td class="numeric">{{ row.summary.shots_on_goal }}</td><td class="numeric">{{ row.summary.shot_attempts }}</td><td class="numeric">{{ row.summary.unblocked_attempts }}</td><td class="numeric">{{ row.summary.missed_shots }}</td><td class="numeric">{{ row.summary.blocked_shots }}</td><td class="numeric">{{ row.summary.shot_pct }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endif %}
+
 {% if !page.situation_summaries.is_empty() %}
 <section>
     <h2>By situation</h2>
