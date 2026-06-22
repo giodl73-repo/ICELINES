@@ -1413,7 +1413,10 @@ pub fn render_admin(f: &mut Frame, app: &App, area: Rect) {
             ),
             (
                 "shifts           ",
-                format!("{} (locked)", cfg.sync.capabilities.shifts.as_str()),
+                format!(
+                    "{} (locked: no shift policy)",
+                    cfg.sync.capabilities.shifts.as_str()
+                ),
             ),
             (
                 "career_history   ",
@@ -1466,7 +1469,7 @@ mod tests {
     }
 
     fn render_admin_to_text(app: &App) -> String {
-        let backend = TestBackend::new(80, 24);
+        let backend = TestBackend::new(80, 32);
         let mut term = Terminal::new(backend).unwrap();
         term.draw(|f| {
             let area = f.area();
@@ -1499,6 +1502,15 @@ mod tests {
         // Canonical CLI commands listed
         assert!(text.contains("icelines fetch all"), "fetch hint missing");
         assert!(text.contains("icelines data list"), "list hint missing");
+    }
+
+    #[test]
+    fn l0_render_admin_labels_shift_policy_lock() {
+        let text = render_admin_to_text(&App::new(false));
+        assert!(
+            text.contains("shifts             off (locked: no shift policy)"),
+            "Admin capability matrix must expose shift policy lock, got:\n{text}"
+        );
     }
 
     #[test]
