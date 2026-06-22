@@ -132,7 +132,10 @@ fn display_placeholder(
 
     if format == Format::Table && out.is_none() {
         eprintln!("No shift data found for {target_full_name}.");
-        eprintln!("Shift-profile fetch/bundling is not supported yet; showing roster fallback.");
+        eprintln!(
+            "sync.capabilities.shifts=off: no supported shift source/bundle/fetch policy yet."
+        );
+        eprintln!("Showing roster fallback; do not run an unsupported fetch shifts workflow.");
         eprintln!();
         eprintln!("PLACEHOLDER — forwards on {target_team} roster:");
     }

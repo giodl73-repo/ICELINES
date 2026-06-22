@@ -469,8 +469,13 @@ icelines scouting "Evan Bouchard"            # 8-section scouting report
 icelines peers "Lane Hutson" --size 8        # draft-class statistical peers
 icelines class 2022 --top 15                 # full draft class ranked
 icelines compare "McDavid" "MacKinnon"       # alias for `query compare`
-icelines mates "Beniers" --top 5             # roster fallback; shift bundles parked
+icelines mates "Beniers" --top 5             # roster fallback; shifts locked off
 ```
+
+`icelines mates` reads a legacy precomputed `ShiftProfile` only if one is
+present. Otherwise it prints the `sync.capabilities.shifts=off` policy and
+renders same-team forward roster fallback rows; there is no supported
+`fetch shifts` recovery today.
 
 `icelines project` preserves its legacy projected-points fields and also emits
 `PlayerScoringPaceView`-backed pace outlook ranges for goals, points, and shots.

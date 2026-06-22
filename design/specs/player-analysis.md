@@ -227,18 +227,23 @@ Career pace avg: 0.63 PPG  |  Peak season: 25-26 (0.69)
 
 ---
 
-### `icelines mates` — Linemate Analysis (Shift-Based)
+### `icelines mates` — Linemate Analysis (Roster Fallback Today)
 
-Using shift data, identify who each player actually played with most frequently and how the
-line combinations performed.
+Current status: `sync.capabilities.shifts=off` is locked because there is no
+supported shift source, historical shift bundle, `fetch shifts` command, fixture,
+or join policy. `icelines mates` can display a legacy precomputed
+`ShiftProfile` if one exists in the Positions snapshot tier, but the normal
+current behavior is a same-team forward roster fallback with explicit shift
+policy copy. It must not instruct users to run `fetch shifts`.
+
+Future Tier 3 goal: using verified shift data, identify who each player actually
+played with most frequently and how the line combinations performed.
 
 ```
 icelines mates <PLAYER> [OPTIONS]
 
 Options:
   --top <N>           Top N line partners [default: 5]
-  --min-shifts <N>    Minimum shared shifts to include [default: 50]
-  --season <YEAR>     Season [default: current]
   --json
 ```
 
@@ -252,7 +257,20 @@ icelines mates "Matty Beniers"
 icelines mates "Eeli Tolvanen" --top 8
 ```
 
-**Terminal output:**
+**Current fallback output:**
+
+```text
+No shift data found for Matty Beniers.
+sync.capabilities.shifts=off: no supported shift source/bundle/fetch policy yet.
+Showing roster fallback; do not run an unsupported fetch shifts workflow.
+
+PLACEHOLDER — forwards on SEA roster:
+rank  player          pos
+1     Eeli Tolvanen   LW
+2     Jordan Eberle   RW
+```
+
+**Future Tier 3 output target:**
 
 ```
 LINEMATES OF MATTY BENIERS (SEA · C)
@@ -469,11 +487,13 @@ pub struct SeasonLine {
 | `icelines compare <P1> <P2>` | 1 | --pace, --history |
 | `icelines group <CMD>` | 1 | create, add, show, compare, auto |
 | `icelines history <PLAYER>` | 1 | --seasons, --pace (from NHL career stats API) |
-| `icelines mates <PLAYER>` | 2 | --top, --min-shifts (requires Tier 3 shift data) |
+| `icelines mates <PLAYER>` | 1 now / 2 future | --top; current roster fallback with shifts locked off, future shift-backed linemates require Tier 3 |
 | `icelines scouting <PLAYER>` | 2 | --format, --out |
 
 Release 1 = NHL API Tiers 1+2 (rosters, bios, season stats — no Yahoo CSV required)
-Release 2 = add Tier 3 shift data for `mates` + enhanced `scouting`
+Release 2 = add Tier 3 shift data for shift-backed `mates` + enhanced
+`scouting`; until then `mates` stays a roster fallback and `scouting` names the
+shift-data deferral.
 
 ---
 

@@ -4757,6 +4757,30 @@ fn l2_config_list_labels_shifts_locked_without_changing_get() {
     assert_eq!(String::from_utf8_lossy(&get.stdout).trim(), "off");
 }
 
+#[test]
+fn l2_mates_fallback_reports_shift_policy_lock() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let _ = run_isolated(home.path(), &["setup", "--accept-defaults"]);
+    let out = run_isolated(home.path(), &["mates", "Connor McDavid", "--top", "3"]);
+    assert!(
+        out.status.success(),
+        "mates fallback should succeed, stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains(
+            "sync.capabilities.shifts=off: no supported shift source/bundle/fetch policy yet"
+        ),
+        "mates fallback must expose shift policy lock, stderr: {stderr}"
+    );
+    assert!(
+        !stderr.contains("run 'icelines fetch shifts' first")
+            && !stderr.contains("run icelines fetch shifts"),
+        "mates fallback must not point at unsupported fetch shifts recovery, stderr: {stderr}"
+    );
+}
+
 // ── Phase Foster.1 — date-anchored CLI L2 ────────────────────────────────────
 
 /// L2 / l2_foster1_tonight_invalid_date_clean_error
