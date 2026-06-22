@@ -1122,6 +1122,12 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-label=\"Open full Poach workspace\""));
     assert!(body.contains("aria-label=\"Pin Poach workspace to left pane\""));
     assert!(body.contains("aria-label=\"Pin Poach workspace to right pane\""));
+    assert!(body.contains("aria-label=\"Open No rows in center workspace\""));
+    assert!(body.contains("aria-label=\"Open No rows in left pane\""));
+    assert!(body.contains("aria-label=\"Open No rows in right pane\""));
+    assert!(body.contains("aria-label=\"Open Imported free agents in center workspace\""));
+    assert!(body.contains("aria-label=\"Open Imported free agents in left pane\""));
+    assert!(body.contains("aria-label=\"Open Imported free agents in right pane\""));
     assert!(body.contains("Workspace wiring"));
     assert!(body.contains("aria-label=\"Right context pane\""));
     assert!(body.contains("data-dashboard-pane=\"schedule\""));

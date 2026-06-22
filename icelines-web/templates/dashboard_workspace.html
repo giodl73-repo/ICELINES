@@ -257,9 +257,9 @@
                 <td><a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}">{% if row.detail != "" %}{{ row.detail }}{% else %}—{% endif %}</a></td>
                 <td>
                     <span class="jaw-target-actions" aria-label="Target {{ row.value }}">
-                        <a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-workspace="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}">Center</a>
-                        · <a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-workspace="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-target="left">Left</a>
-                        · <a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-workspace="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-target="right">Right</a>
+                        <a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" aria-label="Open {{ row.value }} in center workspace" data-dashboard-workspace="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}">Center</a>
+                        · <a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" aria-label="Open {{ row.value }} in left pane" data-dashboard-workspace="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-target="left">Left</a>
+                        · <a href="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" aria-label="Open {{ row.value }} in right pane" data-dashboard-workspace="{% if row.href != "" %}{{ row.href }}{% else %}{{ workspace_url }}{% endif %}" data-dashboard-target="right">Right</a>
                     </span>
                 </td>
             </tr>
@@ -278,9 +278,9 @@
                     <span class="jaw-detail">{{ row.detail }}</span>
                 </a>
                 <span class="jaw-target-actions" aria-label="Target {{ row.label }}">
-                    <a href="{{ row.href }}">Center</a>
-                    · <a href="{{ row.href }}" data-dashboard-target="left">Left</a>
-                    · <a href="{{ row.href }}" data-dashboard-target="right">Right</a>
+                    <a href="{{ row.href }}" aria-label="Open {{ row.label }} in center workspace">Center</a>
+                    · <a href="{{ row.href }}" aria-label="Open {{ row.label }} in left pane" data-dashboard-target="left">Left</a>
+                    · <a href="{{ row.href }}" aria-label="Open {{ row.label }} in right pane" data-dashboard-target="right">Right</a>
                 </span>
             </div>
             {% endfor %}
