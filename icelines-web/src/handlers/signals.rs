@@ -10,6 +10,7 @@ use icelines_core::signal_metrics::{
 };
 use icelines_core::stats_repository::StatsRepository;
 use icelines_core::view_model::signals::PlayerSignalsView;
+use icelines_core::view_model::signals::SignalsSourceAuthority;
 
 pub async fn get_player_signals(State(state): State<WebState>, Path(id): Path<u32>) -> Response {
     match build_player_signals_view(&state, id).await {
@@ -30,6 +31,7 @@ pub async fn get_player_signals_json(
                 player_id: view.player_id,
                 player_name: view.player_name.clone(),
                 signal_count: view.rows.len(),
+                source_authority: view.source_authority.clone(),
             };
             crate::api::json_data_meta("player-signals", view, meta)
         }
@@ -180,6 +182,12 @@ fn render_signals_html(active_label: &str, view: &PlayerSignalsView) -> String {
             )
         })
         .collect::<String>();
+    let source_authority = format!(
+        "<p class=\"meta-line\" data-signals-source-authority=\"{}\" data-coverage-state=\"{}\">{}</p>",
+        html_escape(&view.source_authority.source),
+        html_escape(&view.source_authority.coverage_state),
+        html_escape(&view.source_authority.label)
+    );
 
     format!(
         "<!doctype html><html><head><meta charset=\"utf-8\">\
@@ -190,6 +198,7 @@ fn render_signals_html(active_label: &str, view: &PlayerSignalsView) -> String {
          <h1>{name} Signals</h1>\
          <p>{position} · {team} · {gp} GP · {active}</p>\
          <p class=\"meta-line\">Descriptive derived metrics from PlayerSignalsView; unavailable values are missing evidence, not zero value truth.</p>\
+         {source_authority}\
          <div class=\"table-scroll\"><table><thead><tr><th>Signal</th><th class=\"numeric\">Value</th><th>Unit</th><th>Polarity</th><th>Evidence</th><th>Missing inputs</th></tr></thead><tbody>{rows}</tbody></table></div>\
          <h2>Methodology</h2><ul>{methodology}</ul><h2>Limitations</h2><ul>{limitations}</ul>\
          {disclosures}{non_claims}</main></body></html>",
@@ -247,6 +256,7 @@ struct SignalsMeta {
     player_id: u32,
     player_name: String,
     signal_count: usize,
+    source_authority: SignalsSourceAuthority,
 }
 
 #[cfg(test)]
@@ -268,6 +278,8 @@ mod tests {
         let html = render_signals_html("25-26 Regular", &view);
         assert!(html.contains("unavailable"));
         assert!(html.contains("missing evidence"));
+        assert!(html.contains("data-signals-source-authority=\"PlayerSignalsView stat inputs\""));
+        assert!(html.contains("Signals authority: descriptive derived metrics"));
         assert!(!html.contains(">0.00</td><td>per 60</td><td>neutral"));
     }
 }

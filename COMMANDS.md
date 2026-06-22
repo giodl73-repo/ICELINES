@@ -583,6 +583,11 @@ reviewed the promotion gate and kept those deferrals until accepted cache metric
 keys, invalidation/source-state rules, and bounded catalog/leaderboard copy exist
 (see
 [`design/specs/icelines-signals.md`](design/specs/icelines-signals.md)).
+Single-player Signals JSON includes `meta.source_authority`, and the Web HTML
+page renders the same authority label. The authority names covered inputs
+(season summary, realtime when loaded, ice time when loaded, and minimum games),
+covered metrics, blocked claims, and limitations while preserving unavailable
+values as missing evidence instead of zero.
 
 ### `signals-roster` — team-scoped Signals discovery
 

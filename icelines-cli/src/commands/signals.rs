@@ -392,6 +392,7 @@ fn signals_json_envelope(view: &PlayerSignalsView) -> String {
             "player_id": view.player_id,
             "player_name": view.player_name,
             "signal_count": view.rows.len(),
+            "source_authority": &view.source_authority,
         },
     });
     serde_json::to_string_pretty(&envelope).unwrap_or_default()

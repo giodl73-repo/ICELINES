@@ -2617,6 +2617,31 @@ async fn l1_player_signals_json_renders_player_signals_view() {
     assert_data_meta_envelope(&json, "player-signals");
     assert_eq!(json["meta"]["player_id"], serde_json::json!(8478402));
     assert_eq!(json["meta"]["signal_count"], serde_json::json!(3));
+    assert_eq!(
+        json["meta"]["source_authority"]["coverage_state"],
+        serde_json::json!("descriptive_derived")
+    );
+    assert_eq!(
+        json["meta"]["source_authority"]["covered_metrics"],
+        serde_json::json!([
+            "physical_engagement_rate",
+            "puck_management_differential",
+            "penalty_drag_rate"
+        ])
+    );
+    assert_eq!(
+        json["meta"]["source_authority"]["blocked_claims"],
+        serde_json::json!([
+            "prediction",
+            "betting_edge",
+            "injury_signal",
+            "deployment_recommendation",
+            "player_quality_grade",
+            "autonomous_coaching_decision",
+            "stat_catalog_promotion",
+            "leaderboard_ranking"
+        ])
+    );
     assert_eq!(json["data"]["player_name"], "Connor McDavid");
     assert_eq!(
         json["data"]["rows"][0]["cli_key"],
@@ -2651,6 +2676,14 @@ async fn l1_player_signals_html_renders_unavailable_not_zero() {
     assert!(body.contains("Connor McDavid Signals"), "body was:\n{body}");
     assert!(body.contains("unavailable"), "body was:\n{body}");
     assert!(body.contains("missing evidence"), "body was:\n{body}");
+    assert!(
+        body.contains("data-signals-source-authority=\"PlayerSignalsView stat inputs\""),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("Signals authority: descriptive derived metrics"),
+        "body was:\n{body}"
+    );
     assert!(
         !body.contains(">0.00</td><td>per 60</td><td>neutral"),
         "missing signal must not be rendered as zero:\n{body}"

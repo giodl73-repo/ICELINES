@@ -17,6 +17,7 @@ pub struct PlayerSignalsView {
     pub rows: Vec<PlayerSignalRow>,
     pub disclosures: Vec<String>,
     pub non_claims: Vec<String>,
+    pub source_authority: SignalsSourceAuthority,
 }
 
 impl PlayerSignalsView {
@@ -43,11 +44,61 @@ impl PlayerSignalsView {
                 "Not a prediction, betting edge, injury signal, deployment recommendation, or autonomous coaching decision."
                     .to_string(),
             ],
+            source_authority: SignalsSourceAuthority::default(),
         }
     }
 
     pub fn context_for_player(player: &PlayerView<'_>) -> ViewContext {
         ViewContext::new(ViewWindow::new(player.season(), player.season_type()))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SignalsSourceAuthority {
+    pub source: String,
+    pub coverage_state: String,
+    pub covered_inputs: Vec<String>,
+    pub covered_metrics: Vec<String>,
+    pub blocked_claims: Vec<String>,
+    pub limitations: Vec<String>,
+    pub label: String,
+}
+
+impl Default for SignalsSourceAuthority {
+    fn default() -> Self {
+        Self {
+            source: "PlayerSignalsView stat inputs".to_string(),
+            coverage_state: "descriptive_derived".to_string(),
+            covered_inputs: vec![
+                "season_stat_summary".to_string(),
+                "skater_realtime_when_loaded".to_string(),
+                "time_on_ice_when_loaded".to_string(),
+                "minimum_games_threshold".to_string(),
+            ],
+            covered_metrics: vec![
+                "physical_engagement_rate".to_string(),
+                "puck_management_differential".to_string(),
+                "penalty_drag_rate".to_string(),
+            ],
+            blocked_claims: vec![
+                "prediction".to_string(),
+                "betting_edge".to_string(),
+                "injury_signal".to_string(),
+                "deployment_recommendation".to_string(),
+                "player_quality_grade".to_string(),
+                "autonomous_coaching_decision".to_string(),
+                "stat_catalog_promotion".to_string(),
+                "leaderboard_ranking".to_string(),
+            ],
+            limitations: vec![
+                "missing_inputs_render_unavailable_not_zero".to_string(),
+                "realtime_stats_carry_rink_scorer_bias".to_string(),
+                "penalty_minutes_mix_penalty_types".to_string(),
+                "no_teammate_zone_or_matchup_isolation".to_string(),
+            ],
+            label: "Signals authority: descriptive derived metrics from loaded stat inputs; not predictions, betting, injury, deployment, player-grade, leaderboard, or autonomous coaching claims."
+                .to_string(),
+        }
     }
 }
 
@@ -164,5 +215,18 @@ mod tests {
         assert_eq!(penalty_drag.missing_inputs, Vec::<SignalInput>::new());
         assert!(view.non_claims[0].contains("Not a prediction"));
         assert!(view.disclosures[1].contains("not zero value truth"));
+        assert_eq!(view.source_authority.coverage_state, "descriptive_derived");
+        assert!(view
+            .source_authority
+            .covered_metrics
+            .contains(&"physical_engagement_rate".to_string()));
+        assert!(view
+            .source_authority
+            .blocked_claims
+            .contains(&"deployment_recommendation".to_string()));
+        assert!(view
+            .source_authority
+            .limitations
+            .contains(&"missing_inputs_render_unavailable_not_zero".to_string()));
     }
 }
