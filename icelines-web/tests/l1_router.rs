@@ -1055,6 +1055,33 @@ async fn l1_docs_route_includes_watch_editor_boundary() {
 }
 
 #[tokio::test]
+async fn l1_docs_route_includes_admin_report_toggle_and_static_site_boundaries() {
+    let app = router(WebState::new());
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/docs")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 512 * 1024)
+        .await
+        .expect("body fits");
+    let body = std::str::from_utf8(&bytes).expect("docs html is utf-8");
+    assert!(body.contains("Persistent report toggles are intentionally deferred on web admin"));
+    assert!(body.contains("press R"));
+    assert!(body.contains("~/.icelines/config.toml"));
+    assert!(body.contains("Removed 2026-05-04"));
+    assert!(body.contains("mkdocs static-site frontend"));
+    assert!(body.contains("single web frontend"));
+    assert!(body.contains("no CLI entry point"));
+}
+
+#[tokio::test]
 async fn l1_dashboard_shell_renders_no_js_regions() {
     let app = router(WebState::new());
     let response = app
