@@ -276,11 +276,16 @@ fixture or pinned schema evidence for the new source columns.
 `EvSavePct`, `PpSavePct`, `ShSavePct`,
 `QualityStarts`, `QualityStartPct`, `RegulationWins`, `RegulationLosses`,
 
-**GSAx family (SCOUT-B1 addition)** — sourced from MoneyPuck or NHL Edge:
-- `GoalieXgAgainst`
-- `GoalieXgAgainstPer60`
-- `GoalsSavedAboveExpected` (often abbreviated GSAx)
-- `Gsax60` (per-60 rate)
+**GSAx family (SCOUT-B1 addition)** — reserved/source-blocked until a
+verified goalie xGA source exists. These catalog IDs and CLI keys are stable,
+but `read()` must return `None` until the source gate has schema fixture
+evidence, goalie identity join evidence, freshness/source-state metadata, and
+explicit non-claim copy. QS%/SA/60 and skater on-ice xGA are not goalie xGA
+substitutes.
+- `GoalieXgAgainst` (`goalie-xg-against`)
+- `GoalieXgAgainstPer60` (`goalie-xg-against-per-60`)
+- `GoalsSavedAboveExpected` (`goals-saved-above-expected`, often abbreviated GSAx)
+- `Gsax60` (`gsax-per-60`, per-60 rate)
 
 ### `Derived` — 7 stats (computed from Scoring + GP)
 

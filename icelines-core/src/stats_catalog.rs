@@ -1613,7 +1613,9 @@ impl StatId {
                 .goalie_advanced
                 .as_ref()
                 .map(|g| g.regulation_losses as f64),
-            // GSAx family — Tier-2 (L.6 MoneyPuck/NHL Edge).
+            // GSAx family — reserved/source-blocked until a verified
+            // goalie xGA source is wired. QS%/SA/60 and skater on-ice
+            // xGA are not goalie xGA substitutes.
             GoalieXgAgainst => None,         // L.6
             GoalieXgAgainstPer60 => None,    // L.6
             GoalsSavedAboveExpected => None, // L.6
@@ -3333,6 +3335,40 @@ mod tests {
         assert_eq!(StatId::OnIceXgFor.read(&view), Some(71.0));
         assert_eq!(StatId::OnIceXgAgainst.read(&view), Some(56.0));
         assert_eq!(StatId::XgForPct.read(&view), Some(56.0));
+    }
+
+    #[test]
+    fn l0_goalie_gsax_catalog_keys_remain_source_blocked() {
+        let stats = build_goalie_stats(8400001, 20242025, 2.50, 0.913);
+        let (identity, stats) = synthetic_skater_view(stats);
+        let view = PlayerView {
+            identity: &identity,
+            stats: &stats,
+            contract: None,
+        };
+
+        for (sid, key) in [
+            (StatId::GoalieXgAgainst, "goalie-xg-against"),
+            (StatId::GoalieXgAgainstPer60, "goalie-xg-against-per-60"),
+            (
+                StatId::GoalsSavedAboveExpected,
+                "goals-saved-above-expected",
+            ),
+            (StatId::Gsax60, "gsax-per-60"),
+        ] {
+            assert_eq!(sid.cli_key(), key);
+            assert_eq!(StatId::from_cli_key(key), Some(sid));
+            assert_eq!(
+                sid.read(&view),
+                None,
+                "{sid:?} must stay source-blocked until goalie xGA evidence is wired"
+            );
+            assert_eq!(
+                sid.report_source(),
+                None,
+                "{sid:?} is not backed by goalie/advanced or savesByStrength"
+            );
+        }
     }
 
     /// `available_since` — Scoring basics always available.

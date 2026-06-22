@@ -393,6 +393,9 @@ fields for rows backed by goalie advanced data. GSAx is not surfaced until a
 verified goalie xGA source exists. The Web/API goalie surface now includes a
 `goalie_xga_source` gate that names the blocked GSAx metric family and records
 that QS%/SA/60 and skater on-ice xGA are not goalie xGA substitutes.
+The reserved catalog keys `goalie-xg-against`, `goalie-xg-against-per-60`,
+`goals-saved-above-expected`, and `gsax-per-60` intentionally return no values
+until that gate is satisfied.
 
 ```bash
 icelines query goalies --top 10
