@@ -632,10 +632,22 @@ fn period_label(event: &ScoringEventInput) -> String {
 }
 
 fn situation_label(event: &ScoringEventInput) -> String {
-    event
-        .situation_code
-        .clone()
-        .unwrap_or_else(|| "unknown".to_string())
+    event.situation_code.as_deref().map_or_else(
+        || "unknown".to_string(),
+        |code| strength_state_label(code).unwrap_or_else(|| code.to_string()),
+    )
+}
+
+fn strength_state_label(code: &str) -> Option<String> {
+    let mut chars = code.chars();
+    let _away_goalie = chars.next()?;
+    let away_skaters = chars.next()?.to_digit(10)?;
+    let home_skaters = chars.next()?.to_digit(10)?;
+    let _home_goalie = chars.next()?;
+    if chars.next().is_some() {
+        return None;
+    }
+    Some(format!("{away_skaters}v{home_skaters} ({code})"))
 }
 
 #[cfg(test)]
@@ -981,8 +993,16 @@ mod tests {
         assert_eq!(view.team_summaries.len(), 2);
         assert_eq!(view.team_summaries[0].label, "EDM");
         assert_eq!(view.period_summaries[0].label, "P1");
-        assert_eq!(view.situation_summaries[0].label, "1451");
+        assert_eq!(view.situation_summaries[0].label, "4v5 (1451)");
         assert_eq!(view.top_shooters[0].summary.shot_attempts, 2);
+    }
+
+    #[test]
+    fn l0_scoring_situation_labels_preserve_strength_state_and_raw_code() {
+        assert_eq!(strength_state_label("1551").as_deref(), Some("5v5 (1551)"));
+        assert_eq!(strength_state_label("1451").as_deref(), Some("4v5 (1451)"));
+        assert_eq!(strength_state_label("1541").as_deref(), Some("5v4 (1541)"));
+        assert_eq!(strength_state_label("invalid"), None);
     }
 
     #[test]

@@ -621,6 +621,9 @@ Rocket Richard scoring reports use cached official NHL play-by-play scoring
 events: goals, shots on goal, missed shots, and blocked shots. Populate inputs
 with `icelines fetch play-by-play --date YYYY-MM-DD` or use the web Admin game
 cache loader's "Scoring events / play-by-play" artifact.
+Situation splits render normalized skater-state labels such as `5v5 (1551)` and
+`4v5 (1451)`, preserving the raw NHL `situationCode` for auditability while
+making the first strength-state read surface human-readable.
 
 Web routes: `/game/:id/scoring`, `/team/:abbrev/scoring`,
 `/player/:id/scoring`, `/team/:abbrev/outlook`, `/player/:id/outlook`,
