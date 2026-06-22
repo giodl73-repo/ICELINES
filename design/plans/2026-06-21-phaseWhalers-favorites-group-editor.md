@@ -4,7 +4,7 @@
 > forms and JSON mutation routes without turning dashboard commands or GET
 > navigation into mutations.
 
-**Status:** Implemented - Phase Whalers complete
+**Status:** Closed - 2026-06-21
 
 ## Goals
 

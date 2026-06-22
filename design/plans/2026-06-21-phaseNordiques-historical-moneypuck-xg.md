@@ -4,7 +4,7 @@
 > snapshot reads without changing the optional-source or regular-season-only
 > contract.
 
-**Status:** Implemented - Phase Nordiques complete
+**Status:** Closed - 2026-06-21
 
 ## Goals
 
