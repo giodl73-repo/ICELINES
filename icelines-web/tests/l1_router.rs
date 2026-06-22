@@ -5951,6 +5951,12 @@ async fn l1_goalies_html_exposes_advanced_workload_metrics() {
         body.contains("GSAx blocked: verified goalie xGA source is not loaded or promoted yet"),
         "body was:\n{body}"
     );
+    assert!(
+        body.contains(
+            "High-danger SV% blocked: verified goalie danger source is not loaded or promoted yet"
+        ),
+        "body was:\n{body}"
+    );
 }
 
 #[tokio::test]
@@ -6026,6 +6032,26 @@ async fn l1_goalies_json_exposes_advanced_workload_metrics() {
             "quality_start_pct_is_not_gsax",
             "shots_against_per_60_is_not_xga",
             "skater_on_ice_xga_is_not_goalie_xga"
+        ])
+    );
+    assert_eq!(
+        json["meta"]["goalie_high_danger_source"]["coverage_state"],
+        serde_json::json!("blocked")
+    );
+    assert_eq!(
+        json["meta"]["goalie_high_danger_source"]["blocked_metrics"],
+        serde_json::json!([
+            "goalie_high_danger_shots_against",
+            "goalie_high_danger_saves",
+            "goalie_high_danger_save_pct"
+        ])
+    );
+    assert_eq!(
+        json["meta"]["goalie_high_danger_source"]["limitations"],
+        serde_json::json!([
+            "save_pct_is_not_high_danger_save_pct",
+            "shots_against_per_60_is_not_danger_context",
+            "skater_on_ice_xga_is_not_goalie_danger_context"
         ])
     );
 }

@@ -115,7 +115,7 @@ struct GoalieResult {
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
-pub struct GoalieXgaSourceGate {
+pub struct GoalieSourceGate {
     source: &'static str,
     source_kind: SourceKind,
     state: Completeness,
@@ -288,6 +288,7 @@ pub async fn build_goalies_template(
         active_label: r.active_label,
         rows: r.rows,
         goalie_xga_source_label: goalie_xga_source_gate().label,
+        goalie_high_danger_source_label: goalie_high_danger_source_gate().label,
         goalie_sv_pct_svg,
         total: r.total,
         qualified_threshold: r.qualified_threshold,
@@ -384,7 +385,8 @@ pub struct GoaliesMeta {
     pub total: usize,
     pub returned: usize,
     pub top: usize,
-    pub goalie_xga_source: GoalieXgaSourceGate,
+    pub goalie_xga_source: GoalieSourceGate,
+    pub goalie_high_danger_source: GoalieSourceGate,
 }
 
 pub async fn get_goalies_json(
@@ -433,13 +435,14 @@ pub async fn get_goalies_json(
         returned,
         top: r.top_n,
         goalie_xga_source: goalie_xga_source_gate(),
+        goalie_high_danger_source: goalie_high_danger_source_gate(),
     };
     let _ = r.active_label;
     crate::api::json_data_meta("goalies", data, meta)
 }
 
-fn goalie_xga_source_gate() -> GoalieXgaSourceGate {
-    GoalieXgaSourceGate {
+fn goalie_xga_source_gate() -> GoalieSourceGate {
+    GoalieSourceGate {
         source: "verified goalie xGA source",
         source_kind: SourceKind::Unknown,
         state: Completeness::Unavailable,
@@ -463,6 +466,33 @@ fn goalie_xga_source_gate() -> GoalieXgaSourceGate {
             "skater_on_ice_xga_is_not_goalie_xga",
         ],
         label: "GSAx blocked: verified goalie xGA source is not loaded or promoted yet".to_string(),
+    }
+}
+
+fn goalie_high_danger_source_gate() -> GoalieSourceGate {
+    GoalieSourceGate {
+        source: "verified goalie high-danger chance source",
+        source_kind: SourceKind::Unknown,
+        state: Completeness::Unavailable,
+        coverage_state: "blocked",
+        basis: "High-danger save percentage requires goalie-level danger buckets with schema fixtures, source-state metadata, freshness labels, and explicit non-claims",
+        blocked_metrics: vec![
+            "goalie_high_danger_shots_against",
+            "goalie_high_danger_saves",
+            "goalie_high_danger_save_pct",
+        ],
+        required_evidence: vec![
+            "pinned_goalie_danger_schema_fixture",
+            "goalie_identity_join_fixture",
+            "freshness_and_source_state_contract",
+            "missing_source_non_claim_copy",
+        ],
+        limitations: vec![
+            "save_pct_is_not_high_danger_save_pct",
+            "shots_against_per_60_is_not_danger_context",
+            "skater_on_ice_xga_is_not_goalie_danger_context",
+        ],
+        label: "High-danger SV% blocked: verified goalie danger source is not loaded or promoted yet".to_string(),
     }
 }
 

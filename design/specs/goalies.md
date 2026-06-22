@@ -479,7 +479,15 @@ icelines binary (5 current seasons):
 
 5. **MoneyPuck goalie metrics (xGA, GSAx)?** The MoneyPuck integration in
    `icelines-fetch::moneypuck` is silo'd to skater xG today. Bringing
-   goalie metrics in-line is a follow-up after G.7.
+   goalie metrics in-line is a follow-up after G.7. Web/API goalie surfaces
+   expose `goalie_xga_source` as a blocked source gate until a verified
+   goalie xGA schema, goalie identity join, freshness/source-state contract,
+   and non-claim copy exist.
+
+6. **High-danger goalie metrics?** High-danger SV% is also blocked until a
+   verified goalie danger source exists. Web/API goalie surfaces expose
+   `goalie_high_danger_source` and explicitly state that raw SV%, SA/60, and
+   skater on-ice xGA are not high-danger goalie substitutes.
 
 ---
 

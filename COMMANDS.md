@@ -396,6 +396,10 @@ that QS%/SA/60 and skater on-ice xGA are not goalie xGA substitutes.
 The reserved catalog keys `goalie-xg-against`, `goalie-xg-against-per-60`,
 `goals-saved-above-expected`, and `gsax-per-60` intentionally return no values
 until that gate is satisfied.
+The same Web/API metadata exposes a `goalie_high_danger_source` gate for
+high-danger SV% candidates. It blocks high-danger shots against, saves, and
+save percentage until a verified goalie danger source exists; raw SV%, SA/60,
+and skater on-ice xGA are not high-danger goalie substitutes.
 
 ```bash
 icelines query goalies --top 10

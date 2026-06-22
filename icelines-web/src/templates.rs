@@ -870,6 +870,7 @@ pub struct GoaliesTemplate {
     pub active_label: String,
     pub rows: Vec<GoalieRow>,
     pub goalie_xga_source_label: String,
+    pub goalie_high_danger_source_label: String,
     /// Phase Hurricane 6i — optional inline goalie SV% SVG.
     /// HTML-only; `/api/v1/goalies` remains the tabular contract.
     pub goalie_sv_pct_svg: Option<String>,
