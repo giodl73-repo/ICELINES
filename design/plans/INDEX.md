@@ -16,13 +16,16 @@ Jennings restored the measured baseline, Campbell established the shared
 ViewModel contract path, the Messier/Lester/Ted/Selke parity wave moved the
 major product surfaces onto that path, Prince closed the shared visual-system
 pass, Jim Gregory closed release hardening, Hurricane shipped the current
-analytics surface push, Rangers organized the post-Hurricane workflow, and
-Islanders closed the surface-truth cleanup. The next forward work should be a
-new scoped wave from the remaining promotion gates in
-`design/specs/surface-parity.md` or a new feature phase from the backlog.
+analytics surface push, Rangers organized the post-Hurricane workflow,
+Islanders closed the surface-truth cleanup, and Canadiens now orders the next
+major-stats competition push. The next forward work should start with the
+strength-state split foundation, then proceed through advanced source authority,
+Signals promotion, shift-data policy, browser QA, production packaging,
+editorial/stathead workflows, and data freshness authority.
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
 | [Phase Tigers - Docs boundary truth gate](2026-06-21-phaseTigers-docs-boundary-truth-gate.md) | Closed | Fenced Web `/docs` around persistent report-toggle writes staying a TUI durable-config handoff and the removed mkdocs/static-site frontend staying outside active docs surfaces. |
 | [Phase Cougars - Watch editor boundary docs truth gate](2026-06-21-phaseCougars-watch-editor-boundary-docs.md) | Closed | Clarified `COMMANDS.md` and `/docs`: web/TUI watch editors stay player-rule-only while team/deployment preview/save remains CLI-backed. |
 | [Phase Quakers - Fantasy command docs truth gate](2026-06-21-phaseQuakers-fantasy-command-docs.md) | Closed | Aligned `COMMANDS.md` and `/docs` with dashboard fantasy mutation recovery: roster-shape set and CSV import are not GET-backed and recover through CLI commands. |
