@@ -642,11 +642,13 @@ fn period_label(event: &ScoringEventInput) -> String {
 fn situation_label(event: &ScoringEventInput) -> String {
     event.situation_code.as_deref().map_or_else(
         || "unknown".to_string(),
-        |code| strength_state_label(code).unwrap_or_else(|| code.to_string()),
+        |code| {
+            strength_state_label(code, event.event_owner_side).unwrap_or_else(|| code.to_string())
+        },
     )
 }
 
-fn strength_state_label(code: &str) -> Option<String> {
+fn strength_state_label(code: &str, owner_side: Option<TeamSide>) -> Option<String> {
     let mut chars = code.chars();
     let _away_goalie = chars.next()?;
     let away_skaters = chars.next()?.to_digit(10)?;
@@ -655,7 +657,24 @@ fn strength_state_label(code: &str) -> Option<String> {
     if chars.next().is_some() {
         return None;
     }
-    Some(format!("{away_skaters}v{home_skaters} ({code})"))
+    let counts = format!("{away_skaters}v{home_skaters}");
+    let state = match owner_side {
+        Some(TeamSide::Away) => strength_state_name(away_skaters, home_skaters),
+        Some(TeamSide::Home) => strength_state_name(home_skaters, away_skaters),
+        None => None,
+    };
+    Some(match state {
+        Some(state) => format!("{state} {counts} ({code})"),
+        None => format!("{counts} ({code})"),
+    })
+}
+
+fn strength_state_name(owner_skaters: u32, opponent_skaters: u32) -> Option<&'static str> {
+    match owner_skaters.cmp(&opponent_skaters) {
+        std::cmp::Ordering::Greater => Some("power play"),
+        std::cmp::Ordering::Equal => Some("even strength"),
+        std::cmp::Ordering::Less => Some("penalty kill"),
+    }
 }
 
 #[cfg(test)]
@@ -1002,16 +1021,33 @@ mod tests {
         assert_eq!(view.team_summaries.len(), 2);
         assert_eq!(view.team_summaries[0].label, "EDM");
         assert_eq!(view.period_summaries[0].label, "P1");
-        assert_eq!(view.situation_summaries[0].label, "4v5 (1451)");
+        assert_eq!(view.situation_summaries[0].label, "penalty kill 4v5 (1451)");
         assert_eq!(view.top_shooters[0].summary.shot_attempts, 2);
     }
 
     #[test]
-    fn l0_scoring_situation_labels_preserve_strength_state_and_raw_code() {
-        assert_eq!(strength_state_label("1551").as_deref(), Some("5v5 (1551)"));
-        assert_eq!(strength_state_label("1451").as_deref(), Some("4v5 (1451)"));
-        assert_eq!(strength_state_label("1541").as_deref(), Some("5v4 (1541)"));
-        assert_eq!(strength_state_label("invalid"), None);
+    fn l0_scoring_situation_labels_preserve_owner_strength_state_and_raw_code() {
+        assert_eq!(
+            strength_state_label("1551", Some(TeamSide::Away)).as_deref(),
+            Some("even strength 5v5 (1551)")
+        );
+        assert_eq!(
+            strength_state_label("1451", Some(TeamSide::Away)).as_deref(),
+            Some("penalty kill 4v5 (1451)")
+        );
+        assert_eq!(
+            strength_state_label("1541", Some(TeamSide::Away)).as_deref(),
+            Some("power play 5v4 (1541)")
+        );
+        assert_eq!(
+            strength_state_label("1541", Some(TeamSide::Home)).as_deref(),
+            Some("penalty kill 5v4 (1541)")
+        );
+        assert_eq!(
+            strength_state_label("1551", None).as_deref(),
+            Some("5v5 (1551)")
+        );
+        assert_eq!(strength_state_label("invalid", Some(TeamSide::Away)), None);
     }
 
     #[test]

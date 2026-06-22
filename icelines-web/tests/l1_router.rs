@@ -6796,7 +6796,7 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
     );
     assert_eq!(
         json["data"]["situation_summaries"][0]["label"],
-        serde_json::Value::from("5v5 (1551)")
+        serde_json::Value::from("even strength 5v5 (1551)")
     );
     assert_eq!(
         json["data"]["events"][0]["event_owner_side"],
