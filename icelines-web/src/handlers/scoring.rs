@@ -142,6 +142,9 @@ struct ScoringSummaryTemplateRow {
 #[derive(Debug, Clone)]
 struct ScoringSplitTemplateRow {
     label: String,
+    situation_code: String,
+    skater_state: String,
+    owner_strength_state: String,
     summary: ScoringSummaryTemplateRow,
 }
 
@@ -953,6 +956,17 @@ fn split_rows(rows: &[ScoringSplitSummary]) -> Vec<ScoringSplitTemplateRow> {
     rows.iter()
         .map(|row| ScoringSplitTemplateRow {
             label: row.label.clone(),
+            situation_code: row.situation_code.clone().unwrap_or_default(),
+            skater_state: row.skater_state.clone().unwrap_or_default(),
+            owner_strength_state: row
+                .owner_strength_state
+                .map(|state| match state {
+                    icelines_core::StrengthState::EvenStrength => "even-strength",
+                    icelines_core::StrengthState::PowerPlay => "power-play",
+                    icelines_core::StrengthState::PenaltyKill => "penalty-kill",
+                })
+                .unwrap_or("")
+                .to_string(),
             summary: summary_row(row.summary),
         })
         .collect()

@@ -6817,6 +6817,31 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
 }
 
 #[tokio::test]
+async fn l1_rocket_game_scoring_html_marks_strength_state_rows() {
+    let _guard = home_env_lock().await;
+    let data_root = DataRootEnvFixture::new();
+    seed_scoring_play_by_play(&data_root.data_root(), 2025020001, "2025-10-07");
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/game/2025020001/scoring")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let html = response_text(response, 256 * 1024).await;
+    assert!(html.contains("even strength 5v5 (1551)"));
+    assert!(html.contains("data-situation-code=\"1551\""));
+    assert!(html.contains("data-skater-state=\"5v5\""));
+    assert!(html.contains("data-owner-strength-state=\"even-strength\""));
+}
+
+#[tokio::test]
 async fn l1_rocket_player_scoring_json_filters_player_events() {
     let _guard = home_env_lock().await;
     let data_root = DataRootEnvFixture::new();

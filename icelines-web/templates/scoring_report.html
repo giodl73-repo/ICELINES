@@ -92,7 +92,7 @@
         </thead>
         <tbody>
             {% for row in page.situation_summaries %}
-            <tr><td>{{ row.label }}</td><td class="numeric">{{ row.summary.goals }}</td><td class="numeric">{{ row.summary.shots_on_goal }}</td><td class="numeric">{{ row.summary.shot_attempts }}</td><td class="numeric">{{ row.summary.unblocked_attempts }}</td><td class="numeric">{{ row.summary.missed_shots }}</td><td class="numeric">{{ row.summary.blocked_shots }}</td><td class="numeric">{{ row.summary.shot_pct }}</td></tr>
+            <tr data-situation-code="{{ row.situation_code }}" data-skater-state="{{ row.skater_state }}" data-owner-strength-state="{{ row.owner_strength_state }}"><td>{{ row.label }}</td><td class="numeric">{{ row.summary.goals }}</td><td class="numeric">{{ row.summary.shots_on_goal }}</td><td class="numeric">{{ row.summary.shot_attempts }}</td><td class="numeric">{{ row.summary.unblocked_attempts }}</td><td class="numeric">{{ row.summary.missed_shots }}</td><td class="numeric">{{ row.summary.blocked_shots }}</td><td class="numeric">{{ row.summary.shot_pct }}</td></tr>
             {% endfor %}
         </tbody>
     </table>
