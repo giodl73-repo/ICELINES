@@ -26,6 +26,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Source - Outlook schedule authority](2026-06-22-phaseCanadiensSource-outlook-schedule-authority.md) | Closed | Adds schedule authority metadata and HTML labels to scoring outlook surfaces without over-claiming play-by-play or projection authority. |
 | [Phase Canadiens Source - Tonight Intel authority](2026-06-22-phaseCanadiensSource-tonight-authority.md) | Closed | Extends the scoring source authority contract to Tonight Intel JSON and HTML surfaces. |
 | [Phase Canadiens Source - Scoring authority coverage state](2026-06-22-phaseCanadiensSource-authority-coverage-state.md) | Closed | Adds compact `source_authority.coverage_state` values so scoring consumers can read coverage without interpreting raw source completeness. |
 | [Phase Canadiens Source - Scoring authority limitations](2026-06-22-phaseCanadiensSource-authority-limitations.md) | Closed | Adds machine-readable `source_authority.limitations` keys so scoring consumers can distinguish cached play-by-play coverage from non-covered domains. |

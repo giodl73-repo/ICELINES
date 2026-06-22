@@ -654,7 +654,9 @@ projected finish/range below the sample floor or when remaining schedule data is
 not loaded. The player range is a descriptive confidence band around current
 pace, not a betting forecast. Team outlook rows show goals for/against pace and
 recent pressure from cached regular-season schedule scores only; GET routes do
-not fetch live NHL data.
+not fetch live NHL data. Outlook JSON `meta.schedule_authority` and the HTML
+banner identify the cached NHL schedule/final-score authority for remaining
+games, projected-finish context, team goals for/against, and recent form.
 Web `/player/:id/outlook` and `/team/:abbrev/outlook` render an inline 82-game
 pace SVG chart when outlook rows have finite positive pace values; the JSON
 routes are unchanged.

@@ -107,6 +107,7 @@ struct ScoringOutlookPage {
     back_label: String,
     api_href: String,
     source_label: String,
+    schedule_authority: String,
     outlook_pace_svg: Option<String>,
     rows: Vec<ScoringOutlookTemplateRow>,
     has_recent_form: bool,
@@ -184,6 +185,18 @@ struct ScoringSourceAuthority {
     label: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct ScheduleAuthority {
+    source: &'static str,
+    source_kind: SourceKind,
+    state: Completeness,
+    coverage_state: &'static str,
+    basis: &'static str,
+    covered_metrics: Vec<&'static str>,
+    limitations: Vec<&'static str>,
+    label: String,
+}
+
 pub async fn get_game_scoring(State(state): State<WebState>, Path(id): Path<u64>) -> Response {
     match build_game_scoring_view(&state, id).await {
         Ok((active_label, view)) => {
@@ -239,6 +252,7 @@ pub async fn get_player_outlook_json(
                 "season": view.context.window.season.0.to_string(),
                 "season_type": view.context.window.season_type.label(),
                 "source_state": view.context.source_state,
+                "schedule_authority": schedule_authority(&view.context.source_state),
             });
             crate::api::json_data_meta("player-outlook", view, meta)
         }
@@ -302,6 +316,7 @@ pub async fn get_team_outlook_json(
                 "season": view.context.window.season.0.to_string(),
                 "season_type": view.context.window.season_type.label(),
                 "source_state": view.context.source_state,
+                "schedule_authority": schedule_authority(&view.context.source_state),
             });
             crate::api::json_data_meta("team-outlook", view, meta)
         }
@@ -726,6 +741,7 @@ fn player_outlook_page(view: &PlayerScoringPaceView) -> ScoringOutlookPage {
         back_label: "player card".to_string(),
         api_href: format!("/api/v1/player/{}/outlook", view.player_id),
         source_label: player_outlook_source_label(view),
+        schedule_authority: schedule_authority(&view.context.source_state).label,
         outlook_pace_svg,
         rows,
         has_recent_form: false,
@@ -753,6 +769,7 @@ fn team_outlook_page(view: &TeamScoringOutlookView) -> ScoringOutlookPage {
         back_label: "team page".to_string(),
         api_href: format!("/api/v1/team/{}/outlook", view.team),
         source_label: team_outlook_source_label(view.source_status),
+        schedule_authority: schedule_authority(&view.context.source_state).label,
         outlook_pace_svg,
         rows,
         has_recent_form: true,
@@ -936,6 +953,55 @@ fn team_outlook_source_label(status: TeamScoringOutlookSourceStatus) -> String {
         TeamScoringOutlookSourceStatus::MissingSource => {
             "schedule missing, projected finish unavailable".to_string()
         }
+    }
+}
+
+fn schedule_authority(states: &[SourceState]) -> ScheduleAuthority {
+    let state = states
+        .iter()
+        .find(|state| state.source == SourceKind::Schedule)
+        .map(|state| state.state)
+        .unwrap_or(Completeness::Unavailable);
+    let coverage_state = match state {
+        Completeness::Complete => "covered",
+        Completeness::Partial => "partial",
+        Completeness::Stale => "stale",
+        Completeness::Unavailable => "unavailable",
+    };
+    let label = match state {
+        Completeness::Complete => {
+            "Authority: cached NHL schedule/scores for remaining games and outlook context"
+        }
+        Completeness::Partial => {
+            "Authority: partial cached NHL schedule/scores for remaining games and outlook context"
+        }
+        Completeness::Stale => {
+            "Authority: stale cached NHL schedule/scores for remaining games and outlook context"
+        }
+        Completeness::Unavailable => {
+            "Authority: NHL schedule/scores not loaded for remaining games and outlook context"
+        }
+    };
+
+    ScheduleAuthority {
+        source: "NHL schedule and final scores",
+        source_kind: SourceKind::Schedule,
+        state,
+        coverage_state,
+        basis: "cached schedule games and final scores used for remaining-game and team outlook context",
+        covered_metrics: vec![
+            "remaining_games",
+            "projected_finish_context",
+            "team_goals_for",
+            "team_goals_against",
+            "recent_form",
+        ],
+        limitations: vec![
+            "does_not_include_play_by_play_scoring_events",
+            "does_not_include_expected_goals",
+            "does_not_include_betting_forecasts",
+        ],
+        label: label.to_string(),
     }
 }
 
