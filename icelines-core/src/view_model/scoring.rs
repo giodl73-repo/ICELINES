@@ -219,7 +219,18 @@ impl ScoringEventSummary {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScoringSplitSummary {
     pub label: String,
+    pub situation_code: Option<String>,
+    pub skater_state: Option<String>,
+    pub owner_strength_state: Option<StrengthState>,
     pub summary: ScoringEventSummary,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum StrengthState {
+    EvenStrength,
+    PowerPlay,
+    PenaltyKill,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -580,22 +591,47 @@ fn player_scoring_trend_rows(
 
 fn split_summaries(
     events: &[ScoringEventInput],
-    label_fn: fn(&ScoringEventInput) -> String,
+    split_fn: fn(&ScoringEventInput) -> ScoringSplitDescriptor,
 ) -> Vec<ScoringSplitSummary> {
-    let mut groups: BTreeMap<String, Vec<ScoringEventInput>> = BTreeMap::new();
+    let mut groups: BTreeMap<String, (ScoringSplitDescriptor, Vec<ScoringEventInput>)> =
+        BTreeMap::new();
     for event in events {
+        let split = split_fn(event);
         groups
-            .entry(label_fn(event))
-            .or_default()
+            .entry(split.label.clone())
+            .or_insert_with(|| (split, Vec::new()))
+            .1
             .push(event.clone());
     }
     groups
         .into_iter()
-        .map(|(label, events)| ScoringSplitSummary {
-            label,
+        .map(|(_, (split, events))| ScoringSplitSummary {
+            label: split.label,
+            situation_code: split.situation_code,
+            skater_state: split.skater_state,
+            owner_strength_state: split.owner_strength_state,
             summary: ScoringEventSummary::from_events(&events),
         })
         .collect()
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ScoringSplitDescriptor {
+    label: String,
+    situation_code: Option<String>,
+    skater_state: Option<String>,
+    owner_strength_state: Option<StrengthState>,
+}
+
+impl ScoringSplitDescriptor {
+    fn label(label: String) -> Self {
+        Self {
+            label,
+            situation_code: None,
+            skater_state: None,
+            owner_strength_state: None,
+        }
+    }
 }
 
 fn top_shooter_summaries(events: &[ScoringEventInput]) -> Vec<ScoringShooterSummary> {
@@ -623,32 +659,43 @@ fn top_shooter_summaries(events: &[ScoringEventInput]) -> Vec<ScoringShooterSumm
     rows
 }
 
-fn team_label(event: &ScoringEventInput) -> String {
-    event
-        .event_owner_team_abbrev
-        .clone()
-        .or_else(|| event.event_owner_team_id.map(|id| id.to_string()))
-        .unwrap_or_else(|| "unknown".to_string())
-}
-
-fn period_label(event: &ScoringEventInput) -> String {
-    if event.period_type == "REG" {
-        format!("P{}", event.period)
-    } else {
-        format!("{}{}", event.period_type, event.period)
-    }
-}
-
-fn situation_label(event: &ScoringEventInput) -> String {
-    event.situation_code.as_deref().map_or_else(
-        || "unknown".to_string(),
-        |code| {
-            strength_state_label(code, event.event_owner_side).unwrap_or_else(|| code.to_string())
-        },
+fn team_label(event: &ScoringEventInput) -> ScoringSplitDescriptor {
+    ScoringSplitDescriptor::label(
+        event
+            .event_owner_team_abbrev
+            .clone()
+            .or_else(|| event.event_owner_team_id.map(|id| id.to_string()))
+            .unwrap_or_else(|| "unknown".to_string()),
     )
 }
 
-fn strength_state_label(code: &str, owner_side: Option<TeamSide>) -> Option<String> {
+fn period_label(event: &ScoringEventInput) -> ScoringSplitDescriptor {
+    ScoringSplitDescriptor::label(if event.period_type == "REG" {
+        format!("P{}", event.period)
+    } else {
+        format!("{}{}", event.period_type, event.period)
+    })
+}
+
+fn situation_label(event: &ScoringEventInput) -> ScoringSplitDescriptor {
+    event
+        .situation_code
+        .as_deref()
+        .and_then(|code| strength_state_descriptor(code, event.event_owner_side))
+        .unwrap_or_else(|| {
+            ScoringSplitDescriptor::label(
+                event
+                    .situation_code
+                    .clone()
+                    .unwrap_or_else(|| "unknown".to_string()),
+            )
+        })
+}
+
+fn strength_state_descriptor(
+    code: &str,
+    owner_side: Option<TeamSide>,
+) -> Option<ScoringSplitDescriptor> {
     let mut chars = code.chars();
     let _away_goalie = chars.next()?;
     let away_skaters = chars.next()?.to_digit(10)?;
@@ -663,17 +710,32 @@ fn strength_state_label(code: &str, owner_side: Option<TeamSide>) -> Option<Stri
         Some(TeamSide::Home) => strength_state_name(home_skaters, away_skaters),
         None => None,
     };
-    Some(match state {
-        Some(state) => format!("{state} {counts} ({code})"),
-        None => format!("{counts} ({code})"),
+    Some(ScoringSplitDescriptor {
+        label: match state {
+            Some(state) => format!("{} {counts} ({code})", state.label()),
+            None => format!("{counts} ({code})"),
+        },
+        situation_code: Some(code.to_string()),
+        skater_state: Some(counts),
+        owner_strength_state: state,
     })
 }
 
-fn strength_state_name(owner_skaters: u32, opponent_skaters: u32) -> Option<&'static str> {
+fn strength_state_name(owner_skaters: u32, opponent_skaters: u32) -> Option<StrengthState> {
     match owner_skaters.cmp(&opponent_skaters) {
-        std::cmp::Ordering::Greater => Some("power play"),
-        std::cmp::Ordering::Equal => Some("even strength"),
-        std::cmp::Ordering::Less => Some("penalty kill"),
+        std::cmp::Ordering::Greater => Some(StrengthState::PowerPlay),
+        std::cmp::Ordering::Equal => Some(StrengthState::EvenStrength),
+        std::cmp::Ordering::Less => Some(StrengthState::PenaltyKill),
+    }
+}
+
+impl StrengthState {
+    fn label(self) -> &'static str {
+        match self {
+            Self::EvenStrength => "even strength",
+            Self::PowerPlay => "power play",
+            Self::PenaltyKill => "penalty kill",
+        }
     }
 }
 
@@ -1020,34 +1082,60 @@ mod tests {
 
         assert_eq!(view.team_summaries.len(), 2);
         assert_eq!(view.team_summaries[0].label, "EDM");
+        assert_eq!(view.team_summaries[0].owner_strength_state, None);
         assert_eq!(view.period_summaries[0].label, "P1");
         assert_eq!(view.situation_summaries[0].label, "penalty kill 4v5 (1451)");
+        assert_eq!(
+            view.situation_summaries[0].situation_code.as_deref(),
+            Some("1451")
+        );
+        assert_eq!(
+            view.situation_summaries[0].skater_state.as_deref(),
+            Some("4v5")
+        );
+        assert_eq!(
+            view.situation_summaries[0].owner_strength_state,
+            Some(StrengthState::PenaltyKill)
+        );
         assert_eq!(view.top_shooters[0].summary.shot_attempts, 2);
     }
 
     #[test]
     fn l0_scoring_situation_labels_preserve_owner_strength_state_and_raw_code() {
         assert_eq!(
-            strength_state_label("1551", Some(TeamSide::Away)).as_deref(),
+            strength_state_descriptor("1551", Some(TeamSide::Away))
+                .map(|split| split.label)
+                .as_deref(),
             Some("even strength 5v5 (1551)")
         );
         assert_eq!(
-            strength_state_label("1451", Some(TeamSide::Away)).as_deref(),
+            strength_state_descriptor("1451", Some(TeamSide::Away))
+                .map(|split| split.label)
+                .as_deref(),
             Some("penalty kill 4v5 (1451)")
         );
         assert_eq!(
-            strength_state_label("1541", Some(TeamSide::Away)).as_deref(),
+            strength_state_descriptor("1541", Some(TeamSide::Away))
+                .map(|split| split.label)
+                .as_deref(),
             Some("power play 5v4 (1541)")
         );
         assert_eq!(
-            strength_state_label("1541", Some(TeamSide::Home)).as_deref(),
+            strength_state_descriptor("1541", Some(TeamSide::Home))
+                .map(|split| split.label)
+                .as_deref(),
             Some("penalty kill 5v4 (1541)")
         );
         assert_eq!(
-            strength_state_label("1551", None).as_deref(),
+            strength_state_descriptor("1551", None)
+                .map(|split| split.label)
+                .as_deref(),
             Some("5v5 (1551)")
         );
-        assert_eq!(strength_state_label("invalid", Some(TeamSide::Away)), None);
+        assert_eq!(
+            strength_state_descriptor("invalid", Some(TeamSide::Away)),
+            None
+        );
     }
 
     #[test]

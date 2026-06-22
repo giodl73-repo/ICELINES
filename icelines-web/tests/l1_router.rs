@@ -6799,6 +6799,18 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
         serde_json::Value::from("even strength 5v5 (1551)")
     );
     assert_eq!(
+        json["data"]["situation_summaries"][0]["situation_code"],
+        serde_json::Value::from("1551")
+    );
+    assert_eq!(
+        json["data"]["situation_summaries"][0]["skater_state"],
+        serde_json::Value::from("5v5")
+    );
+    assert_eq!(
+        json["data"]["situation_summaries"][0]["owner_strength_state"],
+        serde_json::Value::from("even-strength")
+    );
+    assert_eq!(
         json["data"]["events"][0]["event_owner_side"],
         serde_json::Value::from("away")
     );
