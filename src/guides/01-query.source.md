@@ -116,7 +116,7 @@ Output includes:
 - Peak season, career PPG
 
 ```bash
-# Situational breakdown (Phase 5C — requires shift data)
+# Situational breakdown is parked until verified shift policy ships
 icelines query player "McDavid" --breakdown situation
 ```
 

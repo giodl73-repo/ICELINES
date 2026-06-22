@@ -26,6 +26,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Shifts - Query doc policy](2026-06-22-phaseCanadiensShifts-query-doc-policy.md) | Closed | Aligns query/dashboard docs with true shift joins staying parked behind a verified source, bundle, fetch, fixture, and join policy. |
 | [Phase Canadiens Shifts - Command doc sources](2026-06-22-phaseCanadiensShifts-command-doc-sources.md) | Closed | Aligns command-reference source tables with `sync.capabilities.shifts=off` and no supported `fetch shifts` recovery. |
 | [Phase Canadiens Shifts - TUI deployment alias](2026-06-22-phaseCanadiensShifts-tui-deployment-alias.md) | Closed | Removes `deployment` as a hidden TUI alias for roster-fallback `mates` while preserving `linemates`. |
 | [Phase Canadiens Shifts - TUI mates handoff](2026-06-22-phaseCanadiensShifts-tui-mates-handoff.md) | Closed | Aligns the TUI `:mates` command handoff with roster fallback and locked shift capability copy. |

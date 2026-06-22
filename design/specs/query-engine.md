@@ -155,8 +155,8 @@ icelines query compare --draft-year 2022 --round 1 --sort xgf-pct
 | GWG | `gwg` | |
 | Shots | `shots` | |
 | Shooting % | `sh-pct` | |
-| TOI/game (ES) | `es-toi` | From shift data (Tier 3) |
-| Zone Start % | `zs-pct` | From shift data (Tier 3) |
+| TOI/game (ES) | `es-toi` | Reserved until Tier 3 shift policy ships |
+| Zone Start % | `zs-pct` | Reserved until Tier 3 shift policy ships |
 
 ### Tier 2 — Reserved for future shift data (Tier 3)
 
@@ -216,11 +216,17 @@ SIMILAR PLAYERS TO MATTY BENIERS (SEA · C · Age 22 · 2022 R1#2)
 
 ## Strength-state implementation
 
-The key differentiator of Natural Stat Trick. Requires shift data (Tier 3).
+The key differentiator of Natural Stat Trick. Full on-ice strength-state rates
+require a future Tier 3 shift policy and remain unavailable today.
 
-Current status: IceLines has shift data infrastructure (`ShiftProfile`, `avg_ev_toi_seconds_per_game`) but no on-ice event data (goals/shots while on ice at 5v5 vs. PP).
+Current status: IceLines has cached play-by-play scoring-event strength splits,
+but no supported historical shift bundle, no `fetch shifts` command, and no
+true per-shift interval join. The legacy `ShiftProfile` projection is a
+boxscore/Positions fallback, not source authority for on-ice 5v5/PP/PK rates or
+deployment claims.
 
-Phase 5 addition: Pull play-by-play from NHL API and cross-reference with shifts to compute:
+Future addition: use a verified shift source/bundle/fetch policy and fixtures to
+cross-reference play-by-play with true shift intervals and compute:
 - `5v5_points`, `5v5_toi` — purely even strength production
 - `pp_points`, `pp_toi` — purely power play production
 - `5v5_pts_per_60` — the gold standard forward ranking metric

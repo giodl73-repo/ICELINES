@@ -358,7 +358,7 @@ pub enum QuerySource {
     DepthChart { team: String, pos: Option<Position> },
     History   { player: String, seasons: u8 },          // multi-season career data
 
-    // Tier 3: available in Release 2 (requires shift data)
+    // Tier 3: parked until a verified shift source/bundle/fetch policy ships
     Shifts    { player: String, min_shared_shifts: u32 }, // linemate analysis
 }
 
