@@ -2952,6 +2952,18 @@ async fn l1_team_streaks_empty_state_loads_cache_in_web_ui() {
     );
     assert!(body.contains("/admin/game-cache/load"), "body was:\n{body}");
     assert!(
+        body.contains(
+            "Authority: cached per-game boxscore skater rows not loaded for team streak leaders"
+        ),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(
+            "Authority: cached official NHL play-by-play shot rows not loaded for team streak leaders"
+        ),
+        "body was:\n{body}"
+    );
+    assert!(
         !body.contains("icelines fetch boxscore"),
         "team streaks empty state should not send users to the CLI:\n{body}"
     );
@@ -7059,6 +7071,28 @@ async fn l1_rocket_team_streaks_json_exposes_shot_metrics() {
         .expect("source state")
         .iter()
         .any(|state| state["source"] == "play_by_play" && state["state"] == "complete"));
+    let authorities = json["meta"]["source_authorities"]
+        .as_array()
+        .expect("source authorities");
+    assert!(authorities.iter().any(|authority| {
+        authority["source_kind"] == "boxscore"
+            && authority["coverage_state"] == "covered"
+            && authority["covered_metrics"]
+                == serde_json::json!([
+                    "goal_streak_leaders",
+                    "assist_streak_leaders",
+                    "point_streak_leaders"
+                ])
+    }));
+    assert!(authorities.iter().any(|authority| {
+        authority["source_kind"] == "play_by_play"
+            && authority["coverage_state"] == "covered"
+            && authority["covered_metrics"]
+                == serde_json::json!([
+                    "shots_on_goal_streak_leaders",
+                    "shot_attempt_streak_leaders"
+                ])
+    }));
 }
 
 #[tokio::test]

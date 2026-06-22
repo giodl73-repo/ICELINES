@@ -810,6 +810,7 @@ pub struct TeamPlayerStreaksTemplate {
     pub season: String,
     pub season_pretty: String,
     pub season_type: String,
+    pub source_authority: String,
     pub rows: Vec<TeamPlayerStreaksTemplateRow>,
     pub games_loaded: usize,
     pub players_loaded: usize,

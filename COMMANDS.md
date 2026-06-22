@@ -533,6 +533,9 @@ press `s` from a player card, or run `:streaks player <name>` in the command bar
 Player streak JSON `meta.source_authorities` separates boxscore authority for
 goal/assist/point streaks from play-by-play authority for shot and attempt
 streaks; the web page prints the same authority labels.
+Team streak JSON uses the same split for team streak leaders, with boxscore
+authority for goal/assist/point leaders and play-by-play authority for shot and
+attempt leaders.
 
 Player cards are now the hub for player-specific surfaces: records, awards,
 streaks, scouting, compare, groups/favorites, and fantasy watch handoffs are

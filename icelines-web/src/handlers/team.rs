@@ -13,7 +13,19 @@ use icelines_core::view_model::{
     DepthGoalieSlot, DepthLine, DepthPair, DepthPlayerSlot, TeamDepthView, TeamPlayerStreaksView,
     TeamSeasonGameRow, TeamSeasonVenue, TeamSeasonView, ViewContext, ViewWindow,
 };
-use icelines_core::{MetricCell, MetricValue};
+use icelines_core::{Completeness, MetricCell, MetricValue, SourceKind, SourceState};
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct TeamStreakSourceAuthority {
+    source: &'static str,
+    source_kind: SourceKind,
+    state: Completeness,
+    coverage_state: &'static str,
+    basis: &'static str,
+    covered_metrics: Vec<&'static str>,
+    limitations: Vec<&'static str>,
+    label: String,
+}
 
 pub async fn get_team(State(state): State<WebState>, Path(abbrev_raw): Path<String>) -> Response {
     match build_team_template(&state, &abbrev_raw).await {
@@ -318,6 +330,7 @@ pub async fn get_team_streaks_json(
                 "games_loaded": view.games_loaded,
                 "players_loaded": view.players_loaded,
                 "source_state": view.context.source_state,
+                "source_authorities": team_streak_source_authorities(&view.context.source_state),
             });
             crate::api::json_data_meta("team-streaks", view, meta)
         }
@@ -417,6 +430,7 @@ fn team_streaks_template(
         season: view.context.window.season.0.to_string(),
         season_pretty: pretty_season_label(view.context.window.season.0),
         season_type: view.context.window.season_type.label().to_string(),
+        source_authority: team_streak_authority_label(&view.context.source_state),
         rows: view.rows.iter().map(team_streaks_template_row).collect(),
         games_loaded: view.games_loaded,
         players_loaded: view.players_loaded,
@@ -442,6 +456,86 @@ fn team_streaks_template_row(
             .unwrap_or_else(|| "-".to_string()),
         games_loaded: row.games_loaded,
     }
+}
+
+fn team_streak_source_authorities(states: &[SourceState]) -> Vec<TeamStreakSourceAuthority> {
+    vec![
+        team_streak_authority(
+            states,
+            SourceKind::Boxscore,
+            "cached per-game boxscore skater rows",
+            "boxscore game lines ordered by game date for team goal, assist, and point streak leaders",
+            vec!["goal_streak_leaders", "assist_streak_leaders", "point_streak_leaders"],
+            vec![
+                "does_not_include_shot_streak_leaders",
+                "does_not_include_shift_time",
+                "does_not_include_expected_goals",
+            ],
+        ),
+        team_streak_authority(
+            states,
+            SourceKind::PlayByPlay,
+            "cached official NHL play-by-play shot rows",
+            "play-by-play shot lines ordered by game date for team shot and attempt streak leaders",
+            vec!["shots_on_goal_streak_leaders", "shot_attempt_streak_leaders"],
+            vec![
+                "does_not_include_goal_assist_point_streak_leaders",
+                "does_not_include_shift_time",
+                "does_not_include_expected_goals",
+            ],
+        ),
+    ]
+}
+
+fn team_streak_authority(
+    states: &[SourceState],
+    source_kind: SourceKind,
+    source: &'static str,
+    basis: &'static str,
+    covered_metrics: Vec<&'static str>,
+    limitations: Vec<&'static str>,
+) -> TeamStreakSourceAuthority {
+    let state = states
+        .iter()
+        .find(|state| state.source == source_kind)
+        .map(|state| state.state)
+        .unwrap_or(Completeness::Unavailable);
+    let coverage_state = match state {
+        Completeness::Complete => "covered",
+        Completeness::Partial => "partial",
+        Completeness::Stale => "stale",
+        Completeness::Unavailable => "unavailable",
+    };
+    let label = match state {
+        Completeness::Complete => format!("Authority: {source} loaded for team streak leaders"),
+        Completeness::Partial => {
+            format!("Authority: partial {source} loaded for team streak leaders")
+        }
+        Completeness::Stale => {
+            format!("Authority: stale {source} loaded for team streak leaders")
+        }
+        Completeness::Unavailable => {
+            format!("Authority: {source} not loaded for team streak leaders")
+        }
+    };
+    TeamStreakSourceAuthority {
+        source,
+        source_kind,
+        state,
+        coverage_state,
+        basis,
+        covered_metrics,
+        limitations,
+        label,
+    }
+}
+
+fn team_streak_authority_label(states: &[SourceState]) -> String {
+    team_streak_source_authorities(states)
+        .into_iter()
+        .map(|authority| authority.label)
+        .collect::<Vec<_>>()
+        .join("; ")
 }
 
 fn pretty_season_label(season: u32) -> String {
