@@ -1,9 +1,9 @@
 <section class="jaw-workspace" aria-label="Workspace" data-workspace-url="{{ workspace_url }}">
     <div class="jaw-workspace-heading">
         <h1>{{ workspace_label }}</h1>
-        <a class="link-button-secondary" href="{{ workspace_url }}">Open full {{ workspace_label }}</a>
-        <a class="link-button-secondary" href="{{ center_pin_left_href }}" data-dashboard-composition-link>Pin left</a>
-        <a class="link-button-secondary" href="{{ center_pin_right_href }}" data-dashboard-composition-link>Pin right</a>
+        <a class="link-button-secondary" href="{{ workspace_url }}" aria-label="Open full {{ workspace_label }} workspace">Open full {{ workspace_label }}</a>
+        <a class="link-button-secondary" href="{{ center_pin_left_href }}" aria-label="Pin {{ workspace_label }} workspace to left pane" data-dashboard-composition-link>Pin left</a>
+        <a class="link-button-secondary" href="{{ center_pin_right_href }}" aria-label="Pin {{ workspace_label }} workspace to right pane" data-dashboard-composition-link>Pin right</a>
     </div>
     {% if !left_context_ring.is_empty() %}
     <nav class="chip-strip" aria-label="Left context ring">

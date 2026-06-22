@@ -1119,6 +1119,9 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("class=\"jaw-data-row\""));
     assert!(body.contains("href=\"/poach?availability=imported-available\""));
     assert!(body.contains("Open full Poach"));
+    assert!(body.contains("aria-label=\"Open full Poach workspace\""));
+    assert!(body.contains("aria-label=\"Pin Poach workspace to left pane\""));
+    assert!(body.contains("aria-label=\"Pin Poach workspace to right pane\""));
     assert!(body.contains("Workspace wiring"));
     assert!(body.contains("aria-label=\"Right context pane\""));
     assert!(body.contains("data-dashboard-pane=\"schedule\""));
