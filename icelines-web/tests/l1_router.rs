@@ -6791,6 +6791,18 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
         serde_json::Value::from(3_u64)
     );
     assert_eq!(
+        json["meta"]["source_authority"]["source"],
+        serde_json::Value::from("official NHL play-by-play")
+    );
+    assert_eq!(
+        json["meta"]["source_authority"]["source_kind"],
+        serde_json::Value::from("play_by_play")
+    );
+    assert_eq!(
+        json["meta"]["source_authority"]["state"],
+        serde_json::Value::from("complete")
+    );
+    assert_eq!(
         json["data"]["team_summaries"][0]["label"],
         serde_json::Value::from("CHI")
     );
@@ -6843,6 +6855,9 @@ async fn l1_rocket_game_scoring_html_marks_strength_state_rows() {
 
     assert_eq!(response.status(), StatusCode::OK);
     let html = response_text(response, 256 * 1024).await;
+    assert!(html.contains(
+        "Authority: official NHL play-by-play cache for scoring events and strength state"
+    ));
     assert!(html.contains("<h2>By strength</h2>"));
     assert!(html.contains("even strength 5v5 (1551)"));
     assert!(html.contains("data-situation-code=\"1551\""));
@@ -7005,6 +7020,12 @@ async fn l1_rocket_team_scoring_html_offers_cache_load_when_missing() {
         .expect("body fits");
     let html = String::from_utf8(bytes.to_vec()).expect("utf8 html");
     assert!(html.contains("CHI Scoring Profile"), "body was:\n{html}");
+    assert!(
+        html.contains(
+            "Authority: official NHL play-by-play cache not loaded for scoring events and strength state"
+        ),
+        "body was:\n{html}"
+    );
     assert!(
         html.contains("Load scoring-event cache"),
         "body was:\n{html}"

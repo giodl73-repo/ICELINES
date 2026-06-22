@@ -32,6 +32,7 @@ struct ScoringReportPage {
     api_href: String,
     source_loaded: bool,
     source_label: String,
+    source_authority: String,
     summary: ScoringSummaryTemplateRow,
     team_summaries: Vec<ScoringSplitTemplateRow>,
     period_summaries: Vec<ScoringSplitTemplateRow>,
@@ -170,6 +171,15 @@ struct ScoringEventTemplateRow {
     location: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct ScoringSourceAuthority {
+    source: &'static str,
+    source_kind: SourceKind,
+    state: Completeness,
+    basis: &'static str,
+    label: String,
+}
+
 pub async fn get_game_scoring(State(state): State<WebState>, Path(id): Path<u64>) -> Response {
     match build_game_scoring_view(&state, id).await {
         Ok((active_label, view)) => {
@@ -186,6 +196,7 @@ pub async fn get_game_scoring_json(State(state): State<WebState>, Path(id): Path
             let meta = serde_json::json!({
                 "game_id": view.game_id,
                 "source_state": view.context.source_state,
+                "source_authority": scoring_source_authority(&view.context.source_state),
             });
             crate::api::json_data_meta("game-scoring", view, meta)
         }
@@ -242,6 +253,7 @@ pub async fn get_player_scoring_json(
                 "season": view.context.window.season.0.to_string(),
                 "season_type": view.context.window.season_type.label(),
                 "source_state": view.context.source_state,
+                "source_authority": scoring_source_authority(&view.context.source_state),
             });
             crate::api::json_data_meta("player-scoring", view, meta)
         }
@@ -304,6 +316,7 @@ pub async fn get_team_scoring_json(
                 "season": view.context.window.season.0.to_string(),
                 "season_type": view.context.window.season_type.label(),
                 "source_state": view.context.source_state,
+                "source_authority": scoring_source_authority(&view.context.source_state),
             });
             crate::api::json_data_meta("team-scoring", view, meta)
         }
@@ -617,6 +630,7 @@ fn game_scoring_page(view: &GameScoringReportView) -> ScoringReportPage {
         api_href: format!("/api/v1/game/{}/scoring", view.game_id),
         source_loaded,
         source_label: source_label(source_loaded),
+        source_authority: scoring_source_authority(&view.context.source_state).label,
         summary: summary_row(view.summary),
         team_summaries: split_rows(&view.team_summaries),
         period_summaries: split_rows(&view.period_summaries),
@@ -646,6 +660,7 @@ fn team_scoring_page(
         api_href: format!("/api/v1/team/{}/scoring", view.team),
         source_loaded,
         source_label: source_label(source_loaded),
+        source_authority: scoring_source_authority(&view.context.source_state).label,
         summary: summary_row(view.summary),
         team_summaries: Vec::new(),
         period_summaries: split_rows(&view.period_summaries),
@@ -680,6 +695,7 @@ fn player_scoring_page(
         api_href: format!("/api/v1/player/{}/scoring", view.player_id),
         source_loaded,
         source_label: source_label(source_loaded),
+        source_authority: scoring_source_authority(&view.context.source_state).label,
         summary: summary_row(view.summary),
         team_summaries: Vec::new(),
         period_summaries: split_rows(&view.period_summaries),
@@ -1054,6 +1070,38 @@ fn source_label(loaded: bool) -> String {
         "play-by-play loaded".to_string()
     } else {
         "play-by-play not loaded".to_string()
+    }
+}
+
+fn scoring_source_authority(states: &[SourceState]) -> ScoringSourceAuthority {
+    let state = states
+        .iter()
+        .find(|state| state.source == SourceKind::PlayByPlay)
+        .map(|state| state.state)
+        .unwrap_or(Completeness::Unavailable);
+    let source = "official NHL play-by-play";
+    let basis = "cached scoring events: goals, shots on goal, missed shots, blocked shots, and owner-perspective strength state";
+    let label = match state {
+        Completeness::Complete => {
+            "Authority: official NHL play-by-play cache for scoring events and strength state"
+        }
+        Completeness::Partial => {
+            "Authority: partial official NHL play-by-play cache for scoring events and strength state"
+        }
+        Completeness::Stale => {
+            "Authority: stale official NHL play-by-play cache for scoring events and strength state"
+        }
+        Completeness::Unavailable => {
+            "Authority: official NHL play-by-play cache not loaded for scoring events and strength state"
+        }
+    };
+
+    ScoringSourceAuthority {
+        source,
+        source_kind: SourceKind::PlayByPlay,
+        state,
+        basis,
+        label: label.to_string(),
     }
 }
 
