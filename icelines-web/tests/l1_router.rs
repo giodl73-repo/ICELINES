@@ -5947,6 +5947,10 @@ async fn l1_goalies_html_exposes_advanced_workload_metrics() {
     assert!(body.contains(">SA/60</th>"), "body was:\n{body}");
     assert!(body.contains(">60.4%</td>"), "body was:\n{body}");
     assert!(body.contains(">29.5</td>"), "body was:\n{body}");
+    assert!(
+        body.contains("GSAx blocked: verified goalie xGA source is not loaded or promoted yet"),
+        "body was:\n{body}"
+    );
 }
 
 #[tokio::test]
@@ -6003,6 +6007,27 @@ async fn l1_goalies_json_exposes_advanced_workload_metrics() {
         "quality_start_pct should preserve the goalie advanced value: {row}"
     );
     assert_eq!(row["shots_against_per_60"], serde_json::json!(29.5));
+    assert_eq!(
+        json["meta"]["goalie_xga_source"]["coverage_state"],
+        serde_json::json!("blocked")
+    );
+    assert_eq!(
+        json["meta"]["goalie_xga_source"]["blocked_metrics"],
+        serde_json::json!([
+            "goalie_xg_against",
+            "goalie_xg_against_per_60",
+            "goals_saved_above_expected",
+            "gsax_60"
+        ])
+    );
+    assert_eq!(
+        json["meta"]["goalie_xga_source"]["limitations"],
+        serde_json::json!([
+            "quality_start_pct_is_not_gsax",
+            "shots_against_per_60_is_not_xga",
+            "skater_on_ice_xga_is_not_goalie_xga"
+        ])
+    );
 }
 
 #[tokio::test]

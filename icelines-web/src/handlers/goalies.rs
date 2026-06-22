@@ -7,7 +7,8 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
-    GoaliesView, MetricValue, SortDirection, SortKey, SortState, ViewContext, ViewWindow,
+    Completeness, GoaliesView, MetricValue, SortDirection, SortKey, SortState, SourceKind,
+    ViewContext, ViewWindow,
 };
 use serde::Deserialize;
 
@@ -111,6 +112,19 @@ struct GoalieResult {
     active_season: String,
     active_season_type: SeasonType,
     top_n: usize,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct GoalieXgaSourceGate {
+    source: &'static str,
+    source_kind: SourceKind,
+    state: Completeness,
+    coverage_state: &'static str,
+    basis: &'static str,
+    blocked_metrics: Vec<&'static str>,
+    required_evidence: Vec<&'static str>,
+    limitations: Vec<&'static str>,
+    label: String,
 }
 
 async fn build_goalie_result(state: &WebState, q: &GoaliesQuery) -> Result<GoalieResult, Response> {
@@ -273,6 +287,7 @@ pub async fn build_goalies_template(
     Ok(GoaliesTemplate {
         active_label: r.active_label,
         rows: r.rows,
+        goalie_xga_source_label: goalie_xga_source_gate().label,
         goalie_sv_pct_svg,
         total: r.total,
         qualified_threshold: r.qualified_threshold,
@@ -369,6 +384,7 @@ pub struct GoaliesMeta {
     pub total: usize,
     pub returned: usize,
     pub top: usize,
+    pub goalie_xga_source: GoalieXgaSourceGate,
 }
 
 pub async fn get_goalies_json(
@@ -416,9 +432,38 @@ pub async fn get_goalies_json(
         total: r.total,
         returned,
         top: r.top_n,
+        goalie_xga_source: goalie_xga_source_gate(),
     };
     let _ = r.active_label;
     crate::api::json_data_meta("goalies", data, meta)
+}
+
+fn goalie_xga_source_gate() -> GoalieXgaSourceGate {
+    GoalieXgaSourceGate {
+        source: "verified goalie xGA source",
+        source_kind: SourceKind::Unknown,
+        state: Completeness::Unavailable,
+        coverage_state: "blocked",
+        basis: "GSAx requires goalie-level expected goals against with schema fixtures, source-state metadata, freshness labels, and explicit non-claims",
+        blocked_metrics: vec![
+            "goalie_xg_against",
+            "goalie_xg_against_per_60",
+            "goals_saved_above_expected",
+            "gsax_60",
+        ],
+        required_evidence: vec![
+            "pinned_goalie_xga_schema_fixture",
+            "goalie_identity_join_fixture",
+            "freshness_and_source_state_contract",
+            "missing_source_non_claim_copy",
+        ],
+        limitations: vec![
+            "quality_start_pct_is_not_gsax",
+            "shots_against_per_60_is_not_xga",
+            "skater_on_ice_xga_is_not_goalie_xga",
+        ],
+        label: "GSAx blocked: verified goalie xGA source is not loaded or promoted yet".to_string(),
+    }
 }
 
 fn error_500(msg: String) -> Response {

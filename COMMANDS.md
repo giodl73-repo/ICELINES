@@ -390,7 +390,9 @@ Default text, JSON, and CSV output include the shared goalie workload/quality
 fields `QS%`/`quality_start_pct` and `SA/60`/`shots_against_per_60` when goalie
 advanced data is loaded. Web `/goalies` and `/api/v1/goalies` expose the same
 fields for rows backed by goalie advanced data. GSAx is not surfaced until a
-verified goalie xGA source exists.
+verified goalie xGA source exists. The Web/API goalie surface now includes a
+`goalie_xga_source` gate that names the blocked GSAx metric family and records
+that QS%/SA/60 and skater on-ice xGA are not goalie xGA substitutes.
 
 ```bash
 icelines query goalies --top 10

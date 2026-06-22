@@ -26,6 +26,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Source - Goalie xGA source gate](2026-06-22-phaseCanadiensSource-goalie-xga-source-gate.md) | Closed | Adds a Web/API goalie xGA source gate that blocks GSAx until a verified goalie xGA schema, join, freshness, and non-claim contract exists. |
 | [Phase Canadiens Source - Team streak authority](2026-06-22-phaseCanadiensSource-team-streak-authority.md) | Closed | Adds team streak source authority metadata and HTML copy for boxscore and play-by-play leader families. |
 | [Phase Canadiens Source - Player streak authority](2026-06-22-phaseCanadiensSource-player-streak-authority.md) | Closed | Adds player streak source authority metadata for boxscore and play-by-play streak families plus matching HTML authority labels. |
 | [Phase Canadiens Source - Player outlook season-stat authority](2026-06-22-phaseCanadiensSource-player-outlook-season-authority.md) | Closed | Adds player outlook season-stat authority metadata and HTML copy while keeping schedule authority separate. |
