@@ -603,6 +603,10 @@ injury signal, deployment recommendation, player-quality grade, or autonomous
 coaching decision. Missing Signals render as `unavailable`, never as zero-filled
 player values. JSON uses the additive `signals-roster.v1` envelope. Phase
 Capitals keeps this surface uncached and team-scoped.
+`signals-roster.v1` also carries `meta.source_authority` and row-level
+`source_authority` values copied from `PlayerSignalsView`, so the roster matrix
+has the same covered inputs, blocked claims, and missing-evidence semantics as
+single-player Signals.
 
 ## `records` — player/team individual records
 

@@ -16,7 +16,7 @@ use icelines_core::signal_metrics::{
     SignalEvidenceTier, SignalInput, SignalMetricUnit, SignalPolarity,
 };
 use icelines_core::stats_repository::PlayerView;
-use icelines_core::view_model::signals::PlayerSignalsView;
+use icelines_core::view_model::signals::{PlayerSignalsView, SignalsSourceAuthority};
 
 /// Render a player's Signals as a text table or a frozen `signals.v1` JSON envelope.
 pub async fn run_signals(
@@ -120,6 +120,7 @@ struct SignalsRosterView {
     rows: Vec<PlayerSignalsView>,
     disclosures: Vec<String>,
     non_claims: Vec<String>,
+    source_authority: SignalsSourceAuthority,
 }
 
 fn build_roster_view(
@@ -175,6 +176,7 @@ fn build_roster_view(
             "Not a Signal leaderboard, StatId promotion, filter key, or analytics-cache metric family."
                 .to_string(),
         ],
+        source_authority: SignalsSourceAuthority::default(),
     })
 }
 
@@ -244,6 +246,7 @@ fn print_signals_roster_text(view: &SignalsRosterView) {
     );
     println!("{}", "=".repeat(96));
     println!("{}", view.schema_note);
+    println!("Authority: {}", view.source_authority.label);
     for disclosure in &view.disclosures {
         println!("Note: {disclosure}");
     }
@@ -411,6 +414,7 @@ fn signals_roster_json_envelope(view: &SignalsRosterView) -> String {
             "team": view.team,
             "player_count": view.rows.len(),
             "non_promotion": "team-scoped discovery matrix; not a leaderboard, StatId, filter, or cache metric family",
+            "source_authority": &view.source_authority,
         },
     });
     serde_json::to_string_pretty(&envelope).unwrap_or_default()
@@ -474,5 +478,72 @@ mod tests {
         assert!(signal_cell(&view, "physical-engagement-rate")
             .value
             .contains("unavailable partial"));
+    }
+
+    #[test]
+    fn l0_signals_roster_json_meta_carries_source_authority() {
+        let row = roster_signal_row();
+        let view = SignalsRosterView {
+            schema_note: "Team-scoped Signals discovery matrix; not a leaderboard.",
+            team: "EDM".to_string(),
+            season: 20252026,
+            season_type: "regular".to_string(),
+            rows: vec![row],
+            disclosures: Vec::new(),
+            non_claims: Vec::new(),
+            source_authority: SignalsSourceAuthority::default(),
+        };
+
+        let json: serde_json::Value =
+            serde_json::from_str(&signals_roster_json_envelope(&view)).expect("valid json");
+        assert_eq!(
+            json["meta"]["source_authority"]["coverage_state"],
+            serde_json::json!("descriptive_derived")
+        );
+        assert_eq!(
+            json["meta"]["source_authority"]["blocked_claims"],
+            serde_json::json!([
+                "prediction",
+                "betting_edge",
+                "injury_signal",
+                "deployment_recommendation",
+                "player_quality_grade",
+                "autonomous_coaching_decision",
+                "stat_catalog_promotion",
+                "leaderboard_ranking"
+            ])
+        );
+        assert_eq!(
+            json["data"]["source_authority"]["covered_metrics"],
+            serde_json::json!([
+                "physical_engagement_rate",
+                "puck_management_differential",
+                "penalty_drag_rate"
+            ])
+        );
+    }
+
+    #[test]
+    fn l0_signals_roster_text_authority_line_uses_shared_label() {
+        let authority = SignalsSourceAuthority::default();
+        assert!(authority.label.contains("Signals authority"));
+        assert!(authority
+            .blocked_claims
+            .contains(&"leaderboard_ranking".to_string()));
+    }
+
+    fn roster_signal_row() -> PlayerSignalsView {
+        let repo = icelines_core::fixtures::test_repo_with(
+            icelines_core::fixtures::identity(8478402).build(),
+            icelines_core::fixtures::stats(8478402, 20252026, "EDM").build(),
+        );
+        let player = repo
+            .view(
+                icelines_core::identity::PlayerId(8478402),
+                icelines_core::model::Season(20252026),
+                SeasonType::Regular,
+            )
+            .expect("player view");
+        PlayerSignalsView::from_player(PlayerSignalsView::context_for_player(&player), &player)
     }
 }
