@@ -160,6 +160,9 @@ struct ScoringEventTemplateRow {
     time: String,
     kind: String,
     team: String,
+    situation_code: String,
+    skater_state: String,
+    owner_strength_state: String,
     shooter: String,
     goalie: String,
     shot_type: String,
@@ -998,6 +1001,17 @@ fn event_row(event: &ScoringEventInput) -> ScoringEventTemplateRow {
             .event_owner_team_abbrev
             .clone()
             .unwrap_or_else(|| "-".to_string()),
+        situation_code: event.situation_code.clone().unwrap_or_default(),
+        skater_state: event.skater_state().unwrap_or_default(),
+        owner_strength_state: event
+            .owner_strength_state()
+            .map(|state| match state {
+                icelines_core::StrengthState::EvenStrength => "even-strength",
+                icelines_core::StrengthState::PowerPlay => "power-play",
+                icelines_core::StrengthState::PenaltyKill => "penalty-kill",
+            })
+            .unwrap_or("")
+            .to_string(),
         shooter: event
             .shooting_player_id
             .or(event.scoring_player_id)

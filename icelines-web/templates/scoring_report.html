@@ -151,7 +151,7 @@
         </thead>
         <tbody>
             {% for event in page.events %}
-            <tr>
+            <tr data-situation-code="{{ event.situation_code }}" data-skater-state="{{ event.skater_state }}" data-owner-strength-state="{{ event.owner_strength_state }}">
                 <td>{{ event.period }}</td>
                 <td>{{ event.time }}</td>
                 <td>{{ event.kind }}</td>

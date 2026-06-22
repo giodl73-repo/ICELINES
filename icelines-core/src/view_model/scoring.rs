@@ -176,6 +176,23 @@ impl ScoringEventInput {
     pub fn matches_scoring_attempt_player(&self, player_id: u32) -> bool {
         self.scoring_attempt_player_id() == Some(player_id)
     }
+
+    pub fn skater_state(&self) -> Option<String> {
+        self.situation_counts()
+            .map(|(away_skaters, home_skaters)| format!("{away_skaters}v{home_skaters}"))
+    }
+
+    pub fn owner_strength_state(&self) -> Option<StrengthState> {
+        let (away_skaters, home_skaters) = self.situation_counts()?;
+        match self.event_owner_side? {
+            TeamSide::Away => strength_state_name(away_skaters, home_skaters),
+            TeamSide::Home => strength_state_name(home_skaters, away_skaters),
+        }
+    }
+
+    fn situation_counts(&self) -> Option<(u32, u32)> {
+        situation_counts(self.situation_code.as_deref()?)
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -696,14 +713,7 @@ fn strength_state_descriptor(
     code: &str,
     owner_side: Option<TeamSide>,
 ) -> Option<ScoringSplitDescriptor> {
-    let mut chars = code.chars();
-    let _away_goalie = chars.next()?;
-    let away_skaters = chars.next()?.to_digit(10)?;
-    let home_skaters = chars.next()?.to_digit(10)?;
-    let _home_goalie = chars.next()?;
-    if chars.next().is_some() {
-        return None;
-    }
+    let (away_skaters, home_skaters) = situation_counts(code)?;
     let counts = format!("{away_skaters}v{home_skaters}");
     let state = match owner_side {
         Some(TeamSide::Away) => strength_state_name(away_skaters, home_skaters),
@@ -719,6 +729,18 @@ fn strength_state_descriptor(
         skater_state: Some(counts),
         owner_strength_state: state,
     })
+}
+
+fn situation_counts(code: &str) -> Option<(u32, u32)> {
+    let mut chars = code.chars();
+    let _away_goalie = chars.next()?;
+    let away_skaters = chars.next()?.to_digit(10)?;
+    let home_skaters = chars.next()?.to_digit(10)?;
+    let _home_goalie = chars.next()?;
+    if chars.next().is_some() {
+        return None;
+    }
+    Some((away_skaters, home_skaters))
 }
 
 fn strength_state_name(owner_skaters: u32, opponent_skaters: u32) -> Option<StrengthState> {
@@ -1136,6 +1158,26 @@ mod tests {
             strength_state_descriptor("invalid", Some(TeamSide::Away)),
             None
         );
+    }
+
+    #[test]
+    fn l0_scoring_event_exposes_structured_strength_state() {
+        let mut event = event(ShotEventKind::Goal);
+        event.situation_code = Some("1541".to_string());
+        event.event_owner_side = Some(TeamSide::Away);
+
+        assert_eq!(event.skater_state().as_deref(), Some("5v4"));
+        assert_eq!(event.owner_strength_state(), Some(StrengthState::PowerPlay));
+
+        event.event_owner_side = Some(TeamSide::Home);
+        assert_eq!(
+            event.owner_strength_state(),
+            Some(StrengthState::PenaltyKill)
+        );
+
+        event.situation_code = Some("bad".to_string());
+        assert_eq!(event.skater_state(), None);
+        assert_eq!(event.owner_strength_state(), None);
     }
 
     #[test]

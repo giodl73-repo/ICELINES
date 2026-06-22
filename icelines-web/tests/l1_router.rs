@@ -6839,6 +6839,12 @@ async fn l1_rocket_game_scoring_html_marks_strength_state_rows() {
     assert!(html.contains("data-situation-code=\"1551\""));
     assert!(html.contains("data-skater-state=\"5v5\""));
     assert!(html.contains("data-owner-strength-state=\"even-strength\""));
+    assert!(html.matches("data-situation-code=\"1551\"").count() >= 2);
+    assert!(
+        html.matches("data-owner-strength-state=\"even-strength\"")
+            .count()
+            >= 2
+    );
 }
 
 #[tokio::test]
