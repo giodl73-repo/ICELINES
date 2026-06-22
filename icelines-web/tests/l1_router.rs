@@ -2625,6 +2625,10 @@ async fn l1_player_outlook_html_includes_pace_svg_chart() {
     assert!(body.contains("82-game pace"), "body was:\n{body}");
     assert!(body.contains("Connor McDavid"), "body was:\n{body}");
     assert!(
+        body.contains("Authority: loaded season skater totals for player scoring pace"),
+        "body was:\n{body}"
+    );
+    assert!(
         body.contains(
             "Authority: NHL schedule/scores not loaded for remaining games and outlook context"
         ),
@@ -7098,6 +7102,47 @@ async fn l1_rocket_game_scoring_json_marks_unavailable_authority_when_missing() 
     assert_eq!(
         json["meta"]["source_authority"]["coverage_state"],
         serde_json::Value::from("unavailable")
+    );
+}
+
+#[tokio::test]
+async fn l1_rocket_player_outlook_json_exposes_season_stat_authority() {
+    let _guard = home_env_lock().await;
+    let _data_root = DataRootEnvFixture::new();
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/player/8478402/outlook")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "player-outlook");
+    assert_eq!(
+        json["meta"]["season_stat_authority"]["source"],
+        serde_json::Value::from("loaded season skater totals")
+    );
+    assert_eq!(
+        json["meta"]["season_stat_authority"]["coverage_state"],
+        serde_json::Value::from("covered")
+    );
+    assert_eq!(
+        json["meta"]["season_stat_authority"]["covered_metrics"],
+        serde_json::json!([
+            "games_played",
+            "goals",
+            "points",
+            "shots",
+            "shot_pct",
+            "per_game",
+            "pace_82"
+        ])
     );
 }
 

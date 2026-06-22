@@ -657,6 +657,9 @@ recent pressure from cached regular-season schedule scores only; GET routes do
 not fetch live NHL data. Outlook JSON `meta.schedule_authority` and the HTML
 banner identify the cached NHL schedule/final-score authority for remaining
 games, projected-finish context, team goals for/against, and recent form.
+Player outlook JSON also exposes `meta.season_stat_authority` for the loaded
+season skater totals that drive games played, goals, points, shots, shot
+percentage, per-game rates, and 82-game pace.
 Web `/player/:id/outlook` and `/team/:abbrev/outlook` render an inline 82-game
 pace SVG chart when outlook rows have finite positive pace values; the JSON
 routes are unchanged.

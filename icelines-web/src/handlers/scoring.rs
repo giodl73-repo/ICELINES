@@ -107,6 +107,7 @@ struct ScoringOutlookPage {
     back_label: String,
     api_href: String,
     source_label: String,
+    season_stat_authority: String,
     schedule_authority: String,
     outlook_pace_svg: Option<String>,
     rows: Vec<ScoringOutlookTemplateRow>,
@@ -197,6 +198,18 @@ struct ScheduleAuthority {
     label: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct SeasonStatAuthority {
+    source: &'static str,
+    source_kind: SourceKind,
+    state: Completeness,
+    coverage_state: &'static str,
+    basis: &'static str,
+    covered_metrics: Vec<&'static str>,
+    limitations: Vec<&'static str>,
+    label: String,
+}
+
 pub async fn get_game_scoring(State(state): State<WebState>, Path(id): Path<u64>) -> Response {
     match build_game_scoring_view(&state, id).await {
         Ok((active_label, view)) => {
@@ -252,6 +265,7 @@ pub async fn get_player_outlook_json(
                 "season": view.context.window.season.0.to_string(),
                 "season_type": view.context.window.season_type.label(),
                 "source_state": view.context.source_state,
+                "season_stat_authority": season_stat_authority(),
                 "schedule_authority": schedule_authority(&view.context.source_state),
             });
             crate::api::json_data_meta("player-outlook", view, meta)
@@ -741,6 +755,7 @@ fn player_outlook_page(view: &PlayerScoringPaceView) -> ScoringOutlookPage {
         back_label: "player card".to_string(),
         api_href: format!("/api/v1/player/{}/outlook", view.player_id),
         source_label: player_outlook_source_label(view),
+        season_stat_authority: season_stat_authority().label,
         schedule_authority: schedule_authority(&view.context.source_state).label,
         outlook_pace_svg,
         rows,
@@ -769,6 +784,7 @@ fn team_outlook_page(view: &TeamScoringOutlookView) -> ScoringOutlookPage {
         back_label: "team page".to_string(),
         api_href: format!("/api/v1/team/{}/outlook", view.team),
         source_label: team_outlook_source_label(view.source_status),
+        season_stat_authority: String::new(),
         schedule_authority: schedule_authority(&view.context.source_state).label,
         outlook_pace_svg,
         rows,
@@ -1002,6 +1018,32 @@ fn schedule_authority(states: &[SourceState]) -> ScheduleAuthority {
             "does_not_include_betting_forecasts",
         ],
         label: label.to_string(),
+    }
+}
+
+fn season_stat_authority() -> SeasonStatAuthority {
+    SeasonStatAuthority {
+        source: "loaded season skater totals",
+        source_kind: SourceKind::Snapshot,
+        state: Completeness::Complete,
+        coverage_state: "covered",
+        basis: "active season skater totals used for player scoring pace",
+        covered_metrics: vec![
+            "games_played",
+            "goals",
+            "points",
+            "shots",
+            "shot_pct",
+            "per_game",
+            "pace_82",
+        ],
+        limitations: vec![
+            "does_not_include_game_by_game_order",
+            "does_not_include_play_by_play_scoring_events",
+            "does_not_include_expected_goals",
+            "does_not_include_betting_forecasts",
+        ],
+        label: "Authority: loaded season skater totals for player scoring pace".to_string(),
     }
 }
 
