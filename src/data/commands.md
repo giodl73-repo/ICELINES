@@ -24,7 +24,7 @@
 | `icelines peers` | Players from same draft class ± 1 year at same position | Bundled |
 | `icelines class` | Entire draft class ranked by production | Bundled |
 | `icelines compare` | Side-by-side stat comparison | Bundled |
-| `icelines mates` | Linemate-style roster fallback; reads `ShiftProfile` only if precomputed | Bundled roster; shifts parked |
+| `icelines mates` | Linemate-style roster fallback; reads `ShiftProfile` only if precomputed | Bundled roster; `sync.capabilities.shifts=off`, no `fetch shifts` recovery |
 | `icelines tonight` | Tonight's NHL games with UTC start times | Live API |
 | `icelines schedule` | Upcoming schedule (N days) | Live API |
 | `icelines trade` | Depth chart impact of a player trade | Bundled |
