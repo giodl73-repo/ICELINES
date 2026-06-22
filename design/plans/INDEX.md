@@ -26,6 +26,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Browser - Dashboard ring labels](2026-06-22-phaseCanadiensBrowser-dashboard-ring-labels.md) | Closed | Adds accessible names to dashboard left context-ring and right detail-ring chips with player-workspace route coverage. |
 | [Phase Canadiens Browser - Dashboard score labels](2026-06-22-phaseCanadiensBrowser-dashboard-score-labels.md) | Closed | Adds accessible names to dashboard scores preview chips and the full scores workspace link with route coverage. |
 | [Phase Canadiens Browser - Dashboard pinned labels](2026-06-22-phaseCanadiensBrowser-dashboard-pinned-labels.md) | Closed | Adds unique accessible names to left and right pinned workspace controls with pinned-pane route coverage. |
 | [Phase Canadiens Browser - Dashboard target labels](2026-06-22-phaseCanadiensBrowser-dashboard-target-labels.md) | Closed | Adds unique accessible names to dashboard summary-row and More views target links with route coverage. |

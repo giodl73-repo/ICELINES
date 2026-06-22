@@ -1691,6 +1691,8 @@ async fn l1_dashboard_player_workspace_renders_right_detail_ring() {
     assert!(body.contains("Pin right"));
     assert!(body.contains("Cycle right detail"));
     assert!(body.contains("Cycle left context"));
+    assert!(body.contains("aria-label=\"Set left context ring: Next 1/3: Favorites"));
+    assert!(body.contains("aria-label=\"Set right detail ring: Next 1/4: Team depth"));
     assert!(body.contains("right_workspace=%2Fteam%2FEDM"));
     assert!(body.contains("left_workspace=%2Ffavorites"));
     assert!(body.contains("Next 1/4: Team depth"));

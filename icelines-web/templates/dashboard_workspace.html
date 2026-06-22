@@ -9,7 +9,7 @@
     <nav class="chip-strip" aria-label="Left context ring">
         <span class="chip-strip-label">Left context:</span>
         {% for row in left_context_ring %}
-        <a href="{{ row.href }}" class="filter-chip" data-dashboard-composition-link data-dashboard-ring="left">{{ row.label }}</a>
+        <a href="{{ row.href }}" class="filter-chip" aria-label="Set left context ring: {{ row.detail }}" data-dashboard-composition-link data-dashboard-ring="left">{{ row.label }}</a>
         <span class="jaw-detail">{{ row.detail }}</span>
         {% endfor %}
     </nav>
@@ -18,7 +18,7 @@
     <nav class="chip-strip" aria-label="Right detail ring">
         <span class="chip-strip-label">Right detail:</span>
         {% for row in right_detail_ring %}
-        <a href="{{ row.href }}" class="filter-chip" data-dashboard-composition-link data-dashboard-ring="right">{{ row.label }}</a>
+        <a href="{{ row.href }}" class="filter-chip" aria-label="Set right detail ring: {{ row.detail }}" data-dashboard-composition-link data-dashboard-ring="right">{{ row.label }}</a>
         <span class="jaw-detail">{{ row.detail }}</span>
         {% endfor %}
     </nav>
