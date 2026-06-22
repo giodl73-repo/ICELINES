@@ -37,8 +37,9 @@ evidence, not as a player value.
 
 `PlayerSignalsView` is the canonical internal consumer shape for future
 renderers. It carries player identity, active window, one row per Signal, typed
-evidence tiers, missing-input labels, methodology, limitations, disclosures, and
-non-claim copy so renderers do not recompute signal meaning locally.
+evidence tiers, missing-input labels, methodology, limitations, source
+authority, disclosures, and non-claim copy so renderers do not recompute signal
+meaning locally.
 
 ## Surface status
 
@@ -58,8 +59,10 @@ non-claim copy so renderers do not recompute signal meaning locally.
 - **Report/export (live, Phase Hurricane / WP-010 pulse-05):** `export md
   signals --player "<player>"` renders a disclosure-first Markdown packet from
   the same `PlayerSignalsView`, including evidence tiers, missing inputs,
-  methodology, limitations, disclosures, and non-claim copy. Signals still remain
-  out of `StatId`, the `--filter` catalog, leaderboards, and analytics cache
+  methodology, limitations, source authority, disclosures, and non-claim copy.
+  The source-authority section names covered inputs, covered metrics, blocked
+  claims, and limitations before the table. Signals still remain out of
+  `StatId`, the `--filter` catalog, leaderboards, and analytics cache
   publication.
 
 ## Promotion rule

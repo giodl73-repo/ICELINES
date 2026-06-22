@@ -132,6 +132,12 @@ fn l2_export_md_signals_writes_markdown_report_to_stdout() {
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(text.contains("type: signals"));
     assert!(text.contains("## Signals Scope"));
+    assert!(text.contains("## Source Authority"));
+    assert!(text.contains("- Source: PlayerSignalsView stat inputs"));
+    assert!(text.contains("- Coverage state: descriptive_derived"));
+    assert!(text.contains("- Covered metrics: physical_engagement_rate"));
+    assert!(text.contains("- Blocked claims: prediction"));
+    assert!(text.contains("deployment_recommendation"));
     assert!(text.contains("| Physical Engagement Rate |"));
     assert!(text.contains("Not a prediction"));
     assert!(text.contains("outside `StatId`, leaderboards, and the `--filter` catalog"));

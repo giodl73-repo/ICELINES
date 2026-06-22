@@ -584,10 +584,10 @@ keys, invalidation/source-state rules, and bounded catalog/leaderboard copy exis
 (see
 [`design/specs/icelines-signals.md`](design/specs/icelines-signals.md)).
 Single-player Signals JSON includes `meta.source_authority`, and the Web HTML
-page renders the same authority label. The authority names covered inputs
-(season summary, realtime when loaded, ice time when loaded, and minimum games),
-covered metrics, blocked claims, and limitations while preserving unavailable
-values as missing evidence instead of zero.
+page and Markdown export render the same authority label. The authority names
+covered inputs (season summary, realtime when loaded, ice time when loaded, and
+minimum games), covered metrics, blocked claims, and limitations while
+preserving unavailable values as missing evidence instead of zero.
 
 ### `signals-roster` — team-scoped Signals discovery
 
@@ -754,8 +754,8 @@ have at least two bundled career seasons; the chart is descriptive context over
 bundled regular-season rows, not an era-adjusted player valuation.
 `export md signals` renders the same `PlayerSignalsView` rows as the CLI/Web
 Signals surfaces with disclosure, non-claim copy, methodology, limitations,
-evidence tiers, and missing-input labels before the table; unavailable evidence
-prints as `unavailable`, never a zero-filled signal value.
+source authority, evidence tiers, and missing-input labels before the table;
+unavailable evidence prints as `unavailable`, never a zero-filled signal value.
 The Web `/compare?a=ID&b=ID` page renders the same bundled regular-season Pts/82
 career trend after the side-by-side table when both compared players have enough
 bundled career rows.

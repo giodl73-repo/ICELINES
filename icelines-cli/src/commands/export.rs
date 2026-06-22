@@ -1898,6 +1898,29 @@ pub(crate) fn render_signals_from_view(
     );
     let _ = writeln!(out);
 
+    let authority = &view.source_authority;
+    let _ = writeln!(out, "## Source Authority\n");
+    let _ = writeln!(out, "- Label: {}", authority.label);
+    let _ = writeln!(out, "- Source: {}", authority.source);
+    let _ = writeln!(out, "- Coverage state: {}", authority.coverage_state);
+    let _ = writeln!(
+        out,
+        "- Covered inputs: {}",
+        md_list(&authority.covered_inputs)
+    );
+    let _ = writeln!(
+        out,
+        "- Covered metrics: {}",
+        md_list(&authority.covered_metrics)
+    );
+    let _ = writeln!(
+        out,
+        "- Blocked claims: {}",
+        md_list(&authority.blocked_claims)
+    );
+    let _ = writeln!(out, "- Limitations: {}", md_list(&authority.limitations));
+    let _ = writeln!(out);
+
     let _ = writeln!(out, "## Signals\n");
     let _ = writeln!(
         out,
@@ -1980,6 +2003,14 @@ fn signal_missing_inputs_label(inputs: &[icelines_core::signal_metrics::SignalIn
 
 fn md_cell(input: &str) -> String {
     input.replace('|', "\\|")
+}
+
+fn md_list(values: &[String]) -> String {
+    values
+        .iter()
+        .map(|value| md_cell(value))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 // ── roster ───────────────────────────────────────────────────────────────────
@@ -2904,11 +2935,23 @@ mod tests {
         assert!(out.contains("type: signals"));
         assert!(out.contains("## Disclosure"));
         assert!(out.contains("## Signals Scope"));
+        assert!(out.contains("## Source Authority"));
         assert!(out.contains("## Signals\n"));
         assert!(
             out.find("## Signals Scope").unwrap() < out.find("## Signals\n").unwrap(),
             "Signals non-claim copy must precede the table"
         );
+        assert!(
+            out.find("## Source Authority").unwrap() < out.find("## Signals\n").unwrap(),
+            "Signals source authority must precede the table"
+        );
+        assert!(out.contains("- Source: PlayerSignalsView stat inputs"));
+        assert!(out.contains("- Coverage state: descriptive_derived"));
+        assert!(out.contains("- Covered metrics: physical_engagement_rate"));
+        assert!(out.contains("puck_management_differential"));
+        assert!(out.contains("- Blocked claims: prediction"));
+        assert!(out.contains("deployment_recommendation"));
+        assert!(out.contains("- Limitations: missing_inputs_render_unavailable_not_zero"));
         assert!(out.contains("Not a prediction"));
         assert!(out.contains("not zero value truth"));
         assert!(out.contains("outside `StatId`, leaderboards, and the `--filter` catalog"));
