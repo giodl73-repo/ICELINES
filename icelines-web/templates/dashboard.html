@@ -17,7 +17,7 @@
         {% if !scores_preview.is_empty() %}
         <div class="jaw-score-strip" aria-label="Scores preview">
             {% for row in scores_preview %}
-            <a class="jaw-score-chip" href="{% if row.href != "" %}{{ row.href }}{% else %}/scores{% endif %}" title="{{ row.detail }}">
+            <a class="jaw-score-chip" href="{% if row.href != "" %}{{ row.href }}{% else %}/scores{% endif %}" title="{{ row.detail }}" aria-label="Open scores preview {{ row.label }} {{ row.value }}">
                 <span class="jaw-kind">{{ row.label }}</span>
                 <strong>{{ row.value }}</strong>
                 {% if row.detail != "" %}<span class="jaw-detail">{{ row.detail }}</span>{% endif %}
@@ -25,7 +25,7 @@
             {% endfor %}
         </div>
         {% endif %}
-        <a href="/scores">Open scores</a>
+        <a href="/scores" aria-label="Open full scores workspace">Open scores</a>
     </header>
 
     <details class="jaw-workbench-nav" aria-label="Dashboard navigation" data-dashboard-nav>

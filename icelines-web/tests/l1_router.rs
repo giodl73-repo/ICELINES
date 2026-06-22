@@ -1103,6 +1103,8 @@ async fn l1_dashboard_shell_renders_no_js_regions() {
     assert!(body.contains("aria-label=\"Scores ribbon\""));
     assert!(body.contains("aria-label=\"Scores preview\""));
     assert!(body.contains("jaw-score-chip"));
+    assert!(body.contains("aria-label=\"Open scores preview"));
+    assert!(body.contains("aria-label=\"Open full scores workspace\""));
     assert!(body.contains("aria-label=\"Left context pane\""));
     assert!(body.contains("data-dashboard-pane=\"favorites\""));
     assert!(body.contains("jaw-pane-content"));
