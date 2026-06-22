@@ -1056,7 +1056,7 @@ central workspace so keyboard input never lands on an invisible pane.
 | `records player <name>` | Open the TUI player records screen | `:records player Andre Burakovsky` |
 | `records team <ABBR>` | Show exact records CLI/web target | `:records team SEA` |
 | `scouting player <name>` | Show exact scouting CLI/web target | `:scouting player Connor McDavid` |
-| `mates player <name>` | Show exact linemate/deployment CLI target | `:mates player Connor McDavid` |
+| `mates player <name>` | Show roster-fallback linemate CLI target; shifts stay locked off | `:mates player Connor McDavid` |
 | `watch <player>` | Show exact watch-note/rule target | `:watch Connor McDavid` |
 | `admin` | Open the operational admin overlay | `:admin` |
 | `data ...` / `snapshot ...` / `config ...` | Show exact admin CLI/web target | `:data status`, `:snapshot list`, `:config list` |

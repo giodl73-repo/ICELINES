@@ -197,7 +197,7 @@ pub enum Command {
     Scouting {
         player: String,
     },
-    /// `mates player <name>` — show canonical linemate/deployment targets.
+    /// `mates player <name>` — show canonical roster-fallback linemate target.
     Mates {
         player: String,
     },
@@ -537,7 +537,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "awards" | "award" | "trophy" => parse_awards(args),
         "streaks" | "streak" => parse_streaks(args),
         "scouting" | "scout" => parse_scouting(args),
-        "mates" | "linemates" | "deployment" => parse_mates(args),
+        "mates" | "linemates" => parse_mates(args),
         "data" => Ok(Command::Data {
             args: args.trim().to_string(),
         }),
@@ -2811,6 +2811,17 @@ mod tests {
             Command::Mates {
                 player: "Connor McDavid".to_string()
             }
+        );
+        assert_eq!(
+            parse_command("linemates Connor McDavid").unwrap(),
+            Command::Mates {
+                player: "Connor McDavid".to_string()
+            }
+        );
+        let err = parse_command("deployment Connor McDavid").expect_err("deployment is not mates");
+        assert!(
+            err.to_string().contains("unknown command"),
+            "deployment alias should not silently map to mates: {err}"
         );
     }
 
