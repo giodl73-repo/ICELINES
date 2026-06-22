@@ -26,6 +26,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Source - Scoring authority coverage state](2026-06-22-phaseCanadiensSource-authority-coverage-state.md) | Closed | Adds compact `source_authority.coverage_state` values so scoring consumers can read coverage without interpreting raw source completeness. |
 | [Phase Canadiens Source - Scoring authority limitations](2026-06-22-phaseCanadiensSource-authority-limitations.md) | Closed | Adds machine-readable `source_authority.limitations` keys so scoring consumers can distinguish cached play-by-play coverage from non-covered domains. |
 | [Phase Canadiens Source - Scoring authority metric family](2026-06-22-phaseCanadiensSource-authority-metrics.md) | Closed | Adds machine-readable `source_authority.covered_metrics` keys for the scoring metrics covered by cached official NHL play-by-play. |
 | [Phase Canadiens Source - Scoring authority metadata](2026-06-22-phaseCanadiensSource-scoring-authority.md) | Closed | Adds scoring report JSON and HTML authority metadata that identifies cached official NHL play-by-play as the scoring-event and strength-state source. |

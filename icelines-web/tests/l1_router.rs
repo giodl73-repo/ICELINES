@@ -6803,6 +6803,10 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
         serde_json::Value::from("complete")
     );
     assert_eq!(
+        json["meta"]["source_authority"]["coverage_state"],
+        serde_json::Value::from("covered")
+    );
+    assert_eq!(
         json["meta"]["source_authority"]["covered_metrics"],
         serde_json::json!([
             "goals",
@@ -7059,6 +7063,35 @@ async fn l1_rocket_team_scoring_html_offers_cache_load_when_missing() {
     assert!(
         !data_root.data_root().exists(),
         "GET /team/:abbrev/scoring must not create local data cache state"
+    );
+}
+
+#[tokio::test]
+async fn l1_rocket_game_scoring_json_marks_unavailable_authority_when_missing() {
+    let _guard = home_env_lock().await;
+    let _data_root = DataRootEnvFixture::new();
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/game/2025020001/scoring")
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("oneshot");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "game-scoring");
+    assert_eq!(
+        json["meta"]["source_authority"]["state"],
+        serde_json::Value::from("unavailable")
+    );
+    assert_eq!(
+        json["meta"]["source_authority"]["coverage_state"],
+        serde_json::Value::from("unavailable")
     );
 }
 

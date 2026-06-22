@@ -176,6 +176,7 @@ struct ScoringSourceAuthority {
     source: &'static str,
     source_kind: SourceKind,
     state: Completeness,
+    coverage_state: &'static str,
     basis: &'static str,
     covered_metrics: Vec<&'static str>,
     limitations: Vec<&'static str>,
@@ -1099,6 +1100,12 @@ fn scoring_source_authority(states: &[SourceState]) -> ScoringSourceAuthority {
         "does_not_include_live_fetch_status",
         "does_not_include_uncached_games",
     ];
+    let coverage_state = match state {
+        Completeness::Complete => "covered",
+        Completeness::Partial => "partial",
+        Completeness::Stale => "stale",
+        Completeness::Unavailable => "unavailable",
+    };
     let label = match state {
         Completeness::Complete => {
             "Authority: official NHL play-by-play cache for scoring events and strength state"
@@ -1118,6 +1125,7 @@ fn scoring_source_authority(states: &[SourceState]) -> ScoringSourceAuthority {
         source,
         source_kind: SourceKind::PlayByPlay,
         state,
+        coverage_state,
         basis,
         covered_metrics,
         limitations,

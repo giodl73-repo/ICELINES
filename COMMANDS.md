@@ -632,7 +632,9 @@ and `owner_strength_state` fields for downstream consumers.
 Scoring JSON `meta.source_authority` and the HTML report banner identify the
 authority as the cached official NHL play-by-play source, with complete,
 partial, stale, or unavailable state carried separately from the computed
-scoring totals. `source_authority.covered_metrics` lists the exact scoring
+scoring totals. `source_authority.coverage_state` gives consumers a compact
+covered, partial, stale, or unavailable authority status.
+`source_authority.covered_metrics` lists the exact scoring
 metric family covered by that authority: goals, shots on goal, attempts,
 unblocked attempts, missed shots, blocked shots, shot percentage, and strength
 state. `source_authority.limitations` lists major non-covered domains,
