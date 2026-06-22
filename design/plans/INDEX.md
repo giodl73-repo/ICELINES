@@ -26,6 +26,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Browser - Dashboard pinned labels](2026-06-22-phaseCanadiensBrowser-dashboard-pinned-labels.md) | Closed | Adds unique accessible names to left and right pinned workspace controls with pinned-pane route coverage. |
 | [Phase Canadiens Browser - Dashboard target labels](2026-06-22-phaseCanadiensBrowser-dashboard-target-labels.md) | Closed | Adds unique accessible names to dashboard summary-row and More views target links with route coverage. |
 | [Phase Canadiens Browser - Dashboard action labels](2026-06-22-phaseCanadiensBrowser-dashboard-action-labels.md) | Closed | Adds workspace-specific accessible names to dashboard workspace action links and route coverage for the rendered labels. |
 | [Phase Canadiens Shifts - Query doc policy](2026-06-22-phaseCanadiensShifts-query-doc-policy.md) | Closed | Aligns query/dashboard docs with true shift joins staying parked behind a verified source, bundle, fetch, fixture, and join policy. |

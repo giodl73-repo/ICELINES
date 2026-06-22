@@ -77,9 +77,9 @@
                 <h2>{{ left_pane_workspace_label }}</h2>
                 <p class="meta-line">
                     Pinned with Ctrl-click.
-                    <a href="{{ left_pane_open_href }}">Open in center</a>
-                    · <a href="{{ left_pane_swap_href }}" data-dashboard-pane-swap="left">Swap with center</a>
-                    · <a href="{{ left_pane_clear_href }}">Clear pin</a>
+                    <a href="{{ left_pane_open_href }}" aria-label="Open left pinned {{ left_pane_workspace_label }} workspace in center">Open in center</a>
+                    · <a href="{{ left_pane_swap_href }}" aria-label="Swap left pinned {{ left_pane_workspace_label }} workspace with center" data-dashboard-pane-swap="left">Swap with center</a>
+                    · <a href="{{ left_pane_clear_href }}" aria-label="Clear left pinned {{ left_pane_workspace_label }} workspace">Clear pin</a>
                 </p>
                 {% if left_pane_workspace_summary.is_empty() %}
                 <p class="empty-state">No preview rows for this workspace.</p>
@@ -197,9 +197,9 @@
                 <h2>{{ right_pane_workspace_label }}</h2>
                 <p class="meta-line">
                     Pinned with Ctrl+Shift-click.
-                    <a href="{{ right_pane_open_href }}">Open in center</a>
-                    · <a href="{{ right_pane_swap_href }}" data-dashboard-pane-swap="right">Swap with center</a>
-                    · <a href="{{ right_pane_clear_href }}">Clear pin</a>
+                    <a href="{{ right_pane_open_href }}" aria-label="Open right pinned {{ right_pane_workspace_label }} workspace in center">Open in center</a>
+                    · <a href="{{ right_pane_swap_href }}" aria-label="Swap right pinned {{ right_pane_workspace_label }} workspace with center" data-dashboard-pane-swap="right">Swap with center</a>
+                    · <a href="{{ right_pane_clear_href }}" aria-label="Clear right pinned {{ right_pane_workspace_label }} workspace">Clear pin</a>
                 </p>
                 {% if right_pane_workspace_summary.is_empty() %}
                 <p class="empty-state">No preview rows for this workspace.</p>
