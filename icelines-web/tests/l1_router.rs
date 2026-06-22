@@ -4332,6 +4332,25 @@ async fn l1_admin_data_status_json_returns_viewmodel_contract() {
     assert!(json["root"].as_str().is_some());
     assert_eq!(json["total"], 0);
     assert_eq!(json["empty_state"]["kind"], "missing_source");
+    assert_eq!(
+        json["authority_notes"][0]["key"],
+        serde_json::json!("moneypuck_skater_snapshot")
+    );
+    assert_eq!(
+        json["authority_notes"][0]["coverage_state"],
+        serde_json::json!("optional_snapshot")
+    );
+    assert_eq!(
+        json["authority_notes"][0]["blocked_metrics"],
+        serde_json::json!([
+            "goalie_xga",
+            "goalie_gsax",
+            "goalie_high_danger_save_pct",
+            "skater_high_danger_chance_pct",
+            "zone_entries",
+            "deployment_recommendations"
+        ])
+    );
     assert!(
         !data_root.exists(),
         "GET /api/v1/admin/data-status must not create local data cache state"
@@ -4363,6 +4382,8 @@ async fn l1_admin_html_renders_operational_viewmodels() {
 
     assert!(html.contains("<h1>Admin</h1>"));
     assert!(html.contains("Data Status"));
+    assert!(html.contains("data-authority-note=\"moneypuck_skater_snapshot\""));
+    assert!(html.contains("MoneyPuck skater xG is an optional snapshot source"));
     assert!(html.contains("Snapshots"));
     assert!(html.contains("Runtime Web Config"));
     assert!(html.contains("These controls change only the running web server"));

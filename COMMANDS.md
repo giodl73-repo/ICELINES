@@ -1490,6 +1490,12 @@ Recognized `--shard` values: `bios`, `stats`, `goalie_stats`,
 `score`, `playoff_bracket`. Source labels: Bundle / Setup / Live /
 DataInstall / Manual.
 
+`data-status`, `/admin`, and `/api/v1/admin/data-status` include shared
+authority notes for optional advanced sources. The MoneyPuck skater snapshot
+note names the same covered xG/CF/FF metrics as `/leaders`, records blocked
+goalie/high-danger/zone-entry/deployment claims, and states that missing
+snapshot values stay absent rather than zero.
+
 ### Date axis on existing commands
 
 ```bash

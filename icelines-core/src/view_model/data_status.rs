@@ -11,6 +11,7 @@ pub struct DataStatusView {
     pub root: String,
     pub active_shard: Option<String>,
     pub stale_only: bool,
+    pub authority_notes: Vec<DataAuthorityNote>,
     pub rows: Vec<DataStatusRow>,
     pub total: usize,
     pub warnings: Vec<ViewWarning>,
@@ -66,12 +67,24 @@ impl DataStatusView {
             root: root.into(),
             active_shard,
             stale_only,
+            authority_notes: default_authority_notes(),
             rows,
             total,
             warnings: Vec::new(),
             empty_state,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DataAuthorityNote {
+    pub key: String,
+    pub source: String,
+    pub coverage_state: String,
+    pub covered_metrics: Vec<String>,
+    pub blocked_metrics: Vec<String>,
+    pub limitations: Vec<String>,
+    pub label: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,6 +197,39 @@ pub fn freshness_label(freshness: &Freshness) -> String {
     }
 }
 
+fn default_authority_notes() -> Vec<DataAuthorityNote> {
+    vec![DataAuthorityNote {
+        key: "moneypuck_skater_snapshot".to_string(),
+        source: "MoneyPuck skater snapshot".to_string(),
+        coverage_state: "optional_snapshot".to_string(),
+        covered_metrics: vec![
+            "individual_expected_goals".to_string(),
+            "individual_expected_goals_per_60".to_string(),
+            "on_ice_expected_goals_for".to_string(),
+            "on_ice_expected_goals_against".to_string(),
+            "expected_goals_for_pct".to_string(),
+            "corsi_for_pct".to_string(),
+            "fenwick_for_pct".to_string(),
+        ],
+        blocked_metrics: vec![
+            "goalie_xga".to_string(),
+            "goalie_gsax".to_string(),
+            "goalie_high_danger_save_pct".to_string(),
+            "skater_high_danger_chance_pct".to_string(),
+            "zone_entries".to_string(),
+            "deployment_recommendations".to_string(),
+        ],
+        limitations: vec![
+            "optional_snapshot_not_live_fetch_status".to_string(),
+            "missing_snapshot_values_are_absent_not_zero".to_string(),
+            "xg_is_not_prediction_or_betting_advice".to_string(),
+            "does_not_cover_high_danger_or_zone_entries".to_string(),
+        ],
+        label: "MoneyPuck skater xG is an optional snapshot source; missing values stay absent, and goalie/high-danger/zone-entry/deployment claims remain blocked."
+            .to_string(),
+    }]
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::Duration;
@@ -220,7 +266,30 @@ mod tests {
         assert_eq!(view.rows[0].source, "Bundle");
         assert_eq!(view.rows[0].freshness, "static");
         assert_eq!(view.context.source_state[0].source, SourceKind::Cache);
+        assert_eq!(view.authority_notes[0].key, "moneypuck_skater_snapshot");
         assert!(view.empty_state.is_none());
+    }
+
+    #[test]
+    fn data_status_view_exposes_moneypuck_snapshot_authority_note() {
+        let context = ViewContext::new(ViewWindow::new(Season(20252026), SeasonType::Regular));
+        let view = DataStatusView::from_entries(context, "/tmp/icelines", None, false, Vec::new());
+        let note = view
+            .authority_notes
+            .iter()
+            .find(|note| note.key == "moneypuck_skater_snapshot")
+            .expect("MoneyPuck authority note");
+
+        assert_eq!(note.coverage_state, "optional_snapshot");
+        assert!(note
+            .covered_metrics
+            .contains(&"on_ice_expected_goals_against".to_string()));
+        assert!(note
+            .blocked_metrics
+            .contains(&"goalie_high_danger_save_pct".to_string()));
+        assert!(note
+            .limitations
+            .contains(&"missing_snapshot_values_are_absent_not_zero".to_string()));
     }
 
     #[test]

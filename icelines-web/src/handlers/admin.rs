@@ -1096,6 +1096,7 @@ fn render_data_status_section(html: &mut String, view: &DataStatusView) {
         view.total,
         html_escape(&view.root)
     ));
+    render_data_authority_notes(html, view);
     if view.rows.is_empty() {
         render_empty_state(
             html,
@@ -1121,6 +1122,17 @@ fn render_data_status_section(html: &mut String, view: &DataStatusView) {
     html.push_str("</tbody></table>");
     render_data_install_remove_controls(html);
     html.push_str("</section>");
+}
+
+fn render_data_authority_notes(html: &mut String, view: &DataStatusView) {
+    for note in &view.authority_notes {
+        html.push_str(&format!(
+            "<p class=\"muted\" data-authority-note=\"{}\" data-coverage-state=\"{}\">{}</p>",
+            html_escape(&note.key),
+            html_escape(&note.coverage_state),
+            html_escape(&note.label)
+        ));
+    }
 }
 
 fn render_data_install_remove_controls(html: &mut String) {

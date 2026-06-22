@@ -33,6 +33,7 @@ pub async fn run(shard: Option<String>, stale_only: bool) -> Result<()> {
     );
 
     if view.rows.is_empty() {
+        print_authority_notes(&view);
         if let Some(k) = kind_filter {
             println!(
                 "No manifest entries for {k:?}{}.",
@@ -98,6 +99,7 @@ fn parse_kind(s: &str) -> Result<DataKind> {
 fn print_table(view: &DataStatusView) {
     println!("DATA STATUS - {}", view.root);
     println!("{}", "-".repeat(76));
+    print_authority_notes(view);
     println!("{:<14} {:<16} {:<24} Freshness", "Source", "Kind", "Key");
     println!("{}", "-".repeat(76));
     for row in &view.rows {
@@ -108,6 +110,12 @@ fn print_table(view: &DataStatusView) {
     }
     println!("{}", "-".repeat(76));
     println!("{} entry(ies).", view.total);
+}
+
+fn print_authority_notes(view: &DataStatusView) {
+    for note in &view.authority_notes {
+        println!("AUTHORITY - {}", note.label);
+    }
 }
 
 fn short_key(key: &DataKey) -> String {
