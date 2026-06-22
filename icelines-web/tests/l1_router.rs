@@ -1227,6 +1227,64 @@ async fn l1_leaders_html_includes_pts82_svg_chart() {
     assert!(body.contains("Pts/82 leaders"));
     assert!(body.contains("<svg"));
     assert!(body.contains(r#"<rect x="190""#));
+    assert!(body.contains("MoneyPuck skater xG: optional snapshot source"));
+    assert!(body.contains(
+        "goalie xGA, GSAx, high-danger, zone-entry, and deployment claims remain blocked"
+    ));
+}
+
+#[tokio::test]
+async fn l1_leaders_json_exposes_moneypuck_source_authority() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/leaders?top=5")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = response_json(response, 256 * 1024).await;
+    assert_data_meta_envelope(&json, "leaders");
+    assert_eq!(
+        json["meta"]["moneypuck_source"]["coverage_state"],
+        serde_json::json!("optional_snapshot")
+    );
+    assert_eq!(
+        json["meta"]["moneypuck_source"]["covered_metrics"],
+        serde_json::json!([
+            "individual_expected_goals",
+            "individual_expected_goals_per_60",
+            "on_ice_expected_goals_for",
+            "on_ice_expected_goals_against",
+            "expected_goals_for_pct",
+            "corsi_for_pct",
+            "fenwick_for_pct"
+        ])
+    );
+    assert_eq!(
+        json["meta"]["moneypuck_source"]["blocked_metrics"],
+        serde_json::json!([
+            "goalie_xga",
+            "goalie_gsax",
+            "goalie_high_danger_save_pct",
+            "skater_high_danger_chance_pct",
+            "zone_entries",
+            "deployment_recommendations"
+        ])
+    );
+    assert_eq!(
+        json["meta"]["moneypuck_source"]["limitations"],
+        serde_json::json!([
+            "optional_snapshot_not_live_fetch_status",
+            "skater_on_ice_xga_is_not_goalie_xga",
+            "xg_is_not_prediction_or_betting_advice",
+            "does_not_cover_high_danger_or_zone_entries"
+        ])
+    );
 }
 
 #[tokio::test]

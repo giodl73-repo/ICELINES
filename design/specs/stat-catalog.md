@@ -267,6 +267,12 @@ xG, on-ice xGF/xGA, Corsi for/against, Fenwick for/against, situation, player ID
 and ice time. Add new MoneyPuck catalog keys only after committing a checked CSV
 fixture or pinned schema evidence for the new source columns.
 
+Web `/leaders` and `/api/v1/leaders` expose `moneypuck_source` authority for
+this optional skater snapshot family. The authority names the covered metrics,
+records blocked adjacent claims (goalie xGA/GSAx, goalie high-danger SV%,
+skater high-danger chance %, zone entries, and deployment recommendations), and
+keeps missing snapshots as absent values instead of zeros.
+
 ### `Goalie` — 22 stats (from goalie reports + xG family)
 
 `GoalieGames`, `GoalieStarts`,

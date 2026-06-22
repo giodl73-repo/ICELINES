@@ -718,7 +718,11 @@ for reproducible report evidence windows.
 skaters by current-window Pts/82 when the rendered result has finite positive
 Pts/82 values.
 Web `/leaders` renders the same descriptive current-window Pts/82 bar chart for
-non-empty skater results; `/api/v1/leaders` is unchanged.
+non-empty skater results. Web `/leaders` and `/api/v1/leaders` also expose
+MoneyPuck source authority for optional skater xG snapshots: covered metrics are
+individual xG, ixG/60, on-ice xGF/xGA, xGF%, CF%, and FF%; blocked related
+claims include goalie xGA/GSAx, goalie high-danger SV%, skater high-danger
+chance %, zone entries, and deployment recommendations.
 `export md team-season` includes an inline SVG quality-ledger bar chart when
 quality ledger counters are positive. The chart is descriptive context over the
 rendered quality ledger table.

@@ -298,6 +298,7 @@ pub struct LeadersTemplate {
     pub active_season_type: String,
     pub source_kind: String,
     pub source_completeness: String,
+    pub moneypuck_source_label: String,
     pub empty_kind: String,
     pub warning_count: usize,
     pub warning_kinds: String,

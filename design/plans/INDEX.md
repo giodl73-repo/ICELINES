@@ -26,6 +26,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Source - MoneyPuck authority](2026-06-22-phaseCanadiensSource-moneypuck-authority.md) | Closed | Adds Web/API MoneyPuck skater snapshot authority for leaders while naming covered xG metrics and blocked adjacent advanced claims. |
 | [Phase Canadiens Source - Goalie danger source gate](2026-06-22-phaseCanadiensSource-goalie-danger-source-gate.md) | Closed | Adds a Web/API goalie high-danger source gate that blocks high-danger save metrics until verified schema, join, freshness, and non-claim evidence exists. |
 | [Phase Canadiens Source - GSAx catalog source block](2026-06-22-phaseCanadiensSource-gsax-catalog-source-block.md) | Closed | Pins the reserved GSAx catalog keys as source-blocked until verified goalie xGA schema, join, freshness, and non-claim evidence exists. |
 | [Phase Canadiens Source - Goalie xGA source gate](2026-06-22-phaseCanadiensSource-goalie-xga-source-gate.md) | Closed | Adds a Web/API goalie xGA source gate that blocks GSAx until a verified goalie xGA schema, join, freshness, and non-claim contract exists. |

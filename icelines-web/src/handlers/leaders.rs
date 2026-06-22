@@ -241,6 +241,21 @@ pub struct LeadersMeta {
     pub top: usize,
     pub empty_state: Option<EmptyState>,
     pub warnings: Vec<ViewWarning>,
+    pub moneypuck_source: MoneyPuckSourceAuthority,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct MoneyPuckSourceAuthority {
+    source: &'static str,
+    source_kind: SourceKind,
+    state: Completeness,
+    coverage_state: &'static str,
+    basis: &'static str,
+    covered_metrics: Vec<&'static str>,
+    blocked_metrics: Vec<&'static str>,
+    required_evidence: Vec<&'static str>,
+    limitations: Vec<&'static str>,
+    label: String,
 }
 
 fn leaders_json_error(
@@ -277,8 +292,49 @@ fn leaders_json_error(
             recovery: Vec::new(),
         }),
         warnings: Vec::new(),
+        moneypuck_source: moneypuck_source_authority(),
     };
     crate::api::json_error_meta(status, "leaders", Vec::<LeaderJsonRow>::new(), meta, error)
+}
+
+fn moneypuck_source_authority() -> MoneyPuckSourceAuthority {
+    MoneyPuckSourceAuthority {
+        source: "MoneyPuck skater snapshot",
+        source_kind: SourceKind::Snapshot,
+        state: Completeness::Partial,
+        coverage_state: "optional_snapshot",
+        basis: "Skater xG metrics are read only from the optional MoneyPuck snapshot parsed by `fetch money-puck`; missing snapshots produce no values rather than zeros",
+        covered_metrics: vec![
+            "individual_expected_goals",
+            "individual_expected_goals_per_60",
+            "on_ice_expected_goals_for",
+            "on_ice_expected_goals_against",
+            "expected_goals_for_pct",
+            "corsi_for_pct",
+            "fenwick_for_pct",
+        ],
+        blocked_metrics: vec![
+            "goalie_xga",
+            "goalie_gsax",
+            "goalie_high_danger_save_pct",
+            "skater_high_danger_chance_pct",
+            "zone_entries",
+            "deployment_recommendations",
+        ],
+        required_evidence: vec![
+            "pinned_moneypuck_skater_csv_fixture",
+            "player_identity_join_fixture",
+            "snapshot_freshness_metadata",
+            "missing_snapshot_non_claim_copy",
+        ],
+        limitations: vec![
+            "optional_snapshot_not_live_fetch_status",
+            "skater_on_ice_xga_is_not_goalie_xga",
+            "xg_is_not_prediction_or_betting_advice",
+            "does_not_cover_high_danger_or_zone_entries",
+        ],
+        label: "MoneyPuck skater xG: optional snapshot source; goalie xGA, GSAx, high-danger, zone-entry, and deployment claims remain blocked".to_string(),
+    }
 }
 
 /// Shared data-path: resolves query params, applies filters,
@@ -1016,6 +1072,7 @@ pub async fn get_leaders_json(
         top: result.top_n,
         empty_state: leaders_view.empty_state.clone(),
         warnings: leaders_view.warnings.clone(),
+        moneypuck_source: moneypuck_source_authority(),
     };
 
     // Suppress unused warning on active_label — the JSON
@@ -1480,6 +1537,7 @@ pub async fn build_leaders_template(
         active_season_type: season_type.label().to_owned(),
         source_kind: source_kind.to_owned(),
         source_completeness: source_completeness.to_owned(),
+        moneypuck_source_label: moneypuck_source_authority().label,
         empty_kind,
         warning_count,
         warning_kinds,
@@ -1696,6 +1754,7 @@ mod tests {
             active_season_type: "regular".to_string(),
             source_kind: "roster".to_string(),
             source_completeness: "complete".to_string(),
+            moneypuck_source_label: moneypuck_source_authority().label,
             empty_kind: "-".to_string(),
             warning_count: 0,
             warning_kinds: "-".to_string(),
@@ -1736,6 +1795,7 @@ mod tests {
         assert!(html.contains(r#"data-active-season-type="regular""#));
         assert!(html.contains(r#"data-source-kind="roster""#));
         assert!(html.contains(r#"data-source-completeness="complete""#));
+        assert!(html.contains("MoneyPuck skater xG: optional snapshot source"));
         assert!(html.contains(r#"data-empty-kind="-""#));
         assert!(html.contains(r#"data-warning-count="0""#));
         assert!(html.contains(r#"data-warning-kinds="-""#));
@@ -1766,6 +1826,7 @@ mod tests {
             active_season_type: "regular".to_string(),
             source_kind: "roster".to_string(),
             source_completeness: "complete".to_string(),
+            moneypuck_source_label: moneypuck_source_authority().label,
             empty_kind: empty_kind_label(empty.kind).to_string(),
             warning_count: view.warnings.len(),
             warning_kinds: view
@@ -1867,6 +1928,7 @@ mod tests {
             active_season_type: "regular".to_string(),
             source_kind: "roster".to_string(),
             source_completeness: "complete".to_string(),
+            moneypuck_source_label: moneypuck_source_authority().label,
             empty_kind: "-".to_string(),
             warning_count: 0,
             warning_kinds: "-".to_string(),
