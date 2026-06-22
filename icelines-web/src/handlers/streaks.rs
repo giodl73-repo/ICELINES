@@ -4,7 +4,21 @@ use axum::response::{Html, IntoResponse, Response};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
-use icelines_core::{PlayerStreaksView, ViewContext, ViewWindow};
+use icelines_core::{
+    Completeness, PlayerStreaksView, SourceKind, SourceState, ViewContext, ViewWindow,
+};
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct StreakSourceAuthority {
+    source: &'static str,
+    source_kind: SourceKind,
+    state: Completeness,
+    coverage_state: &'static str,
+    basis: &'static str,
+    covered_metrics: Vec<&'static str>,
+    limitations: Vec<&'static str>,
+    label: String,
+}
 
 pub async fn get_player_streaks(
     State(state): State<crate::WebState>,
@@ -28,6 +42,7 @@ pub async fn get_player_streaks_json(
                 "player_id": view.player_id,
                 "games_loaded": view.games_loaded,
                 "source_state": view.context.source_state,
+                "source_authorities": player_streak_source_authorities(&view.context.source_state),
             });
             crate::api::json_data_meta("player-streaks", view, meta)
         }
@@ -165,13 +180,88 @@ fn render_streaks_html(
         rows.push_str("</td></tr>");
     }
     format!(
-        "<!doctype html><html><head><meta charset=\"utf-8\"><title>{name} Streaks</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><header><a href=\"/\">IceLines</a> <span>{active}</span></header><main id=\"main\"><p><a href=\"/player/{pid}\">Back to player card</a> | <a href=\"/api/v1/player/{pid}/streaks\">JSON</a></p><h1>{name} Streaks</h1><p>{games} loaded game lines. Source: per-game boxscore and play-by-play rows; no streaks are inferred from season totals.</p><table><thead><tr><th>Metric</th><th>Current</th><th>Longest</th><th>Start</th><th>End</th></tr></thead><tbody>{rows}</tbody></table></main></body></html>",
+        "<!doctype html><html><head><meta charset=\"utf-8\"><title>{name} Streaks</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><header><a href=\"/\">IceLines</a> <span>{active}</span></header><main id=\"main\"><p><a href=\"/player/{pid}\">Back to player card</a> | <a href=\"/api/v1/player/{pid}/streaks\">JSON</a></p><h1>{name} Streaks</h1><p>{games} loaded game lines. Source: per-game boxscore and play-by-play rows; no streaks are inferred from season totals.</p><p>{authority}</p><table><thead><tr><th>Metric</th><th>Current</th><th>Longest</th><th>Start</th><th>End</th></tr></thead><tbody>{rows}</tbody></table></main></body></html>",
         name = html_escape(&view.player_name),
         active = html_escape(active_label),
         pid = view.player_id,
         games = view.games_loaded,
+        authority = html_escape(&player_streak_authority_label(&view.context.source_state)),
         rows = rows
     )
+}
+
+fn player_streak_source_authorities(states: &[SourceState]) -> Vec<StreakSourceAuthority> {
+    vec![
+        streak_authority(
+            states,
+            SourceKind::Boxscore,
+            "cached per-game boxscore skater rows",
+            "boxscore game lines ordered by game date for player goal, assist, and point streaks",
+            vec!["goal_streaks", "assist_streaks", "point_streaks"],
+            vec![
+                "does_not_include_shot_streaks",
+                "does_not_include_shift_time",
+                "does_not_include_expected_goals",
+            ],
+        ),
+        streak_authority(
+            states,
+            SourceKind::PlayByPlay,
+            "cached official NHL play-by-play shot rows",
+            "play-by-play shot lines ordered by game date for player shot and attempt streaks",
+            vec!["shots_on_goal_streaks", "shot_attempt_streaks"],
+            vec![
+                "does_not_include_goal_assist_point_streaks",
+                "does_not_include_shift_time",
+                "does_not_include_expected_goals",
+            ],
+        ),
+    ]
+}
+
+fn streak_authority(
+    states: &[SourceState],
+    source_kind: SourceKind,
+    source: &'static str,
+    basis: &'static str,
+    covered_metrics: Vec<&'static str>,
+    limitations: Vec<&'static str>,
+) -> StreakSourceAuthority {
+    let state = states
+        .iter()
+        .find(|state| state.source == source_kind)
+        .map(|state| state.state)
+        .unwrap_or(Completeness::Unavailable);
+    let coverage_state = match state {
+        Completeness::Complete => "covered",
+        Completeness::Partial => "partial",
+        Completeness::Stale => "stale",
+        Completeness::Unavailable => "unavailable",
+    };
+    let label = match state {
+        Completeness::Complete => format!("Authority: {source} loaded for streak metrics"),
+        Completeness::Partial => format!("Authority: partial {source} loaded for streak metrics"),
+        Completeness::Stale => format!("Authority: stale {source} loaded for streak metrics"),
+        Completeness::Unavailable => format!("Authority: {source} not loaded for streak metrics"),
+    };
+    StreakSourceAuthority {
+        source,
+        source_kind,
+        state,
+        coverage_state,
+        basis,
+        covered_metrics,
+        limitations,
+        label,
+    }
+}
+
+fn player_streak_authority_label(states: &[SourceState]) -> String {
+    player_streak_source_authorities(states)
+        .into_iter()
+        .map(|authority| authority.label)
+        .collect::<Vec<_>>()
+        .join("; ")
 }
 
 fn player_cache_teams(

@@ -530,6 +530,9 @@ icelines streaks "Connor McDavid" --csv --out mcdavid-streaks.csv
 
 Web routes: `/player/:id/streaks` and `/api/v1/player/:id/streaks`. In the TUI,
 press `s` from a player card, or run `:streaks player <name>` in the command bar.
+Player streak JSON `meta.source_authorities` separates boxscore authority for
+goal/assist/point streaks from play-by-play authority for shot and attempt
+streaks; the web page prints the same authority labels.
 
 Player cards are now the hub for player-specific surfaces: records, awards,
 streaks, scouting, compare, groups/favorites, and fantasy watch handoffs are
