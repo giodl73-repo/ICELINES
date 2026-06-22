@@ -7193,6 +7193,14 @@ async fn l1_rocket_tonight_intel_json_filters_favorites() {
     assert_data_meta_envelope(&json, "tonight-intel");
     assert_eq!(json["meta"]["date"], serde_json::Value::from("2025-10-07"));
     assert_eq!(
+        json["meta"]["source_authority"]["source"],
+        serde_json::Value::from("official NHL play-by-play")
+    );
+    assert_eq!(
+        json["meta"]["source_authority"]["coverage_state"],
+        serde_json::Value::from("covered")
+    );
+    assert_eq!(
         json["data"]["favorite_teams"][0]["summary"]["shots_on_goal"],
         serde_json::Value::from(2_u64)
     );
@@ -7226,6 +7234,12 @@ async fn l1_rocket_tonight_intel_html_offers_cache_load_when_missing() {
         .expect("body fits");
     let html = String::from_utf8(bytes.to_vec()).expect("utf8 html");
     assert!(html.contains("Tonight Scoring Intel"), "body was:\n{html}");
+    assert!(
+        html.contains(
+            "Authority: official NHL play-by-play cache not loaded for scoring events and strength state"
+        ),
+        "body was:\n{html}"
+    );
     assert!(
         html.contains("Load Favorites scoring cache"),
         "body was:\n{html}"

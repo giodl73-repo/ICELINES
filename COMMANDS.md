@@ -639,6 +639,8 @@ metric family covered by that authority: goals, shots on goal, attempts,
 unblocked attempts, missed shots, blocked shots, shot percentage, and strength
 state. `source_authority.limitations` lists major non-covered domains,
 including shift time, expected goals, live fetch status, and uncached games.
+Tonight Intel uses the same source authority contract because it is built from
+the same cached play-by-play scoring-event inputs.
 
 Web routes: `/game/:id/scoring`, `/team/:abbrev/scoring`,
 `/player/:id/scoring`, `/team/:abbrev/outlook`, `/player/:id/outlook`,

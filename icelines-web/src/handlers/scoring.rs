@@ -70,6 +70,7 @@ struct TonightIntelPage {
     api_href: String,
     source_loaded: bool,
     source_label: String,
+    source_authority: String,
     games_loaded: usize,
     events_loaded: usize,
     summary: ScoringSummaryTemplateRow,
@@ -356,6 +357,7 @@ pub async fn get_tonight_intel_json(
             let meta = serde_json::json!({
                 "date": view.date,
                 "source_state": view.context.source_state,
+                "source_authority": scoring_source_authority(&view.context.source_state),
                 "favorite_team_count": view.favorite_teams.len(),
                 "favorite_player_count": view.favorite_players.len(),
             });
@@ -773,6 +775,7 @@ fn tonight_intel_page(view: &icelines_core::TonightScoringIntelView) -> TonightI
         api_href: format!("/api/v1/tonight/intel?date={}", view.date),
         source_loaded,
         source_label: source_label(source_loaded),
+        source_authority: scoring_source_authority(&view.context.source_state).label,
         games_loaded: view.games_loaded,
         events_loaded: view.events_loaded,
         summary: summary_row(view.summary),
