@@ -6803,6 +6803,19 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
         serde_json::Value::from("complete")
     );
     assert_eq!(
+        json["meta"]["source_authority"]["covered_metrics"],
+        serde_json::json!([
+            "goals",
+            "shots_on_goal",
+            "shot_attempts",
+            "unblocked_attempts",
+            "missed_shots",
+            "blocked_shots",
+            "shot_pct",
+            "strength_state"
+        ])
+    );
+    assert_eq!(
         json["data"]["team_summaries"][0]["label"],
         serde_json::Value::from("CHI")
     );

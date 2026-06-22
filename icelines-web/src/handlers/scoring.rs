@@ -177,6 +177,7 @@ struct ScoringSourceAuthority {
     source_kind: SourceKind,
     state: Completeness,
     basis: &'static str,
+    covered_metrics: Vec<&'static str>,
     label: String,
 }
 
@@ -1081,6 +1082,16 @@ fn scoring_source_authority(states: &[SourceState]) -> ScoringSourceAuthority {
         .unwrap_or(Completeness::Unavailable);
     let source = "official NHL play-by-play";
     let basis = "cached scoring events: goals, shots on goal, missed shots, blocked shots, and owner-perspective strength state";
+    let covered_metrics = vec![
+        "goals",
+        "shots_on_goal",
+        "shot_attempts",
+        "unblocked_attempts",
+        "missed_shots",
+        "blocked_shots",
+        "shot_pct",
+        "strength_state",
+    ];
     let label = match state {
         Completeness::Complete => {
             "Authority: official NHL play-by-play cache for scoring events and strength state"
@@ -1101,6 +1112,7 @@ fn scoring_source_authority(states: &[SourceState]) -> ScoringSourceAuthority {
         source_kind: SourceKind::PlayByPlay,
         state,
         basis,
+        covered_metrics,
         label: label.to_string(),
     }
 }
