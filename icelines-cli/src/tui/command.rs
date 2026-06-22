@@ -1806,7 +1806,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             }
         }
         Command::Mates { player } => ExecResult::Flash(format!(
-            "mates: run `icelines mates \"{player}\"` for linemates/deployment"
+            "mates: run `icelines mates \"{player}\"` for roster fallback; shifts locked off"
         )),
         Command::Data { args } => ExecResult::Flash(cli_handoff("data", &args, "/admin")),
         Command::Snapshot { args } => ExecResult::Flash(cli_handoff("snapshot", &args, "/admin")),
@@ -3646,6 +3646,23 @@ mod tests {
             assert!(message.contains(expected), "{message}");
             assert!(message.contains("/admin"), "{message}");
         }
+    }
+
+    #[test]
+    fn l0_mates_cmdbar_handoff_reports_shift_lock() {
+        let mut app = fresh_app_with_mdi();
+        let r = execute_command(parse_command("mates Connor McDavid").unwrap(), &mut app);
+        let ExecResult::Flash(message) = r else {
+            panic!("mates should flash canonical handoff");
+        };
+
+        assert!(
+            message.contains("icelines mates \"Connor McDavid\""),
+            "{message}"
+        );
+        assert!(message.contains("roster fallback"), "{message}");
+        assert!(message.contains("shifts locked off"), "{message}");
+        assert!(!message.contains("linemates/deployment"), "{message}");
     }
 
     #[test]
