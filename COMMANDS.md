@@ -635,7 +635,8 @@ partial, stale, or unavailable state carried separately from the computed
 scoring totals. `source_authority.covered_metrics` lists the exact scoring
 metric family covered by that authority: goals, shots on goal, attempts,
 unblocked attempts, missed shots, blocked shots, shot percentage, and strength
-state.
+state. `source_authority.limitations` lists major non-covered domains,
+including shift time, expected goals, live fetch status, and uncached games.
 
 Web routes: `/game/:id/scoring`, `/team/:abbrev/scoring`,
 `/player/:id/scoring`, `/team/:abbrev/outlook`, `/player/:id/outlook`,

@@ -178,6 +178,7 @@ struct ScoringSourceAuthority {
     state: Completeness,
     basis: &'static str,
     covered_metrics: Vec<&'static str>,
+    limitations: Vec<&'static str>,
     label: String,
 }
 
@@ -1092,6 +1093,12 @@ fn scoring_source_authority(states: &[SourceState]) -> ScoringSourceAuthority {
         "shot_pct",
         "strength_state",
     ];
+    let limitations = vec![
+        "does_not_include_shift_time",
+        "does_not_include_expected_goals",
+        "does_not_include_live_fetch_status",
+        "does_not_include_uncached_games",
+    ];
     let label = match state {
         Completeness::Complete => {
             "Authority: official NHL play-by-play cache for scoring events and strength state"
@@ -1113,6 +1120,7 @@ fn scoring_source_authority(states: &[SourceState]) -> ScoringSourceAuthority {
         state,
         basis,
         covered_metrics,
+        limitations,
         label: label.to_string(),
     }
 }

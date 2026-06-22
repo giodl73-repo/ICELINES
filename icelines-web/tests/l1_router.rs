@@ -6816,6 +6816,15 @@ async fn l1_rocket_game_scoring_json_reads_cached_play_by_play() {
         ])
     );
     assert_eq!(
+        json["meta"]["source_authority"]["limitations"],
+        serde_json::json!([
+            "does_not_include_shift_time",
+            "does_not_include_expected_goals",
+            "does_not_include_live_fetch_status",
+            "does_not_include_uncached_games"
+        ])
+    );
+    assert_eq!(
         json["data"]["team_summaries"][0]["label"],
         serde_json::Value::from("CHI")
     );
