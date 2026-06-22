@@ -1420,7 +1420,7 @@ Capability matrix (6 capabilities × 3 modes = `off | favorites | league`):
 | `sync.capabilities.scores_schedule`  | `league`    | Default ON for everyone |
 | `sync.capabilities.transactions`     | `favorites` | Opt-in to `league` |
 | `sync.capabilities.boxscores`        | `favorites` | Deeper stats for favorites |
-| `sync.capabilities.shifts`           | `off`       | **Locked** — only `off` valid (per-shift parsing not implemented) |
+| `sync.capabilities.shifts`           | `off`       | **Locked** — only `off` valid until a supported shift source, bundle, fetch, fixture, and join policy exists |
 | `sync.capabilities.career_history`   | `favorites` | Adds slowly |
 
 `sync.policy` ∈ `eager | lazy | off`; `sync.banner` ∈ `summary |

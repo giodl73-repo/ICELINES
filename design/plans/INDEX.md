@@ -26,6 +26,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Shifts - Policy lock](2026-06-22-phaseCanadiensShifts-policy-lock.md) | Closed | Reaffirms `sync.capabilities.shifts=off` until a verified shift source, bundle, fetch, fixture, and join policy exists, and exposes the lock in `config list`. |
 | [Phase Canadiens Signals - Markdown authority](2026-06-22-phaseCanadiensSignals-markdown-authority.md) | Closed | Carries shared Signals source authority into `export md signals` before the report table with covered metrics, blocked claims, and limitations. |
 | [Phase Canadiens Signals - Roster authority](2026-06-22-phaseCanadiensSignals-roster-authority.md) | Closed | Carries shared Signals source authority into `signals-roster.v1` while preserving the roster matrix as a non-promoted discovery lane. |
 | [Phase Canadiens Signals - Source authority](2026-06-22-phaseCanadiensSignals-source-authority.md) | Closed | Adds shared single-player Signals source authority across CLI JSON and Web HTML/JSON while preserving non-promotion boundaries. |

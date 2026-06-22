@@ -4738,6 +4738,25 @@ fn l2_foster08_config_set_shifts_favorites_rejected() {
     );
 }
 
+#[test]
+fn l2_config_list_labels_shifts_locked_without_changing_get() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let _ = run_isolated(home.path(), &["setup", "--accept-defaults"]);
+    let list = run_isolated(home.path(), &["config", "list"]);
+    assert!(list.status.success(), "config list failed");
+    let stdout = String::from_utf8_lossy(&list.stdout);
+    assert!(
+        stdout.contains(
+            "sync.capabilities.shifts = off (locked: no supported shift source/bundle/fetch policy)"
+        ),
+        "config list must expose shift policy, stdout: {stdout}"
+    );
+
+    let get = run_isolated(home.path(), &["config", "get", "sync.capabilities.shifts"]);
+    assert!(get.status.success(), "config get failed");
+    assert_eq!(String::from_utf8_lossy(&get.stdout).trim(), "off");
+}
+
 // ── Phase Foster.1 — date-anchored CLI L2 ────────────────────────────────────
 
 /// L2 / l2_foster1_tonight_invalid_date_clean_error

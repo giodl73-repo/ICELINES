@@ -62,7 +62,7 @@ fn run_list() -> Result<()> {
     let cfg = Config::load().context("load config")?;
     let view = config_view(&cfg, None);
     for row in &view.rows {
-        println!("{} = {}", row.key, row.value);
+        println!("{} = {}", row.key, config_list_value(&row.key, &row.value));
     }
     Ok(())
 }
@@ -96,4 +96,11 @@ fn default_config_context() -> ViewContext {
         icelines_core::model::Season(CURRENT_SEASON),
         icelines_core::season_stats::SeasonType::Regular,
     ))
+}
+
+fn config_list_value(key: &str, value: &str) -> String {
+    if key == "sync.capabilities.shifts" {
+        return format!("{value} (locked: no supported shift source/bundle/fetch policy)");
+    }
+    value.to_string()
 }

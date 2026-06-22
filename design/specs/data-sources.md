@@ -30,7 +30,7 @@ and how it feeds into the depth chart engine.
 | 2c — Live Scores | NHL API `/v1/score/now` | Per-game live | 30s while active | In-progress scores, period, time |
 | 2d — Boxscore | NHL API `/v1/gamecenter/{id}/boxscore` | Per-game | Permanent once final | Goals, goalies, key stats |
 | 2e — Playoff Bracket | NHL API `/v1/playoff-bracket/{year}` | Per-series | Daily during playoffs | Bracket, series state, advancement |
-| 3 — Shifts | NHL API `/shiftcharts` | Per-shift, per-game | Parked | Real line deployment, line partners, zone starts |
+| 3 — Shifts | NHL API `/shiftcharts` candidate | Per-shift, per-game | Parked / locked off | Real line deployment, line partners, zone starts |
 | 4 — Advanced | NHL Edge / Natural Stat Trick | Per-situation | Daily | Corsi, xG, HDCA, zone entries |
 | 5 — Social | Reddit NHL / Twitter | Per-day | Real-time | Fan sentiment, injury rumors, line news |
 | 6 — Beat Media | RSS / web scrape | Per-article | Real-time | Official line rushes, coach quotes, practice lines |
@@ -42,7 +42,7 @@ there is no `fetch shifts` command, no bundled historical shift artifacts under
 a source contract and fixtures exist. Tiers 4–6 are **contextual** — they
 annotate, not override.
 
-### Tier 3 — Shifts (parked)
+### Tier 3 — Shifts (parked / locked off)
 
 `icelines-fetch/src/shift_profile.rs` contains the domain projection for
 linemate summaries from boxscore-shaped inputs, and `icelines mates` can read a
@@ -57,6 +57,17 @@ Current truth:
 
 Until those contracts exist, shift-aware surfaces must present roster-derived
 fallbacks or explicit deferrals rather than instructing users to fetch shifts.
+
+Promotion requirements:
+- verified shiftchart schema fixtures for at least one completed regular-season
+  and one completed playoff game;
+- a bundle layout and manifest kind for historical shift artifacts;
+- a `fetch shifts` or equivalent sync path that is source-state aware and
+  resumable;
+- joins that prove event-owner, strength-state, and deployment semantics without
+  mixing boxscore shift counts with true per-shift intervals;
+- explicit freshness, unavailable-window, and non-claim copy before
+  `sync.capabilities.shifts` can accept anything besides `off`.
 
 ---
 
@@ -200,23 +211,24 @@ alone. A player with 18:00 ES-TOI is on the first two lines regardless of point 
 
 ---
 
-## Tier 3 — Shift Data (NHL API)
+## Tier 3 — Shift Data Candidate (NHL API)
 
 **Endpoint**: `https://api.nhle.com/stats/rest/en/shiftcharts`  
-**Cache TTL**: 7 days (historical), 6 hours (current season)  
+**Cache TTL**: not active; requires a future bundle/fetch policy
 **Auth**: None
 
 ```
 GET /shiftcharts?cayenneExp=gameId={GAME_ID}
 ```
 
-Shift data is the ground truth of how coaches actually deploy players. It tells us:
+If promoted, shift data would be the ground truth of how coaches deploy players.
+It can answer:
 - Which players were on the ice at the same time (line partners)
 - Which zone they started in (offensive vs defensive zone starts)
 - How long each shift was
 - How many shifts per game (deployment frequency)
 
-### What We Compute From Shifts
+### Candidate Computations
 
 **Line partners:** For each forward, find the two other forwards most frequently on the ice
 simultaneously. This gives the actual deployed line, not the presumed one. A player listed as
@@ -235,7 +247,7 @@ less frequently.
 (shifts 1–4 in a period = first rotation, 5–8 = second rotation). This directly identifies
 line groupings without relying on coaching press releases.
 
-### Schema
+### Candidate Schema
 
 ```rust
 pub struct Shift {
@@ -266,10 +278,11 @@ pub struct ShiftProfile {
 }
 ```
 
-### Shift-Adjusted Line Score
+### Deferred Shift-Adjusted Line Score
 
-The shift profile feeds into a **shift-adjusted line score** that can override pure PPG ranking
-when deployment context clearly places a player higher or lower:
+The shift profile could feed into a **shift-adjusted line score** only after the
+source/bundle/fetch policy above ships. It must not override pure PPG ranking or
+line placement today. Candidate rules:
 
 - If `avg_ev_toi_per_game` > 16:00 for a forward → Line 1–2 floor regardless of PPG
 - If `avg_ev_toi_per_game` < 10:00 → Line 3–4 cap regardless of PPG
