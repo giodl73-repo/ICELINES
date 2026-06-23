@@ -796,6 +796,9 @@ ENTRY POINTS COVERED
         /// List only entries that `fetch sync` would refresh.
         #[arg(long)]
         stale_only: bool,
+        /// Emit the shared DataStatusView JSON envelope.
+        #[arg(long)]
+        json: bool,
     },
 
     /// First-run setup wizard (Phase Foster.0.8).

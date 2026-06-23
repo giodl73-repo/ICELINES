@@ -11,7 +11,7 @@ use icelines_core::{
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::manifest::{DataKey, DataKind};
 
-pub async fn run(shard: Option<String>, stale_only: bool) -> Result<()> {
+pub async fn run(shard: Option<String>, stale_only: bool, json: bool) -> Result<()> {
     let home = std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(std::path::PathBuf::from)
@@ -32,6 +32,14 @@ pub async fn run(shard: Option<String>, stale_only: bool) -> Result<()> {
         rows,
     );
 
+    if json {
+        println!(
+            "{}",
+            serialize_json(&view).context("serializing data status view")?
+        );
+        return Ok(());
+    }
+
     if view.rows.is_empty() {
         print_authority_notes(&view);
         if let Some(k) = kind_filter {
@@ -49,6 +57,10 @@ pub async fn run(shard: Option<String>, stale_only: bool) -> Result<()> {
 
     print_table(&view);
     Ok(())
+}
+
+fn serialize_json(view: &DataStatusView) -> Result<String> {
+    serde_json::to_string_pretty(view).context("serialize DataStatusView")
 }
 
 fn collect_rows(
@@ -209,5 +221,25 @@ mod tests {
         );
         assert_eq!(short_key(&DataKey::Date("2026-01-15".into())), "2026-01-15");
         assert_eq!(short_key(&DataKey::Global), "<global>");
+    }
+
+    #[test]
+    fn l0_data_status_json_includes_authority_and_empty_state() {
+        let view = DataStatusView::from_entries(
+            ViewContext::new(ViewWindow::new(
+                icelines_core::model::Season(CURRENT_SEASON),
+                icelines_core::season_stats::SeasonType::Regular,
+            )),
+            "C:/tmp/icelines-data",
+            None,
+            false,
+            Vec::new(),
+        );
+
+        let body = serialize_json(&view).expect("json");
+        assert!(body.contains("\"authority_notes\""), "got:\n{body}");
+        assert!(body.contains("moneypuck_skater_snapshot"), "got:\n{body}");
+        assert!(body.contains("\"empty_state\""), "got:\n{body}");
+        assert!(body.contains("\"total\": 0"), "got:\n{body}");
     }
 }

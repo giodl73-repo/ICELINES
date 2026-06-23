@@ -1506,6 +1506,9 @@ icelines data-status --shard boxscore
 
 # Show only entries `fetch sync` would refresh
 icelines data-status --stale-only
+
+# Machine-readable freshness diagnostics
+icelines data-status --json
 ```
 
 Recognized `--shard` values: `bios`, `stats`, `goalie_stats`,
@@ -1513,7 +1516,7 @@ Recognized `--shard` values: `bios`, `stats`, `goalie_stats`,
 `score`, `playoff_bracket`. Source labels: Bundle / Setup / Live /
 DataInstall / Manual.
 
-`data-status`, `/admin`, and `/api/v1/admin/data-status` include shared
+`data-status --json`, `/admin`, and `/api/v1/admin/data-status` include shared
 authority notes for optional advanced sources. The MoneyPuck skater snapshot
 note names the same covered xG/CF/FF metrics as `/leaders`, records blocked
 goalie/high-danger/zone-entry/deployment claims, and states that missing
