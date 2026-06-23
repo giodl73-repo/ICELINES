@@ -65,8 +65,9 @@ pub struct Cli {
 
     /// Phase Foster.0.8 — skip the auto-setup wizard.
     ///
-    /// On first run with no config file, `icelines` opens the setup
-    /// wizard. Headless / scripted callers pass this to bypass it.
+    /// On first interactive terminal run with no config file,
+    /// `icelines` opens the setup wizard. Headless / scripted callers
+    /// pass this to bypass it explicitly.
     #[arg(long, global = true)]
     pub no_setup: bool,
 
@@ -800,11 +801,12 @@ ENTRY POINTS COVERED
     /// First-run setup wizard (Phase Foster.0.8).
     ///
     /// Three-question flow that writes capability matrix defaults to
-    /// `~/.icelines/config.toml`. Auto-runs on first invocation when
-    /// no config file exists; pass `--no-setup` (top-level) to skip.
-    /// In scripted contexts pass `--accept-defaults` to write the
-    /// defaults non-interactively. Existing config files are left
-    /// unchanged unless `--reset` is passed.
+    /// `~/.icelines/config.toml`. Auto-runs on first interactive
+    /// terminal invocation when no config file exists; pass
+    /// `--no-setup` (top-level) to skip. In scripted contexts pass
+    /// `--accept-defaults` to write the defaults non-interactively.
+    /// Existing config files are left unchanged unless `--reset` is
+    /// passed.
     Setup {
         /// Skip the prompts; write the spec defaults and exit.
         /// Useful for headless / CI / persona-test contexts.

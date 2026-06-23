@@ -1410,8 +1410,11 @@ without changing it unless `--reset` is passed. Reset rewrites the
 `[sync]` settings only; other config keys are preserved. `--dry-run`
 always previews without writing.
 
-Top-level `--no-setup` flag skips the auto-prompt for callers that
-expect to run headless.
+On the first interactive terminal run with no config file, `icelines`
+opens this setup wizard before dispatching the requested command.
+Top-level `--no-setup` skips that auto-prompt. Non-interactive stdin or
+stdout never auto-prompts; scripted callers can run
+`icelines setup --accept-defaults` explicitly.
 
 ### `icelines config` — sync + capability matrix
 

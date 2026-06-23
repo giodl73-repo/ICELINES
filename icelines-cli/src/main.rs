@@ -22,6 +22,7 @@ use cli::{
 };
 use config::Config;
 use icelines_core::{WorkbenchId, WorkbenchLayoutStore};
+use std::io::IsTerminal;
 
 /// Post-LP review fix #4 — Reset SIGPIPE to SIG_DFL on Unix so a
 /// downstream `| head` (or any consumer that closes its end) ends our
@@ -69,9 +70,6 @@ fn print_short_banner() {
 async fn main() -> anyhow::Result<()> {
     reset_sigpipe_handler();
 
-    // Load config early so any error surfaces before command dispatch.
-    let cfg = Config::load()?;
-
     // Bare `icelines` (no args) prints a short banner pointing at
     // the four primary entry points, then exits 0. Pipe-friendly
     // (works under `icelines | less`); script-friendly (no surprise
@@ -79,11 +77,28 @@ async fn main() -> anyhow::Result<()> {
     // each surface). For the full clap-rendered command list, users
     // run `icelines --help`.
     if std::env::args().len() == 1 {
+        if commands::setup::config_exists()? {
+            Config::load()?;
+        }
         print_short_banner();
         return Ok(());
     }
 
     let cli = Cli::parse();
+    let is_setup_command = matches!(&cli.command, Commands::Setup { .. });
+    if should_auto_setup(
+        cli.no_setup,
+        is_setup_command,
+        commands::setup::config_exists()?,
+        std::io::stdin().is_terminal(),
+        std::io::stdout().is_terminal(),
+    ) {
+        commands::setup::run(false, false, false).await?;
+    }
+
+    // Load config after optional first-run setup so any invalid existing
+    // config still surfaces before command dispatch.
+    let cfg = Config::load()?;
     config::init_live_feeds(cli.no_live, &cfg);
     config::init_dashboards(cli.no_dashboards, &cfg);
 
@@ -92,6 +107,16 @@ async fn main() -> anyhow::Result<()> {
         error::handle_error(e);
     }
     Ok(())
+}
+
+fn should_auto_setup(
+    no_setup: bool,
+    is_setup_command: bool,
+    config_exists: bool,
+    stdin_terminal: bool,
+    stdout_terminal: bool,
+) -> bool {
+    !no_setup && !is_setup_command && !config_exists && stdin_terminal && stdout_terminal
 }
 
 async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
@@ -1103,6 +1128,29 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         },
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn l0_auto_setup_runs_only_for_interactive_missing_config() {
+        assert!(should_auto_setup(false, false, false, true, true));
+    }
+
+    #[test]
+    fn l0_auto_setup_skips_setup_command_and_existing_config() {
+        assert!(!should_auto_setup(false, true, false, true, true));
+        assert!(!should_auto_setup(false, false, true, true, true));
+    }
+
+    #[test]
+    fn l0_auto_setup_skips_no_setup_and_non_interactive() {
+        assert!(!should_auto_setup(true, false, false, true, true));
+        assert!(!should_auto_setup(false, false, false, false, true));
+        assert!(!should_auto_setup(false, false, false, true, false));
+    }
 }
 
 fn screen_spec_for_workbench(id: WorkbenchId) -> anyhow::Result<start_slug::ScreenSpec> {

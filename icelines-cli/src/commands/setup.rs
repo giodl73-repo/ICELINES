@@ -101,6 +101,10 @@ fn config_path() -> Result<PathBuf> {
     Ok(PathBuf::from(home).join(".icelines").join("config.toml"))
 }
 
+pub(crate) fn config_exists() -> Result<bool> {
+    Ok(config_path()?.exists())
+}
+
 fn prompt_flow<R: BufRead, W: Write>(stdin: &mut R, stdout: &mut W) -> Result<SyncConfig> {
     writeln!(stdout, "icelines setup — three quick questions.\n").ok();
     let mut sync = SyncConfig::default();
