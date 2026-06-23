@@ -76,6 +76,17 @@ cargo test -p icelines-web l1_static_css_contains_prince_route_layout_classes
 version/help, representative CLI outputs, docs, markdown export, poach, and
 `serve --no-open` URL printing without requiring live network fetches.
 
+For local Windows artifact assembly before a tag or release draft, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
+```
+
+The script creates `dist\release\icelines-windows-x86_64.zip`, includes the
+release binary plus `ICELINES-PACKAGE.txt`, verifies both files are present in
+the archive, and then runs the release smoke unless `-SkipSmoke` is supplied.
+GitHub Actions remains the canonical builder for macOS and Linux artifacts.
+
 ## 5. Manual release smoke
 
 After `cargo build --release -p icelines-cli`, run:

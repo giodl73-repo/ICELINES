@@ -41,6 +41,7 @@ Release smoke:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
 powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1 -SkipBuild
+powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
 ```
 
 Full release checklist: `design/release-checklist.md`.

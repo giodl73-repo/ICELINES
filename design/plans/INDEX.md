@@ -26,6 +26,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Packaging - Local artifact](2026-06-23-phaseCanadiensPackaging-local-artifact.md) | Closed | Adds a local Windows release packaging script that creates `icelines-windows-x86_64.zip`, writes package metadata, verifies archive membership, and can run release smoke while keeping GitHub Actions canonical for cross-platform artifacts. |
 | [Phase Canadiens Browser - Dashboard ring labels](2026-06-22-phaseCanadiensBrowser-dashboard-ring-labels.md) | Closed | Adds accessible names to dashboard left context-ring and right detail-ring chips with player-workspace route coverage. |
 | [Phase Canadiens Browser - Dashboard score labels](2026-06-22-phaseCanadiensBrowser-dashboard-score-labels.md) | Closed | Adds accessible names to dashboard scores preview chips and the full scores workspace link with route coverage. |
 | [Phase Canadiens Browser - Dashboard pinned labels](2026-06-22-phaseCanadiensBrowser-dashboard-pinned-labels.md) | Closed | Adds unique accessible names to left and right pinned workspace controls with pinned-pane route coverage. |
