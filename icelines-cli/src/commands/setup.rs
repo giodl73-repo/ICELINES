@@ -13,7 +13,10 @@
 //! - `--dry-run` — prints what would be written, never touches disk
 //! - `--reset` — re-runs the wizard even if config.toml already exists
 
-use std::io::{BufRead, Write};
+use std::{
+    io::{BufRead, Write},
+    path::PathBuf,
+};
 
 use anyhow::{Context, Result};
 
@@ -34,10 +37,34 @@ pub async fn run(accept_defaults: bool, dry_run: bool, reset: bool) -> Result<()
 pub fn run_with_io<R: BufRead, W: Write>(
     accept_defaults: bool,
     dry_run: bool,
-    _reset: bool,
+    reset: bool,
     stdin: &mut R,
     stdout: &mut W,
 ) -> Result<()> {
+    let config_path = config_path()?;
+    if config_path.exists() && !reset && !dry_run {
+        writeln!(
+            stdout,
+            "icelines setup — config already exists at {}",
+            config_path.display()
+        )
+        .ok();
+        writeln!(
+            stdout,
+            "Use `icelines setup --reset` to re-run setup, or `icelines config` to edit values."
+        )
+        .ok();
+        return Ok(());
+    }
+    if config_path.exists() && reset {
+        writeln!(
+            stdout,
+            "icelines setup — resetting sync settings in {}",
+            config_path.display()
+        )
+        .ok();
+    }
+
     let cfg = Config::load().unwrap_or_else(|_| default_config());
 
     let sync = if accept_defaults {
@@ -63,6 +90,15 @@ pub fn run_with_io<R: BufRead, W: Write>(
 
 fn default_config() -> Config {
     Config::test_default()
+}
+
+fn config_path() -> Result<PathBuf> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .ok_or_else(|| {
+            anyhow::anyhow!("cannot determine home directory; set HOME or USERPROFILE")
+        })?;
+    Ok(PathBuf::from(home).join(".icelines").join("config.toml"))
 }
 
 fn prompt_flow<R: BufRead, W: Write>(stdin: &mut R, stdout: &mut W) -> Result<SyncConfig> {
@@ -231,6 +267,37 @@ fn print_summary<W: Write>(stdout: &mut W, sync: &SyncConfig) -> Result<()> {
 mod tests {
     use super::*;
     use std::io::Cursor;
+    use std::path::Path;
+
+    struct HomeEnvGuard {
+        prev_home: Option<std::ffi::OsString>,
+        prev_userprofile: Option<std::ffi::OsString>,
+    }
+
+    impl HomeEnvGuard {
+        fn set(home: &Path) -> Self {
+            let guard = Self {
+                prev_home: std::env::var_os("HOME"),
+                prev_userprofile: std::env::var_os("USERPROFILE"),
+            };
+            std::env::set_var("HOME", home);
+            std::env::set_var("USERPROFILE", home);
+            guard
+        }
+    }
+
+    impl Drop for HomeEnvGuard {
+        fn drop(&mut self) {
+            match &self.prev_home {
+                Some(p) => std::env::set_var("HOME", p),
+                None => std::env::remove_var("HOME"),
+            }
+            match &self.prev_userprofile {
+                Some(p) => std::env::set_var("USERPROFILE", p),
+                None => std::env::remove_var("USERPROFILE"),
+            }
+        }
+    }
 
     #[test]
     fn l1_foster08_accept_defaults_writes_default_sync() {
@@ -270,5 +337,58 @@ mod tests {
             .expect_err("must error on out-of-range");
         let msg = err.to_string();
         assert!(msg.contains("out of range"), "got: {msg}");
+    }
+
+    #[test]
+    fn l1_foster08_existing_config_requires_reset_for_write_run() {
+        let _guard = crate::test_utils::home_env_lock();
+        let dir = tempfile::tempdir().expect("tempdir");
+        let _env = HomeEnvGuard::set(dir.path());
+
+        let config_dir = dir.path().join(".icelines");
+        std::fs::create_dir_all(&config_dir).expect("config dir");
+        let config_path = config_dir.join("config.toml");
+        let original = "live = false\n\n[sync]\npolicy = \"off\"\n";
+        std::fs::write(&config_path, original).expect("write config");
+
+        let mut input = Cursor::new(Vec::new());
+        let mut out = Vec::new();
+        run_with_io(true, false, false, &mut input, &mut out).expect("ok");
+
+        let s = String::from_utf8_lossy(&out);
+        assert!(s.contains("config already exists"), "got: {s}");
+        assert_eq!(
+            std::fs::read_to_string(&config_path).expect("read config"),
+            original
+        );
+    }
+
+    #[test]
+    fn l1_foster08_reset_preserves_non_sync_config_keys() {
+        let _guard = crate::test_utils::home_env_lock();
+        let dir = tempfile::tempdir().expect("tempdir");
+        let _env = HomeEnvGuard::set(dir.path());
+
+        let config_dir = dir.path().join(".icelines");
+        std::fs::create_dir_all(&config_dir).expect("config dir");
+        let config_path = config_dir.join("config.toml");
+        std::fs::write(
+            &config_path,
+            "live = false\nseason = 20252026\n\n[sync]\npolicy = \"off\"\n",
+        )
+        .expect("write config");
+
+        let mut input = Cursor::new(Vec::new());
+        let mut out = Vec::new();
+        run_with_io(true, false, true, &mut input, &mut out).expect("ok");
+
+        let body = std::fs::read_to_string(&config_path).expect("read config");
+        assert!(body.contains("live = false"), "got:\n{body}");
+        assert!(body.contains("season = 20252026"), "got:\n{body}");
+        assert!(body.contains("policy = \"eager\""), "got:\n{body}");
+        assert!(
+            body.contains("transactions = \"favorites\""),
+            "got:\n{body}"
+        );
     }
 }

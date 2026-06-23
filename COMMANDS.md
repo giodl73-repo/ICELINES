@@ -1405,6 +1405,11 @@ icelines setup --accept-defaults --dry-run
 icelines setup --reset
 ```
 
+If `~/.icelines/config.toml` already exists, `icelines setup` exits
+without changing it unless `--reset` is passed. Reset rewrites the
+`[sync]` settings only; other config keys are preserved. `--dry-run`
+always previews without writing.
+
 Top-level `--no-setup` flag skips the auto-prompt for callers that
 expect to run headless.
 

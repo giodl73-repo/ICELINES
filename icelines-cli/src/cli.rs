@@ -803,7 +803,8 @@ ENTRY POINTS COVERED
     /// `~/.icelines/config.toml`. Auto-runs on first invocation when
     /// no config file exists; pass `--no-setup` (top-level) to skip.
     /// In scripted contexts pass `--accept-defaults` to write the
-    /// defaults non-interactively.
+    /// defaults non-interactively. Existing config files are left
+    /// unchanged unless `--reset` is passed.
     Setup {
         /// Skip the prompts; write the spec defaults and exit.
         /// Useful for headless / CI / persona-test contexts.
@@ -812,7 +813,7 @@ ENTRY POINTS COVERED
         /// Print what setup would do without writing config.toml.
         #[arg(long)]
         dry_run: bool,
-        /// Re-run the wizard even if config.toml already exists.
+        /// Re-run setup even if config.toml already exists.
         #[arg(long)]
         reset: bool,
     },
