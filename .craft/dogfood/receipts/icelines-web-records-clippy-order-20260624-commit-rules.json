@@ -1,0 +1,47 @@
+{
+  "receiptTier": "dogfood-git-commit-rules-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-web-records-clippy-order-20260624",
+  "gitRepository": true,
+  "actualEmail": "giodl73@gmail.com",
+  "expectedEmail": "giodl73@gmail.com",
+  "emailMatches": true,
+  "actualName": "giodl73-repo",
+  "expectedName": "giodl73-repo",
+  "nameMatches": true,
+  "requireClean": true,
+  "worktreeDirty": true,
+  "receiptArtifactsDirty": true,
+  "productWorktreeDirty": true,
+  "dirtyFiles": [
+    "icelines-web\\src\\handlers\\records.rs",
+    ".craft\\dogfood\\receipts\\icelines-web-records-clippy-order-20260624-check-records-clippy-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-web-records-clippy-order-20260624-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-web-records-clippy-order-20260624-step-records-clippy-order.json",
+    ".craft\\dogfood\\sessions\\icelines-web-records-clippy-order-20260624\\descriptor.json",
+    ".craft\\dogfood\\sessions\\icelines-web-records-clippy-order-20260624\\plan.md"
+  ],
+  "receiptArtifactFiles": [
+    ".craft\\dogfood\\receipts\\icelines-web-records-clippy-order-20260624-check-records-clippy-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-web-records-clippy-order-20260624-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-web-records-clippy-order-20260624-step-records-clippy-order.json",
+    ".craft\\dogfood\\sessions\\icelines-web-records-clippy-order-20260624\\descriptor.json",
+    ".craft\\dogfood\\sessions\\icelines-web-records-clippy-order-20260624\\plan.md"
+  ],
+  "productDirtyFiles": [
+    "icelines-web\\src\\handlers\\records.rs"
+  ],
+  "note": "Commit locally only; include Copilot co-author trailer; do not push.",
+  "readyToCommit": false,
+  "recordedUnixMillis": 1782333862477,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

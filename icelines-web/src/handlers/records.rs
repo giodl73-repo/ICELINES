@@ -544,6 +544,26 @@ fn render_template(template: RecordsTemplate) -> Response {
     }
 }
 
+fn server_error(route: &'static str, err: anyhow::Error) -> Response {
+    crate::api::json_error_meta(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        route,
+        serde_json::json!({}),
+        serde_json::json!({}),
+        err.to_string(),
+    )
+}
+
+fn metric_error(route: &'static str, metric: &str, allowed: &[&str]) -> Response {
+    crate::api::json_error_meta(
+        StatusCode::BAD_REQUEST,
+        route,
+        serde_json::json!({ "metric": metric }),
+        serde_json::json!({ "allowed": allowed }),
+        format!("Unsupported records metric '{metric}'"),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -594,24 +614,4 @@ mod tests {
 
         assert!(render_records_count_svg("NHL teams scored against", &rows).is_none());
     }
-}
-
-fn server_error(route: &'static str, err: anyhow::Error) -> Response {
-    crate::api::json_error_meta(
-        StatusCode::INTERNAL_SERVER_ERROR,
-        route,
-        serde_json::json!({}),
-        serde_json::json!({}),
-        err.to_string(),
-    )
-}
-
-fn metric_error(route: &'static str, metric: &str, allowed: &[&str]) -> Response {
-    crate::api::json_error_meta(
-        StatusCode::BAD_REQUEST,
-        route,
-        serde_json::json!({ "metric": metric }),
-        serde_json::json!({ "allowed": allowed }),
-        format!("Unsupported records metric '{metric}'"),
-    )
 }
