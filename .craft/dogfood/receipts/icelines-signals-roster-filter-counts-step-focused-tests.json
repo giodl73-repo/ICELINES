@@ -1,0 +1,22 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-roster-filter-counts",
+  "noteKind": "focused-tests",
+  "note": "Added signals-roster matched/total/filtered count transparency and passed focused Signals L2 tests; Cargo.lock churn is the known unused-patch removal and will be restored before gate.",
+  "evidence": [
+    "cargo test -p icelines-cli --test signals_system",
+    "7 signals_system tests passed"
+  ],
+  "recordedUnixMillis": 1782312987130,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

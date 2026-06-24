@@ -160,6 +160,9 @@ fn l2_signals_roster_text_is_team_scoped_discovery_not_leaderboard() {
         "{text}"
     );
     assert!(text.contains("Evidence filter: all"), "{text}");
+    assert!(text.contains("Rows: "), "{text}");
+    assert!(text.contains("matched /"), "{text}");
+    assert!(text.contains("filtered out"), "{text}");
     assert!(text.contains("Not a Signal leaderboard"), "{text}");
     assert!(text.contains("Mika Zibanejad"), "{text}");
     assert!(text.contains("Phys/60"), "{text}");
@@ -176,6 +179,7 @@ fn l2_signals_roster_text_accepts_evidence_filter_without_leaderboard_promotion(
     );
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(text.contains("Evidence filter: partial"), "{text}");
+    assert!(text.contains("filtered out"), "{text}");
     assert!(text.contains("Not a Signal leaderboard"), "{text}");
     assert!(text.contains("Player"), "{text}");
     assert!(text.contains("Evidence"), "{text}");
@@ -196,6 +200,15 @@ fn l2_signals_roster_json_envelope_preserves_non_promotion_copy() {
     assert_eq!(json["data"]["team"], "NYR");
     assert_eq!(json["data"]["evidence_filter"], "all");
     assert_eq!(json["meta"]["evidence_filter"], "all");
+    assert_eq!(
+        json["data"]["total_player_count"],
+        json["meta"]["total_player_count"]
+    );
+    assert_eq!(
+        json["data"]["total_player_count"],
+        json["meta"]["player_count"]
+    );
+    assert_eq!(json["meta"]["filtered_out_count"], 0);
     assert!(json["data"]["rows"].as_array().unwrap().len() > 5);
     assert!(
         json["meta"]["non_promotion"]

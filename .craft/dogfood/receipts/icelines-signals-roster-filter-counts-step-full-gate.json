@@ -1,0 +1,22 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-roster-filter-counts",
+  "noteKind": "full-gate",
+  "note": "Full native gate passed for signals-roster filter count transparency.",
+  "evidence": [
+    "7 signals_system L2 tests passed",
+    "L0 filter semantics test, cargo check --workspace, clippy -D warnings, and git diff --check passed"
+  ],
+  "recordedUnixMillis": 1782313114756,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

@@ -1,0 +1,48 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-roster-filter-counts",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Added matched/total/filtered row-count transparency to signals-roster evidence filters while preserving team-scoped inspection and non-promotion boundaries.",
+  "recordedUnixMillis": 1782313134509,
+  "progress": {
+    "stepCount": 2,
+    "latestStepLabel": "full-gate",
+    "latestStepNote": "Full native gate passed for signals-roster filter count transparency.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-signals-roster-filter-counts-step-full-gate.json",
+    "latestStepEvidenceItems": [
+      "7 signals_system L2 tests passed",
+      "L0 filter semantics test, cargo check --workspace, clippy -D warnings, and git diff --check passed"
+    ],
+    "recentSteps": [
+      {
+        "label": "full-gate",
+        "note": "Full native gate passed for signals-roster filter count transparency.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-signals-roster-filter-counts-step-full-gate.json",
+        "evidenceItems": [
+          "7 signals_system L2 tests passed",
+          "L0 filter semantics test, cargo check --workspace, clippy -D warnings, and git diff --check passed"
+        ]
+      },
+      {
+        "label": "focused-tests",
+        "note": "Added signals-roster matched/total/filtered count transparency and passed focused Signals L2 tests; Cargo.lock churn is the known unused-patch removal and will be restored before gate.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-signals-roster-filter-counts-step-focused-tests.json",
+        "evidenceItems": [
+          "cargo test -p icelines-cli --test signals_system",
+          "7 signals_system tests passed"
+        ]
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

@@ -120,6 +120,7 @@ struct SignalsRosterView {
     season_type: String,
     rows: Vec<PlayerSignalsView>,
     evidence_filter: SignalEvidenceFilter,
+    total_player_count: usize,
     disclosures: Vec<String>,
     non_claims: Vec<String>,
     source_authority: SignalsSourceAuthority,
@@ -136,13 +137,17 @@ fn build_roster_view(
     let (outcome, season_key, season_type) =
         crate::commands::players::load_repo_for_season(season, Some(season_type))?;
 
-    let mut rows: Vec<PlayerSignalsView> = outcome
+    let all_rows: Vec<PlayerSignalsView> = outcome
         .repo
         .skaters(season_key, season_type)
         .filter(|player| player.team_display() == team_abbr.0)
         .map(|player| {
             PlayerSignalsView::from_player(PlayerSignalsView::context_for_player(&player), &player)
         })
+        .collect();
+    let total_player_count = all_rows.len();
+    let mut rows: Vec<PlayerSignalsView> = all_rows
+        .into_iter()
         .filter(|row| evidence_filter.matches(row))
         .collect();
     rows.sort_by(|a, b| {
@@ -168,6 +173,7 @@ fn build_roster_view(
         season_type: season_type.label().to_string(),
         rows,
         evidence_filter,
+        total_player_count,
         disclosures: vec![
             "Signals are descriptive derived metrics built from existing stat inputs."
                 .to_string(),
@@ -221,6 +227,12 @@ impl SignalEvidenceFilter {
             Self::Partial => "partial",
             Self::Missing => "missing",
         }
+    }
+}
+
+impl SignalsRosterView {
+    fn filtered_out_count(&self) -> usize {
+        self.total_player_count.saturating_sub(self.rows.len())
     }
 }
 
@@ -292,6 +304,12 @@ fn print_signals_roster_text(view: &SignalsRosterView) {
     println!("{}", "=".repeat(96));
     println!("{}", view.schema_note);
     println!("Evidence filter: {}", view.evidence_filter.label());
+    println!(
+        "Rows: {} matched / {} total / {} filtered out",
+        view.rows.len(),
+        view.total_player_count,
+        view.filtered_out_count()
+    );
     println!("Authority: {}", view.source_authority.label);
     for disclosure in &view.disclosures {
         println!("Note: {disclosure}");
@@ -460,6 +478,8 @@ fn signals_roster_json_envelope(view: &SignalsRosterView) -> String {
             "team": view.team,
             "player_count": view.rows.len(),
             "evidence_filter": view.evidence_filter,
+            "total_player_count": view.total_player_count,
+            "filtered_out_count": view.filtered_out_count(),
             "non_promotion": "team-scoped discovery matrix; not a leaderboard, StatId, filter, or cache metric family",
             "source_authority": &view.source_authority,
         },
@@ -537,6 +557,7 @@ mod tests {
             season_type: "regular".to_string(),
             rows: vec![row],
             evidence_filter: SignalEvidenceFilter::All,
+            total_player_count: 1,
             disclosures: Vec::new(),
             non_claims: Vec::new(),
             source_authority: SignalsSourceAuthority::default(),

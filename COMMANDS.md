@@ -654,8 +654,10 @@ injury signal, deployment recommendation, player-quality grade, or autonomous
 coaching decision. Missing Signals render as `unavailable`, never as zero-filled
 player values. `--evidence all|full|partial|missing` narrows the team-scoped
 inspection rows by Signal evidence coverage while preserving player-name sorting
-and the non-promotion boundary. JSON uses the additive `signals-roster.v1`
-envelope. Phase Capitals keeps this surface uncached and team-scoped.
+and the non-promotion boundary. Text and JSON output report matched, total, and
+filtered-out row counts so filter scope is auditable without implying rank. JSON
+uses the additive `signals-roster.v1` envelope. Phase Capitals keeps this surface
+uncached and team-scoped.
 `signals-roster.v1` also carries `meta.source_authority` and row-level
 `source_authority` values copied from `PlayerSignalsView`, so the roster matrix
 has the same covered inputs, blocked claims, and missing-evidence semantics as
