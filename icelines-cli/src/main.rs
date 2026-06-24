@@ -61,7 +61,7 @@ fn print_short_banner() {
     println!();
     println!("Quick:");
     println!("  icelines query leaders --filter \"age<=24 AND p>=80\"");
-    println!("  icelines report list");
+    println!("  icelines stathead --markdown");
     println!("  icelines tui player Bedard");
     println!("  icelines --help    All commands and flags");
 }
@@ -228,6 +228,25 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 .await?;
             }
         },
+        Commands::Stathead {
+            pack,
+            json,
+            markdown,
+            commands_only,
+            read_only,
+            writes_only,
+            out,
+        } => {
+            commands::stathead::run(
+                pack,
+                json,
+                markdown,
+                commands_only,
+                read_only,
+                writes_only,
+                out,
+            )?;
+        }
         Commands::Records(sub) => match sub {
             RecordsSubcommand::Player {
                 player,

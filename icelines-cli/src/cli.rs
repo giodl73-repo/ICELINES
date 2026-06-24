@@ -188,6 +188,52 @@ Examples:
     )]
     Report(ReportSubcommand),
 
+    /// Curated stathead/editorial query starter packs.
+    #[command(long_about = r#"
+Curated stathead/editorial query starter packs.
+
+This command does not introduce new metric semantics; it prints reusable query
+recipes for existing IceLines surfaces. Use it when you want a starting point
+for historical leaderboards, young-player lists, playoff runs, or goalie notes.
+
+Examples:
+  icelines stathead
+  icelines stathead young-stars
+  icelines stathead era-leaders --json
+  icelines stathead goalie-notebook --markdown --out goalie-notebook.md
+  icelines stathead young-stars --commands
+  icelines stathead fantasy-prep --commands --read-only
+  icelines stathead --commands --writes-only
+"#)]
+    Stathead {
+        /// Pack slug to show. Omit to list available packs.
+        pack: Option<String>,
+
+        /// Emit pack metadata and commands as JSON.
+        #[arg(long)]
+        json: bool,
+
+        /// Render the selected pack as Markdown.
+        #[arg(long)]
+        markdown: bool,
+
+        /// Print only runnable commands, one per line.
+        #[arg(long = "commands")]
+        commands_only: bool,
+
+        /// With --commands, omit recipes that write files.
+        #[arg(long)]
+        read_only: bool,
+
+        /// With --commands, emit only recipes that write files.
+        #[arg(long)]
+        writes_only: bool,
+
+        /// Write Markdown or commands output to a file.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+
     /// Player/team individual records from event-level data.
     #[command(
         subcommand,

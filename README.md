@@ -24,13 +24,17 @@ operator/developer references and should not override the VTRACE baseline.
    - Mac (Apple Silicon) → `icelines-macos-arm64.tar.gz`
    - Mac (Intel) → `icelines-macos-x86_64.tar.gz`
    - Linux → `icelines-linux-x86_64.tar.gz`
-2. Extract the archive — you get a single `icelines` (or `icelines.exe`) file
-3. Open a terminal in that folder and run:
+2. Optional: download the matching `.sha256` file and verify the archive hash
+   before extracting. Release archives also contain `ICELINES-PACKAGE.txt` with
+   the source commit, build timestamp, and binary SHA-256.
+3. Extract the archive — you get a single `icelines` (or `icelines.exe`) file
+4. Open a terminal in that folder and run:
 
 ```bash
 icelines fetch all        # download current NHL data (~5 seconds)
 icelines tui              # launch the full interactive app
 icelines menu             # don't know which surface you want? Pick from a menu.
+icelines stathead         # browse curated query starter packs
 
 # Or boot directly on a specific surface:
 icelines tui scores               # tonight's games
@@ -83,6 +87,7 @@ Release smoke for maintainers:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
+powershell -ExecutionPolicy Bypass -File scripts\verify-release-artifact.ps1 -ArtifactPath dist\release\icelines-windows-x86_64.zip
 ```
 
 Full release checklist: [design/release-checklist.md](design/release-checklist.md).

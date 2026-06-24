@@ -42,12 +42,56 @@ Release smoke:
 powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
 powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1 -SkipBuild
 powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
+powershell -ExecutionPolicy Bypass -File scripts\verify-release-artifact.ps1 -ArtifactPath dist\release\icelines-windows-x86_64.zip
 ```
+
+`package-release.ps1` writes `dist\release\icelines-windows-x86_64.zip` plus a
+`.sha256` sidecar; `ICELINES-PACKAGE.txt` inside the archive records the binary
+version, source commit, build timestamp, and binary SHA-256.
+Tagged GitHub releases publish the same `.sha256` sidecar pattern for every
+Linux, macOS, and Windows archive, and each release archive includes the same
+`ICELINES-PACKAGE.txt` metadata file. `verify-release-artifact.ps1` verifies the
+sidecar hash and required archive members for downloaded `.zip` or `.tar.gz`
+artifacts.
 
 Full release checklist: `design/release-checklist.md`.
 `ci-audit` installs `cargo-audit --locked` when missing; RustSec vulnerability
 advisories block, while warning-class advisories remain visible in the release
 checklist ledger.
+
+---
+
+## Stathead starter packs
+
+`icelines stathead` prints curated editorial/stathead query packs. These are
+recipes over existing IceLines commands, not new metric semantics. JSON and
+Markdown outputs include the source/data requirement and command-effect notes
+for each recipe; `--commands` emits only runnable command lines, and
+`--commands --read-only` omits file-writing recipes. Use
+`--commands --writes-only` to inspect only recipes that write files.
+
+```bash
+icelines stathead                         # list available packs
+icelines stathead young-stars             # show one pack
+icelines stathead era-leaders --json      # machine-readable pack metadata
+icelines stathead --markdown --out stathead-packs.md
+icelines stathead goalie-notebook --markdown --out goalie-notebook.md
+icelines stathead young-stars --commands  # runnable commands only
+icelines stathead fantasy-prep --commands --read-only
+icelines stathead --commands --writes-only
+```
+
+Current packs:
+
+| Pack | Focus |
+|---|---|
+| `era-leaders` | Bundled-history and multi-season scoring leaderboards |
+| `young-stars` | Age-gated scorer and category-filter starter queries |
+| `playoff-runs` | Playoff scoring and series-context entry points |
+| `goalie-notebook` | Goalie rate and workload notebook starters |
+| `records-notebook` | Cached event-data player/team record starters |
+| `fantasy-prep` | Fantasy poach and weekly-prep starter recipes |
+| `draft-scouting` | Draft class, peer cohort, and scouting-report starters |
 
 ---
 

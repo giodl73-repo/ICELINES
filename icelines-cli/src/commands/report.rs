@@ -109,6 +109,15 @@ const REPORT_CATALOG: &[ReportCatalogEntry] = &[
         notes:
             "Available: teams/goalies scored against plus fight opponents from cached play-by-play.",
     },
+    ReportCatalogEntry {
+        name: "stathead-packs",
+        status: "available",
+        canonical:
+            "icelines stathead | icelines stathead --markdown | icelines stathead --commands --read-only | icelines stathead --commands --writes-only",
+        formats: "text,json,markdown,commands",
+        screens: "CLI docs/report discovery",
+        notes: "Curated editorial query recipes; use --commands --read-only or --writes-only to filter by command effect.",
+    },
 ];
 
 pub fn run_list(json: bool) -> anyhow::Result<()> {
@@ -120,8 +129,8 @@ pub fn run_list(json: bool) -> anyhow::Result<()> {
     println!("IceLines report surface");
     println!();
     println!("Use `query` when you are asking a question, `x` when you want CSV/JSON,");
-    println!("`export md` when you want a markdown packet, and `report` for durable");
-    println!("decision reports. Planned `records` reports will share the same export rules.");
+    println!("`export md` when you want a markdown packet, `report` for durable decision");
+    println!("reports, and `stathead` for curated editorial query recipes.");
     println!();
     println!(
         "{:<16} {:<10} {:<26} Canonical command",
@@ -142,5 +151,9 @@ pub fn run_list(json: bool) -> anyhow::Result<()> {
     println!("  icelines records team SEA --metric players-scored-against-team");
     println!("  icelines records team SEA --metric goalies-beaten-by-team");
     println!("  icelines records team SEA --metric fight-opponents-by-team");
+    println!();
+    println!("Stathead starter examples:");
+    println!("  icelines stathead");
+    println!("  icelines stathead --markdown --out stathead-packs.md");
     Ok(())
 }

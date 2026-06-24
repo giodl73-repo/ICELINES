@@ -28,6 +28,7 @@ pub mod serve;
 pub mod setup;
 pub mod signals;
 pub mod snapshot;
+pub mod stathead;
 pub mod streaks;
 pub mod team;
 pub mod tonight;

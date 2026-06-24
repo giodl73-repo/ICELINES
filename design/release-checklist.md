@@ -83,8 +83,10 @@ powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
 ```
 
 The script creates `dist\release\icelines-windows-x86_64.zip`, includes the
-release binary plus `ICELINES-PACKAGE.txt`, verifies both files are present in
-the archive, and then runs the release smoke unless `-SkipSmoke` is supplied.
+release binary plus `ICELINES-PACKAGE.txt`, records the binary SHA-256 in the
+package manifest, writes `icelines-windows-x86_64.zip.sha256`, verifies the
+archive contents, and then runs the release smoke unless `-SkipSmoke` is
+supplied.
 GitHub Actions remains the canonical builder for macOS and Linux artifacts.
 
 ## 5. Manual release smoke
@@ -116,8 +118,11 @@ GitHub release workflow artifacts:
 | Linux x64 | `icelines-linux-x86_64.tar.gz` |
 
 Each archive should contain the single `icelines` binary (`icelines.exe` on
-Windows). The release workflow verifies archive existence and expected binary
-membership before upload.
+Windows) plus `ICELINES-PACKAGE.txt` with the release version, source commit,
+binary SHA-256, and build timestamp. Each archive is published with a same-name
+`.sha256` sidecar. The release workflow verifies archive existence, checksum
+sidecar integrity, expected binary membership, and manifest membership before
+upload.
 
 ## 7. Tag and release
 
@@ -134,6 +139,9 @@ After it finishes, download at least the Windows artifact and run:
 ```powershell
 icelines.exe --version
 icelines.exe query leaders --top 3
+Get-FileHash -Algorithm SHA256 .\icelines-windows-x86_64.zip
+Get-Content .\icelines-windows-x86_64.zip.sha256
+powershell -ExecutionPolicy Bypass -File scripts\verify-release-artifact.ps1 -ArtifactPath .\icelines-windows-x86_64.zip
 ```
 
 ## 8. Rollback

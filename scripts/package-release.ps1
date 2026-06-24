@@ -31,6 +31,7 @@ if (-not $SkipBuild) {
 $Binary = Resolve-Path $BinaryPath
 $BinaryLeaf = Split-Path $Binary -Leaf
 $ArchivePath = Join-Path $OutputDir $ArtifactName
+$ChecksumPath = "$ArchivePath.sha256"
 $StageRoot = Join-Path $OutputDir ".stage"
 $StageDir = Join-Path $StageRoot ([IO.Path]::GetFileNameWithoutExtension($ArtifactName))
 $VerifyDir = Join-Path $OutputDir ".verify"
@@ -39,9 +40,11 @@ New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 Remove-Item -LiteralPath $StageRoot -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $VerifyDir -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $ArchivePath -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $ChecksumPath -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $StageDir | Out-Null
 
 Copy-Item -LiteralPath $Binary -Destination (Join-Path $StageDir $BinaryLeaf)
+$binaryHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $Binary).Hash.ToLowerInvariant()
 
 $version = & $Binary --version
 if ($LASTEXITCODE -ne 0) {
@@ -53,6 +56,7 @@ $manifest = @(
     "binary=$BinaryLeaf",
     "version=$($version -join ' ')",
     "source_commit=$commit",
+    "binary_sha256=$binaryHash",
     "built_at_utc=$((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'))"
 )
 Set-Content -Path (Join-Path $StageDir "ICELINES-PACKAGE.txt") -Value $manifest -Encoding utf8
@@ -65,6 +69,11 @@ if ($ArtifactName.EndsWith(".zip", [StringComparison]::OrdinalIgnoreCase)) {
     }
     if (-not (Test-Path (Join-Path $VerifyDir "ICELINES-PACKAGE.txt"))) {
         Write-Error "Packaged archive does not contain ICELINES-PACKAGE.txt"
+    }
+    $archiveHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $ArchivePath).Hash.ToLowerInvariant()
+    Set-Content -Path $ChecksumPath -Value "$archiveHash  $ArtifactName" -Encoding ascii
+    if (-not (Test-Path $ChecksumPath)) {
+        Write-Error "Packaged archive checksum was not written to $ChecksumPath"
     }
 } else {
     Write-Error "Only .zip artifacts are supported by this local packaging script. GitHub Actions still builds cross-platform tarballs."
@@ -82,3 +91,4 @@ Remove-Item -LiteralPath $StageRoot -Recurse -Force -ErrorAction SilentlyContinu
 Remove-Item -LiteralPath $VerifyDir -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host "packaged release artifact: $ArchivePath" -ForegroundColor Green
+Write-Host "packaged release checksum: $ChecksumPath" -ForegroundColor Green

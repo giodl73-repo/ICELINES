@@ -26,6 +26,8 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
+| [Phase Canadiens Stathead - Query packs](2026-06-23-phaseCanadiensStathead-query-packs.md) | Closed | Adds `icelines stathead [pack] [--json]` with curated query-pack recipes for era leaders, young stars, playoff runs, and goalie notebooks. |
+| [Phase Canadiens Packaging - Checksums](2026-06-23-phaseCanadiensPackaging-checksums.md) | Closed | Adds SHA-256 sidecars to local Windows packaging and every GitHub release archive, with workflow verification and release-checklist documentation. |
 | [Phase Canadiens Diagnostics - Data status JSON](2026-06-23-phaseCanadiensDiagnostics-data-status-json.md) | Closed | Adds `icelines data-status --json` so release-data freshness and authority diagnostics are scriptable through the shared `DataStatusView` contract. |
 | [Phase Canadiens Setup - Auto prompt](2026-06-23-phaseCanadiensSetup-auto-prompt.md) | Closed | Makes the documented first-run setup wizard run for interactive terminal users with no config while preserving script safety through `--no-setup` and non-interactive gating. |
 | [Phase Canadiens Setup - Reset guard](2026-06-23-phaseCanadiensSetup-reset-guard.md) | Closed | Makes `icelines setup` preserve an existing config unless `--reset` is explicit, while keeping reset scoped to sync settings and preserving dry-run preview behavior. |

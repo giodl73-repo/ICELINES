@@ -2024,6 +2024,11 @@ fn l2_report_list_exits_zero_and_lists_report_doors() {
         "export md",
         "weekly-fantasy",
         "records",
+        "stathead-packs",
+        "icelines stathead",
+        "--commands --read-only",
+        "--commands --writes-only",
+        "text,json,markdown,commands",
         "teams-scored-against",
     ] {
         assert!(
@@ -2042,8 +2047,274 @@ fn l2_report_list_json_marks_records_available() {
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("\"name\": \"records\"") && stdout.contains("\"status\": \"available\""),
-        "report list JSON must expose available records catalog row, got: {stdout}"
+        stdout.contains("\"name\": \"records\"")
+            && stdout.contains("\"name\": \"stathead-packs\"")
+            && stdout.contains("--commands --read-only")
+            && stdout.contains("--commands --writes-only")
+            && stdout.contains("\"formats\": \"text,json,markdown,commands\"")
+            && stdout.contains("\"status\": \"available\""),
+        "report list JSON must expose available records and stathead catalog rows, got: {stdout}"
+    );
+}
+
+#[test]
+fn l2_stathead_lists_editorial_query_packs() {
+    let out = run(&["stathead"]);
+    assert!(out.status.success(), "icelines stathead must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Stathead query packs"), "got: {stdout}");
+    assert!(stdout.contains("young-stars"), "got: {stdout}");
+    assert!(stdout.contains("goalie-notebook"), "got: {stdout}");
+    assert!(stdout.contains("records-notebook"), "got: {stdout}");
+    assert!(stdout.contains("fantasy-prep"), "got: {stdout}");
+    assert!(stdout.contains("draft-scouting"), "got: {stdout}");
+    assert!(
+        stdout.contains("icelines stathead --markdown --out stathead-packs.md"),
+        "got: {stdout}"
+    );
+    assert!(
+        stdout.contains("icelines stathead --commands --read-only"),
+        "got: {stdout}"
+    );
+}
+
+#[test]
+fn l2_stathead_pack_json_contains_queries() {
+    let out = run(&["stathead", "young-stars", "--json"]);
+    assert!(
+        out.status.success(),
+        "icelines stathead young-stars --json must exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("\"slug\": \"young-stars\""),
+        "got: {stdout}"
+    );
+    assert!(
+        stdout.contains("icelines query leaders --age-max 23"),
+        "got: {stdout}"
+    );
+    assert!(stdout.contains("\"requires\""), "got: {stdout}");
+    assert!(stdout.contains("\"effect\""), "got: {stdout}");
+    assert!(
+        stdout.contains("Current configured season"),
+        "got: {stdout}"
+    );
+    assert!(stdout.contains("read-only stdout"), "got: {stdout}");
+}
+
+#[test]
+fn l2_stathead_pack_markdown_contains_query_table() {
+    let out = run(&["stathead", "goalie-notebook", "--markdown"]);
+    assert!(
+        out.status.success(),
+        "icelines stathead goalie-notebook --markdown must exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("# Goalie notebook"), "got: {stdout}");
+    assert!(
+        stdout.contains("| Query | Command | Why | Requires | Effect |"),
+        "got: {stdout}"
+    );
+    assert!(
+        stdout.contains("icelines query goalies --sort goalie-games"),
+        "got: {stdout}"
+    );
+    assert!(stdout.contains("Goalie season totals"), "got: {stdout}");
+    assert!(stdout.contains("read-only stdout"), "got: {stdout}");
+}
+
+#[test]
+fn l2_stathead_pack_markdown_out_writes_file() {
+    let temp = tempfile::TempDir::new().unwrap();
+    let out_path = temp.path().join("young-stars.md");
+    let out_arg = out_path.to_string_lossy().to_string();
+    let out = run(&["stathead", "young-stars", "--markdown", "--out", &out_arg]);
+    assert!(
+        out.status.success(),
+        "icelines stathead --markdown --out must exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let written = std::fs::read_to_string(&out_path).expect("read markdown output");
+    assert!(written.contains("# Young stars"), "got: {written}");
+    assert!(
+        written.contains("icelines query leaders --age-max 23"),
+        "got: {written}"
+    );
+    assert!(
+        written.contains("Current configured season"),
+        "got: {written}"
+    );
+    assert!(written.contains("read-only stdout"), "got: {written}");
+}
+
+#[test]
+fn l2_stathead_markdown_without_pack_renders_full_index() {
+    let out = run(&["stathead", "--markdown"]);
+    assert!(
+        out.status.success(),
+        "icelines stathead --markdown must exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("# IceLines stathead query packs"),
+        "got: {stdout}"
+    );
+    assert!(stdout.contains("## Era leaders"), "got: {stdout}");
+    assert!(stdout.contains("## Goalie notebook"), "got: {stdout}");
+    assert!(stdout.contains("## Records notebook"), "got: {stdout}");
+    assert!(stdout.contains("## Fantasy prep"), "got: {stdout}");
+    assert!(stdout.contains("## Draft scouting"), "got: {stdout}");
+}
+
+#[test]
+fn l2_stathead_commands_prints_runnable_lines_only() {
+    let out = run(&["stathead", "young-stars", "--commands"]);
+    assert!(
+        out.status.success(),
+        "icelines stathead young-stars --commands must exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let lines = stdout.lines().collect::<Vec<_>>();
+    assert_eq!(lines.len(), 2, "got: {stdout}");
+    assert_eq!(
+        lines[0],
+        "icelines query leaders --age-max 23 --sort ppg --top 25"
+    );
+    assert!(
+        lines.iter().all(|line| line.starts_with("icelines ")),
+        "commands output should only contain runnable lines, got: {stdout}"
+    );
+}
+
+#[test]
+fn l2_stathead_commands_out_writes_full_catalog() {
+    let temp = tempfile::TempDir::new().unwrap();
+    let out_path = temp.path().join("stathead-commands.txt");
+    let out_arg = out_path.to_string_lossy().to_string();
+    let out = run(&["stathead", "--commands", "--out", &out_arg]);
+    assert!(
+        out.status.success(),
+        "icelines stathead --commands --out must exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let written = std::fs::read_to_string(&out_path).expect("read commands output");
+    assert!(written.contains("icelines query leaders --seasons 38"));
+    assert!(written.contains("icelines query goalies --sort goalie-games"));
+    assert!(written.contains("icelines records team SEA --metric players-scored-against-team"));
+    assert!(written.contains("icelines poach --category hits,blocks,shots --top 20"));
+    assert!(written.contains("icelines class 2023 --pos F --top 25"));
+    assert!(
+        !written.contains("read-only stdout"),
+        "--commands should not include effect notes, got: {written}"
+    );
+    assert!(
+        written.lines().all(|line| line.starts_with("icelines ")),
+        "commands file should only contain runnable lines, got: {written}"
+    );
+}
+
+#[test]
+fn l2_stathead_commands_read_only_omits_file_writers() {
+    let out = run(&["stathead", "fantasy-prep", "--commands", "--read-only"]);
+    assert!(
+        out.status.success(),
+        "icelines stathead fantasy-prep --commands --read-only must exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("icelines poach --category hits,blocks,shots --top 20"));
+    assert!(
+        !stdout.contains("weekly.md"),
+        "read-only command output should omit file writers, got: {stdout}"
+    );
+}
+
+#[test]
+fn l2_stathead_commands_read_only_out_writes_filtered_file() {
+    let temp = tempfile::TempDir::new().unwrap();
+    let out_path = temp.path().join("stathead-read-only.txt");
+    let out_arg = out_path.to_string_lossy().to_string();
+    let out = run(&["stathead", "--commands", "--read-only", "--out", &out_arg]);
+    assert!(
+        out.status.success(),
+        "icelines stathead --commands --read-only --out must exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let written = std::fs::read_to_string(&out_path).expect("read read-only commands output");
+    assert!(written.contains("icelines query leaders --seasons 38"));
+    assert!(written.contains("icelines poach --category hits,blocks,shots --top 20"));
+    assert!(
+        !written.contains("weekly.md"),
+        "read-only commands file should omit file writers, got: {written}"
+    );
+    assert!(
+        written.lines().all(|line| line.starts_with("icelines ")),
+        "read-only commands file should only contain runnable lines, got: {written}"
+    );
+}
+
+#[test]
+fn l2_stathead_commands_writes_only_emits_file_writers() {
+    let out = run(&["stathead", "--commands", "--writes-only"]);
+    assert!(
+        out.status.success(),
+        "icelines stathead --commands --writes-only must exit 0: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("icelines report weekly --category hits,blocks --top 10 --out weekly.md")
+    );
+    assert!(
+        stdout.lines().all(|line| line.contains("--out ")),
+        "writes-only command output should only contain file-writing recipes, got: {stdout}"
+    );
+}
+
+#[test]
+fn l2_stathead_read_only_without_commands_errors_cleanly() {
+    let out = run(&["stathead", "fantasy-prep", "--read-only"]);
+    assert!(
+        !out.status.success(),
+        "icelines stathead --read-only without --commands must fail"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("--read-only requires --commands"),
+        "expected clear --read-only error, got: {stderr}"
+    );
+}
+
+#[test]
+fn l2_stathead_writes_only_without_commands_errors_cleanly() {
+    let out = run(&["stathead", "fantasy-prep", "--writes-only"]);
+    assert!(
+        !out.status.success(),
+        "icelines stathead --writes-only without --commands must fail"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("--writes-only requires --commands"),
+        "expected clear --writes-only error, got: {stderr}"
+    );
+}
+
+#[test]
+fn l2_stathead_read_only_and_writes_only_conflict() {
+    let out = run(&["stathead", "--commands", "--read-only", "--writes-only"]);
+    assert!(
+        !out.status.success(),
+        "icelines stathead --commands --read-only --writes-only must fail"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("--read-only and --writes-only are mutually exclusive"),
+        "expected clear read/write filter conflict, got: {stderr}"
     );
 }
 
