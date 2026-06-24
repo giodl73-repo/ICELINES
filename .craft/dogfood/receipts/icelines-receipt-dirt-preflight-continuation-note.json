@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-receipt-dirt-preflight",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Verified craft commit-rules distinguishes receipt-only dirt from product dirt in icelines: receipt artifacts dirty, product dirt false, readyToCommit true.",
+  "recordedUnixMillis": 1782311658968,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
