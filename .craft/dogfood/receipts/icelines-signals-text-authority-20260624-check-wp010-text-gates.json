@@ -1,0 +1,34 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-text-authority-20260624",
+  "checkLabel": "wp010-text-gates",
+  "command": "cargo fmt --check; cargo test -p icelines-cli --test signals_system --quiet; cargo clippy -p icelines-cli --test signals_system -- -D warnings; proof check docs/vtrace --errors-only; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "WP-010 single-player text authority guardrail passed focused CLI, clippy, proof, and diff gates.",
+  "evidence": [
+    "signals_system: 9 tests passed",
+    "clippy -p icelines-cli --test signals_system passed with -D warnings",
+    "proof docs/vtrace checked 19 files with 0 errors and 0 warnings",
+    "git diff --check passed"
+  ],
+  "workspaceDirty": true,
+  "changedFiles": [
+    "icelines-cli/tests/signals_system.rs",
+    "docs/vtrace/VERIFICATION.md",
+    "docs/vtrace/VALIDATION.md"
+  ],
+  "dirtyNote": "Expected WP-010 test, VTRACE, and dogfood receipt changes are pending commit.",
+  "recordedUnixMillis": 1782332795152,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

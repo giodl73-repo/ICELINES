@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-text-authority-20260624",
+  "noteKind": "signals-text-authority",
+  "note": "Pinned single-player signals text source-authority details for source, coverage state, covered inputs, covered metrics, and blocked claims without promotion.",
+  "recordedUnixMillis": 1782332795126,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

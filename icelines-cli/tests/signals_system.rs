@@ -101,6 +101,13 @@ fn l2_signals_text_surface_prints_disclaimer() {
     assert!(text.contains("SIGNALS — "));
     assert!(text.contains("Disclaimer:"));
     assert!(text.contains("Authority: Signals authority: descriptive derived metrics"));
+    assert!(text.contains("Authority source: PlayerSignalsView stat inputs"));
+    assert!(text.contains("Coverage state: descriptive_derived"));
+    assert!(text.contains("Covered inputs: season_stat_summary"));
+    assert!(text.contains("Covered metrics: physical_engagement_rate"));
+    assert!(text.contains("Blocked claims: prediction"));
+    assert!(text.contains("stat_catalog_promotion"));
+    assert!(text.contains("leaderboard_ranking"));
     assert!(text.contains("not predictions, betting, injury, deployment"));
     // No silent zero-fill: the word "unavailable" is allowed; a bare 0.00 for a
     // missing signal is not the concern here since McDavid has full evidence.
