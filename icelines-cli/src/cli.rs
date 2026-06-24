@@ -204,6 +204,13 @@ Examples:
   icelines stathead young-stars --commands
   icelines stathead fantasy-prep --commands --read-only
   icelines stathead --commands --writes-only
+
+Output modes:
+  --json                      machine-readable pack metadata
+  --markdown [--out PATH]     Markdown report artifact
+  --commands [--out PATH]     runnable commands only
+  --commands --read-only      omit recipes that write files
+  --commands --writes-only    show only recipes that write files
 "#)]
     Stathead {
         /// Pack slug to show. Omit to list available packs.

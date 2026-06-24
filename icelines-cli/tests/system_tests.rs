@@ -2079,6 +2079,26 @@ fn l2_stathead_lists_editorial_query_packs() {
 }
 
 #[test]
+fn l2_stathead_help_lists_output_modes() {
+    let out = run(&["stathead", "--help"]);
+    assert!(out.status.success(), "icelines stathead --help must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    for needle in [
+        "Output modes:",
+        "--json",
+        "--markdown [--out PATH]",
+        "--commands [--out PATH]",
+        "--commands --read-only",
+        "--commands --writes-only",
+    ] {
+        assert!(
+            stdout.contains(needle),
+            "stathead help should mention {needle:?}, got: {stdout}"
+        );
+    }
+}
+
+#[test]
 fn l2_stathead_pack_json_contains_queries() {
     let out = run(&["stathead", "young-stars", "--json"]);
     assert!(
