@@ -232,3 +232,17 @@ fn l2_signals_roster_json_envelope_preserves_non_promotion_copy() {
         "{json}"
     );
 }
+
+#[test]
+fn l2_signals_roster_empty_full_filter_reports_no_match_not_no_skaters() {
+    let output = run_signals_roster(&["--team", "NYR", "--evidence", "full"]);
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("no Signals roster rows matched evidence filter 'full'"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("0 matched /"), "{stderr}");
+    assert!(stderr.contains("filtered out"), "{stderr}");
+    assert!(!stderr.contains("no skaters found"), "{stderr}");
+}

@@ -1,0 +1,39 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-roster-full-filter-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed after pinning full-evidence roster filter boundary and operator example.",
+  "recordedUnixMillis": 1782330078017,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "full-filter-boundary",
+    "latestStepNote": "Pinned Signals roster full-evidence filter behavior in test-mode fixtures and added a production operator example without promoting roster output to leaderboard/filter/cache semantics.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-signals-roster-full-filter-20260624-step-full-filter-boundary.json",
+    "latestStepEvidenceItems": [
+      "NYR --evidence full reports no matched rows, not no skaters, under test fixtures",
+      "COMMANDS.md includes EDM full-evidence JSON example"
+    ],
+    "recentSteps": [
+      {
+        "label": "full-filter-boundary",
+        "note": "Pinned Signals roster full-evidence filter behavior in test-mode fixtures and added a production operator example without promoting roster output to leaderboard/filter/cache semantics.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-signals-roster-full-filter-20260624-step-full-filter-boundary.json",
+        "evidenceItems": [
+          "NYR --evidence full reports no matched rows, not no skaters, under test fixtures",
+          "COMMANDS.md includes EDM full-evidence JSON example"
+        ]
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

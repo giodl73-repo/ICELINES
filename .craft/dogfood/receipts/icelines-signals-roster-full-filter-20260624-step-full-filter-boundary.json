@@ -1,0 +1,22 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-roster-full-filter-20260624",
+  "noteKind": "full-filter-boundary",
+  "note": "Pinned Signals roster full-evidence filter behavior in test-mode fixtures and added a production operator example without promoting roster output to leaderboard/filter/cache semantics.",
+  "evidence": [
+    "NYR --evidence full reports no matched rows, not no skaters, under test fixtures",
+    "COMMANDS.md includes EDM full-evidence JSON example"
+  ],
+  "recordedUnixMillis": 1782330077764,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

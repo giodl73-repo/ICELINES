@@ -656,6 +656,7 @@ preserving unavailable values as missing evidence instead of zero.
 ```bash
 icelines signals-roster --team NYR
 icelines signals-roster --team NYR --evidence partial
+icelines signals-roster --team EDM --evidence full --json
 icelines signals-roster --team NYR --json
 ```
 
