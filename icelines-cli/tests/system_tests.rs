@@ -2285,7 +2285,7 @@ fn l2_stathead_read_only_without_commands_errors_cleanly() {
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.contains("--read-only requires --commands"),
+        stderr.contains("required arguments") && stderr.contains("--commands"),
         "expected clear --read-only error, got: {stderr}"
     );
 }
@@ -2299,7 +2299,7 @@ fn l2_stathead_writes_only_without_commands_errors_cleanly() {
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.contains("--writes-only requires --commands"),
+        stderr.contains("required arguments") && stderr.contains("--commands"),
         "expected clear --writes-only error, got: {stderr}"
     );
 }
@@ -2313,8 +2313,26 @@ fn l2_stathead_read_only_and_writes_only_conflict() {
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.contains("--read-only and --writes-only are mutually exclusive"),
+        stderr.contains("--read-only")
+            && stderr.contains("cannot be used with")
+            && stderr.contains("--writes-only"),
         "expected clear read/write filter conflict, got: {stderr}"
+    );
+}
+
+#[test]
+fn l2_stathead_output_modes_conflict_cleanly() {
+    let out = run(&["stathead", "--json", "--markdown"]);
+    assert!(
+        !out.status.success(),
+        "icelines stathead --json --markdown must fail"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("--json")
+            && stderr.contains("cannot be used with")
+            && stderr.contains("--markdown"),
+        "expected clear output-mode conflict, got: {stderr}"
     );
 }
 

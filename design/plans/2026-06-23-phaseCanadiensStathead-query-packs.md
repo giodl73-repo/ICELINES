@@ -20,6 +20,8 @@ command that turns existing IceLines query power into reusable starter packs.
 - Add `--commands --read-only` to omit file-writing recipes from command-list
   output.
 - Add `--commands --writes-only` to inspect only file-writing recipes.
+- Use Clap-level conflicts for mutually exclusive output modes and command
+  effect filters, with dispatch validation retained as a backstop.
 - Cover `--read-only` misuse with a clean CLI error.
 - Add per-recipe `requires` notes so JSON, text, and Markdown outputs name the
   source/data dependency behind each starter command.

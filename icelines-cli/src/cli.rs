@@ -210,11 +210,11 @@ Examples:
         pack: Option<String>,
 
         /// Emit pack metadata and commands as JSON.
-        #[arg(long)]
+        #[arg(long, conflicts_with_all = ["markdown", "commands_only"])]
         json: bool,
 
         /// Render the selected pack as Markdown.
-        #[arg(long)]
+        #[arg(long, conflicts_with = "commands_only")]
         markdown: bool,
 
         /// Print only runnable commands, one per line.
@@ -222,11 +222,11 @@ Examples:
         commands_only: bool,
 
         /// With --commands, omit recipes that write files.
-        #[arg(long)]
+        #[arg(long, requires = "commands_only", conflicts_with = "writes_only")]
         read_only: bool,
 
         /// With --commands, emit only recipes that write files.
-        #[arg(long)]
+        #[arg(long, requires = "commands_only")]
         writes_only: bool,
 
         /// Write Markdown or commands output to a file.
