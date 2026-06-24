@@ -291,7 +291,9 @@ fn find_pack(slug: &str) -> Result<&'static StatheadPack> {
                 .map(|pack| pack.slug)
                 .collect::<Vec<_>>()
                 .join(", ");
-            anyhow::anyhow!("unknown stathead pack '{slug}'. Known packs: {known}")
+            anyhow::anyhow!(
+                "unknown stathead pack '{slug}'. Known packs: {known}. Run `icelines stathead` to list packs."
+            )
         })
 }
 
@@ -466,6 +468,7 @@ mod tests {
         let msg = err.to_string();
         assert!(msg.contains("unknown stathead pack 'missing'"));
         assert!(msg.contains("young-stars"));
+        assert!(msg.contains("Run `icelines stathead` to list packs"));
     }
 
     #[test]

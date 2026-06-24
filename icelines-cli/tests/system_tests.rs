@@ -2099,6 +2099,18 @@ fn l2_stathead_help_lists_output_modes() {
 }
 
 #[test]
+fn l2_stathead_unknown_pack_points_to_list_command() {
+    let out = run(&["stathead", "missing-pack"]);
+    assert!(!out.status.success(), "unknown stathead pack should fail");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("unknown stathead pack 'missing-pack'")
+            && stderr.contains("Run `icelines stathead` to list packs"),
+        "unknown pack error should point to list command, got: {stderr}"
+    );
+}
+
+#[test]
 fn l2_stathead_pack_json_contains_queries() {
     let out = run(&["stathead", "young-stars", "--json"]);
     assert!(
