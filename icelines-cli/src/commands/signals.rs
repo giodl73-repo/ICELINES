@@ -302,7 +302,7 @@ fn print_signals_text(view: &PlayerSignalsView) {
     for non_claim in &view.non_claims {
         println!("Disclaimer: {non_claim}");
     }
-    println!("Authority: {}", view.source_authority.label);
+    print_source_authority_text(&view.source_authority);
     println!();
     println!("Legend: ↑ higher is better · ↓ lower is better · = neutral");
 }
@@ -321,7 +321,7 @@ fn print_signals_roster_text(view: &SignalsRosterView) {
         view.total_player_count,
         view.filtered_out_count()
     );
-    println!("Authority: {}", view.source_authority.label);
+    print_source_authority_text(&view.source_authority);
     for disclosure in &view.disclosures {
         println!("Note: {disclosure}");
     }
@@ -351,6 +351,15 @@ fn print_signals_roster_text(view: &SignalsRosterView) {
     }
     println!();
     println!("Legend: unavailable means missing/below-threshold evidence, never zero value truth.");
+}
+
+fn print_source_authority_text(authority: &SignalsSourceAuthority) {
+    println!("Authority: {}", authority.label);
+    println!("Authority source: {}", authority.source);
+    println!("Coverage state: {}", authority.coverage_state);
+    println!("Covered inputs: {}", authority.covered_inputs.join(", "));
+    println!("Covered metrics: {}", authority.covered_metrics.join(", "));
+    println!("Blocked claims: {}", authority.blocked_claims.join(", "));
 }
 
 struct SignalCell {

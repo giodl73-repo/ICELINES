@@ -164,6 +164,25 @@ fn l2_signals_roster_text_is_team_scoped_discovery_not_leaderboard() {
     assert!(text.contains("matched /"), "{text}");
     assert!(text.contains("filtered out"), "{text}");
     assert!(text.contains("Not a Signal leaderboard"), "{text}");
+    assert!(text.contains("Authority: Signals authority"), "{text}");
+    assert!(
+        text.contains("Authority source: PlayerSignalsView stat inputs"),
+        "{text}"
+    );
+    assert!(
+        text.contains("Coverage state: descriptive_derived"),
+        "{text}"
+    );
+    assert!(
+        text.contains("Covered inputs: season_stat_summary"),
+        "{text}"
+    );
+    assert!(
+        text.contains("Covered metrics: physical_engagement_rate"),
+        "{text}"
+    );
+    assert!(text.contains("Blocked claims: prediction"), "{text}");
+    assert!(text.contains("leaderboard_ranking"), "{text}");
     assert!(text.contains("Mika Zibanejad"), "{text}");
     assert!(text.contains("Phys/60"), "{text}");
     assert!(text.contains("Evidence"), "{text}");
