@@ -100,6 +100,8 @@ fn l2_signals_text_surface_prints_disclaimer() {
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(text.contains("SIGNALS — "));
     assert!(text.contains("Disclaimer:"));
+    assert!(text.contains("Authority: Signals authority: descriptive derived metrics"));
+    assert!(text.contains("not predictions, betting, injury, deployment"));
     // No silent zero-fill: the word "unavailable" is allowed; a bare 0.00 for a
     // missing signal is not the concern here since McDavid has full evidence.
     assert!(text.contains("evidence:"));

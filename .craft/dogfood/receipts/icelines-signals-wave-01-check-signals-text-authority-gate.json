@@ -1,0 +1,21 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-wave-01",
+  "checkLabel": "signals-text-authority-gate",
+  "command": "cargo fmt --check; cargo test -p icelines-cli --test signals_system l2_signals_text_surface_prints_disclaimer; cargo check --workspace; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "Signals text authority disclosure passed focused L2 text system test plus affected workspace gates.",
+  "recordedUnixMillis": 1782309933898,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

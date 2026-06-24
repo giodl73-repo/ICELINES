@@ -1,0 +1,21 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-wave-01",
+  "checkLabel": "baseline-fmt-check",
+  "command": "cargo fmt --check; cargo check --workspace",
+  "status": "passed",
+  "passed": true,
+  "note": "WP-010 Signals pulse preflight passed formatting and workspace type-check gates before product edits.",
+  "recordedUnixMillis": 1782309815343,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

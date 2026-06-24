@@ -235,6 +235,7 @@ fn print_signals_text(view: &PlayerSignalsView) {
     for non_claim in &view.non_claims {
         println!("Disclaimer: {non_claim}");
     }
+    println!("Authority: {}", view.source_authority.label);
     println!();
     println!("Legend: ↑ higher is better · ↓ lower is better · = neutral");
 }
