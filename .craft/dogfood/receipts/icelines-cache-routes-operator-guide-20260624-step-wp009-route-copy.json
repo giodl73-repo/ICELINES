@@ -1,0 +1,22 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-cache-routes-operator-guide-20260624",
+  "noteKind": "wp009-route-copy",
+  "note": "Documented selected WP-009 analytics-cache evidence routes in COMMANDS.md with unavailable/no-live/non-claim boundaries.",
+  "evidence": [
+    "COMMANDS.md now lists selected analytics-cache HTML/JSON twins",
+    "Copy keeps broader product workflows partial until VAL-011 accepts surface evidence"
+  ],
+  "recordedUnixMillis": 1782331276560,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

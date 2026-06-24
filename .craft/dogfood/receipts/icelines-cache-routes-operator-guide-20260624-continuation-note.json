@@ -1,0 +1,39 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-cache-routes-operator-guide-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed after documenting selected WP-009 analytics-cache evidence routes without broad product-surface promotion.",
+  "recordedUnixMillis": 1782331276881,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "wp009-route-copy",
+    "latestStepNote": "Documented selected WP-009 analytics-cache evidence routes in COMMANDS.md with unavailable/no-live/non-claim boundaries.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-cache-routes-operator-guide-20260624-step-wp009-route-copy.json",
+    "latestStepEvidenceItems": [
+      "COMMANDS.md now lists selected analytics-cache HTML/JSON twins",
+      "Copy keeps broader product workflows partial until VAL-011 accepts surface evidence"
+    ],
+    "recentSteps": [
+      {
+        "label": "wp009-route-copy",
+        "note": "Documented selected WP-009 analytics-cache evidence routes in COMMANDS.md with unavailable/no-live/non-claim boundaries.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-cache-routes-operator-guide-20260624-step-wp009-route-copy.json",
+        "evidenceItems": [
+          "COMMANDS.md now lists selected analytics-cache HTML/JSON twins",
+          "Copy keeps broader product workflows partial until VAL-011 accepts surface evidence"
+        ]
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

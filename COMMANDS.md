@@ -756,6 +756,34 @@ Web `/player/:id/outlook` and `/team/:abbrev/outlook` render an inline 82-game
 pace SVG chart when outlook rows have finite positive pace values; the JSON
 routes are unchanged.
 
+## Analytics cache evidence routes
+
+WP-009 analytics-cache routes read prepared cache records and render evidence
+envelopes for selected future hockey decision surfaces. They do not compute live
+analytics, fetch missing data, or claim prediction, betting, injury, line
+chemistry causality, or autonomous coaching authority. Missing cache records
+render an explicit unavailable state instead of synthesizing results.
+
+Selected HTML / JSON twins:
+
+```bash
+/reports/analytics-cache?cache_key=coach_dashboard:20252026:regular&metrics=expected_goals_share
+/api/v1/reports/analytics-cache?cache_key=coach_dashboard:20252026:regular&metrics=expected_goals_share
+/coach/dashboard
+/api/v1/coach/dashboard
+/scout/opponent
+/api/v1/scout/opponent
+/player/evidence-card
+/api/v1/player/evidence-card
+```
+
+Additional selected cache-backed evidence routes include `/lines/explorer`,
+`/goalies/readiness`, `/practice/focus`, `/postgame/review`,
+`/postgame/adjustments`, and `/agents/evidence`, each with a matching
+`/api/v1/...` JSON route. These routes are WP-009 evidence surfaces only; broader
+practice, postgame, agent, and downstream product workflows remain partial until
+`VAL-011` accepts product-copy and consumer evidence for that surface.
+
 ## `x` — quick CSV/JSON export
 
 One-shot export of any report shape to stdout (default CSV) or a file. Excel-friendly.

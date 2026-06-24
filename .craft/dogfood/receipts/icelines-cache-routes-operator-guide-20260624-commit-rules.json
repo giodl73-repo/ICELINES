@@ -1,0 +1,47 @@
+{
+  "receiptTier": "dogfood-git-commit-rules-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-cache-routes-operator-guide-20260624",
+  "gitRepository": true,
+  "actualEmail": "giodl73@gmail.com",
+  "expectedEmail": "giodl73@gmail.com",
+  "emailMatches": true,
+  "actualName": "giodl73-repo",
+  "expectedName": "giodl73-repo",
+  "nameMatches": true,
+  "requireClean": true,
+  "worktreeDirty": true,
+  "receiptArtifactsDirty": true,
+  "productWorktreeDirty": true,
+  "dirtyFiles": [
+    "COMMANDS.md",
+    ".craft\\dogfood\\receipts\\icelines-cache-routes-operator-guide-20260624-check-cache-route-doc-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-cache-routes-operator-guide-20260624-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-cache-routes-operator-guide-20260624-step-wp009-route-copy.json",
+    ".craft\\dogfood\\sessions\\icelines-cache-routes-operator-guide-20260624\\descriptor.json",
+    ".craft\\dogfood\\sessions\\icelines-cache-routes-operator-guide-20260624\\plan.md"
+  ],
+  "receiptArtifactFiles": [
+    ".craft\\dogfood\\receipts\\icelines-cache-routes-operator-guide-20260624-check-cache-route-doc-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-cache-routes-operator-guide-20260624-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-cache-routes-operator-guide-20260624-step-wp009-route-copy.json",
+    ".craft\\dogfood\\sessions\\icelines-cache-routes-operator-guide-20260624\\descriptor.json",
+    ".craft\\dogfood\\sessions\\icelines-cache-routes-operator-guide-20260624\\plan.md"
+  ],
+  "productDirtyFiles": [
+    "COMMANDS.md"
+  ],
+  "note": "Pre-commit rule check intentionally observes dirty operator guide and receipt files before local commit.",
+  "readyToCommit": false,
+  "recordedUnixMillis": 1782331276841,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
