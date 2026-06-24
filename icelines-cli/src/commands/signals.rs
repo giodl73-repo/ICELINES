@@ -157,6 +157,17 @@ fn build_roster_view(
     });
 
     if rows.is_empty() {
+        if total_player_count > 0 {
+            anyhow::bail!(
+                "no Signals roster rows matched evidence filter '{}' for {} in {} {}; 0 matched / {} total / {} filtered out",
+                evidence_filter.label(),
+                team_abbr.0,
+                season_key.0,
+                season_type.label(),
+                total_player_count,
+                total_player_count
+            );
+        }
         anyhow::bail!(
             "no skaters found for {} in {} {} with evidence filter '{}'",
             team_abbr.0,

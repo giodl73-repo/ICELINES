@@ -1,0 +1,39 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-roster-empty-filter-copy",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Improved signals-roster evidence filter no-match error copy so empty filters report 0 matched/total/filtered counts instead of implying no skaters exist.",
+  "recordedUnixMillis": 1782315113819,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "focused-empty-filter-test",
+    "latestStepNote": "Improved signals-roster no-match evidence filter error copy and passed focused/full signals_system L2 tests.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-signals-roster-empty-filter-copy-step-focused-empty-filter-test.json",
+    "latestStepEvidenceItems": [
+      "cargo test -p icelines-cli --test signals_system l2_signals_roster_empty_evidence_filter_reports_no_match_not_no_skaters",
+      "8 signals_system tests passed"
+    ],
+    "recentSteps": [
+      {
+        "label": "focused-empty-filter-test",
+        "note": "Improved signals-roster no-match evidence filter error copy and passed focused/full signals_system L2 tests.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-signals-roster-empty-filter-copy-step-focused-empty-filter-test.json",
+        "evidenceItems": [
+          "cargo test -p icelines-cli --test signals_system l2_signals_roster_empty_evidence_filter_reports_no_match_not_no_skaters",
+          "8 signals_system tests passed"
+        ]
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
