@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-commit-rules-preflight",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed after recording icelines git identity rules: expected and actual local git identity match giodl73-repo/giodl73@gmail.com; worktree was dirty only because CRAFT receipt artifacts were pending.",
+  "recordedUnixMillis": 1782310841319,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
