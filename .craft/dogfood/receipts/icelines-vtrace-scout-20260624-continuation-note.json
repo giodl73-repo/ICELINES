@@ -1,0 +1,41 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-vtrace-scout-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed WP-010 VTRACE roster evidence alignment: docs now cite signals-roster.v1 as a team-scoped discovery surface, with proof and diff-check receipts recorded and promotion limits preserved.",
+  "recordedUnixMillis": 1782316032948,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "wp010-vtrace-roster-evidence",
+    "latestStepNote": "Updated WORK_PACKAGES, VERIFICATION, TRACE, and VALIDATION so signals-roster.v1 is tracked as a team-scoped discovery surface without StatId/filter/catalog/cache/leaderboard promotion.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-vtrace-scout-20260624-step-wp010-vtrace-roster-evidence.json",
+    "latestStepEvidenceItems": [
+      "docs\\vtrace\\WORK_PACKAGES.md now names CLI signals-roster and roster discovery evidence under WP-010",
+      "docs\\vtrace\\VERIFICATION.md adds EVID-WP010-SIGNALS-ROSTER-L2",
+      "docs\\vtrace\\TRACE.md and VALIDATION.md carry roster evidence while preserving unaccepted promotion claims"
+    ],
+    "recentSteps": [
+      {
+        "label": "wp010-vtrace-roster-evidence",
+        "note": "Updated WORK_PACKAGES, VERIFICATION, TRACE, and VALIDATION so signals-roster.v1 is tracked as a team-scoped discovery surface without StatId/filter/catalog/cache/leaderboard promotion.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-vtrace-scout-20260624-step-wp010-vtrace-roster-evidence.json",
+        "evidenceItems": [
+          "docs\\vtrace\\WORK_PACKAGES.md now names CLI signals-roster and roster discovery evidence under WP-010",
+          "docs\\vtrace\\VERIFICATION.md adds EVID-WP010-SIGNALS-ROSTER-L2",
+          "docs\\vtrace\\TRACE.md and VALIDATION.md carry roster evidence while preserving unaccepted promotion claims"
+        ]
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
