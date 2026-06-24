@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-web-signals-authority-docs-20260624",
+  "checkLabel": "wp010-web-signals-docs-gates",
+  "command": "proof check docs/vtrace --errors-only; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "WP-010 Web Signals authority operator docs passed VTRACE proof and diff gates.",
+  "evidence": [
+    "proof docs/vtrace checked 19 files with 0 errors and 0 warnings",
+    "git diff --check passed"
+  ],
+  "workspaceDirty": true,
+  "changedFiles": [
+    "COMMANDS.md",
+    "docs/vtrace/VERIFICATION.md"
+  ],
+  "dirtyNote": "Expected WP-010 operator doc/VTRACE and dogfood receipt changes are pending commit.",
+  "recordedUnixMillis": 1782339841272,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

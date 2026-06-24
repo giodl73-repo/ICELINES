@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-web-signals-authority-docs-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed after documenting WP-010 Web Signals source-authority details and passing doc gates.",
+  "recordedUnixMillis": 1782339853975,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "web-signals-authority-docs",
+    "latestStepNote": "Aligned COMMANDS.md Signals operator copy with Web HTML source-authority details and updated WP-010 surface evidence wording.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-web-signals-authority-docs-20260624-step-web-signals-authority-docs.json",
+    "recentSteps": [
+      {
+        "label": "web-signals-authority-docs",
+        "note": "Aligned COMMANDS.md Signals operator copy with Web HTML source-authority details and updated WP-010 surface evidence wording.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-web-signals-authority-docs-20260624-step-web-signals-authority-docs.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
