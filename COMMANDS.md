@@ -139,6 +139,18 @@ candidates without exporting bytes or activating data. VTRACE `WP-007` keeps the
 standalone/no-cross-repo-dependency target open until these seams are removed or
 explicitly replaced, refused, or rolled back.
 
+The current lean/dependency-seam posture is auditable without promoting lean
+support:
+
+```powershell
+pwsh scripts/rangers-lean-audit.ps1
+pwsh scripts/rangers-lean-audit.ps1 -Json
+```
+
+The audit is expected to report `target-not-met` while `fletch-core`,
+`slice-core`, the FLETCH command surfaces, the SLICE selector surface, and the
+missing `cli` feature remain present.
+
 ---
 
 ## Filter grammar — Phase Art Ross (v0.20.0)

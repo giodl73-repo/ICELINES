@@ -1,0 +1,39 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-lean-audit-command-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed after exposing the current WP-007 audit command and preserving no-lean-claim evidence posture.",
+  "recordedUnixMillis": 1782326574616,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "operator-audit-copy",
+    "latestStepNote": "Surfaced the WP-007 lean/dependency-seam audit script in COMMANDS.md and VTRACE evidence without promoting lean support.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-lean-audit-command-20260624-step-operator-audit-copy.json",
+    "latestStepEvidenceItems": [
+      "COMMANDS.md documents pwsh scripts/rangers-lean-audit.ps1 and -Json",
+      "WORK_PACKAGES.md and VERIFICATION.md keep target-not-met_dispositioned posture"
+    ],
+    "recentSteps": [
+      {
+        "label": "operator-audit-copy",
+        "note": "Surfaced the WP-007 lean/dependency-seam audit script in COMMANDS.md and VTRACE evidence without promoting lean support.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-lean-audit-command-20260624-step-operator-audit-copy.json",
+        "evidenceItems": [
+          "COMMANDS.md documents pwsh scripts/rangers-lean-audit.ps1 and -Json",
+          "WORK_PACKAGES.md and VERIFICATION.md keep target-not-met_dispositioned posture"
+        ]
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

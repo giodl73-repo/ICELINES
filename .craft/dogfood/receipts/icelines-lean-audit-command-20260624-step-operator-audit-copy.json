@@ -1,0 +1,22 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-lean-audit-command-20260624",
+  "noteKind": "operator-audit-copy",
+  "note": "Surfaced the WP-007 lean/dependency-seam audit script in COMMANDS.md and VTRACE evidence without promoting lean support.",
+  "evidence": [
+    "COMMANDS.md documents pwsh scripts/rangers-lean-audit.ps1 and -Json",
+    "WORK_PACKAGES.md and VERIFICATION.md keep target-not-met_dispositioned posture"
+  ],
+  "recordedUnixMillis": 1782326574176,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

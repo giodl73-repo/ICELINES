@@ -1,0 +1,32 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-lean-audit-command-20260624",
+  "checkLabel": "lean-audit-doc-gates",
+  "command": "pwsh scripts/rangers-lean-audit.ps1; pwsh scripts/rangers-lean-audit.ps1 -Json; proof.exe check docs/vtrace --errors-only; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "Lean audit text/JSON reported target-not-met, VTRACE proof check passed, and diff whitespace check passed.",
+  "evidence": [
+    "Rangers lean audit: target-not-met",
+    "OK — 19 files checked, 0 errors, 0 warnings"
+  ],
+  "workspaceDirty": true,
+  "changedFiles": [
+    "COMMANDS.md",
+    "docs\\vtrace\\WORK_PACKAGES.md",
+    "docs\\vtrace\\VERIFICATION.md"
+  ],
+  "dirtyNote": "Expected docs and dogfood receipts before commit.",
+  "recordedUnixMillis": 1782326574250,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

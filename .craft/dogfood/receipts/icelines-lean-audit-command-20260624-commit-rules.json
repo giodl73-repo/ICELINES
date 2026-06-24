@@ -1,0 +1,51 @@
+{
+  "receiptTier": "dogfood-git-commit-rules-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-lean-audit-command-20260624",
+  "gitRepository": true,
+  "actualEmail": "giodl73@gmail.com",
+  "expectedEmail": "giodl73@gmail.com",
+  "emailMatches": true,
+  "actualName": "giodl73-repo",
+  "expectedName": "giodl73-repo",
+  "nameMatches": true,
+  "requireClean": true,
+  "worktreeDirty": true,
+  "receiptArtifactsDirty": true,
+  "productWorktreeDirty": true,
+  "dirtyFiles": [
+    "COMMANDS.md",
+    "docs\\vtrace\\VERIFICATION.md",
+    "docs\\vtrace\\WORK_PACKAGES.md",
+    ".craft\\dogfood\\receipts\\icelines-lean-audit-command-20260624-check-lean-audit-doc-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-lean-audit-command-20260624-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-lean-audit-command-20260624-step-operator-audit-copy.json",
+    ".craft\\dogfood\\sessions\\icelines-lean-audit-command-20260624\\descriptor.json",
+    ".craft\\dogfood\\sessions\\icelines-lean-audit-command-20260624\\plan.md"
+  ],
+  "receiptArtifactFiles": [
+    ".craft\\dogfood\\receipts\\icelines-lean-audit-command-20260624-check-lean-audit-doc-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-lean-audit-command-20260624-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-lean-audit-command-20260624-step-operator-audit-copy.json",
+    ".craft\\dogfood\\sessions\\icelines-lean-audit-command-20260624\\descriptor.json",
+    ".craft\\dogfood\\sessions\\icelines-lean-audit-command-20260624\\plan.md"
+  ],
+  "productDirtyFiles": [
+    "COMMANDS.md",
+    "docs\\vtrace\\VERIFICATION.md",
+    "docs\\vtrace\\WORK_PACKAGES.md"
+  ],
+  "note": "Pre-commit rule check intentionally observes dirty docs and receipt files before local commit.",
+  "readyToCommit": false,
+  "recordedUnixMillis": 1782326574561,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
