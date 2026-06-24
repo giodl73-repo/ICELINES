@@ -1,0 +1,41 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-vtrace-next-gap-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed docs-only VTRACE operator-guide evidence tightening with proof and diff checks recorded.",
+  "recordedUnixMillis": 1782318671334,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "vtrace-operator-guide-evidence",
+    "latestStepNote": "Tightened WP-010 Signals roster VTRACE evidence so the operator guide COMMANDS.md is named as inspected roster non-claim copy.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-vtrace-next-gap-20260624-step-vtrace-operator-guide-evidence.json",
+    "latestStepEvidenceItems": [
+      "Updated VERIFICATION.md EVID-WP010-SIGNALS-ROSTER-L2",
+      "Updated VALIDATION.md EVID-VAL-012",
+      "Updated WORK_PACKAGES.md WP-010 exit criteria"
+    ],
+    "recentSteps": [
+      {
+        "label": "vtrace-operator-guide-evidence",
+        "note": "Tightened WP-010 Signals roster VTRACE evidence so the operator guide COMMANDS.md is named as inspected roster non-claim copy.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-vtrace-next-gap-20260624-step-vtrace-operator-guide-evidence.json",
+        "evidenceItems": [
+          "Updated VERIFICATION.md EVID-WP010-SIGNALS-ROSTER-L2",
+          "Updated VALIDATION.md EVID-VAL-012",
+          "Updated WORK_PACKAGES.md WP-010 exit criteria"
+        ]
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

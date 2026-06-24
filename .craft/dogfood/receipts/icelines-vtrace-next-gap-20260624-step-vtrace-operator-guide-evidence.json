@@ -1,0 +1,23 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-vtrace-next-gap-20260624",
+  "noteKind": "vtrace-operator-guide-evidence",
+  "note": "Tightened WP-010 Signals roster VTRACE evidence so the operator guide COMMANDS.md is named as inspected roster non-claim copy.",
+  "evidence": [
+    "Updated VERIFICATION.md EVID-WP010-SIGNALS-ROSTER-L2",
+    "Updated VALIDATION.md EVID-VAL-012",
+    "Updated WORK_PACKAGES.md WP-010 exit criteria"
+  ],
+  "recordedUnixMillis": 1782318649727,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

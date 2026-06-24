@@ -889,9 +889,9 @@ Exit criteria:
   Signals surfaces, and the `signals-roster.v1` roster discovery matrix
   preserve evidence, unavailable state, methodology, limitations, disclosures,
   and non-claim copy without zero-fill or leaderboard/cache/catalog promotion.
-- `design/specs/icelines-signals.md`, `VALIDATION.md`, `VERIFICATION.md`,
-  `TRACE.md`, `REVIEW.md`, route inventory, and wave pulse records point to
-  concrete evidence.
+- `COMMANDS.md`, `design/specs/icelines-signals.md`, `VALIDATION.md`,
+  `VERIFICATION.md`, `TRACE.md`, `REVIEW.md`, route inventory, and wave pulse
+  records point to concrete evidence without overclaiming roster discovery.
 - Required docs/source gates pass.
 
 Verification plan:
