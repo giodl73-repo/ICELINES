@@ -1,0 +1,26 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-agentmap-next-20260624",
+  "checkLabel": "vtrace-proof-check",
+  "command": "C:\\src\\proof\\target\\debug\\proof.exe check C:\\src\\tracker\\repos\\applied-systems\\icelines\\docs\\vtrace --errors-only",
+  "status": "passed",
+  "passed": true,
+  "note": "VTRACE proof check passed after WP-010 change-control tightening.",
+  "evidence": [
+    "19 files checked, 0 errors, 0 warnings"
+  ],
+  "workspaceDirty": false,
+  "changedFiles": [],
+  "recordedUnixMillis": 1782325569781,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

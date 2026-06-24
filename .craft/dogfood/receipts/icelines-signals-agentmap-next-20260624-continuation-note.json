@@ -1,0 +1,39 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-agentmap-next-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed AgentMap-selected Signals VTRACE tightening with proof and diff checks recorded.",
+  "recordedUnixMillis": 1782325595131,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "wp010-change-control-tightening",
+    "latestStepNote": "Tightened WP-010 detailed parent IDs so the CLI and TUI/Web Signals change-control rows CHG-075 and CHG-076 are listed with the existing Signals surface evidence.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-signals-agentmap-next-20260624-step-wp010-change-control-tightening.json",
+    "latestStepEvidenceItems": [
+      "AgentMap icelines-product active node: icelines-signals",
+      "Updated docs/vtrace/WORK_PACKAGES.md WP-010 Change control parent IDs"
+    ],
+    "recentSteps": [
+      {
+        "label": "wp010-change-control-tightening",
+        "note": "Tightened WP-010 detailed parent IDs so the CLI and TUI/Web Signals change-control rows CHG-075 and CHG-076 are listed with the existing Signals surface evidence.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-signals-agentmap-next-20260624-step-wp010-change-control-tightening.json",
+        "evidenceItems": [
+          "AgentMap icelines-product active node: icelines-signals",
+          "Updated docs/vtrace/WORK_PACKAGES.md WP-010 Change control parent IDs"
+        ]
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

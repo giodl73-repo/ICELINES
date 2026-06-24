@@ -849,7 +849,8 @@ Parent IDs:
 - Design/architecture: `DES-016`, signal methodology specification
 - Validation: `VAL-012`
 - Integration: `INT-010`
-- Change control: `CHG-073`, `CHG-074`, `CHG-114`, `CHG-116`
+- Change control: `CHG-073`, `CHG-074`, `CHG-075`, `CHG-076`, `CHG-114`,
+  `CHG-116`
 
 Scope:
 
