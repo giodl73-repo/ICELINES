@@ -66,7 +66,14 @@ struct AnalyticsCacheUnavailablePayload {
     cache_key: Option<String>,
     reason: String,
     guidance: &'static str,
+    non_claims: &'static [&'static str],
 }
+
+const UNAVAILABLE_JSON_NON_CLAIMS: &[&str] = &[
+    "Does not compute live analytics.",
+    "Does not infer prediction, betting, injury, deployment, or linemate meaning.",
+    "Does not create or fetch missing cache records.",
+];
 
 pub async fn analytics_cache_report(
     State(state): State<WebState>,
@@ -481,6 +488,7 @@ pub async fn analytics_cache_report_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the named analytics cache before using this report.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),
@@ -507,6 +515,7 @@ pub async fn coach_dashboard_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active coach-dashboard analytics cache before using this screen.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),
@@ -536,6 +545,7 @@ pub async fn opponent_scout_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active opponent-scout analytics cache before using this report.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),
@@ -565,6 +575,7 @@ pub async fn player_evidence_card_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active player-evidence-card analytics cache before using this card.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),
@@ -594,6 +605,7 @@ pub async fn line_combination_explorer_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active line-combination analytics cache before using this explorer.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),
@@ -620,6 +632,7 @@ pub async fn goalie_readiness_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active goalie-readiness analytics cache before using this workload view.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),
@@ -646,6 +659,7 @@ pub async fn practice_focus_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active practice-focus analytics cache before using this report.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),
@@ -672,6 +686,7 @@ pub async fn postgame_review_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active postgame-review analytics cache before using this report.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),
@@ -698,6 +713,7 @@ pub async fn postgame_adjustments_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active postgame-adjustments analytics cache before using this report.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),
@@ -724,6 +740,7 @@ pub async fn agent_evidence_json(
                 cache_key: query.cache_key.clone(),
                 reason: err.message,
                 guidance: "Build or restore the active agent-evidence analytics cache before using this summary.",
+                non_claims: UNAVAILABLE_JSON_NON_CLAIMS,
             })),
         )
             .into_response(),

@@ -217,6 +217,29 @@ async fn app_with_config(season: &str, season_type: &str) -> axum::Router {
     router(state)
 }
 
+fn assert_unavailable_json_non_claims(json: &serde_json::Value) {
+    let non_claims = json["non_claims"]
+        .as_array()
+        .expect("unavailable JSON carries non_claims");
+    assert!(
+        non_claims
+            .iter()
+            .any(|claim| claim == "Does not compute live analytics."),
+        "{json}"
+    );
+    assert!(
+        non_claims.iter().any(|claim| claim
+            == "Does not infer prediction, betting, injury, deployment, or linemate meaning."),
+        "{json}"
+    );
+    assert!(
+        non_claims
+            .iter()
+            .any(|claim| claim == "Does not create or fetch missing cache records."),
+        "{json}"
+    );
+}
+
 #[tokio::test]
 async fn l2_wp009_analytics_cache_report_missing_cache_is_explicitly_unavailable() {
     let _guard = env_lock().await;
@@ -263,6 +286,7 @@ async fn l2_wp009_analytics_cache_report_missing_cache_is_explicitly_unavailable
         .as_str()
         .expect("reason")
         .contains("analytics cache entry is missing: missing:cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 
@@ -309,6 +333,7 @@ async fn l2_wp009_coach_dashboard_defaults_to_active_cache_and_explicit_unavaila
         .as_str()
         .expect("guidance")
         .contains("coach-dashboard analytics cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 
