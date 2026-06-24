@@ -1,0 +1,23 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-export-authority-docs-20260624",
+  "checkLabel": "wp010-signals-export-docs-gates",
+  "command": "proof check docs/vtrace --errors-only; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "proof check docs/vtrace --errors-only and git diff --check passed for WP-010 Signals export authority docs tightening.",
+  "workspaceDirty": false,
+  "changedFiles": [],
+  "recordedUnixMillis": 1782340196348,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

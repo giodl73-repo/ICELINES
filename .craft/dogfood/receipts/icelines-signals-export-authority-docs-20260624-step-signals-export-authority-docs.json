@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-export-authority-docs-20260624",
+  "noteKind": "signals-export-authority-docs",
+  "note": "Tightened WP-010 markdown export source-authority evidence wording in VERIFICATION.md and VAL-012, and aligned COMMANDS.md export-md-signals operator copy without promoting cache, filters, leaderboards, StatId, prediction, or coaching claims.",
+  "recordedUnixMillis": 1782340180231,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

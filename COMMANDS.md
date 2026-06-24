@@ -856,8 +856,9 @@ have at least two bundled career seasons; the chart is descriptive context over
 bundled regular-season rows, not an era-adjusted player valuation.
 `export md signals` renders the same `PlayerSignalsView` rows as the CLI/Web
 Signals surfaces with disclosure, non-claim copy, methodology, limitations,
-source authority, evidence tiers, and missing-input labels before the table;
-unavailable evidence prints as `unavailable`, never a zero-filled signal value.
+source-authority label/source/coverage/blocked-claim details, evidence tiers,
+and missing-input labels before the table; unavailable evidence prints as
+`unavailable`, never a zero-filled signal value.
 The Web `/compare?a=ID&b=ID` page renders the same bundled regular-season Pts/82
 career trend after the side-by-side table when both compared players have enough
 bundled career rows.

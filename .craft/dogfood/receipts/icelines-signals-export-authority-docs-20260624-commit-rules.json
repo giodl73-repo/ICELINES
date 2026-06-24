@@ -1,0 +1,51 @@
+{
+  "receiptTier": "dogfood-git-commit-rules-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-export-authority-docs-20260624",
+  "gitRepository": true,
+  "actualEmail": "giodl73@gmail.com",
+  "expectedEmail": null,
+  "emailMatches": null,
+  "actualName": "giodl73-repo",
+  "expectedName": null,
+  "nameMatches": null,
+  "requireClean": true,
+  "worktreeDirty": true,
+  "receiptArtifactsDirty": true,
+  "productWorktreeDirty": true,
+  "dirtyFiles": [
+    "COMMANDS.md",
+    "docs\\vtrace\\VALIDATION.md",
+    "docs\\vtrace\\VERIFICATION.md",
+    ".craft\\dogfood\\receipts\\icelines-signals-export-authority-docs-20260624-check-wp010-signals-export-docs-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-signals-export-authority-docs-20260624-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-signals-export-authority-docs-20260624-step-signals-export-authority-docs.json",
+    ".craft\\dogfood\\sessions\\icelines-signals-export-authority-docs-20260624\\descriptor.json",
+    ".craft\\dogfood\\sessions\\icelines-signals-export-authority-docs-20260624\\plan.md"
+  ],
+  "receiptArtifactFiles": [
+    ".craft\\dogfood\\receipts\\icelines-signals-export-authority-docs-20260624-check-wp010-signals-export-docs-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-signals-export-authority-docs-20260624-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-signals-export-authority-docs-20260624-step-signals-export-authority-docs.json",
+    ".craft\\dogfood\\sessions\\icelines-signals-export-authority-docs-20260624\\descriptor.json",
+    ".craft\\dogfood\\sessions\\icelines-signals-export-authority-docs-20260624\\plan.md"
+  ],
+  "productDirtyFiles": [
+    "COMMANDS.md",
+    "docs\\vtrace\\VALIDATION.md",
+    "docs\\vtrace\\VERIFICATION.md"
+  ],
+  "note": "Docs-only WP-010 Signals export source-authority evidence tightening; no provider calls, no network calls, no autonomous coding claim, and no dogfood-verification claim.",
+  "readyToCommit": false,
+  "recordedUnixMillis": 1782340211805,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
