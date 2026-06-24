@@ -183,10 +183,23 @@ fn render_signals_html(active_label: &str, view: &PlayerSignalsView) -> String {
         })
         .collect::<String>();
     let source_authority = format!(
-        "<p class=\"meta-line\" data-signals-source-authority=\"{}\" data-coverage-state=\"{}\">{}</p>",
+        "<section aria-labelledby=\"signals-source-authority\"><h2 id=\"signals-source-authority\">Source authority</h2>\
+         <p class=\"meta-line\" data-signals-source-authority=\"{}\" data-coverage-state=\"{}\">{}</p>\
+         <p class=\"meta-line\"><strong>Authority source:</strong> {}</p>\
+         <p class=\"meta-line\"><strong>Coverage state:</strong> {}</p>\
+         <p class=\"meta-line\"><strong>Covered inputs:</strong> {}</p>\
+         <p class=\"meta-line\"><strong>Covered metrics:</strong> {}</p>\
+         <p class=\"meta-line\"><strong>Blocked claims:</strong> {}</p>\
+         <p class=\"meta-line\"><strong>Authority limitations:</strong> {}</p></section>",
         html_escape(&view.source_authority.source),
         html_escape(&view.source_authority.coverage_state),
-        html_escape(&view.source_authority.label)
+        html_escape(&view.source_authority.label),
+        html_escape(&view.source_authority.source),
+        html_escape(&view.source_authority.coverage_state),
+        html_escape(&view.source_authority.covered_inputs.join(", ")),
+        html_escape(&view.source_authority.covered_metrics.join(", ")),
+        html_escape(&view.source_authority.blocked_claims.join(", ")),
+        html_escape(&view.source_authority.limitations.join(", "))
     );
 
     format!(

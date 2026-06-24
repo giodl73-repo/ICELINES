@@ -2704,6 +2704,28 @@ async fn l1_player_signals_html_renders_unavailable_not_zero() {
         "body was:\n{body}"
     );
     assert!(
+        body.contains("<strong>Authority source:</strong> PlayerSignalsView stat inputs"),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("<strong>Coverage state:</strong> descriptive_derived"),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("<strong>Covered inputs:</strong> season_stat_summary"),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("<strong>Covered metrics:</strong> physical_engagement_rate"),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("<strong>Blocked claims:</strong> prediction"),
+        "body was:\n{body}"
+    );
+    assert!(body.contains("stat_catalog_promotion"), "body was:\n{body}");
+    assert!(body.contains("leaderboard_ranking"), "body was:\n{body}");
+    assert!(
         !body.contains(">0.00</td><td>per 60</td><td>neutral"),
         "missing signal must not be rendered as zero:\n{body}"
     );
