@@ -431,6 +431,7 @@ async fn l2_wp009_opponent_scout_defaults_to_active_cache_and_explicit_unavailab
         .as_str()
         .expect("guidance")
         .contains("opponent-scout analytics cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 
@@ -531,6 +532,7 @@ async fn l2_wp009_player_evidence_card_defaults_to_active_cache_and_explicit_una
         .as_str()
         .expect("guidance")
         .contains("player-evidence-card analytics cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 
@@ -636,6 +638,7 @@ async fn l2_wp009_line_combination_explorer_defaults_to_active_cache_and_explici
         .as_str()
         .expect("guidance")
         .contains("line-combination analytics cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 
@@ -741,6 +744,7 @@ async fn l2_wp009_goalie_readiness_defaults_to_active_cache_and_explicit_unavail
         .as_str()
         .expect("guidance")
         .contains("goalie-readiness analytics cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 
@@ -843,6 +847,7 @@ async fn l2_wp009_practice_focus_defaults_to_active_cache_and_explicit_unavailab
         .as_str()
         .expect("guidance")
         .contains("practice-focus analytics cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 
@@ -943,6 +948,7 @@ async fn l2_wp009_postgame_review_defaults_to_active_cache_and_explicit_unavaila
         .as_str()
         .expect("guidance")
         .contains("postgame-review analytics cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 
@@ -1045,6 +1051,7 @@ async fn l2_wp009_postgame_adjustments_defaults_to_active_cache_and_explicit_una
         .as_str()
         .expect("guidance")
         .contains("postgame-adjustments analytics cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 
@@ -1147,6 +1154,7 @@ async fn l2_wp009_agent_evidence_defaults_to_active_cache_and_explicit_unavailab
         .as_str()
         .expect("guidance")
         .contains("agent-evidence analytics cache"));
+    assert_unavailable_json_non_claims(&json);
     assert!(!fixture.path().join("analytics_cache").exists());
 }
 

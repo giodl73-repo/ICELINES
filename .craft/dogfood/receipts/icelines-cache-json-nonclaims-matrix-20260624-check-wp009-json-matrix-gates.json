@@ -1,0 +1,34 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-cache-json-nonclaims-matrix-20260624",
+  "checkLabel": "wp009-json-matrix-gates",
+  "command": "cargo fmt --check; cargo test -p icelines-web --test l2_analytics_cache_report --quiet; cargo clippy -p icelines-web --lib --tests -- -D warnings; proof check docs/vtrace --errors-only; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "WP-009 selected-route unavailable JSON non-claim matrix passed focused route, web clippy, proof, and diff gates.",
+  "evidence": [
+    "l2_analytics_cache_report: 20 tests passed",
+    "cargo clippy -p icelines-web --lib --tests -- -D warnings passed",
+    "proof docs/vtrace checked 19 files with 0 errors and 0 warnings",
+    "git diff --check passed"
+  ],
+  "workspaceDirty": true,
+  "changedFiles": [
+    "icelines-web/tests/l2_analytics_cache_report.rs",
+    "docs/vtrace/VERIFICATION.md",
+    "docs/vtrace/VALIDATION.md"
+  ],
+  "dirtyNote": "Expected WP-009 test/VTRACE and dogfood receipt changes are pending commit.",
+  "recordedUnixMillis": 1782334089282,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
