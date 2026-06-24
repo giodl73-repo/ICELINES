@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-cache-routes-vtrace-evidence-20260624",
+  "noteKind": "vtrace-evidence-alignment",
+  "note": "Aligned WP-009 VTRACE evidence rows with COMMANDS.md analytics-cache route operator copy while preserving partial/non-claim boundaries.",
+  "recordedUnixMillis": 1782331570060,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

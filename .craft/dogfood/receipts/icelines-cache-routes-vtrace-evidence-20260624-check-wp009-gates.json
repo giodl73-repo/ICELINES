@@ -1,0 +1,32 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-cache-routes-vtrace-evidence-20260624",
+  "checkLabel": "wp009-gates",
+  "command": "cargo test -p icelines-web --test l2_analytics_cache_report --quiet; proof check docs/vtrace --errors-only; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "WP-009 route evidence docs remain proof-clean and route fixtures pass.",
+  "evidence": [
+    "20 icelines-web L2 analytics-cache tests passed",
+    "proof docs/vtrace checked 19 files with 0 errors and 0 warnings",
+    "git diff --check passed"
+  ],
+  "workspaceDirty": true,
+  "changedFiles": [
+    "docs/vtrace/VERIFICATION.md",
+    "docs/vtrace/VALIDATION.md"
+  ],
+  "dirtyNote": "Expected VTRACE evidence documentation changes plus dogfood receipts are pending commit.",
+  "recordedUnixMillis": 1782331570098,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
