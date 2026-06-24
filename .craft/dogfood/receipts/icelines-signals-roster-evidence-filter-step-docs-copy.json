@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-roster-evidence-filter",
+  "noteKind": "docs-copy",
+  "note": "Updated COMMANDS.md so signals-roster documents --evidence all|full|partial|missing as team-scoped inspection filtering, not StatId/filter/leaderboard promotion.",
+  "recordedUnixMillis": 1782312238464,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

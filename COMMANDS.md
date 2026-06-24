@@ -643,6 +643,7 @@ preserving unavailable values as missing evidence instead of zero.
 
 ```bash
 icelines signals-roster --team NYR
+icelines signals-roster --team NYR --evidence partial
 icelines signals-roster --team NYR --json
 ```
 
@@ -651,8 +652,10 @@ rows for one team. It is an inspection aid, not a Signal leaderboard, `StatId`
 promotion, filter key, analytics-cache metric family, prediction, betting edge,
 injury signal, deployment recommendation, player-quality grade, or autonomous
 coaching decision. Missing Signals render as `unavailable`, never as zero-filled
-player values. JSON uses the additive `signals-roster.v1` envelope. Phase
-Capitals keeps this surface uncached and team-scoped.
+player values. `--evidence all|full|partial|missing` narrows the team-scoped
+inspection rows by Signal evidence coverage while preserving player-name sorting
+and the non-promotion boundary. JSON uses the additive `signals-roster.v1`
+envelope. Phase Capitals keeps this surface uncached and team-scoped.
 `signals-roster.v1` also carries `meta.source_authority` and row-level
 `source_authority` values copied from `PlayerSignalsView`, so the roster matrix
 has the same covered inputs, blocked claims, and missing-evidence semantics as

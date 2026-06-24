@@ -40,9 +40,10 @@ pub async fn run_signals_roster(
     team: String,
     season: Option<String>,
     season_type: SeasonType,
+    evidence: SignalEvidenceFilter,
     json: bool,
 ) -> anyhow::Result<()> {
-    let view = build_roster_view(&team, season.as_deref(), season_type)?;
+    let view = build_roster_view(&team, season.as_deref(), season_type, evidence)?;
     if json {
         println!("{}", signals_roster_json_envelope(&view));
     } else {
@@ -118,6 +119,7 @@ struct SignalsRosterView {
     season: u32,
     season_type: String,
     rows: Vec<PlayerSignalsView>,
+    evidence_filter: SignalEvidenceFilter,
     disclosures: Vec<String>,
     non_claims: Vec<String>,
     source_authority: SignalsSourceAuthority,
@@ -127,6 +129,7 @@ fn build_roster_view(
     team: &str,
     season: Option<&str>,
     season_type: SeasonType,
+    evidence_filter: SignalEvidenceFilter,
 ) -> anyhow::Result<SignalsRosterView> {
     let team_abbr = TeamAbbr::parse(team)
         .map_err(|_| anyhow::anyhow!("'{team}' is not a valid NHL team abbreviation"))?;
@@ -140,6 +143,7 @@ fn build_roster_view(
         .map(|player| {
             PlayerSignalsView::from_player(PlayerSignalsView::context_for_player(&player), &player)
         })
+        .filter(|row| evidence_filter.matches(row))
         .collect();
     rows.sort_by(|a, b| {
         a.player_name
@@ -149,10 +153,11 @@ fn build_roster_view(
 
     if rows.is_empty() {
         anyhow::bail!(
-            "no skaters found for {} in {} {}",
+            "no skaters found for {} in {} {} with evidence filter '{}'",
             team_abbr.0,
             season_key.0,
-            season_type.label()
+            season_type.label(),
+            evidence_filter.label()
         );
     }
 
@@ -162,6 +167,7 @@ fn build_roster_view(
         season: season_key.0,
         season_type: season_type.label().to_string(),
         rows,
+        evidence_filter,
         disclosures: vec![
             "Signals are descriptive derived metrics built from existing stat inputs."
                 .to_string(),
@@ -178,6 +184,44 @@ fn build_roster_view(
         ],
         source_authority: SignalsSourceAuthority::default(),
     })
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SignalEvidenceFilter {
+    All,
+    Full,
+    Partial,
+    Missing,
+}
+
+impl SignalEvidenceFilter {
+    fn matches(self, view: &PlayerSignalsView) -> bool {
+        match self {
+            Self::All => true,
+            Self::Full => view
+                .rows
+                .iter()
+                .all(|row| row.evidence_tier == SignalEvidenceTier::Full),
+            Self::Partial => view
+                .rows
+                .iter()
+                .any(|row| row.evidence_tier == SignalEvidenceTier::Partial),
+            Self::Missing => view
+                .rows
+                .iter()
+                .any(|row| row.evidence_tier == SignalEvidenceTier::Missing),
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::Full => "full",
+            Self::Partial => "partial",
+            Self::Missing => "missing",
+        }
+    }
 }
 
 // ── text rendering ────────────────────────────────────────────────────────────
@@ -247,6 +291,7 @@ fn print_signals_roster_text(view: &SignalsRosterView) {
     );
     println!("{}", "=".repeat(96));
     println!("{}", view.schema_note);
+    println!("Evidence filter: {}", view.evidence_filter.label());
     println!("Authority: {}", view.source_authority.label);
     for disclosure in &view.disclosures {
         println!("Note: {disclosure}");
@@ -414,6 +459,7 @@ fn signals_roster_json_envelope(view: &SignalsRosterView) -> String {
             "season_type": view.season_type,
             "team": view.team,
             "player_count": view.rows.len(),
+            "evidence_filter": view.evidence_filter,
             "non_promotion": "team-scoped discovery matrix; not a leaderboard, StatId, filter, or cache metric family",
             "source_authority": &view.source_authority,
         },
@@ -490,6 +536,7 @@ mod tests {
             season: 20252026,
             season_type: "regular".to_string(),
             rows: vec![row],
+            evidence_filter: SignalEvidenceFilter::All,
             disclosures: Vec::new(),
             non_claims: Vec::new(),
             source_authority: SignalsSourceAuthority::default(),
@@ -531,6 +578,28 @@ mod tests {
         assert!(authority
             .blocked_claims
             .contains(&"leaderboard_ranking".to_string()));
+    }
+
+    #[test]
+    fn l0_signals_roster_evidence_filter_matches_any_partial_or_missing() {
+        let partial = roster_signal_row();
+        assert!(SignalEvidenceFilter::All.matches(&partial));
+        assert!(SignalEvidenceFilter::Partial.matches(&partial));
+        assert!(!SignalEvidenceFilter::Full.matches(&partial));
+
+        let mut full = partial.clone();
+        for row in &mut full.rows {
+            row.evidence_tier = SignalEvidenceTier::Full;
+            row.missing_inputs.clear();
+        }
+        assert!(SignalEvidenceFilter::Full.matches(&full));
+        assert!(!SignalEvidenceFilter::Partial.matches(&full));
+        assert!(!SignalEvidenceFilter::Missing.matches(&full));
+
+        let mut missing = full.clone();
+        missing.rows[0].evidence_tier = SignalEvidenceTier::Missing;
+        assert!(SignalEvidenceFilter::Missing.matches(&missing));
+        assert!(!SignalEvidenceFilter::Full.matches(&missing));
     }
 
     fn roster_signal_row() -> PlayerSignalsView {

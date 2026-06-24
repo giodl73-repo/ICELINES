@@ -159,9 +159,25 @@ fn l2_signals_roster_text_is_team_scoped_discovery_not_leaderboard() {
         text.contains("Team-scoped Signals discovery matrix"),
         "{text}"
     );
+    assert!(text.contains("Evidence filter: all"), "{text}");
     assert!(text.contains("Not a Signal leaderboard"), "{text}");
     assert!(text.contains("Mika Zibanejad"), "{text}");
     assert!(text.contains("Phys/60"), "{text}");
+    assert!(text.contains("Evidence"), "{text}");
+}
+
+#[test]
+fn l2_signals_roster_text_accepts_evidence_filter_without_leaderboard_promotion() {
+    let output = run_signals_roster(&["--team", "NYR", "--evidence", "partial"]);
+    assert!(
+        output.status.success(),
+        "signals-roster --evidence partial failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("Evidence filter: partial"), "{text}");
+    assert!(text.contains("Not a Signal leaderboard"), "{text}");
+    assert!(text.contains("Player"), "{text}");
     assert!(text.contains("Evidence"), "{text}");
 }
 
@@ -178,6 +194,8 @@ fn l2_signals_roster_json_envelope_preserves_non_promotion_copy() {
     assert_eq!(json["schema"], "signals-roster.v1");
     assert_eq!(json["route"], "signals-roster");
     assert_eq!(json["data"]["team"], "NYR");
+    assert_eq!(json["data"]["evidence_filter"], "all");
+    assert_eq!(json["meta"]["evidence_filter"], "all");
     assert!(json["data"]["rows"].as_array().unwrap().len() > 5);
     assert!(
         json["meta"]["non_promotion"]

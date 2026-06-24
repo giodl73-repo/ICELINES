@@ -1,0 +1,285 @@
+{
+  "tier": "D1_DESCRIPTOR",
+  "sessionId": "icelines-signals-roster-evidence-filter",
+  "descriptorId": "work-session-descriptor-d1-icelines-signals-roster-evidence-filter",
+  "intent": {
+    "selectedTaskId": "task-001",
+    "title": "task-001: Complete the pulse intent through the selected lane.",
+    "readiness": "ready-after-required-gates",
+    "roles": [
+      "agent-provider",
+      "agent-secure",
+      "compiler-execution",
+      "craft-architect",
+      "craft-dragon",
+      "craft-observability",
+      "craft-security",
+      "craft-testing",
+      "rust-errors",
+      "rust-type-system"
+    ]
+  },
+  "planIdentity": {
+    "path": "C:\\src\\tracker\\repos\\applied-systems\\icelines\\.craft\\dogfood\\sessions\\icelines-signals-roster-evidence-filter\\plan.md",
+    "title": "Craft Chat Pulse icelines-signals-roster-evidence-filter",
+    "wave": "fire-the-kiln",
+    "pulse": "icelines-signals-roster-evidence-filter",
+    "contentHash": "sha256:0be3bc1242cebb1905713ac4830649589cc2f61abca675095275ff7786d395c1"
+  },
+  "agentMapRef": {
+    "descriptorTier": "D1 model-lock descriptor",
+    "sourcePlanHash": "sha256:0be3bc1242cebb1905713ac4830649589cc2f61abca675095275ff7786d395c1",
+    "descriptorHash": "sha256:ff72685a8adfed0260c5900f1c9cc53ec869f09473847ee8990aabdd68ea4a1e",
+    "compiledModelRef": true,
+    "leafExecutionArtifact": false
+  },
+  "workSessionState": "ready",
+  "roles": [
+    {
+      "name": "agent-provider",
+      "role_family": "agent",
+      "role_file_path": "roles/agent/agent-provider.md"
+    },
+    {
+      "name": "agent-secure",
+      "role_family": "agent",
+      "role_file_path": "roles/agent/agent-secure.md"
+    },
+    {
+      "name": "compiler-execution",
+      "role_family": "compiler",
+      "role_file_path": "roles/compiler/compiler-execution.md"
+    },
+    {
+      "name": "craft-architect",
+      "role_family": "craft",
+      "role_file_path": "roles/craft/craft-architect.md"
+    },
+    {
+      "name": "craft-dragon",
+      "role_family": "craft",
+      "role_file_path": "roles/craft/craft-dragon.md"
+    },
+    {
+      "name": "craft-observability",
+      "role_family": "craft",
+      "role_file_path": "roles/craft/craft-observability.md"
+    },
+    {
+      "name": "craft-security",
+      "role_family": "craft",
+      "role_file_path": "roles/craft/craft-security.md"
+    },
+    {
+      "name": "craft-testing",
+      "role_family": "craft",
+      "role_file_path": "roles/craft/craft-testing.md"
+    },
+    {
+      "name": "rust-errors",
+      "role_family": "rust",
+      "role_file_path": "roles/rust/rust-errors.md"
+    },
+    {
+      "name": "rust-type-system",
+      "role_family": "rust",
+      "role_file_path": "roles/rust/rust-type-system.md"
+    }
+  ],
+  "allowedSkills": [
+    {
+      "id": "craft:self-check/ok",
+      "capabilityClass": "in-process-self-check",
+      "reusable": true,
+      "mutationCapable": false,
+      "providerCapable": false
+    },
+    {
+      "id": "craft:read-only/version",
+      "capabilityClass": "read-only-terminal-command",
+      "reusable": true,
+      "mutationCapable": false,
+      "providerCapable": false
+    },
+    {
+      "id": "craft:source-patch/proposal-validation",
+      "capabilityClass": "proposal-preflight-only",
+      "reusable": true,
+      "mutationCapable": false,
+      "providerCapable": false
+    }
+  ],
+  "proposalSlots": [
+    {
+      "id": "proposal-slot-source-patch-d1",
+      "slotKind": "source-patch-proposal",
+      "instanceSpecific": true,
+      "populated": false,
+      "artifactRef": null
+    }
+  ],
+  "preflightRequirements": [
+    {
+      "id": "preflight-session-id",
+      "requirement": "valid-session-id",
+      "state": "satisfied-for-descriptor-d1"
+    },
+    {
+      "id": "preflight-selected-task",
+      "requirement": "selected-task-present",
+      "state": "satisfied-for-descriptor-d1"
+    },
+    {
+      "id": "preflight-vtrace",
+      "requirement": "req-wp-and-roles-present",
+      "state": "satisfied-for-descriptor-d1"
+    },
+    {
+      "id": "preflight-non-claims",
+      "requirement": "d1-capability-promotions-rejected",
+      "state": "satisfied-for-descriptor-d1"
+    },
+    {
+      "id": "preflight-transaction",
+      "requirement": "future-transaction-explicit-opt-in-required",
+      "state": "satisfied-for-descriptor-d1"
+    }
+  ],
+  "transactionPolicy": {
+    "sourceMutationAllowed": false,
+    "proposalApplicationAllowed": false,
+    "transactionExecutionAllowed": false,
+    "requiresFutureExplicitOptIn": true,
+    "rollbackPolicy": "not-applicable-at-descriptor-d1"
+  },
+  "gatePlan": [
+    {
+      "id": "gate-001",
+      "command": "Craft chat pulse plan is descriptor-ready.",
+      "checked": true,
+      "required": true,
+      "fail_behavior": "block"
+    },
+    {
+      "id": "gate-002",
+      "command": "D1 non-claims remain explicit in the Non-goals section.",
+      "checked": true,
+      "required": true,
+      "fail_behavior": "block"
+    },
+    {
+      "id": "gate-003",
+      "command": "`craft chat` is the operator cockpit for this session.",
+      "checked": true,
+      "required": true,
+      "fail_behavior": "block"
+    }
+  ],
+  "receiptPlan": {
+    "expectedReceipts": [
+      "descriptor-d1-icelines-signals-roster-evidence-filter",
+      "vtrace-REQ-DOGFOOD-001-implementation-note",
+      "vtrace-WP-FIRE-DOGFOOD-WORK-SESSION-DESCRIPTOR-D1-implementation-note"
+    ],
+    "leafExecutionArtifactRefs": [
+      "proposalSlots[].artifactRef",
+      "receiptPlan.expectedReceipts",
+      "evidenceStateRefs"
+    ],
+    "writesReceipts": false
+  },
+  "evidenceStateRefs": [
+    {
+      "vtraceFile": "docs/vtrace/TRACE.md",
+      "rowKey": "REQ-DOGFOOD-001",
+      "evidencePointer": "FIRE-DOGFOOD-AGENTMAP-DESCRIPTOR-D1.md",
+      "expectedStatusEffect": "implementation-note",
+      "doesNotVerifyD2": true
+    },
+    {
+      "vtraceFile": "docs/vtrace/WORK_PACKAGES.md",
+      "rowKey": "WP-FIRE-DOGFOOD-WORK-SESSION-DESCRIPTOR-D1",
+      "evidencePointer": "FIRE-DOGFOOD-AGENTMAP-DESCRIPTOR-D1.md",
+      "expectedStatusEffect": "implementation-note",
+      "doesNotVerifyD2": true
+    }
+  ],
+  "unsupportedCapabilities": [
+    "arbitrary-shell-wrapper",
+    "autonomous-coding",
+    "automatic-code-editing",
+    "daemon-cloud-pr-automation",
+    "dogfood-verification",
+    "full-self-hosting",
+    "git-commit-or-pr-creation",
+    "network-call",
+    "proposal-application",
+    "provider-call",
+    "source-mutation",
+    "transaction-execution"
+  ],
+  "nonClaimFlags": [
+    {
+      "boundary": "arbitrary-shell-wrapper",
+      "claimed": false
+    },
+    {
+      "boundary": "autonomous-coding",
+      "claimed": false
+    },
+    {
+      "boundary": "automatic-code-editing",
+      "claimed": false
+    },
+    {
+      "boundary": "daemon-cloud-pr-automation",
+      "claimed": false
+    },
+    {
+      "boundary": "dogfood-verification",
+      "claimed": false
+    },
+    {
+      "boundary": "full-self-hosting",
+      "claimed": false
+    },
+    {
+      "boundary": "git-commit-or-pr-creation",
+      "claimed": false
+    },
+    {
+      "boundary": "network-call",
+      "claimed": false
+    },
+    {
+      "boundary": "proposal-application",
+      "claimed": false
+    },
+    {
+      "boundary": "provider-call",
+      "claimed": false
+    },
+    {
+      "boundary": "source-mutation",
+      "claimed": false
+    },
+    {
+      "boundary": "transaction-execution",
+      "claimed": false
+    }
+  ],
+  "claimStatus": {
+    "providerCalled": false,
+    "networkCalled": false,
+    "arbitraryShellWrapper": false,
+    "sourceMutation": false,
+    "proposalApplied": false,
+    "transactionExecuted": false,
+    "automaticCodeEditing": false,
+    "autonomousCoding": false,
+    "daemonCloudPrAutomation": false,
+    "gitCommitOrPrCreated": false,
+    "fullSelfHosting": false,
+    "dogfoodVerified": false
+  }
+}

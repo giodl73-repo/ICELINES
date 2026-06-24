@@ -816,10 +816,17 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             team,
             season,
             season_type,
+            evidence,
             json,
         } => {
-            commands::signals::run_signals_roster(team, season, season_type.to_core(), json)
-                .await?;
+            commands::signals::run_signals_roster(
+                team,
+                season,
+                season_type.to_core(),
+                evidence,
+                json,
+            )
+            .await?;
         }
         Commands::Scheme(sub) => {
             commands::scheme::run(sub).await?;

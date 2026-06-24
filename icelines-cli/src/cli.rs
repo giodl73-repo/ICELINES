@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::commands::signals::SignalEvidenceFilter;
 use clap::{Parser, Subcommand, ValueEnum};
 
 // ── Top-level CLI ─────────────────────────────────────────────────────────────
@@ -946,6 +947,7 @@ autonomous coaching decision.
 
 Examples:
   icelines signals-roster --team NYR
+  icelines signals-roster --team NYR --evidence partial
   icelines signals-roster --team NYR --json
 "#
     )]
@@ -959,6 +961,9 @@ Examples:
         /// Regular season or playoffs.
         #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
         season_type: QuerySeasonType,
+        /// Filter rows by Signal evidence coverage without changing name sorting.
+        #[arg(long, value_enum, default_value_t = SignalEvidenceFilter::All)]
+        evidence: SignalEvidenceFilter,
         /// Emit a `signals-roster.v1` JSON envelope.
         #[arg(long)]
         json: bool,
