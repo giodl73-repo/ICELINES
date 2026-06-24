@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-bootstrap-survey",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Bootstrap complete: icelines is now a CRAFT dogfood workspace with baseline cargo fmt/check evidence, VTRACE work-package survey, and WP-010 Signals identified as the first product-wave candidate.",
+  "recordedUnixMillis": 1782309510394,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "baseline-survey",
+    "latestStepNote": "Inspected icelines repo instructions and native gates; confirmed Rust workspace with VTRACE baseline and cargo fmt/check/test/clippy gate convention.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-bootstrap-survey-step-baseline-survey.json",
+    "recentSteps": [
+      {
+        "label": "baseline-survey",
+        "note": "Inspected icelines repo instructions and native gates; confirmed Rust workspace with VTRACE baseline and cargo fmt/check/test/clippy gate convention.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-bootstrap-survey-step-baseline-survey.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
