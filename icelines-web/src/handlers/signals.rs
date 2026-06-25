@@ -70,6 +70,9 @@ pub async fn get_team_signals_json(
                 season_type: view.season_type.clone(),
                 team: view.team.clone(),
                 evidence_filter: view.evidence_filter.label().to_string(),
+                evidence_filter_scope:
+                    "team-scoped Signals roster inspection only; not a leaderboard, StatId promotion, filter catalog, or analytics-cache metric family",
+                evidence_filter_docs: signals_roster_evidence_filter_docs(&view.team),
                 matched_count: view.rows.len(),
                 total_player_count: view.total_player_count,
                 filtered_out_count: view.filtered_out_count(),
@@ -539,10 +542,49 @@ struct SignalsRosterMeta {
     season_type: String,
     team: String,
     evidence_filter: String,
+    evidence_filter_scope: &'static str,
+    evidence_filter_docs: Vec<SignalsRosterEvidenceFilterDoc>,
     matched_count: usize,
     total_player_count: usize,
     filtered_out_count: usize,
     source_authority: SignalsSourceAuthority,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct SignalsRosterEvidenceFilterDoc {
+    value: &'static str,
+    meaning: &'static str,
+    html_url: String,
+    json_url: String,
+}
+
+fn signals_roster_evidence_filter_docs(team: &str) -> Vec<SignalsRosterEvidenceFilterDoc> {
+    [
+        (
+            "all",
+            "include every player on the team Signals roster regardless of evidence tier",
+        ),
+        (
+            "full",
+            "include only players whose Signals rows are all full-evidence rows",
+        ),
+        (
+            "partial",
+            "include players with at least one partial-evidence Signals row",
+        ),
+        (
+            "missing",
+            "include players with at least one missing-evidence Signals row",
+        ),
+    ]
+    .into_iter()
+    .map(|(value, meaning)| SignalsRosterEvidenceFilterDoc {
+        value,
+        meaning,
+        html_url: format!("/team/{team}/signals?evidence={value}"),
+        json_url: format!("/api/v1/team/{team}/signals?evidence={value}"),
+    })
+    .collect()
 }
 
 #[cfg(test)]

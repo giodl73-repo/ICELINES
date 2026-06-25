@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p03-signals-json-filter-doc",
+  "noteKind": "json-filter-docs",
+  "note": "Added team Signals JSON evidence_filter_docs with all/full/partial/missing semantics, HTML/JSON route handoffs, and non-promotion scope.",
+  "recordedUnixMillis": 1782362395788,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

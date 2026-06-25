@@ -2757,6 +2757,29 @@ async fn l1_team_signals_json_renders_shared_roster_view_without_leaderboard_pro
     assert_eq!(json["meta"]["team"], serde_json::json!("EDM"));
     assert_eq!(json["meta"]["evidence_filter"], serde_json::json!("all"));
     assert_eq!(
+        json["meta"]["evidence_filter_scope"],
+        "team-scoped Signals roster inspection only; not a leaderboard, StatId promotion, filter catalog, or analytics-cache metric family"
+    );
+    assert_eq!(
+        json["meta"]["evidence_filter_docs"]
+            .as_array()
+            .expect("filter docs")
+            .len(),
+        4
+    );
+    assert!(
+        json["meta"]["evidence_filter_docs"]
+            .as_array()
+            .expect("filter docs")
+            .iter()
+            .any(|doc| doc["value"] == "partial"
+                && doc["meaning"]
+                    == "include players with at least one partial-evidence Signals row"
+                && doc["html_url"] == "/team/EDM/signals?evidence=partial"
+                && doc["json_url"] == "/api/v1/team/EDM/signals?evidence=partial"),
+        "team Signals JSON should document evidence filters and route handoffs: {json}"
+    );
+    assert_eq!(
         json["meta"]["source_authority"]["coverage_state"],
         "descriptive_derived"
     );
