@@ -2822,6 +2822,29 @@ async fn l1_team_signals_html_renders_discovery_matrix_and_source_authority() {
         body.contains("data-signals-roster-source-authority=\"PlayerSignalsView stat inputs\""),
         "body was:\n{body}"
     );
+    assert!(body.contains("Evidence filters"), "body was:\n{body}");
+    assert!(
+        body.contains(r#"/team/EDM/signals?evidence=full"#),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(r#"/team/EDM/signals?evidence=partial"#),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(r#"/team/EDM/signals?evidence=missing"#),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(r#"/api/v1/team/EDM/signals?evidence=partial"#),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(
+            "do not rank players or promote Signals to cache, StatId, or leaderboard surfaces"
+        ),
+        "body was:\n{body}"
+    );
     assert!(body.contains("leaderboard_ranking"), "body was:\n{body}");
     assert!(
         body.contains("/player/8478402/signals"),

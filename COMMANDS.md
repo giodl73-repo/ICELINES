@@ -683,6 +683,10 @@ scope is auditable without implying rank. CLI JSON uses the additive
 `signals-roster.v1` envelope; Web JSON uses the route envelope
 `team-signals-roster`. Phase Capitals keeps this surface uncached and
 team-scoped.
+Web HTML also exposes explicit `all|full|partial|missing` filter handoff links
+plus JSON twins for the same team-scoped roster; those links narrow inspection
+only and do not rank players or promote Signals to cache, `StatId`, or
+leaderboard surfaces.
 `signals-roster.v1` also carries `meta.source_authority` and row-level
 `source_authority` values copied from `PlayerSignalsView`, so the roster matrix
 has the same covered inputs, blocked claims, and missing-evidence semantics as

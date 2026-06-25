@@ -390,6 +390,23 @@ fn render_team_signals_roster_html(active_label: &str, view: &SignalsRosterView)
         html_escape(&view.source_authority.covered_metrics.join(", ")),
         html_escape(&view.source_authority.blocked_claims.join(", "))
     );
+    let filter_links = ["all", "full", "partial", "missing"]
+        .into_iter()
+        .map(|filter| {
+            let current = if filter == view.evidence_filter.label() {
+                " aria-current=\"page\""
+            } else {
+                ""
+            };
+            format!(
+                "<li><a href=\"/team/{team}/signals?evidence={filter}\"{current}>{filter}</a> \
+                 <a class=\"muted\" href=\"/api/v1/team/{team}/signals?evidence={filter}\">JSON</a></li>",
+                team = html_escape(&view.team),
+                filter = filter,
+                current = current
+            )
+        })
+        .collect::<String>();
 
     format!(
         "<!doctype html><html><head><meta charset=\"utf-8\">\
@@ -400,6 +417,9 @@ fn render_team_signals_roster_html(active_label: &str, view: &SignalsRosterView)
          <h1>{team} Signals roster</h1>\
          <p class=\"meta-line\">{note}</p>\
          <p class=\"meta-line\">Evidence filter: {filter}; rows: {matched} matched / {total} total / {filtered} filtered out.</p>\
+         <section aria-labelledby=\"signals-roster-evidence-filters\"><h2 id=\"signals-roster-evidence-filters\">Evidence filters</h2>\
+         <p class=\"meta-line\">Filter links narrow this team-scoped discovery matrix only; they do not rank players or promote Signals to cache, StatId, or leaderboard surfaces.</p>\
+         <ul>{filter_links}</ul></section>\
          {source_authority}{disclosures}{non_claims}\
          <div class=\"table-scroll\"><table><thead><tr><th>Player</th><th>Phys/60</th><th>PMD/60</th><th>PIM/60</th><th>Evidence</th></tr></thead><tbody>{rows}</tbody></table></div>\
          <p class=\"meta-line\">Legend: unavailable means missing/below-threshold evidence, never zero value truth.</p>\
@@ -411,6 +431,7 @@ fn render_team_signals_roster_html(active_label: &str, view: &SignalsRosterView)
         matched = view.rows.len(),
         total = view.total_player_count,
         filtered = view.filtered_out_count(),
+        filter_links = filter_links,
     )
 }
 
