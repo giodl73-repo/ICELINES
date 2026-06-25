@@ -1,0 +1,105 @@
+{
+  "waveId": "icelines-long-wave",
+  "pulses": [
+    {
+      "session": "icelines-wave-p01-cache-health-copy",
+      "intent": "Pulse 01 cache health copy",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p02-signals-empty-filter",
+      "intent": "Pulse 02 Signals empty-filter recovery",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p03-signals-json-filter-doc",
+      "intent": "Pulse 03 Signals JSON filter docs",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p04-cache-json-handoff",
+      "intent": "Pulse 04 cache JSON handoff",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p05-coach-cache-boundary",
+      "intent": "Pulse 05 coach cache boundary",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p06-scout-cache-boundary",
+      "intent": "Pulse 06 scout cache boundary",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p07-player-evidence-boundary",
+      "intent": "Pulse 07 player evidence boundary",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p08-lines-cache-boundary",
+      "intent": "Pulse 08 lines cache boundary",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p09-goalie-cache-boundary",
+      "intent": "Pulse 09 goalie cache boundary",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p10-practice-cache-boundary",
+      "intent": "Pulse 10 practice cache boundary",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p11-postgame-cache-boundary",
+      "intent": "Pulse 11 postgame cache boundary",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p12-agent-evidence-boundary",
+      "intent": "Pulse 12 agent evidence boundary",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p13-vtrace-cache-trace",
+      "intent": "Pulse 13 cache VTRACE trace",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p14-vtrace-signals-trace",
+      "intent": "Pulse 14 Signals VTRACE trace",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p15-home-evidence-map",
+      "intent": "Pulse 15 home evidence map",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p16-team-page-evidence-map",
+      "intent": "Pulse 16 team page evidence map",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p17-player-page-evidence-map",
+      "intent": "Pulse 17 player page evidence map",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p18-route-inventory-evidence",
+      "intent": "Pulse 18 route inventory evidence",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p19-operator-command-map",
+      "intent": "Pulse 19 operator command map",
+      "lane": "rust"
+    },
+    {
+      "session": "icelines-wave-p20-wave-close-readiness",
+      "intent": "Pulse 20 wave close readiness",
+      "lane": "rust"
+    }
+  ]
+}

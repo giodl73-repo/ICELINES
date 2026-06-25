@@ -1,0 +1,36 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p02-signals-empty-filter",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 02 closed: Signals empty evidence-filter recovery now points to valid filters and repeats non-promotion boundary; focused gates passed.",
+  "recordedUnixMillis": 1782362016295,
+  "progress": {
+    "stepCount": 2,
+    "latestStepLabel": "empty-filter-recovery",
+    "latestStepNote": "Added Signals empty evidence-filter recovery copy with all/partial/missing links and non-promotion boundary; added L1 route assertion.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p02-signals-empty-filter-step-empty-filter-recovery.json",
+    "recentSteps": [
+      {
+        "label": "empty-filter-recovery",
+        "note": "Added Signals empty evidence-filter recovery copy with all/partial/missing links and non-promotion boundary; added L1 route assertion.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p02-signals-empty-filter-step-empty-filter-recovery.json"
+      },
+      {
+        "label": "craft-runner-selected",
+        "note": "Craft chat run-wave selected the open pulse from .craft\\dogfood\\waves\\icelines-long-wave.json; continuing only inside that selected session.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p02-signals-empty-filter-step-craft-runner-selected.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

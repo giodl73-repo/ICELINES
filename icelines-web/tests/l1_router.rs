@@ -2854,6 +2854,46 @@ async fn l1_team_signals_html_renders_discovery_matrix_and_source_authority() {
 }
 
 #[tokio::test]
+async fn l1_team_signals_empty_evidence_filter_renders_recovery_links_without_promotion() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/team/EDM/signals?evidence=full")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    let status = response.status();
+    let body = response_text(response, 512 * 1024).await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "body: {body}");
+    assert!(
+        body.contains("No Signals roster rows matched evidence filter 'full' for EDM."),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(r#"/team/EDM/signals?evidence=all"#),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(r#"/team/EDM/signals?evidence=partial"#),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(r#"/team/EDM/signals?evidence=missing"#),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(
+            "These recovery links keep Signals team-scoped and do not rank players or promote Signals to cache, StatId, or leaderboard surfaces."
+        ),
+        "body was:\n{body}"
+    );
+}
+
+#[tokio::test]
 async fn l1_player_outlook_html_includes_pace_svg_chart() {
     let app = router(WebState::with_repo(repo_with_mcdavid()));
 

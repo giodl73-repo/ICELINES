@@ -196,9 +196,16 @@ async fn build_team_signals_roster_view(
     if view.rows.is_empty() {
         let message = if view.total_player_count > 0 {
             format!(
-                "No Signals roster rows matched evidence filter '{}' for {}.",
+                "No Signals roster rows matched evidence filter '{}' for {}. \
+                 Try <a href=\"/team/{}/signals?evidence=all\">all</a>, \
+                 <a href=\"/team/{}/signals?evidence=partial\">partial</a>, or \
+                 <a href=\"/team/{}/signals?evidence=missing\">missing</a>. \
+                 These recovery links keep Signals team-scoped and do not rank players or promote Signals to cache, StatId, or leaderboard surfaces.",
                 evidence_filter.label(),
-                team.0
+                html_escape(&team.0),
+                html_escape(&team.0),
+                html_escape(&team.0),
+                html_escape(&team.0)
             )
         } else {
             format!(
