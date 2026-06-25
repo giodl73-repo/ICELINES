@@ -1111,6 +1111,10 @@ async fn l2_wp009_postgame_review_renders_cache_as_postgame_consumer_view() {
     assert_eq!(json["status"], "ready");
     assert_eq!(json["cache_key"], "postgame_review:20252026:regular");
     assert_eq!(json["consumer"], "postgame_review_report");
+    assert_eq!(
+        json["consumer_boundary"],
+        "Postgame review reads prepared analytics-cache evidence only; it does not issue postgame conclusions, adjustment plans, blame assignments, live analytics, predictions, or cache fetches."
+    );
     assert_eq!(json["report"]["title"], "Postgame Review Report");
     assert_eq!(json["report"]["consumer"], "postgame_review_report");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
@@ -1216,6 +1220,10 @@ async fn l2_wp009_postgame_adjustments_renders_cache_as_postgame_consumer_view()
     assert_eq!(json["status"], "ready");
     assert_eq!(json["cache_key"], "postgame_adjustments:20252026:regular");
     assert_eq!(json["consumer"], "postgame_review_report");
+    assert_eq!(
+        json["consumer_boundary"],
+        "Postgame review reads prepared analytics-cache evidence only; it does not issue postgame conclusions, adjustment plans, blame assignments, live analytics, predictions, or cache fetches."
+    );
     assert_eq!(json["report"]["title"], "Postgame Review Report");
     assert_eq!(json["report"]["consumer"], "postgame_review_report");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
