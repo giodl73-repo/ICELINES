@@ -469,6 +469,10 @@ async fn l2_wp009_coach_dashboard_renders_default_cache_without_generic_query_co
     assert_eq!(json["status"], "ready");
     assert_eq!(json["cache_key"], "coach_dashboard:20252026:regular");
     assert_eq!(json["consumer"], "coach_dashboard");
+    assert_eq!(
+        json["consumer_boundary"],
+        "Coach dashboard reads prepared analytics-cache evidence only; it does not issue coaching recommendations, deployment decisions, live analytics, predictions, or cache fetches."
+    );
     assert_eq!(json["report"]["title"], "Coach Game-Day Dashboard");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
     assert_cache_json_evidence_route_handoffs(&json);

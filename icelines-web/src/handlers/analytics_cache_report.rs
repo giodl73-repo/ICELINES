@@ -57,6 +57,7 @@ struct AnalyticsCacheReportPayload {
     status: &'static str,
     cache_key: String,
     consumer: AnalyticsCacheConsumerKind,
+    consumer_boundary: &'static str,
     selected_cache_evidence_routes: Vec<AnalyticsCacheEvidenceRouteHandoff>,
     selected_cache_evidence_scope: &'static str,
     report: AnalyticsCacheConsumerView,
@@ -785,12 +786,24 @@ fn load_analytics_cache_report(
     Ok(AnalyticsCacheReportPayload {
         status: "ready",
         cache_key,
+        consumer_boundary: analytics_cache_consumer_boundary(&consumer),
         consumer,
         selected_cache_evidence_routes: selected_cache_evidence_route_handoffs(),
         selected_cache_evidence_scope:
             "prepared analytics cache records only; does not compute live analytics, fetch missing cache records, infer predictions, or create autonomous coaching actions",
         report: AnalyticsCacheConsumerView::from_envelope(&envelope, read.disposition),
     })
+}
+
+fn analytics_cache_consumer_boundary(consumer: &AnalyticsCacheConsumerKind) -> &'static str {
+    match consumer {
+        AnalyticsCacheConsumerKind::CoachDashboard => {
+            "Coach dashboard reads prepared analytics-cache evidence only; it does not issue coaching recommendations, deployment decisions, live analytics, predictions, or cache fetches."
+        }
+        _ => {
+            "Selected analytics-cache evidence surface reads prepared cache records only; it does not compute live analytics, infer predictions, or create autonomous actions."
+        }
+    }
 }
 
 fn selected_cache_evidence_route_handoffs() -> Vec<AnalyticsCacheEvidenceRouteHandoff> {
