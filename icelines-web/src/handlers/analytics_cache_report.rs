@@ -800,6 +800,9 @@ fn analytics_cache_consumer_boundary(consumer: &AnalyticsCacheConsumerKind) -> &
         AnalyticsCacheConsumerKind::CoachDashboard => {
             "Coach dashboard reads prepared analytics-cache evidence only; it does not issue coaching recommendations, deployment decisions, live analytics, predictions, or cache fetches."
         }
+        AnalyticsCacheConsumerKind::OpponentScoutReport => {
+            "Opponent scout reads prepared analytics-cache evidence only; it does not issue scouting recommendations, line-matchup decisions, live analytics, predictions, or cache fetches."
+        }
         _ => {
             "Selected analytics-cache evidence surface reads prepared cache records only; it does not compute live analytics, infer predictions, or create autonomous actions."
         }

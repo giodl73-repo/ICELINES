@@ -803,6 +803,11 @@ issue coaching recommendations, deployment decisions, live analytics,
 predictions, or cache fetches; its `consumer_boundary` field repeats that
 contract for machine readers.
 
+Opponent scout JSON follows the same prepared-cache boundary. It does not issue
+scouting recommendations, line-matchup decisions, live analytics, predictions,
+or cache fetches; its `consumer_boundary` field repeats that contract for
+machine readers.
+
 Additional selected cache-backed evidence routes include `/lines/explorer`,
 `/goalies/readiness`, `/practice/focus`, `/postgame/review`,
 `/postgame/adjustments`, and `/agents/evidence`, each with a matching

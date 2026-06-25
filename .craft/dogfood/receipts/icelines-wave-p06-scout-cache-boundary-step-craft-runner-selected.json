@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p06-scout-cache-boundary",
+  "noteKind": "craft-runner-selected",
+  "note": "Continuing the Craft-selected pulse 06 from chat run-wave: scout cache boundary.",
+  "recordedUnixMillis": 1782363317849,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

@@ -572,6 +572,10 @@ async fn l2_wp009_opponent_scout_renders_cache_as_scout_consumer_view() {
     assert_eq!(json["status"], "ready");
     assert_eq!(json["cache_key"], "opponent_scout:20252026:regular");
     assert_eq!(json["consumer"], "opponent_scout_report");
+    assert_eq!(
+        json["consumer_boundary"],
+        "Opponent scout reads prepared analytics-cache evidence only; it does not issue scouting recommendations, line-matchup decisions, live analytics, predictions, or cache fetches."
+    );
     assert_eq!(json["report"]["title"], "Opponent Scout Report");
     assert_eq!(json["report"]["consumer"], "opponent_scout_report");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
