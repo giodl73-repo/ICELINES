@@ -1006,6 +1006,10 @@ async fn l2_wp009_practice_focus_renders_cache_as_practice_consumer_view() {
     assert_eq!(json["status"], "ready");
     assert_eq!(json["cache_key"], "practice_focus:20252026:regular");
     assert_eq!(json["consumer"], "practice_focus_report");
+    assert_eq!(
+        json["consumer_boundary"],
+        "Practice focus reads prepared analytics-cache evidence only; it does not issue practice plans, coaching recommendations, deployment decisions, live analytics, predictions, or cache fetches."
+    );
     assert_eq!(json["report"]["title"], "Practice Focus Report");
     assert_eq!(json["report"]["consumer"], "practice_focus_report");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");

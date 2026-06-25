@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p10-practice-cache-boundary",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 10 closed: practice focus JSON now discloses prepared-cache-only consumer boundary.",
+  "recordedUnixMillis": 1782364012346,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "practice-boundary",
+    "latestStepNote": "Added practice focus prepared-cache-only consumer_boundary in JSON, tests, and operator docs.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p10-practice-cache-boundary-step-practice-boundary.json",
+    "recentSteps": [
+      {
+        "label": "practice-boundary",
+        "note": "Added practice focus prepared-cache-only consumer_boundary in JSON, tests, and operator docs.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p10-practice-cache-boundary-step-practice-boundary.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
