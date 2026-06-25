@@ -64,6 +64,16 @@
 </section>
 
 <section class="card">
+  <h2>Cache health interpretation</h2>
+  <p>
+    Status, disposition, quality, and sample size describe the prepared cache
+    record that was read. They are evidence health signals, not confidence
+    scores, predictions, live fetch results, or instructions to create missing
+    cache records.
+  </p>
+</section>
+
+<section class="card">
   <h2>Metrics from cache</h2>
   {% if metrics.len() == 0 %}
   <p>No metrics are available for this cache-backed report state.</p>

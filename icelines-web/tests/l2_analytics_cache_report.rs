@@ -275,6 +275,16 @@ fn assert_cache_evidence_route_handoffs(body: &str) {
     assert!(body.contains(r#"href="/agents/evidence""#), "{body}");
 }
 
+fn assert_cache_health_interpretation(body: &str) {
+    assert!(body.contains("Cache health interpretation"), "{body}");
+    assert!(body.contains("record that was read"), "{body}");
+    assert!(body.contains("evidence health signals"), "{body}");
+    assert!(body.contains("confidence"), "{body}");
+    assert!(body.contains("predictions"), "{body}");
+    assert!(body.contains("live fetch results"), "{body}");
+    assert!(body.contains("missing cache records"), "{body}");
+}
+
 #[tokio::test]
 async fn l2_wp009_analytics_cache_report_missing_cache_is_explicitly_unavailable() {
     let _guard = env_lock().await;
@@ -300,6 +310,7 @@ async fn l2_wp009_analytics_cache_report_missing_cache_is_explicitly_unavailable
     assert!(body.contains("analytics cache entry is missing: missing:cache"));
     assert_unavailable_html_non_claims(&body);
     assert_cache_evidence_route_handoffs(&body);
+    assert_cache_health_interpretation(&body);
 
     let response = app
         .oneshot(
@@ -405,6 +416,7 @@ async fn l2_wp009_coach_dashboard_renders_default_cache_without_generic_query_co
     assert!(body.contains("/api/v1/coach/dashboard?cache_key=coach_dashboard%3A20252026%3Aregular"));
     assert!(body.contains("Not a prediction, betting, injury, or autonomous coaching claim."));
     assert_cache_evidence_route_handoffs(&body);
+    assert_cache_health_interpretation(&body);
 
     let response = app
         .oneshot(
