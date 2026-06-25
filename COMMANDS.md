@@ -845,6 +845,23 @@ Additional selected cache-backed evidence routes include `/lines/explorer`,
 practice, postgame, agent, and downstream product workflows remain partial until
 `VAL-011` accepts product-copy and consumer evidence for that surface.
 
+### Evidence map operator quick paths
+
+The Web evidence maps are inspection-first navigation aids. They do not fetch
+live data, make predictions, issue deployment advice, create cache claims, or
+take autonomous coaching actions.
+
+| Need | Web path | Focused gate |
+|---|---|---|
+| Home evidence map | `/` | `cargo test -p icelines-web --test l1_router l1_get_root_returns_200_html --quiet` |
+| Team evidence map | `/team/EDM` | `cargo test -p icelines-web --test l1_router l1_team_html_includes_skater_pts82_svg_chart --quiet` |
+| Player evidence map | `/player/8478402` | `cargo test -p icelines-web --test l1_router l1_player_html_links_signals_surface --quiet` |
+| Evidence-map route inventory | n/a | `cargo test -p icelines-web --test ted_lindsay_route_inventory --quiet` |
+
+The route-inventory gate keeps every evidence-map handoff backed by a mounted
+route entry and by `design/specs/surface-parity.md` before the links become
+operator-facing shortcuts.
+
 ## `x` — quick CSV/JSON export
 
 One-shot export of any report shape to stdout (default CSV) or a file. Excel-friendly.

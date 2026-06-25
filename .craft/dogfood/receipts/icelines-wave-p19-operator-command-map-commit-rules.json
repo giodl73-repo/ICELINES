@@ -1,0 +1,47 @@
+{
+  "receiptTier": "dogfood-git-commit-rules-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p19-operator-command-map",
+  "gitRepository": true,
+  "actualEmail": "giodl73@gmail.com",
+  "expectedEmail": null,
+  "emailMatches": null,
+  "actualName": "giodl73-repo",
+  "expectedName": null,
+  "nameMatches": null,
+  "requireClean": true,
+  "worktreeDirty": true,
+  "receiptArtifactsDirty": true,
+  "productWorktreeDirty": true,
+  "dirtyFiles": [
+    "COMMANDS.md",
+    "docs\\vtrace\\VERIFICATION.md",
+    ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-check-doc-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-open.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-step-operator-command-map.json"
+  ],
+  "receiptArtifactFiles": [
+    ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-check-doc-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-open.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-step-operator-command-map.json"
+  ],
+  "productDirtyFiles": [
+    "COMMANDS.md",
+    "docs\\vtrace\\VERIFICATION.md"
+  ],
+  "note": "Local commit must include pulse 19 COMMANDS/VTRACE docs, Craft receipts, and Copilot co-author trailer.",
+  "readyToCommit": false,
+  "recordedUnixMillis": 1782365151949,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

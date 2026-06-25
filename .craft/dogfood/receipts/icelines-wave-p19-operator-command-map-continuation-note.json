@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p19-operator-command-map",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 19 closed: evidence-map operator command map is documented.",
+  "recordedUnixMillis": 1782365152056,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "operator-command-map",
+    "latestStepNote": "Added COMMANDS.md evidence-map operator quick paths with focused gates and no-overclaim boundaries.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-step-operator-command-map.json",
+    "recentSteps": [
+      {
+        "label": "operator-command-map",
+        "note": "Added COMMANDS.md evidence-map operator quick paths with focused gates and no-overclaim boundaries.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p19-operator-command-map-step-operator-command-map.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
