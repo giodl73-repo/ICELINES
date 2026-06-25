@@ -1,0 +1,46 @@
+{
+  "receiptTier": "dogfood-git-commit-rules-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p20-wave-close-readiness",
+  "gitRepository": true,
+  "actualEmail": "giodl73@gmail.com",
+  "expectedEmail": null,
+  "emailMatches": null,
+  "actualName": "giodl73-repo",
+  "expectedName": null,
+  "nameMatches": null,
+  "requireClean": true,
+  "worktreeDirty": true,
+  "receiptArtifactsDirty": true,
+  "productWorktreeDirty": false,
+  "dirtyFiles": [
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-check-final-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-continuation-note.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-open.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-step-wave-close-readiness.json",
+    ".craft\\dogfood\\waves\\icelines-long-wave-readiness.json"
+  ],
+  "receiptArtifactFiles": [
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-check-final-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-continuation-note.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-open.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p20-wave-close-readiness-step-wave-close-readiness.json",
+    ".craft\\dogfood\\waves\\icelines-long-wave-readiness.json"
+  ],
+  "productDirtyFiles": [],
+  "note": "Local commit must include pulse 20 close-readiness artifact, Craft receipts, and Copilot co-author trailer.",
+  "readyToCommit": true,
+  "recordedUnixMillis": 1782365279206,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

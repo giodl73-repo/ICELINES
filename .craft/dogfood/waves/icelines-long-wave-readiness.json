@@ -1,0 +1,42 @@
+{
+  "wave": "icelines-long-wave",
+  "status": "complete",
+  "selected": "wave-complete",
+  "total_pulses": 20,
+  "completed_pulses": 20,
+  "opened_pulses": 20,
+  "remaining_pulses": 0,
+  "receipt_metrics": {
+    "receipts": 315,
+    "sessions": 51,
+    "closed_sessions": 51,
+    "closed_session_ratio": "51/51 (100.0%)",
+    "receipt_bytes": 554663,
+    "average_receipt_bytes": 1760,
+    "receipts_per_session": 6.2,
+    "meet_survival": "0/4 (0.0%)"
+  },
+  "final_gate": {
+    "status": "passed",
+    "commands": [
+      "cargo fmt --check",
+      "cargo test -p icelines-web --test l1_router --quiet",
+      "cargo test -p icelines-web --test l2_analytics_cache_report --quiet",
+      "cargo test -p icelines-web --test ted_lindsay_route_inventory --quiet",
+      "cargo clippy -p icelines-web --lib --tests -- -D warnings",
+      "proof check docs\\vtrace --errors-only",
+      "git diff --check"
+    ],
+    "passed_counts": {
+      "l1_router": 184,
+      "l2_analytics_cache_report": 20,
+      "ted_lindsay_route_inventory": 4,
+      "vtrace_files_checked": 19
+    }
+  },
+  "honesty_boundary": [
+    "Craft selected/opened/closed pulses and recorded receipts.",
+    "Craft did not autonomously edit source, call providers, use network providers, commit, push, or verify dogfood beyond receipt accounting.",
+    "Manual source edits, gates, and commits were performed by the operator loop under Craft receipts."
+  ]
+}
