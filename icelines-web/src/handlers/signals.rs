@@ -1,16 +1,22 @@
 use crate::state::WebState;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use icelines_core::identity::PlayerId;
-use icelines_core::model::Season;
+use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::signal_metrics::{
     SignalEvidenceTier, SignalInput, SignalMetricUnit, SignalPolarity,
 };
 use icelines_core::stats_repository::StatsRepository;
-use icelines_core::view_model::signals::PlayerSignalsView;
-use icelines_core::view_model::signals::SignalsSourceAuthority;
+use icelines_core::view_model::signals::{
+    PlayerSignalsView, SignalRosterEvidenceFilter, SignalsRosterView, SignalsSourceAuthority,
+};
+
+#[derive(Debug, serde::Deserialize)]
+pub struct TeamSignalsQuery {
+    evidence: Option<String>,
+}
 
 pub async fn get_player_signals(State(state): State<WebState>, Path(id): Path<u32>) -> Response {
     match build_player_signals_view(&state, id).await {
@@ -34,6 +40,42 @@ pub async fn get_player_signals_json(
                 source_authority: view.source_authority.clone(),
             };
             crate::api::json_data_meta("player-signals", view, meta)
+        }
+        Err(response) => response,
+    }
+}
+
+pub async fn get_team_signals(
+    State(state): State<WebState>,
+    Path(abbrev): Path<String>,
+    Query(query): Query<TeamSignalsQuery>,
+) -> Response {
+    match build_team_signals_roster_view(&state, &abbrev, query.evidence.as_deref()).await {
+        Ok((active_label, view)) => {
+            Html(render_team_signals_roster_html(&active_label, &view)).into_response()
+        }
+        Err(response) => response,
+    }
+}
+
+pub async fn get_team_signals_json(
+    State(state): State<WebState>,
+    Path(abbrev): Path<String>,
+    Query(query): Query<TeamSignalsQuery>,
+) -> Response {
+    match build_team_signals_roster_view(&state, &abbrev, query.evidence.as_deref()).await {
+        Ok((_active_label, view)) => {
+            let meta = SignalsRosterMeta {
+                season: view.season.to_string(),
+                season_type: view.season_type.clone(),
+                team: view.team.clone(),
+                evidence_filter: view.evidence_filter.label().to_string(),
+                matched_count: view.rows.len(),
+                total_player_count: view.total_player_count,
+                filtered_out_count: view.filtered_out_count(),
+                source_authority: view.source_authority.clone(),
+            };
+            crate::api::json_data_meta("team-signals-roster", view, meta)
         }
         Err(response) => response,
     }
@@ -111,6 +153,76 @@ fn player_local_repo(shared: &StatsRepository, pid: PlayerId) -> StatsRepository
         }
     }
     local
+}
+
+async fn build_team_signals_roster_view(
+    state: &WebState,
+    abbrev: &str,
+    evidence: Option<&str>,
+) -> Result<(String, SignalsRosterView), Response> {
+    let team = TeamAbbr::parse(abbrev).map_err(|_| {
+        (
+            StatusCode::NOT_FOUND,
+            Html(format!("Unknown team '{}'.", html_escape(abbrev))),
+        )
+            .into_response()
+    })?;
+    let evidence_filter = parse_evidence_filter(evidence).map_err(|message| {
+        (StatusCode::BAD_REQUEST, Html(html_escape(&message))).into_response()
+    })?;
+    let (season_str, season_type, active_label) = {
+        let cfg = state.config.read().await;
+        let st = SeasonType::parse_lossy(&cfg.active_season_type);
+        (cfg.active_season.clone(), st, cfg.active_label.clone())
+    };
+    let season_u32: u32 = season_str.parse().map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            Html(format!("Season '{season_str}' is not a valid YYYYZZZZ id")),
+        )
+            .into_response()
+    })?;
+    let season = Season(season_u32);
+    let view = {
+        let repo = state.repo.read().await;
+        SignalsRosterView::from_players(
+            team.clone(),
+            season,
+            season_type,
+            repo.skaters(season, season_type).collect::<Vec<_>>(),
+            evidence_filter,
+        )
+    };
+    if view.rows.is_empty() {
+        let message = if view.total_player_count > 0 {
+            format!(
+                "No Signals roster rows matched evidence filter '{}' for {}.",
+                evidence_filter.label(),
+                team.0
+            )
+        } else {
+            format!(
+                "No skaters found for {} in {} {}.",
+                team.0,
+                season.0,
+                season_type.label()
+            )
+        };
+        return Err((StatusCode::NOT_FOUND, Html(message)).into_response());
+    }
+    Ok((active_label, view))
+}
+
+fn parse_evidence_filter(value: Option<&str>) -> Result<SignalRosterEvidenceFilter, String> {
+    match value.unwrap_or("all").trim().to_ascii_lowercase().as_str() {
+        "all" => Ok(SignalRosterEvidenceFilter::All),
+        "full" => Ok(SignalRosterEvidenceFilter::Full),
+        "partial" => Ok(SignalRosterEvidenceFilter::Partial),
+        "missing" => Ok(SignalRosterEvidenceFilter::Missing),
+        other => Err(format!(
+            "Unknown Signals evidence filter '{other}'. Use all, full, partial, or missing."
+        )),
+    }
 }
 
 fn render_signals_html(active_label: &str, view: &PlayerSignalsView) -> String {
@@ -224,6 +336,127 @@ fn render_signals_html(active_label: &str, view: &PlayerSignalsView) -> String {
     )
 }
 
+fn render_team_signals_roster_html(active_label: &str, view: &SignalsRosterView) -> String {
+    let rows = view
+        .rows
+        .iter()
+        .map(|player| {
+            let phys = signal_cell(player, "physical-engagement-rate");
+            let pmd = signal_cell(player, "puck-management-differential");
+            let pim = signal_cell(player, "penalty-drag-rate");
+            format!(
+                "<tr><td><a href=\"/player/{pid}/signals\">{name}</a><br><span class=\"muted\">{pos} · {gp} GP</span></td>\
+                 <td>{phys}</td><td>{pmd}</td><td>{pim}</td><td>{evidence}</td></tr>",
+                pid = player.player_id,
+                name = html_escape(&player.player_name),
+                pos = html_escape(&player.position),
+                gp = player.games_played,
+                phys = html_escape(&phys),
+                pmd = html_escape(&pmd),
+                pim = html_escape(&pim),
+                evidence = html_escape(&row_evidence_summary(player))
+            )
+        })
+        .collect::<String>();
+    let disclosures = view
+        .disclosures
+        .iter()
+        .map(|line| format!("<p class=\"meta-line\">{}</p>", html_escape(line)))
+        .collect::<String>();
+    let non_claims = view
+        .non_claims
+        .iter()
+        .map(|line| {
+            format!(
+                "<p class=\"meta-line\"><strong>Non-claim:</strong> {}</p>",
+                html_escape(line)
+            )
+        })
+        .collect::<String>();
+    let source_authority = format!(
+        "<section aria-labelledby=\"signals-roster-source-authority\"><h2 id=\"signals-roster-source-authority\">Source authority</h2>\
+         <p class=\"meta-line\" data-signals-roster-source-authority=\"{}\" data-coverage-state=\"{}\">{}</p>\
+         <p class=\"meta-line\"><strong>Authority source:</strong> {}</p>\
+         <p class=\"meta-line\"><strong>Coverage state:</strong> {}</p>\
+         <p class=\"meta-line\"><strong>Covered inputs:</strong> {}</p>\
+         <p class=\"meta-line\"><strong>Covered metrics:</strong> {}</p>\
+         <p class=\"meta-line\"><strong>Blocked claims:</strong> {}</p></section>",
+        html_escape(&view.source_authority.source),
+        html_escape(&view.source_authority.coverage_state),
+        html_escape(&view.source_authority.label),
+        html_escape(&view.source_authority.source),
+        html_escape(&view.source_authority.coverage_state),
+        html_escape(&view.source_authority.covered_inputs.join(", ")),
+        html_escape(&view.source_authority.covered_metrics.join(", ")),
+        html_escape(&view.source_authority.blocked_claims.join(", "))
+    );
+
+    format!(
+        "<!doctype html><html><head><meta charset=\"utf-8\">\
+         <title>{team} Signals roster</title><link rel=\"stylesheet\" href=\"/static/style.css\">\
+         </head><body><header><a href=\"/\">IceLines</a> <span>{active}</span></header>\
+         <main id=\"main\"><p><a href=\"/team/{team}\">Back to team page</a> | \
+         <a href=\"/api/v1/team/{team}/signals?evidence={filter}\">JSON</a></p>\
+         <h1>{team} Signals roster</h1>\
+         <p class=\"meta-line\">{note}</p>\
+         <p class=\"meta-line\">Evidence filter: {filter}; rows: {matched} matched / {total} total / {filtered} filtered out.</p>\
+         {source_authority}{disclosures}{non_claims}\
+         <div class=\"table-scroll\"><table><thead><tr><th>Player</th><th>Phys/60</th><th>PMD/60</th><th>PIM/60</th><th>Evidence</th></tr></thead><tbody>{rows}</tbody></table></div>\
+         <p class=\"meta-line\">Legend: unavailable means missing/below-threshold evidence, never zero value truth.</p>\
+         </main></body></html>",
+        team = html_escape(&view.team),
+        active = html_escape(active_label),
+        filter = view.evidence_filter.label(),
+        note = html_escape(&view.schema_note),
+        matched = view.rows.len(),
+        total = view.total_player_count,
+        filtered = view.filtered_out_count(),
+    )
+}
+
+fn signal_cell(view: &PlayerSignalsView, key: &str) -> String {
+    let row = view
+        .rows
+        .iter()
+        .find(|row| row.cli_key == key)
+        .expect("current signal key");
+    match row.value {
+        Some(value) => format!("{value:.2} {}", tier_label(row.evidence_tier)),
+        None => format!("unavailable {}", tier_label(row.evidence_tier)),
+    }
+}
+
+fn row_evidence_summary(view: &PlayerSignalsView) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    for row in &view.rows {
+        if row.evidence_tier != SignalEvidenceTier::Full || !row.missing_inputs.is_empty() {
+            parts.push(format!(
+                "{}: {} missing {}",
+                row.short_label,
+                tier_label(row.evidence_tier),
+                missing_inputs_label(&row.missing_inputs)
+            ));
+        }
+    }
+    if parts.is_empty() {
+        "all full".to_string()
+    } else {
+        parts.join("; ")
+    }
+}
+
+fn missing_inputs_label(inputs: &[SignalInput]) -> String {
+    if inputs.is_empty() {
+        "none".to_string()
+    } else {
+        inputs
+            .iter()
+            .map(|input| input_label(*input))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+}
+
 fn unit_label(unit: SignalMetricUnit) -> &'static str {
     match unit {
         SignalMetricUnit::Per60 => "per 60",
@@ -269,6 +502,18 @@ struct SignalsMeta {
     player_id: u32,
     player_name: String,
     signal_count: usize,
+    source_authority: SignalsSourceAuthority,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct SignalsRosterMeta {
+    season: String,
+    season_type: String,
+    team: String,
+    evidence_filter: String,
+    matched_count: usize,
+    total_player_count: usize,
+    filtered_out_count: usize,
     source_authority: SignalsSourceAuthority,
 }
 

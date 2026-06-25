@@ -169,6 +169,14 @@ pub fn router(state: WebState) -> Router {
             get(handlers::scoring::get_team_scoring_json),
         )
         .route(
+            "/team/:abbrev/signals",
+            get(handlers::signals::get_team_signals),
+        )
+        .route(
+            "/api/v1/team/:abbrev/signals",
+            get(handlers::signals::get_team_signals_json),
+        )
+        .route(
             "/api/v1/team/:abbrev/outlook",
             get(handlers::scoring::get_team_outlook_json),
         )

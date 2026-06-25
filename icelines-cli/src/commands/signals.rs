@@ -16,7 +16,9 @@ use icelines_core::signal_metrics::{
     SignalEvidenceTier, SignalInput, SignalMetricUnit, SignalPolarity,
 };
 use icelines_core::stats_repository::PlayerView;
-use icelines_core::view_model::signals::{PlayerSignalsView, SignalsSourceAuthority};
+use icelines_core::view_model::signals::{
+    PlayerSignalsView, SignalRosterEvidenceFilter, SignalsRosterView, SignalsSourceAuthority,
+};
 
 /// Render a player's Signals as a text table or a frozen `signals.v1` JSON envelope.
 pub async fn run_signals(
@@ -112,20 +114,6 @@ fn find_signal_view<'a, 'r>(views: &'a [PlayerView<'r>], name: &str) -> Option<&
         .find(|v| v.identity.full_name.to_lowercase().contains(&needle))
 }
 
-#[derive(Debug, serde::Serialize)]
-struct SignalsRosterView {
-    schema_note: &'static str,
-    team: String,
-    season: u32,
-    season_type: String,
-    rows: Vec<PlayerSignalsView>,
-    evidence_filter: SignalEvidenceFilter,
-    total_player_count: usize,
-    disclosures: Vec<String>,
-    non_claims: Vec<String>,
-    source_authority: SignalsSourceAuthority,
-}
-
 fn build_roster_view(
     team: &str,
     season: Option<&str>,
@@ -137,35 +125,27 @@ fn build_roster_view(
     let (outcome, season_key, season_type) =
         crate::commands::players::load_repo_for_season(season, Some(season_type))?;
 
-    let all_rows: Vec<PlayerSignalsView> = outcome
-        .repo
-        .skaters(season_key, season_type)
-        .filter(|player| player.team_display() == team_abbr.0)
-        .map(|player| {
-            PlayerSignalsView::from_player(PlayerSignalsView::context_for_player(&player), &player)
-        })
-        .collect();
-    let total_player_count = all_rows.len();
-    let mut rows: Vec<PlayerSignalsView> = all_rows
-        .into_iter()
-        .filter(|row| evidence_filter.matches(row))
-        .collect();
-    rows.sort_by(|a, b| {
-        a.player_name
-            .cmp(&b.player_name)
-            .then_with(|| a.player_id.cmp(&b.player_id))
-    });
+    let view = SignalsRosterView::from_players(
+        team_abbr.clone(),
+        season_key,
+        season_type,
+        outcome
+            .repo
+            .skaters(season_key, season_type)
+            .collect::<Vec<_>>(),
+        evidence_filter.into(),
+    );
 
-    if rows.is_empty() {
-        if total_player_count > 0 {
+    if view.rows.is_empty() {
+        if view.total_player_count > 0 {
             anyhow::bail!(
                 "no Signals roster rows matched evidence filter '{}' for {} in {} {}; 0 matched / {} total / {} filtered out",
                 evidence_filter.label(),
                 team_abbr.0,
                 season_key.0,
                 season_type.label(),
-                total_player_count,
-                total_player_count
+                view.total_player_count,
+                view.filtered_out_count()
             );
         }
         anyhow::bail!(
@@ -177,30 +157,7 @@ fn build_roster_view(
         );
     }
 
-    Ok(SignalsRosterView {
-        schema_note: "Team-scoped Signals discovery matrix; not a leaderboard.",
-        team: team_abbr.0,
-        season: season_key.0,
-        season_type: season_type.label().to_string(),
-        rows,
-        evidence_filter,
-        total_player_count,
-        disclosures: vec![
-            "Signals are descriptive derived metrics built from existing stat inputs."
-                .to_string(),
-            "Unavailable Signals mean required evidence is missing or below threshold, not zero value truth."
-                .to_string(),
-            "This matrix is an inspection aid; open a player Signals card or Markdown packet for full methodology and limitations."
-                .to_string(),
-        ],
-        non_claims: vec![
-            "Not a prediction, betting edge, injury signal, deployment recommendation, player-quality grade, or autonomous coaching decision."
-                .to_string(),
-            "Not a Signal leaderboard, StatId promotion, filter key, or analytics-cache metric family."
-                .to_string(),
-        ],
-        source_authority: SignalsSourceAuthority::default(),
-    })
+    Ok(view)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, serde::Serialize)]
@@ -213,37 +170,19 @@ pub enum SignalEvidenceFilter {
 }
 
 impl SignalEvidenceFilter {
-    fn matches(self, view: &PlayerSignalsView) -> bool {
-        match self {
-            Self::All => true,
-            Self::Full => view
-                .rows
-                .iter()
-                .all(|row| row.evidence_tier == SignalEvidenceTier::Full),
-            Self::Partial => view
-                .rows
-                .iter()
-                .any(|row| row.evidence_tier == SignalEvidenceTier::Partial),
-            Self::Missing => view
-                .rows
-                .iter()
-                .any(|row| row.evidence_tier == SignalEvidenceTier::Missing),
-        }
-    }
-
     fn label(self) -> &'static str {
-        match self {
-            Self::All => "all",
-            Self::Full => "full",
-            Self::Partial => "partial",
-            Self::Missing => "missing",
-        }
+        SignalRosterEvidenceFilter::from(self).label()
     }
 }
 
-impl SignalsRosterView {
-    fn filtered_out_count(&self) -> usize {
-        self.total_player_count.saturating_sub(self.rows.len())
+impl From<SignalEvidenceFilter> for SignalRosterEvidenceFilter {
+    fn from(value: SignalEvidenceFilter) -> Self {
+        match value {
+            SignalEvidenceFilter::All => Self::All,
+            SignalEvidenceFilter::Full => Self::Full,
+            SignalEvidenceFilter::Partial => Self::Partial,
+            SignalEvidenceFilter::Missing => Self::Missing,
+        }
     }
 }
 

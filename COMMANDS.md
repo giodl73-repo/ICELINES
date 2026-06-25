@@ -637,9 +637,11 @@ Current signals (all per-60):
 | Penalty Drag Rate | `penalty-drag-rate` | ↓ lower better | `penalty minutes` per 60 |
 
 Legend: `↑` higher is better · `↓` lower is better · `=` neutral. Signals are
-available through the CLI, the player-card TUI block, Web HTML
-(`/player/:id/signals`), Web JSON (`/api/v1/player/:id/signals`), and
-`export md signals --player <name>`. They are intentionally **not** in the
+available through the CLI, the player-card TUI block, Web player HTML
+(`/player/:id/signals`), Web player JSON (`/api/v1/player/:id/signals`),
+team-scoped Web roster HTML/JSON (`/team/:abbrev/signals` and
+`/api/v1/team/:abbrev/signals`), and `export md signals --player <name>`.
+They are intentionally **not** in the
 `--filter` catalog, leaderboards, `StatId`, or analytics cache. Phase Capitals
 reviewed the promotion gate and kept those deferrals until accepted cache metric
 keys, invalidation/source-state rules, and bounded catalog/leaderboard copy exist
@@ -662,19 +664,25 @@ icelines signals-roster --team NYR
 icelines signals-roster --team NYR --evidence partial
 icelines signals-roster --team EDM --evidence full --json
 icelines signals-roster --team NYR --json
+# Web twins:
+/team/NYR/signals
+/api/v1/team/NYR/signals?evidence=partial
 ```
 
-`signals-roster` renders a roster matrix over the existing `PlayerSignalsView`
-rows for one team. It is an inspection aid, not a Signal leaderboard, `StatId`
-promotion, filter key, analytics-cache metric family, prediction, betting edge,
-injury signal, deployment recommendation, player-quality grade, or autonomous
-coaching decision. Missing Signals render as `unavailable`, never as zero-filled
-player values. `--evidence all|full|partial|missing` narrows the team-scoped
-inspection rows by Signal evidence coverage while preserving player-name sorting
-and the non-promotion boundary. Text and JSON output report matched, total, and
-filtered-out row counts so filter scope is auditable without implying rank. JSON
-uses the additive `signals-roster.v1` envelope. Phase Capitals keeps this surface
-uncached and team-scoped.
+`signals-roster` and `/team/:abbrev/signals` render the shared
+`SignalsRosterView` matrix over the existing `PlayerSignalsView` rows for one
+team. It is an inspection aid, not a Signal leaderboard, `StatId` promotion,
+filter key, analytics-cache metric family, prediction, betting edge, injury
+signal, deployment recommendation, player-quality grade, or autonomous coaching
+decision. Missing Signals render as `unavailable`, never as zero-filled player
+values. `--evidence all|full|partial|missing` and `?evidence=...` narrow the
+team-scoped inspection rows by Signal evidence coverage while preserving
+player-name sorting and the non-promotion boundary. Text, CLI JSON, Web HTML,
+and Web JSON output report matched, total, and filtered-out row counts so filter
+scope is auditable without implying rank. CLI JSON uses the additive
+`signals-roster.v1` envelope; Web JSON uses the route envelope
+`team-signals-roster`. Phase Capitals keeps this surface uncached and
+team-scoped.
 `signals-roster.v1` also carries `meta.source_authority` and row-level
 `source_authority` values copied from `PlayerSignalsView`, so the roster matrix
 has the same covered inputs, blocked claims, and missing-evidence semantics as

@@ -2732,6 +2732,99 @@ async fn l1_player_signals_html_renders_unavailable_not_zero() {
 }
 
 #[tokio::test]
+async fn l1_team_signals_json_renders_shared_roster_view_without_leaderboard_promotion() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/team/EDM/signals")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    let status = response.status();
+    let json = response_json(response, 512 * 1024).await;
+    assert_eq!(status, StatusCode::OK, "body: {json}");
+    assert_data_meta_envelope(&json, "team-signals-roster");
+    assert_eq!(json["meta"]["team"], serde_json::json!("EDM"));
+    assert_eq!(json["meta"]["evidence_filter"], serde_json::json!("all"));
+    assert_eq!(
+        json["meta"]["source_authority"]["coverage_state"],
+        "descriptive_derived"
+    );
+    assert!(
+        json["meta"]["source_authority"]["blocked_claims"]
+            .as_array()
+            .expect("blocked claims")
+            .iter()
+            .any(|claim| claim == "leaderboard_ranking"),
+        "team Signals roster must preserve non-leaderboard boundary: {json}"
+    );
+    assert_eq!(
+        json["data"]["schema_note"],
+        "Team-scoped Signals discovery matrix; not a leaderboard."
+    );
+    assert!(
+        json["data"]["non_claims"]
+            .as_array()
+            .expect("non_claims")
+            .iter()
+            .any(|claim| claim
+                .as_str()
+                .expect("claim")
+                .contains("Not a Signal leaderboard")),
+        "non-promotion copy must travel with team roster JSON: {json}"
+    );
+    assert!(
+        json["data"]["rows"]
+            .as_array()
+            .expect("team rows")
+            .iter()
+            .any(|row| row["player_name"] == "Connor McDavid"),
+        "team Signals roster should include player Signals rows: {json}"
+    );
+}
+
+#[tokio::test]
+async fn l1_team_signals_html_renders_discovery_matrix_and_source_authority() {
+    let app = router(WebState::with_repo(repo_with_mcdavid()));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/team/EDM/signals")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    let status = response.status();
+    let body = response_text(response, 512 * 1024).await;
+    assert_eq!(status, StatusCode::OK, "body: {body}");
+    assert!(body.contains("EDM Signals roster"), "body was:\n{body}");
+    assert!(
+        body.contains("Team-scoped Signals discovery matrix; not a leaderboard."),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("Not a Signal leaderboard"),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("data-signals-roster-source-authority=\"PlayerSignalsView stat inputs\""),
+        "body was:\n{body}"
+    );
+    assert!(body.contains("leaderboard_ranking"), "body was:\n{body}");
+    assert!(
+        body.contains("/player/8478402/signals"),
+        "body was:\n{body}"
+    );
+    assert!(body.contains("unavailable"), "body was:\n{body}");
+}
+
+#[tokio::test]
 async fn l1_player_outlook_html_includes_pace_svg_chart() {
     let app = router(WebState::with_repo(repo_with_mcdavid()));
 

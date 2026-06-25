@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::model::{Season, TeamAbbr};
+use crate::season_stats::SeasonType;
 use crate::signal_metrics::{
     SignalEvidenceTier, SignalInput, SignalMetricId, SignalMetricUnit, SignalPolarity,
 };
@@ -62,6 +64,118 @@ pub struct SignalsSourceAuthority {
     pub blocked_claims: Vec<String>,
     pub limitations: Vec<String>,
     pub label: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SignalRosterEvidenceFilter {
+    All,
+    Full,
+    Partial,
+    Missing,
+}
+
+impl SignalRosterEvidenceFilter {
+    pub fn matches(self, view: &PlayerSignalsView) -> bool {
+        match self {
+            Self::All => true,
+            Self::Full => view
+                .rows
+                .iter()
+                .all(|row| row.evidence_tier == SignalEvidenceTier::Full),
+            Self::Partial => view
+                .rows
+                .iter()
+                .any(|row| row.evidence_tier == SignalEvidenceTier::Partial),
+            Self::Missing => view
+                .rows
+                .iter()
+                .any(|row| row.evidence_tier == SignalEvidenceTier::Missing),
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::Full => "full",
+            Self::Partial => "partial",
+            Self::Missing => "missing",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SignalsRosterView {
+    pub schema_note: String,
+    pub team: String,
+    pub season: u32,
+    pub season_type: String,
+    pub rows: Vec<PlayerSignalsView>,
+    pub evidence_filter: SignalRosterEvidenceFilter,
+    pub total_player_count: usize,
+    pub disclosures: Vec<String>,
+    pub non_claims: Vec<String>,
+    pub source_authority: SignalsSourceAuthority,
+}
+
+impl SignalsRosterView {
+    pub fn from_players<'a>(
+        team: TeamAbbr,
+        season: Season,
+        season_type: SeasonType,
+        players: impl IntoIterator<Item = PlayerView<'a>>,
+        evidence_filter: SignalRosterEvidenceFilter,
+    ) -> Self {
+        let all_rows: Vec<PlayerSignalsView> = players
+            .into_iter()
+            .filter(|player| player.team_display() == team.0)
+            .map(|player| {
+                PlayerSignalsView::from_player(
+                    PlayerSignalsView::context_for_player(&player),
+                    &player,
+                )
+            })
+            .collect();
+        let total_player_count = all_rows.len();
+        let mut rows: Vec<PlayerSignalsView> = all_rows
+            .into_iter()
+            .filter(|row| evidence_filter.matches(row))
+            .collect();
+        rows.sort_by(|a, b| {
+            a.player_name
+                .cmp(&b.player_name)
+                .then_with(|| a.player_id.cmp(&b.player_id))
+        });
+
+        Self {
+            schema_note: "Team-scoped Signals discovery matrix; not a leaderboard.".to_string(),
+            team: team.0,
+            season: season.0,
+            season_type: season_type.label().to_string(),
+            rows,
+            evidence_filter,
+            total_player_count,
+            disclosures: vec![
+                "Signals are descriptive derived metrics built from existing stat inputs."
+                    .to_string(),
+                "Unavailable Signals mean required evidence is missing or below threshold, not zero value truth."
+                    .to_string(),
+                "This matrix is an inspection aid; open a player Signals card or Markdown packet for full methodology and limitations."
+                    .to_string(),
+            ],
+            non_claims: vec![
+                "Not a prediction, betting edge, injury signal, deployment recommendation, player-quality grade, or autonomous coaching decision."
+                    .to_string(),
+                "Not a Signal leaderboard, StatId promotion, filter key, or analytics-cache metric family."
+                    .to_string(),
+            ],
+            source_authority: SignalsSourceAuthority::default(),
+        }
+    }
+
+    pub fn filtered_out_count(&self) -> usize {
+        self.total_player_count.saturating_sub(self.rows.len())
+    }
 }
 
 impl Default for SignalsSourceAuthority {

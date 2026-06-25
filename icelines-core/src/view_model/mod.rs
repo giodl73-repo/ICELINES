@@ -155,7 +155,9 @@ pub use scoring_pace::{
     PlayerScoringPaceMetric, PlayerScoringPaceRow, PlayerScoringPaceSampleStatus,
     PlayerScoringPaceView,
 };
-pub use signals::{PlayerSignalRow, PlayerSignalsView};
+pub use signals::{
+    PlayerSignalRow, PlayerSignalsView, SignalRosterEvidenceFilter, SignalsRosterView,
+};
 pub use snapshot::{
     SnapshotEntryInput, SnapshotMutationIntent, SnapshotMutationOperation, SnapshotRow,
     SnapshotView,

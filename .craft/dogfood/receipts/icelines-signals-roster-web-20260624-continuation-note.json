@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-signals-roster-web-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed WP-010 dogfood pulse after team-scoped Web Signals roster discovery used shared core roster ViewModel and preserved non-leaderboard/non-promotion boundaries.",
+  "recordedUnixMillis": 1782348868474,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "shared-roster-web",
+    "latestStepNote": "Extracted shared SignalsRosterView, reused it in CLI roster output, and exposed team-scoped Web HTML/JSON roster discovery without leaderboard promotion.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-signals-roster-web-20260624-step-shared-roster-web.json",
+    "recentSteps": [
+      {
+        "label": "shared-roster-web",
+        "note": "Extracted shared SignalsRosterView, reused it in CLI roster output, and exposed team-scoped Web HTML/JSON roster discovery without leaderboard promotion.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-signals-roster-web-20260624-step-shared-roster-web.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
