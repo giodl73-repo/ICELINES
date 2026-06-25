@@ -57,7 +57,16 @@ struct AnalyticsCacheReportPayload {
     status: &'static str,
     cache_key: String,
     consumer: AnalyticsCacheConsumerKind,
+    selected_cache_evidence_routes: Vec<AnalyticsCacheEvidenceRouteHandoff>,
+    selected_cache_evidence_scope: &'static str,
     report: AnalyticsCacheConsumerView,
+}
+
+#[derive(Debug, Serialize)]
+struct AnalyticsCacheEvidenceRouteHandoff {
+    label: &'static str,
+    html_path: &'static str,
+    json_path: &'static str,
 }
 
 #[derive(Debug, Serialize)]
@@ -777,8 +786,56 @@ fn load_analytics_cache_report(
         status: "ready",
         cache_key,
         consumer,
+        selected_cache_evidence_routes: selected_cache_evidence_route_handoffs(),
+        selected_cache_evidence_scope:
+            "prepared analytics cache records only; does not compute live analytics, fetch missing cache records, infer predictions, or create autonomous coaching actions",
         report: AnalyticsCacheConsumerView::from_envelope(&envelope, read.disposition),
     })
+}
+
+fn selected_cache_evidence_route_handoffs() -> Vec<AnalyticsCacheEvidenceRouteHandoff> {
+    vec![
+        AnalyticsCacheEvidenceRouteHandoff {
+            label: "Coach dashboard evidence",
+            html_path: "/coach/dashboard",
+            json_path: COACH_DASHBOARD_JSON_PATH,
+        },
+        AnalyticsCacheEvidenceRouteHandoff {
+            label: "Opponent scout evidence",
+            html_path: "/scout/opponent",
+            json_path: OPPONENT_SCOUT_JSON_PATH,
+        },
+        AnalyticsCacheEvidenceRouteHandoff {
+            label: "Player evidence card",
+            html_path: "/player/evidence-card",
+            json_path: PLAYER_EVIDENCE_CARD_JSON_PATH,
+        },
+        AnalyticsCacheEvidenceRouteHandoff {
+            label: "Line combination explorer",
+            html_path: "/lines/explorer",
+            json_path: LINE_COMBINATION_EXPLORER_JSON_PATH,
+        },
+        AnalyticsCacheEvidenceRouteHandoff {
+            label: "Goalie readiness evidence",
+            html_path: "/goalies/readiness",
+            json_path: GOALIE_READINESS_JSON_PATH,
+        },
+        AnalyticsCacheEvidenceRouteHandoff {
+            label: "Practice focus evidence",
+            html_path: "/practice/focus",
+            json_path: PRACTICE_FOCUS_JSON_PATH,
+        },
+        AnalyticsCacheEvidenceRouteHandoff {
+            label: "Postgame review evidence",
+            html_path: "/postgame/review",
+            json_path: POSTGAME_REVIEW_JSON_PATH,
+        },
+        AnalyticsCacheEvidenceRouteHandoff {
+            label: "Agent evidence summary",
+            html_path: "/agents/evidence",
+            json_path: AGENT_EVIDENCE_JSON_PATH,
+        },
+    ]
 }
 
 fn normalized_cache_key(

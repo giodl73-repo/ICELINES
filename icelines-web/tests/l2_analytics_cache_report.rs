@@ -275,6 +275,41 @@ fn assert_cache_evidence_route_handoffs(body: &str) {
     assert!(body.contains(r#"href="/agents/evidence""#), "{body}");
 }
 
+fn assert_cache_json_evidence_route_handoffs(json: &serde_json::Value) {
+    assert_eq!(
+        json["selected_cache_evidence_scope"],
+        "prepared analytics cache records only; does not compute live analytics, fetch missing cache records, infer predictions, or create autonomous coaching actions"
+    );
+    let routes = json["selected_cache_evidence_routes"]
+        .as_array()
+        .expect("ready cache JSON carries selected evidence route handoffs");
+    assert_eq!(routes.len(), 8, "{json}");
+    assert!(
+        routes
+            .iter()
+            .any(|route| route["label"] == "Coach dashboard evidence"
+                && route["html_path"] == "/coach/dashboard"
+                && route["json_path"] == "/api/v1/coach/dashboard"),
+        "{json}"
+    );
+    assert!(
+        routes
+            .iter()
+            .any(|route| route["label"] == "Opponent scout evidence"
+                && route["html_path"] == "/scout/opponent"
+                && route["json_path"] == "/api/v1/scout/opponent"),
+        "{json}"
+    );
+    assert!(
+        routes
+            .iter()
+            .any(|route| route["label"] == "Agent evidence summary"
+                && route["html_path"] == "/agents/evidence"
+                && route["json_path"] == "/api/v1/agents/evidence"),
+        "{json}"
+    );
+}
+
 fn assert_cache_health_interpretation(body: &str) {
     assert!(body.contains("Cache health interpretation"), "{body}");
     assert!(body.contains("record that was read"), "{body}");
@@ -436,6 +471,7 @@ async fn l2_wp009_coach_dashboard_renders_default_cache_without_generic_query_co
     assert_eq!(json["consumer"], "coach_dashboard");
     assert_eq!(json["report"]["title"], "Coach Game-Day Dashboard");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
+    assert_cache_json_evidence_route_handoffs(&json);
 }
 
 #[tokio::test]
