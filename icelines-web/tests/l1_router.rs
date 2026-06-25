@@ -6431,6 +6431,10 @@ async fn l1_team_html_includes_skater_pts82_svg_chart() {
     assert_eq!(response.status(), StatusCode::OK);
 
     let body = response_text(response, 1024 * 1024).await;
+    assert!(
+        body.contains(r#"<a href="/team/EDM/signals">Signals roster</a>"#),
+        "team page should link to the team-scoped Signals discovery roster without promotion copy; body was:\n{body}"
+    );
     assert!(body.contains("team-skater-chart"), "body was:\n{body}");
     assert!(body.contains("Roster Pts/82 chart"), "body was:\n{body}");
     assert!(body.contains("<svg"), "body was:\n{body}");

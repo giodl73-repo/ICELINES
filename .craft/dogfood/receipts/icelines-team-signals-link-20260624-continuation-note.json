@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-team-signals-link-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed WP-010 discoverability pulse: team page now links to the team-scoped Signals roster while preserving non-leaderboard/non-promotion boundaries.",
+  "recordedUnixMillis": 1782351493079,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "implementation",
+    "latestStepNote": "Linked /team/:abbrev to /team/:abbrev/signals with neutral Signals roster copy and pinned the handoff in the team HTML router test.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-team-signals-link-20260624-step-implementation.json",
+    "recentSteps": [
+      {
+        "label": "implementation",
+        "note": "Linked /team/:abbrev to /team/:abbrev/signals with neutral Signals roster copy and pinned the handoff in the team HTML router test.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-team-signals-link-20260624-step-implementation.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
