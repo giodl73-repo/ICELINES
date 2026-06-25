@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p12-agent-evidence-boundary",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 12 closed: agent evidence JSON now discloses prepared-cache-only consumer boundary.",
+  "recordedUnixMillis": 1782364231254,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "agent-boundary",
+    "latestStepNote": "Added agent evidence prepared-cache-only consumer_boundary in JSON, tests, and operator docs; removed stale fallback after the match became exhaustive.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p12-agent-evidence-boundary-step-agent-boundary.json",
+    "recentSteps": [
+      {
+        "label": "agent-boundary",
+        "note": "Added agent evidence prepared-cache-only consumer_boundary in JSON, tests, and operator docs; removed stale fallback after the match became exhaustive.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p12-agent-evidence-boundary-step-agent-boundary.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

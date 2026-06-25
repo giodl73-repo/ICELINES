@@ -1325,6 +1325,10 @@ async fn l2_wp009_agent_evidence_renders_cache_as_agent_consumer_view() {
     assert_eq!(json["status"], "ready");
     assert_eq!(json["cache_key"], "agent_evidence:20252026:regular");
     assert_eq!(json["consumer"], "agent_evidence");
+    assert_eq!(
+        json["consumer_boundary"],
+        "Agent evidence reads prepared analytics-cache evidence only; it does not execute recommendations, take autonomous actions, call agents, compute live analytics, make predictions, or fetch cache records."
+    );
     assert_eq!(json["report"]["title"], "Agent Evidence Summary");
     assert_eq!(json["report"]["consumer"], "agent_evidence");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");

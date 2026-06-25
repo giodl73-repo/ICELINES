@@ -833,6 +833,11 @@ conclusions, adjustment plans, blame assignments, live analytics, predictions,
 or cache fetches; its `consumer_boundary` field repeats that contract for
 machine readers.
 
+Agent evidence JSON is prepared-cache evidence only. It does not execute
+recommendations, take autonomous actions, call agents, compute live analytics,
+make predictions, or fetch cache records; its `consumer_boundary` field repeats
+that contract for machine readers.
+
 Additional selected cache-backed evidence routes include `/lines/explorer`,
 `/goalies/readiness`, `/practice/focus`, `/postgame/review`,
 `/postgame/adjustments`, and `/agents/evidence`, each with a matching
