@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p15-home-evidence-map",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 15 closed: home page exposes inspection-first evidence map handoffs.",
+  "recordedUnixMillis": 1782364732044,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "home-evidence-map",
+    "latestStepNote": "Added home Evidence map section linking prepared cache and uncached Signals handoffs with no-live/no-prediction/no-autonomous-action copy.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p15-home-evidence-map-step-home-evidence-map.json",
+    "recentSteps": [
+      {
+        "label": "home-evidence-map",
+        "note": "Added home Evidence map section linking prepared cache and uncached Signals handoffs with no-live/no-prediction/no-autonomous-action copy.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p15-home-evidence-map-step-home-evidence-map.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

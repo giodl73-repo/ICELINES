@@ -828,6 +828,17 @@ async fn l1_get_root_returns_200_html() {
             && body.contains("no live fetch or prediction claim"),
         "home page should expose the analytics cache evidence route without live-fetch or prediction copy"
     );
+    assert!(body.contains("Evidence map"), "{body}");
+    assert!(body.contains(r#"href="/coach/dashboard""#), "{body}");
+    assert!(body.contains(r#"href="/scout/opponent""#), "{body}");
+    assert!(body.contains(r#"href="/team/NYR/signals""#), "{body}");
+    assert!(
+        body.contains("uncached Signals evidence-filter handoff"),
+        "{body}"
+    );
+    assert!(body.contains("not fetch live data"), "{body}");
+    assert!(body.contains("make predictions"), "{body}");
+    assert!(body.contains("autonomous coaching"), "{body}");
     assert!(
         !body.contains("Fantasy</a> <small>(soon"),
         "home page must not describe the mounted fantasy surface as soon/deferred"
