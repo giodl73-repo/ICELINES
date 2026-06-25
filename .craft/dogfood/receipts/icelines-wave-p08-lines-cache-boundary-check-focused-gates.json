@@ -1,0 +1,23 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p08-lines-cache-boundary",
+  "checkLabel": "focused-gates",
+  "command": "cargo fmt --check; cargo test -p icelines-web --test l2_analytics_cache_report --quiet; cargo test -p icelines-web --test ted_lindsay_route_inventory --quiet; cargo clippy -p icelines-web --lib --tests -- -D warnings; proof check docs/vtrace --errors-only; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "Focused pulse 08 gates passed after adding line combination boundary disclosure.",
+  "workspaceDirty": false,
+  "changedFiles": [],
+  "recordedUnixMillis": 1782363710349,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

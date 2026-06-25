@@ -1,0 +1,51 @@
+{
+  "receiptTier": "dogfood-git-commit-rules-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p08-lines-cache-boundary",
+  "gitRepository": true,
+  "actualEmail": "giodl73@gmail.com",
+  "expectedEmail": null,
+  "emailMatches": null,
+  "actualName": "giodl73-repo",
+  "expectedName": null,
+  "nameMatches": null,
+  "requireClean": true,
+  "worktreeDirty": true,
+  "receiptArtifactsDirty": true,
+  "productWorktreeDirty": true,
+  "dirtyFiles": [
+    "COMMANDS.md",
+    "icelines-web\\src\\handlers\\analytics_cache_report.rs",
+    "icelines-web\\tests\\l2_analytics_cache_report.rs",
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-check-focused-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-open.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-step-craft-runner-selected.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-step-lines-cache-boundary.json"
+  ],
+  "receiptArtifactFiles": [
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-check-focused-gates.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-gate.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-open.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-step-craft-runner-selected.json",
+    ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-step-lines-cache-boundary.json"
+  ],
+  "productDirtyFiles": [
+    "COMMANDS.md",
+    "icelines-web\\src\\handlers\\analytics_cache_report.rs",
+    "icelines-web\\tests\\l2_analytics_cache_report.rs"
+  ],
+  "note": "Local commit only; include required Co-authored-by trailer; no push.",
+  "readyToCommit": false,
+  "recordedUnixMillis": 1782363730005,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

@@ -1,0 +1,36 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p08-lines-cache-boundary",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 08 closed: line combination JSON and operator guide now disclose prepared-cache-only boundary; focused gates passed.",
+  "recordedUnixMillis": 1782363730011,
+  "progress": {
+    "stepCount": 2,
+    "latestStepLabel": "lines-cache-boundary",
+    "latestStepNote": "Added ready line combination JSON consumer_boundary and operator-guide copy preserving prepared-cache-only, no chemistry/deployment/live-fetch claims.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-step-lines-cache-boundary.json",
+    "recentSteps": [
+      {
+        "label": "lines-cache-boundary",
+        "note": "Added ready line combination JSON consumer_boundary and operator-guide copy preserving prepared-cache-only, no chemistry/deployment/live-fetch claims.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-step-lines-cache-boundary.json"
+      },
+      {
+        "label": "craft-runner-selected",
+        "note": "Continuing the Craft-selected pulse 08 from chat run-wave: lines cache boundary.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p08-lines-cache-boundary-step-craft-runner-selected.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

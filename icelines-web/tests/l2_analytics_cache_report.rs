@@ -794,6 +794,10 @@ async fn l2_wp009_line_combination_explorer_renders_cache_as_line_consumer_view(
         "line_combination_explorer:20252026:regular"
     );
     assert_eq!(json["consumer"], "line_combination_explorer");
+    assert_eq!(
+        json["consumer_boundary"],
+        "Line combination explorer reads prepared analytics-cache evidence only; it does not infer line chemistry, issue deployment recommendations, compute live analytics, make predictions, or fetch cache records."
+    );
     assert_eq!(json["report"]["title"], "Line Combination Explorer");
     assert_eq!(json["report"]["consumer"], "line_combination_explorer");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");
