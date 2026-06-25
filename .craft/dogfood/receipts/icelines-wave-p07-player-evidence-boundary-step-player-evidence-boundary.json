@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p07-player-evidence-boundary",
+  "noteKind": "player-evidence-boundary",
+  "note": "Added ready player evidence JSON consumer_boundary and operator-guide copy preserving prepared-cache-only, no grade/recommendation/deployment/live-fetch claims.",
+  "recordedUnixMillis": 1782363511025,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

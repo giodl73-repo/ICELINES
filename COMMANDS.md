@@ -808,6 +808,11 @@ scouting recommendations, line-matchup decisions, live analytics, predictions,
 or cache fetches; its `consumer_boundary` field repeats that contract for
 machine readers.
 
+Player evidence card JSON is also prepared-cache evidence only. It does not
+issue player grades, roster recommendations, deployment decisions, live
+analytics, predictions, or cache fetches; its `consumer_boundary` field repeats
+that contract for machine readers.
+
 Additional selected cache-backed evidence routes include `/lines/explorer`,
 `/goalies/readiness`, `/practice/focus`, `/postgame/review`,
 `/postgame/adjustments`, and `/agents/evidence`, each with a matching

@@ -679,6 +679,10 @@ async fn l2_wp009_player_evidence_card_renders_cache_as_player_consumer_view() {
     assert_eq!(json["status"], "ready");
     assert_eq!(json["cache_key"], "player_evidence_card:20252026:regular");
     assert_eq!(json["consumer"], "player_evidence_card");
+    assert_eq!(
+        json["consumer_boundary"],
+        "Player evidence card reads prepared analytics-cache evidence only; it does not issue player grades, roster recommendations, deployment decisions, live analytics, predictions, or cache fetches."
+    );
     assert_eq!(json["report"]["title"], "Player Evidence Card");
     assert_eq!(json["report"]["consumer"], "player_evidence_card");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");

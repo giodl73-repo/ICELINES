@@ -1,0 +1,36 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p07-player-evidence-boundary",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 07 closed: player evidence JSON and operator guide now disclose prepared-cache-only boundary; focused gates passed.",
+  "recordedUnixMillis": 1782363528440,
+  "progress": {
+    "stepCount": 2,
+    "latestStepLabel": "player-evidence-boundary",
+    "latestStepNote": "Added ready player evidence JSON consumer_boundary and operator-guide copy preserving prepared-cache-only, no grade/recommendation/deployment/live-fetch claims.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p07-player-evidence-boundary-step-player-evidence-boundary.json",
+    "recentSteps": [
+      {
+        "label": "player-evidence-boundary",
+        "note": "Added ready player evidence JSON consumer_boundary and operator-guide copy preserving prepared-cache-only, no grade/recommendation/deployment/live-fetch claims.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p07-player-evidence-boundary-step-player-evidence-boundary.json"
+      },
+      {
+        "label": "craft-runner-selected",
+        "note": "Continuing the Craft-selected pulse 07 from chat run-wave: player evidence boundary.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p07-player-evidence-boundary-step-craft-runner-selected.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
