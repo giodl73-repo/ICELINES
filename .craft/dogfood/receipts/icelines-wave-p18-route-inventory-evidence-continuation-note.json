@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p18-route-inventory-evidence",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 18 closed: evidence-map handoffs are route-inventory backed.",
+  "recordedUnixMillis": 1782365079275,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "route-inventory-evidence",
+    "latestStepNote": "Added route inventory coverage for player awards/streak routes and a guard that evidence-map handoffs remain backed by Ted Lindsay inventory.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p18-route-inventory-evidence-step-route-inventory-evidence.json",
+    "recentSteps": [
+      {
+        "label": "route-inventory-evidence",
+        "note": "Added route inventory coverage for player awards/streak routes and a guard that evidence-map handoffs remain backed by Ted Lindsay inventory.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p18-route-inventory-evidence-step-route-inventory-evidence.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

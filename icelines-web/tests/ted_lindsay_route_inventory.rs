@@ -17,6 +17,10 @@ const ROUTER_ROUTES: &[&str] = &[
     "GET /api/v1/player/:id/scoring",
     "GET /player/:id/signals",
     "GET /api/v1/player/:id/signals",
+    "GET /player/:id/awards",
+    "GET /api/v1/player/:id/awards",
+    "GET /player/:id/streaks",
+    "GET /api/v1/player/:id/streaks",
     "GET /scouting/:id",
     "GET /api/v1/scouting/:id",
     "GET /compare",
@@ -138,6 +142,21 @@ const DASHBOARD_PANEL_READY_WORKSPACES: &[&str] = &[
     "/docs",
 ];
 
+const EVIDENCE_MAP_ROUTE_HANDOFFS: &[&str] = &[
+    "GET /reports/analytics-cache",
+    "GET /coach/dashboard",
+    "GET /scout/opponent",
+    "GET /team/:abbrev/signals",
+    "GET /team/:abbrev/scoring",
+    "GET /team/:abbrev/streaks",
+    "GET /team/:abbrev/season",
+    "GET /player/:id/signals",
+    "GET /records/player/:id",
+    "GET /player/:id/awards",
+    "GET /player/:id/streaks",
+    "GET /scouting/:id",
+];
+
 #[test]
 fn every_router_route_is_in_surface_parity_matrix() {
     let matrix = include_str!("../../design/specs/surface-parity.md");
@@ -178,5 +197,19 @@ fn route_inventory_has_no_duplicate_entries() {
         sorted.len(),
         ROUTER_ROUTES.len(),
         "Ted Lindsay route inventory contains duplicate route entries"
+    );
+}
+
+#[test]
+fn evidence_map_handoffs_are_route_inventory_backed() {
+    let missing: Vec<&str> = EVIDENCE_MAP_ROUTE_HANDOFFS
+        .iter()
+        .copied()
+        .filter(|route| !ROUTER_ROUTES.contains(route))
+        .collect();
+
+    assert!(
+        missing.is_empty(),
+        "evidence map route handoff(s) missing from Ted Lindsay inventory: {missing:?}"
     );
 }
