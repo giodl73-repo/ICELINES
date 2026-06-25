@@ -823,6 +823,12 @@ async fn l1_get_root_returns_200_html() {
         "home page should advertise the live fantasy read/product surface"
     );
     assert!(
+        body.contains(r#"href="/reports/analytics-cache""#)
+            && body.contains("prepared-cache evidence only")
+            && body.contains("no live fetch or prediction claim"),
+        "home page should expose the analytics cache evidence route without live-fetch or prediction copy"
+    );
+    assert!(
         !body.contains("Fantasy</a> <small>(soon"),
         "home page must not describe the mounted fantasy surface as soon/deferred"
     );

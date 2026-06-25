@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-analytics-cache-home-link-20260624",
+  "noteKind": "implementation",
+  "note": "Linked the home page More section to /reports/analytics-cache with prepared-cache/no-live/no-prediction copy, and pinned the handoff in the root HTML route test.",
+  "recordedUnixMillis": 1782355374373,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
