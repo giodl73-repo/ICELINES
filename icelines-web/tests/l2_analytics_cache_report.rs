@@ -901,6 +901,10 @@ async fn l2_wp009_goalie_readiness_renders_cache_as_goalie_consumer_view() {
     assert_eq!(json["status"], "ready");
     assert_eq!(json["cache_key"], "goalie_readiness:20252026:regular");
     assert_eq!(json["consumer"], "goalie_readiness");
+    assert_eq!(
+        json["consumer_boundary"],
+        "Goalie readiness reads prepared analytics-cache evidence only; it does not issue readiness recommendations, workload decisions, live analytics, predictions, or cache fetches."
+    );
     assert_eq!(json["report"]["title"], "Goalie Readiness & Workload View");
     assert_eq!(json["report"]["consumer"], "goalie_readiness");
     assert_eq!(json["report"]["metrics"][0]["cell"]["label"], "xG Share");

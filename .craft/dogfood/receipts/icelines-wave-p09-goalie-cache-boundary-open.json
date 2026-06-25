@@ -1,0 +1,20 @@
+{
+  "receiptTier": "dogfood-chat-open-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p09-goalie-cache-boundary",
+  "intent": "Pulse 09 goalie cache boundary",
+  "lane": "rust",
+  "artifactMode": "compact",
+  "verboseArtifactsCommand": "craft chat open --workspace-root \\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines --session icelines-wave-p09-goalie-cache-boundary --intent <TEXT> --lane rust --verbose-artifacts",
+  "recordedUnixMillis": 1782363749115,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

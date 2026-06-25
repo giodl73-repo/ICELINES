@@ -809,6 +809,9 @@ fn analytics_cache_consumer_boundary(consumer: &AnalyticsCacheConsumerKind) -> &
         AnalyticsCacheConsumerKind::LineCombinationExplorer => {
             "Line combination explorer reads prepared analytics-cache evidence only; it does not infer line chemistry, issue deployment recommendations, compute live analytics, make predictions, or fetch cache records."
         }
+        AnalyticsCacheConsumerKind::GoalieReadiness => {
+            "Goalie readiness reads prepared analytics-cache evidence only; it does not issue readiness recommendations, workload decisions, live analytics, predictions, or cache fetches."
+        }
         _ => {
             "Selected analytics-cache evidence surface reads prepared cache records only; it does not compute live analytics, infer predictions, or create autonomous actions."
         }
