@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-cache-html-nonclaims-20260624",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed WP-009 dogfood pulse after selected unavailable HTML pages rendered the same no-live/no-inference/no-fetch non-claim list as JSON twins.",
+  "recordedUnixMillis": 1782347197145,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "html-nonclaims",
+    "latestStepNote": "Aligned unavailable analytics-cache HTML non-claims with JSON twins and updated WP-009 operator/VTRACE copy.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-cache-html-nonclaims-20260624-step-html-nonclaims.json",
+    "recentSteps": [
+      {
+        "label": "html-nonclaims",
+        "note": "Aligned unavailable analytics-cache HTML non-claims with JSON twins and updated WP-009 operator/VTRACE copy.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-cache-html-nonclaims-20260624-step-html-nonclaims.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

@@ -888,7 +888,10 @@ fn unavailable_template(
         warnings: Vec::new(),
         limitations: Vec::new(),
         disclosures: Vec::new(),
-        non_claims: vec!["This page does not compute live analytics or infer betting, injury, deployment, or linemate meaning.".to_string()],
+        non_claims: UNAVAILABLE_JSON_NON_CLAIMS
+            .iter()
+            .map(|claim| (*claim).to_string())
+            .collect(),
     }
 }
 

@@ -767,7 +767,8 @@ envelopes for selected future hockey decision surfaces. They do not compute live
 analytics, fetch missing data, or claim prediction, betting, injury, line
 chemistry causality, or autonomous coaching authority. Missing cache records
 render an explicit unavailable state instead of synthesizing results.
-Unavailable JSON responses include a `non_claims[]` array that repeats the
+Unavailable HTML pages now render the same Non-claims list as their JSON twins,
+and unavailable JSON responses include a `non_claims[]` array that repeats the
 route boundary for operators: no live analytics are computed, no prediction /
 betting / injury / deployment / linemate meaning is inferred, and missing cache
 records are not created or fetched.

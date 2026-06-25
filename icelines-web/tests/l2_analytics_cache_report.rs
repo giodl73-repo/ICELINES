@@ -240,6 +240,21 @@ fn assert_unavailable_json_non_claims(json: &serde_json::Value) {
     );
 }
 
+fn assert_unavailable_html_non_claims(body: &str) {
+    assert!(body.contains("Non-claims"), "{body}");
+    assert!(body.contains("Does not compute live analytics."), "{body}");
+    assert!(
+        body.contains(
+            "Does not infer prediction, betting, injury, deployment, or linemate meaning."
+        ),
+        "{body}"
+    );
+    assert!(
+        body.contains("Does not create or fetch missing cache records."),
+        "{body}"
+    );
+}
+
 #[tokio::test]
 async fn l2_wp009_analytics_cache_report_missing_cache_is_explicitly_unavailable() {
     let _guard = env_lock().await;
@@ -263,7 +278,7 @@ async fn l2_wp009_analytics_cache_report_missing_cache_is_explicitly_unavailable
     let body = response_text(response).await;
     assert!(body.contains("Report unavailable"));
     assert!(body.contains("analytics cache entry is missing: missing:cache"));
-    assert!(body.contains("does not compute live analytics"));
+    assert_unavailable_html_non_claims(&body);
 
     let response = app
         .oneshot(
@@ -313,6 +328,7 @@ async fn l2_wp009_coach_dashboard_defaults_to_active_cache_and_explicit_unavaila
     assert!(body.contains("Report unavailable"));
     assert!(body.contains("coach_dashboard:20252026:regular"));
     assert!(body.contains("analytics cache entry is missing: coach_dashboard:20252026:regular"));
+    assert_unavailable_html_non_claims(&body);
 
     let response = app
         .oneshot(
