@@ -2632,6 +2632,27 @@ async fn l1_player_html_links_signals_surface() {
         body.contains("/player/8478402/signals"),
         "player card should link to the Signals surface:\n{body}"
     );
+    assert!(body.contains("Player evidence map"), "{body}");
+    assert!(
+        body.contains("Inspection-first handoffs for Connor McDavid evidence"),
+        "{body}"
+    );
+    assert!(
+        body.contains("do not create predictions")
+            && body.contains("grades")
+            && body.contains("deployment advice")
+            && body.contains("injury claims")
+            && body.contains("autonomous coaching actions"),
+        "{body}"
+    );
+    assert!(
+        body.contains(r#"href="/records/player/8478402""#)
+            && body.contains(r#"href="/player/8478402/awards""#)
+            && body.contains(r#"href="/player/8478402/streaks""#)
+            && body.contains(r#"href="/scouting/8478402""#)
+            && body.contains("uncached descriptive signal evidence"),
+        "{body}"
+    );
 }
 
 #[tokio::test]

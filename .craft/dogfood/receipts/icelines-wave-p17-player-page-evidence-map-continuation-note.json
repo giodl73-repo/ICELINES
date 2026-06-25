@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p17-player-page-evidence-map",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 17 closed: player page exposes inspection-first evidence map handoffs.",
+  "recordedUnixMillis": 1782364936471,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "player-evidence-map",
+    "latestStepNote": "Added player Evidence map section with Signals, records, awards, streaks, and scouting handoffs plus no-prediction/no-grade/no-deployment/no-injury/no-autonomous-action copy.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p17-player-page-evidence-map-step-player-evidence-map.json",
+    "recentSteps": [
+      {
+        "label": "player-evidence-map",
+        "note": "Added player Evidence map section with Signals, records, awards, streaks, and scouting handoffs plus no-prediction/no-grade/no-deployment/no-injury/no-autonomous-action copy.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p17-player-page-evidence-map-step-player-evidence-map.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

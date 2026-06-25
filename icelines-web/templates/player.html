@@ -67,6 +67,22 @@
 Source: IceLines · /player/{{ nhl_id }}
 </script>
 
+<section class="page-section" aria-label="Player evidence map">
+    <h2 class="section-heading">Player evidence map</h2>
+    <p>
+        Inspection-first handoffs for {{ full_name }} evidence. These links
+        preserve descriptive evidence and do not create predictions, grades,
+        deployment advice, injury claims, or autonomous coaching actions.
+    </p>
+    <ul>
+        <li><a href="/player/{{ nhl_id }}/signals">Signals</a> — uncached descriptive signal evidence</li>
+        <li><a href="/records/player/{{ nhl_id }}">Records</a> — historical record evidence</li>
+        <li><a href="/player/{{ nhl_id }}/awards">Awards</a> — awards evidence</li>
+        <li><a href="/player/{{ nhl_id }}/streaks">Streaks</a> — descriptive streak evidence</li>
+        <li><a href="/scouting/{{ nhl_id }}">Scouting</a> — scouting notes evidence</li>
+    </ul>
+</section>
+
 <div class="player-identity">
     {% match headshot_url %}
         {% when Some with (url) %}
