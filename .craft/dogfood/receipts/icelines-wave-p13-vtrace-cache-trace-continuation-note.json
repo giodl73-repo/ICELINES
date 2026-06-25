@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p13-vtrace-cache-trace",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 13 closed: cache-route consumer_boundary evidence is traced in VTRACE.",
+  "recordedUnixMillis": 1782364407973,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "cache-vtrace-trace",
+    "latestStepNote": "Traced selected cache-route consumer_boundary JSON contracts through WP-009, IF-CACHE, VAL-011, and EVID-WP009-CACHE-WEB-L2.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p13-vtrace-cache-trace-step-cache-vtrace-trace.json",
+    "recentSteps": [
+      {
+        "label": "cache-vtrace-trace",
+        "note": "Traced selected cache-route consumer_boundary JSON contracts through WP-009, IF-CACHE, VAL-011, and EVID-WP009-CACHE-WEB-L2.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p13-vtrace-cache-trace-step-cache-vtrace-trace.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

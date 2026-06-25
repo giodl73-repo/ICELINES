@@ -789,7 +789,7 @@ Verification plan:
 |---|---|---|---|
 | L0 | yes | Schema/contract fixture tests for cache records, invalidation keys, version compatibility, and consumer envelopes. | partial; pulses 02-04 passed selected core schema serde, version compatibility, invalidation-key/methodology/consumer requirements, consumer-envelope fixtures, and internal consumer-ViewModel projection |
 | L1 | yes | Tempdir/source-state fixtures for missing/stale/partial/schema/unsupported/no-live paths plus affected clippy/format tests if code is touched. | partial; pulse 03 adds a strict `icelines-fetch` cache store/read path with tempdir missing, stale/partial/missing-source preservation, schema/metric refusal, invalidation, and rollback fixtures |
-| L2 | yes | At least one consumer demo or snapshot showing cache-backed decision-support envelope and non-claim disclosure. | partial; pulses 02-14 passed in-core, store-backed coach-dashboard envelope, internal dashboard-style ViewModel proofs, first named-cache Web report, first coach dashboard route, first opponent scout route, first player evidence-card route, first line-combination explorer route, first goalie readiness route, first practice focus route, first postgame review route, first postgame adjustment-review route, and first agent evidence summary route evidence; broader practice/postgame/agent workflows are not claimed |
+| L2 | yes | At least one consumer demo or snapshot showing cache-backed decision-support envelope and non-claim disclosure. | partial; pulses 02-14 passed in-core, store-backed coach-dashboard envelope, internal dashboard-style ViewModel proofs, first named-cache Web report, first coach dashboard route, first opponent scout route, first player evidence-card route, first line-combination explorer route, first goalie readiness route, first practice focus route, first postgame review route, first postgame adjustment-review route, first agent evidence summary route evidence, and selected route-specific `consumer_boundary` JSON contract assertions; broader practice/postgame/agent workflows are not claimed |
 
 V closure: partial. The initial core schema/source/consumer contract slice exists
 in `icelines-core::analytics_cache`, and the first strict JSON store/read path
@@ -799,7 +799,8 @@ ViewModel fixture exists in
 report, first coach dashboard route, first opponent scout route, first player
 evidence-card route, first line-combination explorer route, first goalie
 readiness route, first practice focus route, first postgame review route, first
-postgame adjustment-review route, and first agent evidence summary route exist in
+postgame adjustment-review route, first agent evidence summary route, and
+selected route-specific `consumer_boundary` JSON contract assertions exist in
 `icelines-web::handlers::analytics_cache_report`. Downstream broader
 practice/postgame/agent workflows and broader product-copy reviews remain
 pending.
