@@ -1,0 +1,23 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p14-vtrace-signals-trace",
+  "checkLabel": "doc-gates",
+  "command": "proof check docs\\vtrace --errors-only; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "VTRACE proof and diff whitespace gates passed for pulse 14.",
+  "workspaceDirty": false,
+  "changedFiles": [],
+  "recordedUnixMillis": 1782364498505,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

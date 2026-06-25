@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p14-vtrace-signals-trace",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 14 closed: Signals evidence-filter guardrails are traced in VTRACE.",
+  "recordedUnixMillis": 1782364498795,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "signals-vtrace-trace",
+    "latestStepNote": "Traced Signals evidence-filter recovery and operator-copy guardrails through REQ-SIGNAL, WP-010, IF-SIGNAL, VAL-012, and EVID-VAL-012.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p14-vtrace-signals-trace-step-signals-vtrace-trace.json",
+    "recentSteps": [
+      {
+        "label": "signals-vtrace-trace",
+        "note": "Traced Signals evidence-filter recovery and operator-copy guardrails through REQ-SIGNAL, WP-010, IF-SIGNAL, VAL-012, and EVID-VAL-012.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p14-vtrace-signals-trace-step-signals-vtrace-trace.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
