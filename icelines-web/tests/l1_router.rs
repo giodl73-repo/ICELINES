@@ -6538,6 +6538,25 @@ async fn l1_team_html_includes_skater_pts82_svg_chart() {
         body.contains(r#"<a href="/team/EDM/signals">Signals roster</a>"#),
         "team page should link to the team-scoped Signals discovery roster without promotion copy; body was:\n{body}"
     );
+    assert!(body.contains("Team evidence map"), "body was:\n{body}");
+    assert!(
+        body.contains("Inspection-first handoffs for EDM evidence"),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains("do not create predictions")
+            && body.contains("deployment advice")
+            && body.contains("cache claims")
+            && body.contains("autonomous coaching actions"),
+        "body was:\n{body}"
+    );
+    assert!(
+        body.contains(r#"href="/team/EDM/scoring""#)
+            && body.contains(r#"href="/team/EDM/streaks""#)
+            && body.contains(r#"href="/team/EDM/season""#)
+            && body.contains("uncached evidence-filter discovery"),
+        "body was:\n{body}"
+    );
     assert!(body.contains("team-skater-chart"), "body was:\n{body}");
     assert!(body.contains("Roster Pts/82 chart"), "body was:\n{body}");
     assert!(body.contains("<svg"), "body was:\n{body}");

@@ -1,0 +1,18 @@
+{
+  "receiptTier": "dogfood-chat-step-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p16-team-page-evidence-map",
+  "noteKind": "team-evidence-map",
+  "note": "Added team Evidence map section with team-scoped Signals, scoring, streak, and season evidence handoffs plus no-prediction/no-deployment/no-cache/no-autonomous-action copy.",
+  "recordedUnixMillis": 1782364837367,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

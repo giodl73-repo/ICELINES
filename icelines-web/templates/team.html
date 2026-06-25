@@ -38,6 +38,21 @@
     </form>
 </header>
 
+<section class="page-section" aria-label="Team evidence map">
+    <h2 class="section-heading">Team evidence map</h2>
+    <p>
+        Inspection-first handoffs for {{ team_abbrev }} evidence. These links
+        preserve prepared or bundled evidence and do not create predictions,
+        deployment advice, cache claims, or autonomous coaching actions.
+    </p>
+    <ul>
+        <li><a href="/team/{{ team_abbrev }}/signals">Signals roster</a> — uncached evidence-filter discovery</li>
+        <li><a href="/team/{{ team_abbrev }}/scoring">Scoring profile</a> — descriptive scoring evidence</li>
+        <li><a href="/team/{{ team_abbrev }}/streaks">Streak leaders</a> — descriptive streak evidence</li>
+        <li><a href="/team/{{ team_abbrev }}/season">Season performance</a> — bundled season evidence</li>
+    </ul>
+</section>
+
 <h2 class="page-section">Skaters</h2>
 
 {% if skaters.is_empty() %}

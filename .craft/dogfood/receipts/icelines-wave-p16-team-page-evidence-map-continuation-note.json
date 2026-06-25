@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-wave-p16-team-page-evidence-map",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Pulse 16 closed: team page exposes inspection-first evidence map handoffs.",
+  "recordedUnixMillis": 1782364837675,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "team-evidence-map",
+    "latestStepNote": "Added team Evidence map section with team-scoped Signals, scoring, streak, and season evidence handoffs plus no-prediction/no-deployment/no-cache/no-autonomous-action copy.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-wave-p16-team-page-evidence-map-step-team-evidence-map.json",
+    "recentSteps": [
+      {
+        "label": "team-evidence-map",
+        "note": "Added team Evidence map section with team-scoped Signals, scoring, streak, and season evidence handoffs plus no-prediction/no-deployment/no-cache/no-autonomous-action copy.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-wave-p16-team-page-evidence-map-step-team-evidence-map.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
