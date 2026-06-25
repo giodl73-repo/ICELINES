@@ -1,0 +1,20 @@
+{
+  "receiptTier": "dogfood-chat-open-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-analytics-cache-next",
+  "intent": "Bounded pulse for icelines-analytics-cache: Analytics cache evidence layer",
+  "lane": "rust",
+  "artifactMode": "compact",
+  "verboseArtifactsCommand": "craft chat open --workspace-root \\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines --session icelines-analytics-cache-next --intent <TEXT> --lane rust --verbose-artifacts",
+  "recordedUnixMillis": 1782358321096,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}

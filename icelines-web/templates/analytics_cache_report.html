@@ -16,6 +16,25 @@
   <p><a class="button secondary" href="{{ json_href }}">Open JSON twin</a></p>
 </section>
 
+<section class="card">
+  <h2>Selected cache evidence routes</h2>
+  <p>
+    These routes inspect prepared analytics cache records only. They do not
+    compute live analytics, fetch missing cache records, infer predictions, or
+    create autonomous coaching actions.
+  </p>
+  <ul>
+    <li><a href="/coach/dashboard">Coach dashboard evidence</a></li>
+    <li><a href="/scout/opponent">Opponent scout evidence</a></li>
+    <li><a href="/player/evidence-card">Player evidence card</a></li>
+    <li><a href="/lines/explorer">Line combination explorer</a></li>
+    <li><a href="/goalies/readiness">Goalie readiness evidence</a></li>
+    <li><a href="/practice/focus">Practice focus evidence</a></li>
+    <li><a href="/postgame/review">Postgame review evidence</a></li>
+    <li><a href="/agents/evidence">Agent evidence summary</a></li>
+  </ul>
+</section>
+
 {% if error != "" %}
 <section class="card warning">
   <h2>Report unavailable</h2>

@@ -1,0 +1,31 @@
+{
+  "receiptTier": "dogfood-continuation-note-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-analytics-cache-next",
+  "noteKind": "manual-source-edit-continuation",
+  "note": "Closed compact staircase dogfood pulse: generic report now hands off to selected cache evidence routes under prepared-cache-only boundaries.",
+  "recordedUnixMillis": 1782358499772,
+  "progress": {
+    "stepCount": 1,
+    "latestStepLabel": "implementation",
+    "latestStepNote": "Linked the generic analytics cache report to selected prepared-cache evidence routes while preserving no-live/no-prediction/no-autonomous-coaching copy.",
+    "latestStepEvidence": ".craft\\dogfood\\receipts\\icelines-analytics-cache-next-step-implementation.json",
+    "recentSteps": [
+      {
+        "label": "implementation",
+        "note": "Linked the generic analytics cache report to selected prepared-cache evidence routes while preserving no-live/no-prediction/no-autonomous-coaching copy.",
+        "evidence": ".craft\\dogfood\\receipts\\icelines-analytics-cache-next-step-implementation.json"
+      }
+    ]
+  },
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
