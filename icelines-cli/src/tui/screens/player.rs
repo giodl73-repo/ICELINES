@@ -387,6 +387,22 @@ pub(crate) fn player_signals_lines(
         " Signals are descriptive only; unavailable is missing evidence, not zero value truth.",
         dim,
     ));
+    let authority = &view.source_authority;
+    out.push(Line::styled(
+        format!(
+            " Authority: {} | source: {} | coverage: {}",
+            authority.label, authority.source, authority.coverage_state
+        ),
+        dim,
+    ));
+    out.push(Line::styled(
+        format!(
+            " Authority metrics: {} | blocked: {}",
+            authority.covered_metrics.join(", "),
+            authority.blocked_claims.join(", ")
+        ),
+        dim,
+    ));
     out
 }
 
@@ -1555,6 +1571,13 @@ mod hurricane_signals_tests {
         assert!(text.contains("/player/8478402/signals"));
         assert!(text.contains("unavailable"));
         assert!(text.contains("realtime"));
+        assert!(text.contains("Authority: Signals authority: descriptive derived metrics"));
+        assert!(text.contains("source: PlayerSignalsView stat inputs"));
+        assert!(text.contains("coverage: descriptive_derived"));
+        assert!(text.contains("Authority metrics: physical_engagement_rate"));
+        assert!(text.contains("puck_management_differential"));
+        assert!(text.contains("blocked: prediction"));
+        assert!(text.contains("leaderboard_ranking"));
         assert!(!text.contains("0.00 per60   partial"));
     }
 }

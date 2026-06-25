@@ -1,0 +1,23 @@
+{
+  "receiptTier": "dogfood-native-gate-receipt-d1",
+  "workspaceRoot": "\\\\?\\C:\\src\\TRACKER\\repos\\applied-systems\\icelines",
+  "sessionId": "icelines-tui-signals-authority-20260624",
+  "checkLabel": "wp010-tui-signals-authority-gates",
+  "command": "cargo fmt --check; cargo test -p icelines-cli --bin icelines l0_player_signals_lines_preserve_unavailable_evidence; cargo clippy -p icelines-cli --bin icelines -- -D warnings; proof check docs/vtrace --errors-only; git diff --check",
+  "status": "passed",
+  "passed": true,
+  "note": "Affected TUI Signals test, icelines-cli clippy, VTRACE proof check, formatting, and diff whitespace checks passed; Cargo.lock patch.unused markers restored after cargo touched them.",
+  "workspaceDirty": false,
+  "changedFiles": [],
+  "recordedUnixMillis": 1782346839002,
+  "unsupportedCapabilities": [
+    "provider-call",
+    "network-call",
+    "arbitrary-shell",
+    "git-commit-or-pr",
+    "autonomous-coding-claim",
+    "dogfood-verification-claim"
+  ],
+  "sourceEditPerformed": false,
+  "doesNotVerifyDogfood": true
+}
