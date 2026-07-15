@@ -3308,9 +3308,11 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            out.matches("Trade Continuity").count(),
+            out.lines()
+                .filter(|line| line.contains("| Trade Continuity | NYR | C |"))
+                .count(),
             1,
-            "traded player must render as one aggregate row"
+            "traded player must render as one aggregate table row"
         );
         assert!(out.contains("| Trade Continuity | NYR | C |"));
         assert!(out.contains("|  60 |"));

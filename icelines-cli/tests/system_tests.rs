@@ -134,6 +134,11 @@ fn l2_cmd_fetch_dry_run_exits_zero() {
 fn l2_cmd_fetch_rosters_dry_run_exits_zero() {
     let out = run(&["fetch", "rosters", "--dry-run"]);
     assert!(out.status.success(), "fetch rosters --dry-run must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("/v1/roster/NYR/current"),
+        "current-season roster dry-run must use the live roster endpoint, got: {stdout}"
+    );
 }
 
 // ── L2: fetch stats --dry-run exits 0 ────────────────────────────────────────
@@ -3818,21 +3823,17 @@ fn l2_cmd_query_goalies_json_csv_row_identity_match() {
 
 #[test]
 fn l2_cmd_query_goalies_sort_gaa_low_first() {
-    let out = run(&["query", "goalies", "--top", "5", "--sort", "gaa"]);
+    let out = run(&["query", "goalies", "--top", "5", "--sort", "gaa", "--json"]);
     assert!(out.status.success());
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    // Pull GAA column values from the data rows; the smallest should
-    // be first since GAA sort is ascending.
-    let gaas: Vec<f32> = stdout
-        .lines()
-        .filter(|l| l.starts_with(|c: char| c.is_ascii_digit()))
-        .filter_map(|l| {
-            let parts: Vec<&str> = l.split_whitespace().collect();
-            // Layout: rank goalie team gp w-l-ot sv% gaa so saves
-            parts
-                .get(parts.len().saturating_sub(3))
-                .and_then(|s| s.parse::<f32>().ok())
-        })
+    let rows: serde_json::Value =
+        serde_json::from_slice(&out.stdout).expect("query goalies --json must emit valid JSON");
+    // Read the named JSON field so adding table columns cannot make this sort
+    // assertion accidentally inspect a neighboring numeric column.
+    let gaas: Vec<f64> = rows
+        .as_array()
+        .expect("query goalies --json should emit an array")
+        .iter()
+        .filter_map(|row| row["goals_against_average"].as_f64())
         .collect();
     assert!(
         gaas.len() >= 2,

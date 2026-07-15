@@ -66,9 +66,8 @@ pub struct Cli {
 
     /// Phase Foster.0.8 — skip the auto-setup wizard.
     ///
-    /// On first interactive terminal run with no config file,
-    /// `icelines` opens the setup wizard. Headless / scripted callers
-    /// pass this to bypass it explicitly.
+    /// Without a config file, interactive runs open setup. Headless or
+    /// scripted callers pass this flag to bypass it.
     #[arg(long, global = true)]
     pub no_setup: bool,
 
@@ -1094,6 +1093,16 @@ mod tui_surface_tests {
     use crate::start_slug::{parse_start_slug, NavSpec, ScreenSpec};
     use clap::Parser;
 
+    fn with_large_stack(test: impl FnOnce() + Send + 'static) {
+        std::thread::Builder::new()
+            .name("clap-surface-test".to_string())
+            .stack_size(16 * 1024 * 1024)
+            .spawn(test)
+            .expect("spawn clap surface test")
+            .join()
+            .expect("clap surface test");
+    }
+
     /// LB.2 / l0_sugar_each_nav_tab_parses
     /// — Every TuiSurface variant parses cleanly via clap and resolves
     ///   to the same ScreenSpec as the corresponding `--start <slug>`.
@@ -1340,51 +1349,58 @@ mod tui_surface_tests {
     }
 
     #[test]
-    fn l0_fantasy_matchup_clap_surfaces_parse() {
-        let read = Cli::try_parse_from([
-            "icelines",
-            "fantasy",
-            "matchup",
-            "--date",
-            "2026-01-15",
-            "--league",
-            "Matchup League",
-            "--json",
-        ])
-        .expect("fantasy matchup should parse");
-        match read.command {
-            Commands::Fantasy(FantasySubcommand::Matchup {
-                date, league, json, ..
-            }) => {
-                assert_eq!(date.to_string(), "2026-01-15");
-                assert_eq!(league.as_deref(), Some("Matchup League"));
-                assert!(json);
+    fn l0_fantasy_matchup_clap_surface_parses() {
+        with_large_stack(|| {
+            let read = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "matchup",
+                "--date",
+                "2026-01-15",
+                "--league",
+                "Matchup League",
+                "--json",
+            ])
+            .expect("fantasy matchup should parse");
+            match read.command {
+                Commands::Fantasy(FantasySubcommand::Matchup {
+                    date, league, json, ..
+                }) => {
+                    assert_eq!(date.to_string(), "2026-01-15");
+                    assert_eq!(league.as_deref(), Some("Matchup League"));
+                    assert!(json);
+                }
+                other => panic!("expected fantasy matchup, got {other:?}"),
             }
-            other => panic!("expected fantasy matchup, got {other:?}"),
-        }
+        });
+    }
 
-        let setup = Cli::try_parse_from([
-            "icelines",
-            "fantasy",
-            "matchup-set",
-            "--week",
-            "2026-01-15",
-            "--home",
-            "My Team",
-            "--away",
-            "Rival",
-        ])
-        .expect("fantasy matchup-set should parse");
-        match setup.command {
-            Commands::Fantasy(FantasySubcommand::MatchupSet {
-                week, home, away, ..
-            }) => {
-                assert_eq!(week.to_string(), "2026-01-15");
-                assert_eq!(home, "My Team");
-                assert_eq!(away.as_deref(), Some("Rival"));
+    #[test]
+    fn l0_fantasy_matchup_set_clap_surface_parses() {
+        with_large_stack(|| {
+            let setup = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "matchup-set",
+                "--week",
+                "2026-01-15",
+                "--home",
+                "My Team",
+                "--away",
+                "Rival",
+            ])
+            .expect("fantasy matchup-set should parse");
+            match setup.command {
+                Commands::Fantasy(FantasySubcommand::MatchupSet {
+                    week, home, away, ..
+                }) => {
+                    assert_eq!(week.to_string(), "2026-01-15");
+                    assert_eq!(home, "My Team");
+                    assert_eq!(away.as_deref(), Some("Rival"));
+                }
+                other => panic!("expected fantasy matchup-set, got {other:?}"),
             }
-            other => panic!("expected fantasy matchup-set, got {other:?}"),
-        }
+        });
     }
 
     #[test]
@@ -1424,59 +1440,65 @@ mod tui_surface_tests {
 
     #[test]
     fn l0_fantasy_roster_shape_clap_surfaces_parse() {
-        let show = Cli::try_parse_from([
-            "icelines",
-            "fantasy",
-            "roster-shape",
-            "--league",
-            "Office Pool",
-            "--json",
-        ])
-        .expect("fantasy roster-shape should parse");
-        match show.command {
-            Commands::Fantasy(FantasySubcommand::RosterShape { league, json }) => {
-                assert_eq!(league.as_deref(), Some("Office Pool"));
-                assert!(json);
+        with_large_stack(|| {
+            let show = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "roster-shape",
+                "--league",
+                "Office Pool",
+                "--json",
+            ])
+            .expect("fantasy roster-shape should parse");
+            match show.command {
+                Commands::Fantasy(FantasySubcommand::RosterShape { league, json }) => {
+                    assert_eq!(league.as_deref(), Some("Office Pool"));
+                    assert!(json);
+                }
+                other => panic!("expected fantasy roster-shape, got {other:?}"),
             }
-            other => panic!("expected fantasy roster-shape, got {other:?}"),
-        }
 
-        let set = Cli::try_parse_from([
-            "icelines",
-            "fantasy",
-            "roster-shape-set",
-            "yahoo-standard",
-            "--league",
-            "Office Pool",
-        ])
-        .expect("fantasy roster-shape-set should parse");
-        match set.command {
-            Commands::Fantasy(FantasySubcommand::RosterShapeSet { shape, league }) => {
-                assert_eq!(shape, "yahoo-standard");
-                assert_eq!(league.as_deref(), Some("Office Pool"));
+            let set = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "roster-shape-set",
+                "yahoo-standard",
+                "--league",
+                "Office Pool",
+            ])
+            .expect("fantasy roster-shape-set should parse");
+            match set.command {
+                Commands::Fantasy(FantasySubcommand::RosterShapeSet { shape, league }) => {
+                    assert_eq!(shape, "yahoo-standard");
+                    assert_eq!(league.as_deref(), Some("Office Pool"));
+                }
+                other => panic!("expected fantasy roster-shape-set, got {other:?}"),
             }
-            other => panic!("expected fantasy roster-shape-set, got {other:?}"),
-        }
 
-        let validate = Cli::try_parse_from([
-            "icelines",
-            "fantasy",
-            "roster-shape-validate",
-            "--league",
-            "Office Pool",
-            "--team",
-            "My Team",
-            "--json",
-        ])
-        .expect("fantasy roster-shape-validate should parse");
-        match validate.command {
-            Commands::Fantasy(FantasySubcommand::RosterShapeValidate { league, team, json }) => {
-                assert_eq!(league.as_deref(), Some("Office Pool"));
-                assert_eq!(team.as_deref(), Some("My Team"));
-                assert!(json);
+            let validate = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "roster-shape-validate",
+                "--league",
+                "Office Pool",
+                "--team",
+                "My Team",
+                "--json",
+            ])
+            .expect("fantasy roster-shape-validate should parse");
+            match validate.command {
+                Commands::Fantasy(FantasySubcommand::RosterShapeValidate {
+                    league,
+                    team,
+                    json,
+                }) => {
+                    assert_eq!(league.as_deref(), Some("Office Pool"));
+                    assert_eq!(team.as_deref(), Some("My Team"));
+                    assert!(json);
+                }
+                other => panic!("expected fantasy roster-shape-validate, got {other:?}"),
             }
-            other => panic!("expected fantasy roster-shape-validate, got {other:?}"),
-        }
+        });
     }
 }
 

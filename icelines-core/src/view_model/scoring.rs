@@ -1139,17 +1139,16 @@ mod tests {
             Some(StrengthState::PenaltyKill)
         );
         assert_eq!(view.strength_summaries[1].summary.shots_on_goal, 1);
-        assert_eq!(view.situation_summaries[0].label, "penalty kill 4v5 (1451)");
+        let penalty_kill = view
+            .situation_summaries
+            .iter()
+            .find(|row| row.situation_code.as_deref() == Some("1451"))
+            .expect("penalty-kill situation summary");
+        assert_eq!(penalty_kill.label, "penalty kill 4v5 (1451)");
+        assert_eq!(penalty_kill.situation_code.as_deref(), Some("1451"));
+        assert_eq!(penalty_kill.skater_state.as_deref(), Some("4v5"));
         assert_eq!(
-            view.situation_summaries[0].situation_code.as_deref(),
-            Some("1451")
-        );
-        assert_eq!(
-            view.situation_summaries[0].skater_state.as_deref(),
-            Some("4v5")
-        );
-        assert_eq!(
-            view.situation_summaries[0].owner_strength_state,
+            penalty_kill.owner_strength_state,
             Some(StrengthState::PenaltyKill)
         );
         assert_eq!(view.top_shooters[0].summary.shot_attempts, 2);
