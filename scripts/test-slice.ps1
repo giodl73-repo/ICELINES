@@ -50,6 +50,13 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# The generated Clap command graph is large enough to overflow Rust's default
+# Windows test-thread stack. Production parsing runs on the process main stack;
+# size test-harness worker threads explicitly so CLI parser tests are stable.
+if (-not $env:RUST_MIN_STACK) {
+    $env:RUST_MIN_STACK = "16777216"
+}
+
 function Invoke-Cargo {
     param([string[]]$CargoArgs)
 

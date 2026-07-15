@@ -510,12 +510,12 @@ mod tests {
     fn l0_signals_roster_json_meta_carries_source_authority() {
         let row = roster_signal_row();
         let view = SignalsRosterView {
-            schema_note: "Team-scoped Signals discovery matrix; not a leaderboard.",
+            schema_note: "Team-scoped Signals discovery matrix; not a leaderboard.".to_string(),
             team: "EDM".to_string(),
             season: 20252026,
             season_type: "regular".to_string(),
             rows: vec![row],
-            evidence_filter: SignalEvidenceFilter::All,
+            evidence_filter: SignalEvidenceFilter::All.into(),
             total_player_count: 1,
             disclosures: Vec::new(),
             non_claims: Vec::new(),
@@ -563,23 +563,23 @@ mod tests {
     #[test]
     fn l0_signals_roster_evidence_filter_matches_any_partial_or_missing() {
         let partial = roster_signal_row();
-        assert!(SignalEvidenceFilter::All.matches(&partial));
-        assert!(SignalEvidenceFilter::Partial.matches(&partial));
-        assert!(!SignalEvidenceFilter::Full.matches(&partial));
+        assert!(SignalRosterEvidenceFilter::All.matches(&partial));
+        assert!(SignalRosterEvidenceFilter::Partial.matches(&partial));
+        assert!(!SignalRosterEvidenceFilter::Full.matches(&partial));
 
         let mut full = partial.clone();
         for row in &mut full.rows {
             row.evidence_tier = SignalEvidenceTier::Full;
             row.missing_inputs.clear();
         }
-        assert!(SignalEvidenceFilter::Full.matches(&full));
-        assert!(!SignalEvidenceFilter::Partial.matches(&full));
-        assert!(!SignalEvidenceFilter::Missing.matches(&full));
+        assert!(SignalRosterEvidenceFilter::Full.matches(&full));
+        assert!(!SignalRosterEvidenceFilter::Partial.matches(&full));
+        assert!(!SignalRosterEvidenceFilter::Missing.matches(&full));
 
         let mut missing = full.clone();
         missing.rows[0].evidence_tier = SignalEvidenceTier::Missing;
-        assert!(SignalEvidenceFilter::Missing.matches(&missing));
-        assert!(!SignalEvidenceFilter::Full.matches(&missing));
+        assert!(SignalRosterEvidenceFilter::Missing.matches(&missing));
+        assert!(!SignalRosterEvidenceFilter::Full.matches(&missing));
     }
 
     fn roster_signal_row() -> PlayerSignalsView {

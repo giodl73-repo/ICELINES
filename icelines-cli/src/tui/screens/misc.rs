@@ -568,12 +568,33 @@ fn scores_view_from_games(
     app: &App,
     games: impl IntoIterator<Item = icelines_fetch::nhl_api::ScheduledGame>,
 ) -> ScoresView {
+    let games: Vec<_> = games.into_iter().collect();
     let active_date = if app.tonight.date.is_empty() {
         chrono::Local::now().date_naive()
     } else {
         chrono::NaiveDate::parse_from_str(&app.tonight.date, "%Y-%m-%d")
             .unwrap_or_else(|_| chrono::Local::now().date_naive())
     };
+    // The live Scores view intentionally accepts both local-today and
+    // UTC-today. Pick the narrowest core timeframe that covers every
+    // already-filtered game so the ViewModel does not discard the adjacent
+    // UTC date at midnight or during the July offseason boundary.
+    let game_dates: Vec<_> = games
+        .iter()
+        .filter_map(|game| chrono::NaiveDate::parse_from_str(&game.date, "%Y-%m-%d").ok())
+        .collect();
+    let timeframe = [
+        Timeframe::Day,
+        Timeframe::Week,
+        Timeframe::Month,
+        Timeframe::Season,
+    ]
+    .into_iter()
+    .find(|candidate| {
+        let (start, end) = candidate.range(active_date);
+        game_dates.iter().all(|date| *date >= start && *date <= end)
+    })
+    .unwrap_or(Timeframe::Week);
 
     ScoresView::from_games(
         ViewContext::new(ViewWindow::new(
@@ -582,7 +603,7 @@ fn scores_view_from_games(
         )),
         active_date,
         chrono::Local::now().date_naive(),
-        Timeframe::Season,
+        timeframe,
         games.into_iter().map(scheduled_game_input).collect(),
     )
 }
