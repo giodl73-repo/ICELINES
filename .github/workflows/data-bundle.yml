@@ -67,7 +67,7 @@ jobs:
         working-directory: .
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python (for current season refresh)
         if: matrix.season == '20252026'
