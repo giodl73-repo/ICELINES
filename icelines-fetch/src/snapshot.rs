@@ -663,6 +663,42 @@ impl SnapshotStore {
         self.read(&name, tier, filename)
     }
 
+    /// Read a specific tier file from the newest sealed snapshot for a season
+    /// that actually contains that file.
+    ///
+    /// Side-fetch snapshots can share a tier directory without carrying every
+    /// file in that tier (for example goalie or transaction snapshots under
+    /// `stats/`). Filtering on the file avoids selecting one of those partial
+    /// snapshots when a caller needs `bios.json` or `stats.json`.
+    pub fn read_tier_file_any_for_season<T: serde::de::DeserializeOwned>(
+        &self,
+        tier: &SnapshotTier,
+        filename: &str,
+        requested_season: &str,
+    ) -> Result<T, SnapshotError> {
+        let manifest = self.load_manifest()?;
+        let mut candidates: Vec<&SnapshotEntry> = manifest
+            .snapshots
+            .iter()
+            .filter(|entry| entry.season == requested_season && entry.sealed)
+            .filter(|entry| {
+                self.snapshot_dir(&entry.name)
+                    .join(tier.dir_name())
+                    .join(filename)
+                    .is_file()
+            })
+            .collect();
+        candidates.sort_by(|a, b| b.name.cmp(&a.name));
+        let snapshot = candidates.first().ok_or_else(|| SnapshotError::NotFound {
+            name: format!(
+                "no sealed snapshot for season {requested_season} contains {}/{}",
+                tier.dir_name(),
+                filename
+            ),
+        })?;
+        self.read(&snapshot.name, tier, filename)
+    }
+
     // ── Reading ───────────────────────────────────────────────────────────────
 
     /// Read a file from the active snapshot, verifying integrity.
@@ -2167,6 +2203,53 @@ mod tests {
         assert_eq!(m.bios().len(), 1);
         assert!(m.playoff_bios().is_none());
         assert!(m.playoff_stats().is_none());
+    }
+
+    #[test]
+    fn l0_file_specific_season_read_skips_partial_same_tier_snapshot() {
+        let (_dir, store) = store();
+        store
+            .create(
+                "20252026-2026-07-14-stats",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-07-14",
+            )
+            .unwrap();
+        store
+            .write_file(
+                "20252026-2026-07-14-stats",
+                &SnapshotTier::Stats,
+                "bios.json",
+                br#"[1,2]"#,
+            )
+            .unwrap();
+        store.seal("20252026-2026-07-14-stats").unwrap();
+
+        store
+            .create(
+                "20252026-2026-07-15-transactions",
+                "20252026",
+                SnapshotTier::Stats,
+                None,
+                "2026-07-15",
+            )
+            .unwrap();
+        store
+            .write_file(
+                "20252026-2026-07-15-transactions",
+                &SnapshotTier::Stats,
+                "transactions.json",
+                br#"[]"#,
+            )
+            .unwrap();
+        store.seal("20252026-2026-07-15-transactions").unwrap();
+
+        let bios: Vec<u32> = store
+            .read_tier_file_any_for_season(&SnapshotTier::Stats, "bios.json", "20252026")
+            .unwrap();
+        assert_eq!(bios, vec![1, 2]);
     }
 
     #[test]

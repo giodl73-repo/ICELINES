@@ -681,6 +681,7 @@ pub fn parse_player_landing_contract(player_id: u32, raw: &serde_json::Value) ->
         expiry_year,
         expiry_type,
         salary,
+        ..PlayerContract::default()
     }
 }
 

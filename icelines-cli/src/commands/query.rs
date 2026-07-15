@@ -574,6 +574,7 @@ pub struct LeadersArgs {
     pub json: bool,
     pub json_envelope: bool,
     pub csv: bool,
+    pub out: Option<std::path::PathBuf>,
     /// Phase Lindsay L.3.1 — generic stat filters. Each string is parsed
     /// via `icelines_core::stats_catalog::parse_filter` and added to
     /// `PlayerFilter.stat_filters`; `normalize_stat_filters` runs before
@@ -692,6 +693,9 @@ fn emit_explain_json(plans: &[icelines_query::QueryPlan], filters: &[String]) {
 // ── icelines query leaders ────────────────────────────────────────────────────
 
 pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
+    if args.out.is_some() && !(args.json || args.json_envelope || args.csv) {
+        anyhow::bail!("--out requires --json, --json-envelope, or --csv");
+    }
     // Phase Lindsay L.5.1 — try legacy-first, fall through to catalog.
     let metric = SortDispatch::parse(&args.sort)?;
 
@@ -982,25 +986,35 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
         apply_leaders_warning_state(&mut leaders_view, args.pos.as_deref());
 
         if args.json_envelope {
-            println!(
-                "{}",
-                leaders_json_envelope(
+            return emit_query_output(
+                args.out.as_deref(),
+                &leaders_json_envelope(
                     &leaders_view,
                     total_matched,
                     args.top,
                     &args.filters,
                     args.pos.as_deref(),
-                    &args.sort
-                )
+                    &args.sort,
+                ),
             );
-            return Ok(());
         }
         if args.json {
-            println!(
-                "{}",
-                leaders_json(&leaders_view, total_matched, args.top, &args.filters)
+            return emit_query_output(
+                args.out.as_deref(),
+                &leaders_json(&leaders_view, total_matched, args.top, &args.filters),
             );
-            return Ok(());
+        }
+        if args.csv {
+            return emit_query_output(
+                args.out.as_deref(),
+                &leaders_csv(
+                    &leaders_view,
+                    total_matched,
+                    args.top,
+                    &args.sort,
+                    &args.filters,
+                ),
+            );
         }
         println!("{}", leaders_context_line(&leaders_view));
         println!();
@@ -1066,35 +1080,35 @@ pub async fn run_leaders(args: LeadersArgs) -> anyhow::Result<()> {
     apply_leaders_warning_state(&mut leaders_view, args.pos.as_deref());
 
     if args.json_envelope {
-        println!(
-            "{}",
-            leaders_json_envelope(
+        return emit_query_output(
+            args.out.as_deref(),
+            &leaders_json_envelope(
                 &leaders_view,
                 total_matched,
                 args.top,
                 &args.filters,
                 args.pos.as_deref(),
-                &args.sort
-            )
+                &args.sort,
+            ),
         );
-        return Ok(());
     }
     if args.json {
-        println!(
-            "{}",
-            leaders_json(&leaders_view, total_matched, args.top, &args.filters)
+        return emit_query_output(
+            args.out.as_deref(),
+            &leaders_json(&leaders_view, total_matched, args.top, &args.filters),
         );
-        return Ok(());
     }
     if args.csv {
-        leaders_csv(
-            &leaders_view,
-            total_matched,
-            args.top,
-            &args.sort,
-            &args.filters,
+        return emit_query_output(
+            args.out.as_deref(),
+            &leaders_csv(
+                &leaders_view,
+                total_matched,
+                args.top,
+                &args.sort,
+                &args.filters,
+            ),
         );
-        return Ok(());
     }
 
     let percentiles: Vec<Option<u8>> = if args.percentiles {
@@ -1623,14 +1637,18 @@ fn leaders_csv(
     top: usize,
     sort: &str,
     active_filters: &[String],
-) {
-    println!("{}", leaders_csv_header());
+) -> String {
+    use std::fmt::Write as _;
+
+    let mut out = String::new();
+    let _ = writeln!(out, "{}", leaders_csv_header());
     let window = view.context.window;
     let (source_kind, source_completeness) = leaders_source_state_labels(view);
     let returned = view.rows.len();
     let active_filters = leaders_active_filters_label(active_filters);
     for row in &view.rows {
-        println!(
+        let _ = writeln!(
+            out,
             "{},{},{},{},{},{:.3},{:.1},{:.1},{},{},{},{},{},{},{},{},{},{},{},{},{}",
             row.rank,
             row.display_name,
@@ -1655,6 +1673,22 @@ fn leaders_csv(
             active_filters,
         );
     }
+    out
+}
+
+fn emit_query_output(path: Option<&std::path::Path>, body: &str) -> anyhow::Result<()> {
+    match path {
+        Some(path) => {
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("creating {}", parent.display()))?;
+            }
+            std::fs::write(path, body).with_context(|| format!("writing {}", path.display()))?;
+            eprintln!("✓ wrote {} ({} bytes)", path.display(), body.len());
+        }
+        None => println!("{body}"),
+    }
+    Ok(())
 }
 
 fn leaders_csv_header() -> &'static str {

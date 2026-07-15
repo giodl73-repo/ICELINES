@@ -1195,6 +1195,7 @@ fn l1_load_into_repo_with_populated_snapshot_contracts() {
         expiry_year: Some(2026),
         expiry_type: Some("UFA".into()),
         salary: Some(12_500_000),
+        ..LegacyContract::default()
     }];
     let bytes = serde_json::to_vec(&contracts).unwrap();
     let snap = "20242025-contracts";

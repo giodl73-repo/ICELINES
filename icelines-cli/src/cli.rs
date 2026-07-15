@@ -1501,6 +1501,15 @@ pub enum FetchSeasonType {
     Both,
 }
 
+/// Contract data provider. Third-party providers are always opt-in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum ContractSource {
+    /// NHL player landing API (currently carries no salary values).
+    Nhl,
+    /// Licensed CapWages API; requires CAPWAGES_API_KEY.
+    CapWages,
+}
+
 /// Hart.6.9 — `--type` flag for read-side query commands. Unlike
 /// `FetchSeasonType` there's no `Both`: a query operates on a single
 /// `(season, season_type)` window at a time. Maps cleanly to
@@ -2003,10 +2012,18 @@ pub enum FetchSubcommand {
         #[arg(long)]
         dry_run: bool,
     },
-    /// Fetch NHL contract data (expiry type, expiry year) from the player landing API.
+    /// Fetch contract data from the NHL API or an opt-in licensed provider.
     Contracts {
         #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
         season: String,
+        /// Contract value season; defaults to --season.
+        #[arg(long, value_name = "YYYYYYYY")]
+        valuation_season: Option<String>,
+        #[arg(long, value_enum, default_value_t = ContractSource::Nhl)]
+        source: ContractSource,
+        /// Salary-cap upper limit in dollars, used for team cap-share output.
+        #[arg(long)]
+        cap_limit: Option<u64>,
         #[arg(long)]
         dry_run: bool,
     },
@@ -2542,6 +2559,9 @@ OUTPUT
         /// Export as CSV
         #[arg(long)]
         csv: bool,
+        /// Write JSON/CSV output to this path instead of stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
         /// Only players on UFA contracts (unrestricted free agents)
         #[arg(long)]
         ufa: bool,

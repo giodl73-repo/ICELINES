@@ -1,4 +1,6 @@
-use crate::cli::{FetchSeasonType, FetchSubcommand, QuerySeasonType, ReportKindArg};
+use crate::cli::{
+    ContractSource, FetchSeasonType, FetchSubcommand, QuerySeasonType, ReportKindArg,
+};
 use crate::config::Config;
 use anyhow::{anyhow, Context};
 use icelines_core::season_stats::SeasonType;
@@ -81,7 +83,9 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             if want_regular {
                 // Contracts and transactions are type-agnostic; they only
                 // run on the regular pass.
-                if let Err(e) = do_contracts(&season, dry_run).await {
+                if let Err(e) =
+                    do_contracts(&season, &season, ContractSource::Nhl, None, dry_run).await
+                {
                     eprintln!("Warning: contract fetch failed (non-fatal): {e}");
                 }
                 if let Err(e) = do_transactions(&season, dry_run).await {
@@ -98,7 +102,22 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             seasons,
             dry_run,
         } => do_moneypuck(&season, seasons, dry_run).await,
-        FetchSubcommand::Contracts { season, dry_run } => do_contracts(&season, dry_run).await,
+        FetchSubcommand::Contracts {
+            season,
+            valuation_season,
+            source,
+            cap_limit,
+            dry_run,
+        } => {
+            do_contracts(
+                &season,
+                valuation_season.as_deref().unwrap_or(&season),
+                source,
+                cap_limit,
+                dry_run,
+            )
+            .await
+        }
         FetchSubcommand::Career {
             dry_run,
             bundled_seasons,
@@ -1081,19 +1100,39 @@ fn moneypuck_season_window(latest_season: &str, count: u8) -> anyhow::Result<Vec
         .collect())
 }
 
-async fn do_contracts(season: &str, dry_run: bool) -> anyhow::Result<()> {
+async fn do_contracts(
+    season: &str,
+    valuation_season: &str,
+    source: ContractSource,
+    cap_limit: Option<u64>,
+    dry_run: bool,
+) -> anyhow::Result<()> {
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
 
-    // Load player IDs from the active Stats snapshot bios.json (same pattern as do_positions).
-    let bios: Vec<SkaterBio> = store.read_tier(&SnapshotTier::Stats, "bios.json").context(
-        "reading bios.json from active Stats snapshot — run `icelines fetch stats` first",
-    )?;
+    // A goalie or transaction side-fetch may be the active Stats-tier snapshot
+    // without containing bios.json. Resolve the newest sealed snapshot for the
+    // requested season that actually carries the file.
+    let bios: Vec<SkaterBio> = store
+        .read_tier_file_any_for_season(&SnapshotTier::Stats, "bios.json", season)
+        .context(
+            "reading bios.json from a sealed Stats snapshot — run `icelines fetch stats` first",
+        )?;
 
     let player_ids: Vec<u32> = bios.iter().map(|b| b.player_id).collect();
     let n = player_ids.len();
 
     if dry_run {
+        if source == ContractSource::CapWages {
+            println!("Would fetch licensed CapWages contract data for {n} players.");
+            println!("Roster snapshot season: {season}");
+            println!("Contract valuation season: {valuation_season}");
+            println!("Authentication: CAPWAGES_API_KEY environment variable (never persisted)");
+            if let Some(limit) = cap_limit {
+                println!("Would write team-cap-summary.json using upper limit ${limit}.");
+            }
+            return Ok(());
+        }
         let est_secs = (n as f64 * 0.05).ceil() as u64;
         println!("Would fetch contract/landing data for {n} players.");
         println!("Endpoint: /v1/player/{{id}}/landing (one per player, 50ms delay)");
@@ -1113,41 +1152,85 @@ async fn do_contracts(season: &str, dry_run: bool) -> anyhow::Result<()> {
         .create(&snap, season, SnapshotTier::Contracts, None, &today)
         .context("creating contracts snapshot")?;
 
-    println!(
-        "Fetching contract data for {n} players (this takes ~{}s)...",
-        (n as f64 * 0.05).ceil() as u64
-    );
-    let landing_by_player = icelines_fetch::fletch::fetch_player_landing_batch_bytes_async(
-        player_ids.clone(),
-        icelines_fetch::fletch::FletchPlayerLandingArtifact::Landing,
-        fletch_cache_root(&cfg),
-        false,
-        50,
-    )
-    .await
-    .context("fetching player landing contract batch through FLETCH")?;
-    let contracts = player_ids
-        .iter()
-        .filter_map(|player_id| {
-            let raw_bytes = landing_by_player.get(player_id)?;
-            let raw = match serde_json::from_slice::<serde_json::Value>(raw_bytes) {
-                Ok(raw) => raw,
-                Err(error) => {
-                    eprintln!("  contracts: skipping player {player_id}: {error}");
-                    return None;
-                }
-            };
-            Some(icelines_fetch::nhl_api::parse_player_landing_contract(
-                *player_id, &raw,
-            ))
-        })
-        .collect::<Vec<_>>();
+    let contracts = if source == ContractSource::CapWages {
+        println!("Fetching licensed CapWages values for {n} players...");
+        icelines_fetch::capwages::CapWagesClient::from_env()?
+            .fetch_contracts(&bios, valuation_season)
+            .await?
+    } else {
+        println!(
+            "Fetching contract data for {n} players (this takes ~{}s)...",
+            (n as f64 * 0.05).ceil() as u64
+        );
+        let landing_by_player = icelines_fetch::fletch::fetch_player_landing_batch_bytes_async(
+            player_ids.clone(),
+            icelines_fetch::fletch::FletchPlayerLandingArtifact::Landing,
+            fletch_cache_root(&cfg),
+            false,
+            50,
+        )
+        .await
+        .context("fetching player landing contract batch through FLETCH")?;
+        player_ids
+            .iter()
+            .filter_map(|player_id| {
+                let raw_bytes = landing_by_player.get(player_id)?;
+                let raw = match serde_json::from_slice::<serde_json::Value>(raw_bytes) {
+                    Ok(raw) => raw,
+                    Err(error) => {
+                        eprintln!("  contracts: skipping player {player_id}: {error}");
+                        return None;
+                    }
+                };
+                Some(icelines_fetch::nhl_api::parse_player_landing_contract(
+                    *player_id, &raw,
+                ))
+            })
+            .collect::<Vec<_>>()
+    };
     let found = contracts.len();
 
     let json = serde_json::to_vec(&contracts).context("serializing contracts")?;
     store
         .write_file(&snap, &SnapshotTier::Contracts, "contracts.json", &json)
         .context("writing contracts.json")?;
+
+    if let Some(upper_limit) = cap_limit {
+        let mut roster_players = Vec::new();
+        for team in TEAMS {
+            let roster: icelines_fetch::schema::RosterResponse = match store
+                .read_tier_file_any_for_season(
+                    &SnapshotTier::Rosters,
+                    &format!("{team}.json"),
+                    season,
+                ) {
+                Ok(roster) => roster,
+                Err(_) => continue,
+            };
+            roster_players.extend(
+                roster
+                    .forwards
+                    .iter()
+                    .chain(&roster.defensemen)
+                    .chain(&roster.goalies)
+                    .map(|player| ((*team).to_owned(), player.id)),
+            );
+        }
+        if roster_players.is_empty() {
+            anyhow::bail!("cannot calculate team cap shares: no roster snapshots found");
+        }
+        let summary =
+            icelines_fetch::capwages::summarize_team_caps(&roster_players, &contracts, upper_limit);
+        let json = serde_json::to_vec_pretty(&summary).context("serializing team cap summary")?;
+        store
+            .write_file(
+                &snap,
+                &SnapshotTier::Contracts,
+                "team-cap-summary.json",
+                &json,
+            )
+            .context("writing team-cap-summary.json")?;
+    }
 
     store.seal(&snap).context("sealing contracts snapshot")?;
     println!("Fetched contracts for {n} players ({found} found)");

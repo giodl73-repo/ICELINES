@@ -25,6 +25,18 @@ pub struct PlayerContract {
     /// Current-season cap hit / salary in dollars.
     #[serde(default)]
     pub salary: Option<u64>,
+    /// Current-season cap hit in dollars.
+    #[serde(default)]
+    pub cap_hit: Option<u64>,
+    /// Contract average annual value in dollars.
+    #[serde(default)]
+    pub aav: Option<u64>,
+    /// Provenance identifier for the value source.
+    #[serde(default)]
+    pub source: Option<String>,
+    /// Timestamp reported by the source or observed during the fetch.
+    #[serde(default)]
+    pub source_checked_at: Option<String>,
 }
 
 #[cfg(test)]
@@ -37,6 +49,10 @@ mod tests {
             expiry_year: Some(2027),
             expiry_type: Some("UFA".into()),
             salary: Some(12_500_000),
+            cap_hit: Some(12_500_000),
+            aav: Some(12_500_000),
+            source: Some("capwages".into()),
+            source_checked_at: Some("2026-07-14T00:00:00Z".into()),
         };
         let s = serde_json::to_string(&c).unwrap();
         let back: PlayerContract = serde_json::from_str(&s).unwrap();

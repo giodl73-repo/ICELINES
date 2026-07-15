@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 // struct for forward-compatibility and are always None when fetched from the
 // current NHL API. Future NHL API versions or a third-party source may populate
 // them. The `player_id` is always populated.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct PlayerContract {
     pub player_id: u32,
     /// Year the contract expires (e.g. 2027). None — not available in current NHL API.
@@ -17,6 +17,18 @@ pub struct PlayerContract {
     pub expiry_type: Option<String>,
     /// Current-season cap hit / salary in dollars. None — not available in current NHL API.
     pub salary: Option<u64>,
+    /// Current-season cap hit in dollars.
+    #[serde(default)]
+    pub cap_hit: Option<u64>,
+    /// Contract average annual value in dollars.
+    #[serde(default)]
+    pub aav: Option<u64>,
+    /// Source identifier for third-party values (for example, `capwages`).
+    #[serde(default)]
+    pub source: Option<String>,
+    /// Source freshness timestamp, not the local snapshot creation time.
+    #[serde(default)]
+    pub source_checked_at: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -690,6 +690,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                         json,
                         json_envelope: false,
                         csv,
+                        out,
                         filters: Vec::new(),
                     })
                     .await?;
@@ -863,6 +864,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 json,
                 json_envelope,
                 csv,
+                out,
                 ufa,
                 rfa,
                 elc,
@@ -877,6 +879,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     anyhow::bail!(
                         "--json-envelope is only supported for standard `query leaders` output"
                     );
+                }
+                if out.is_some() && (explain || playoff || week || month) {
+                    anyhow::bail!("--out is only supported for standard `query leaders` output");
                 }
                 if explain {
                     // Phase Art Ross A.5 — print the parsed plan
@@ -944,6 +949,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     json,
                     json_envelope,
                     csv,
+                    out,
                     filters,
                 })
                 .await?;

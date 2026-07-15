@@ -1407,6 +1407,31 @@ fn l2_cmd_query_leaders_json_export() {
 }
 
 #[test]
+fn l2_cmd_query_leaders_json_out_writes_file() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("leaders.json");
+    let out = run(&[
+        "query",
+        "leaders",
+        "--top",
+        "5",
+        "--json",
+        "--out",
+        path.to_str().expect("UTF-8 output path"),
+    ]);
+
+    assert!(out.status.success(), "query leaders --out must exit 0");
+    assert!(
+        String::from_utf8_lossy(&out.stdout).trim().is_empty(),
+        "file output must not also emit JSON to stdout"
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(path).expect("leaders output file"))
+            .expect("leaders output must be valid JSON");
+    assert_eq!(json.as_array().expect("leaders JSON array").len(), 5);
+}
+
+#[test]
 fn l2_cmd_query_leaders_json_envelope_empty_warning_export() {
     let out = run(&[
         "query",

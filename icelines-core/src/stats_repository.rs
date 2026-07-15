@@ -1673,6 +1673,7 @@ mod tests {
             expiry_year: Some(2026),
             expiry_type: Some("UFA".into()),
             salary: Some(12_500_000),
+            ..Default::default()
         };
         r.upsert_contract(PlayerId(8478402), c.clone());
 

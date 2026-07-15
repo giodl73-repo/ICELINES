@@ -7,6 +7,7 @@ pub mod boxscore_client;
 pub mod boxscore_to_night_line;
 pub mod bundled;
 pub mod cache;
+pub mod capwages;
 pub mod career;
 pub mod career_landing;
 pub mod chunkstore;
