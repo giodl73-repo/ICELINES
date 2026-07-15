@@ -369,6 +369,10 @@ icelines fetch contracts        # UFA/RFA/ELC contract status
 # Licensed salary values (API key stays in the environment; values carry provenance)
 CAPWAGES_API_KEY=... icelines fetch contracts --source cap-wages \
   --valuation-season 20262027 --cap-limit 104000000
+# Free local overlay: validates NHL IDs, provenance URLs, and timestamps
+icelines fetch contracts --source csv \
+  --input examples/contracts-young-stars-20262027.csv \
+  --valuation-season 20262027 --cap-limit 104000000
 
 # Historical seasons (1987-88 through 2025-26, excluding 2004-05)
 icelines data install --season 19881989    # Gretzky's first LA season
@@ -469,6 +473,7 @@ icelines serve                      # launch the axum web dashboard/API
 | NHL API (free, public, no key) | Stats, rosters, bios, realtime, schedule | `icelines fetch all` |
 | MoneyPuck (free CSV) | xG, CF%, FF%, xGF% at 5v5 | `icelines fetch money-puck` |
 | CapWages (licensed, API key required) | Salary, cap hit, AAV, expiry, team cap share | `icelines fetch contracts --source cap-wages` |
+| Local contract CSV | User-curated cap hit/AAV/expiry with per-row provenance | `icelines fetch contracts --source csv --input PATH` |
 | Bundled (in binary) | 38 seasons 19871988–20252026, excluding 20042005 | — (zero config) |
 | GitHub Releases | Optional season refresh/install tarballs | `icelines data install` |
 

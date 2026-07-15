@@ -11,6 +11,7 @@ pub mod capwages;
 pub mod career;
 pub mod career_landing;
 pub mod chunkstore;
+pub mod contracts_csv;
 pub mod csv_loader;
 pub mod datastore;
 pub mod error;

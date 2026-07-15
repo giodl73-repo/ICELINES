@@ -1401,12 +1401,14 @@ fn build_goalie_season_stats(
 
 fn build_contract(c: &LegacyContract) -> PlayerContract {
     PlayerContract {
+        valuation_season: c.valuation_season.clone(),
         expiry_year: c.expiry_year,
         expiry_type: c.expiry_type.clone(),
         salary: c.salary,
         cap_hit: c.cap_hit,
         aav: c.aav,
         source: c.source.clone(),
+        source_url: c.source_url.clone(),
         source_checked_at: c.source_checked_at.clone(),
     }
 }

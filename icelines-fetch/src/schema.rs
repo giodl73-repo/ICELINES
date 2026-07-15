@@ -11,6 +11,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct PlayerContract {
     pub player_id: u32,
+    /// Season whose monetary values are represented (for example, `20262027`).
+    #[serde(default)]
+    pub valuation_season: Option<String>,
     /// Year the contract expires (e.g. 2027). None — not available in current NHL API.
     pub expiry_year: Option<u16>,
     /// Contract type: "UFA", "RFA", "ELC", etc. None — not available in current NHL API.
@@ -26,6 +29,9 @@ pub struct PlayerContract {
     /// Source identifier for third-party values (for example, `capwages`).
     #[serde(default)]
     pub source: Option<String>,
+    /// Direct URL supporting the imported value, when available.
+    #[serde(default)]
+    pub source_url: Option<String>,
     /// Source freshness timestamp, not the local snapshot creation time.
     #[serde(default)]
     pub source_checked_at: Option<String>,

@@ -265,12 +265,14 @@ fn contract_for_season(
             .map(|year| 2000 + year);
         Some(PlayerContract {
             player_id,
+            valuation_season: None,
             expiry_year,
             expiry_type: contract.expiry_status.clone(),
             salary: row.total_salary,
             cap_hit: row.cap_hit,
             aav: row.aav,
             source: Some("capwages".to_owned()),
+            source_url: None,
             source_checked_at: Some(checked_at.to_owned()),
         })
     })

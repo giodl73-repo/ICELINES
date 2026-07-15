@@ -1,0 +1,4 @@
+nhl_id,player,team,season,cap_hit,aav,salary,expiry_year,expiry_type,source_url,checked_at
+8484153,Leo Carlsson,ANA,20262027,18000000,18000000,,2031,UFA,https://www.nhl.com/news/leo-carlsson-signs-5-year-contract-with-ducks-match-flyers-offer-sheet,2026-07-14T12:00:00-07:00
+8483431,Logan Cooley,UTA,20262027,10000000,10000000,,2034,UFA,https://www.nhl.com/news/logan-cooley-signs-8-year-contract-with-utah-mammoth,2026-07-14T12:00:00-07:00
+8483457,Lane Hutson,MTL,20262027,8850000,8850000,,2034,UFA,https://www.nhl.com/canadiens/news/eight-year-contract-extension-for-lane-hutson-oct-13-2025,2026-07-14T12:00:00-07:00

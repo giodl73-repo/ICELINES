@@ -1952,23 +1952,36 @@ fn print_current_stats(card: Option<&PlayerCardView>, v: &PlayerView<'_>) {
     );
     println!();
 
-    if let Some(expiry_type) = v.contract_expiry_type() {
+    if v.contract.is_some() {
         let expiry_year = v
             .contract_expiry_year()
             .map(|y| y.to_string())
             .unwrap_or_else(|| "?".to_owned());
-        let salary_str = v
-            .contract_salary()
-            .map(|s| format!("${:.1}M", s as f64 / 1_000_000.0))
-            .unwrap_or_else(|| "—".to_owned());
+        let expiry_type = v.contract_expiry_type().unwrap_or("unknown");
         println!(
-            "  Contract: {} expires {}  Salary: {}",
+            "  Contract: {} expires {}  Valuation season: {}  Cap hit: {}  AAV: {}  Salary: {}",
             expiry_type.to_uppercase(),
             expiry_year,
-            salary_str
+            v.contract_valuation_season().unwrap_or("unknown"),
+            format_contract_money(v.contract_cap_hit()),
+            format_contract_money(v.contract_aav()),
+            format_contract_money(v.contract_salary()),
         );
+        if let Some(source) = v.contract_source() {
+            if let Some(url) = v.contract_source_url() {
+                println!("  Contract source: {source} ({url})");
+            } else {
+                println!("  Contract source: {source}");
+            }
+        }
         println!();
     }
+}
+
+fn format_contract_money(value: Option<u64>) -> String {
+    value
+        .map(|amount| format!("${:.2}M", amount as f64 / 1_000_000.0))
+        .unwrap_or_else(|| "—".to_owned())
 }
 
 fn print_percentile(
@@ -2777,6 +2790,16 @@ fn print_head_to_head(v1: &PlayerView<'_>, v2: &PlayerView<'_>) {
             .map(|y| y.to_string())
             .unwrap_or_else(|| "—".to_owned()),
     );
+    row(
+        "Cap hit",
+        &format_contract_money(v1.contract_cap_hit()),
+        &format_contract_money(v2.contract_cap_hit()),
+    );
+    row(
+        "AAV",
+        &format_contract_money(v1.contract_aav()),
+        &format_contract_money(v2.contract_aav()),
+    );
 }
 
 fn print_head_to_head_from_compare_view(
@@ -2951,6 +2974,16 @@ fn print_head_to_head_cards(
             .contract_expiry_year()
             .map(|y| y.to_string())
             .unwrap_or_else(|| "—".to_owned()),
+    );
+    row(
+        "Cap hit",
+        &format_contract_money(fallback1.contract_cap_hit()),
+        &format_contract_money(fallback2.contract_cap_hit()),
+    );
+    row(
+        "AAV",
+        &format_contract_money(fallback1.contract_aav()),
+        &format_contract_money(fallback2.contract_aav()),
     );
 }
 

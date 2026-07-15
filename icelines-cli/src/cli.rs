@@ -1508,6 +1508,8 @@ pub enum ContractSource {
     Nhl,
     /// Licensed CapWages API; requires CAPWAGES_API_KEY.
     CapWages,
+    /// Validated local CSV overlay with per-row provenance.
+    Csv,
 }
 
 /// Hart.6.9 — `--type` flag for read-side query commands. Unlike
@@ -2021,6 +2023,9 @@ pub enum FetchSubcommand {
         valuation_season: Option<String>,
         #[arg(long, value_enum, default_value_t = ContractSource::Nhl)]
         source: ContractSource,
+        /// Local contract overlay; required with `--source csv`.
+        #[arg(long, value_name = "PATH")]
+        input: Option<PathBuf>,
         /// Salary-cap upper limit in dollars, used for team cap-share output.
         #[arg(long)]
         cap_limit: Option<u64>,

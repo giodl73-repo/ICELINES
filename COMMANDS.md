@@ -1042,6 +1042,8 @@ icelines fetch money-puck             # MoneyPuck CSV via FLETCH, ICELINES parse
 icelines fetch money-puck --seasons 5 # current season plus 4 prior regular seasons
 icelines fetch fletch-sources --gate  # source handoff inventory + migration gate
 icelines fetch contracts              # UFA/RFA/ELC
+icelines fetch contracts --source csv --input examples/contracts-young-stars-20262027.csv \
+  --valuation-season 20262027 --cap-limit 104000000
 icelines fetch career --bundled-seasons 5   # multi-league career history (Calder)
                                             # ~100s; populates ~/.icelines/career_history.json
                                             # for ~1,650 players. Lights up the pre-NHL section
@@ -1054,6 +1056,20 @@ icelines data install --season 19881989
 icelines data remove 19921993
 icelines data verify --all            # verify installed data manifests
 ```
+
+Local contract overlays use this header:
+
+```csv
+nhl_id,player,team,season,cap_hit,aav,salary,expiry_year,expiry_type,source_url,checked_at
+```
+
+`nhl_id`, `player`, `team`, `season`, `source_url`, and `checked_at` are
+required. `checked_at` must be RFC 3339 and `source_url` must be an absolute
+HTTP(S) URL. At least one of `cap_hit`, `aav`, or `salary` must be present.
+Rows for other valid seasons are ignored, while duplicate players, unknown NHL
+IDs, malformed provenance, or an empty selected season fail before a snapshot
+is created. The included young-stars example contains only confirmed values;
+unsigned players are intentionally absent.
 
 The web Admin page also exposes scoped data install/remove forms. Web install
 writes only embedded bundled seasons to `~/.icelines/seasons/<season>/bundle-<season>`

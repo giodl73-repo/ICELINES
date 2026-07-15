@@ -12,6 +12,7 @@ use icelines_fetch::{
     schema::SkaterBio,
     snapshot::{today_date, SnapshotStore, SnapshotTier},
 };
+use sha2::{Digest, Sha256};
 
 pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
     match args {
@@ -84,7 +85,7 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
                 // Contracts and transactions are type-agnostic; they only
                 // run on the regular pass.
                 if let Err(e) =
-                    do_contracts(&season, &season, ContractSource::Nhl, None, dry_run).await
+                    do_contracts(&season, &season, ContractSource::Nhl, None, None, dry_run).await
                 {
                     eprintln!("Warning: contract fetch failed (non-fatal): {e}");
                 }
@@ -106,6 +107,7 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             season,
             valuation_season,
             source,
+            input,
             cap_limit,
             dry_run,
         } => {
@@ -113,6 +115,7 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
                 &season,
                 valuation_season.as_deref().unwrap_or(&season),
                 source,
+                input.as_deref(),
                 cap_limit,
                 dry_run,
             )
@@ -1104,6 +1107,7 @@ async fn do_contracts(
     season: &str,
     valuation_season: &str,
     source: ContractSource,
+    input: Option<&std::path::Path>,
     cap_limit: Option<u64>,
     dry_run: bool,
 ) -> anyhow::Result<()> {
@@ -1122,12 +1126,31 @@ async fn do_contracts(
     let player_ids: Vec<u32> = bios.iter().map(|b| b.player_id).collect();
     let n = player_ids.len();
 
+    let csv_input = match (source, input) {
+        (ContractSource::Csv, Some(path)) => Some(path),
+        (ContractSource::Csv, None) => anyhow::bail!("--source csv requires --input PATH"),
+        (_, Some(_)) => anyhow::bail!("--input is only valid with --source csv"),
+        (_, None) => None,
+    };
+
     if dry_run {
         if source == ContractSource::CapWages {
             println!("Would fetch licensed CapWages contract data for {n} players.");
             println!("Roster snapshot season: {season}");
             println!("Contract valuation season: {valuation_season}");
             println!("Authentication: CAPWAGES_API_KEY environment variable (never persisted)");
+            if let Some(limit) = cap_limit {
+                println!("Would write team-cap-summary.json using upper limit ${limit}.");
+            }
+            return Ok(());
+        }
+        if let Some(path) = csv_input {
+            let contracts =
+                icelines_fetch::contracts_csv::load_contracts_csv(path, &bios, valuation_season)?;
+            println!("Validated {} local contract rows.", contracts.len());
+            println!("Input: {}", path.display());
+            println!("Roster snapshot season: {season}");
+            println!("Contract valuation season: {valuation_season}");
             if let Some(limit) = cap_limit {
                 println!("Would write team-cap-summary.json using upper limit ${limit}.");
             }
@@ -1145,52 +1168,69 @@ async fn do_contracts(
         return Ok(());
     }
 
-    let today = today_date();
-    let snap = format!("{season}-{today}-contracts");
+    let mut contracts = match source {
+        ContractSource::CapWages => {
+            println!("Fetching licensed CapWages values for {n} players...");
+            icelines_fetch::capwages::CapWagesClient::from_env()?
+                .fetch_contracts(&bios, valuation_season)
+                .await?
+        }
+        ContractSource::Csv => {
+            let path = csv_input.expect("validated CSV input");
+            println!("Loading local contract overlay from {}...", path.display());
+            icelines_fetch::contracts_csv::load_contracts_csv(path, &bios, valuation_season)?
+        }
+        ContractSource::Nhl => {
+            println!(
+                "Fetching contract data for {n} players (this takes ~{}s)...",
+                (n as f64 * 0.05).ceil() as u64
+            );
+            let landing_by_player = icelines_fetch::fletch::fetch_player_landing_batch_bytes_async(
+                player_ids.clone(),
+                icelines_fetch::fletch::FletchPlayerLandingArtifact::Landing,
+                fletch_cache_root(&cfg),
+                false,
+                50,
+            )
+            .await
+            .context("fetching player landing contract batch through FLETCH")?;
+            player_ids
+                .iter()
+                .filter_map(|player_id| {
+                    let raw_bytes = landing_by_player.get(player_id)?;
+                    let raw = match serde_json::from_slice::<serde_json::Value>(raw_bytes) {
+                        Ok(raw) => raw,
+                        Err(error) => {
+                            eprintln!("  contracts: skipping player {player_id}: {error}");
+                            return None;
+                        }
+                    };
+                    Some(icelines_fetch::nhl_api::parse_player_landing_contract(
+                        *player_id, &raw,
+                    ))
+                })
+                .collect::<Vec<_>>()
+        }
+    };
+    for contract in &mut contracts {
+        contract.valuation_season = Some(valuation_season.to_owned());
+    }
+    let found = contracts.len();
 
+    // Do not create a snapshot until the upstream or local source has parsed
+    // successfully; validation failures must not leave partial snapshots.
+    let json = serde_json::to_vec(&contracts).context("serializing contracts")?;
+    let today = today_date();
+    let snap = if source == ContractSource::Csv {
+        let digest = format!("{:x}", Sha256::digest(&json));
+        format!("{season}-{today}-contracts-csv-{}", &digest[..8])
+    } else {
+        format!("{season}-{today}-contracts")
+    };
     store
         .create(&snap, season, SnapshotTier::Contracts, None, &today)
         .context("creating contracts snapshot")?;
 
-    let contracts = if source == ContractSource::CapWages {
-        println!("Fetching licensed CapWages values for {n} players...");
-        icelines_fetch::capwages::CapWagesClient::from_env()?
-            .fetch_contracts(&bios, valuation_season)
-            .await?
-    } else {
-        println!(
-            "Fetching contract data for {n} players (this takes ~{}s)...",
-            (n as f64 * 0.05).ceil() as u64
-        );
-        let landing_by_player = icelines_fetch::fletch::fetch_player_landing_batch_bytes_async(
-            player_ids.clone(),
-            icelines_fetch::fletch::FletchPlayerLandingArtifact::Landing,
-            fletch_cache_root(&cfg),
-            false,
-            50,
-        )
-        .await
-        .context("fetching player landing contract batch through FLETCH")?;
-        player_ids
-            .iter()
-            .filter_map(|player_id| {
-                let raw_bytes = landing_by_player.get(player_id)?;
-                let raw = match serde_json::from_slice::<serde_json::Value>(raw_bytes) {
-                    Ok(raw) => raw,
-                    Err(error) => {
-                        eprintln!("  contracts: skipping player {player_id}: {error}");
-                        return None;
-                    }
-                };
-                Some(icelines_fetch::nhl_api::parse_player_landing_contract(
-                    *player_id, &raw,
-                ))
-            })
-            .collect::<Vec<_>>()
-    };
-    let found = contracts.len();
-
-    let json = serde_json::to_vec(&contracts).context("serializing contracts")?;
     store
         .write_file(&snap, &SnapshotTier::Contracts, "contracts.json", &json)
         .context("writing contracts.json")?;

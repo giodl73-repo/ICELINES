@@ -12,10 +12,13 @@ use serde::{Deserialize, Serialize};
 /// `schema::PlayerContract` does.
 ///
 /// As of 2026-04-30 the public NHL landing API does not expose contract
-/// fields; all three are typically `None`. Future API versions or a
+/// fields; contract values are typically `None`. Future API versions or a
 /// third-party source may populate them.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PlayerContract {
+    /// Season whose monetary values are represented (for example, `20262027`).
+    #[serde(default)]
+    pub valuation_season: Option<String>,
     /// Year the contract expires (e.g. 2027).
     #[serde(default)]
     pub expiry_year: Option<u16>,
@@ -34,6 +37,9 @@ pub struct PlayerContract {
     /// Provenance identifier for the value source.
     #[serde(default)]
     pub source: Option<String>,
+    /// Direct URL supporting the imported value, when available.
+    #[serde(default)]
+    pub source_url: Option<String>,
     /// Timestamp reported by the source or observed during the fetch.
     #[serde(default)]
     pub source_checked_at: Option<String>,
@@ -46,12 +52,14 @@ mod tests {
     #[test]
     fn l0_hart3_contract_serde_round_trip() {
         let c = PlayerContract {
+            valuation_season: Some("20262027".into()),
             expiry_year: Some(2027),
             expiry_type: Some("UFA".into()),
             salary: Some(12_500_000),
             cap_hit: Some(12_500_000),
             aav: Some(12_500_000),
             source: Some("capwages".into()),
+            source_url: Some("https://capwages.com".into()),
             source_checked_at: Some("2026-07-14T00:00:00Z".into()),
         };
         let s = serde_json::to_string(&c).unwrap();

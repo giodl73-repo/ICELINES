@@ -753,11 +753,26 @@ impl PlayerView<'_> {
     pub fn contract_expiry_year(&self) -> Option<u16> {
         self.contract.and_then(|c| c.expiry_year)
     }
+    pub fn contract_valuation_season(&self) -> Option<&str> {
+        self.contract.and_then(|c| c.valuation_season.as_deref())
+    }
     pub fn contract_expiry_type(&self) -> Option<&str> {
         self.contract.and_then(|c| c.expiry_type.as_deref())
     }
     pub fn contract_salary(&self) -> Option<u64> {
         self.contract.and_then(|c| c.salary)
+    }
+    pub fn contract_cap_hit(&self) -> Option<u64> {
+        self.contract.and_then(|c| c.cap_hit)
+    }
+    pub fn contract_aav(&self) -> Option<u64> {
+        self.contract.and_then(|c| c.aav)
+    }
+    pub fn contract_source(&self) -> Option<&str> {
+        self.contract.and_then(|c| c.source.as_deref())
+    }
+    pub fn contract_source_url(&self) -> Option<&str> {
+        self.contract.and_then(|c| c.source_url.as_deref())
     }
 
     // ── Hart.5b2 prep — derived helpers matching legacy Player methods ──
@@ -1688,6 +1703,7 @@ mod tests {
         assert_eq!(v.contract_expiry_year(), Some(2026));
         assert_eq!(v.contract_expiry_type(), Some("UFA"));
         assert_eq!(v.contract_salary(), Some(12_500_000));
+        assert_eq!(v.contract_cap_hit(), None);
 
         // Re-upsert is idempotent.
         r.upsert_contract(PlayerId(8478402), c.clone());
