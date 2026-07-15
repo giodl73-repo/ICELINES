@@ -55,6 +55,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  # The generated Clap graph exceeds Rust's default Windows test-thread stack.
+  RUST_MIN_STACK: 16777216
 
 jobs:
   quality:
