@@ -1556,6 +1556,33 @@ pub enum ReportSubcommand {
         json: bool,
     },
 
+    /// Project current-roster market cost and cap pressure across future seasons.
+    CapForecast {
+        /// First forecast season, e.g. 20262027.
+        #[arg(long, default_value = "20262027")]
+        season: String,
+
+        /// Number of seasons to project (1-10).
+        #[arg(long, default_value_t = 5, value_parser = clap::value_parser!(u8).range(1..=10))]
+        years: u8,
+
+        /// Annual cap growth after announced limits, as a percentage.
+        #[arg(long, default_value_t = 5.0, allow_hyphen_values = true)]
+        growth_pct: f64,
+
+        /// Limit output to one current NHL roster.
+        #[arg(long)]
+        team: Option<String>,
+
+        /// Emit cap_projection.v1 JSON instead of the text report.
+        #[arg(long)]
+        json: bool,
+
+        /// Write report to path. Pass '-' or omit for stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+
     /// Generate a fantasy poacher report from PoachReportView.
     Poach {
         /// Season id, e.g. 20252026. Defaults to configured season.

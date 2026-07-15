@@ -1,0 +1,55 @@
+FIVE-YEAR ROSTER MARKET-COST FORECAST
+Schema: cap_projection.v1
+Method: current-roster market-cost scenario
+Scenario growth after announced limits: 5.0%
+Market anchor: Leo Carlsson: $18M AAV beginning 2026-27
+Cap-limit source: https://www.nhl.com/news/topic/catching-up-with/nhl-nhlpa-announce-team-payroll-ranges-for-next-3-seasons-through-2027-28
+Market-anchor source: https://www.nhl.com/ducks/news/ducks-match-five-year-offer-sheet-for-carlsson
+
+Season    Team  Cap $M Active Out Conf Model    Spend $M   Share  Pressure
+----------------------------------------------------------------------------------------
+2026-27   NYR    104.0     23   4    0   23       122.0  117.3%  market-gap
+2027-28   NYR    113.5     23   4    0   23       131.8  116.2%  market-gap
+2028-29   NYR    119.2     23   4    0   23       137.4  115.3%  market-gap
+2029-30   NYR    125.2     23   4    0   23       143.2  114.4%  market-gap
+2030-31   NYR    131.5     23   4    0   23       147.1  111.9%  market-gap
+
+NYR PLAYER MARKET — 2026-27
+Player                   Pos  Role             Basis       Mid $M       Low-high $M
+------------------------------------------------------------------------------------
+Pavel Dorofeyev          RW   first-line F     modeled      11.95    10.15-   13.75
+Mika Zibanejad           C    elite F          modeled      11.50     9.80-   13.20
+Adam Fox                 D    top D            modeled      10.90     9.25-   12.55
+J.T. Miller              C    first-line F     modeled      10.15     8.65-   11.65
+Igor Shesterkin          G    starting G       modeled       8.30     7.05-    9.55
+Alexis Lafrenière        LW   top-six F        modeled       7.30     6.20-    8.40
+Gabe Perreault           RW   top-six F        modeled       7.30     6.20-    8.40
+Sean Durzi               D    second-pair D    modeled       6.25     5.30-    7.20
+Vladislav Gavrikov       D    second-pair D    modeled       5.95     5.05-    6.85
+Joonas Korpisalo         G    tandem G         modeled       4.70     4.00-    5.40
+Adam Sykora              LW   third-line F     modeled       4.00     3.40-    4.60
+Noah Laba                C    third-line F     modeled       4.00     3.40-    4.60
+Tye Kartye               LW   third-line F     modeled       4.00     3.40-    4.60
+Will Cuylle              LW   third-line F     modeled       4.00     3.40-    4.60
+Oliver Bjorkstrand       RW   third-line F     modeled       3.80     3.25-    4.35
+Braden Schneider         D    third-pair D     modeled       2.85     2.40-    3.30
+Matthew Robertson        D    third-pair D     modeled       2.85     2.40-    3.30
+Urho Vaakanainen         D    third-pair D     modeled       2.85     2.40-    3.30
+Marcus Pettersson        D    third-pair D     modeled       2.70     2.30-    3.10
+Jaroslav Chmelar         RW   fourth-line F    modeled       1.65     1.40-    1.90
+Joseph Veleno            C    fourth-line F    modeled       1.65     1.40-    1.90
+Matt Rempe               C    fourth-line F    modeled       1.65     1.40-    1.90
+Taylor Raddysh           RW   fourth-line F    modeled       1.65     1.40-    1.90
+
+DISCLOSURES
+- 2026-27 uses the official $104M upper limit; 2027-28 uses the announced $113.5M projection, which remains subject to adjustment.
+- Later cap limits compound the selected scenario growth rate and are not NHL/NHLPA forecasts.
+- Confirmed cap hits are carried through a known expiry year; all other values are role-market estimates tied to that season's cap.
+- Low/high modeled values are an 85%-115% scenario band around the role midpoint.
+- Team totals use a deterministic 23-player active-roster scenario: up to 14 forwards, 7 defensemen, and 2 goalies, ranked by games played and production.
+- Modeled market values apply a 5% age discount at 30-31 and a 15% discount at 32 or older.
+- Player production and role are held at the source-season level while age advances in each forecast season.
+NON-CLAIMS
+- This report does not predict trades, waivers, buyouts, retention, injuries, roster turnover, term, clauses, or signing bonuses.
+- Current-roster market cost is not the same as a team's legally committed cap payroll.
+- Missing or low-sample production is classified conservatively and never represented as a confirmed salary.

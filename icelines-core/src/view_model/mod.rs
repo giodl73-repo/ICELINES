@@ -6,6 +6,7 @@
 
 pub mod analytics_cache_consumer;
 pub mod awards;
+pub mod cap_projection;
 pub mod career;
 pub mod compare;
 pub mod config;
@@ -45,6 +46,13 @@ pub use analytics_cache_consumer::{
     analytics_cache_consumer_title, AnalyticsCacheConsumerMetricRow, AnalyticsCacheConsumerView,
 };
 pub use awards::{PlayerAwardRow, PlayerAwardSeasonRow, PlayerAwardsView};
+pub use cap_projection::{
+    build_cap_projection, classify_cap_role, sort_team_seasons_by_pressure, CapLimitAuthority,
+    CapLimitProjection, CapPressure, CapProjectionAssumptions, CapProjectionContractInput,
+    CapProjectionError, CapProjectionPlayerInput, CapProjectionRole, CapProjectionView,
+    PlayerCapProjection, SalaryBasis, TeamCapProjection, TeamSeasonCapProjection,
+    CAP_LIMIT_SOURCE_URL, CAP_PROJECTION_METHOD, CAP_PROJECTION_SCHEMA, CARLSSON_ANCHOR_URL,
+};
 pub use career::{
     CareerRow, CareerSortKey, CareerView, CAREER_HISTORY_FETCH_COMMAND,
     CAREER_HISTORY_MISSING_STORE_MESSAGE, CAREER_HISTORY_STORE_PATH,

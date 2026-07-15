@@ -548,6 +548,8 @@ screen/web surface that owns each one.
 ```bash
 icelines report list
 icelines report list --json
+icelines report cap-forecast --team NYR
+icelines report cap-forecast --years 5 --growth-pct 5 --json --out cap-forecast.json
 icelines report poach --category shots --top 10 --out poach.md
 icelines report weekly --league default --category hits,blocks --out weekly.md
 ```
@@ -559,8 +561,18 @@ Surface rule of thumb:
 | Ask a filter/query question | `icelines query ...` |
 | Quick CSV/JSON for Excel/scripts | `icelines x <shape>` |
 | Durable markdown packet | `icelines export md <shape>` |
+| Five-year roster market cost / cap pressure | `icelines report cap-forecast` |
 | Fantasy decision report | `icelines report poach` / `icelines report weekly` |
 | See every available/planned report family | `icelines report list` |
+
+`report cap-forecast` emits the `cap_projection.v1` scenario contract. It uses
+the official $104M 2026-27 upper limit, the announced $113.5M 2027-28
+projection, and configurable growth after that. Team totals select a
+deterministic 23-player scenario (14 forwards, 7 defensemen, 2 goalies) from
+current-roster authority. Confirmed imported contracts remain distinct from
+modeled low/mid/high role-market values. Pressure labels describe the cost of
+retaining that current roster at modeled market rates; they are not committed
+payroll or a prediction of trades, bonuses, term, clauses, or roster turnover.
 
 Web `/reports/poach` and `/reports/weekly` HTML append an inline SVG bar chart
 for positive returned poach scores. The chart is descriptive report context;
