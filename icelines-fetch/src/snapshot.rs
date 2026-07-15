@@ -917,7 +917,7 @@ impl SnapshotStore {
         }
 
         let mut to_delete: Vec<String> = Vec::new();
-        for (_tier, entries) in by_tier.iter() {
+        for entries in by_tier.values() {
             for entry in entries.iter().skip(keep) {
                 if active.as_deref() == Some(entry.name.as_str()) {
                     continue;
@@ -1076,12 +1076,12 @@ impl SnapshotStore {
         };
 
         let mut bios: Vec<crate::schema::SkaterBio> = Vec::with_capacity(bios_idx.len());
-        for (_, hash) in bios_idx.iter() {
+        for hash in bios_idx.values() {
             let bytes = store.get(hash).map_err(io_to_snapshot)?;
             bios.push(serde_json::from_slice(&bytes)?);
         }
         let mut stats: Vec<crate::schema::SkaterStats> = Vec::with_capacity(stats_idx.len());
-        for (_, hash) in stats_idx.iter() {
+        for hash in stats_idx.values() {
             let bytes = store.get(hash).map_err(io_to_snapshot)?;
             stats.push(serde_json::from_slice(&bytes)?);
         }
