@@ -16,13 +16,13 @@ pub enum CountryCodeError {
 }
 
 impl CountryCode {
-    pub const CAN: CountryCode = CountryCode([b'C', b'A', b'N']);
-    pub const USA: CountryCode = CountryCode([b'U', b'S', b'A']);
-    pub const SWE: CountryCode = CountryCode([b'S', b'W', b'E']);
-    pub const FIN: CountryCode = CountryCode([b'F', b'I', b'N']);
-    pub const RUS: CountryCode = CountryCode([b'R', b'U', b'S']);
-    pub const CZE: CountryCode = CountryCode([b'C', b'Z', b'E']);
-    pub const SVK: CountryCode = CountryCode([b'S', b'V', b'K']);
+    pub const CAN: CountryCode = CountryCode(*b"CAN");
+    pub const USA: CountryCode = CountryCode(*b"USA");
+    pub const SWE: CountryCode = CountryCode(*b"SWE");
+    pub const FIN: CountryCode = CountryCode(*b"FIN");
+    pub const RUS: CountryCode = CountryCode(*b"RUS");
+    pub const CZE: CountryCode = CountryCode(*b"CZE");
+    pub const SVK: CountryCode = CountryCode(*b"SVK");
 
     pub fn parse(s: &str) -> Result<Self, CountryCodeError> {
         let trimmed = s.trim();
