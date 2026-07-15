@@ -134,6 +134,11 @@ fn l2_cmd_fetch_dry_run_exits_zero() {
 fn l2_cmd_fetch_rosters_dry_run_exits_zero() {
     let out = run(&["fetch", "rosters", "--dry-run"]);
     assert!(out.status.success(), "fetch rosters --dry-run must exit 0");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("/v1/roster/NYR/current"),
+        "current-season roster dry-run must use the live roster endpoint, got: {stdout}"
+    );
 }
 
 // ── L2: fetch stats --dry-run exits 0 ────────────────────────────────────────

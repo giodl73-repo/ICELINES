@@ -28,9 +28,11 @@ use thiserror::Error;
 use crate::bundled;
 use crate::moneypuck::MoneyPuckStats;
 use crate::schema::{
-    GoalieStats, PlayerContract as LegacyContract, SkaterBio, SkaterRealtime, SkaterStats,
+    GoalieStats, PlayerContract as LegacyContract, RosterResponse, SkaterBio, SkaterRealtime,
+    SkaterStats,
 };
 use crate::snapshot::{SnapshotMetaFlags, SnapshotStore, SnapshotTier};
+use crate::ALL_NHL_TEAMS;
 
 /// Bundled-JSON file format version this binary understands. Bumps on
 /// non-`Option` field additions to existing types in the bundles.
@@ -560,6 +562,36 @@ pub fn load_into_repo(
         repo.upsert_stats(stats)?;
         if let Some(c) = contracts_idx.get(&g.player_id) {
             repo.upsert_contract(pid, build_contract(c));
+        }
+    }
+
+    // Current-roster membership is a separate authority from season
+    // statistics. During the offseason the stats/bios endpoints still
+    // describe each player's final in-season stint, while `/roster/{team}/current`
+    // reflects completed trades, signings, and waiver claims. Overlay the
+    // roster IDs without rewriting `SeasonStats::team_stints`, so historical
+    // and trade views retain their original meaning.
+    if season_type == SeasonType::Regular {
+        for team in ALL_NHL_TEAMS {
+            let Ok(roster) = store.read_tier_file_any_for_season::<RosterResponse>(
+                &SnapshotTier::Rosters,
+                &format!("{team}.json"),
+                &season_str,
+            ) else {
+                continue;
+            };
+            let player_ids = roster
+                .forwards
+                .iter()
+                .chain(&roster.defensemen)
+                .chain(&roster.goalies)
+                .map(|player| PlayerId(player.id));
+            repo.set_current_roster(
+                TeamAbbr((*team).to_owned()),
+                season,
+                season_type,
+                player_ids,
+            );
         }
     }
 

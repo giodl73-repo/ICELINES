@@ -7,7 +7,9 @@ use icelines_core::season_stats::SeasonType;
 use icelines_core::stats_catalog::{ReportKind, Tier, TIER1_REPORTS};
 use icelines_fetch::{
     boxscore_client::{aggregate_profiles, BoxscoreClient},
-    fetch_lock, moneypuck,
+    fetch_lock,
+    fletch::roster_url,
+    moneypuck,
     nhl_api::NhlApiClient,
     schema::SkaterBio,
     snapshot::{today_date, SnapshotStore, SnapshotTier},
@@ -610,7 +612,7 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
     if dry_run {
         println!("Would create snapshot: {snap}");
         for team in TEAMS {
-            println!("  {team}: would fetch /v1/roster/{team}/{season}");
+            println!("  {team}: would fetch {}", roster_url(team, season));
         }
         return Ok(());
     }
@@ -634,7 +636,7 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
     let fletch_cache = fletch_cache_root(&cfg);
     for team in TEAMS {
         let url = icelines_fetch::fletch::roster_url(team, season);
-        let fletch_id = format!("icelines.roster.{season}.{team}");
+        let fletch_id = icelines_fetch::fletch::roster_dataset_id(team, season);
         let roster_bytes = match icelines_fetch::fletch::fetch_generic_http_bytes_async(
             fletch_id,
             url,

@@ -23,7 +23,20 @@ const TEAMS: &[&str] = &[
 ];
 
 pub fn roster_url(team: &str, season: &str) -> String {
-    format!("{WEB_BASE}/roster/{team}/{season}")
+    let window = if season == icelines_core::CURRENT_SEASON_STR {
+        "current"
+    } else {
+        season
+    };
+    format!("{WEB_BASE}/roster/{team}/{window}")
+}
+
+pub fn roster_dataset_id(team: &str, season: &str) -> String {
+    if season == icelines_core::CURRENT_SEASON_STR {
+        format!("icelines.roster.{season}.current.{team}")
+    } else {
+        format!("icelines.roster.{season}.{team}")
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -192,7 +205,7 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             &mut fletches,
             &mut seen,
             source_def(SourceDefInput {
-                id: format!("icelines.roster.{season}.{team}"),
+                id: roster_dataset_id(team, season),
                 fetch_surface: "rosters",
                 season,
                 season_type: "regular",
@@ -520,7 +533,7 @@ pub fn fletch_query_partition_report(
 
     let roster_sources = TEAMS
         .iter()
-        .map(|team| format!("icelines.roster.{season}.{team}"))
+        .map(|team| roster_dataset_id(team, season))
         .collect::<Vec<_>>();
     push_query_partition(
         &mut rows,
@@ -1796,7 +1809,7 @@ mod tests {
             Vec::<String>::new()
         );
         assert!(report.rows.iter().any(|row| {
-            row.fletch_id == "icelines.roster.20252026.EDM"
+            row.fletch_id == "icelines.roster.20252026.current.EDM"
                 && row.source_kind == "http"
                 && row.handoff_status == "generic-fetch-ready"
         }));
@@ -1805,6 +1818,26 @@ mod tests {
                 && row.source_kind == "http"
                 && row.handoff_status == "generic-fetch-ready"
         }));
+    }
+
+    #[test]
+    fn current_roster_source_uses_current_endpoint_and_distinct_cache_id() {
+        assert_eq!(
+            roster_url("NYR", icelines_core::CURRENT_SEASON_STR),
+            "https://api-web.nhle.com/v1/roster/NYR/current"
+        );
+        assert_eq!(
+            roster_dataset_id("NYR", icelines_core::CURRENT_SEASON_STR),
+            "icelines.roster.20252026.current.NYR"
+        );
+        assert_eq!(
+            roster_url("NYR", "20242025"),
+            "https://api-web.nhle.com/v1/roster/NYR/20242025"
+        );
+        assert_eq!(
+            roster_dataset_id("NYR", "20242025"),
+            "icelines.roster.20242025.NYR"
+        );
     }
 
     #[test]

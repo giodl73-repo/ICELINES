@@ -213,7 +213,12 @@ impl NhlApiClient {
         team: &str,
         season: &str,
     ) -> Result<RosterResponse, FetchError> {
-        let url = format!("{}/roster/{team}/{season}", self.base_web);
+        let window = if season == icelines_core::CURRENT_SEASON_STR {
+            "current"
+        } else {
+            season
+        };
+        let url = format!("{}/roster/{team}/{window}", self.base_web);
         self.get_json(&url).await
     }
 

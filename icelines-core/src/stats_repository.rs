@@ -5,11 +5,14 @@
 //! - `stats: HashMap<(PlayerId, Season, SeasonType), SeasonStats>` — per
 //!   (player, season, type) row
 //!
-//! Two roster indexes (rebuilt incrementally on upsert, never persisted):
+//! Three roster indexes (rebuilt incrementally on upsert, never persisted):
 //! - `rosters_last_stint` — players whose **last** stint was on a given
 //!   team in a given (season, type). Matches "current home" semantics.
 //! - `rosters_all_stints` — every player who had ANY stint with a team
 //!   that (season, type). Used by trade / historical views.
+//! - `rosters_current` — optional current-roster membership loaded from
+//!   NHL roster snapshots. When present, lineup-card reads prefer this
+//!   authority while season statistics and stint history remain unchanged.
 //!
 //! Window LRU bounds memory at `lru_cap` resident (Season, SeasonType)
 //! windows. Identities never evict (cheap and stable).
@@ -99,6 +102,7 @@ pub struct StatsRepository {
 
     rosters_last_stint: HashMap<(Season, SeasonType, TeamAbbr), Vec<PlayerId>>,
     rosters_all_stints: HashMap<(Season, SeasonType, TeamAbbr), Vec<PlayerId>>,
+    rosters_current: HashMap<(Season, SeasonType, TeamAbbr), Vec<PlayerId>>,
 
     window_lru: VecDeque<(Season, SeasonType)>,
     lru_cap: usize,
@@ -160,6 +164,7 @@ impl StatsRepository {
             contracts: HashMap::new(),
             rosters_last_stint: HashMap::new(),
             rosters_all_stints: HashMap::new(),
+            rosters_current: HashMap::new(),
             window_lru: VecDeque::with_capacity(cap),
             lru_cap: cap,
             extra_reports: std::collections::BTreeMap::new(),
@@ -335,17 +340,46 @@ impl StatsRepository {
         self.contracts.len()
     }
 
-    /// Players whose **last** stint was on `team` for (season, type).
-    /// Matches today's "current home" UI semantics — the lineup card.
+    /// Players on the NHL current-roster snapshot for `team`, when one
+    /// has been loaded for this window; otherwise players whose **last**
+    /// season stint was on `team`.
+    ///
+    /// The explicit current-roster overlay is membership-only: returned
+    /// views still carry the requested season's stats. This lets offseason
+    /// lineup cards rank newly acquired players by their prior-season
+    /// production without rewriting historical team stints.
     pub fn team_roster(&self, team: &TeamAbbr, s: Season, t: SeasonType) -> Vec<PlayerView<'_>> {
-        self.rosters_last_stint
+        self.rosters_current
             .get(&(s, t, team.clone()))
+            .or_else(|| self.rosters_last_stint.get(&(s, t, team.clone())))
             .map(|ids| {
                 ids.iter()
                     .filter_map(|&id| self.view(id, s, t))
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default()
+    }
+
+    /// Replace one team's current-roster membership for a stats window.
+    ///
+    /// Empty membership is meaningful and suppresses the last-stint
+    /// fallback for that team. Player IDs are de-duplicated in source order;
+    /// unknown IDs remain harmless because `team_roster` filters them until
+    /// a matching identity + stats row is loaded.
+    pub fn set_current_roster(
+        &mut self,
+        team: TeamAbbr,
+        s: Season,
+        t: SeasonType,
+        player_ids: impl IntoIterator<Item = PlayerId>,
+    ) {
+        let mut ids = Vec::new();
+        for id in player_ids {
+            if !ids.contains(&id) {
+                ids.push(id);
+            }
+        }
+        self.rosters_current.insert((s, t, team), ids);
     }
 
     /// Every player who had ANY stint with `team` for (season, type).
@@ -450,6 +484,8 @@ impl StatsRepository {
         self.rosters_last_stint
             .retain(|&(s, t, _), _| !(s == season && t == season_type));
         self.rosters_all_stints
+            .retain(|&(s, t, _), _| !(s == season && t == season_type));
+        self.rosters_current
             .retain(|&(s, t, _), _| !(s == season && t == season_type));
         // Phase Lindsay L.2.5 / DI-12: cascade-evict every Tier-2
         // `extra_reports` entry whose key prefix matches this window.
@@ -1490,6 +1526,52 @@ mod tests {
         let v = fla_last.into_iter().next().unwrap();
         assert!(v.is_goalie());
         assert!(v.was_traded_in_window());
+    }
+
+    #[test]
+    fn l0_current_roster_overlay_moves_lineup_membership_without_rewriting_stints() {
+        let mut repo = StatsRepository::new();
+        repo.upsert_identity(fixtures::identity(8478402).build())
+            .unwrap();
+        repo.upsert_stats(skater_stats(8478402, 20252026, SeasonType::Regular, "EDM"))
+            .unwrap();
+
+        let season = Season(20252026);
+        assert_eq!(
+            repo.team_roster(&TeamAbbr("EDM".into()), season, SeasonType::Regular)
+                .len(),
+            1
+        );
+
+        repo.set_current_roster(
+            TeamAbbr("EDM".into()),
+            season,
+            SeasonType::Regular,
+            Vec::<PlayerId>::new(),
+        );
+        repo.set_current_roster(
+            TeamAbbr("NYR".into()),
+            season,
+            SeasonType::Regular,
+            [PlayerId(8478402), PlayerId(8478402)],
+        );
+
+        assert!(repo
+            .team_roster(&TeamAbbr("EDM".into()), season, SeasonType::Regular)
+            .is_empty());
+        let current = repo.team_roster(&TeamAbbr("NYR".into()), season, SeasonType::Regular);
+        assert_eq!(current.len(), 1, "overlay IDs are de-duplicated");
+        assert_eq!(
+            current[0].team().expect("season stint team").as_str(),
+            "EDM",
+            "stats retain stint team"
+        );
+        assert_eq!(
+            repo.team_roster_all_stints(&TeamAbbr("EDM".into()), season, SeasonType::Regular)
+                .len(),
+            1,
+            "historical stint index remains intact"
+        );
     }
 
     // ── LRU eviction ────────────────────────────────────────────────────────

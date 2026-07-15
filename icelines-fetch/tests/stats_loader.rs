@@ -1235,6 +1235,88 @@ fn l1_load_into_repo_with_populated_snapshot_contracts() {
     assert!(other.contract.is_none());
 }
 
+#[test]
+fn l1_load_into_repo_prefers_current_roster_membership_over_last_season_stint() {
+    use icelines_core::TeamAbbr;
+    use icelines_fetch::schema::{LocalizedString, RosterPlayer, RosterResponse};
+    use icelines_fetch::snapshot::SnapshotTier;
+
+    let dir = tempfile::TempDir::new().unwrap();
+    let store = SnapshotStore::new(dir.path());
+    let snap = "20252026-current-rosters";
+    store
+        .create(snap, "20252026", SnapshotTier::Rosters, None, "2026-07-15")
+        .unwrap();
+
+    let empty = RosterResponse {
+        forwards: Vec::new(),
+        defensemen: Vec::new(),
+        goalies: Vec::new(),
+    };
+    let acquired = RosterResponse {
+        forwards: vec![RosterPlayer {
+            id: 8478402,
+            first_name: LocalizedString::Localized {
+                default: "Connor".into(),
+            },
+            last_name: LocalizedString::Localized {
+                default: "McDavid".into(),
+            },
+            sweater_number: Some(97),
+            position_code: "C".into(),
+            shoots_catches: Some("L".into()),
+            birth_date: Some("1997-01-13".into()),
+            birth_country: Some("CAN".into()),
+            height_in_inches: Some(73),
+            weight_in_pounds: Some(194),
+            headshot: None,
+            birth_city: None,
+            birth_state_province: None,
+        }],
+        defensemen: Vec::new(),
+        goalies: Vec::new(),
+    };
+    store
+        .write_file(
+            snap,
+            &SnapshotTier::Rosters,
+            "EDM.json",
+            &serde_json::to_vec(&empty).unwrap(),
+        )
+        .unwrap();
+    store
+        .write_file(
+            snap,
+            &SnapshotTier::Rosters,
+            "NYR.json",
+            &serde_json::to_vec(&acquired).unwrap(),
+        )
+        .unwrap();
+    store.seal(snap).unwrap();
+
+    let outcome = load_into_repo(Season(20252026), SeasonType::Regular, &store).unwrap();
+    assert!(outcome
+        .repo
+        .team_roster(
+            &TeamAbbr("EDM".into()),
+            Season(20252026),
+            SeasonType::Regular,
+        )
+        .is_empty());
+    let nyr = outcome.repo.team_roster(
+        &TeamAbbr("NYR".into()),
+        Season(20252026),
+        SeasonType::Regular,
+    );
+    assert_eq!(nyr.len(), 1);
+    assert_eq!(nyr[0].id(), PlayerId(8478402));
+    assert_eq!(
+        nyr[0].team().expect("season stint team").as_str(),
+        "EDM",
+        "the roster overlay must not rewrite season-stint provenance"
+    );
+}
+
 // ── Hart.4.1 v0.2 — Gap H: error-path L1 audit ─────────────────────────────
 
 /// Gap H — exercises the StatsWithoutIdentity error path. Synthesize
