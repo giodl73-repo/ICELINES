@@ -2053,6 +2053,7 @@ fn l2_report_list_exits_zero_and_lists_report_doors() {
         "x",
         "export md",
         "weekly-fantasy",
+        "cap-forecast",
         "records",
         "stathead-packs",
         "icelines stathead",
@@ -2085,6 +2086,59 @@ fn l2_report_list_json_marks_records_available() {
             && stdout.contains("\"status\": \"available\""),
         "report list JSON must expose available records and stathead catalog rows, got: {stdout}"
     );
+}
+
+#[test]
+fn l2_report_cap_forecast_json_exposes_roster_market_scenario() {
+    let out = run(&[
+        "report",
+        "cap-forecast",
+        "--team",
+        "NYR",
+        "--years",
+        "2",
+        "--json",
+    ]);
+    assert!(
+        out.status.success(),
+        "cap forecast stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&out.stdout).expect("cap forecast must emit valid JSON");
+    assert_eq!(parsed["schema"], "cap_projection.v1");
+    assert_eq!(parsed["assumptions"]["base_season"], 20_262_027);
+    assert_eq!(parsed["teams"][0]["team"], "NYR");
+    let seasons = parsed["teams"][0]["seasons"]
+        .as_array()
+        .expect("team seasons array");
+    assert_eq!(seasons.len(), 2);
+    assert!(seasons[0]["roster_players"].as_u64().unwrap_or(0) <= 23);
+    assert!(seasons[0]["source_roster_players"].as_u64().unwrap_or(0) >= 23);
+    assert!(parsed["non_claims"]
+        .as_array()
+        .expect("non-claims array")
+        .iter()
+        .any(|row| row
+            .as_str()
+            .unwrap_or_default()
+            .contains("committed cap payroll")));
+}
+
+#[test]
+fn l2_report_cap_forecast_rejects_unknown_team() {
+    let out = run(&["report", "cap-forecast", "--team", "XYZ"]);
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("unknown team"));
+}
+
+#[test]
+fn l2_report_cap_forecast_text_preserves_provenance_urls() {
+    let out = run(&["report", "cap-forecast", "--team", "NYR", "--years", "1"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Cap-limit source: https://www.nhl.com/"));
+    assert!(stdout.contains("Market-anchor source: https://www.nhl.com/ducks/"));
 }
 
 #[test]

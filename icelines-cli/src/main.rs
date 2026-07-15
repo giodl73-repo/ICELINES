@@ -173,6 +173,23 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             ReportSubcommand::List { json } => {
                 commands::report::run_list(json)?;
             }
+            ReportSubcommand::CapForecast {
+                season,
+                years,
+                growth_pct,
+                team,
+                json,
+                out,
+            } => {
+                commands::report::run_cap_forecast(commands::report::CapForecastArgs {
+                    season,
+                    years,
+                    growth_pct,
+                    team,
+                    json,
+                    out,
+                })?;
+            }
             ReportSubcommand::Poach {
                 season,
                 season_type,

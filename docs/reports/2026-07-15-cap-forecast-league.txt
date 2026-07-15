@@ -1,0 +1,183 @@
+FIVE-YEAR ROSTER MARKET-COST FORECAST
+Schema: cap_projection.v1
+Method: current-roster market-cost scenario
+Scenario growth after announced limits: 5.0%
+Market anchor: Leo Carlsson: $18M AAV beginning 2026-27
+Cap-limit source: https://www.nhl.com/news/topic/catching-up-with/nhl-nhlpa-announce-team-payroll-ranges-for-next-3-seasons-through-2027-28
+Market-anchor source: https://www.nhl.com/ducks/news/ducks-match-five-year-offer-sheet-for-carlsson
+
+Season    Team  Cap $M Active Out Conf Model    Spend $M   Share  Pressure
+----------------------------------------------------------------------------------------
+2026-27   DAL    104.0     23   0    0   23       149.2  143.4%  market-gap
+2026-27   MTL    104.0     23   3    1   22       145.9  140.3%  market-gap
+2026-27   VGK    104.0     23   5    0   23       145.3  139.8%  market-gap
+2026-27   WSH    104.0     23   2    0   23       145.2  139.6%  market-gap
+2026-27   UTA    104.0     23   1    1   22       139.7  134.3%  market-gap
+2026-27   TBL    104.0     23   3    0   23       137.2  131.9%  market-gap
+2026-27   TOR    104.0     23   2    0   23       134.8  129.6%  market-gap
+2026-27   FLA    104.0     23   2    0   23       134.8  129.6%  market-gap
+2026-27   OTT    104.0     23   3    0   23       132.9  127.8%  market-gap
+2026-27   BOS    104.0     23   1    0   23       131.9  126.8%  market-gap
+2026-27   CAR    104.0     22   0    0   22       130.7  125.6%  market-gap
+2026-27   COL    104.0     21   0    0   21       130.2  125.2%  market-gap
+2026-27   ANA    104.0     22   0    1   21       129.8  124.8%  market-gap
+2026-27   PHI    104.0     23   5    0   23       128.0  123.0%  market-gap
+2026-27   MIN    104.0     23   5    0   23       127.3  122.4%  market-gap
+2026-27   BUF    104.0     23   5    0   23       126.5  121.7%  market-gap
+2026-27   PIT    104.0     23   0    0   23       126.5  121.7%  market-gap
+2026-27   EDM    104.0     23   0    0   23       124.4  119.6%  market-gap
+2026-27   SJS    104.0     20   0    0   20       122.3  117.6%  market-gap
+2026-27   NYR    104.0     23   4    0   23       122.0  117.3%  market-gap
+2026-27   LAK    104.0     22   0    0   22       121.2  116.5%  market-gap
+2026-27   STL    104.0     23   0    0   23       119.5  114.9%  market-gap
+2026-27   DET    104.0     19   0    0   19       118.4  113.8%  market-gap
+2026-27   NJD    104.0     21   0    0   21       117.2  112.7%  market-gap
+2026-27   CHI    104.0     23   2    0   23       115.0  110.6%  market-gap
+2026-27   NSH    104.0     22   0    0   22       114.2  109.8%  market-gap
+2026-27   WPG    104.0     21   0    0   21       113.7  109.3%  market-gap
+2026-27   CBJ    104.0     22   0    0   22       111.0  106.7%  market-gap
+2026-27   NYI    104.0     21   0    0   21       108.9  104.7%  market-gap
+2026-27   SEA    104.0     21   0    0   21       102.5   98.6%  critical
+2026-27   VAN    104.0     22   0    0   22        94.8   91.1%  tight
+2026-27   CGY    104.0     23   6    0   23        93.6   90.0%  tight
+2027-28   DAL    113.5     23   0    0   23       162.6  143.3%  market-gap
+2027-28   MTL    113.5     23   3    1   22       158.4  139.6%  market-gap
+2027-28   WSH    113.5     23   2    0   23       157.4  138.7%  market-gap
+2027-28   VGK    113.5     23   5    0   23       153.6  135.3%  market-gap
+2027-28   UTA    113.5     23   1    1   22       150.8  132.9%  market-gap
+2027-28   TBL    113.5     23   3    0   23       148.8  131.1%  market-gap
+2027-28   TOR    113.5     23   2    0   23       145.2  128.0%  market-gap
+2027-28   FLA    113.5     23   2    0   23       143.8  126.7%  market-gap
+2027-28   OTT    113.5     23   3    0   23       143.5  126.4%  market-gap
+2027-28   BOS    113.5     23   1    0   23       142.0  125.1%  market-gap
+2027-28   CAR    113.5     22   0    0   22       141.6  124.8%  market-gap
+2027-28   ANA    113.5     22   0    1   21       139.2  122.7%  market-gap
+2027-28   COL    113.5     21   0    0   21       139.0  122.5%  market-gap
+2027-28   PHI    113.5     23   5    0   23       138.8  122.2%  market-gap
+2027-28   BUF    113.5     23   5    0   23       137.2  120.8%  market-gap
+2027-28   PIT    113.5     23   0    0   23       137.1  120.8%  market-gap
+2027-28   MIN    113.5     23   5    0   23       137.0  120.7%  market-gap
+2027-28   EDM    113.5     23   0    0   23       132.1  116.4%  market-gap
+2027-28   NYR    113.5     23   4    0   23       131.8  116.2%  market-gap
+2027-28   LAK    113.5     22   0    0   22       131.7  116.0%  market-gap
+2027-28   SJS    113.5     20   0    0   20       131.7  116.0%  market-gap
+2027-28   STL    113.5     23   0    0   23       129.7  114.2%  market-gap
+2027-28   DET    113.5     19   0    0   19       127.8  112.6%  market-gap
+2027-28   NJD    113.5     21   0    0   21       127.5  112.3%  market-gap
+2027-28   NSH    113.5     22   0    0   22       124.5  109.7%  market-gap
+2027-28   CHI    113.5     23   2    0   23       123.9  109.2%  market-gap
+2027-28   WPG    113.5     21   0    0   21       122.6  108.0%  market-gap
+2027-28   CBJ    113.5     22   0    0   22       118.9  104.8%  market-gap
+2027-28   NYI    113.5     21   0    0   21       115.7  101.9%  market-gap
+2027-28   SEA    113.5     21   0    0   21       111.8   98.5%  critical
+2027-28   VAN    113.5     22   0    0   22       102.2   90.1%  tight
+2027-28   CGY    113.5     23   6    0   23       102.0   89.8%  tight
+2028-29   DAL    119.2     23   0    0   23       166.9  140.1%  market-gap
+2028-29   MTL    119.2     23   3    1   22       165.4  138.8%  market-gap
+2028-29   WSH    119.2     23   2    0   23       162.2  136.1%  market-gap
+2028-29   VGK    119.2     23   5    0   23       158.1  132.6%  market-gap
+2028-29   UTA    119.2     23   1    1   22       154.2  129.3%  market-gap
+2028-29   TBL    119.2     23   3    0   23       153.8  129.0%  market-gap
+2028-29   OTT    119.2     23   3    0   23       149.3  125.3%  market-gap
+2028-29   TOR    119.2     23   2    0   23       148.6  124.7%  market-gap
+2028-29   FLA    119.2     23   2    0   23       147.4  123.7%  market-gap
+2028-29   CAR    119.2     22   0    0   22       147.0  123.3%  market-gap
+2028-29   BOS    119.2     23   1    0   23       145.4  122.0%  market-gap
+2028-29   ANA    119.2     22   0    1   21       144.8  121.5%  market-gap
+2028-29   COL    119.2     21   0    0   21       144.8  121.5%  market-gap
+2028-29   PHI    119.2     23   5    0   23       144.2  120.9%  market-gap
+2028-29   MIN    119.2     23   5    0   23       143.9  120.8%  market-gap
+2028-29   BUF    119.2     23   5    0   23       143.8  120.6%  market-gap
+2028-29   PIT    119.2     23   0    0   23       142.9  119.9%  market-gap
+2028-29   SJS    119.2     20   0    0   20       137.9  115.7%  market-gap
+2028-29   EDM    119.2     23   0    0   23       137.6  115.4%  market-gap
+2028-29   NYR    119.2     23   4    0   23       137.4  115.3%  market-gap
+2028-29   LAK    119.2     22   0    0   22       136.2  114.2%  market-gap
+2028-29   STL    119.2     23   0    0   23       135.6  113.7%  market-gap
+2028-29   DET    119.2     19   0    0   19       132.9  111.5%  market-gap
+2028-29   NJD    119.2     21   0    0   21       132.3  111.0%  market-gap
+2028-29   NSH    119.2     22   0    0   22       130.2  109.2%  market-gap
+2028-29   CHI    119.2     23   2    0   23       129.6  108.7%  market-gap
+2028-29   WPG    119.2     21   0    0   21       126.0  105.7%  market-gap
+2028-29   CBJ    119.2     22   0    0   22       124.4  104.4%  market-gap
+2028-29   NYI    119.2     21   0    0   21       121.7  102.1%  market-gap
+2028-29   SEA    119.2     21   0    0   21       114.2   95.8%  critical
+2028-29   CGY    119.2     23   6    0   23       106.5   89.3%  tight
+2028-29   VAN    119.2     22   0    0   22       106.2   89.1%  tight
+2029-30   DAL    125.2     23   0    0   23       172.6  137.9%  market-gap
+2029-30   MTL    125.2     23   3    1   22       171.2  136.7%  market-gap
+2029-30   WSH    125.2     23   2    0   23       167.7  133.9%  market-gap
+2029-30   VGK    125.2     23   5    0   23       161.0  128.6%  market-gap
+2029-30   UTA    125.2     23   1    1   22       159.3  127.2%  market-gap
+2029-30   TBL    125.2     23   3    0   23       158.3  126.4%  market-gap
+2029-30   OTT    125.2     23   3    0   23       154.8  123.6%  market-gap
+2029-30   CAR    125.2     22   0    0   22       152.4  121.8%  market-gap
+2029-30   TOR    125.2     23   2    0   23       152.4  121.8%  market-gap
+2029-30   FLA    125.2     23   2    0   23       151.8  121.2%  market-gap
+2029-30   COL    125.2     21   0    0   21       149.3  119.2%  market-gap
+2029-30   ANA    125.2     22   0    1   21       148.6  118.7%  market-gap
+2029-30   BOS    125.2     23   1    0   23       148.3  118.5%  market-gap
+2029-30   PIT    125.2     23   0    0   23       148.2  118.3%  market-gap
+2029-30   PHI    125.2     23   5    0   23       148.1  118.3%  market-gap
+2029-30   BUF    125.2     23   5    0   23       147.6  117.9%  market-gap
+2029-30   MIN    125.2     23   5    0   23       146.5  117.0%  market-gap
+2029-30   SJS    125.2     20   0    0   20       143.4  114.6%  market-gap
+2029-30   NYR    125.2     23   4    0   23       143.2  114.4%  market-gap
+2029-30   LAK    125.2     22   0    0   22       142.1  113.5%  market-gap
+2029-30   STL    125.2     23   0    0   23       140.3  112.1%  market-gap
+2029-30   EDM    125.2     23   0    0   23       140.2  111.9%  market-gap
+2029-30   NJD    125.2     21   0    0   21       137.0  109.4%  market-gap
+2029-30   DET    125.2     19   0    0   19       136.7  109.1%  market-gap
+2029-30   NSH    125.2     22   0    0   22       135.8  108.5%  market-gap
+2029-30   CHI    125.2     23   2    0   23       135.1  107.9%  market-gap
+2029-30   WPG    125.2     21   0    0   21       130.1  103.9%  market-gap
+2029-30   CBJ    125.2     22   0    0   22       127.0  101.4%  market-gap
+2029-30   NYI    125.2     21   0    0   21       125.5  100.2%  market-gap
+2029-30   SEA    125.2     21   0    0   21       119.0   95.0%  critical
+2029-30   CGY    125.2     23   6    0   23       110.1   87.9%  tight
+2029-30   VAN    125.2     22   0    0   22       107.8   86.1%  tight
+2030-31   DAL    131.5     23   0    0   23       180.3  137.1%  market-gap
+2030-31   MTL    131.5     23   3    1   22       178.4  135.7%  market-gap
+2030-31   WSH    131.5     23   2    0   23       171.7  130.6%  market-gap
+2030-31   VGK    131.5     23   5    0   23       168.4  128.1%  market-gap
+2030-31   TBL    131.5     23   3    0   23       163.2  124.1%  market-gap
+2030-31   UTA    131.5     23   1    1   22       162.2  123.3%  market-gap
+2030-31   OTT    131.5     23   3    0   23       160.2  121.9%  market-gap
+2030-31   TOR    131.5     23   2    0   23       159.8  121.5%  market-gap
+2030-31   CAR    131.5     22   0    0   22       158.8  120.8%  market-gap
+2030-31   FLA    131.5     23   2    0   23       158.6  120.6%  market-gap
+2030-31   PHI    131.5     23   5    0   23       155.0  117.9%  market-gap
+2030-31   ANA    131.5     22   0    1   21       154.9  117.8%  market-gap
+2030-31   COL    131.5     21   0    0   21       154.3  117.4%  market-gap
+2030-31   MIN    131.5     23   5    0   23       153.4  116.7%  market-gap
+2030-31   PIT    131.5     23   0    0   23       153.4  116.7%  market-gap
+2030-31   BOS    131.5     23   1    0   23       153.2  116.5%  market-gap
+2030-31   BUF    131.5     23   5    0   23       153.0  116.3%  market-gap
+2030-31   SJS    131.5     20   0    0   20       150.2  114.3%  market-gap
+2030-31   LAK    131.5     22   0    0   22       148.8  113.2%  market-gap
+2030-31   NYR    131.5     23   4    0   23       147.1  111.9%  market-gap
+2030-31   STL    131.5     23   0    0   23       146.9  111.7%  market-gap
+2030-31   EDM    131.5     23   0    0   23       146.5  111.4%  market-gap
+2030-31   DET    131.5     19   0    0   19       143.2  108.9%  market-gap
+2030-31   CHI    131.5     23   2    0   23       141.8  107.8%  market-gap
+2030-31   NJD    131.5     21   0    0   21       141.7  107.7%  market-gap
+2030-31   NSH    131.5     22   0    0   22       141.2  107.4%  market-gap
+2030-31   WPG    131.5     21   0    0   21       135.5  103.0%  market-gap
+2030-31   CBJ    131.5     22   0    0   22       131.8  100.2%  market-gap
+2030-31   NYI    131.5     21   0    0   21       130.8   99.5%  critical
+2030-31   SEA    131.5     21   0    0   21       123.5   93.9%  tight
+2030-31   CGY    131.5     23   6    0   23       114.2   86.9%  tight
+2030-31   VAN    131.5     22   0    0   22       111.5   84.8%  flexible
+
+DISCLOSURES
+- 2026-27 uses the official $104M upper limit; 2027-28 uses the announced $113.5M projection, which remains subject to adjustment.
+- Later cap limits compound the selected scenario growth rate and are not NHL/NHLPA forecasts.
+- Confirmed cap hits are carried through a known expiry year; all other values are role-market estimates tied to that season's cap.
+- Low/high modeled values are an 85%-115% scenario band around the role midpoint.
+- Team totals use a deterministic 23-player active-roster scenario: up to 14 forwards, 7 defensemen, and 2 goalies, ranked by games played and production.
+- Modeled market values apply a 5% age discount at 30-31 and a 15% discount at 32 or older.
+- Player production and role are held at the source-season level while age advances in each forecast season.
+NON-CLAIMS
+- This report does not predict trades, waivers, buyouts, retention, injuries, roster turnover, term, clauses, or signing bonuses.
+- Current-roster market cost is not the same as a team's legally committed cap payroll.
+- Missing or low-sample production is classified conservatively and never represented as a confirmed salary.

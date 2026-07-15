@@ -293,6 +293,8 @@ icelines poach --category hits,blocks --top 15
 icelines poach --availability imported-available --category hits,blocks --top 15
 icelines poach --team SEA --pos LW --json
 icelines report list
+icelines report cap-forecast --team NYR
+icelines report cap-forecast --years 5 --growth-pct 5 --json
 icelines report poach --category shots --top 10 --out poach.md
 icelines report weekly --league default --category hits,blocks
 icelines records player "Andre Burakovsky" --metric teams-scored-against
