@@ -13,11 +13,18 @@ pub mod config;
 pub mod context;
 pub mod data_status;
 pub mod docs;
+pub mod fantasy_assistant;
+pub mod fantasy_category_matchup;
+pub mod fantasy_competition;
 pub mod fantasy_daily;
 pub mod fantasy_gap;
+pub mod fantasy_goalie_plan;
 pub mod fantasy_import;
 pub mod fantasy_league;
 pub mod fantasy_matchup;
+pub mod fantasy_matchup_strategy;
+pub mod fantasy_schedule;
+pub mod fantasy_season_sim;
 pub mod fantasy_sim;
 pub mod favorites;
 pub mod game;
@@ -38,6 +45,7 @@ pub mod scoring_pace;
 pub mod signals;
 pub mod snapshot;
 pub mod streaks;
+pub mod team_ceiling;
 pub mod team_depth;
 pub mod tokens;
 pub mod transactions;
@@ -70,6 +78,43 @@ pub use data_status::{
     DataMutationIntent, DataMutationOperation, DataStatusEntryInput, DataStatusRow, DataStatusView,
 };
 pub use docs::DocsView;
+pub use fantasy_assistant::{
+    apply_fantasy_pickup_reserve, build_fantasy_daily_lineup, build_fantasy_draft_board,
+    build_fantasy_morning_briefing, build_fantasy_sleeper_board, build_fantasy_week_budget,
+    build_fantasy_weekly_pickups, build_fantasy_weekly_pickups_with_reserve_override,
+    fantasy_acquisition_availability, fantasy_waiver_window, import_fantasy_platform_eligibility,
+    import_fantasy_taken_players, resolve_fantasy_player_status, FantasyAcquisitionAvailability,
+    FantasyAcquisitionInput, FantasyAcquisitionKind, FantasyActiveSlot, FantasyActiveSlotKind,
+    FantasyAssistantRules, FantasyDailyLineupView, FantasyDraftBoardView,
+    FantasyDraftCandidateInput, FantasyDraftCandidateRow, FantasyDraftIdentityInput,
+    FantasyDraftPositionLeader, FantasyDraftValueComponents, FantasyEligibilityImportRow,
+    FantasyEligibilityImportStatus, FantasyEligibilityImportView, FantasyInjuryPlanView,
+    FantasyLineupAssignmentRow, FantasyLineupPlayerInput, FantasyMarketStatus,
+    FantasyMorningAction, FantasyMorningActionKind, FantasyMorningBriefingView,
+    FantasyObservationConfidence, FantasyObservationFreshness, FantasyPlayerAvailabilityStatus,
+    FantasyReserveAssignmentRow, FantasyResolvedPlayerStatus, FantasySleeperBoardView,
+    FantasySleeperComponents, FantasySleeperConfidence, FantasySleeperInput, FantasySleeperRow,
+    FantasyStatusObservation, FantasyTakenImportView, FantasyTakenPlayerRow,
+    FantasyTakenResolutionStatus, FantasyWaiverWindow, FantasyWeekBudgetView,
+    FantasyWeeklyMoveInput, FantasyWeeklyMoveRow, FantasyWeeklyPickupView,
+    FANTASY_ASSISTANT_RULES_SCHEMA, FANTASY_DAILY_LINEUP_SCHEMA, FANTASY_DRAFT_BOARD_SCHEMA,
+    FANTASY_ELIGIBILITY_IMPORT_SCHEMA, FANTASY_INJURY_PLAN_SCHEMA, FANTASY_MORNING_BRIEFING_SCHEMA,
+    FANTASY_SLEEPER_BOARD_SCHEMA, FANTASY_TAKEN_IMPORT_SCHEMA, FANTASY_WEEKLY_PICKUP_SCHEMA,
+    FANTASY_WEEK_BUDGET_SCHEMA,
+};
+pub use fantasy_category_matchup::{
+    build_fantasy_category_matchup, FantasyCategoryClassification, FantasyCategoryMatchupInput,
+    FantasyCategoryMatchupRow, FantasyCategoryMatchupView, FantasyCategoryPlayerInput,
+    FantasyCategoryProjectedResult, FantasyCategoryProjectedValue, FantasyCategoryRateInput,
+    FantasyCategoryScope, FantasyCategorySnapshotComponents, FantasyCategorySnapshotInput,
+    FantasyCategorySnapshotRow, FantasyCategoryTeamInput, FANTASY_CATEGORY_MATCHUP_SCHEMA,
+    FANTASY_CATEGORY_SNAPSHOT_SCHEMA,
+};
+pub use fantasy_competition::{
+    FantasyCategoryAggregation, FantasyCategoryDirection, FantasyCategoryRule,
+    FantasyCompetitionMode, FantasyCompetitionRules, FantasyMatchupTiePolicy,
+    FANTASY_COMPETITION_RULES_SCHEMA,
+};
 pub use fantasy_daily::{
     score_daily_goalie_line, score_daily_skater_line, FantasyDailyDeltaInput,
     FantasyDailyDeltaView, FantasyDailyLineInput, FantasyDailyPlayerInput, FantasyDailyPlayerRow,
@@ -78,6 +123,13 @@ pub use fantasy_daily::{
 pub use fantasy_gap::{
     FantasyRosterGapAction, FantasyRosterGapCandidate, FantasyRosterGapInput,
     FantasyRosterGapReplacement, FantasyRosterGapRow, FantasyRosterGapView,
+};
+pub use fantasy_goalie_plan::{
+    build_fantasy_goalie_plan, resolve_fantasy_goalie_start, FantasyGoalieGameInput,
+    FantasyGoaliePlanAction, FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput,
+    FantasyGoaliePlanRow, FantasyGoaliePlanView, FantasyGoaliePortfolioComparison,
+    FantasyGoalieRefreshUrgency, FantasyGoalieStartObservation, FantasyGoalieStartState,
+    FantasyGoalieStreamCandidateRow, FantasyResolvedGoalieStart, FANTASY_GOALIE_PLAN_SCHEMA,
 };
 pub use fantasy_import::{
     FantasyImportMode, FantasyImportPlayerRow, FantasyImportRowInput, FantasyImportRowStatus,
@@ -92,6 +144,23 @@ pub use fantasy_matchup::{
     FantasyMatchupOutcome, FantasyMatchupRow, FantasyMatchupScheduleInput, FantasyMatchupSideRow,
     FantasyMatchupTeamRow, FantasyMatchupTeamTotalInput, FantasyMatchupWeekInput,
     FantasyMatchupWeekView,
+};
+pub use fantasy_matchup_strategy::{
+    build_fantasy_matchup_strategy, FantasyMatchupDailyProjectionRow,
+    FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy, FantasyMatchupStrategyInput,
+    FantasyMatchupStrategyPlayerInput, FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView,
+    FantasyMatchupSwingInput, FantasyMatchupTeamProjection, FANTASY_MATCHUP_STRATEGY_SCHEMA,
+};
+pub use fantasy_schedule::{
+    build_fantasy_schedule_view, FantasyDailySlateRow, FantasyRosterScheduleView,
+    FantasyScheduleClassRow, FantasyScheduleComplementRow, FantasyScheduleGameInput,
+    FantasyScheduleOverlapRow, FantasyScheduleTeamRow, FantasyScheduleView, FantasyScheduleWeekRow,
+    FantasyWeeklyTeamRow, FANTASY_SCHEDULE_SCHEMA,
+};
+pub use fantasy_season_sim::{
+    simulate_fantasy_season, FantasySeasonEventKind, FantasySeasonEventRow, FantasySeasonSimConfig,
+    FantasySeasonSimPlayerInput, FantasySeasonSimTeamRow, FantasySeasonSimView,
+    FANTASY_SEASON_SIM_SCHEMA,
 };
 pub use fantasy_sim::{
     build_fantasy_simulation_view, fantasy_roster_games_played, fantasy_roster_games_remaining,
@@ -173,6 +242,11 @@ pub use snapshot::{
 pub use streaks::{
     PlayerGameLineInput, PlayerShotLineInput, PlayerStreakRow, PlayerStreaksView,
     TeamPlayerStreakLeaderRow, TeamPlayerStreaksView,
+};
+pub use team_ceiling::{
+    build_team_ceiling, TeamCeilingError, TeamCeilingLens, TeamCeilingLensScore,
+    TeamCeilingPlayerInput, TeamCeilingPlayerRow, TeamCeilingRow, TeamCeilingView,
+    TEAM_CEILING_METHOD, TEAM_CEILING_SCHEMA,
 };
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,

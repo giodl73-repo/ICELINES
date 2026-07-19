@@ -610,7 +610,7 @@ pub(crate) fn parse_game(
     })
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ScheduledGame {
     pub game_id: u64,
     pub date: String,  // "YYYY-MM-DD"

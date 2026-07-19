@@ -1581,7 +1581,7 @@ pub const WORKBENCH_EXPERIENCES: &[WorkbenchExperience] = &[
     ),
     experience(
         WorkbenchExperienceId::FantasyRoom,
-        "Fantasy room",
+        "The Bench",
         &[WorkbenchSurface::Tui, WorkbenchSurface::Web],
         WorkbenchId::Fantasy,
         Some(WorkbenchPaneBindingId::FantasyRosterLeft),
@@ -1972,5 +1972,15 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn l0_fantasy_experience_uses_the_bench_brand_without_changing_its_id() {
+        let experience = workbench_experience(WorkbenchExperienceId::FantasyRoom)
+            .expect("fantasy experience remains registered");
+
+        assert_eq!(experience.id.slug(), "fantasy-room");
+        assert_eq!(experience.label, "The Bench");
+        assert_eq!(experience.center, WorkbenchId::Fantasy);
     }
 }

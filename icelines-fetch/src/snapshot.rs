@@ -470,6 +470,10 @@ impl SnapshotStore {
         self.write_meta(name, &meta)?;
 
         let mut manifest = self.load_manifest()?;
+        // A same-day fetch retry reuses the deterministic snapshot name.
+        // Replace its stale unsealed index row instead of accumulating
+        // duplicate entries that can make later tier selection ambiguous.
+        manifest.snapshots.retain(|entry| entry.name != name);
         manifest.snapshots.push(SnapshotEntry {
             name: name.to_owned(),
             season: season.to_owned(),
@@ -1517,6 +1521,33 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let store = SnapshotStore::new(dir.path());
         (dir, store)
+    }
+
+    #[test]
+    fn l0_same_name_snapshot_retry_replaces_manifest_entry() {
+        let (_dir, store) = store();
+        store
+            .create(
+                "20262027-2026-07-16-rosters",
+                "20262027",
+                SnapshotTier::Rosters,
+                None,
+                "2026-07-16",
+            )
+            .unwrap();
+        store
+            .create(
+                "20262027-2026-07-16-rosters",
+                "20262027",
+                SnapshotTier::Rosters,
+                None,
+                "2026-07-16",
+            )
+            .unwrap();
+
+        let manifest = store.load_manifest().unwrap();
+        assert_eq!(manifest.snapshots.len(), 1);
+        assert_eq!(manifest.snapshots[0].name, "20262027-2026-07-16-rosters");
     }
 
     // ── Phase T.0: atomic snapshot writer ─────────────────────────────────

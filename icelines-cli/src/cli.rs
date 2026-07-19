@@ -1404,38 +1404,266 @@ mod tui_surface_tests {
     }
 
     #[test]
-    fn l0_fantasy_import_yahoo_clap_surface_parses() {
-        let cli = Cli::try_parse_from([
-            "icelines",
-            "fantasy",
-            "import-yahoo",
-            "--file",
-            "rosters.csv",
-            "--league",
-            "Office Pool",
-            "--my-team",
-            "My Team",
-            "--dry-run",
-            "--json",
-        ])
-        .expect("fantasy import-yahoo should parse");
+    fn l0_fantasy_matchup_plan_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "matchup-plan",
+                "--week",
+                "2026-10-08",
+                "--opponent",
+                "Rival",
+                "--team",
+                "My Team",
+                "--strategy",
+                "floor",
+                "--through",
+                "2026-10-07",
+                "--user-current",
+                "42.5",
+                "--opponent-current",
+                "39.0",
+                "--candidates",
+                "40",
+                "--json",
+            ])
+            .expect("fantasy matchup-plan should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::MatchupPlan {
+                    week,
+                    team: Some(team),
+                    opponent: Some(opponent),
+                    strategy,
+                    through: Some(through),
+                    user_current: Some(user_current),
+                    opponent_current: Some(opponent_current),
+                    candidates: 40,
+                    json: true,
+                    ..
+                }) if week.to_string() == "2026-10-08"
+                    && team == "My Team"
+                    && opponent == "Rival"
+                    && strategy == "floor"
+                    && through.to_string() == "2026-10-07"
+                    && user_current == 42.5
+                    && opponent_current == 39.0
+            ));
+        });
+    }
 
-        match cli.command {
-            Commands::Fantasy(FantasySubcommand::ImportYahoo {
-                file,
-                league,
-                my_team,
-                dry_run,
-                json,
-            }) => {
-                assert_eq!(file, std::path::PathBuf::from("rosters.csv"));
-                assert_eq!(league, "Office Pool");
-                assert_eq!(my_team.as_deref(), Some("My Team"));
-                assert!(dry_run);
-                assert!(json);
+    #[test]
+    fn l0_fantasy_competition_set_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "competition-set",
+                "--mode",
+                "categories",
+                "--category",
+                "goals:higher:sum",
+                "--category",
+                "save_percentage:higher:ratio:0.0001",
+                "--minimum-goalie-appearances",
+                "3",
+            ])
+            .expect("fantasy competition-set should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::CompetitionSet {
+                    mode,
+                    categories,
+                    minimum_goalie_appearances: 3,
+                    ..
+                }) if mode == "categories" && categories.len() == 2
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_matchup_plan_category_snapshot_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "matchup-plan",
+                "--week",
+                "2026-10-08",
+                "--opponent",
+                "Rival",
+                "--category-snapshot",
+                "-",
+            ])
+            .expect("category snapshot should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::MatchupPlan {
+                    category_snapshot: Some(path),
+                    ..
+                }) if path.as_os_str() == "-"
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_import_yahoo_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "import-yahoo",
+                "--file",
+                "-",
+                "--league",
+                "Office Pool",
+                "--my-team",
+                "My Team",
+                "--dry-run",
+                "--replace",
+                "--json",
+            ])
+            .expect("fantasy import-yahoo should parse");
+
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::ImportYahoo {
+                    file,
+                    league,
+                    my_team,
+                    dry_run,
+                    replace,
+                    json,
+                }) => {
+                    assert_eq!(file, std::path::PathBuf::from("-"));
+                    assert_eq!(league, "Office Pool");
+                    assert_eq!(my_team.as_deref(), Some("My Team"));
+                    assert!(dry_run);
+                    assert!(replace);
+                    assert!(json);
+                }
+                other => panic!("expected fantasy import-yahoo, got {other:?}"),
             }
-            other => panic!("expected fantasy import-yahoo, got {other:?}"),
-        }
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_trade_readiness_and_complete_gate_parse() {
+        with_large_stack(|| {
+            let readiness = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade-readiness",
+                "--league",
+                "Office Pool",
+                "--team",
+                "My Team",
+                "--stats-season",
+                "20252026",
+                "--json",
+            ])
+            .expect("fantasy trade-readiness should parse");
+            assert!(matches!(
+                readiness.command,
+                Commands::Fantasy(FantasySubcommand::TradeReadiness {
+                    team: Some(team),
+                    json: true,
+                    ..
+                }) if team == "My Team"
+            ));
+
+            let finder = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade-finder",
+                "--team",
+                "My Team",
+                "--require-complete",
+            ])
+            .expect("fantasy trade-finder complete gate should parse");
+            assert!(matches!(
+                finder.command,
+                Commands::Fantasy(FantasySubcommand::TradeFinder {
+                    require_complete: true,
+                    ..
+                })
+            ));
+
+            let history = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade-history",
+                "--league",
+                "Office Pool",
+                "--limit",
+                "25",
+                "--json",
+            ])
+            .expect("fantasy trade-history should parse");
+            assert!(matches!(
+                history.command,
+                Commands::Fantasy(FantasySubcommand::TradeHistory {
+                    limit: 25,
+                    json: true,
+                    ..
+                })
+            ));
+
+            let offers = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade-offers",
+                "--status",
+                "pending",
+                "--limit",
+                "25",
+                "--actionable-only",
+            ])
+            .expect("fantasy trade-offers should parse");
+            assert!(matches!(
+                offers.command,
+                Commands::Fantasy(FantasySubcommand::TradeOffers {
+                    status: Some(status),
+                    limit: 25,
+                    actionable_only: true,
+                    ..
+                }) if status == "pending"
+            ));
+
+            let save = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade",
+                "Bouchard",
+                "--to-team",
+                "Rival",
+                "--for-player",
+                "Werenski",
+                "--save-offer",
+            ])
+            .expect("fantasy trade --save-offer should parse");
+            assert!(matches!(
+                save.command,
+                Commands::Fantasy(FantasySubcommand::Trade {
+                    save_offer: true,
+                    execute: false,
+                    ..
+                })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade",
+                "Bouchard",
+                "--to-team",
+                "Rival",
+                "--for-player",
+                "Werenski",
+                "--save-offer",
+                "--execute",
+            ])
+            .is_err());
+        });
     }
 
     #[test]
@@ -1497,6 +1725,69 @@ mod tui_surface_tests {
                     assert!(json);
                 }
                 other => panic!("expected fantasy roster-shape-validate, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_goalie_evidence_and_plan_commands_parse() {
+        with_large_stack(|| {
+            for args in [
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-start-record",
+                    "Igor Shesterkin",
+                    "--date",
+                    "2026-11-12",
+                    "--state",
+                    "confirmed-starting",
+                    "--source",
+                    "team reporter",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-start-show",
+                    "--week",
+                    "2026-11-09",
+                    "--max-age-minutes",
+                    "180",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-start-import",
+                    "--file",
+                    "-",
+                    "--source",
+                    "daily goalie report",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-start-template",
+                    "--date",
+                    "2026-11-12",
+                    "--top-streams",
+                    "5",
+                    "--out",
+                    "-",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-plan",
+                    "--date",
+                    "2026-11-12",
+                    "--strategy",
+                    "floor",
+                    "--current-appearances",
+                    "2",
+                    "--json",
+                ],
+            ] {
+                Cli::try_parse_from(args).expect("fantasy goalie command should parse");
             }
         });
     }
@@ -1575,6 +1866,29 @@ pub enum ReportSubcommand {
         team: Option<String>,
 
         /// Emit cap_projection.v1 JSON instead of the text report.
+        #[arg(long)]
+        json: bool,
+
+        /// Write report to path. Pass '-' or omit for stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+
+    /// Compare 2026-27 current-roster ceiling with the prior-season roster.
+    TeamCeiling {
+        /// Current roster authority season.
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        roster_season: String,
+
+        /// Completed production season used to rate players and form the baseline.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+
+        /// Limit rendered output to one team while preserving league normalization.
+        #[arg(long)]
+        team: Option<String>,
+
+        /// Emit team_ceiling.v1 JSON instead of text.
         #[arg(long)]
         json: bool,
 
@@ -2905,6 +3219,37 @@ pub enum FantasySubcommand {
     LeagueSwitch { name: String },
     /// Delete a fantasy league and all its teams.
     LeagueDelete { name: String },
+    /// Change the scoring scheme for an existing fantasy league.
+    LeagueSchemeSet {
+        scheme: String,
+        #[arg(long)]
+        league: Option<String>,
+    },
+    /// Show the active league's exact points/category competition contract.
+    #[command(name = "competition-show")]
+    CompetitionShow {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Set points mode or exact category rules for a league.
+    #[command(name = "competition-set")]
+    CompetitionSet {
+        /// points or categories.
+        #[arg(long)]
+        mode: String,
+        /// KEY:DIRECTION:AGGREGATION[:TIE_EPSILON], repeat for every category.
+        #[arg(long = "category")]
+        categories: Vec<String>,
+        #[arg(long, default_value_t = 0)]
+        minimum_goalie_appearances: u8,
+        /// tie or higher_seed_wins.
+        #[arg(long, default_value = "tie")]
+        tie_policy: String,
+        #[arg(long)]
+        league: Option<String>,
+    },
 
     // Team management
     /// Create a new fantasy team in the active league.
@@ -2931,6 +3276,8 @@ pub enum FantasySubcommand {
         name: String,
         #[arg(long)]
         league: Option<String>,
+        #[arg(long)]
+        stats_season: Option<String>,
     },
     /// Add a player to a fantasy team.
     TeamAdd {
@@ -2938,6 +3285,8 @@ pub enum FantasySubcommand {
         player: String,
         #[arg(long)]
         league: Option<String>,
+        #[arg(long)]
+        stats_season: Option<String>,
     },
     /// Drop a player from a fantasy team.
     TeamDrop {
@@ -2990,6 +3339,89 @@ pub enum FantasySubcommand {
         json: bool,
     },
 
+    /// Stress-test a complete fantasy season with injuries, pickups, and trades.
+    #[command(name = "season-sim")]
+    SeasonSim {
+        #[arg(long)]
+        league: Option<String>,
+        /// Fantasy team whose current partial or complete roster is locked into team one.
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long, default_value_t = 12)]
+        teams: usize,
+        #[arg(long, default_value_t = 6)]
+        playoff_teams: usize,
+        #[arg(long, default_value_t = 100)]
+        trials: usize,
+        #[arg(long, default_value_t = 20_262_027)]
+        seed: u64,
+        /// Per-player probability of a new injury on each scheduled game day.
+        #[arg(long, default_value_t = 0.0015)]
+        injury_rate: f64,
+        /// Probability that each fantasy team attempts a trade each week.
+        #[arg(long, default_value_t = 0.10)]
+        trade_probability: f64,
+        /// Chance an opponent selects the top projected weekly pickup; team one always does.
+        #[arg(long, default_value_t = 1.0)]
+        opponent_pickup_accuracy: f64,
+        /// Team-one acquisitions held back through Friday for injury replacements.
+        #[arg(long, default_value_t = 1)]
+        pickup_reserve: u8,
+        /// Minimum simulated net value required to spend the protected final move.
+        #[arg(long, default_value_t = 6.0)]
+        exceptional_reserve_min_value: f64,
+        /// Minimum seven-day game-volume gain required to spend the protected move.
+        #[arg(long, default_value_t = 3)]
+        exceptional_reserve_min_games: i8,
+        /// Disable the exceptional-value escape hatch and keep a strict reserve.
+        #[arg(long)]
+        strict_pickup_reserve: bool,
+        /// Compare clean, baseline, and high-chaos environments with the same seed.
+        #[arg(long)]
+        scenario_matrix: bool,
+        /// Compare 100%, 85%, and 70% opponent pickup accuracy with the same seed.
+        #[arg(long)]
+        manager_matrix: bool,
+        /// Compare all-in, strict-reserve, and adaptive-reserve acquisition policies.
+        #[arg(long)]
+        reserve_matrix: bool,
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Find weekly game volume, quiet-slate teams, and schedule-diverse draft fits.
+    #[command(name = "schedule-edge")]
+    ScheduleEdge {
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        /// Show only the Monday-Sunday week containing this date.
+        #[arg(long)]
+        week: Option<chrono::NaiveDate>,
+        /// Explicit NHL teams to analyze as a roster (overrides the active fantasy roster).
+        #[arg(long = "teams", value_delimiter = ',')]
+        teams: Vec<String>,
+        /// Fantasy league used to resolve the marked user roster.
+        #[arg(long)]
+        league: Option<String>,
+        /// A game is an off-night opportunity when the NHL slate has at most this many games.
+        #[arg(long, default_value_t = 4)]
+        off_night_max_games: usize,
+        /// Number of exact-date schedule equivalence classes.
+        #[arg(long, default_value_t = 8)]
+        classes: usize,
+        /// Ignore the locally cached schedule and reload all teams from the official NHL API.
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+
     /// Show fantasy points earned on a date from cached finalized boxscores.
     Daily {
         /// Date to score, in YYYY-MM-DD format.
@@ -3020,6 +3452,53 @@ pub enum FantasySubcommand {
         json: bool,
     },
 
+    /// Project a points-mode weekly matchup using legal daily lineups.
+    #[command(name = "matchup-plan")]
+    MatchupPlan {
+        /// Date inside the Monday-Sunday matchup week.
+        #[arg(long)]
+        week: chrono::NaiveDate,
+        /// Team perspective; otherwise use the marked user team.
+        #[arg(long)]
+        team: Option<String>,
+        /// Opponent override; otherwise use the saved matchup schedule.
+        #[arg(long)]
+        opponent: Option<String>,
+        /// Risk posture: floor, balanced, or upside.
+        #[arg(long, default_value = "balanced")]
+        strategy: String,
+        /// Whether your team owns the higher-seed tiebreak (required by that policy).
+        #[arg(long)]
+        user_higher_seed: Option<bool>,
+        /// JSON category totals snapshot, or - to read pasted JSON from stdin.
+        #[arg(long)]
+        category_snapshot: Option<PathBuf>,
+        /// Last matchup date already included in both current point totals.
+        #[arg(long)]
+        through: Option<chrono::NaiveDate>,
+        /// Your platform matchup points through --through.
+        #[arg(long, requires = "through")]
+        user_current: Option<f64>,
+        /// Opponent platform matchup points through --through.
+        #[arg(long, requires = "through")]
+        opponent_current: Option<f64>,
+        /// Human-readable authority for supplied current totals.
+        #[arg(long, default_value = "manual platform entry")]
+        current_source: String,
+        /// Maximum age of saved status evidence before it becomes advisory only.
+        #[arg(long, default_value_t = 360)]
+        status_max_age_minutes: i64,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// Maximum free agents considered for the one-move swing.
+        #[arg(long, default_value_t = 75)]
+        candidates: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Add a local fantasy matchup schedule row for a week.
     MatchupSet {
         /// Date inside the matchup week, in YYYY-MM-DD format.
@@ -3036,7 +3515,7 @@ pub enum FantasySubcommand {
 
     /// Import a Yahoo roster CSV into the local FantasyDb.
     ImportYahoo {
-        /// Yahoo roster CSV export to parse.
+        /// Yahoo roster CSV export to parse, or `-` to read pasted CSV from stdin.
         #[arg(long)]
         file: PathBuf,
         /// Fantasy league name to preview or create/update.
@@ -3048,6 +3527,9 @@ pub enum FantasySubcommand {
         /// Preview diagnostics without writing FantasyDb changes.
         #[arg(long)]
         dry_run: bool,
+        /// Replace each included team's saved roster instead of only adding rows.
+        #[arg(long)]
+        replace: bool,
         #[arg(long)]
         json: bool,
     },
@@ -3077,18 +3559,385 @@ pub enum FantasySubcommand {
         json: bool,
     },
 
+    /// Verify that saved rosters are complete enough for actionable trade search.
+    #[command(name = "trade-readiness")]
+    TradeReadiness {
+        #[arg(long)]
+        league: Option<String>,
+        /// Limit the report to one team.
+        #[arg(long)]
+        team: Option<String>,
+        /// Completed season used to resolve canonical player positions.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Persist the configured 2026 draft/daily assistant roster and transaction rules.
+    AssistantSetup {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show the active league's persisted draft/daily assistant rules.
+    AssistantRules {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Rank the best available players for the next draft pick.
+    DraftBoard {
+        /// Newline or CSV list of drafted players; use `-` to read stdin.
+        #[arg(long)]
+        taken_file: Option<PathBuf>,
+        /// Yahoo/player-pool CSV containing player names and eligible positions.
+        #[arg(long)]
+        eligibility_file: Option<PathBuf>,
+        /// Preview the recommendation after hypothetically drafting this player.
+        #[arg(long)]
+        pick: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        /// Completed stats season evaluated under the active league scheme.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 15)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show the Monday-Sunday acquisition budget for the selected league.
+    WeeklyBudget {
+        #[arg(long)]
+        league: Option<String>,
+        /// RFC3339 evaluation time; defaults to now.
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Rank legal add/drop moves for the remaining Monday-Sunday fantasy week.
+    WeeklyPickups {
+        /// Evaluation date in YYYY-MM-DD; defaults to today in league timezone.
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 50)]
+        candidates: usize,
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Find unrostered skaters with rising league-scored and category rates.
+    Sleepers {
+        #[arg(long)]
+        league: Option<String>,
+        /// Evaluation season, normally the latest completed or in-progress sample.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// Prior season used as the player-rate baseline.
+        #[arg(long, default_value = "20242025")]
+        baseline_season: String,
+        /// Restrict to one or more positions: C, LW, RW, D.
+        #[arg(long, value_delimiter = ',')]
+        positions: Vec<String>,
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Record a completed local fantasy add and optional drop.
+    AcquisitionRecord {
+        #[arg(long)]
+        add: String,
+        #[arg(long)]
+        drop: Option<String>,
+        #[arg(long, default_value = "free-agent")]
+        kind: String,
+        /// RFC3339 effective time; defaults to now.
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        /// Store the event without consuming the weekly limit.
+        #[arg(long)]
+        no_count: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Record a sourced fantasy availability observation for a player.
+    StatusRecord {
+        player: String,
+        #[arg(long)]
+        status: String,
+        #[arg(long)]
+        source: String,
+        #[arg(long)]
+        source_url: Option<String>,
+        #[arg(long)]
+        observed_at: Option<String>,
+        #[arg(long, default_value = "reported")]
+        confidence: String,
+        #[arg(long)]
+        detail: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show latest evidence-aware availability statuses.
+    StatusShow {
+        player: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Record sourced starter evidence for one goalie and NHL game date.
+    GoalieStartRecord {
+        player: String,
+        #[arg(long)]
+        date: String,
+        #[arg(long)]
+        state: String,
+        #[arg(long)]
+        source: String,
+        #[arg(long)]
+        source_url: Option<String>,
+        #[arg(long)]
+        observed_at: Option<String>,
+        #[arg(long)]
+        detail: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Atomically import same-day goalie starter evidence from CSV or stdin.
+    GoalieStartImport {
+        /// CSV path, or - for clipboard/stdin input.
+        #[arg(long, default_value = "-")]
+        file: PathBuf,
+        /// Fallback source applied when a CSV row has no source.
+        #[arg(long)]
+        source: Option<String>,
+        /// Fallback RFC3339 observation time applied when a row omits observed_at.
+        #[arg(long)]
+        observed_at: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Export today's rostered-goalie and stream-candidate evidence checklist CSV.
+    GoalieStartTemplate {
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 5)]
+        top_streams: usize,
+        /// Output CSV path; omit or use - for stdout.
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+
+    /// Show latest game-specific goalie starter evidence and freshness.
+    GoalieStartShow {
+        player: Option<String>,
+        #[arg(long)]
+        week: Option<String>,
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Build a weekly goalie evidence, slot-capacity, and minimum-appearance plan.
+    GoaliePlan {
+        #[arg(long)]
+        week: Option<String>,
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value = "balanced")]
+        strategy: String,
+        #[arg(long, default_value_t = 0.0)]
+        current_appearances: f64,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Build an evidence-aware lineup and IR/IR+ placement plan.
+    InjuryPlan {
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Build the evidence-aware 07:00 lineup, IR, and pickup briefing.
+    Morning {
+        #[arg(long)]
+        date: Option<String>,
+        /// RFC3339 pregame evaluation time; omitted means 07:00 local baseline.
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        /// Goalie appearances already recorded in the current Monday-Sunday matchup.
+        #[arg(long, default_value_t = 0.0)]
+        current_goalie_appearances: f64,
+        /// Suppress text/actions when the decision-bearing fingerprint is unchanged.
+        #[arg(long)]
+        material_only: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
     // Trade
-    /// Evaluate or execute a player trade between two teams.
+    /// Evaluate or atomically execute a player trade between two teams.
     Trade {
+        /// Player or comma-separated package your side sends.
         player1: String,
         #[arg(long)]
         to_team: String,
         #[arg(long = "for-player")]
+        /// Player or comma-separated package the other side sends.
         for_player: String,
         #[arg(long)]
         execute: bool,
+        /// Save this legal evaluation as a pending offer without changing rosters.
+        #[arg(long, conflicts_with = "execute")]
+        save_offer: bool,
         #[arg(long)]
         league: Option<String>,
+        /// Completed production season used to value the players.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show locally executed fantasy trades, newest first.
+    #[command(name = "trade-history")]
+    TradeHistory {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// List saved trade offers, newest first.
+    #[command(name = "trade-offers")]
+    TradeOffers {
+        /// Filter by pending, accepted, rejected, cancelled, or expired.
+        #[arg(long)]
+        status: Option<String>,
+        /// Hide offers whose saved players no longer belong to the expected teams.
+        #[arg(long)]
+        actionable_only: bool,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Close a pending saved trade offer without changing rosters.
+    #[command(name = "trade-offer-close")]
+    TradeOfferClose {
+        id: String,
+        /// accepted, rejected, cancelled, or expired.
+        #[arg(long)]
+        status: String,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Search opponent rosters for fair, legal trade offers.
+    #[command(name = "trade-finder")]
+    TradeFinder {
+        /// Team to improve; defaults to the marked user team.
+        #[arg(long)]
+        team: Option<String>,
+        /// Search only this opponent instead of the entire league.
+        #[arg(long)]
+        to_team: Option<String>,
+        /// Largest package on either side (one or two players).
+        #[arg(long, default_value_t = 2)]
+        max_package: usize,
+        /// Maximum projected value gap for a mutually plausible offer.
+        #[arg(long, default_value_t = 10.0)]
+        fairness_percent: f64,
+        /// Player names that must not appear in outgoing packages.
+        #[arg(long, value_delimiter = ',')]
+        protect: Vec<String>,
+        /// Allow the roster's highest-value player to appear in offers.
+        #[arg(long)]
+        include_anchors: bool,
+        /// Refuse to rank offers unless every searched roster is complete and legal.
+        #[arg(long)]
+        require_complete: bool,
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        #[arg(long)]
+        league: Option<String>,
+        /// Completed production season used to value the players.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long)]
+        json: bool,
     },
 
     // Server

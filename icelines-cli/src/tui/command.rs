@@ -52,7 +52,7 @@ pub enum Command {
     Stats,
     /// `goalies` — workspace becomes Goalies leaderboard.
     Goalies,
-    /// `poach` — workspace becomes Fantasy Poacher.
+    /// `poach` — workspace becomes The Bench's Waiver Wire.
     Poach,
     PoachKv {
         args: PoachCommandArgs,

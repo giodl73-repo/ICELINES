@@ -25,6 +25,9 @@ editorial/stathead workflows, and data freshness authority.
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Fantasy War Room Roadmap](2026-07-18-fantasy-war-room-roadmap.md) | Active | Sequences weekly matchup strategy, playoff portfolio, live draft sessions, four-move pickup planning, injury contingencies, goalie decisions, trade counters, archetypes, decision review, and readiness. |
+| [Fantasy Draft and Daily Assistant](2026-07-16-fantasy-draft-daily-assistant.md) | Active | Builds the 2026-27 draft loop, daily multi-position lineup optimizer, four-pickup weekly streaming, two-day waivers, 2 IR/2 IR+, injury-aware morning briefing, and secret-finds board on the active league scoring scheme. |
+| [Team Season Forecast](2026-07-19-team-season-forecast.md) | Draft | Forecasts or replays any season using point-in-time personnel, shared game outcomes, travel/rest context, actual or simulated trades, standings/playoff odds, streak leaders, and Rangers/Kraken showcase reports. |
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
 | [Phase Canadiens Stathead - Query packs](2026-06-23-phaseCanadiensStathead-query-packs.md) | Closed | Adds `icelines stathead [pack] [--json]` with curated query-pack recipes for era leaders, young stars, playoff runs, and goalie notebooks. |
 | [Phase Canadiens Packaging - Checksums](2026-06-23-phaseCanadiensPackaging-checksums.md) | Closed | Adds SHA-256 sidecars to local Windows packaging and every GitHub release archive, with workflow verification and release-checklist documentation. |

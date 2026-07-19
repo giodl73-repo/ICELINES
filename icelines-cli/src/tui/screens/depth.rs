@@ -22,7 +22,7 @@ pub fn chrome(
 ) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
     let title = format!(
-        "Depth - scoring={} - pos={} - country={}",
+        "The Depth Chart - scoring={} - pos={} - country={}",
         mode.label(),
         filters.pos_filter.label(),
         filters.country_label()
@@ -88,7 +88,7 @@ pub(crate) fn team_chart_view_from_app(app: &App, abbrev: &str) -> Option<TeamDe
 pub fn render_league(f: &mut Frame, app: &App, area: Rect) {
     let mode = app.depth_mode;
     let block = Block::default().borders(Borders::ALL).title(format!(
-        " Depth Rankings — {} · s: toggle scoring · Enter: team chart · Esc: back ",
+        " The Depth Chart — Depth Rankings — {} · s: scoring · Enter: team chart · Esc: back ",
         mode.label()
     ));
     let inner = block.inner(area);

@@ -79,11 +79,11 @@ pub fn chrome(state: &TransactionsState) -> crate::tui::chrome::ScreenChrome {
 
     let title = match (state.team_filter.as_deref(), state.kind_filter) {
         (Some(t), Some(k)) => {
-            format!("Transactions — {t} · {}", k.label())
+            format!("The Boards — Transactions — {t} · {}", k.label())
         }
-        (Some(t), None) => format!("Transactions — {t}"),
-        (None, Some(k)) => format!("Transactions — {}", k.label()),
-        (None, None) => "Transactions".to_owned(),
+        (Some(t), None) => format!("The Boards — Transactions — {t}"),
+        (None, Some(k)) => format!("The Boards — Transactions — {}", k.label()),
+        (None, None) => "The Boards — Transactions".to_owned(),
     };
 
     let keybinds = if state.search_mode {
@@ -219,7 +219,7 @@ fn title_text(app: &App) -> Line<'static> {
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         ));
     }
-    spans.push(Span::raw(" Transactions · ESPN"));
+    spans.push(Span::raw(" The Boards · Transactions · ESPN"));
     if !app.txs.fetched_at.is_empty() {
         spans.push(Span::styled(
             format!(" · as of {} ", app.txs.fetched_at),
@@ -371,9 +371,9 @@ fn render_footer(f: &mut Frame, area: Rect) {
 
 fn render_empty_legend_card(f: &mut Frame, app: &App, area: Rect) {
     let title = if app.txs.stale {
-        " [STALE] Transactions · ESPN "
+        " [STALE] The Boards · Transactions · ESPN "
     } else {
-        " Transactions · ESPN "
+        " The Boards · Transactions · ESPN "
     };
     let outer = Block::default().borders(Borders::ALL).title(title);
     let inner = outer.inner(area);
@@ -645,7 +645,7 @@ mod norris_state_tests {
     fn l0_masterton_txs_chrome_default() {
         let s = TransactionsState::default();
         let c = chrome(&s);
-        assert_eq!(c.title, "Transactions");
+        assert_eq!(c.title, "The Boards — Transactions");
         let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
         for needed in ["/", "T", "k"] {
             assert!(

@@ -1038,8 +1038,20 @@ pub fn fetch_generic_http_bytes(
     cache_root: &Path,
     force: bool,
 ) -> Result<Vec<u8>> {
-    let fletch_id = fletch_id.into();
-    let source_url = source_url.into();
+    let (bytes, entry) =
+        fetch_generic_http_bytes_unindexed(fletch_id.into(), source_url.into(), cache_root, force)?;
+    if let Some(entry) = entry {
+        upsert_fletch_cache_manifest_entries(cache_root, [entry])?;
+    }
+    Ok(bytes)
+}
+
+fn fetch_generic_http_bytes_unindexed(
+    fletch_id: String,
+    source_url: String,
+    cache_root: &Path,
+    force: bool,
+) -> Result<(Vec<u8>, Option<CacheEntry>)> {
     let mut plan = fetch_plan_with_kind(fletch_id.clone(), source_url, SourceKind::Http)
         .with_context(|| format!("building FLETCH fetch plan for {fletch_id}"))?;
     plan.cache_policy = CachePolicy {
@@ -1061,7 +1073,7 @@ pub fn fetch_generic_http_bytes(
             if let Some(bytes) = read_verified_fletch_cache_bytes(cache_root, &fletch_id)
                 .with_context(|| format!("reading cached FLETCH object for {fletch_id}"))?
             {
-                return Ok(bytes);
+                return Ok((bytes, None));
             }
             return Err(error).with_context(|| format!("fetching {fletch_id} through FLETCH"));
         }
@@ -1069,10 +1081,9 @@ pub fn fetch_generic_http_bytes(
             return Err(error).with_context(|| format!("fetching {fletch_id} through FLETCH"));
         }
     };
-    upsert_fletch_cache_manifest_entries(cache_root, [outcome.entry.clone()])?;
-
-    std::fs::read(&outcome.path)
-        .with_context(|| format!("reading FLETCH cache object {}", outcome.path.display()))
+    let bytes = std::fs::read(&outcome.path)
+        .with_context(|| format!("reading FLETCH cache object {}", outcome.path.display()))?;
+    Ok((bytes, Some(outcome.entry)))
 }
 
 pub async fn fetch_generic_http_bytes_async(
@@ -1089,6 +1100,64 @@ pub async fn fetch_generic_http_bytes_async(
     })
     .await
     .context("joining FLETCH fetch task")?
+}
+
+/// Fetch independent HTTP cachelines concurrently while writing the shared
+/// ICELINES FLETCH manifest once. Per-request manifest writes are deliberately
+/// deferred so concurrent read-modify-write cycles cannot drop entries.
+pub async fn fetch_generic_http_batch_async(
+    requests: Vec<(String, String)>,
+    cache_root: impl Into<std::path::PathBuf>,
+    force: bool,
+    max_concurrency: usize,
+) -> Vec<(String, Result<Vec<u8>>)> {
+    let cache_root = cache_root.into();
+    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(max_concurrency.max(1)));
+    let mut tasks = tokio::task::JoinSet::new();
+    for (dataset_id, source_url) in requests {
+        let task_id = dataset_id.clone();
+        let root = cache_root.clone();
+        let semaphore = semaphore.clone();
+        tasks.spawn(async move {
+            let permit = semaphore
+                .acquire_owned()
+                .await
+                .context("acquiring generic HTTP batch permit")?;
+            let outcome = tokio::task::spawn_blocking(move || {
+                let _permit = permit;
+                fetch_generic_http_bytes_unindexed(dataset_id, source_url, &root, force)
+            })
+            .await
+            .context("joining generic HTTP batch task")?;
+            Ok::<_, anyhow::Error>((task_id, outcome))
+        });
+    }
+
+    let mut fetched = Vec::new();
+    let mut entries = Vec::new();
+    while let Some(joined) = tasks.join_next().await {
+        match joined {
+            Ok(Ok((dataset_id, Ok((bytes, entry))))) => {
+                if let Some(entry) = entry {
+                    entries.push(entry);
+                }
+                fetched.push((dataset_id, Ok(bytes)));
+            }
+            Ok(Ok((dataset_id, Err(error)))) => fetched.push((dataset_id, Err(error))),
+            Ok(Err(error)) => fetched.push(("unknown".to_owned(), Err(error))),
+            Err(error) => fetched.push((
+                "unknown".to_owned(),
+                Err(anyhow::anyhow!("generic HTTP batch task failed: {error}")),
+            )),
+        }
+    }
+    if !entries.is_empty() {
+        if let Err(error) = upsert_fletch_cache_manifest_entries(&cache_root, entries) {
+            fetched.push(("fletch-manifest".to_owned(), Err(error)));
+        }
+    }
+    fetched.sort_by(|a, b| a.0.cmp(&b.0));
+    fetched
 }
 
 pub fn stats_report_url(kind: ReportKind, season: &str, season_type: &str) -> String {

@@ -1,0 +1,3 @@
+player,date,state,source,source_url,observed_at,detail
+Igor Shesterkin,2026-11-12,confirmed-starting,team reporter,https://example.test/shesterkin,2026-11-12T17:15:00-08:00,first goalie off at morning skate
+Jonathan Quick,2026-11-12,confirmed-backup,team reporter,https://example.test/quick,2026-11-12T17:15:00-08:00,backing up

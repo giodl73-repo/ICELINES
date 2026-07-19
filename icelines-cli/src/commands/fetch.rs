@@ -620,13 +620,38 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
     // Check if already sealed today
     if !refresh {
         if let Ok(entries) = store.list() {
-            if entries.iter().any(|e| e.name == snap && e.sealed) {
+            if entries
+                .iter()
+                .any(|e| e.name == snap && e.sealed && e.file_count >= TEAMS.len())
+            {
                 println!("Rosters already fetched today (use --refresh to re-fetch).");
                 println!("  Snapshot: {snap}");
                 return Ok(());
             }
+            if entries
+                .iter()
+                .any(|e| e.name == snap && e.file_count < TEAMS.len())
+            {
+                println!("Roster snapshot is incomplete; resuming from verified cache.");
+            }
         }
     }
+
+    let resumed_files: std::collections::HashMap<&str, Vec<u8>> = if refresh {
+        std::collections::HashMap::new()
+    } else {
+        TEAMS
+            .iter()
+            .filter_map(|team| {
+                let path = store
+                    .root()
+                    .join(&snap)
+                    .join(SnapshotTier::Rosters.dir_name())
+                    .join(format!("{team}.json"));
+                std::fs::read(path).ok().map(|bytes| (*team, bytes))
+            })
+            .collect()
+    };
 
     store
         .create(&snap, season, SnapshotTier::Rosters, None, &today)
@@ -634,23 +659,37 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
 
     println!("Fetching rosters → snapshot '{snap}'");
     let fletch_cache = fletch_cache_root(&cfg);
+    let requests: Vec<_> = TEAMS
+        .iter()
+        .filter(|team| !resumed_files.contains_key(**team))
+        .map(|team| {
+            (
+                icelines_fetch::fletch::roster_dataset_id(team, season),
+                icelines_fetch::fletch::roster_url(team, season),
+            )
+        })
+        .collect();
+    let fetched =
+        icelines_fetch::fletch::fetch_generic_http_batch_async(requests, fletch_cache, refresh, 8)
+            .await;
+    let fetched_by_id: std::collections::HashMap<_, _> = fetched.into_iter().collect();
+    let mut written = 0usize;
     for team in TEAMS {
-        let url = icelines_fetch::fletch::roster_url(team, season);
         let fletch_id = icelines_fetch::fletch::roster_dataset_id(team, season);
-        let roster_bytes = match icelines_fetch::fletch::fetch_generic_http_bytes_async(
-            fletch_id,
-            url,
-            fletch_cache.clone(),
-            refresh,
-        )
-        .await
-        {
-            Ok(bytes) => bytes,
-            Err(e) => {
-                // Skip teams that didn't exist in this season (e.g. UTA before 2024-25)
-                println!("  {team}: skipped ({e})");
-                continue;
-            }
+        let roster_bytes = match resumed_files.get(team) {
+            Some(bytes) => bytes.clone(),
+            None => match fetched_by_id.get(&fletch_id) {
+                Some(Ok(bytes)) => bytes.clone(),
+                Some(Err(e)) => {
+                    // Skip teams that didn't exist in this season (e.g. UTA before 2024-25)
+                    println!("  {team}: skipped ({e:#})");
+                    continue;
+                }
+                None => {
+                    println!("  {team}: skipped (fetch result missing)");
+                    continue;
+                }
+            },
         };
         let roster: icelines_fetch::schema::RosterResponse = serde_json::from_slice(&roster_bytes)
             .with_context(|| format!("parsing roster JSON for {team}"))?;
@@ -664,9 +703,16 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
                 &json,
             )
             .with_context(|| format!("writing {team} to snapshot"))?;
+        written += 1;
         println!("  {team}: {count} players");
     }
 
+    if written != TEAMS.len() {
+        anyhow::bail!(
+            "roster snapshot incomplete: wrote {written}/{} teams; retry without --refresh to resume",
+            TEAMS.len()
+        );
+    }
     store.seal(&snap).context("sealing roster snapshot")?;
     println!("Snapshot '{snap}' sealed and set as active.");
     Ok(())

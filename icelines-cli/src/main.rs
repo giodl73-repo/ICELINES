@@ -190,6 +190,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     out,
                 })?;
             }
+            ReportSubcommand::TeamCeiling {
+                roster_season,
+                stats_season,
+                team,
+                json,
+                out,
+            } => {
+                commands::report::run_team_ceiling(commands::report::TeamCeilingArgs {
+                    roster_season,
+                    stats_season,
+                    team,
+                    json,
+                    out,
+                })?;
+            }
             ReportSubcommand::Poach {
                 season,
                 season_type,
@@ -1072,6 +1087,28 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             FantasySubcommand::LeagueDelete { name } => {
                 commands::fantasy::run_league_delete(name).await?
             }
+            FantasySubcommand::LeagueSchemeSet { scheme, league } => {
+                commands::fantasy::run_league_scheme_set(scheme, league).await?
+            }
+            FantasySubcommand::CompetitionShow { league, json } => {
+                commands::fantasy::run_competition_show(league, json).await?
+            }
+            FantasySubcommand::CompetitionSet {
+                mode,
+                categories,
+                minimum_goalie_appearances,
+                tie_policy,
+                league,
+            } => {
+                commands::fantasy::run_competition_set(
+                    mode,
+                    categories,
+                    minimum_goalie_appearances,
+                    tie_policy,
+                    league,
+                )
+                .await?
+            }
             FantasySubcommand::TeamCreate {
                 name,
                 owner,
@@ -1083,14 +1120,17 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             FantasySubcommand::TeamUse { name, league } => {
                 commands::fantasy::run_team_use(name, league).await?
             }
-            FantasySubcommand::TeamShow { name, league } => {
-                commands::fantasy::run_team_show(name, league).await?
-            }
+            FantasySubcommand::TeamShow {
+                name,
+                league,
+                stats_season,
+            } => commands::fantasy::run_team_show(name, league, stats_season).await?,
             FantasySubcommand::TeamAdd {
                 team,
                 player,
                 league,
-            } => commands::fantasy::run_team_add(team, player, league).await?,
+                stats_season,
+            } => commands::fantasy::run_team_add(team, player, league, stats_season).await?,
             FantasySubcommand::TeamDrop {
                 team,
                 player,
@@ -1124,6 +1164,74 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 )
                 .await?
             }
+            FantasySubcommand::SeasonSim {
+                league,
+                team,
+                teams,
+                playoff_teams,
+                trials,
+                seed,
+                injury_rate,
+                trade_probability,
+                opponent_pickup_accuracy,
+                pickup_reserve,
+                exceptional_reserve_min_value,
+                exceptional_reserve_min_games,
+                strict_pickup_reserve,
+                scenario_matrix,
+                manager_matrix,
+                reserve_matrix,
+                season,
+                stats_season,
+                json,
+            } => {
+                commands::fantasy::run_season_sim(commands::fantasy::SeasonSimArgs {
+                    league,
+                    team,
+                    teams,
+                    playoff_teams,
+                    trials,
+                    seed,
+                    injury_rate,
+                    trade_probability,
+                    opponent_pickup_accuracy,
+                    pickup_reserve,
+                    exceptional_reserve_min_value,
+                    exceptional_reserve_min_games,
+                    strict_pickup_reserve,
+                    scenario_matrix,
+                    manager_matrix,
+                    reserve_matrix,
+                    season,
+                    stats_season,
+                    json,
+                })
+                .await?
+            }
+            FantasySubcommand::ScheduleEdge {
+                season,
+                week,
+                teams,
+                league,
+                off_night_max_games,
+                classes,
+                refresh,
+                json,
+                out,
+            } => {
+                commands::fantasy::run_schedule_edge(commands::fantasy::ScheduleEdgeArgs {
+                    season,
+                    week,
+                    teams,
+                    league,
+                    off_night_max_games,
+                    classes,
+                    refresh,
+                    json,
+                    out,
+                })
+                .await?
+            }
             FantasySubcommand::Daily {
                 date,
                 league,
@@ -1144,6 +1252,42 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 commands::fantasy::run_matchup(date, league, season, season_type.to_core(), json)
                     .await?
             }
+            FantasySubcommand::MatchupPlan {
+                week,
+                team,
+                opponent,
+                strategy,
+                user_higher_seed,
+                category_snapshot,
+                through,
+                user_current,
+                opponent_current,
+                current_source,
+                status_max_age_minutes,
+                league,
+                stats_season,
+                candidates,
+                json,
+            } => {
+                commands::fantasy::run_matchup_plan(
+                    week,
+                    team,
+                    opponent,
+                    strategy,
+                    user_higher_seed,
+                    category_snapshot,
+                    through,
+                    user_current,
+                    opponent_current,
+                    current_source,
+                    status_max_age_minutes,
+                    league,
+                    stats_season,
+                    candidates,
+                    json,
+                )
+                .await?
+            }
             FantasySubcommand::MatchupSet {
                 week,
                 home,
@@ -1155,8 +1299,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 league,
                 my_team,
                 dry_run,
+                replace,
                 json,
-            } => commands::fantasy::run_import_yahoo(file, league, my_team, dry_run, json).await?,
+            } => {
+                commands::fantasy::run_import_yahoo(file, league, my_team, dry_run, replace, json)
+                    .await?
+            }
             FantasySubcommand::RosterShape { league, json } => {
                 commands::fantasy::run_roster_shape_show(league, json).await?
             }
@@ -1166,14 +1314,320 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             FantasySubcommand::RosterShapeValidate { league, team, json } => {
                 commands::fantasy::run_roster_shape_validate(league, team, json).await?
             }
+            FantasySubcommand::TradeReadiness {
+                league,
+                team,
+                stats_season,
+                json,
+            } => commands::fantasy::run_trade_readiness(league, team, stats_season, json).await?,
+            FantasySubcommand::AssistantSetup { league, json } => {
+                commands::fantasy::run_assistant_setup(league, json).await?
+            }
+            FantasySubcommand::AssistantRules { league, json } => {
+                commands::fantasy::run_assistant_rules(league, json).await?
+            }
+            FantasySubcommand::DraftBoard {
+                taken_file,
+                eligibility_file,
+                pick,
+                league,
+                stats_season,
+                top,
+                json,
+            } => {
+                commands::fantasy::run_draft_board(
+                    taken_file,
+                    eligibility_file,
+                    pick,
+                    league,
+                    stats_season,
+                    top,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::WeeklyBudget { league, at, json } => {
+                commands::fantasy::run_weekly_budget(league, at, json).await?
+            }
+            FantasySubcommand::WeeklyPickups {
+                date,
+                league,
+                stats_season,
+                candidates,
+                top,
+                json,
+            } => {
+                commands::fantasy::run_weekly_pickups(
+                    date,
+                    league,
+                    stats_season,
+                    candidates,
+                    top,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::Sleepers {
+                league,
+                stats_season,
+                baseline_season,
+                positions,
+                top,
+                json,
+            } => {
+                commands::fantasy::run_sleepers(
+                    league,
+                    stats_season,
+                    baseline_season,
+                    positions,
+                    top,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::AcquisitionRecord {
+                add,
+                drop,
+                kind,
+                at,
+                league,
+                no_count,
+                json,
+            } => {
+                commands::fantasy::run_acquisition_record(
+                    add, drop, kind, at, league, no_count, json,
+                )
+                .await?
+            }
+            FantasySubcommand::StatusRecord {
+                player,
+                status,
+                source,
+                source_url,
+                observed_at,
+                confidence,
+                detail,
+                league,
+                json,
+            } => {
+                commands::fantasy::run_status_record(
+                    player,
+                    status,
+                    source,
+                    source_url,
+                    observed_at,
+                    confidence,
+                    detail,
+                    league,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::StatusShow {
+                player,
+                league,
+                max_age_minutes,
+                json,
+            } => commands::fantasy::run_status_show(player, league, max_age_minutes, json).await?,
+            FantasySubcommand::GoalieStartRecord {
+                player,
+                date,
+                state,
+                source,
+                source_url,
+                observed_at,
+                detail,
+                league,
+                json,
+            } => {
+                commands::fantasy::run_goalie_start_record(
+                    player,
+                    date,
+                    state,
+                    source,
+                    source_url,
+                    observed_at,
+                    detail,
+                    league,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::GoalieStartShow {
+                player,
+                week,
+                date,
+                league,
+                max_age_minutes,
+                json,
+            } => {
+                commands::fantasy::run_goalie_start_show(
+                    player,
+                    week,
+                    date,
+                    league,
+                    max_age_minutes,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::GoalieStartImport {
+                file,
+                source,
+                observed_at,
+                league,
+                json,
+            } => {
+                commands::fantasy::run_goalie_start_import(file, source, observed_at, league, json)
+                    .await?
+            }
+            FantasySubcommand::GoalieStartTemplate {
+                date,
+                team,
+                league,
+                stats_season,
+                top_streams,
+                out,
+            } => {
+                commands::fantasy::run_goalie_start_template(
+                    date,
+                    team,
+                    league,
+                    stats_season,
+                    top_streams,
+                    out,
+                )
+                .await?
+            }
+            FantasySubcommand::GoaliePlan {
+                week,
+                date,
+                team,
+                league,
+                stats_season,
+                strategy,
+                current_appearances,
+                max_age_minutes,
+                json,
+            } => {
+                commands::fantasy::run_goalie_plan(
+                    week,
+                    date,
+                    team,
+                    league,
+                    stats_season,
+                    strategy,
+                    current_appearances,
+                    max_age_minutes,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::InjuryPlan {
+                date,
+                league,
+                stats_season,
+                max_age_minutes,
+                json,
+            } => {
+                commands::fantasy::run_injury_plan(
+                    date,
+                    league,
+                    stats_season,
+                    max_age_minutes,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::Morning {
+                date,
+                at,
+                league,
+                stats_season,
+                max_age_minutes,
+                current_goalie_appearances,
+                material_only,
+                json,
+            } => {
+                commands::fantasy::run_morning(
+                    date,
+                    at,
+                    league,
+                    stats_season,
+                    max_age_minutes,
+                    current_goalie_appearances,
+                    material_only,
+                    json,
+                )
+                .await?
+            }
             FantasySubcommand::Trade {
                 player1,
                 to_team,
                 for_player,
                 execute,
+                save_offer,
                 league,
+                stats_season,
+                json,
             } => {
-                commands::fantasy::run_trade(player1, to_team, for_player, execute, league).await?
+                commands::fantasy::run_trade(
+                    player1,
+                    to_team,
+                    for_player,
+                    execute,
+                    save_offer,
+                    league,
+                    stats_season,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::TradeHistory {
+                league,
+                limit,
+                json,
+            } => commands::fantasy::run_trade_history(league, limit, json)?,
+            FantasySubcommand::TradeOffers {
+                status,
+                actionable_only,
+                league,
+                limit,
+                json,
+            } => commands::fantasy::run_trade_offers(status, actionable_only, league, limit, json)?,
+            FantasySubcommand::TradeOfferClose {
+                id,
+                status,
+                league,
+                json,
+            } => commands::fantasy::run_trade_offer_close(id, status, league, json)?,
+            FantasySubcommand::TradeFinder {
+                team,
+                to_team,
+                max_package,
+                fairness_percent,
+                protect,
+                include_anchors,
+                require_complete,
+                top,
+                league,
+                stats_season,
+                json,
+            } => {
+                commands::fantasy::run_trade_finder(
+                    team,
+                    to_team,
+                    max_package,
+                    fairness_percent,
+                    protect,
+                    include_anchors,
+                    require_complete,
+                    top,
+                    league,
+                    stats_season,
+                    json,
+                )
+                .await?
             }
             FantasySubcommand::Serve { port, league } => {
                 commands::fantasy::run_serve(port, league).await?

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Playoffs{% endblock %}
+{% block title %}The Goal Line — Playoffs{% endblock %}
 
 {% block content %}
 <p class="back-link-row">
     <a href="/">← back to dashboard</a>
 </p>
 
-<h1>Playoffs — {{ season_pretty }}</h1>
+<h1 aria-label="Playoff bracket">The Goal Line — Cup Chase — Playoffs — {{ season_pretty }}</h1>
 <p class="context-line">
     Source: {{ source_label }}
 </p>

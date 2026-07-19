@@ -57,7 +57,7 @@ pub fn chrome(state: &GoaliesState) -> crate::tui::chrome::ScreenChrome {
         .map(|s| s.label())
         .unwrap_or("?");
     let title = format!(
-        "Goalies - {sort_label} - GP >= {} - role={} - country={} - saves={}",
+        "The Crease - Between the Pipes - Goalies - {sort_label} - GP >= {} - role={} - country={} - saves={}",
         state.min_gp,
         state.role_filter.label(),
         state.filters.country_label(),
@@ -159,6 +159,9 @@ mod norris_state_tests {
             "default chrome must show GP >= 15; got: {}",
             c.title
         );
+        assert!(c.title.contains("The Crease"));
+        assert!(c.title.contains("Between the Pipes"));
+        assert!(c.title.contains("Goalies"));
         let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
         assert!(keys.contains(&"s"));
         assert!(keys.contains(&"m"));
@@ -358,7 +361,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
         .copied()
         .unwrap_or(GoalieSort::SvPctDesc);
     let title = format!(
-        " Goalies - sort: {} - min GP: {} - role: {} - nation: {} - s/m/p/n/h  Enter:detail  Esc:back ",
+        " The Crease — Between the Pipes — Goalies · sort: {} · min GP: {} · role: {} · nation: {} ",
         sort.label(),
         app.goalies.min_gp,
         app.goalies.role_filter.label(),

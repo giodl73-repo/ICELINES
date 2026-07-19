@@ -41,6 +41,7 @@ axum.workspace        = true
 tower.workspace       = true
 uuid.workspace        = true
 chrono.workspace      = true
+chrono-tz.workspace   = true
 open.workspace        = true
 # Phase Adams.6 — AI fallback trait uses async-trait for the
 # Send-clean dyn AiProvider type. async-trait is already a

@@ -26,7 +26,7 @@ use crate::visual::{
 pub fn chrome() -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
     ScreenChrome {
-        title: "Fantasy Gaps - active roster".to_string(),
+        title: "The Bench - Coach's Clipboard - roster gaps".to_string(),
         keybinds: vec![
             KeyHint::new("up/down", "select"),
             KeyHint::new("Enter", "player card"),
@@ -39,7 +39,7 @@ pub fn chrome() -> crate::tui::chrome::ScreenChrome {
 pub fn simulation_chrome() -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
     ScreenChrome {
-        title: "Fantasy Simulation - active league".to_string(),
+        title: "The Bench - The Line Blender - league simulation".to_string(),
         keybinds: vec![
             KeyHint::new("a", "add/drop scenario"),
             KeyHint::new(":", "command"),
@@ -106,7 +106,7 @@ impl FantasySimulationScreenState {
 }
 
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
-    let block = tui_panel_block(" Fantasy Gaps - weighted category upgrades ");
+    let block = tui_panel_block(" The Bench - Coach's Clipboard - roster gaps ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -213,7 +213,7 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render_simulation(f: &mut Frame, app: &App, area: Rect) {
-    let block = tui_panel_block(" Fantasy Simulation - current score projection ");
+    let block = tui_panel_block(" The Bench - The Line Blender - league simulation ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -525,7 +525,9 @@ mod tests {
     fn l0_fantasy_gaps_tui_chrome_names_surface() {
         let chrome = super::chrome();
 
-        assert!(chrome.title.contains("Fantasy Gaps"));
+        assert!(chrome.title.contains("The Bench"));
+        assert!(chrome.title.contains("roster gaps"));
+        assert!(chrome.title.contains("Coach's Clipboard"));
         assert!(chrome.keybinds.iter().any(|key| key.key == "Enter"));
         assert!(chrome.keybinds.iter().any(|key| key.key == "g"));
     }
@@ -534,7 +536,9 @@ mod tests {
     fn l0_fantasy_sim_tui_chrome_names_scenario_shortcut() {
         let chrome = super::simulation_chrome();
 
-        assert!(chrome.title.contains("Fantasy Simulation"));
+        assert!(chrome.title.contains("The Bench"));
+        assert!(chrome.title.contains("league simulation"));
+        assert!(chrome.title.contains("The Line Blender"));
         assert!(chrome.keybinds.iter().any(|key| key.key == "a"));
     }
 

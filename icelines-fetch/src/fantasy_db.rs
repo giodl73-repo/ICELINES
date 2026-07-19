@@ -4,13 +4,16 @@
 //! on every startup.  Use `FantasyDb::open_in_memory()` in unit tests.
 
 use anyhow::{bail, Context};
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use icelines_core::{
-    model::Position, RosterShape, RosterShapePlayerInput, RosterShapeValidationInput,
+    model::Position, FantasyAcquisitionKind, FantasyAssistantRules, FantasyCompetitionMode,
+    FantasyCompetitionRules, FantasyGoalieStartObservation, FantasyGoalieStartState,
+    FantasyObservationConfidence, FantasyPlayerAvailabilityStatus, FantasyStatusObservation,
+    FantasyWaiverWindow, RosterShape, RosterShapePlayerInput, RosterShapeValidationInput,
     RosterShapeValidationView,
 };
-use rusqlite::{Connection, OpenFlags};
-use std::collections::BTreeMap;
+use rusqlite::{Connection, OpenFlags, OptionalExtension};
+use std::collections::{BTreeMap, BTreeSet};
 
 pub const DEFAULT_ROSTER_SHAPE: &str = "yahoo-standard";
 
@@ -61,6 +64,54 @@ pub struct FantasyMatchupScheduleRow {
     pub week_start: NaiveDate,
     pub home_team: String,
     pub away_team: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FantasyPlayerEligibilityRow {
+    pub player_normalized: String,
+    pub positions: Vec<Position>,
+    pub source: String,
+    pub fetched_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FantasyAcquisitionLedgerRow {
+    pub id: String,
+    pub player_added: String,
+    pub player_dropped: Option<String>,
+    pub kind: FantasyAcquisitionKind,
+    pub effective_at: DateTime<Utc>,
+    pub counts_toward_limit: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct FantasyTradeHistoryRow {
+    pub id: String,
+    pub league_id: String,
+    pub sending_team_id: String,
+    pub sending_team: String,
+    pub receiving_team_id: String,
+    pub receiving_team: String,
+    pub sends: Vec<String>,
+    pub receives: Vec<String>,
+    pub executed_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct FantasyTradeOfferRow {
+    pub id: String,
+    pub league_id: String,
+    pub sending_team_id: String,
+    pub sending_team: String,
+    pub receiving_team_id: String,
+    pub receiving_team: String,
+    pub sends: Vec<String>,
+    pub receives: Vec<String>,
+    pub status: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub roster_current: bool,
+    pub roster_issues: Vec<String>,
 }
 
 impl FantasyLeagueSnapshot {
@@ -146,6 +197,15 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
         .context("migration 008: add fl_leagues.roster_shape")?;
     }
 
+    let has_competition_mode_column = table_has_column(conn, "fl_leagues", "competition_mode")
+        .context("migration 017: inspect fl_leagues.competition_mode")?;
+    if !has_competition_mode_column {
+        conn.execute_batch(
+            "ALTER TABLE fl_leagues ADD COLUMN competition_mode TEXT NOT NULL DEFAULT 'points';",
+        )
+        .context("migration 017: add fl_leagues.competition_mode")?;
+    }
+
     // Migration 005 — fantasy rosters
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS fl_roster (
@@ -175,6 +235,167 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
     )
     .context("migration 007: create fl_matchups table")?;
 
+    // Migration 009 — league-specific draft/daily assistant rules.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_assistant_settings (
+            league_id   TEXT PRIMARY KEY,
+            rules_json  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );",
+    )
+    .context("migration 009: create fl_assistant_settings table")?;
+
+    // Migration 010 — fantasy-platform eligibility, separate from canonical NHL position.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_player_eligibility (
+            league_id          TEXT NOT NULL,
+            player_normalized  TEXT NOT NULL,
+            positions_json     TEXT NOT NULL,
+            source             TEXT NOT NULL,
+            fetched_at         TEXT NOT NULL,
+            PRIMARY KEY(league_id, player_normalized),
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );",
+    )
+    .context("migration 010: create fl_player_eligibility table")?;
+
+    // Migration 011 — acquisition ledger used for the Monday-Sunday hard limit.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_acquisitions (
+            id                   TEXT PRIMARY KEY,
+            league_id            TEXT NOT NULL,
+            player_added         TEXT NOT NULL,
+            player_dropped       TEXT,
+            kind                 TEXT NOT NULL,
+            effective_at         TEXT NOT NULL,
+            counts_toward_limit  INTEGER NOT NULL DEFAULT 1,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_fl_acquisitions_league_effective
+            ON fl_acquisitions(league_id, effective_at);",
+    )
+    .context("migration 011: create fl_acquisitions table")?;
+
+    // Migration 012 — latest dropped-player waiver clearance per league.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_waivers (
+            league_id            TEXT NOT NULL,
+            player_normalized    TEXT NOT NULL,
+            dropped_at           TEXT NOT NULL,
+            clears_at            TEXT NOT NULL,
+            PRIMARY KEY(league_id, player_normalized),
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );",
+    )
+    .context("migration 012: create fl_waivers table")?;
+
+    // Migration 013 — sourced, time-bounded player availability observations.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_status_observations (
+            id                  TEXT PRIMARY KEY,
+            league_id           TEXT NOT NULL,
+            player_normalized   TEXT NOT NULL,
+            status              TEXT NOT NULL,
+            source              TEXT NOT NULL,
+            source_url          TEXT,
+            observed_at         TEXT NOT NULL,
+            fetched_at          TEXT NOT NULL,
+            confidence          TEXT NOT NULL,
+            detail              TEXT,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_fl_status_league_player_observed
+            ON fl_status_observations(league_id, player_normalized, observed_at DESC);",
+    )
+    .context("migration 013: create fl_status_observations table")?;
+
+    // Migration 014 — last emitted material morning decision per league/day.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_morning_briefings (
+            league_id       TEXT NOT NULL,
+            briefing_date   TEXT NOT NULL,
+            fingerprint     TEXT NOT NULL,
+            generated_at    TEXT NOT NULL,
+            PRIMARY KEY(league_id, briefing_date),
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );",
+    )
+    .context("migration 014: create fl_morning_briefings table")?;
+
+    // Migration 015 — atomic local fantasy trade audit trail.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_trade_history (
+            id                 TEXT PRIMARY KEY,
+            league_id          TEXT NOT NULL,
+            sending_team_id    TEXT NOT NULL,
+            sending_team_name  TEXT NOT NULL,
+            receiving_team_id  TEXT NOT NULL,
+            receiving_team_name TEXT NOT NULL,
+            sends_json         TEXT NOT NULL,
+            receives_json      TEXT NOT NULL,
+            executed_at        TEXT NOT NULL,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_fl_trade_history_league_executed
+            ON fl_trade_history(league_id, executed_at DESC);",
+    )
+    .context("migration 015: create fl_trade_history table")?;
+
+    // Migration 016 — proposed fantasy trade lifecycle, separate from execution.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_trade_offers (
+            id                  TEXT PRIMARY KEY,
+            league_id           TEXT NOT NULL,
+            sending_team_id     TEXT NOT NULL,
+            sending_team_name   TEXT NOT NULL,
+            receiving_team_id   TEXT NOT NULL,
+            receiving_team_name TEXT NOT NULL,
+            sends_json          TEXT NOT NULL,
+            receives_json       TEXT NOT NULL,
+            status              TEXT NOT NULL,
+            created_at          TEXT NOT NULL,
+            updated_at          TEXT NOT NULL,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_fl_trade_offers_league_status_updated
+            ON fl_trade_offers(league_id, status, updated_at DESC);",
+    )
+    .context("migration 016: create fl_trade_offers table")?;
+
+    // Migration 017 — exact points/category competition contract.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_competition_settings (
+            league_id   TEXT PRIMARY KEY,
+            rules_json  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );",
+    )
+    .context("migration 017: create fl_competition_settings table")?;
+
+    // Migration 018 — sourced, game-specific goalie starter observations.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_goalie_start_observations (
+            id                  TEXT PRIMARY KEY,
+            league_id           TEXT NOT NULL,
+            player_normalized   TEXT NOT NULL,
+            game_date           TEXT NOT NULL,
+            state               TEXT NOT NULL,
+            source              TEXT NOT NULL,
+            source_url          TEXT,
+            observed_at         TEXT NOT NULL,
+            fetched_at          TEXT NOT NULL,
+            detail              TEXT,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_fl_goalie_start_league_game_player_observed
+            ON fl_goalie_start_observations(
+                league_id, game_date, player_normalized, observed_at DESC
+            );",
+    )
+    .context("migration 018: create fl_goalie_start_observations table")?;
+
     // Enable foreign-key enforcement (off by default in rusqlite).
     conn.execute_batch("PRAGMA foreign_keys = ON;")
         .context("enable foreign keys")?;
@@ -192,6 +413,15 @@ fn table_has_column(conn: &Connection, table: &str, column: &str) -> anyhow::Res
         .collect::<Result<Vec<_>, _>>()
         .with_context(|| format!("collect {table} columns"))?;
     Ok(columns.iter().any(|name| name == column))
+}
+
+fn validate_trade_offer_status(status: &str) -> anyhow::Result<()> {
+    match status {
+        "pending" | "accepted" | "rejected" | "cancelled" | "expired" => Ok(()),
+        _ => bail!(
+            "unknown trade offer status '{status}'; expected pending, accepted, rejected, cancelled, or expired"
+        ),
+    }
 }
 
 pub fn open_existing_sqlite_read_only_path(
@@ -343,6 +573,81 @@ impl FantasyDb {
         Ok(())
     }
 
+    pub fn set_league_scheme(&self, league_id: &str, scheme: &str) -> anyhow::Result<()> {
+        let rows = self
+            .conn
+            .execute(
+                "UPDATE fl_leagues SET scheme = ?1 WHERE id = ?2",
+                rusqlite::params![scheme, league_id],
+            )
+            .with_context(|| format!("set scoring scheme '{scheme}' for league {league_id}"))?;
+        if rows == 0 {
+            bail!("league id '{league_id}' not found");
+        }
+        Ok(())
+    }
+
+    pub fn set_competition_rules(
+        &self,
+        league_id: &str,
+        rules: &FantasyCompetitionRules,
+    ) -> anyhow::Result<()> {
+        rules.validate().map_err(anyhow::Error::msg)?;
+        let rules_json = serde_json::to_string(rules).context("serialize competition rules")?;
+        let now = Utc::now().to_rfc3339();
+        let tx = self
+            .conn
+            .unchecked_transaction()
+            .context("begin competition-rules transaction")?;
+        let updated = tx.execute(
+            "UPDATE fl_leagues SET competition_mode = ?1 WHERE id = ?2",
+            rusqlite::params![rules.mode.label(), league_id],
+        )?;
+        if updated == 0 {
+            bail!("league id '{league_id}' not found");
+        }
+        tx.execute(
+            "INSERT INTO fl_competition_settings (league_id, rules_json, updated_at)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(league_id) DO UPDATE SET
+               rules_json = excluded.rules_json,
+               updated_at = excluded.updated_at",
+            rusqlite::params![league_id, rules_json, now],
+        )?;
+        tx.commit().context("commit competition rules")?;
+        Ok(())
+    }
+
+    pub fn get_competition_rules(
+        &self,
+        league_id: &str,
+    ) -> anyhow::Result<FantasyCompetitionRules> {
+        let raw = self
+            .conn
+            .query_row(
+                "SELECT competition_mode,
+                        (SELECT rules_json FROM fl_competition_settings WHERE league_id = l.id)
+                 FROM fl_leagues l WHERE id = ?1",
+                rusqlite::params![league_id],
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?)),
+            )
+            .optional()
+            .context("read competition rules")?
+            .ok_or_else(|| anyhow::anyhow!("league id '{league_id}' not found"))?;
+        let rules = match raw {
+            (mode, None) if mode == FantasyCompetitionMode::Points.label() => {
+                FantasyCompetitionRules::points()
+            }
+            (mode, None) => {
+                bail!("league competition mode is '{mode}' but its category rules are missing")
+            }
+            (_, Some(json)) => serde_json::from_str::<FantasyCompetitionRules>(&json)
+                .context("parse persisted competition rules")?,
+        };
+        rules.validate().map_err(anyhow::Error::msg)?;
+        Ok(rules)
+    }
+
     /// Get the currently active league (if any).
     pub fn get_active_league(&self) -> anyhow::Result<Option<LeagueRow>> {
         let mut stmt = self.conn.prepare(
@@ -399,6 +704,517 @@ impl FantasyDb {
         if rows == 0 {
             bail!("league '{league_id}' not found");
         }
+        Ok(())
+    }
+
+    pub fn set_assistant_rules(
+        &self,
+        league_id: &str,
+        rules: &FantasyAssistantRules,
+    ) -> anyhow::Result<()> {
+        rules.validate().map_err(anyhow::Error::msg)?;
+        let exists = self
+            .conn
+            .query_row(
+                "SELECT 1 FROM fl_leagues WHERE id = ?1",
+                rusqlite::params![league_id],
+                |_| Ok(()),
+            )
+            .is_ok();
+        if !exists {
+            bail!("league '{league_id}' not found");
+        }
+        let rules_json =
+            serde_json::to_string(rules).context("serialize fantasy assistant rules")?;
+        let now = chrono::Utc::now().to_rfc3339();
+        self.conn
+            .execute(
+                "INSERT INTO fl_assistant_settings (league_id, rules_json, updated_at)
+                 VALUES (?1, ?2, ?3)
+                 ON CONFLICT(league_id) DO UPDATE SET
+                   rules_json = excluded.rules_json,
+                   updated_at = excluded.updated_at",
+                rusqlite::params![league_id, rules_json, now],
+            )
+            .with_context(|| format!("persist assistant rules for league {league_id}"))?;
+        Ok(())
+    }
+
+    pub fn get_assistant_rules(
+        &self,
+        league_id: &str,
+    ) -> anyhow::Result<Option<FantasyAssistantRules>> {
+        let raw = self
+            .conn
+            .query_row(
+                "SELECT rules_json FROM fl_assistant_settings WHERE league_id = ?1",
+                rusqlite::params![league_id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()
+            .context("read fantasy assistant rules")?;
+        raw.map(|json| {
+            let rules: FantasyAssistantRules =
+                serde_json::from_str(&json).context("parse persisted fantasy assistant rules")?;
+            rules.validate().map_err(anyhow::Error::msg)?;
+            Ok(rules)
+        })
+        .transpose()
+    }
+
+    pub fn upsert_player_eligibility(
+        &self,
+        league_id: &str,
+        player_normalized: &str,
+        positions: &[Position],
+        source: &str,
+    ) -> anyhow::Result<()> {
+        if positions.is_empty() {
+            bail!("platform eligibility requires at least one position");
+        }
+        let positions_json =
+            serde_json::to_string(positions).context("serialize platform eligibility")?;
+        let fetched_at = chrono::Utc::now().to_rfc3339();
+        self.conn
+            .execute(
+                "INSERT INTO fl_player_eligibility
+                   (league_id, player_normalized, positions_json, source, fetched_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)
+                 ON CONFLICT(league_id, player_normalized) DO UPDATE SET
+                   positions_json = excluded.positions_json,
+                   source = excluded.source,
+                   fetched_at = excluded.fetched_at",
+                rusqlite::params![
+                    league_id,
+                    player_normalized,
+                    positions_json,
+                    source,
+                    fetched_at
+                ],
+            )
+            .with_context(|| format!("persist platform eligibility for {player_normalized}"))?;
+        Ok(())
+    }
+
+    pub fn list_player_eligibility(
+        &self,
+        league_id: &str,
+    ) -> anyhow::Result<Vec<FantasyPlayerEligibilityRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT player_normalized, positions_json, source, fetched_at
+             FROM fl_player_eligibility
+             WHERE league_id = ?1
+             ORDER BY player_normalized",
+        )?;
+        let rows = stmt
+            .query_map(rusqlite::params![league_id], |row| {
+                let positions_json: String = row.get(1)?;
+                let positions =
+                    serde_json::from_str::<Vec<Position>>(&positions_json).map_err(|error| {
+                        rusqlite::Error::FromSqlConversionFailure(
+                            positions_json.len(),
+                            rusqlite::types::Type::Text,
+                            Box::new(error),
+                        )
+                    })?;
+                Ok(FantasyPlayerEligibilityRow {
+                    player_normalized: row.get(0)?,
+                    positions,
+                    source: row.get(2)?,
+                    fetched_at: row.get(3)?,
+                })
+            })
+            .context("list platform eligibility query")?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .context("list platform eligibility collect")
+    }
+
+    pub fn record_acquisition(
+        &self,
+        league_id: &str,
+        player_added: &str,
+        player_dropped: Option<&str>,
+        kind: FantasyAcquisitionKind,
+        effective_at: DateTime<Utc>,
+        counts_toward_limit: bool,
+        waiver_days: u8,
+    ) -> anyhow::Result<String> {
+        let id = uuid::Uuid::new_v4().to_string();
+        self.conn
+            .execute(
+                "INSERT INTO fl_acquisitions
+                   (id, league_id, player_added, player_dropped, kind, effective_at, counts_toward_limit)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                rusqlite::params![
+                    id,
+                    league_id,
+                    player_added,
+                    player_dropped,
+                    acquisition_kind_label(kind),
+                    effective_at.to_rfc3339(),
+                    i64::from(counts_toward_limit)
+                ],
+            )
+            .context("record fantasy acquisition")?;
+        if let Some(dropped) = player_dropped {
+            let waiver = icelines_core::fantasy_waiver_window(dropped, effective_at, waiver_days);
+            self.upsert_waiver(league_id, &waiver)?;
+        }
+        Ok(id)
+    }
+
+    pub fn list_acquisitions(
+        &self,
+        league_id: &str,
+        from: DateTime<Utc>,
+        through: DateTime<Utc>,
+    ) -> anyhow::Result<Vec<FantasyAcquisitionLedgerRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, player_added, player_dropped, kind, effective_at, counts_toward_limit
+             FROM fl_acquisitions
+             WHERE league_id = ?1 AND effective_at >= ?2 AND effective_at <= ?3
+             ORDER BY effective_at, id",
+        )?;
+        let rows = stmt.query_map(
+            rusqlite::params![league_id, from.to_rfc3339(), through.to_rfc3339()],
+            |row| {
+                let kind: String = row.get(3)?;
+                let effective_at: String = row.get(4)?;
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                    kind,
+                    effective_at,
+                    row.get::<_, i64>(5)? != 0,
+                ))
+            },
+        )?;
+        rows.map(|row| {
+            let (id, player_added, player_dropped, kind, effective_at, counts_toward_limit) = row?;
+            Ok(FantasyAcquisitionLedgerRow {
+                id,
+                player_added,
+                player_dropped,
+                kind: parse_acquisition_kind(&kind)?,
+                effective_at: DateTime::parse_from_rfc3339(&effective_at)
+                    .with_context(|| format!("parse acquisition timestamp {effective_at}"))?
+                    .with_timezone(&Utc),
+                counts_toward_limit,
+            })
+        })
+        .collect()
+    }
+
+    pub fn upsert_waiver(
+        &self,
+        league_id: &str,
+        waiver: &FantasyWaiverWindow,
+    ) -> anyhow::Result<()> {
+        self.conn.execute(
+            "INSERT INTO fl_waivers (league_id, player_normalized, dropped_at, clears_at)
+             VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(league_id, player_normalized) DO UPDATE SET
+               dropped_at = excluded.dropped_at,
+               clears_at = excluded.clears_at",
+            rusqlite::params![
+                league_id,
+                waiver.player_key,
+                waiver.dropped_at.to_rfc3339(),
+                waiver.clears_at.to_rfc3339()
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_waiver(
+        &self,
+        league_id: &str,
+        player_normalized: &str,
+    ) -> anyhow::Result<Option<FantasyWaiverWindow>> {
+        let raw = self
+            .conn
+            .query_row(
+                "SELECT dropped_at, clears_at FROM fl_waivers
+             WHERE league_id = ?1 AND player_normalized = ?2",
+                rusqlite::params![league_id, player_normalized],
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+            )
+            .optional()?;
+        raw.map(
+            |(dropped_at, clears_at)| -> anyhow::Result<FantasyWaiverWindow> {
+                Ok(FantasyWaiverWindow {
+                    player_key: player_normalized.to_owned(),
+                    dropped_at: DateTime::parse_from_rfc3339(&dropped_at)?.with_timezone(&Utc),
+                    clears_at: DateTime::parse_from_rfc3339(&clears_at)?.with_timezone(&Utc),
+                })
+            },
+        )
+        .transpose()
+    }
+
+    pub fn record_status_observation(
+        &self,
+        league_id: &str,
+        observation: &FantasyStatusObservation,
+    ) -> anyhow::Result<String> {
+        if observation.source.trim().is_empty() {
+            bail!("status observation source is required");
+        }
+        if observation.player_key.trim().is_empty() {
+            bail!("status observation player key is required");
+        }
+        let id = uuid::Uuid::new_v4().to_string();
+        self.conn.execute(
+            "INSERT INTO fl_status_observations
+               (id, league_id, player_normalized, status, source, source_url,
+                observed_at, fetched_at, confidence, detail)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            rusqlite::params![
+                id,
+                league_id,
+                observation.player_key,
+                availability_status_label(observation.status),
+                observation.source,
+                observation.source_url,
+                observation.observed_at.to_rfc3339(),
+                observation.fetched_at.to_rfc3339(),
+                observation_confidence_label(observation.confidence),
+                observation.detail,
+            ],
+        )?;
+        Ok(id)
+    }
+
+    pub fn list_latest_status_observations(
+        &self,
+        league_id: &str,
+    ) -> anyhow::Result<Vec<FantasyStatusObservation>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT player_normalized, status, source, source_url, observed_at,
+                    fetched_at, confidence, detail
+             FROM fl_status_observations
+             WHERE league_id = ?1
+             ORDER BY player_normalized, observed_at DESC, fetched_at DESC, id DESC",
+        )?;
+        let raw = stmt
+            .query_map(rusqlite::params![league_id], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, Option<String>>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, String>(5)?,
+                    row.get::<_, String>(6)?,
+                    row.get::<_, Option<String>>(7)?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut seen = std::collections::BTreeSet::new();
+        raw.into_iter()
+            .filter(|row| seen.insert(row.0.clone()))
+            .map(
+                |(
+                    player_key,
+                    status,
+                    source,
+                    source_url,
+                    observed_at,
+                    fetched_at,
+                    confidence,
+                    detail,
+                )| {
+                    Ok(FantasyStatusObservation {
+                        player_key,
+                        status: parse_availability_status(&status)?,
+                        source,
+                        source_url,
+                        observed_at: DateTime::parse_from_rfc3339(&observed_at)?
+                            .with_timezone(&Utc),
+                        fetched_at: DateTime::parse_from_rfc3339(&fetched_at)?.with_timezone(&Utc),
+                        confidence: parse_observation_confidence(&confidence)?,
+                        detail,
+                    })
+                },
+            )
+            .collect()
+    }
+
+    pub fn record_goalie_start_observation(
+        &self,
+        league_id: &str,
+        observation: &FantasyGoalieStartObservation,
+    ) -> anyhow::Result<String> {
+        if observation.source.trim().is_empty() {
+            bail!("goalie start observation source is required");
+        }
+        if observation.player_key.trim().is_empty() {
+            bail!("goalie start observation player key is required");
+        }
+        let id = uuid::Uuid::new_v4().to_string();
+        self.conn.execute(
+            "INSERT INTO fl_goalie_start_observations
+               (id, league_id, player_normalized, game_date, state, source, source_url,
+                observed_at, fetched_at, detail)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            rusqlite::params![
+                id,
+                league_id,
+                observation.player_key,
+                observation.game_date.to_string(),
+                goalie_start_state_label(observation.state),
+                observation.source,
+                observation.source_url,
+                observation.observed_at.to_rfc3339(),
+                observation.fetched_at.to_rfc3339(),
+                observation.detail,
+            ],
+        )?;
+        Ok(id)
+    }
+
+    pub fn record_goalie_start_observations(
+        &self,
+        league_id: &str,
+        observations: &[FantasyGoalieStartObservation],
+    ) -> anyhow::Result<Vec<String>> {
+        for observation in observations {
+            if observation.source.trim().is_empty() {
+                bail!("goalie start observation source is required");
+            }
+            if observation.player_key.trim().is_empty() {
+                bail!("goalie start observation player key is required");
+            }
+        }
+        let transaction = self.conn.unchecked_transaction()?;
+        let mut ids = Vec::with_capacity(observations.len());
+        for observation in observations {
+            let id = uuid::Uuid::new_v4().to_string();
+            transaction.execute(
+                "INSERT INTO fl_goalie_start_observations
+                   (id, league_id, player_normalized, game_date, state, source, source_url,
+                    observed_at, fetched_at, detail)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                rusqlite::params![
+                    id,
+                    league_id,
+                    observation.player_key,
+                    observation.game_date.to_string(),
+                    goalie_start_state_label(observation.state),
+                    observation.source,
+                    observation.source_url,
+                    observation.observed_at.to_rfc3339(),
+                    observation.fetched_at.to_rfc3339(),
+                    observation.detail,
+                ],
+            )?;
+            ids.push(id);
+        }
+        transaction.commit()?;
+        Ok(ids)
+    }
+
+    pub fn list_latest_goalie_start_observations(
+        &self,
+        league_id: &str,
+        from: NaiveDate,
+        through: NaiveDate,
+    ) -> anyhow::Result<Vec<FantasyGoalieStartObservation>> {
+        if through < from {
+            bail!("goalie observation end date cannot precede start date");
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT player_normalized, game_date, state, source, source_url, observed_at,
+                    fetched_at, detail
+             FROM fl_goalie_start_observations
+             WHERE league_id = ?1 AND game_date >= ?2 AND game_date <= ?3
+             ORDER BY game_date, player_normalized, observed_at DESC, fetched_at DESC, id DESC",
+        )?;
+        let raw = stmt
+            .query_map(
+                rusqlite::params![league_id, from.to_string(), through.to_string()],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, Option<String>>(4)?,
+                        row.get::<_, String>(5)?,
+                        row.get::<_, String>(6)?,
+                        row.get::<_, Option<String>>(7)?,
+                    ))
+                },
+            )?
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut seen = BTreeSet::new();
+        raw.into_iter()
+            .filter(|row| seen.insert((row.0.clone(), row.1.clone())))
+            .map(
+                |(
+                    player_key,
+                    game_date,
+                    state,
+                    source,
+                    source_url,
+                    observed_at,
+                    fetched_at,
+                    detail,
+                )| {
+                    Ok(FantasyGoalieStartObservation {
+                        player_key,
+                        game_date: NaiveDate::parse_from_str(&game_date, "%Y-%m-%d")?,
+                        state: parse_goalie_start_state(&state)?,
+                        source,
+                        source_url,
+                        observed_at: DateTime::parse_from_rfc3339(&observed_at)?
+                            .with_timezone(&Utc),
+                        fetched_at: DateTime::parse_from_rfc3339(&fetched_at)?.with_timezone(&Utc),
+                        detail,
+                    })
+                },
+            )
+            .collect()
+    }
+
+    pub fn get_morning_briefing_fingerprint(
+        &self,
+        league_id: &str,
+        date: NaiveDate,
+    ) -> anyhow::Result<Option<String>> {
+        self.conn
+            .query_row(
+                "SELECT fingerprint FROM fl_morning_briefings
+                 WHERE league_id = ?1 AND briefing_date = ?2",
+                rusqlite::params![league_id, date.to_string()],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(Into::into)
+    }
+
+    pub fn upsert_morning_briefing_fingerprint(
+        &self,
+        league_id: &str,
+        date: NaiveDate,
+        fingerprint: &str,
+        generated_at: DateTime<Utc>,
+    ) -> anyhow::Result<()> {
+        self.conn.execute(
+            "INSERT INTO fl_morning_briefings
+               (league_id, briefing_date, fingerprint, generated_at)
+             VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(league_id, briefing_date) DO UPDATE SET
+               fingerprint = excluded.fingerprint,
+               generated_at = excluded.generated_at",
+            rusqlite::params![
+                league_id,
+                date.to_string(),
+                fingerprint,
+                generated_at.to_rfc3339()
+            ],
+        )?;
         Ok(())
     }
 
@@ -591,6 +1407,359 @@ impl FantasyDb {
         Ok(rows > 0)
     }
 
+    /// Atomically exchange player packages between two fantasy teams.
+    ///
+    /// Every outgoing player must still belong to the supplied team when the
+    /// transaction begins. Any stale membership, duplicate player, or insert
+    /// failure rolls back the complete trade.
+    pub fn execute_trade(
+        &self,
+        sending_team_id: &str,
+        sends: &[String],
+        receiving_team_id: &str,
+        receives: &[String],
+    ) -> anyhow::Result<()> {
+        if sending_team_id == receiving_team_id {
+            bail!("trade teams must be different");
+        }
+        if sends.is_empty() || receives.is_empty() {
+            bail!("trade packages must not be empty");
+        }
+
+        let sends_set = sends.iter().collect::<BTreeSet<_>>();
+        let receives_set = receives.iter().collect::<BTreeSet<_>>();
+        if sends_set.len() != sends.len() || receives_set.len() != receives.len() {
+            bail!("trade packages must not contain duplicate players");
+        }
+        if sends_set.iter().any(|player| receives_set.contains(player)) {
+            bail!("a player cannot appear on both sides of a trade");
+        }
+
+        let tx = self
+            .conn
+            .unchecked_transaction()
+            .context("begin fantasy trade")?;
+        let (league_id, sending_team_name, receiving_team_name) = tx
+            .query_row(
+                "SELECT sender.league_id, sender.name, receiver.name
+                 FROM fl_teams sender
+                 JOIN fl_teams receiver
+                   ON receiver.id = ?2 AND receiver.league_id = sender.league_id
+                 WHERE sender.id = ?1",
+                rusqlite::params![sending_team_id, receiving_team_id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                    ))
+                },
+            )
+            .optional()
+            .context("verify fantasy trade teams share a league")?
+            .context("trade teams must exist in the same league")?;
+        for (team_id, players) in [(sending_team_id, sends), (receiving_team_id, receives)] {
+            for player in players {
+                let present = tx
+                    .query_row(
+                        "SELECT EXISTS(SELECT 1 FROM fl_roster \
+                         WHERE team_id = ?1 AND player_normalized = ?2)",
+                        rusqlite::params![team_id, player],
+                        |row| row.get::<_, bool>(0),
+                    )
+                    .with_context(|| format!("verify player '{player}' on team {team_id}"))?;
+                if !present {
+                    bail!("player '{player}' is no longer on team {team_id}");
+                }
+            }
+        }
+
+        for (team_id, players) in [(sending_team_id, sends), (receiving_team_id, receives)] {
+            for player in players {
+                tx.execute(
+                    "DELETE FROM fl_roster WHERE team_id = ?1 AND player_normalized = ?2",
+                    rusqlite::params![team_id, player],
+                )
+                .with_context(|| format!("remove traded player '{player}' from team {team_id}"))?;
+            }
+        }
+
+        let now = chrono::Utc::now().to_rfc3339();
+        for (team_id, players) in [(sending_team_id, receives), (receiving_team_id, sends)] {
+            for player in players {
+                tx.execute(
+                    "INSERT INTO fl_roster (team_id, player_normalized, added_at) \
+                     VALUES (?1, ?2, ?3)",
+                    rusqlite::params![team_id, player, now],
+                )
+                .with_context(|| format!("add traded player '{player}' to team {team_id}"))?;
+            }
+        }
+        tx.execute(
+            "INSERT INTO fl_trade_history (
+                id, league_id, sending_team_id, sending_team_name,
+                receiving_team_id, receiving_team_name,
+                sends_json, receives_json, executed_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            rusqlite::params![
+                uuid::Uuid::new_v4().to_string(),
+                league_id,
+                sending_team_id,
+                sending_team_name,
+                receiving_team_id,
+                receiving_team_name,
+                serde_json::to_string(sends).context("serialize sent trade package")?,
+                serde_json::to_string(receives).context("serialize received trade package")?,
+                now,
+            ],
+        )
+        .context("record fantasy trade history")?;
+        tx.commit().context("commit fantasy trade")?;
+        Ok(())
+    }
+
+    /// List the most recently executed local fantasy trades for a league.
+    pub fn list_trade_history(
+        &self,
+        league_id: &str,
+        limit: usize,
+    ) -> anyhow::Result<Vec<FantasyTradeHistoryRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT h.id, h.league_id,
+                    h.sending_team_id, h.sending_team_name,
+                    h.receiving_team_id, h.receiving_team_name,
+                    h.sends_json, h.receives_json, h.executed_at
+             FROM fl_trade_history h
+             WHERE h.league_id = ?1
+             ORDER BY h.executed_at DESC, h.id DESC
+             LIMIT ?2",
+        )?;
+        let raw = stmt
+            .query_map(rusqlite::params![league_id, limit as i64], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, String>(5)?,
+                    row.get::<_, String>(6)?,
+                    row.get::<_, String>(7)?,
+                    row.get::<_, String>(8)?,
+                ))
+            })
+            .context("list fantasy trade history query")?
+            .collect::<Result<Vec<_>, _>>()
+            .context("list fantasy trade history rows")?;
+        raw.into_iter()
+            .map(
+                |(
+                    id,
+                    league_id,
+                    sending_team_id,
+                    sending_team,
+                    receiving_team_id,
+                    receiving_team,
+                    sends_json,
+                    receives_json,
+                    executed_at,
+                )| {
+                    Ok(FantasyTradeHistoryRow {
+                        id,
+                        league_id,
+                        sending_team_id,
+                        sending_team,
+                        receiving_team_id,
+                        receiving_team,
+                        sends: serde_json::from_str(&sends_json)
+                            .context("parse sent trade package history")?,
+                        receives: serde_json::from_str(&receives_json)
+                            .context("parse received trade package history")?,
+                        executed_at,
+                    })
+                },
+            )
+            .collect()
+    }
+
+    /// Save a proposed trade without changing either roster.
+    pub fn save_trade_offer(
+        &self,
+        sending_team_id: &str,
+        sends: &[String],
+        receiving_team_id: &str,
+        receives: &[String],
+    ) -> anyhow::Result<String> {
+        if sending_team_id == receiving_team_id || sends.is_empty() || receives.is_empty() {
+            bail!("a trade offer requires two teams and non-empty packages");
+        }
+        let sends_set = sends.iter().collect::<BTreeSet<_>>();
+        let receives_set = receives.iter().collect::<BTreeSet<_>>();
+        if sends_set.len() != sends.len()
+            || receives_set.len() != receives.len()
+            || sends_set.iter().any(|player| receives_set.contains(player))
+        {
+            bail!("trade offer packages must be unique and disjoint");
+        }
+        let tx = self
+            .conn
+            .unchecked_transaction()
+            .context("begin fantasy trade offer")?;
+        let (league_id, sending_team, receiving_team) = tx
+            .query_row(
+                "SELECT sender.league_id, sender.name, receiver.name
+                 FROM fl_teams sender
+                 JOIN fl_teams receiver
+                   ON receiver.id = ?2 AND receiver.league_id = sender.league_id
+                 WHERE sender.id = ?1",
+                rusqlite::params![sending_team_id, receiving_team_id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                    ))
+                },
+            )
+            .optional()
+            .context("verify fantasy offer teams")?
+            .context("trade offer teams must exist in the same league")?;
+        for (team_id, players) in [(sending_team_id, sends), (receiving_team_id, receives)] {
+            for player in players {
+                let present = tx.query_row(
+                    "SELECT EXISTS(SELECT 1 FROM fl_roster
+                     WHERE team_id = ?1 AND player_normalized = ?2)",
+                    rusqlite::params![team_id, player],
+                    |row| row.get::<_, bool>(0),
+                )?;
+                if !present {
+                    bail!("player '{player}' is no longer on team {team_id}");
+                }
+            }
+        }
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = Utc::now().to_rfc3339();
+        tx.execute(
+            "INSERT INTO fl_trade_offers (
+                id, league_id, sending_team_id, sending_team_name,
+                receiving_team_id, receiving_team_name, sends_json,
+                receives_json, status, created_at, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'pending', ?9, ?9)",
+            rusqlite::params![
+                id,
+                league_id,
+                sending_team_id,
+                sending_team,
+                receiving_team_id,
+                receiving_team,
+                serde_json::to_string(sends).context("serialize offered players")?,
+                serde_json::to_string(receives).context("serialize requested players")?,
+                now,
+            ],
+        )
+        .context("save fantasy trade offer")?;
+        tx.commit().context("commit fantasy trade offer")?;
+        Ok(id)
+    }
+
+    pub fn list_trade_offers(
+        &self,
+        league_id: &str,
+        status: Option<&str>,
+        limit: usize,
+    ) -> anyhow::Result<Vec<FantasyTradeOfferRow>> {
+        if let Some(status) = status {
+            validate_trade_offer_status(status)?;
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT id, league_id, sending_team_id, sending_team_name,
+                    receiving_team_id, receiving_team_name, sends_json,
+                    receives_json, status, created_at, updated_at
+             FROM fl_trade_offers
+             WHERE league_id = ?1 AND (?2 IS NULL OR status = ?2)
+             ORDER BY updated_at DESC, id DESC LIMIT ?3",
+        )?;
+        let raw = stmt
+            .query_map(rusqlite::params![league_id, status, limit as i64], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, String>(5)?,
+                    row.get::<_, String>(6)?,
+                    row.get::<_, String>(7)?,
+                    row.get::<_, String>(8)?,
+                    row.get::<_, String>(9)?,
+                    row.get::<_, String>(10)?,
+                ))
+            })
+            .context("list fantasy trade offers query")?
+            .collect::<Result<Vec<_>, _>>()
+            .context("list fantasy trade offer rows")?;
+        raw.into_iter()
+            .map(|row| {
+                let sends: Vec<String> =
+                    serde_json::from_str(&row.6).context("parse offered players")?;
+                let receives: Vec<String> =
+                    serde_json::from_str(&row.7).context("parse requested players")?;
+                let mut roster_issues = Vec::new();
+                for (team_id, team_name, players) in [
+                    (row.2.as_str(), row.3.as_str(), sends.as_slice()),
+                    (row.4.as_str(), row.5.as_str(), receives.as_slice()),
+                ] {
+                    for player in players {
+                        let present = self.conn.query_row(
+                            "SELECT EXISTS(SELECT 1 FROM fl_roster
+                             WHERE team_id = ?1 AND player_normalized = ?2)",
+                            rusqlite::params![team_id, player],
+                            |db_row| db_row.get::<_, bool>(0),
+                        )?;
+                        if !present {
+                            roster_issues
+                                .push(format!("'{player}' is no longer rostered by '{team_name}'"));
+                        }
+                    }
+                }
+                Ok(FantasyTradeOfferRow {
+                    id: row.0,
+                    league_id: row.1,
+                    sending_team_id: row.2,
+                    sending_team: row.3,
+                    receiving_team_id: row.4,
+                    receiving_team: row.5,
+                    sends,
+                    receives,
+                    status: row.8,
+                    created_at: row.9,
+                    updated_at: row.10,
+                    roster_current: roster_issues.is_empty(),
+                    roster_issues,
+                })
+            })
+            .collect()
+    }
+
+    /// Close a pending offer. Closed offers are immutable.
+    pub fn close_trade_offer(
+        &self,
+        league_id: &str,
+        id: &str,
+        status: &str,
+    ) -> anyhow::Result<bool> {
+        validate_trade_offer_status(status)?;
+        if status == "pending" {
+            bail!("closing an offer requires accepted, rejected, cancelled, or expired status");
+        }
+        let rows = self.conn.execute(
+            "UPDATE fl_trade_offers SET status = ?3, updated_at = ?4
+             WHERE league_id = ?1 AND id = ?2 AND status = 'pending'",
+            rusqlite::params![league_id, id, status, Utc::now().to_rfc3339()],
+        )?;
+        Ok(rows == 1)
+    }
+
     /// List all normalized player names on a team's roster.
     pub fn list_roster(&self, team_id: &str) -> anyhow::Result<Vec<String>> {
         let mut stmt = self.conn.prepare(
@@ -604,6 +1773,33 @@ impl FantasyDb {
             .context("list_roster collect")?;
 
         Ok(rows)
+    }
+
+    /// Atomically replace the complete membership of one or more fantasy rosters.
+    /// Team ids must already exist. Duplicate player keys within a supplied roster
+    /// are collapsed before insertion.
+    pub fn replace_rosters(&self, rosters: &[(String, Vec<String>)]) -> anyhow::Result<()> {
+        let tx = self
+            .conn
+            .unchecked_transaction()
+            .context("begin fantasy roster replacement")?;
+        let now = chrono::Utc::now().to_rfc3339();
+        for (team_id, players) in rosters {
+            tx.execute(
+                "DELETE FROM fl_roster WHERE team_id = ?1",
+                rusqlite::params![team_id],
+            )
+            .with_context(|| format!("clear roster for team {team_id}"))?;
+            for player in players.iter().collect::<BTreeSet<_>>() {
+                tx.execute(
+                    "INSERT INTO fl_roster (team_id, player_normalized, added_at) VALUES (?1, ?2, ?3)",
+                    rusqlite::params![team_id, player, now],
+                )
+                .with_context(|| format!("replace player '{player}' on team {team_id}"))?;
+            }
+        }
+        tx.commit().context("commit fantasy roster replacement")?;
+        Ok(())
     }
 
     pub fn schedule_matchup(
@@ -788,6 +1984,92 @@ pub fn resolve_roster_shape(name: &str) -> anyhow::Result<RosterShape> {
     })
 }
 
+fn acquisition_kind_label(kind: FantasyAcquisitionKind) -> &'static str {
+    match kind {
+        FantasyAcquisitionKind::FreeAgentAdd => "free_agent_add",
+        FantasyAcquisitionKind::WaiverClaim => "waiver_claim",
+    }
+}
+
+fn parse_acquisition_kind(value: &str) -> anyhow::Result<FantasyAcquisitionKind> {
+    match value {
+        "free_agent_add" => Ok(FantasyAcquisitionKind::FreeAgentAdd),
+        "waiver_claim" => Ok(FantasyAcquisitionKind::WaiverClaim),
+        other => bail!("unknown fantasy acquisition kind '{other}'"),
+    }
+}
+
+fn availability_status_label(status: FantasyPlayerAvailabilityStatus) -> &'static str {
+    match status {
+        FantasyPlayerAvailabilityStatus::Healthy => "healthy",
+        FantasyPlayerAvailabilityStatus::DayToDay => "day_to_day",
+        FantasyPlayerAvailabilityStatus::GameTimeDecision => "game_time_decision",
+        FantasyPlayerAvailabilityStatus::Out => "out",
+        FantasyPlayerAvailabilityStatus::InjuredReserve => "injured_reserve",
+        FantasyPlayerAvailabilityStatus::LongTermInjuredReserve => "long_term_injured_reserve",
+        FantasyPlayerAvailabilityStatus::Suspended => "suspended",
+        FantasyPlayerAvailabilityStatus::Personal => "personal",
+        FantasyPlayerAvailabilityStatus::Unknown => "unknown",
+    }
+}
+
+fn parse_availability_status(value: &str) -> anyhow::Result<FantasyPlayerAvailabilityStatus> {
+    match value {
+        "healthy" => Ok(FantasyPlayerAvailabilityStatus::Healthy),
+        "day_to_day" => Ok(FantasyPlayerAvailabilityStatus::DayToDay),
+        "game_time_decision" => Ok(FantasyPlayerAvailabilityStatus::GameTimeDecision),
+        "out" => Ok(FantasyPlayerAvailabilityStatus::Out),
+        "injured_reserve" => Ok(FantasyPlayerAvailabilityStatus::InjuredReserve),
+        "long_term_injured_reserve" => Ok(FantasyPlayerAvailabilityStatus::LongTermInjuredReserve),
+        "suspended" => Ok(FantasyPlayerAvailabilityStatus::Suspended),
+        "personal" => Ok(FantasyPlayerAvailabilityStatus::Personal),
+        "unknown" => Ok(FantasyPlayerAvailabilityStatus::Unknown),
+        other => bail!("unknown fantasy availability status '{other}'"),
+    }
+}
+
+fn observation_confidence_label(confidence: FantasyObservationConfidence) -> &'static str {
+    match confidence {
+        FantasyObservationConfidence::Confirmed => "confirmed",
+        FantasyObservationConfidence::Reported => "reported",
+        FantasyObservationConfidence::Estimated => "estimated",
+        FantasyObservationConfidence::Unknown => "unknown",
+    }
+}
+
+fn parse_observation_confidence(value: &str) -> anyhow::Result<FantasyObservationConfidence> {
+    match value {
+        "confirmed" => Ok(FantasyObservationConfidence::Confirmed),
+        "reported" => Ok(FantasyObservationConfidence::Reported),
+        "estimated" => Ok(FantasyObservationConfidence::Estimated),
+        "unknown" => Ok(FantasyObservationConfidence::Unknown),
+        other => bail!("unknown fantasy observation confidence '{other}'"),
+    }
+}
+
+fn goalie_start_state_label(state: FantasyGoalieStartState) -> &'static str {
+    match state {
+        FantasyGoalieStartState::ConfirmedStarting => "confirmed_starting",
+        FantasyGoalieStartState::ReportedStarting => "reported_starting",
+        FantasyGoalieStartState::EstimatedStarting => "estimated_starting",
+        FantasyGoalieStartState::ConfirmedBackup => "confirmed_backup",
+        FantasyGoalieStartState::ReportedBackup => "reported_backup",
+        FantasyGoalieStartState::Unknown => "unknown",
+    }
+}
+
+fn parse_goalie_start_state(value: &str) -> anyhow::Result<FantasyGoalieStartState> {
+    match value {
+        "confirmed_starting" => Ok(FantasyGoalieStartState::ConfirmedStarting),
+        "reported_starting" => Ok(FantasyGoalieStartState::ReportedStarting),
+        "estimated_starting" => Ok(FantasyGoalieStartState::EstimatedStarting),
+        "confirmed_backup" => Ok(FantasyGoalieStartState::ConfirmedBackup),
+        "reported_backup" => Ok(FantasyGoalieStartState::ReportedBackup),
+        "unknown" => Ok(FantasyGoalieStartState::Unknown),
+        other => bail!("unknown fantasy goalie start state '{other}'"),
+    }
+}
+
 fn ensure_team_unscheduled(
     conn: &Connection,
     league_id: &str,
@@ -818,6 +2100,7 @@ fn ensure_team_unscheduled(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::TimeZone;
 
     #[test]
     fn l1_fantasy_create_league() {
@@ -940,6 +2223,243 @@ mod tests {
             .drop_player(&team_id, "auston_matthews")
             .expect("drop non-existent");
         assert!(!noop);
+    }
+
+    #[test]
+    fn l1_fantasy_replace_rosters_rolls_back_every_team_on_failure() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Office League", "yahoo-standard")
+            .expect("create league");
+        let team_id = db
+            .create_team(&league_id, "Alpha", "Alice")
+            .expect("create team");
+        db.add_player(&team_id, "original_player")
+            .expect("seed roster");
+
+        let result = db.replace_rosters(&[
+            (team_id.clone(), vec!["replacement_player".to_owned()]),
+            (
+                "missing-team-id".to_owned(),
+                vec!["invalid_player".to_owned()],
+            ),
+        ]);
+
+        assert!(result.is_err(), "invalid team must fail replacement");
+        assert_eq!(
+            db.list_roster(&team_id).expect("roster after rollback"),
+            vec!["original_player".to_owned()],
+            "the first team deletion/insertion must roll back with the failed transaction"
+        );
+    }
+
+    #[test]
+    fn l1_fantasy_execute_trade_swaps_complete_packages_atomically() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Trade League", "yahoo-standard")
+            .expect("create league");
+        let alpha = db
+            .create_team(&league_id, "Alpha", "Alice")
+            .expect("create alpha");
+        let beta = db
+            .create_team(&league_id, "Beta", "Bob")
+            .expect("create beta");
+        for player in ["alpha_one", "alpha_two", "alpha_keep"] {
+            db.add_player(&alpha, player).expect("seed alpha");
+        }
+        for player in ["beta_one", "beta_keep"] {
+            db.add_player(&beta, player).expect("seed beta");
+        }
+
+        db.execute_trade(
+            &alpha,
+            &["alpha_one".to_owned(), "alpha_two".to_owned()],
+            &beta,
+            &["beta_one".to_owned()],
+        )
+        .expect("execute package trade");
+
+        let alpha_roster = db.list_roster(&alpha).expect("list alpha");
+        let beta_roster = db.list_roster(&beta).expect("list beta");
+        assert_eq!(alpha_roster.len(), 2);
+        assert!(alpha_roster.contains(&"alpha_keep".to_owned()));
+        assert!(alpha_roster.contains(&"beta_one".to_owned()));
+        assert_eq!(beta_roster.len(), 3);
+        assert!(beta_roster.contains(&"beta_keep".to_owned()));
+        assert!(beta_roster.contains(&"alpha_one".to_owned()));
+        assert!(beta_roster.contains(&"alpha_two".to_owned()));
+        let history = db
+            .list_trade_history(&league_id, 10)
+            .expect("list trade history");
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].sending_team, "Alpha");
+        assert_eq!(history[0].receiving_team, "Beta");
+        assert_eq!(history[0].sends, vec!["alpha_one", "alpha_two"]);
+        assert_eq!(history[0].receives, vec!["beta_one"]);
+        assert!(db
+            .delete_team(&league_id, "Beta")
+            .expect("delete traded team"));
+        let retained = db
+            .list_trade_history(&league_id, 10)
+            .expect("history survives team deletion");
+        assert_eq!(retained.len(), 1);
+        assert_eq!(retained[0].receiving_team, "Beta");
+    }
+
+    #[test]
+    fn l1_fantasy_execute_trade_rejects_stale_package_without_mutation() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Stale Trade League", "yahoo-standard")
+            .expect("create league");
+        let alpha = db
+            .create_team(&league_id, "Alpha", "Alice")
+            .expect("create alpha");
+        let beta = db
+            .create_team(&league_id, "Beta", "Bob")
+            .expect("create beta");
+        db.add_player(&alpha, "alpha_one").expect("seed alpha");
+        db.add_player(&beta, "beta_one").expect("seed beta");
+
+        let result = db.execute_trade(
+            &alpha,
+            &["alpha_one".to_owned(), "already_moved".to_owned()],
+            &beta,
+            &["beta_one".to_owned()],
+        );
+
+        assert!(result.is_err(), "stale package must fail");
+        assert_eq!(
+            db.list_roster(&alpha).expect("alpha after rollback"),
+            vec!["alpha_one".to_owned()]
+        );
+        assert_eq!(
+            db.list_roster(&beta).expect("beta after rollback"),
+            vec!["beta_one".to_owned()]
+        );
+        assert!(db
+            .list_trade_history(&league_id, 10)
+            .expect("history after stale trade")
+            .is_empty());
+    }
+
+    #[test]
+    fn l1_fantasy_execute_trade_rolls_back_after_insert_failure() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Conflicting Trade League", "yahoo-standard")
+            .expect("create league");
+        let alpha = db
+            .create_team(&league_id, "Alpha", "Alice")
+            .expect("create alpha");
+        let beta = db
+            .create_team(&league_id, "Beta", "Bob")
+            .expect("create beta");
+        db.add_player(&alpha, "alpha_one").expect("seed alpha");
+        db.add_player(&beta, "beta_one").expect("seed beta");
+        db.add_player(&beta, "alpha_one")
+            .expect("seed conflicting duplicate ownership");
+        let alpha_before = db.list_roster(&alpha).expect("alpha before trade");
+        let beta_before = db.list_roster(&beta).expect("beta before trade");
+
+        let result = db.execute_trade(
+            &alpha,
+            &["alpha_one".to_owned()],
+            &beta,
+            &["beta_one".to_owned()],
+        );
+
+        assert!(result.is_err(), "conflicting insert must fail");
+        assert_eq!(
+            db.list_roster(&alpha).expect("alpha after rollback"),
+            alpha_before
+        );
+        assert_eq!(
+            db.list_roster(&beta).expect("beta after rollback"),
+            beta_before
+        );
+        assert!(db
+            .list_trade_history(&league_id, 10)
+            .expect("history after rollback")
+            .is_empty());
+    }
+
+    #[test]
+    fn l1_fantasy_trade_offer_lifecycle_does_not_mutate_rosters() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Offer League", "yahoo-standard")
+            .expect("create league");
+        let alpha = db.create_team(&league_id, "Alpha", "Alice").unwrap();
+        let beta = db.create_team(&league_id, "Beta", "Bob").unwrap();
+        db.add_player(&alpha, "alpha_one").unwrap();
+        db.add_player(&beta, "beta_one").unwrap();
+
+        let id = db
+            .save_trade_offer(
+                &alpha,
+                &["alpha_one".to_owned()],
+                &beta,
+                &["beta_one".to_owned()],
+            )
+            .expect("save offer");
+        let pending = db
+            .list_trade_offers(&league_id, Some("pending"), 10)
+            .expect("list pending offers");
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].id, id);
+        assert_eq!(pending[0].sends, vec!["alpha_one"]);
+        assert_eq!(pending[0].receives, vec!["beta_one"]);
+        assert!(pending[0].roster_current);
+        assert!(pending[0].roster_issues.is_empty());
+        assert!(db
+            .close_trade_offer(&league_id, &id, "accepted")
+            .expect("accept offer"));
+        assert!(!db
+            .close_trade_offer(&league_id, &id, "rejected")
+            .expect("closed offer remains immutable"));
+        assert!(db
+            .list_trade_offers(&league_id, Some("pending"), 10)
+            .unwrap()
+            .is_empty());
+        assert_eq!(
+            db.list_trade_offers(&league_id, Some("accepted"), 10)
+                .unwrap()[0]
+                .status,
+            "accepted"
+        );
+        assert_eq!(db.list_roster(&alpha).unwrap(), vec!["alpha_one"]);
+        assert_eq!(db.list_roster(&beta).unwrap(), vec!["beta_one"]);
+    }
+
+    #[test]
+    fn l1_fantasy_trade_offer_detects_stale_roster_membership() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Stale Offer League", "yahoo-standard")
+            .unwrap();
+        let alpha = db.create_team(&league_id, "Alpha", "Alice").unwrap();
+        let beta = db.create_team(&league_id, "Beta", "Bob").unwrap();
+        db.add_player(&alpha, "alpha_one").unwrap();
+        db.add_player(&beta, "beta_one").unwrap();
+        db.save_trade_offer(
+            &alpha,
+            &["alpha_one".to_owned()],
+            &beta,
+            &["beta_one".to_owned()],
+        )
+        .unwrap();
+        db.drop_player(&beta, "beta_one").unwrap();
+
+        let offers = db
+            .list_trade_offers(&league_id, Some("pending"), 10)
+            .unwrap();
+        assert_eq!(offers.len(), 1);
+        assert!(!offers[0].roster_current);
+        assert_eq!(offers[0].roster_issues.len(), 1);
+        assert!(offers[0].roster_issues[0].contains("beta_one"));
+        assert!(offers[0].roster_issues[0].contains("Beta"));
     }
 
     #[test]
@@ -1250,6 +2770,218 @@ mod tests {
     }
 
     #[test]
+    fn l1_fantasy_assistant_rules_round_trip_per_league() {
+        let db = FantasyDb::open_in_memory().unwrap();
+        let league_id = db
+            .create_league("Assistant League", "yahoo-standard")
+            .unwrap();
+        assert!(db.get_assistant_rules(&league_id).unwrap().is_none());
+
+        let rules = FantasyAssistantRules::configured_2026();
+        db.set_assistant_rules(&league_id, &rules).unwrap();
+        let loaded = db.get_assistant_rules(&league_id).unwrap().unwrap();
+        assert_eq!(loaded, rules);
+        assert_eq!(loaded.standard_roster_capacity(), 16);
+        assert_eq!(loaded.total_capacity_with_reserve(), 20);
+    }
+
+    #[test]
+    fn l1_platform_eligibility_preserves_multi_position_source() {
+        let db = FantasyDb::open_in_memory().unwrap();
+        let league_id = db
+            .create_league("Eligibility League", "yahoo-standard")
+            .unwrap();
+        db.upsert_player_eligibility(
+            &league_id,
+            "flex_forward",
+            &[Position::Center, Position::LeftWing],
+            "yahoo-player-pool-csv",
+        )
+        .unwrap();
+
+        let rows = db.list_player_eligibility(&league_id).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].player_normalized, "flex_forward");
+        assert_eq!(
+            rows[0].positions,
+            vec![Position::Center, Position::LeftWing]
+        );
+        assert_eq!(rows[0].source, "yahoo-player-pool-csv");
+    }
+
+    #[test]
+    fn l1_acquisition_ledger_creates_two_day_drop_waiver() {
+        let db = FantasyDb::open_in_memory().unwrap();
+        let league_id = db.create_league("Weekly League", "yahoo-standard").unwrap();
+        let effective_at = Utc.with_ymd_and_hms(2026, 10, 5, 16, 0, 0).unwrap();
+
+        db.record_acquisition(
+            &league_id,
+            "new_player",
+            Some("dropped_player"),
+            FantasyAcquisitionKind::FreeAgentAdd,
+            effective_at,
+            true,
+            2,
+        )
+        .unwrap();
+
+        let rows = db
+            .list_acquisitions(
+                &league_id,
+                effective_at - chrono::Duration::hours(1),
+                effective_at + chrono::Duration::hours(1),
+            )
+            .unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].player_added, "new_player");
+        assert_eq!(rows[0].player_dropped.as_deref(), Some("dropped_player"));
+        assert!(rows[0].counts_toward_limit);
+
+        let waiver = db
+            .get_waiver(&league_id, "dropped_player")
+            .unwrap()
+            .unwrap();
+        assert_eq!(waiver.dropped_at, effective_at);
+        assert_eq!(waiver.clears_at, effective_at + chrono::Duration::days(2));
+    }
+
+    #[test]
+    fn l1_latest_status_observation_preserves_source_and_confidence() {
+        let db = FantasyDb::open_in_memory().unwrap();
+        let league_id = db.create_league("Status League", "yahoo-standard").unwrap();
+        let first = Utc.with_ymd_and_hms(2026, 10, 5, 14, 0, 0).unwrap();
+        let latest = FantasyStatusObservation {
+            player_key: "injured_player".to_owned(),
+            status: FantasyPlayerAvailabilityStatus::Out,
+            source: "league-export".to_owned(),
+            source_url: Some("https://example.test/player".to_owned()),
+            observed_at: first + chrono::Duration::minutes(30),
+            fetched_at: first + chrono::Duration::minutes(31),
+            confidence: FantasyObservationConfidence::Confirmed,
+            detail: Some("ruled out".to_owned()),
+        };
+        let mut older = latest.clone();
+        older.status = FantasyPlayerAvailabilityStatus::DayToDay;
+        older.observed_at = first;
+        older.fetched_at = first;
+        db.record_status_observation(&league_id, &older).unwrap();
+        db.record_status_observation(&league_id, &latest).unwrap();
+
+        let rows = db.list_latest_status_observations(&league_id).unwrap();
+        assert_eq!(rows, vec![latest]);
+    }
+
+    #[test]
+    fn l1_latest_goalie_start_observation_is_game_specific_and_sourced() {
+        let db = FantasyDb::open_in_memory().unwrap();
+        let league_id = db.create_league("Goalie League", "yahoo-standard").unwrap();
+        let date = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+        let first = Utc.with_ymd_and_hms(2026, 11, 9, 15, 0, 0).unwrap();
+        let latest = FantasyGoalieStartObservation {
+            player_key: "igor_shesterkin".to_owned(),
+            game_date: date,
+            state: FantasyGoalieStartState::ConfirmedStarting,
+            source: "team-reporter".to_owned(),
+            source_url: Some("https://example.test/goalie".to_owned()),
+            observed_at: first + chrono::Duration::minutes(30),
+            fetched_at: first + chrono::Duration::minutes(31),
+            detail: Some("led morning skate".to_owned()),
+        };
+        let mut older = latest.clone();
+        older.state = FantasyGoalieStartState::EstimatedStarting;
+        older.observed_at = first;
+        older.fetched_at = first;
+        db.record_goalie_start_observation(&league_id, &older)
+            .unwrap();
+        db.record_goalie_start_observation(&league_id, &latest)
+            .unwrap();
+
+        let rows = db
+            .list_latest_goalie_start_observations(&league_id, date, date)
+            .unwrap();
+        assert_eq!(rows, vec![latest]);
+    }
+
+    #[test]
+    fn l1_goalie_start_batch_validates_before_atomic_insert() {
+        let db = FantasyDb::open_in_memory().unwrap();
+        let league_id = db.create_league("Goalie Batch", "yahoo-standard").unwrap();
+        let date = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+        let now = Utc.with_ymd_and_hms(2026, 11, 9, 17, 0, 0).unwrap();
+        let valid = FantasyGoalieStartObservation {
+            player_key: "goalie_one".to_owned(),
+            game_date: date,
+            state: FantasyGoalieStartState::ConfirmedStarting,
+            source: "reporter".to_owned(),
+            source_url: None,
+            observed_at: now,
+            fetched_at: now,
+            detail: None,
+        };
+        let mut invalid = valid.clone();
+        invalid.player_key = "goalie_two".to_owned();
+        invalid.source.clear();
+        assert!(db
+            .record_goalie_start_observations(&league_id, &[valid.clone(), invalid])
+            .is_err());
+        assert!(db
+            .list_latest_goalie_start_observations(&league_id, date, date)
+            .unwrap()
+            .is_empty());
+
+        let mut second = valid.clone();
+        second.player_key = "goalie_two".to_owned();
+        let ids = db
+            .record_goalie_start_observations(&league_id, &[valid, second])
+            .unwrap();
+        assert_eq!(ids.len(), 2);
+        assert_eq!(
+            db.list_latest_goalie_start_observations(&league_id, date, date)
+                .unwrap()
+                .len(),
+            2
+        );
+    }
+
+    #[test]
+    fn l1_morning_briefing_fingerprint_round_trips_and_updates() {
+        let db = FantasyDb::open_in_memory().unwrap();
+        let league_id = db
+            .create_league("Morning League", "yahoo-standard")
+            .unwrap();
+        let date = NaiveDate::from_ymd_opt(2026, 10, 8).unwrap();
+        let generated_at = Utc.with_ymd_and_hms(2026, 10, 8, 14, 0, 0).unwrap();
+
+        assert_eq!(
+            db.get_morning_briefing_fingerprint(&league_id, date)
+                .unwrap(),
+            None
+        );
+        db.upsert_morning_briefing_fingerprint(&league_id, date, "first", generated_at)
+            .unwrap();
+        assert_eq!(
+            db.get_morning_briefing_fingerprint(&league_id, date)
+                .unwrap()
+                .as_deref(),
+            Some("first")
+        );
+        db.upsert_morning_briefing_fingerprint(
+            &league_id,
+            date,
+            "second",
+            generated_at + chrono::Duration::minutes(5),
+        )
+        .unwrap();
+        assert_eq!(
+            db.get_morning_briefing_fingerprint(&league_id, date)
+                .unwrap()
+                .as_deref(),
+            Some("second")
+        );
+    }
+
+    #[test]
     fn l1_fantasy_matchup_schedule_persists_byes_and_rejects_duplicates() {
         let db = FantasyDb::open_in_memory().expect("open in-memory db");
         let league_id = db
@@ -1284,5 +3016,79 @@ mod tests {
                 .is_err(),
             "self-matchups are invalid"
         );
+    }
+
+    #[test]
+    fn l1_competition_rules_default_to_points_and_round_trip_categories() {
+        use icelines_core::{
+            FantasyCategoryAggregation, FantasyCategoryDirection, FantasyCategoryRule,
+            FantasyMatchupTiePolicy, FANTASY_COMPETITION_RULES_SCHEMA,
+        };
+
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Category League", "yahoo-standard")
+            .expect("create league");
+        assert_eq!(
+            db.get_competition_rules(&league_id).unwrap(),
+            FantasyCompetitionRules::points()
+        );
+
+        let rules = FantasyCompetitionRules {
+            schema: FANTASY_COMPETITION_RULES_SCHEMA.to_owned(),
+            mode: FantasyCompetitionMode::Categories,
+            categories: vec![
+                FantasyCategoryRule {
+                    key: "goals".to_owned(),
+                    label: "G".to_owned(),
+                    direction: FantasyCategoryDirection::HigherWins,
+                    aggregation: FantasyCategoryAggregation::Sum,
+                    tie_epsilon: 0.0,
+                },
+                FantasyCategoryRule {
+                    key: "save_percentage".to_owned(),
+                    label: "SV%".to_owned(),
+                    direction: FantasyCategoryDirection::HigherWins,
+                    aggregation: FantasyCategoryAggregation::Ratio,
+                    tie_epsilon: 0.0001,
+                },
+            ],
+            minimum_goalie_appearances: 3,
+            matchup_tie_policy: FantasyMatchupTiePolicy::Tie,
+        };
+        db.set_competition_rules(&league_id, &rules).unwrap();
+        assert_eq!(db.get_competition_rules(&league_id).unwrap(), rules);
+
+        let points = FantasyCompetitionRules::points();
+        db.set_competition_rules(&league_id, &points).unwrap();
+        assert_eq!(db.get_competition_rules(&league_id).unwrap(), points);
+    }
+
+    #[test]
+    fn l1_competition_migration_preserves_existing_league_as_points() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE fl_leagues (
+                id TEXT PRIMARY KEY,
+                name TEXT UNIQUE NOT NULL,
+                scheme TEXT NOT NULL,
+                roster_shape TEXT NOT NULL,
+                is_active INTEGER NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            INSERT INTO fl_leagues VALUES
+                ('legacy', 'Legacy League', 'yahoo-standard', 'yahoo-standard', 1, '2026-01-01');",
+        )
+        .unwrap();
+        run_migrations(&conn).unwrap();
+        let (name, mode): (String, String) = conn
+            .query_row(
+                "SELECT name, competition_mode FROM fl_leagues WHERE id = 'legacy'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(name, "Legacy League");
+        assert_eq!(mode, "points");
     }
 }

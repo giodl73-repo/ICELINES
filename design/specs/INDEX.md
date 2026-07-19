@@ -27,6 +27,9 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [scheme-customization.md](scheme-customization.md) | Implemented | `scheme list/show/fromcsv` CLI, user vs built-in |
 | [fantasy-leagues.md](fantasy-leagues.md) | Implemented (partial) | SQLite + skater/goalie scoring + trade eval + local fantasy server. H2H matchups and full web mutation parity deferred. |
 | [fantasy-poacher.md](fantasy-poacher.md) | Implemented (partial) | Phase Selke player-poacher scoring, roster gaps, simulation scenarios, watch rules, reports, and CLI/TUI/web ViewModel contracts. Carry-forward: full TUI rule editor and imported roster-need fit. |
+| [fantasy-draft-daily-assistant.md](fantasy-draft-daily-assistant.md) | Draft | League-specific assistant plus the linked war-room roadmap for matchup strategy, playoffs, live drafting, multi-move pickups, goalie decisions, trades, archetypes, journaling, and readiness. |
+| [team-season-forecast.md](team-season-forecast.md) | Draft | Season-generic forecast/replay engine with shared game outcomes, point-in-time people, schedule/travel context, actual or simulated trades, standings/playoff odds, streak distributions, and Rangers/Kraken showcase reports. |
+| [brand-the-rink.md](brand-the-rink.md) | Draft | Canonical IceLines product language: The Rink navigation, Ice product family, The Insider voice/evidence labels, hockey report names, and backward-compatible naming guardrails. |
 | [group-management.md](group-management.md) | Implemented | Player watchlists: SQLite, CRUD, TUI g/f keys |
 | [player-analysis.md](player-analysis.md) | Implemented | PlayerFilter, similarity search, career arc |
 | [scouting-reports.md](scouting-reports.md) | Implemented | 8-section player report (terminal/markdown/json). Test coverage added in Hart.5c.2. |
@@ -71,7 +74,7 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 
 **Player analytics**: `player-analysis.md` → `query-engine.md` → `projection-engine.md` → `scouting-reports.md`
 
-**Fantasy stack**: `fantasy-scheme.md` → `scheme-customization.md` → `fantasy-leagues.md` → `fantasy-poacher.md`
+**Fantasy stack**: `fantasy-scheme.md` → `scheme-customization.md` → `fantasy-leagues.md` → `fantasy-poacher.md` → `fantasy-draft-daily-assistant.md`
 
 **TUI**: `tui-v2.md` → `season-timetravel.md` → `scores.md` / `schedule.md` / `playoffs.md` → `tui-admin-overlay.md`
 

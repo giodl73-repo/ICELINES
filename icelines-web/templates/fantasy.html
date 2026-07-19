@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Fantasy Gaps{% endblock %}
+{% block title %}The Bench — Roster Gaps{% endblock %}
 
 {% block content %}
-<h1>Fantasy Gaps</h1>
+<h1 aria-label="Fantasy roster gaps">The Bench — Coach's Clipboard — Roster Gaps</h1>
 
 <p class="meta-line">
     {{ active_label }} · {{ league }} · {{ team }} · {{ scoring_scheme }}
@@ -34,13 +34,13 @@
         <button type="submit">Apply</button>
         <a href="/api/v1/fantasy/gaps"><code>/api/v1/fantasy/gaps</code></a>
         <a href="/api/v1/fantasy/simulate"><code>/api/v1/fantasy/simulate</code></a>
-        <a href="/poach?availability=imported-available">Poach free agents</a>
+        <a href="/poach?availability=imported-available">Open the Waiver Wire</a>
     </div>
 </form>
 
 {% if !simulation_rows.is_empty() || !simulation_scenarios.is_empty() %}
 <section class="page-section">
-    <h2>League Simulation</h2>
+    <h2>The Bench — The Line Blender — League Simulation</h2>
     {% if !simulation_warnings.is_empty() %}
     <div class="state-warning">
         {% for warning in simulation_warnings %}

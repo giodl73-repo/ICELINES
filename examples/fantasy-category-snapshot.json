@@ -1,0 +1,29 @@
+{
+  "schema": "fantasy_category_snapshot.v1",
+  "through_date": "2026-10-07",
+  "source": "Yahoo matchup page manual paste",
+  "user_goalie_appearances": 1.0,
+  "opponent_goalie_appearances": 2.0,
+  "categories": [
+    {
+      "key": "goals",
+      "user": { "numerator": 8.0, "denominator": 0.0 },
+      "opponent": { "numerator": 6.0, "denominator": 0.0 }
+    },
+    {
+      "key": "assists",
+      "user": { "numerator": 13.0, "denominator": 0.0 },
+      "opponent": { "numerator": 15.0, "denominator": 0.0 }
+    },
+    {
+      "key": "save_percentage",
+      "user": { "numerator": 54.0, "denominator": 60.0 },
+      "opponent": { "numerator": 70.0, "denominator": 76.0 }
+    },
+    {
+      "key": "goals_against_average",
+      "user": { "numerator": 6.0, "denominator": 2.0 },
+      "opponent": { "numerator": 6.0, "denominator": 2.5 }
+    }
+  ]
+}

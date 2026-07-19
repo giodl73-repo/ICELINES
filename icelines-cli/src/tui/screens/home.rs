@@ -102,7 +102,7 @@ fn render_col(f: &mut Frame, app: &App, area: Rect, from: usize, to: usize, rank
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(" IceLines — League Tracker "),
+                .title(" Center Ice — League Tracker "),
         )
         .highlight_style(
             Style::default()

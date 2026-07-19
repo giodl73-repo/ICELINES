@@ -39,5 +39,11 @@ fn fantasy_template_renders_simulation_scenarios_and_preserves_inputs() {
     assert!(html.contains("value=\"Bench Forward\""));
     assert!(html.contains("class=\"state-warning\""));
     assert!(html.contains("class=\"state-warning-line\""));
+    assert!(html.contains("The Bench — Coach's Clipboard — Roster Gaps"));
+    assert!(html.contains("The Bench — The Line Blender — League Simulation"));
+    assert!(html.contains("aria-label=\"Fantasy roster gaps\""));
+    assert!(html.contains("href=\"/fantasy\" aria-label=\"The Bench — fantasy roster decisions\""));
+    assert!(html
+        .contains("href=\"/poach\" aria-label=\"Waiver Wire — best available fantasy players\""));
     assert!(!html.contains("color: #8a5a00"));
 }

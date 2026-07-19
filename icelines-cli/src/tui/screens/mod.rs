@@ -396,14 +396,14 @@ fn append_truncated(line: &mut String, suffix: &str, max_width: usize) {
 /// `screen_label` but trims to the bare workspace name.
 fn chrome_screen_label(s: &Screen) -> &'static str {
     match s {
-        Screen::Queries => "Stats",
-        Screen::Goalies => "Goalies",
+        Screen::Queries => "IceStats",
+        Screen::Goalies => "Crease",
         Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _) => "Schedule",
-        Screen::Transactions => "Transactions",
-        Screen::Playoffs | Screen::SeriesDetail(_) => "Playoffs",
-        Screen::Tonight => "Scores",
+        Screen::Transactions => "Boards",
+        Screen::Playoffs | Screen::SeriesDetail(_) => "Goal Line",
+        Screen::Tonight => "Scoreboard",
         Screen::Team(_) => "Team",
-        Screen::Depth | Screen::DepthTeam(_) => "Depth",
+        Screen::Depth | Screen::DepthTeam(_) => "Depth Chart",
         Screen::Poach => "Poach",
         Screen::FantasyGaps => "Fantasy",
         Screen::Favorites => "Favorites",
@@ -693,6 +693,9 @@ fn workbench_rail_label(label: &str, experience_label: Option<&'static str>) -> 
     let Some(experience_label) = experience_label else {
         return label.to_owned();
     };
+    if experience_label == "The Bench" {
+        return experience_label.to_owned();
+    }
     let compact = compact_experience_label(experience_label);
     if label.eq_ignore_ascii_case(compact) {
         format!("{label} room")
@@ -706,7 +709,7 @@ fn compact_experience_label(label: &'static str) -> &'static str {
         "Tonight bench" => "Today",
         "Scoring room" => "Score",
         "Team room" => "Team",
-        "Fantasy room" => "Fantasy",
+        "The Bench" => "Bench",
         "Admin room" => "Admin",
         other => other,
     }
@@ -921,26 +924,26 @@ fn screen_label(s: &Screen) -> &'static str {
         Screen::PlayerAwardsById(_) => "Trophy Case",
         Screen::PlayerStreaksById(_) => "Player Streaks",
         Screen::Search => "Search",
-        Screen::Queries => "Stats",
-        Screen::Tonight => "Tonight",
+        Screen::Queries => "IceStats",
+        Screen::Tonight => "The Scoreboard",
         Screen::Projections => "Projections",
         Screen::Groups => "Groups",
         Screen::GroupDetail(_) => "Group",
         Screen::Fetch => "Fetch",
         Screen::Help => "Help",
         Screen::CompsById(_) => "Comps",
-        Screen::Depth => "Depth",
-        Screen::DepthTeam(_) => "Depth (team)",
+        Screen::Depth => "The Depth Chart",
+        Screen::DepthTeam(_) => "The Depth Chart (team)",
         Screen::Poach => "Poach",
         Screen::Schedule => "Schedule",
         Screen::ScheduleTeam(_) => "Schedule (team)",
         Screen::ScheduleMatchup(_, _) => "Schedule (matchup)",
-        Screen::Playoffs => "Playoffs",
+        Screen::Playoffs => "The Goal Line",
         Screen::SeriesDetail(_) => "Series",
         Screen::GameDetail(_) => "Boxscore",
-        Screen::Goalies => "Goalies",
+        Screen::Goalies => "The Crease",
         Screen::GoalieDetailById(_) => "Goalie",
-        Screen::Transactions => "Transactions",
+        Screen::Transactions => "The Boards",
         Screen::Favorites => "Favorites",
         Screen::FantasyGaps => "Fantasy Gaps",
         Screen::FantasySim => "Fantasy Sim",
@@ -1124,16 +1127,7 @@ fn render_footer(f: &mut Frame, app: &App, chrome: &crate::tui::chrome::ScreenCh
 
 fn render_nav(f: &mut Frame, app: &App, area: Rect) {
     let tab_labels = [
-        "League",
-        "Depth",
-        "Stats",
-        "Goalies",
-        "Favorites",
-        "Poach",
-        "Scores",
-        "Schedule",
-        "Transactions",
-        "Playoffs",
+        "Center", "Depth", "Stats", "Crease", "Faves", "Wire", "Scores", "Sched", "Boards", "Goal",
     ];
     let active_tab = tab_for_screen(&app.screen);
 
@@ -1260,25 +1254,19 @@ mod app_snapshot_tests {
     /// Catches: tab dropped from the array, label renamed, layout truncated
     /// at common widths.
     #[test]
-    fn l0_app_nav_bar_renders_all_tabs_at_120_cols() {
+    fn l0_app_nav_bar_renders_all_tabs_at_supported_widths() {
         let app = App::new(true);
-        let text = render_app_to_text(&app, 120, 30);
-        for label in [
-            "League",
-            "Depth",
-            "Stats",
-            "Goalies",
-            "Favorites",
-            "Poach",
-            "Scores",
-            "Schedule",
-            "Transactions",
-            "Playoffs",
-        ] {
-            assert!(
-                text.contains(label),
-                "nav bar missing tab label {label:?}; full output:\n{text}"
-            );
+        for width in [80, 120] {
+            let text = render_app_to_text(&app, width, 30);
+            for label in [
+                "Center", "Depth", "Stats", "Crease", "Faves", "Wire", "Scores", "Sched", "Boards",
+                "Goal",
+            ] {
+                assert!(
+                    text.contains(label),
+                    "{width}-column nav bar missing tab label {label:?}; full output:\n{text}"
+                );
+            }
         }
     }
 
@@ -1325,7 +1313,7 @@ mod app_snapshot_tests {
             "Stats · Score",
             "Depth · Team",
             "Scores · Today",
-            "Fantasy room",
+            "The Bench",
             "Admin room",
         ] {
             assert!(
@@ -1447,7 +1435,7 @@ mod app_snapshot_tests {
             let text = render_app_to_text(&app, 120, 30);
             // Sanity: screen produced *some* output (non-empty buffer with
             // at least the nav bar).
-            assert!(text.contains("League"), "nav bar missing on {screen:?}");
+            assert!(text.contains("Center"), "nav bar missing on {screen:?}");
         }
     }
 
@@ -1503,25 +1491,25 @@ mod app_snapshot_tests {
     /// LB.5 / lb_smoke_league
     #[test]
     fn lb_smoke_league() {
-        lb_smoke_screen(Screen::Home, "League");
+        lb_smoke_screen(Screen::Home, "Center Ice");
     }
 
     /// LB.5 / lb_smoke_depth
     #[test]
     fn lb_smoke_depth() {
-        lb_smoke_screen(Screen::Depth, "Depth");
+        lb_smoke_screen(Screen::Depth, "The Depth Chart");
     }
 
     /// LB.5 / lb_smoke_stats
     #[test]
     fn lb_smoke_stats() {
-        lb_smoke_screen(Screen::Queries, "Stats");
+        lb_smoke_screen(Screen::Queries, "IceStats");
     }
 
     /// LB.5 / lb_smoke_goalies
     #[test]
     fn lb_smoke_goalies() {
-        lb_smoke_screen(Screen::Goalies, "Goalies");
+        lb_smoke_screen(Screen::Goalies, "The Crease");
     }
 
     /// LB.5 / lb_smoke_scores
@@ -1531,25 +1519,25 @@ mod app_snapshot_tests {
     ///   Future/parked).
     #[test]
     fn lb_smoke_scores() {
-        lb_smoke_screen(Screen::Tonight, "Scores");
+        lb_smoke_screen(Screen::Tonight, "The Scoreboard");
     }
 
     /// LB.5 / lb_smoke_schedule
     #[test]
     fn lb_smoke_schedule() {
-        lb_smoke_screen(Screen::Schedule, "Schedule");
+        lb_smoke_screen(Screen::Schedule, "Center Ice");
     }
 
     /// LB.5 / lb_smoke_transactions
     #[test]
     fn lb_smoke_transactions() {
-        lb_smoke_screen(Screen::Transactions, "Transactions");
+        lb_smoke_screen(Screen::Transactions, "The Boards");
     }
 
     /// LB.5 / lb_smoke_playoffs
     #[test]
     fn lb_smoke_playoffs() {
-        lb_smoke_screen(Screen::Playoffs, "Playoffs");
+        lb_smoke_screen(Screen::Playoffs, "The Goal Line");
     }
 
     fn prince_tui_surface_at_size(screen: Screen, expected: &[&str], w: u16, h: u16) {
@@ -1576,7 +1564,7 @@ mod app_snapshot_tests {
             (Screen::Team("EDM".to_owned()), &["EDM", "Roster"][..]),
             (Screen::Goalies, &["Goalies", "GP"][..]),
             (Screen::Schedule, &["Schedule"][..]),
-            (Screen::Poach, &["Poach"][..]),
+            (Screen::Poach, &["Waiver Wire"][..]),
         ] {
             prince_tui_surface_at_size(screen, expected, 80, 24);
         }
@@ -1590,7 +1578,7 @@ mod app_snapshot_tests {
             (Screen::Team("EDM".to_owned()), &["EDM", "Roster"][..]),
             (Screen::Goalies, &["Goalies", "GP"][..]),
             (Screen::Schedule, &["Schedule"][..]),
-            (Screen::Poach, &["Poach"][..]),
+            (Screen::Poach, &["Waiver Wire"][..]),
         ] {
             prince_tui_surface_at_size(screen, expected, 120, 32);
         }

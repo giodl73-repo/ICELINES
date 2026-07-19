@@ -143,7 +143,7 @@ fn repo_with_mcdavid() -> icelines_core::stats_repository::StatsRepository {
     let identity = fixtures::identity(8478402)
         .name("Connor McDavid", "connor_mcdavid")
         .build();
-    let stats = fixtures::stats(8478402, 20252026, "EDM").build();
+    let stats = fixtures::stats(8478402, icelines_core::CURRENT_SEASON, "EDM").build();
     fixtures::test_repo_with(identity, stats)
 }
 
@@ -156,7 +156,7 @@ fn repo_with_mcdavid_and_bench_forward() -> icelines_core::stats_repository::Sta
     )
     .expect("upsert bench identity");
     repo.upsert_stats(
-        fixtures::stats(1, 20252026, "SEA")
+        fixtures::stats(1, icelines_core::CURRENT_SEASON, "SEA")
             .position(icelines_core::model::Position::Goalie)
             .build(),
     )
@@ -171,18 +171,22 @@ fn repo_with_goalie_advanced() -> icelines_core::stats_repository::StatsReposito
     let identity = fixtures::identity(8479979)
         .name("Advanced Goalie", "advanced_goalie")
         .build();
-    let stats = fixtures::solo_goalie(8479979, 20252026, TeamAbbr("WPG".to_owned()))
-        .goalie_advanced(GoalieAdvancedStats {
-            quality_starts: 32,
-            quality_starts_pct: Some(0.604),
-            regulation_wins: 28,
-            regulation_losses: 14,
-            complete_games: 48,
-            incomplete_games: 5,
-            complete_game_pct: Some(0.906),
-            shots_against_per_60: Some(29.5),
-        })
-        .build();
+    let stats = fixtures::solo_goalie(
+        8479979,
+        icelines_core::CURRENT_SEASON,
+        TeamAbbr("WPG".to_owned()),
+    )
+    .goalie_advanced(GoalieAdvancedStats {
+        quality_starts: 32,
+        quality_starts_pct: Some(0.604),
+        regulation_wins: 28,
+        regulation_losses: 14,
+        complete_games: 48,
+        incomplete_games: 5,
+        complete_game_pct: Some(0.906),
+        shots_against_per_60: Some(29.5),
+    })
+    .build();
     fixtures::test_repo_with_goalie(identity, stats)
 }
 
@@ -858,9 +862,10 @@ async fn l1_get_root_returns_200_html() {
 async fn l1_html_each_route_has_active_season_header() {
     let app = router(WebState::new());
 
-    // Default WebConfig::default() uses CURRENT_SEASON_STR + "regular"
-    // → label "25-26 · Regular". The fence checks for the structural
-    // marker (the season-header CSS class) plus the label substring.
+    // Default WebConfig::default() uses CURRENT_SEASON_STR + "regular".
+    // The fence checks for the structural marker plus the derived label,
+    // so a season rollover does not make the test fixture stale.
+    let expected_active_label = WebConfig::default().active_label;
     let html_routes: &[&str] = &[
         "/",
         "/dashboard",
@@ -912,10 +917,9 @@ async fn l1_html_each_route_has_active_season_header() {
             "{route} must include the .season-header element \
              (broadcast a11y/UX contract)"
         );
-        // CURRENT_SEASON_STR is "20252026" → label "25-26 · Regular"
         assert!(
-            body.contains("25-26 · Regular"),
-            "{route} must render the active-season label '25-26 · Regular' \
+            body.contains(&expected_active_label),
+            "{route} must render the active-season label '{expected_active_label}' \
              (got body without it — make sure the route's template extends \
              base.html and the handler passes active_label)"
         );
@@ -1198,6 +1202,8 @@ async fn l1_dashboard_leaders_workspace_embeds_full_leaders_surface() {
 
     assert!(body.contains("jaw-full-workspace"));
     assert!(body.contains("aria-label=\"Full Leaders workspace\""));
+    assert!(body.contains("IceStats — Leaderboards"));
+    assert!(body.contains("aria-label=\"Player leaderboards\""));
     assert!(body.contains("aria-label=\"Position filter\""));
     assert!(body.contains("Bio filters"));
     assert!(body.contains("Click any column header to sort by that stat"));
@@ -1336,7 +1342,8 @@ async fn l1_dashboard_goalies_workspace_embeds_full_goalies_page() {
 
     assert!(body.contains("jaw-full-workspace"));
     assert!(body.contains("aria-label=\"Full Goalies workspace\""));
-    assert!(body.contains("Goalies"));
+    assert!(body.contains("The Crease — Between the Pipes — Goalies"));
+    assert!(body.contains("aria-label=\"Goalie statistics\""));
     assert!(body.contains("<th>Goalie</th>"));
     assert!(body.contains("qualified threshold: 0+ GP"));
     assert!(!body.contains("aria-label=\"Goalies preview\""));
@@ -1364,7 +1371,8 @@ async fn l1_dashboard_depth_workspace_embeds_full_depth_page() {
 
     assert!(body.contains("jaw-full-workspace"));
     assert!(body.contains("aria-label=\"Full Depth workspace\""));
-    assert!(body.contains("Depth Rankings"));
+    assert!(body.contains("The Depth Chart — Team Rankings"));
+    assert!(body.contains("aria-label=\"Team depth rankings\""));
     assert!(body.contains("Cross-team line-value rankings"));
     assert!(!body.contains("aria-label=\"Depth preview\""));
     assert!(!body.contains("<main id=\"main\">"));
@@ -1477,6 +1485,8 @@ async fn l1_dashboard_scores_workspace_embeds_full_scores_page() {
 
     assert!(body.contains("jaw-full-workspace"));
     assert!(body.contains("aria-label=\"Full Scores workspace\""));
+    assert!(body.contains("The Scoreboard — Scores"));
+    assert!(body.contains("aria-label=\"NHL game scores\""));
     assert!(body.contains("Date picker"));
     assert!(body.contains("showing week starting <strong>2024-10-04</strong>"));
     assert!(!body.contains("aria-label=\"Scores preview\""));
@@ -1504,6 +1514,8 @@ async fn l1_dashboard_schedule_workspace_embeds_full_schedule_page() {
 
     assert!(body.contains("jaw-full-workspace"));
     assert!(body.contains("aria-label=\"Full Schedule workspace\""));
+    assert!(body.contains("Center Ice — Team Schedule"));
+    assert!(body.contains("aria-label=\"Team schedule\""));
     assert!(body.contains("Team picker"));
     assert!(body.contains("EDM"));
     assert!(!body.contains("aria-label=\"Schedule preview\""));
@@ -2520,7 +2532,7 @@ async fn l1_fantasy_html_renders_add_scenario() {
 /// — Phase Lady Byng follow-up. The /depth route mirrors the TUI Depth
 ///   tab; this fence proves it boots and renders the askama template
 ///   without panicking. Asserts the route resolves to 200, returns HTML
-///   with the expected charset, and contains the "Depth Rankings"
+///   with the expected charset, and contains The Depth Chart heading
 ///   heading from depth.html.
 #[tokio::test]
 async fn l1_depth_route_returns_200_html() {
@@ -2547,7 +2559,7 @@ async fn l1_depth_route_returns_200_html() {
         .expect("body fits");
     let body = std::str::from_utf8(&bytes).expect("html is utf-8");
     assert!(
-        body.contains("Depth Rankings"),
+        body.contains("The Depth Chart — Team Rankings"),
         "/depth page must render its h1 heading, got start:\n{}",
         &body[..body.len().min(120)]
     );
@@ -4034,7 +4046,8 @@ async fn l1_poach_route_returns_200_html() {
         .expect("body fits");
     let body = std::str::from_utf8(&bytes).expect("html is utf-8");
 
-    assert!(body.contains("Fantasy Poacher"));
+    assert!(body.contains("The Bench — Waiver Wire — Best Available"));
+    assert!(body.contains("aria-label=\"Fantasy free-agent acquisition board\""));
     assert!(body.contains("href=\"/poach\""));
     assert!(body.contains("imported-available"));
     assert!(body.contains("Missing poacher source data"));
@@ -6754,6 +6767,33 @@ async fn l1_transactions_json_missing_source_returns_typed_error() {
         .is_some_and(|msg| msg.contains("could not be loaded")));
 }
 
+#[tokio::test]
+async fn l1_transactions_html_current_season_cold_start_is_transparent_and_usable() {
+    let dir = tempfile::TempDir::new().expect("temp snapshots root");
+    let state = WebState {
+        snapshots_root: std::sync::Arc::new(Some(dir.path().join("snapshots"))),
+        ..WebState::new()
+    };
+    let app = router(state);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/transactions")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_text(response, 256 * 1024).await;
+    assert!(body.contains("The Boards — Transactions"));
+    assert!(body.contains("Under Review — source unavailable"));
+    assert!(body.contains("icelines fetch transactions"));
+    assert!(body.contains("season-header"));
+}
+
 /// l1_unknown_route_returns_404
 /// — axum's default not-found handler. Once King.1.6 adds host-header
 ///   validation we'll add a 421 case for DNS rebinding, but the basic
@@ -6798,8 +6838,27 @@ async fn l1_html_shell_exposes_no_js_viewport_and_recovery_navigation() {
     assert!(body.contains(r##"<a href="#main" class="skip-link">Skip to content</a>"##));
     assert!(body.contains(r#"<noscript>"#));
     assert!(body.contains("JavaScript is optional here"));
-    assert!(body.contains(r#"<a href="/dashboard" class="nav-dashboard">Dashboard</a>"#));
-    assert!(body.contains(r#"<a href="/leaders">Leaders</a>"#));
+    assert!(body.contains(
+        r#"<a href="/dashboard" class="nav-dashboard" aria-label="Center Ice — dashboard">Center Ice</a>"#
+    ));
+    assert!(body.contains(
+        r#"<a href="/leaders" aria-label="IceStats — player leaderboards">IceStats</a>"#
+    ));
+    assert!(body.contains(
+        r#"<a href="/goalies" aria-label="The Crease — goalie statistics">The Crease</a>"#
+    ));
+    assert!(body.contains(
+        r#"<a href="/depth" aria-label="The Depth Chart — team depth rankings">The Depth Chart</a>"#
+    ));
+    assert!(body.contains(
+        r#"<a href="/scores" aria-label="The Scoreboard — game scores">The Scoreboard</a>"#
+    ));
+    assert!(body.contains(
+        r#"<a href="/playoffs" aria-label="The Goal Line — playoff bracket">The Goal Line</a>"#
+    ));
+    assert!(body.contains(
+        r#"<a href="/transactions" aria-label="The Boards — NHL transactions">The Boards</a>"#
+    ));
     assert!(body.contains(r#"<a href="/docs">Docs</a>"#));
     assert!(body.contains("This workspace is server-rendered and URL-addressable"));
 
@@ -6817,8 +6876,8 @@ async fn l1_html_shell_exposes_no_js_viewport_and_recovery_navigation() {
     let body = response_text(response, 256 * 1024).await;
     assert!(body.contains("Couldn't find <code>/this-route-does-not-exist</code>"));
     assert!(body.contains(r#"<form method="get" action="/compare""#));
-    assert!(body.contains(r#"<a href="/leaders">Leaders</a>"#));
-    assert!(body.contains(r#"<a href="/playoffs">Playoffs</a>"#));
+    assert!(body.contains(r#"<a href="/leaders">IceStats</a>"#));
+    assert!(body.contains(r#"<a href="/playoffs">The Goal Line</a>"#));
 }
 
 // ── Season-type toggle (UX.E, 2026-05-04) ───────────────────────────

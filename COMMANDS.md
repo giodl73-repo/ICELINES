@@ -1,5 +1,10 @@
 # IceLines — Command Reference
 
+Visible report headings use The Rink product language—such as **The Insider —
+Morning Skate** and **The Crease — Who Gets the Net?**—without renaming the
+stable commands documented below. Branded aliases such as future `icecast` and
+`icereplay` commands are additive rather than replacements.
+
 ## Test slices
 
 Use the slice runner while developing so you do not have to run the full
@@ -548,6 +553,9 @@ screen/web surface that owns each one.
 ```bash
 icelines report list
 icelines report list --json
+icelines report team-ceiling
+icelines report team-ceiling --team NYR
+icelines report team-ceiling --json --out team-ceiling.json
 icelines report cap-forecast --team NYR
 icelines report cap-forecast --years 5 --growth-pct 5 --json --out cap-forecast.json
 icelines report poach --category shots --top 10 --out poach.md
@@ -561,9 +569,20 @@ Surface rule of thumb:
 | Ask a filter/query question | `icelines query ...` |
 | Quick CSV/JSON for Excel/scripts | `icelines x <shape>` |
 | Durable markdown packet | `icelines export md <shape>` |
+| 2026-27 roster ceiling / prior-year delta | `icelines report team-ceiling` |
 | Five-year roster market cost / cap pressure | `icelines report cap-forecast` |
 | Fantasy decision report | `icelines report poach` / `icelines report weekly` |
 | See every available/planned report family | `icelines report list` |
+
+`report team-ceiling` emits `team_ceiling.v1`. Current NHL roster membership
+is rated from the completed 2025-26 NHL sample through four mechanisms:
+points pace, goal scoring, fantasy/peripherals, and age-adjusted upside. Each
+team uses the best 12 forwards, 6 defensemen, and 2 goalies for each lens.
+Current and prior totals share the same 0-100 normalization, producing a true
+within-report delta rather than comparing two unrelated scales. Missing-sample
+prospects remain visible and reduce coverage instead of receiving a fabricated
+zero. The playoff range is a transparent logistic roster-strength scenario
+widened for missing coverage; it is not a trained forecast or betting line.
 
 `report cap-forecast` emits the `cap_projection.v1` scenario contract. It uses
 the official $104M 2026-27 upper limit, the announced $113.5M 2027-28
@@ -978,16 +997,320 @@ keeping Pts/82 as the controlling value.
 
 ## Fantasy league
 
+### Schedule edge and draft-calendar fit
+
+This report appears as **The Bench — The Gauntlet — Fantasy Schedule Edge**:
+The Bench is the fantasy workspace, while The Gauntlet names schedule-density
+and off-night analysis.
+
+```bash
+icelines fantasy schedule-edge --refresh
+icelines fantasy schedule-edge --week 2026-10-05
+icelines fantasy schedule-edge --teams NYR,COL,EDM
+icelines fantasy schedule-edge --off-night-max-games 3 --classes 8
+icelines fantasy schedule-edge --json --out schedule-edge.json
+```
+
+The report uses Monday-Sunday fantasy weeks. It ranks every team by games,
+quiet-slate games (dates with at most four NHL games by default), and a scarcity
+score that sums `1 / games on the NHL slate`. Eight exact-date overlap classes
+group teams that frequently play together; the marked user roster adds its
+highest-collision pairs and the lowest-overlap available team complements.
+`--teams` overrides the marked roster for draft planning. The first successful
+load persists the deduplicated season schedule locally; `--refresh` replaces it
+from all 32 official club feeds.
+
+### Full-season stress simulation
+
+```bash
+icelines fantasy season-sim --league "My League"
+icelines fantasy season-sim --league "My League" --team "My Team"
+icelines fantasy season-sim --trials 250 --seed 20262027 --json
+icelines fantasy season-sim --injury-rate 0.003 --trade-probability 0.50
+icelines fantasy season-sim --scenario-matrix
+icelines fantasy season-sim --scenario-matrix --trials 120 --json
+icelines fantasy season-sim --opponent-pickup-accuracy 0.70
+icelines fantasy season-sim --manager-matrix --trials 120
+icelines fantasy season-sim --pickup-reserve 1
+icelines fantasy season-sim --reserve-matrix --trials 60
+icelines fantasy season-sim --exceptional-reserve-min-value 6 --exceptional-reserve-min-games 3
+icelines fantasy season-sim --strict-pickup-reserve
+```
+
+`season-sim` is a seeded, non-mutating Monte Carlo stress model. It creates a
+synthetic league from completed-season player rates, uses exact 2026-27 game
+dates and daily multi-position slot assignment, and simulates weekly pickups,
+fair-value trades, scheduled-player-game injuries, IR/IR+ replacements,
+recoveries, missed starts, and roster churn. Regular standings use Monday-Sunday
+weeks and report average W-L-T records, average seed, and No. 1-seed
+probability; six qualifiers then play a three-round head-to-head bracket across the
+final three weeks, with first-round byes for seeds one and two. The command does
+not write simulated transactions to FantasyDb or claim to forecast real injuries.
+Results separate first-round, semifinal, and final exits from championships, so
+a dominant regular season can still expose one-week playoff upset risk.
+`--team` locks every resolved player from a partial or complete saved roster
+before legally filling open spots; without it, the marked user team is used.
+Use `team-add --stats-season 20252026` and `team-show --stats-season 20252026`
+when reconstructing a historical roster from completed-season data.
+Use `league-scheme-set dexters-dawgs --league "My League"` to apply the saved
+Dexter's Dawgs weights without recreating the league.
+`--scenario-matrix` holds the roster, seed, scoring, schedule, and trial count
+constant while comparing clean, baseline, and high-chaos injury/trade settings.
+The text view reports each environment's delta from baseline; JSON contains all
+three full simulation views and their scenario labels.
+`--opponent-pickup-accuracy` explicitly stress-tests transaction decision
+quality. Team one retains the best projected weekly add; an opponent miss picks
+the second- or third-ranked add. `1.0` is the neutral default, and the simulator
+does not apply a hidden manager-skill points bonus.
+Randomness is domain-separated: pickup, trade, injury, and performance rolls
+remain reproducible without one scenario's extra decision consuming another
+scenario's injury or scoring roll.
+`--manager-matrix` compares parity (100%), moderate edge (85%), and strong edge
+(70%) under the same baseline environment. It is mutually exclusive with
+`--scenario-matrix`, and its point deltas use parity as the reference.
+Pickup and trade events preserve each roster's ability to fill every configured
+active slot. Multi-position eligibility participates in that matching; a move
+is rejected when aggregate positional counts look acceptable but legal slot
+assignment fails.
+Injured players occupying simulated IR/IR+ are not eligible synthetic drops or
+trade pieces. Replacement identity follows subsequent add/drop and trade swaps,
+so the correct current substitute is released when the original player returns.
+Complete locked rosters and every synthetic draft are position-validated before
+trials. A complete imported roster is checked directly rather than first being
+forced through an unrelated temporary synthetic draft.
+On a recovery date, the returning player and substitute release are processed
+before Monday's pickup/trade window, so transactions evaluate the actual current
+roster rather than stale IR state.
+The transaction window runs every simulated morning rather than only Monday.
+Daily pickup priority rotates, and legal pickups plus later injury replacements
+consume the same four-move Monday-Sunday counter.
+Drops and released injury substitutes enter the saved waiver window rather than
+returning immediately to free agency. A player dropped Monday is excluded until
+Wednesday under the configured two-day rule.
+Seven-day pickup gain is reduced by a three-game retention cost when the drop's
+league-scored per-game rate exceeds the add's. This preserves schedule streaming
+between comparable players without sacrificing a star solely for a quiet week.
+Team one holds one acquisition back from proactive streaming through Friday by
+default, then releases it Saturday if unused; injury replacements may use the
+full weekly limit throughout. Set `--pickup-reserve 0` to stress an all-in
+streaming policy or a larger value to model more caution.
+The `IR blocked` result isolates long-injury replacements rejected because the
+weekly acquisition budget was already exhausted.
+`weekly-budget`, `weekly-pickups`, and `morning` expose both hard-limit remaining
+moves and the smaller safe proactive budget. With three of four moves used
+Monday-Friday, ordinary streams are withheld, an IR/IR+ replacement may use the
+last move, and the reserve releases Saturday.
+The morning surface may flag an exceptional reserve override only when the move
+adds at least 6.0 projected net value and 3.0 usable starts and no roster status
+requires a pregame refresh. Uncertain injury evidence tightens the policy.
+`--reserve-matrix` holds all random domains constant while comparing no reserve,
+a strict Friday reserve, and the adaptive threshold. It is mutually exclusive
+with the scenario and manager matrices. The season model uses three extra
+seven-day scheduled games as a stable proxy for two optimized usable starts.
+
+### Draft and daily assistant rules
+
+```bash
+icelines fantasy assistant-rules
+icelines fantasy assistant-rules --league "My League" --json
+icelines fantasy assistant-setup
+icelines fantasy assistant-setup --league "My League" --json
+```
+
+`assistant-rules` safely previews either the persisted league contract or the
+configured 2026-27 default. `assistant-setup` persists the 2 C / 2 LW / 2 RW /
+3 D / 1 skater UTIL / 2 G active shape, four unrestricted bench slots, two IR,
+two IR+, four weekly acquisitions, two-day waivers, same-day free agents, and
+daily lineup changes. An active league is required unless `--league` is given.
+
+### Live draft board
+
+This report appears as **The Bench — War Room — Draft Board**.
+
+```powershell
+Get-Clipboard | icelines fantasy draft-board --taken-file -
+icelines fantasy draft-board --taken-file taken.txt --top 20
+icelines fantasy draft-board --taken-file yahoo-draft.csv --json
+icelines fantasy draft-board --eligibility-file yahoo-player-pool.csv
+icelines fantasy draft-board --pick "Connor McDavid"
+icelines fantasy draft-board --stats-season 20252026 --league "My League"
+```
+
+The draft board uses the active league scoring scheme and completed statistics,
+then adjusts transparently for open starter slots, positional replacement
+level, platform multi-position eligibility, incremental non-collision dates,
+quiet slates, and exact-date roster collision. `--pick` previews the next board
+without adding anyone to FantasyDb. Newline and common player-name CSV columns
+are accepted; ambiguous and unresolved taken rows are reported and never
+silently removed from the available pool. Injury and role deductions remain
+explicitly disabled until the evidence/freshness phase is implemented.
+Supplying `--eligibility-file` explicitly persists resolved platform positions
+for the league; C/LW, C/RW, LW/RW, D, and G are supported, while duplicate,
+ambiguous, unresolved, and invalid rows remain visible in the output.
+
+### Weekly acquisition ledger
+
+Weekly recommendations appear as **The Bench — Waiver Wire — Weekly Pickups**;
+breakout searches appear as **The Bench — Call-Up Board — Sleepers**.
+
+```powershell
+icelines fantasy weekly-budget
+icelines fantasy weekly-budget --at 2026-10-08T07:00:00-07:00 --json
+icelines fantasy weekly-pickups --date 2026-10-08 --top 20
+icelines fantasy weekly-pickups --candidates 75 --json
+icelines fantasy sleepers --positions D --top 20
+icelines fantasy sleepers --positions LW,RW --json
+icelines fantasy acquisition-record --add "Darren Raddysh" --drop "Bench Defenseman"
+icelines fantasy acquisition-record --add "Goalie Name" --kind waiver --json
+```
+
+The budget uses the league timezone and Monday-Sunday boundaries, including
+Pacific DST transitions. A counted `acquisition-record` is rejected once four
+moves have been used. Recording a drop creates a waiver window ending exactly
+two days after the effective timestamp. These commands update only IceLines'
+local ledger; they do not perform a move on Yahoo or another fantasy platform.
+
+`weekly-pickups` simulates each remaining date through Sunday using the legal
+active-slot assignment engine. Every candidate is tested against each legal
+drop (and an open roster slot when available); rankings use incremental playable
+starts, active league-scored value, dropped rest-of-week value, waiver
+reacquisition cost, and pickup-budget cost. Raw scheduled games that would be
+benched do not count as usable starts.
+
+### Sleeper discovery
+
+`sleepers` excludes players rostered anywhere in the selected fantasy league
+and compares 2025-26 rates with 2024-25 by default. Its typed
+`fantasy_sleeper_board.v1` score separates active-league fantasy-rate growth,
+shots/hits/blocks growth, power-play growth, quiet-slate value,
+multi-position flexibility, newcomer opportunity, and small-sample risk.
+Candidates need at least 10 games. Baseline source gaps are reported and never
+receive fabricated growth or newcomer credit. This is a discovery board—not an
+injury, lineup-role, or rest-of-season projection—and currently covers skaters.
+
+### Status evidence and injury plan
+
+```powershell
+icelines fantasy status-record "Player Name" --status dtd --source "league app"
+icelines fantasy status-record "Player Name" --status out --source "team report" --confidence confirmed --observed-at 2026-10-08T16:00:00-07:00
+icelines fantasy status-show
+icelines fantasy status-show "Player Name" --max-age-minutes 180 --json
+icelines fantasy goalie-start-record "Igor Shesterkin" --date 2026-11-12 --state confirmed-starting --source "team reporter"
+Get-Clipboard | icelines fantasy goalie-start-import --file - --source "daily goalie report"
+icelines fantasy goalie-start-import --file examples/fantasy-goalie-starts.csv
+icelines fantasy goalie-start-template --date 2026-11-12 --out goalie-news.csv
+icelines fantasy goalie-start-show --week 2026-11-09 --max-age-minutes 180
+icelines fantasy goalie-plan --week 2026-11-09 --strategy balanced
+icelines fantasy goalie-plan --date 2026-11-12 --strategy floor --current-appearances 2 --json
+icelines fantasy injury-plan --date 2026-10-08 --json
+icelines fantasy morning --date 2026-10-08
+icelines fantasy morning --date 2026-10-08 --at 2026-10-08T17:30:00-07:00
+icelines fantasy morning --date 2026-10-08 --current-goalie-appearances 2
+icelines fantasy morning --material-only --json
+```
+
+Supported statuses are healthy, DTD, GTD, out, IR, LTIR, suspended,
+personal, and unknown. Every observation retains source, optional URL, observed
+and fetched times, confidence, and detail. Stale, future-dated, or missing
+evidence resolves to `Unknown` and requires a pregame refresh. `injury-plan`
+places fresh IR/LTIR evidence into strict IR first and fresh DTD/GTD/out evidence
+into IR+; it is advisory and never mutates the fantasy platform.
+
+`morning` evaluates the requested day at 07:00 in the saved league timezone,
+combines the injury/IR plan and goalie command center with the persisted weekly
+acquisition budget and the top five legal remaining-week add/drop alternatives,
+then emits ordered actions. Confirmed healthy skaters with a game receive start
+actions; stale, missing, DTD, GTD, or otherwise uncertain evidence receives a
+conditional refresh action instead. The top positive pickup becomes a concrete
+conditional add/drop action; if none improves usable starts or projected value,
+the briefing recommends no transaction. A decision-bearing fingerprint excludes
+generation time and warning prose. With `--material-only`, a repeated unchanged
+briefing prints only the no-change line; JSON sets `suppressed_unchanged` while
+retaining the complete typed briefing. No external lineup or roster is changed.
+Goalies use their own evidence gate: only a fresh confirmed starter receives a
+firm goalie-start action. Reported, estimated, stale, or missing evidence emits
+a same-day refresh with workload probability clearly labeled. When minimum risk
+or meaningful coverage gain warrants it, the briefing includes the best legal
+confirmed-before-add stream and a second fallback if the first player is claimed
+or remains unconfirmed. `--current-goalie-appearances` supplies completed weekly
+appearances so midweek minimum advice does not project from zero.
+The top five sleeper rows are embedded separately. A leading sleeper matching
+the best weekly pickup produces a supporting-evidence action; a different
+leader produces a watch action. Sleeper evidence never silently changes the
+optimizer's add/drop value.
+Omitting `--at` evaluates the reproducible 07:00 local baseline. Supplying an
+RFC3339 `--at` time reevaluates status freshness and waiver usability at that
+pregame instant; its local date must match `--date` when both are supplied.
+The text briefing includes one goalie checkpoint line with the next refresh,
+number due now, and next lock. The v3 JSON contract separates the real
+`generated_at` timestamp from the decision-bearing `evaluated_at` timestamp, so
+replays never filter a valid stream using wall-clock time. Confirmed same-day
+streams rank ahead of unconfirmed higher-volume options; the latter remains an
+explicit confirmation-gated fallback.
+Confirmed starters and confirmed backups still receive a final safety check 30
+minutes before game lock. Inside that window, the briefing emits a verify-now
+action while retaining the current start/bench recommendation until newer
+evidence supersedes it.
+The goalie stream and weekly pickup surfaces cannot silently spend the same
+last move twice. With one proactive acquisition remaining, different candidates
+are rendered as choose-one alternatives. An identical candidate is deduplicated
+into the goalie action with the weekly optimizer's drop and value evidence.
+Each primary and fallback stream independently searches all ranked weekly moves
+for its legal drop/value pairing. Without one, the action is explicitly
+capacity-gated and must not be executed unless an open roster spot is verified.
+
+Goalie evidence is keyed by normalized player and NHL game date. Starter states
+remain confirmed, reported, estimated, confirmed backup, reported backup, or
+unknown; stale/future evidence resolves effectively to unknown. `goalie-plan`
+uses the saved user roster, NHL schedule, active scoring scheme, daily goalie
+slot count, and competition minimum. Expected appearances and the confirmed
+floor are separate, and each row includes a poor-start points/SV%/GAA stress
+case. Opponent offense is indexed from current-team skater goals/game relative
+to the league average. Unsourced back-to-back starts receive a workload
+discount, while sourced confirmation still wins. Free-agent goalies are ranked
+by marginal usable appearances after daily slot collisions, waiver timing, and
+the proactive move budget; the portfolio block compares keeping the current
+group with the best conditional third-goalie add. Verified opponent shot
+quality and richer multi-day goalie rest history remain follow-ons.
+
+`goalie-start-import` atomically imports CSV evidence from a file or `--file -`.
+Columns are `player,date,state,source,source_url,observed_at,detail`; source and
+observation time may instead come from command fallbacks. Duplicate player/date
+rows or any malformed row reject the entire paste. Goalie-plan rows carry NHL
+game start, a 30-minute refresh deadline, minutes to lock, and check-later /
+refresh-soon / refresh-now / locked urgency. Locked games contribute no
+remaining appearance or stream value.
+
+`goalie-start-template` emits the same CSV schema for rostered goalies playing
+on the requested date and the top legal same-day stream candidates. Existing
+reported state is retained so the file can be updated from morning news and fed
+back to `goalie-start-import`. Plan JSON and text expose the next required
+refresh, next game lock, number of checks due now, and unresolved rostered
+goalies on the focus date. A newer observation always supersedes earlier
+starter evidence, including a late confirmed-start to confirmed-backup reversal.
+
+The fantasy command family keeps stable literal command names while its reports
+use The Rink: draft and waiver work lives on **The Bench**, matchup plans meet in
+the **Faceoff Circle** for a **Tale of the Tape**, and trades move to **The
+Boards**. The **Trade Desk** evaluates an offer; the **Hot Stove** finds
+plausible deals. Readiness, offers, and history retain those literal labels.
+
 ```bash
 # Setup
 icelines fantasy league-create "My League" --scheme yahoo-standard
 icelines fantasy team-create "My Team" --owner "Gio"
 icelines fantasy team-add "My Team" "McDavid"
 icelines fantasy import-yahoo --file rosters.csv --league "My League" --dry-run
+Get-Clipboard | icelines fantasy import-yahoo --file - --league "My League" --dry-run --replace
 icelines fantasy import-yahoo --file rosters.csv --league "My League" --my-team "My Team"
+icelines fantasy import-yahoo --file rosters.csv --league "My League" --dry-run --replace
+icelines fantasy import-yahoo --file rosters.csv --league "My League" --replace
 icelines fantasy roster-shape
 icelines fantasy roster-shape-set yahoo-standard --league "My League"
 icelines fantasy roster-shape-validate --team "My Team" --json
+icelines fantasy assistant-rules
+icelines fantasy assistant-setup --league "My League"
+icelines fantasy draft-board --taken-file taken.txt
 
 # Manage
 icelines fantasy team-show "My Team"
@@ -995,12 +1318,36 @@ icelines fantasy standings
 icelines fantasy daily --date 2026-01-15 --json
 icelines fantasy matchup-set --week 2026-01-15 --home "My Team" --away "Rival"
 icelines fantasy matchup --date 2026-01-15 --json
+icelines fantasy matchup-plan --week 2026-10-05 --strategy balanced
+icelines fantasy matchup-plan --week 2026-10-05 --team "My Team" --opponent "Rival" --strategy upside --json
+icelines fantasy matchup-plan --week 2026-10-05 --through 2026-10-07 --user-current 42.5 --opponent-current 39 --current-source "Yahoo matchup page"
+icelines fantasy competition-show --json
+icelines fantasy competition-set --mode categories --category goals:higher:sum --category goals_against_average:lower:ratio:0.001 --minimum-goalie-appearances 3
+icelines fantasy competition-set --mode points
+icelines fantasy matchup-plan --week 2026-10-05 --category-snapshot examples/fantasy-category-snapshot.json
+Get-Clipboard | icelines fantasy matchup-plan --week 2026-10-05 --category-snapshot -
 icelines fantasy league-list
 icelines fantasy league-switch "My League"
 
 # Trades
-icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski"
+icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --stats-season 20252026
+icelines fantasy trade "McDavid,Bouchard" --to-team "Other" --for-player "MacKinnon,Werenski" --stats-season 20252026 --json
+icelines fantasy trade "McDavid,Bouchard" --to-team "Other" --for-player "MacKinnon,Werenski" --execute
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --execute
+icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --save-offer
+icelines fantasy trade-offers --status pending
+icelines fantasy trade-offers --status pending --actionable-only
+icelines fantasy trade-offers --json
+icelines fantasy trade-offer-close OFFER_ID --status accepted
+icelines fantasy trade-history --limit 20
+icelines fantasy trade-history --json
+icelines fantasy trade-finder --team "Dexter's Dawgs" --stats-season 20252026 --top 20
+icelines fantasy trade-finder --to-team "Other" --max-package 2 --fairness-percent 8 --json
+icelines fantasy trade-finder --protect "McDavid,Kucherov" --top 20
+icelines fantasy trade-finder --include-anchors --to-team "Other"
+icelines fantasy trade-readiness --league "My League"
+icelines fantasy trade-readiness --team "Dexter's Dawgs" --json
+icelines fantasy trade-finder --require-complete --top 20
 
 # Web dashboard
 icelines fantasy serve --port 8080
@@ -1015,6 +1362,55 @@ icelines fantasy serve --port 8080
 # GET /api/v1/fantasy/roster-shape?team=<name> RosterShapeValidationView JSON
 ```
 
+`fantasy matchup-plan` emits `fantasy_matchup_strategy.v1`. It scores
+completed-season per-game rates with the active league scheme, assigns both
+saved rosters legally on every projected date, and reports expected/floor/upside
+points, modeled win probability, usable starts, and value lost to bench
+collisions. For an in-progress matchup, supply `--through`, `--user-current`,
+and `--opponent-current` together. Those platform totals remain fixed and only
+later dates are projected, so elapsed games are never counted twice.
+`--current-source` labels their authority.
+
+Fresh saved non-healthy status observations affect lineup eligibility during
+the current matchup window. Missing, stale, or future-week status evidence is
+not presented as confirmed health; the projection discloses its availability
+assumption and asks for a pregame refresh. The best current legal one-move
+pickup swing is included when the weekly optimizer can produce one. The 80%
+bands use disclosed skater/goalie volatility proxies, and the probability is a
+deterministic stress estimate—not betting odds.
+
+`fantasy competition-set` persists the league's competition mode separately
+from its points scheme. A category specification is
+`KEY:DIRECTION:AGGREGATION[:TIE_EPSILON]`; direction is `higher` or `lower`,
+and aggregation is `sum` or `ratio`. Supported skater keys are `goals`,
+`assists`, `points`, `plus_minus`, `shots`, `hits`, `blocks`, `pp_goals`,
+`pp_assists`, `sh_goals`, `sh_assists`, `gwg`, `ot_goals`, `takeaways`, and
+`giveaways`. Supported goalie keys are `wins`, `losses`, `saves`,
+`goals_against`, `shutouts`, `save_percentage`, and
+`goals_against_average`. The last two require `ratio`; every other supported
+key requires `sum`.
+If the saved tie policy is `higher_seed_wins`, pass
+`--user-higher-seed true` or `--user-higher-seed false` to `matchup-plan` so
+the projected matchup result can apply the rule without guessing seed order.
+
+When the saved league is in category mode, `fantasy matchup-plan` emits
+`fantasy_category_matchup.v1`. It projects legal daily assignments, category
+W-T-L, per-category win/tie/loss probabilities, safe/press/volatile/low-return
+classification, and expected goalie appearances against the saved minimum.
+Ratio categories sum their numerator and denominator before division.
+
+For an in-progress category matchup, pass `--category-snapshot FILE` or pipe
+pasted JSON with `--category-snapshot -`. The document uses
+`fantasy_category_snapshot.v1`; see
+`examples/fantasy-category-snapshot.json`. It must include the source,
+`through_date`, both goalie-appearance totals, and exactly one row for every
+configured category. Counting categories store the observed value in
+`numerator` with a zero `denominator`. `save_percentage` uses saves and shots
+against; `goals_against_average` uses goals against and goalie hours. IceLines
+fixes those components as observed history and projects only later dates. JSON
+and text output expose current + remaining = final values. Confirmed starting
+goalies remain a later Wave 14 input and are not fabricated.
+
 `fantasy import-yahoo` accepts Yahoo roster CSV exports with a player column
 (`Player`, `Name`, `Player Name`, or `First Name` + `Last Name`) and a fantasy
 team column (`Fantasy Team`, `Team Name`, `Rostered By`, `Owner Team`, or
@@ -1023,6 +1419,13 @@ are diagnostic context only. Use `--dry-run` first to preview created/updated
 teams, imported/skipped players, unresolved names, duplicate ownership, and
 header problems; rerun without `--dry-run` to apply local FantasyDb membership.
 Yahoo stats are ignored and never become player/stat/photo truth.
+Pass `--file -` to read the CSV from stdin; in PowerShell, `Get-Clipboard |`
+provides a fast pre-draft or pre-trade synchronization path.
+Imports are additive by default. For a complete current export, preview with
+`--dry-run --replace`, fix every diagnostic, then apply with `--replace` to make
+each included team's saved roster exactly match the CSV. Replacement is refused
+when any row is skipped, unresolved, duplicated, or invalid; accepted changes
+are committed atomically across the included rosters.
 
 `fantasy roster-shape` lists the active league shape and available built-ins.
 `fantasy roster-shape-set <shape>` persists the per-league setup rule, and
@@ -1039,7 +1442,8 @@ icelines scheme show yahoo-standard
 icelines scheme from-csv path/to/yahoo.csv      # detect platform, build template
 ```
 
-Built-in schemes: `yahoo-standard`, `espn-standard`, `simple-pts`.
+Built-in schemes: `yahoo-standard`, `espn-standard`, `simple-pts`,
+`dexters-dawgs`.
 
 ---
 
@@ -1221,7 +1625,7 @@ Use `Tab` or `Esc` to leave command mode. Outside command mode, Tab moves
 between workbench zones instead of cycling legacy tabs.
 
 Bound MDI experiences are available from the activity rail for Tonight bench,
-Scoring room, Team room, Fantasy room, and Admin room. Each preset swaps the
+Scoring room, Team room, The Bench, and Admin room. Each preset swaps the
 workspace plus left/right context panes together, using the same shared
 workbench IDs as the web dashboard. Starting the dashboard on a bound workspace
 (`icelines tui stats`, `icelines tui --start scores`, `icelines tui fantasy`)

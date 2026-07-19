@@ -33,6 +33,7 @@ pub(super) struct TransactionsResult {
     pub(super) active_team: String,
     pub(super) out_of_coverage: bool,
     pub(super) earliest_season_pretty: String,
+    pub(super) source_warning: String,
 }
 
 #[derive(Debug)]
@@ -92,6 +93,7 @@ struct TransactionsMeta {
     empty_unfiltered: bool,
     out_of_coverage: bool,
     earliest_season: String,
+    source_error: Option<String>,
 }
 
 fn pretty_season(s: &str) -> String {
@@ -134,6 +136,7 @@ pub async fn get_transactions(
         active_team: result.active_team,
         out_of_coverage: result.out_of_coverage,
         earliest_season_pretty: result.earliest_season_pretty,
+        source_warning: result.source_warning,
     };
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),
@@ -164,6 +167,7 @@ pub async fn get_transactions_json(
                 empty_unfiltered: result.empty_unfiltered,
                 out_of_coverage: result.out_of_coverage,
                 earliest_season: result.earliest_season_pretty,
+                source_error: (!result.source_warning.is_empty()).then_some(result.source_warning),
             },
         ),
         Err(err) => crate::api::json_error_meta(
@@ -216,17 +220,25 @@ pub(super) async fn build_transactions_result(
     };
     let store = icelines_fetch::snapshot::SnapshotStore::new(snapshots_root);
 
+    let mut source_warning = String::new();
     let rows = if out_of_coverage {
         Vec::new()
     } else {
-        icelines_fetch::bundled::load_transactions_with_fallback(&season_str, &store)
-            .map_err(|err| {
-                TransactionsBuildError::unavailable(
+        match icelines_fetch::bundled::load_transactions_with_fallback(&season_str, &store) {
+            Ok(data) => data.rows,
+            Err(err) if season_str == icelines_core::CURRENT_SEASON_STR => {
+                source_warning = format!(
+                    "Current-season transactions are not loaded yet: {err}. Run `icelines fetch transactions`."
+                );
+                Vec::new()
+            }
+            Err(err) => {
+                return Err(TransactionsBuildError::unavailable(
                     format!("Transactions data for season {season_str} could not be loaded: {err}"),
                     &season_str,
-                )
-            })?
-            .rows
+                ));
+            }
+        }
     };
 
     let view = TransactionsView::from_rows(
@@ -249,6 +261,7 @@ pub(super) async fn build_transactions_result(
         active_team: view.active_team,
         out_of_coverage: view.out_of_coverage,
         earliest_season_pretty: view.earliest_season_pretty,
+        source_warning,
     })
 }
 
@@ -261,6 +274,7 @@ fn transactions_error_meta(q: &TransactionsQuery, season: &str) -> TransactionsM
         empty_unfiltered: true,
         out_of_coverage: false,
         earliest_season: pretty_season(TRANSACTIONS_EARLIEST_SEASON),
+        source_error: None,
     }
 }
 

@@ -154,6 +154,36 @@ impl Scheme {
         }
     }
 
+    /// Dexter's Dawgs 2025-26 Yahoo points-league scoring, recovered from the
+    /// exported workbook's exact player-stat and fantasy-point totals.
+    pub fn dexters_dawgs() -> Self {
+        Self {
+            name: "dexters-dawgs".into(),
+            description: "Dexter's Dawgs Yahoo points scoring (2025-26)".into(),
+            source: SchemeSource::Custom,
+            skater: SkaterWeights {
+                goals: 3.25,
+                assists: 2.25,
+                pp_goals: 3.0,
+                pp_assists: 2.0,
+                sh_goals: 1.0,
+                sh_assists: 1.0,
+                gwg: 1.0,
+                hits: 0.5,
+                blocks: 0.5,
+                ..Default::default()
+            },
+            goalie: GoalieWeights {
+                wins: 3.0,
+                losses: -0.5,
+                saves: 0.2,
+                goals_against: -0.25,
+                shutouts: 3.0,
+                ..Default::default()
+            },
+        }
+    }
+
     /// Pure hockey points — goals + assists only, no bonuses.
     pub fn simple_pts() -> Self {
         Self {
@@ -173,6 +203,7 @@ impl Scheme {
         vec![
             Self::yahoo_standard(),
             Self::espn_standard(),
+            Self::dexters_dawgs(),
             Self::simple_pts(),
         ]
     }
@@ -401,6 +432,22 @@ mod tests {
     }
 
     #[test]
+    fn l0_dexters_dawgs_reproduces_exported_mackinnon_total() {
+        let stats = SkaterStats {
+            goals: 35,
+            assists: 39,
+            pp_goals: 7,
+            pp_assists: 11,
+            gwg: 5,
+            hits: 34,
+            blocks: 23,
+            ..Default::default()
+        };
+        let score = compute_fantasy_score(&stats, &Scheme::dexters_dawgs().skater, 80).unwrap();
+        assert!((score.total - 278.0).abs() < 0.001);
+    }
+
+    #[test]
     fn l0_scheme_breakdown_sums_to_total() {
         // DI-23: breakdown values must sum to total within 0.001
         let s =
@@ -447,7 +494,7 @@ mod tests {
 
     #[test]
     fn l0_scheme_builtins_count() {
-        assert_eq!(Scheme::all_builtins().len(), 3);
+        assert_eq!(Scheme::all_builtins().len(), 4);
     }
 
     #[test]

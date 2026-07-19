@@ -619,6 +619,8 @@ pub struct TransactionsTemplate {
     /// Earliest season ESPN archives, surfaced in the out-of-coverage
     /// note so the user knows what's available.
     pub earliest_season_pretty: String,
+    /// Non-empty when the current season has no installed transaction source.
+    pub source_warning: String,
 }
 
 /// One row in the transactions feed, projected for the template so
