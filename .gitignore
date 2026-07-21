@@ -13,3 +13,4 @@ __pycache__/
 # Editor + tool caches — never tracked.
 .vscode/
 .proof/
+.craft/

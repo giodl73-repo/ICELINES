@@ -2,6 +2,10 @@
 
 NHL depth charts, pace-adjusted rankings, query engine, fantasy league management, and 38 seasons of history — all from a single Rust CLI with **every season from 1987-88 to 2025-26 bundled in**, no fetch required.
 
+**Hockey data should be explorable without an account, database setup, or black-box ranking.**
+
+**Series:** [Applied Systems](https://github.com/giodl73-repo/giodl73-repo/blob/main/series/applied-systems.md)
+
 **[→ View the site](https://giodl73-repo.github.io/ICELINES/)**
 
 **Review roles:** This repo uses
