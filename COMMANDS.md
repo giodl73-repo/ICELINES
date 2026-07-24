@@ -2,8 +2,8 @@
 
 Visible report headings use The Rink product language—such as **The Insider —
 Morning Skate** and **The Crease — Who Gets the Net?**—without renaming the
-stable commands documented below. Branded aliases such as future `icecast` and
-`icereplay` commands are additive rather than replacements.
+stable commands documented below. Branded commands such as `icecast` are
+additive rather than replacements; `icereplay` remains planned.
 
 ## Test slices
 
@@ -556,6 +556,15 @@ icelines report list --json
 icelines report team-ceiling
 icelines report team-ceiling --team NYR
 icelines report team-ceiling --json --out team-ceiling.json
+icelines report team-lineup --team NYR
+icelines report team-lineup --team SEA --json --out sea-lineup.json
+icelines report team-card --team NYR --scenario-id nyr-development-variance
+icelines report team-card --team SEA --scenario-id sea-development-variance --json --out sea-card.json
+icelines report team-card --team NYR --scenario-id nyr-development-variance --scenario-comparison-key development-variance --trials 1000 --seed 20262027 --generated-at 2026-07-22T12:00:00Z --json
+pwsh -NoProfile -File scripts/validate-card-document.ps1 -Path examples/team-prognosis-card-nyr-2026-27.json -Summary
+pwsh -NoProfile -File scripts/render-card-document.ps1 -Path examples/team-prognosis-card-nyr-2026-27.json -OutDir dist/cards
+pwsh -NoProfile -File scripts/render-card-document.ps1 -Path examples/team-prognosis-card-nyr-2026-27.json -OutDir dist/cards -ResolveAssets -Pdf
+pwsh -NoProfile -File scripts/test-card-reference-renderer.ps1
 icelines report cap-forecast --team NYR
 icelines report cap-forecast --years 5 --growth-pct 5 --json --out cap-forecast.json
 icelines report poach --category shots --top 10 --out poach.md
@@ -570,6 +579,8 @@ Surface rule of thumb:
 | Quick CSV/JSON for Excel/scripts | `icelines x <shape>` |
 | Durable markdown packet | `icelines export md <shape>` |
 | 2026-27 roster ceiling / prior-year delta | `icelines report team-ceiling` |
+| Four lines, pairs, goalies, faces, and IceLines scores | `icelines report team-lineup --team NYR` |
+| Two-page lineup and prognosis source document | `icelines report team-card --team NYR --scenario-id nyr-development-variance` |
 | Five-year roster market cost / cap pressure | `icelines report cap-forecast` |
 | Fantasy decision report | `icelines report poach` / `icelines report weekly` |
 | See every available/planned report family | `icelines report list` |
@@ -995,6 +1006,579 @@ keeping Pts/82 as the controlling value.
 
 ---
 
+## IceCast — The Goal Line
+
+```powershell
+icelines icecast camp --input examples/icecast-nyr-training-camp.json --json --out nyr-camp.json --lineup-set-out nyr-camp-lineups.json --blender-set-out nyr-camp-blenders.json --season-scenario-out nyr-camp-season.json --max-lineup-branches 5 --season-max-roster-branches 3000
+icelines icecast camp-league --candidate-overlay examples/icecast-league-candidate-overlay-2026-27.json --authored-input examples/icecast-nyr-training-camp.json --authored-input examples/icecast-sea-training-camp.json --trials 1000 --json --out league-camp.json
+icelines icecast bubble --input league-camp.json --top 10 --json --out league-bubble.json
+icelines icecast bubble --input league-camp.json --transaction-context transaction-context.json --top 10 --json --out league-bubble.json
+icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.json --transaction-context examples/icecast-transaction-context-nyr-sea-2026-27.json --top 10 --json --out league-bubble-sourced.json
+icelines icecast affiliate --input affiliate-scenario.json --json --out affiliate-lines.json
+icelines icecast affiliate-map --json --out ahl-affiliations.json
+icelines icecast season --team NYR --scenario nyr-camp-season.json --trials 10000 --json --out nyr-camp-season-forecast.json
+icelines icecast season --team NYR --all-games --game-forecast-out nyr-games.json
+icelines icecast bench --forecast nyr-games.json --lineup examples/team-lineup-nyr-2026-27.json --profile nyr-decision-profile.json --style-evidence opponent-styles.json --scenario-out nyr-game-plans.json --json --out nyr-bench-schedule.json
+icelines icecast blender --lineup examples/team-lineup-nyr-2026-27.json --scenario-out nyr-bench.json
+icelines icecast blender --lineup examples/team-lineup-nyr-2026-27.json --review-games 6 --minimum-points-percentage 0.50 --max-changes 2 --max-choices 3 --json --out nyr-lines.json --scenario-out nyr-bench.json
+icelines icecast blender --lineup examples/team-lineup-nyr-2026-27.json --shift-season 20252026 --shift-report-out nyr-shifts.json --json --out nyr-lines.json
+icelines icecast blender --lineup examples/team-lineup-nyr-2026-27.json --shift-season 20252026 --allow-off-wing --json --out nyr-lines.json
+icelines icecast season --team NYR --scenario nyr-bench.json --trials 10000 --json --out nyr-adaptive-lines.json
+icelines icecast season                                # NYR + SEA summary by default
+icelines icecast season --team NYR --team SEA --all-games
+icelines icecast season --team NYR --trials 25000 --seed 20262027
+icelines icecast season --scenario examples/icecast-scenario.json
+icelines icecast scenario import --id nyr-development-variance --path examples/icecast-nyr-development-variance.json --season 20262027 --evidence estimated
+icelines icecast scenario list
+icelines icecast scenario show nyr-development-variance
+icelines icecast season --scenario-id nyr-development-variance --team NYR
+icelines icecast season --scenario-id nyr-development-variance --team NYR --isolated-impacts --json
+icelines icecast season --auto-personnel --trials 10000
+icelines icecast season --trade-mode plausible --trials 10000
+icelines icecast season --team SEA --json
+icelines icecast season --team NYR --json --out nyr-2026-27.json
+icelines icecast season-card --input nyr-2026-27.json --team NYR --team-name "New York Rangers" --out nyr-season-card.json
+icelines icecast season --refresh                      # refresh official schedule cache
+icelines icecast season --season 20252026 --replay-mode rolling --all-games
+icelines icecast season --season 20242025 --replay-mode rolling --through 2025-01-31 --trials 1000 --json
+icelines icecast season --season 20242025 --replay-mode rolling --through 2025-01-31 --scenario historical-counterfactual.json --isolated-impacts --json
+icelines icecast movement --earlier january.json --later february.json --team NYR --team SEA
+icelines icecast movement --earlier january.json --later february.json --json --out movement.json
+icelines icecast movement-card --input movement.json --team NYR --team-name "New York Rangers" --out nyr-movement-card.json
+icelines icecast history --input january.json --input february.json --input march.json --team NYR --team SEA
+icelines icecast history --input january.json --input february.json --json --out history.json
+icelines icecast history-card --input history.json --team NYR --team-name "New York Rangers" --out nyr-history-card.json
+icelines icecast backtest --input 2021-22.json --input 2022-23.json --input 2023-24.json
+icelines icecast backtest --input 2021.json --input 2022.json --input 2023.json --json --out validation.json
+icelines icecast calibrate-development --start-season 20052006 --end-season 20252026
+icelines icecast calibrate-development --json --out development-calibration.json
+icelines icecast import-opening-rosters --manifest opening-rosters-2024.json --dry-run
+icelines icecast import-opening-rosters --manifest opening-rosters-2024.json
+icelines icecast discover-opening-rosters --season 20242025 --out coverage.json --manifest-out import.json
+icelines icecast discover-opening-rosters --season 20242025 --partial-manifest-out partial.json
+icelines icecast discover-opening-rosters --season 20242025 --cache-only --partial-manifest-out partial.json
+icelines icecast import-opening-rosters --manifest partial.json --allow-partial-evaluation
+icelines icecast season --season 20212022 --stats-season 20202021 --replay-mode rolling --retrospective-opening-lineups
+```
+
+`icecast camp` selects the opening active roster before the dressed 12F/6D/2G
+lineup. Text and JSON distinguish active-roster, dressed, healthy-scratch, and
+waiver-exposure probabilities. Salary-cap enforcement is fail-closed when
+configured; without complete sourced cap hits, the forecast reports a structured
+`no_read` instead of treating missing salaries as zero.
+Player make, dress, scratch, waiver, and displacement probabilities are
+conditioned on valid constrained trials. Rejected cap or roster trials remain
+visible through `incomplete_trials` and are not miscounted as player cuts.
+`icecast camp-league` applies that same contract to every franchise. Authored
+team inputs override the automatic concept pool; automatic pools use current
+roster identities, merge optional explicitly sourced organizational candidates,
+add explicitly labeled prior-season organizational fallback candidates toward
+17F/9D/3G, and retain per-team authority warnings. Candidate overlays require a
+checked date, unique NHL player IDs, valid positions, and absolute evidence URLs.
+Opening-
+roster authority is separate from competition-pool construction, so an optional
+fallback invite does not imply the 23-man roster itself lacks authority.
+
+`icecast bubble` converts that league camp forecast into the UI-neutral
+`training_camp_exposure_board.v1`. It ranks each team's available-but-not-
+selected pressure, healthy-scratch pressure, and disclosed prospect
+displacement. Injury/unavailability is isolated from selection loss and cannot
+create waiver exposure. Without a sourced transaction overlay, material
+pressure is labeled `roster_decision_review`. `transaction_review` requires
+sourced waiver status and trade-protection context and is still research, not
+a transaction prediction: market demand and waiver-claim probability remain
+unknown.
+
+The optional `training_camp_transaction_context.v1` document is season-scoped
+and keyed by NHL player ID. Each row can carry cap hit, expiry year/type,
+trade protection, and `requires_waivers`, plus at least one absolute source
+URL. Duplicate or unknown player IDs, season/schema mismatches, empty source
+lists, relative URLs, label mismatches, and zero cap hits fail closed. A sourced
+no-move clause produces `contract_protected`; it cannot fall through to an
+ordinary transaction or waiver lane.
+
+`icecast affiliate` builds `ahl_affiliate_projection.v1` for the associated
+AHL club. It selects 12 forwards, six defensemen, and two goaltenders, then
+emits four forward lines, three defense pairs, and the goalie tandem. The
+season-scoped rule authority defaults to the AHL's official development rule:
+at least 12 of 18 dressed skaters must have 260 or fewer professional
+regular-season games as measured at the start of the season. Missing
+professional-game totals fail closed; age, NHL waiver status, and AHL rookie
+status are not substitutes for the development-rule calculation.
+
+`icecast affiliate-map` emits the dated `ahl_affiliation_catalog.v1` authority
+used to connect all 32 NHL organizations to their current AHL affiliates. For
+the 2026-27 catalog, `icecast affiliate` rejects a mismatched free-form
+affiliate label rather than silently projecting a player pool onto the wrong
+club.
+
+`icecast blender` reads `team_lineup_projection.v1`, ranks the submitted
+lineup plus deterministic legal one-swap alternatives, and emits
+`line_combination_forecast.v1`. `--scenario-out` writes a reusable
+`team_season_scenario.v1`: The Bench opens with the submitted lineup, reviews
+standings-points percentage after each configured team-game window, and
+advances through ranked choices after a miss. Optional `--pair-evidence`
+accepts explicitly labeled shift, coarse same-game, or simulated pair inputs;
+absent evidence stays neutral and is disclosed rather than invented.
+
+`icecast bench` is the sealed evidence bridge from the per-game IceCast
+baseline to opponent-specific coaching plans. `icecast season
+--game-forecast-out` writes the required `team_game_forecast.v1`; Bench joins
+it to a UI-neutral lineup, one team decision profile, current-roster player
+role evidence derived from `--stats-season`, and an explicit style-evidence row
+for every scheduled opponent. Missing or no-read opponent evidence fails
+closed. The output is `team_season_game_plan_schedule.v1`, while
+`--scenario-out` writes its simulation-ready `team_season_scenario.v1`.
+
+Web card routes served by `icelines serve`:
+
+```text
+/icecast/20262027/NYR/card?scenario=nyr-development-variance&page=depth-chart
+/icecast/20262027/SEA/card?scenario=sea-development-variance&page=insider
+/api/v1/cards/team-prognosis/20262027/NYR?scenario=nyr-development-variance
+/icecast/20262027/NYR/simulation?page=scoreboard
+/icecast/20262027/SEA/simulation?page=insider
+/api/v1/cards/season-simulation/20262027/NYR
+/icecast/20242025/NYR/simulation?page=insider
+/api/v1/cards/season-simulation/20242025/NYR
+/icecast/20242025/NYR/movement?page=shift
+/icecast/20242025/SEA/movement?page=insider
+/api/v1/cards/forecast-movement/20242025/NYR
+/icecast/20242025/NYR/history?page=tape
+/icecast/20242025/SEA/history?page=insider
+/api/v1/cards/forecast-history/20242025/NYR
+```
+
+The TUI commands `season-card`, `season-card NYR`, and `season-card SEA` open
+the same sealed season-simulation documents. Press `p` to switch between The
+Scoreboard and The Insider, `t` to switch teams, or `c` for side-by-side NYR
+and SEA projections from the same league run.
+
+For the sealed completed-season replay, use `replay-card NYR` or
+`replay-card SEA`. Its Insider page adds confirmed actual records and points,
+league and focused-team pick accuracy, Brier score, calibration error,
+coin-flip skill, and the best tested chronological Elo blend.
+
+For the sealed Jan. 31 → Feb. 28, 2025 checkpoint comparison, use
+`movement-card NYR` or `movement-card SEA`. Press `p` for The Shift/Insider,
+`t` to switch teams, or `c` for side-by-side movement from the same two
+league-run fingerprints.
+
+For the multi-checkpoint projection, use `history-card NYR` or
+`history-card SEA`. Press `p` for The Tape/Insider, `t` to switch teams, or
+`c` for side-by-side history sourced from the same sealed league runs.
+The sealed showcase includes Jan. 31, Feb. 28, and Mar. 31, 2025. After
+building the CLI, `scripts/generate-icecast-history-showcase.ps1` regenerates
+the history and cards; pass `-Season`, `-StatsSeason`, `-CheckpointDate`,
+`-Trials`, and `-Seed` to use the same pipeline for another year.
+
+After building the CLI, `scripts/generate-icecast-validation.ps1` generates
+the chronological replay set and invokes `icecast backtest`. Its defaults cover
+2021-22 through 2025-26 with deterministic season seeds and prior-season stats,
+writing to `~/.icelines/reports/validation`. The runner validates schema,
+season, and graded-game coverage before admitting a replay, but never upgrades
+partial roster authority. `-PlanOnly` prints the complete plan without resolving
+the executable or writing files. Valid replay artifacts are reused by default;
+pass `-ForceReplay` after model changes. The quick
+`scripts/test-icecast-validation-runner.ps1` fixture proves initial generation,
+resume-only backtesting, and forced regeneration without running simulations.
+
+`icecast season` emits `team_season_forecast.v1`, including its complete
+`team_game_forecast.v1` game list. JSON always contains the full league run;
+repeat `--team` to choose summary/text game tables. For the
+current 2026–27 season the command refuses incomplete schedules unless it sees
+exactly 1,344 games and 84 games (42 home/42 road) for every team.
+
+`icecast calibrate-development` measures consecutive-season player-value
+changes across completed seasons. Skaters must reach 20 games in the outcome
+season and goalies 15; shortened lockout/pandemic seasons are excluded.
+The v2 value model normalizes each lens within season and position: scoring,
+ice time, shots, power-play production and plus/minus for skaters; save
+percentage, inverse GAA, starts and shutout rate for goalies. Values are
+credibility-shrunk toward 50, missing optional lenses are neutral, and extreme
+feature z-scores are capped.
+Position/age/experience/prior-value cohort rates are shrunk toward the global
+rate, and JSON retains sample sizes, empirical rates, calibrated rates, median
+deltas, a latest-season player lookup, examples, thresholds, and
+leakage/selection disclosures. The bundled history does not yet provide
+complete blocks, xG, possession, matchup-quality, or special-teams deployment.
+
+The game baseline uses roster/depth strength plus home ice, rest,
+back-to-backs, congestion, itinerary distance, and timezone displacement. A
+seeded chronological league simulation produces consistent records, point
+ranges, playoff/Presidents' Trophy odds, and longest-win-streak distributions.
+Scenario injuries, goalie availability, form, deadline trades, playoff series,
+and bounded hunt/spoiler state are supported. Live confirmations remain a
+later IceCast milestone; point-in-time historical replay is available through
+`icecast season --replay-mode rolling --through`.
+
+`icecast scenario import` is the boundary between local authoring and reusable
+scenarios. It stores immutable content under `~/.icelines/scenarios`, records a
+stable ID, scope, evidence label, calendar fingerprint, and SHA-256 hash, and is
+idempotent when the same content is imported again. Web, TUI, cards, and
+reproducible comparisons use IDs; only the CLI accepts an ephemeral
+`--scenario PATH`, and it cannot be combined with `--scenario-id`.
+
+Scenario JSON accepts dated event kinds `injury`, `goalie`, `trade`, `return`,
+`form`, and `custom`. Each event supplies `team`, `effective_date`, optional
+`end_date`, signed `strength_delta`, and `occurrence_probability` from 0 to 1.
+Occurrence uses an event-specific seeded stream, so adding an event does not
+rewrite unrelated game luck. Trade events after `trade_deadline` are rejected.
+When a 2026–27 scenario omits its deadline, the CLI attaches the user-provided
+March 5, 2027 boundary. See `examples/icecast-scenario.json`.
+
+`--auto-personnel` generates seeded player-aware injury and goalie-availability
+events from each roster's highest-impact multi-lens player records. Age and
+games played alter risk; rating and goalie role alter bounded team impact. The
+generated events are serialized with the forecast for inspection and are
+modeled risks rather than live status claims. Authored and automatic scenarios
+can be combined.
+
+`--trade-mode plausible` builds up to six named deadline hypotheses from team
+outlook and roster records. Buyers target their weakest F/D/G bucket; sellers
+contribute a high-impact player aged 33 or younger when available. Each paired
+buyer/seller effect has one correlation key and occurrence probability, making
+the movement atomic per trial. These are transparent hypothetical scenarios,
+not rumors or claims about real negotiations.
+
+Plausible trade mode automatically runs an otherwise-identical no-trade
+counterfactual. `scenario_impacts` reports scenario-minus-baseline expected
+points, playoff and Presidents' Trophy probability, and longest-win-streak
+deltas for all teams. Comparisons refuse different seeds, trial counts,
+schedules, seasons, or team sets.
+
+Text labels the probability-weighted columns `Mkt` and the forced-occurrence
+columns `Done`. JSON stores the corresponding full-league rows in
+`scenario_impacts` and `conditional_scenario_impacts`. This prevents a 30%
+trade proposal from being mistaken for the value of that trade if completed.
+
+Each trial proceeds through the seeded divisional/wild-card playoff bracket and
+best-of-seven 2-2-1-1-1 series. Team rows and JSON include
+`second_round_probability`, `conference_final_probability`,
+`stanley_cup_final_probability`, and `stanley_cup_probability`. Scenario impact
+rows carry the matching round/Cup deltas.
+
+`pivotal_games` identifies late-season schedule dates that become hunt or
+spoiler games across trials. Conference ranks 7-10 define the hunt; ranks 13-16
+can act as spoilers. Race motivation changes game probability by at most 0.4
+points, while rolling five-game form is capped at 1.5 points. Text presents the
+top five focused-team matchups under **The Bubble**.
+
+**The Scoreboard** renders top-five Presidents' Trophy, Stanley Cup, and
+longest-win-streak leader probabilities. **The Gauntlet** renders each focused
+team's hardest and easiest consecutive five-game windows with average win
+probability, expected wins, opponents, road count, back-to-backs, and travel.
+The structured equivalents are `league_leaders` and `schedule_stretches`.
+
+If the schedule contains completed games, **The Review** reports pick accuracy,
+binary Brier score, binary winner log loss, and three-way regulation-home /
+regulation-away / OT-SO log loss. Positive skill deltas mean the forecast beat
+the corresponding 50/50 or equal-three-outcome baseline. Ten-point home-win
+probability bins report observed rates and expected calibration error. The full
+summary also reports logistic calibration intercept and slope once at least 20
+games with both outcomes are available. Their ideal values are 0 and 1; they
+are retrospective diagnostics and are not forecast inputs. The full
+summary retains standard errors and approximate 95% Wald intervals for both
+parameters. The full
+JSON game ledger adds
+`actual_away_score`, `actual_home_score`, `actual_winner`, `actual_ending`,
+`pick_correct`, `brier_score`, `binary_log_loss`, and
+`multiclass_log_loss`; the top-level `accuracy` summary and
+`calibration_bins` are absent until at least one final can be graded. A
+three-way score remains null when REG/OT/SO ending metadata is unavailable.
+Final results are evaluation labels joined after probability computation, not
+forecast features.
+
+`accuracy.baselines` scores `home_only`, `rolling_standings`, and
+`chronological_elo` over the exact same graded games. Home-only uses no team
+information. Rolling standings uses only points earned before the game date,
+regressed against a neutral 20-game prior. Elo begins at 1500 with a 22-point
+home advantage and K=20; an OT/SO result is 0.75/0.25, and same-date ratings
+are frozen until every game that day has been forecast. Per-game
+`home_only_home_win_probability`, `standings_home_win_probability`, and
+`elo_home_win_probability` make each comparison reproducible. Positive
+`model_*_improvement` means IceLines beat that baseline; negative means the
+baseline had lower loss. Non-rolling runs omit standings, label the Elo
+comparison `frozen_equal_rating_elo`, and do not update it from in-season
+results, preserving an equal-information comparison.
+
+`accuracy.ablations` evaluates each factor by subtracting its frozen,
+reconciled `home_win_probability_delta` from every graded game and rescoring
+the same outcomes. Rows include `games_affected`,
+`mean_absolute_probability_delta`, ablated pick/Brier/log-loss scores, and
+signed model improvements. This is a local factor-removal audit, not a refit;
+positive improvement means including the factor helped, while negative means
+the ablated forecast scored better.
+Rolling replay attributes earlier-result strength, verified opening-roster
+priors, and later player changes separately as `strength`, `opening_roster`,
+and `personnel`; their deltas still reconcile exactly to the published game
+probability.
+The verified opening-strength cohort is centered at neutral 50 before replay.
+One shared normalization offset preserves its relative team ordering; a
+one-team partial cohort is therefore neutral rather than receiving an
+unverifiable absolute edge over uncovered teams.
+
+Historical replay accepts `ARI` for pre-Utah schedules and retains `UTA` for
+modern schedules. Both map to the Western Conference Central Division;
+Arizona's historical arena coordinates and timezone are used for itinerary
+features. A season schedule remains authoritative, so the aliases are never
+merged into one season's team list.
+
+In rolling replay, `accuracy.elo_blend_sweep` evaluates weights 0.0 through 1.0
+in 0.1 steps using `p = IceLines * (1 - elo_weight) + Elo * elo_weight`.
+`best_elo_blend_by_brier` retains the lowest-Brier row, breaking exact ties
+toward less Elo. The sweep is empty for frozen forecasts and never changes the
+primary game probabilities; it is calibration evidence for later model work.
+
+`icecast backtest` reads at least three JSON files previously emitted by
+`icecast season --json`. It emits `team_game_forecast_validation.v1` with a
+game-weighted `pooled_sweep`, `pooled_best_by_brier`, and one row per held-out
+season. Duplicate seasons, empty grading, and incompatible or non-finite blend
+grids or calibration observations are rejected. A holdout row's
+`selected_elo_weight` is learned only from
+`training_seasons`; signed fields compare its untouched-season loss with
+unblended IceLines and pure Elo. The report's `promotion_status` is backed by
+named `promotion_checks`: five or more seasons, authoritative opening rosters
+for all inputs, every holdout beating IceLines, at least 60% of holdouts beating
+pure Elo, pooled blend improvement over pure Elo, and holdout-selected weight
+span at most 0.20. Even a clean pass is only
+`candidate_for_versioned_evaluation`; defaults are never changed by this
+command. Missing roster authority produces
+`evaluation_only_missing_roster_authority`.
+
+The same artifact includes `calibration_holdouts`, beginning with the second
+chronological input. Each row fits logistic calibration only on earlier
+supplied seasons and then scores the untouched next season, reporting frozen
+intercept/slope plus held-out Brier and binary-log-loss improvement. This is
+the deployable-evidence path; same-season calibration remains diagnostic only.
+`calibration_summary` pools those untouched holdouts by game count rather than
+averaging seasons, and reports before/after loss, signed gains, and the number
+of holdouts improved for both metrics. It also reports paired per-game standard
+errors and normal-approximation 95% intervals. Those intervals do not model
+parameter-selection uncertainty. A second interval uses a delete-one-holdout-
+season jackknife to expose season-clustered variation; it remains conditional
+on the fitted chronological sequence and is unstable with few holdouts. The
+machine-readable evidence label remains `insufficient_holdouts` until four
+holdout seasons exist, then becomes `positive`, `negative`, or `inconclusive`
+according to whether the clustered interval lies above, below, or across zero.
+
+The July 23, 2026 default runner execution produced four chronological
+calibration holdouts over 5,248 games. Brier improved by 0.002531 and binary log
+loss by 0.005168, but their season-clustered 95% intervals crossed zero, leaving
+both evidence labels `inconclusive`. Recalibration improved 3/4 holdouts and
+worsened the newest 2025-26 holdout by 0.001246 Brier and 0.002637 log loss.
+The separate blend gates passed at a 90%
+Elo pooled minimum, while opening-roster authority remained 0/5; the overall
+status therefore stayed `evaluation_only_missing_roster_authority`.
+
+An opening-roster archive manifest has this shape, repeated once for every
+season member:
+
+```json
+{
+  "schema": "icecast.opening_roster_archive.v1",
+  "season": 20242025,
+  "opening_date": "2024-10-04",
+  "captures": [
+    {
+      "team": "NYR",
+      "archive_url": "https://web.archive.org/web/20240930074603id_/https://api-web.nhle.com/v1/roster/NYR/20242025"
+    }
+  ]
+}
+```
+
+The one-row example is illustrative and intentionally fails default coverage.
+A promotion-authoritative manifest must contain exactly one matching immutable
+official-API capture for all season teams. Either the season endpoint or its timestamped official
+`current` endpoint is accepted inside the July 1-to-opening preseason window.
+`--dry-run` validates schema, identity, timestamps, URLs, and
+coverage without network downloads or snapshot writes. The apply command first
+downloads and parses every roster, then creates an integrity-sealed snapshot;
+partial downloads never become authority. Archive observation time and local
+import time remain separate.
+Each payload gets three bounded attempts. The importer recognizes gzip magic
+bytes even when Wayback omits `Content-Encoding`, limits decompressed rosters to
+4 MiB, and includes a short response signature when parsing still fails.
+
+`--allow-partial-evaluation` accepts a non-empty manifest without full league
+coverage and seals it with the same provenance checks. Rolling replay applies
+player-value weights only to the manifest-verified teams and leaves every other
+team neutral. Its authority status is `partial_evaluation`, so `icecast
+backtest` never counts it toward the opening-roster promotion check.
+
+`discover-opening-rosters` derives opening day and membership from the loaded
+schedule, then selects the latest CDX capture strictly before that date for each
+official season-roster endpoint. When that endpoint has no capture, discovery
+also checks the official `current` roster archive inside the same preseason
+window. Its report separates `missing_teams` from
+`request_errors`, retains selected URLs, and embeds `import_manifest` only for
+complete coverage. `--manifest-out` fails closed when coverage is incomplete.
+`--partial-manifest-out` writes the non-empty verified capture set for an
+explicit evaluation-only import while leaving `import_manifest` absent.
+Discovery uses at most four concurrent archive requests.
+Parsed CDX responses are atomically cached under the IceLines cache root by
+season/team. A later transport failure may reuse that response and is listed in
+`cache_fallback_teams`; unrecoverable failures remain in `request_errors`.
+`--cache-only` skips all Internet Archive requests and revalidates only cached
+CDX responses. An endpoint without a saved response remains an explicit
+request error, preserving the distinction between “not captured” and “not
+checked.”
+
+`--retrospective-opening-lineups` requires rolling replay and is explicitly not
+archive authority. For each team, it selects the first scheduled regular-season
+game, loads the official NHL boxscore, requires 15–18 unique dressed skaters
+and two goalies, and retains only player ID, abbreviated display name, and position.
+That team's first-game date is its personnel evidence cutoff, so earlier
+transactions are already reflected while later transactions may alter the
+lineup. Boxscores are atomically cached under the IceLines cache root and
+`--refresh` re-fetches them. This mode is always `retrospective_evaluation` and
+never counts toward `opening_roster_authority` promotion.
+
+Season simulation currently accepts 2021–22 and later alignment. A pre-2021–22
+request fails with an explicit historical division/playoff-authority error
+rather than applying the current bracket silently. Focus-team validation uses
+the loaded schedule, so historical `--team ARI` is accepted and default SEA is
+omitted for pre-expansion schedules.
+
+`fetch rosters --season ...` is also season-aware: Coyotes seasons request
+`ARI`, Utah seasons request `UTA`, and the pre-Seattle 2020–21 audit season has
+31 teams. Fetch time remains the snapshot evidence time. Downloading a
+historical endpoint today never fabricates a pre-opening capture and therefore
+cannot satisfy The Crease gate by itself.
+
+`--replay-mode rolling` switches to **The Film Room — IceReplay**. It uses a
+neutral regressed opening prior, then updates each team from standings points
+and goal differential in completed games strictly before the forecast date.
+Same-date results are applied as one batch only after all that date's picks are
+frozen. Text `Known` and JSON `away_evidence_games`, `home_evidence_games`, and
+`evidence_cutoff_date` expose the cutoff. Replay refuses current-roster
+substitution and simulated personnel or trade combinations. Player-value
+effects require the dated opening-roster authority described below; without
+it, personnel history remains auditable but strength-neutral.
+
+Add `--through YYYY-MM-DD` to turn a completed rolling replay into an as-of
+season forecast. Final games through that date seed every trial's standings,
+form, and streak state; later games are simulated. IceLines removes all later
+scores and dated personnel evidence before building rolling strengths, emits
+the typed `as_of_date` plus `replay_checkpoint`, and fails if any required
+earlier result is missing or any future result reaches the simulator. The text
+report's **The Checkpoint** table and the card Scoreboard show actual GP,
+W-L-OTL, points, and games remaining before the projected final distribution.
+**The Rest of the Way** then shows model-expected remaining W-L-OTL and points;
+those values are core-owned fields that reconcile observed plus expected
+remainder to the projected final averages.
+`--through` requires rolling mode and
+can be combined with `--isolated-impacts`; its baseline, natural scenario,
+single-event, and forced-ceiling runs all share the identical fixed-result
+boundary, trials, and seed.
+
+`icecast movement --earlier ... --later ...` builds
+`team_season_forecast_movement.v1` from two complete league artifacts. **The
+Shift** reports later-minus-earlier changes in projected points, playoff and
+Cup probability, newly completed games, observed standings points, and
+expected remaining points. Both full artifacts are fingerprinted before the
+text team filter is applied. Comparison requires identical season, schedule
+size, teams, trials, and seed; two dated checkpoints must be chronological.
+
+`icecast movement-card --input ... --team ...` projects one team from that
+sealed movement artifact into `card_document.v1`. The two source fingerprints,
+cutoffs, simulation identity, typed deltas, and disclosures remain core-owned;
+generic terminal, web, SVG, and downstream renderers do not recalculate them.
+
+`icecast history --input ... --input ...` builds
+`team_season_forecast_history.v1` from two or more chronological `--through`
+artifacts. **The Tape** reports each checkpoint's projected points, playoff
+odds, observed games/points, and consecutive points/playoff/Cup movement.
+It also reports first-to-last movement for each focused team and the league's
+top-five projected-points risers and fallers. Each focused team carries its
+league movement rank with deterministic team-code tie breaks, an
+improving/declining/mixed/stable trajectory, and its largest signed checkpoint
+swing. Checkpoints retain P10/P50/P90 points. Net movement materiality compares
+the absolute first-to-last change with the average first/last P10-P90 width;
+it is explicitly descriptive rather than a significance test. Every source fingerprint is retained. Inputs must have strictly increasing
+dates and identical season, schedule, teams, trials, and seed. Text may focus
+teams; JSON always retains the full league history.
+
+The first-to-last movement bridge must reconcile net projected-points change
+to confirmed standings points gained plus the change in expected remaining
+points. Core stores and validates all three values before CLI, TUI, web, or SVG
+rendering.
+
+History also reports a pace-normalized attribution. It values games completed
+between the first and last checkpoints at the first checkpoint's average
+expected remaining points per game. Realized points versus that prior pace plus
+revaluation of the still-unplayed outlook must reconcile to net movement. This
+is a descriptive accounting view, not a causal schedule-strength decomposition.
+Each checkpoint after the first also retains this split for its immediately
+preceding interval; text output prints the interval attribution beneath that
+checkpoint and UI-neutral cards expose the same typed metrics.
+
+`icecast history-card --input ... --team ...` projects one team from that
+history into `card_document.v1`. Every checkpoint fingerprint, absolute level,
+consecutive delta, and disclosure remains core-owned; the TUI, web, SVG, and
+downstream renderers only select and lay out sections.
+
+**The Crease — Opening Roster Gate** reports the structured
+`opening_roster_authority` decision. A roster snapshot qualifies only when it
+is sealed, season-matched, captured before the first game date, integrity
+valid, and non-empty for every scheduled team. Same-day snapshots are rejected
+because game timestamps are not available to prove a pre-puck cutoff. Passing
+the gate enables coverage-regressed `opening_strengths`: 55% from the top 12
+forwards, 30% from six defensemen, and 15% from two goalies, using only the
+preceding completed season. Missing histories are neutral rather than zero,
+and current-season results progressively replace that opening prior.
+
+`opening_strengths[].players` retains exact roster identity, position group,
+prior/modeled value, and opening-slot selection. Only transactions strictly
+after `personnel_events_effective_after` alter that baseline. The replay
+recomputes active 12F/6D/2G groups after recalls, assignments, IR placements,
+and activations; per-game signed changes appear as
+`away_personnel_strength_delta` and `home_personnel_strength_delta`.
+For newcomers absent from the snapshot, `resolved_players` includes
+`prior_position_group`; a later recall or waiver claim joins the player to the
+appropriate lineup pool only when both that group and `prior_value` are known.
+
+Modern bundled transaction seasons also render **The Wire**. Every sourced
+trade, recall, assignment, waiver, signing, and IR row is retained in
+`personnel_evidence` and becomes known only after its date. Game rows expose
+`away_known_personnel_events`, `home_known_personnel_events`, and conservative
+active-IR signals. Only one-direction IR placement/activation prose changes
+the signal; mixed rows remain neutral, and no generic transaction changes team
+strength without player identity/value evidence.
+
+`resolved_players` links exact full-name mentions to stable NHL player IDs.
+Names with multiple identity candidates remain in `ambiguous_player_names`.
+The identity catalog is used only for entity resolution; its full-season stats
+do not become replay features.
+
+Every resolved player also carries `action` and `membership_delta`. Mixed rows
+are parsed per player, so recalls, assignments, and IR placements in one source
+row do not share a guessed direction. Only recalls, waiver claims, and
+assignments alter NHL active-roster evidence; trades, acquisitions, and
+releases remain personnel evidence without asserting active status.
+
+`paired_trades` links exactly one same-date `traded_away` row and one
+`acquired` row for the same stable player ID on different teams. If the source
+lineup is already known to contain that player, replay transfers membership,
+player value, and active IR state atomically. Otherwise the row is retained as
+`source_not_known_active` organizational evidence and does not change either
+lineup. The Wire reports active-lineup and organizational-only counts.
+
+`membership_intervals` opens and closes those sourced active-roster periods.
+Removal-only periods are labeled `implied_preexisting`, while repeated
+transitions appear in `membership_anomalies` instead of creating overlapping
+intervals. Without dated opening-roster authority, interval values are audit
+metadata and do not alter replay strength.
+Repeated active-roster and IR transitions also leave cumulative game state
+unchanged after the first valid player transition; raw source-event counts are
+preserved separately.
+
+`prior_season`, `prior_games_played`, and `prior_value` provide the only player
+performance value admissible for a season-start replay. Values use the
+immediately preceding completed season with small-sample regression; absent
+history remains null rather than borrowing replay-year results.
+
 ## Fantasy league
 
 ### Schedule edge and draft-calendar fit
@@ -1176,6 +1760,12 @@ drop (and an open roster slot when available); rankings use incremental playable
 starts, active league-scored value, dropped rest-of-week value, waiver
 reacquisition cost, and pickup-budget cost. Raw scheduled games that would be
 benched do not count as usable starts.
+When the playoff calendar is configured, the top 15 available candidates are
+also simulated against every legal drop across that window. The saved-calendar
+retention value uses legal starts and active-lineup value, appears explicitly in
+the recommendation reasons, and is capped at +6/-4. Candidates outside that
+bounded playoff beam retain a neutral future-schedule component rather than a
+fabricated zero-game claim.
 
 ### Sleeper discovery
 
@@ -1207,6 +1797,8 @@ icelines fantasy morning --date 2026-10-08
 icelines fantasy morning --date 2026-10-08 --at 2026-10-08T17:30:00-07:00
 icelines fantasy morning --date 2026-10-08 --current-goalie-appearances 2
 icelines fantasy morning --material-only --json
+icelines fantasy morning-card --date 2026-10-08
+icelines fantasy morning-card --date 2026-10-08 --current-goalie-appearances 2 --json
 ```
 
 Supported statuses are healthy, DTD, GTD, out, IR, LTIR, suspended,
@@ -1251,6 +1843,11 @@ Confirmed starters and confirmed backups still receive a final safety check 30
 minutes before game lock. Inside that window, the briefing emits a verify-now
 action while retaining the current start/bench recommendation until newer
 evidence supersedes it.
+`morning-card` evaluates that identical pipeline and seals it into the two-page
+UI-neutral `fantasy_morning_card.v1` document. Its Morning Skate contains the
+action queue and legal lineup; its Insider contains pickup budget, goalie
+checkpoints and evidence, injury refreshes, weekly moves, warnings, and
+methodology. Renderers do not recompute lineup, acquisition, or goalie choices.
 The goalie stream and weekly pickup surfaces cannot silently spend the same
 last move twice. With one proactive acquisition remaining, different candidates
 are rendered as choose-one alternatives. An identical candidate is deduplicated
@@ -1316,6 +1913,10 @@ icelines fantasy draft-board --taken-file taken.txt
 icelines fantasy team-show "My Team"
 icelines fantasy standings
 icelines fantasy daily --date 2026-01-15 --json
+icelines fantasy roster-card --date 2026-10-08
+icelines fantasy roster-card --date 2026-10-08 --classes 8 --json
+icelines fantasy draft-card --taken-file taken.txt
+Get-Clipboard | icelines fantasy draft-card --taken-file - --top 8 --json
 icelines fantasy matchup-set --week 2026-01-15 --home "My Team" --away "Rival"
 icelines fantasy matchup --date 2026-01-15 --json
 icelines fantasy matchup-plan --week 2026-10-05 --strategy balanced
@@ -1326,11 +1927,17 @@ icelines fantasy competition-set --mode categories --category goals:higher:sum -
 icelines fantasy competition-set --mode points
 icelines fantasy matchup-plan --week 2026-10-05 --category-snapshot examples/fantasy-category-snapshot.json
 Get-Clipboard | icelines fantasy matchup-plan --week 2026-10-05 --category-snapshot -
+icelines fantasy playoff-portfolio --rounds 3
+icelines fantasy playoff-portfolio --start 2027-03-15 --rounds 3
+icelines fantasy playoff-portfolio --team "Dexter's Dawgs" --season 20262027 --candidates 25 --top 10 --json
+icelines fantasy playoff-calendar-set --start 2027-03-15 --rounds 3
 icelines fantasy league-list
 icelines fantasy league-switch "My League"
 
 # Trades
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --stats-season 20252026
+icelines fantasy trade-card "Bouchard" --to-team "Other" --for-player "Werenski"
+icelines fantasy trade-card "McDavid,Bouchard" --to-team "Other" --for-player "MacKinnon,Werenski" --json
 icelines fantasy trade "McDavid,Bouchard" --to-team "Other" --for-player "MacKinnon,Werenski" --stats-season 20252026 --json
 icelines fantasy trade "McDavid,Bouchard" --to-team "Other" --for-player "MacKinnon,Werenski" --execute
 icelines fantasy trade "Bouchard" --to-team "Other" --for-player "Werenski" --execute
@@ -1348,6 +1955,7 @@ icelines fantasy trade-finder --include-anchors --to-team "Other"
 icelines fantasy trade-readiness --league "My League"
 icelines fantasy trade-readiness --team "Dexter's Dawgs" --json
 icelines fantasy trade-finder --require-complete --top 20
+icelines tui team-card TRADE # sealed trade board; also `:trade-card`
 
 # Web dashboard
 icelines fantasy serve --port 8080
@@ -1370,6 +1978,31 @@ collisions. For an in-progress matchup, supply `--through`, `--user-current`,
 and `--opponent-current` together. Those platform totals remain fixed and only
 later dates are projected, so elapsed games are never counted twice.
 `--current-source` labels their authority.
+
+`fantasy playoff-portfolio` emits `fantasy_playoff_portfolio.v1`. It treats the
+final requested Monday-Sunday weeks of the NHL regular-season schedule as the
+fantasy playoff rounds, then runs the saved roster through the same legal daily
+assignment engine used by matchup planning. Scheduled games, usable starts,
+quiet-slate starts, bench collisions, and projected usable value remain
+separate. A positive rank delta identifies a player who rises versus the
+roster's completed-season per-game value order because the playoff calendar
+fits the actual roster. The disclosed portfolio score adds 0.25 per quiet-slate
+start and subtracts 0.50 per bench collision; it does not predict injuries,
+starting goalies, or future role changes.
+Pass `--start` with the league's first-round Monday to override the final-weeks
+default. The candidate section evaluates the highest-value unrostered pool
+(bounded by `--candidates`) against every one-for-one drop and ranks the best
+whole-roster playoff deltas; `--top` controls the returned recommendations.
+`fantasy playoff-calendar-set` persists the first-round Monday and one-to-four
+round count inside the active league's assistant rules. Portfolio runs inherit
+those values; command-line `--start` or `--rounds` values override them for a
+single non-mutating report. `fantasy assistant-rules` displays the saved
+calendar and includes it in JSON.
+When that calendar is configured, `fantasy draft-board` reruns legal daily
+assignments for the top 100 completed-season candidates over the exact playoff
+dates. `playoff_fit_value` is exposed separately in each candidate's component
+breakdown and capped at +12/-8 points, so schedule fit can break close calls but
+cannot silently replace league-scored quality, starter gaps, or scarcity.
 
 Fresh saved non-healthy status observations affect lineup eligibility during
 the current matchup window. Missing, stale, or future-week status evidence is
@@ -1458,6 +2091,9 @@ icelines fetch money-puck             # MoneyPuck CSV via FLETCH, ICELINES parse
 icelines fetch money-puck --seasons 5 # current season plus 4 prior regular seasons
 icelines fetch fletch-sources --gate  # source handoff inventory + migration gate
 icelines fetch contracts              # UFA/RFA/ELC
+icelines fetch ahl --season 20262027 --out data/ahl/roster-stats.json
+icelines fetch ahl --season 20252026 --team HFD --team CV \
+  --out data/ahl/nyr-sea-2025-26.json
 icelines fetch contracts --source csv --input examples/contracts-young-stars-20262027.csv \
   --valuation-season 20262027 --cap-limit 104000000
 icelines fetch career --bundled-seasons 5   # multi-league career history (Calder)
@@ -1472,6 +2108,26 @@ icelines data install --season 19881989
 icelines data remove 19921993
 icelines data verify --all            # verify installed data manifests
 ```
+
+`fetch ahl` resolves IceLines' eight-digit season against the official AHL
+season catalog, discovers the provider's team IDs, and ingests the official
+season-roster, skater-stat, and goalie-stat reports into
+`ahl_roster_stats.v1`. With no `--team` filter it fetches every provider team;
+repeat `--team` with an AHL code or exact name for a smaller snapshot. AHL
+HockeyTech player IDs are serialized only as `provider_player_id`: they are
+not NHL IDs and require an explicit identity crosswalk. The current season can
+attach the dated NHL/AHL affiliation catalog; historical rows remain
+league-neutral until a historical affiliation catalog is supplied.
+All source responses pass through verified FLETCH cachelines; the canonical
+typed result is sealed at `<snapshot>/ahl/ahl-roster-stats.json`. `--out` is an
+optional additional export, and `--refresh` forces source revalidation.
+Filtered `--team` fetches use a team-code suffix in the snapshot name, so a
+scoped side-fetch cannot overwrite the same-day full-league AHL snapshot.
+
+Roster fetches seal `_official-roster-capture.json` with the observation time
+and exact official NHL API URL for every season team. IceCast will not treat a
+plain local roster snapshot as authoritative opening evidence, even when it is
+sealed and contains all 32 teams.
 
 Local contract overlays use this header:
 
@@ -1498,6 +2154,13 @@ The bundled-data cap is 38 seasons because `BUNDLED_SEASONS` is the canonical so
 ---
 
 ## TUI (`icelines tui` or `icelines dashboard`)
+
+```powershell
+icelines tui team-card NYR  # sealed IceCast card; also `:team-card NYR` in the command bar
+icelines tui team-card DEX  # sealed Dexter's Dawgs roster card; `p` switches to The Insider
+icelines tui team-card DRAFT # sealed fantasy draft board; also `:draft-card`
+icelines tui team-card MORNING # sealed Morning Skate; also `:morning-card`
+```
 
 Interactive dashboard. By default `icelines tui` opens the shared composable
 workbench: an activity/catalog rail, scores ribbon, swappable left/right context
@@ -1647,6 +2310,7 @@ central workspace so keyboard input never lands on an invisible pane.
 | `gaps <kv...>` / `fantasy gaps <kv...>` | Fantasy roster-gap filters | `:gaps cats=hits,blocks,shots top=8` |
 | `poach <kv...>` / `fantasy poach <kv...>` | Fantasy poacher filters | `:poach rw cats=hits,blocks free top=12` |
 | `simulate <kv...>` / `fantasy simulate <kv...>` | Fantasy add/drop scenario projection | `:simulate add=Connor_McDavid drop=Bench_Forward weeks=3` |
+| `team-card [NYR\|SEA\|DEX\|DRAFT\|MORNING\|TRADE]` / `draft-card` / `morning-card` / `trade-card` | Open a sealed UI-neutral card (`p` page; NHL cards: `t` team, `c` compare) | `:trade-card` |
 | `daily date=YYYY-MM-DD` / `fantasy daily date=YYYY-MM-DD` | Fantasy daily-delta read-surface handoff | `:fantasy daily date=2026-01-15` |
 | `fantasy roster-shape show|validate ...` | Fantasy roster-shape CLI/API handoff | `:fantasy roster-shape validate team My_Team` |
 | `fantasy roster-shape set <shape>` | Fantasy roster-shape setup CLI handoff | `:fantasy roster-shape set yahoo-standard` |

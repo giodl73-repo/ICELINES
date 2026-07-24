@@ -1,28 +1,29 @@
 # IceLines — App Plan
 
-**Version**: 1.0
-**Date**: 2026-05-01
-**Status**: Active — first written 2026-05-01 after a 30-spec audit
+**Version**: 1.1
+**Date**: 2026-07-22
+**Status**: Active product orientation
 
 ---
 
 ## What IceLines is
 
 IceLines is a single-binary NHL hockey analytics + fantasy tool. It runs locally on
-one user's machine. Four surfaces share one engine:
+one user's machine. Three interactive surfaces and durable artifacts share one engine:
 
 - **TUI** (the default — `icelines` with no arguments) — full-screen `ratatui` UI with
   7 tabs (League, Stats, Goalies, Scores, Schedule, Groups, Playoffs). Primary surface.
 - **CLI** — 28 composable commands (`query leaders`, `team EDM`, `scouting McDavid`,
   `fantasy standings`, `export md`, ...). For scripting and one-shot lookups.
-- **Static site** (`build` / `serve` / `deploy`) — mkdocs-Material site, one team
-  page per NHL team plus a ranked index. The "share with non-CLI users" surface.
 - **HTTP server** (`serve`) — axum web dashboard with `/fantasy`,
   `/api/v1/fantasy/gaps`, `/api/v1/fantasy/simulate`, poach, reports, and
   other parity routes. The older `fantasy serve` command remains as a legacy
   local league-management/mutation server.
+- **Artifacts** — JSON/CSV/Markdown exports and sealed UI-neutral card
+  documents rendered as web, terminal, SVG, or PDF output. The older
+  mkdocs/static-site command surface is retired.
 
-All four surfaces produce the same output for the same data state along the
+All applicable surfaces produce the same hockey meaning for the same data state along the
 canonical view path (depth chart, query, scouting, fantasy scoring,
 `export md`, HTTP `/api/team/<abbr>/roster`). Surface-specific affordances
 exist (TUI admin overlay, fantasy SQLite, transactions UI); only the data +
@@ -82,6 +83,7 @@ include: deliberate scope (fantasy is local-only today), data-source constraint
 | Transactions | ✅ `transactions` | ✅ `tui transactions` | ✅ `/transactions` |
 | Docs reference | ✅ `docs` | ✅ `m` overlay *(LP.4)* | ✅ `/docs` |
 | Fantasy | ✅ `fantasy …` | ✅ `fantasy gaps` / `fantasy simulate` | ✅ `/fantasy`, `/api/v1/fantasy/*` |
+| Decision cards | ✅ report/fantasy/IceCast card commands | ✅ `team-card`, `season-card`, `replay-card` | ✅ `/icecast/*/card`, `/icecast/*/simulation`, `/fantasy/cards/*`, `/api/v1/cards/*` |
 
 Phase Lady Byng is implemented; the TUI launcher forms above are active
 product entry points, not planned placeholders.
@@ -102,7 +104,7 @@ primary mutation surface for league/team management.
 
 ## What the v1.0 surface is
 
-The 28 commands working end-to-end against the post-Hart data model. Specifically:
+The command families working end-to-end against the current data model. Specifically:
 
 - **Analytics**: `query` subcommands (leaders/player/compare/similar), plus
   top-level `rank`, `players`, `class`, `peers`, `compare`, `history`, `mates`,
@@ -113,17 +115,27 @@ The 28 commands working end-to-end against the post-Hart data model. Specificall
 - **Live**: `tonight`, `schedule`, `transactions`, plus the TUI Scores/Schedule/Playoffs tabs
 - **Data ops**: `fetch all`, `data {install,list,remove}`, `snapshot {list,show,use,
   verify,delete}`, `group {create,add,show,list,delete}`
-- **Output**: `build`, `serve`, `deploy` (mkdocs), `export md <shape>`
+- **Output**: `serve`, `export md <shape>`, JSON/CSV, and UI-neutral card documents
 
 Plus the TUI: every tab functional, season time-travel via `y` working across
 all screens, fantasy gaps/simulation screens render shared ViewModels, fantasy
 server stable, ASCII headshots rendering.
 
-## Where we are (2026-05-01)
+## Current decision-artifact portfolio (2026-07-22)
+
+IceLines now seals team prognosis, fantasy roster/draft/morning/trade, season
+simulation, and completed replay decisions as `card_document.v1`. Core owns all
+hockey logic; CLI, TUI, Web/API, SVG, and PDF projections consume the sealed
+document. Rangers and Kraken prospective cards retain one full 32-team run
+fingerprint, while the 2024-25 replay adds confirmed actuals and calibration.
+The durable contract is
+[`specs/ui-neutral-card-system.md`](specs/ui-neutral-card-system.md); surface
+claims live only in [`specs/surface-parity.md`](specs/surface-parity.md).
+
+## Historical checkpoint (2026-05-01)
 
 **Shipped** (verified by running the release binary against bundled data):
-- All four surfaces functional. `query leaders --top 5` returns Kucherov 140.3, McDavid
-  138.0; `team EDM` renders the depth chart correctly; `scouting McDavid` produces the
+- All applicable surfaces functional; `team EDM` renders the shared depth projection and `scouting McDavid` produces the
   full 8-section report; `export md leaders` writes the front-matter + table.
 - Hart phase data normalization in progress: 5c.0 through 5c.5 done (PlayerFilter,
   DepthChart, scouting, query, fantasy, export all migrated to PlayerView).
@@ -192,4 +204,4 @@ That's v1.0. After v1.0, work moves to the backlog as user-driven feature reques
 
 This document is the **what + who + where**. The **how** (system architecture, data
 spine, query model, persistence layers, lifecycle) lives in `ARCHITECTURE.md`. The
-**features** (28 commands and 7 TUI tabs in detail) live in `design/specs/`.
+**features** (command families and TUI workspaces in detail) live in `design/specs/`.

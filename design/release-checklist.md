@@ -28,13 +28,15 @@ commit being tagged.
 - Confirm `COMMANDS.md` is current or intentionally unchanged.
 - Confirm `design/plans/INDEX.md` and `design/phases.md` reflect any phase
   status changes.
+- Confirm card fixtures, routes, and `design/specs/surface-parity.md` reflect
+  any changed card builder or IceCast contract.
 
 ## 3. Data and season sanity
 
 - Confirm `icelines-core/src/lib.rs` has the intended `CURRENT_SEASON` and
   `CURRENT_SEASON_STR`.
-- Confirm the bundled season list includes the current season and excludes the
-  2004-05 lockout.
+- Confirm the current season matches or immediately follows the newest
+  completed bundled-stat season and that the list excludes the 2004-05 lockout.
 - Confirm README data-source claims match reality:
   - bundled binary data;
   - GitHub release data bundles;
@@ -60,6 +62,20 @@ For code changes touching shared contracts or multiple surfaces, also run:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci
 ```
+
+For UI-neutral card or IceCast simulation/replay changes, also run:
+
+```powershell
+cargo test -p icelines-core --test season_simulation_card
+cargo test -p icelines-web --test team_card_routes
+cargo test -p icelines-cli --bin icelines tui::screens::team_card::tests
+powershell -ExecutionPolicy Bypass -File scripts/validate-card-document.ps1 -Path examples/season-simulation-card-nyr-2026-27.json
+powershell -ExecutionPolicy Bypass -File scripts/test-card-reference-renderer.ps1
+```
+
+The NYR and SEA focused season cards must share the same complete league-run
+fingerprint for a given artifact. Completed replay cards must label actual and
+calibration metrics as confirmed evidence and retain zero pending games.
 
 The `ci` slice includes the dependency vulnerability audit, clippy, fmt, and
 release build/smoke sequence after the split test gates.

@@ -9,6 +9,11 @@ replace the ViewModel contracts; it describes how CLI, TUI, web, and markdown
 surfaces should render those contracts with a shared hockey-native visual
 language.
 
+Multi-page, independently renderable card artifacts use
+[`ui-neutral-card-system.md`](ui-neutral-card-system.md). That contract owns
+card semantics and content; this visual system continues to own renderer token
+mapping, responsive composition, accessibility, and CREST review.
+
 ---
 
 ## Design Aim

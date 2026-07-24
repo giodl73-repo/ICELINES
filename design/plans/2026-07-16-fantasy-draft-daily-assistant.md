@@ -1,10 +1,12 @@
 # Fantasy Draft and Daily Assistant — Implementation Plan
 
 **Date**: 2026-07-16  
-**Status**: Active  
+**Status**: Superseded for active navigation; retained pending archive migration
 **Specification**: [`../specs/fantasy-draft-daily-assistant.md`](../specs/fantasy-draft-daily-assistant.md)
 
-**Expansion roadmap**: [`2026-07-18-fantasy-war-room-roadmap.md`](2026-07-18-fantasy-war-room-roadmap.md)
+**Superseded by**: [`2026-07-18-fantasy-war-room-roadmap.md`](2026-07-18-fantasy-war-room-roadmap.md)
+**Archive when**: the consolidation manifest records this path and all inbound
+links use the Fantasy War Room roadmap
 
 ## Objective
 

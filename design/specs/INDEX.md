@@ -27,9 +27,12 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [scheme-customization.md](scheme-customization.md) | Implemented | `scheme list/show/fromcsv` CLI, user vs built-in |
 | [fantasy-leagues.md](fantasy-leagues.md) | Implemented (partial) | SQLite + skater/goalie scoring + trade eval + local fantasy server. H2H matchups and full web mutation parity deferred. |
 | [fantasy-poacher.md](fantasy-poacher.md) | Implemented (partial) | Phase Selke player-poacher scoring, roster gaps, simulation scenarios, watch rules, reports, and CLI/TUI/web ViewModel contracts. Carry-forward: full TUI rule editor and imported roster-need fit. |
-| [fantasy-draft-daily-assistant.md](fantasy-draft-daily-assistant.md) | Draft | League-specific assistant plus the linked war-room roadmap for matchup strategy, playoffs, live drafting, multi-move pickups, goalie decisions, trades, archetypes, journaling, and readiness. |
-| [team-season-forecast.md](team-season-forecast.md) | Draft | Season-generic forecast/replay engine with shared game outcomes, point-in-time people, schedule/travel context, actual or simulated trades, standings/playoff odds, streak distributions, and Rangers/Kraken showcase reports. |
-| [brand-the-rink.md](brand-the-rink.md) | Draft | Canonical IceLines product language: The Rink navigation, Ice product family, The Insider voice/evidence labels, hockey report names, and backward-compatible naming guardrails. |
+| [fantasy-draft-daily-assistant.md](fantasy-draft-daily-assistant.md) | Implemented (partial) | League-specific draft, daily, morning, roster, trade, schedule, goalie, and season-simulation foundations; the linked war-room roadmap owns remaining automation and review work. |
+| [team-season-forecast.md](team-season-forecast.md) | Implemented | Game probabilities, league Monte Carlo, playoffs, scenarios, player risk, atomic trades, paired impact, point-in-time replay, sealed-checkpoint movement/history/cards, and calibration. |
+| [line-combination-simulation.md](line-combination-simulation.md) | Implemented (foundation) | The Blender and The Bench are implemented; The Cut training-camp roster selection and per-trial roster propagation are specified next. |
+| [management-behavior-simulation.md](management-behavior-simulation.md) | Implemented (foundation) | Separate GM roster tendencies from manager deployment behavior; build opponent-style, matchup-line, checking-line, and bilateral-fatigue game plans. |
+| [ahl-affiliate-development.md](ahl-affiliate-development.md) | Implemented (foundation) | Affiliate 12F/6D/2G lines enforce the sourced AHL 12-of-18 development-player rule; official roster and cross-league career-game ingestion remains. |
+| [brand-the-rink.md](brand-the-rink.md) | Implemented | Canonical IceLines product language: The Rink navigation, Ice product family, The Insider voice/evidence labels, and hockey report names. |
 | [group-management.md](group-management.md) | Implemented | Player watchlists: SQLite, CRUD, TUI g/f keys |
 | [player-analysis.md](player-analysis.md) | Implemented | PlayerFilter, similarity search, career arc |
 | [scouting-reports.md](scouting-reports.md) | Implemented | 8-section player report (terminal/markdown/json). Test coverage added in Hart.5c.2. |
@@ -43,7 +46,8 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [test-strategy.md](test-strategy.md) | Implemented | L0/L1/L2 tiers, mock NHL API fixture, ~1020 tests |
 | [platform-contracts.md](platform-contracts.md) | Draft | Uniform data/query/ViewModel/surface/report/visual contracts for Campbell and later phases. |
 | [viewmodels.md](viewmodels.md) | Draft | Typed ViewModel boundary between core/query logic and CLI/TUI/web/report renderers. |
-| [surface-parity.md](surface-parity.md) | Draft | Feature-by-surface matrix; Campbell seeds it, Ted Lindsay verifies web parity. |
+| [ui-neutral-card-system.md](ui-neutral-card-system.md) | Implemented | Versioned core-built documents for prognosis, fantasy roster/draft/morning/trade, prospective simulation, and historical replay across JSON/Web/TUI/reference rendering. |
+| [surface-parity.md](surface-parity.md) | Active source of truth | Feature-by-surface matrix, including explicit partials and card renderer parity. |
 | [visual-system.md](visual-system.md) | Implemented | Prince of Wales ASPECT visual contract, semantic tokens, representative TUI/web/CLI fences, and CREST closeout notes. |
 
 ---
@@ -78,13 +82,15 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 
 **TUI**: `tui-v2.md` → `season-timetravel.md` → `scores.md` / `schedule.md` / `playoffs.md` → `tui-admin-overlay.md`
 
+**Cross-surface cards**: `platform-contracts.md` → `viewmodels.md` → `ui-neutral-card-system.md` → `visual-system.md` → `surface-parity.md`
+
 **Live game data**: `scores.md` → `schedule.md` → `transactions.md`
 
 ---
 
 ## Spec Health
 
-Last audit: 2026-05-01
+Last audit: 2026-07-22
 
 | Issue | Action taken |
 |-------|--------------|

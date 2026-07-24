@@ -2,7 +2,8 @@
 
 **Version**: 0.2  
 **Date**: 2026-07-18  
-**Status**: Draft  
+**Status**: Implemented (partial) — draft, daily, morning, roster, trade, and simulation foundations live
+**Owner domain**: fantasy decision support
 **Plan**: [`../plans/2026-07-16-fantasy-draft-daily-assistant.md`](../plans/2026-07-16-fantasy-draft-daily-assistant.md)
 **Expansion roadmap**: [`../plans/2026-07-18-fantasy-war-room-roadmap.md`](../plans/2026-07-18-fantasy-war-room-roadmap.md)
 
@@ -409,6 +410,12 @@ icelines fantasy season-sim --manager-matrix [--trials N] [--json]
 
 All views support deterministic JSON. CLI/TUI/Web renderers consume the shared
 views and do not recompute assignment or recommendation math.
+
+Roster, draft, morning, and trade card projections follow
+[`ui-neutral-card-system.md`](ui-neutral-card-system.md). Those projections
+reuse the active league and feature ViewModels; the card grammar does not gain
+its own eligibility, assignment, waiver, pickup-budget, scoring, or trade
+logic.
 
 ---
 

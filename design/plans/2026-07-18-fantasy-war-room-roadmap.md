@@ -4,6 +4,8 @@
 **Status**: Active  
 **Parent plan**: [`2026-07-16-fantasy-draft-daily-assistant.md`](2026-07-16-fantasy-draft-daily-assistant.md)  
 **Specification**: [`../specs/fantasy-draft-daily-assistant.md`](../specs/fantasy-draft-daily-assistant.md)
+**Archive when**: Waves 14–23 are complete or the remaining work is transferred
+to a named successor roadmap
 
 ## Objective
 
@@ -109,6 +111,20 @@ confirmed starting goalies wait for verified source adapters.
 - Floor strategy cannot be labeled safer unless its modeled loss tail improves.
 
 ## Wave 15 — Playoff Schedule Portfolio
+
+Status: roster portfolio foundation implemented. `fantasy playoff-portfolio`
+derives the final requested Monday-Sunday rounds from the exact season
+schedule, reuses legal daily assignment, and reports round/player/team scheduled
+games, usable starts, quiet-slate starts, bench collisions, projected usable
+value, and rank delta versus completed-season per-game value. The follow-up adds
+an explicit first-round Monday and bounded free-agent candidate fits evaluated
+against every one-for-one drop using whole-roster deltas. Persisted league
+playoff dates now live in the backward-compatible assistant-rules JSON and are
+managed by `fantasy playoff-calendar-set`; downstream draft/pickup/trade score
+integration begins with a capped, separately disclosed draft-board component
+computed from legal daily assignments. Weekly pickups now use the same saved
+calendar for a bounded top-15 candidate/all-legal-drop retention component,
+capped below the current-week objective. Trade integration remains.
 
 ### User workflow
 

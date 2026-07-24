@@ -2,7 +2,8 @@
 
 **Version**: 0.1  
 **Date**: 2026-07-19  
-**Status**: Draft  
+**Status**: Implemented vocabulary baseline
+**Owner domain**: product language and navigation
 
 ---
 
@@ -215,4 +216,3 @@ Apply brand copy without changing behavior:
    as actual news.
 6. Accessibility labels state literal function even when visible copy uses a
    Rink or hockey expression.
-

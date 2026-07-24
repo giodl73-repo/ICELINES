@@ -12,6 +12,11 @@ StatsRepository + Query/Feature Intent -> ViewModel -> Renderer
 
 The goal is surface uniformity without forcing every surface to look the same.
 
+Versioned multi-page decision artifacts use the shared ViewModel rules through
+[`ui-neutral-card-system.md`](ui-neutral-card-system.md). Card builders remain
+in core; CLI, TUI, web, image, and report renderers receive the same serialized
+document and retain the renderer restrictions below.
+
 ---
 
 ## Rules
@@ -436,6 +441,34 @@ Current mutation intent helpers:
 Surfaces may still perform persistence in their local storage layer, but the
 resolved intent/result shape is shared so CLI, TUI, web, and future JSON/admin
 routes do not invent incompatible mutation responses.
+
+---
+
+### `TeamLineupProjectionView`
+
+Owned by IceCast/The Blender and shared by CLI, web, TUI, cards, training camp,
+and season-scenario workflows.
+
+Required:
+
+- stable team, season, player IDs, position eligibility, faces, and IceLines
+  player scores;
+- four forward lines, three defense pairs, two goalies, and explicit extras;
+- assignment evidence distinct from player-score evidence;
+- `special_teams.power_play` containing PP1 and PP2, each with a stable
+  defenseman `quarterback_id` and five `player_ids` when evidence is complete;
+- `special_teams.penalty_kill` containing PK1 and PK2 with four player IDs when
+  evidence is complete;
+- player-level raw prior-season PP/SH seconds-per-game role scores and their
+  evidence label;
+- unit-level GP-confidence-weighted average role scores and warnings for
+  incomplete deployment evidence.
+
+Renderer rule:
+
+Renderers resolve unit player IDs against the lineup player collection. They may
+change layout and density, but must not select a different quarterback, reorder
+unit personnel, fill missing roles, or recompute deployment scores.
 
 ---
 

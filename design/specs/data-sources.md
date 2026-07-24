@@ -30,19 +30,20 @@ and how it feeds into the depth chart engine.
 | 2c — Live Scores | NHL API `/v1/score/now` | Per-game live | 30s while active | In-progress scores, period, time |
 | 2d — Boxscore | NHL API `/v1/gamecenter/{id}/boxscore` | Per-game | Permanent once final | Goals, goalies, key stats |
 | 2e — Playoff Bracket | NHL API `/v1/playoff-bracket/{year}` | Per-series | Daily during playoffs | Bracket, series state, advancement |
-| 3 — Shifts | NHL API `/shiftcharts` candidate | Per-shift, per-game | Parked / locked off | Real line deployment, line partners, zone starts |
+| 3 — Shifts | NHL stats REST `/shiftcharts` | Per-shift, per-game | Historical Blender path; general sync locked off | Exact shared deployment intervals and line partners |
 | 4 — Advanced | NHL Edge / Natural Stat Trick | Per-situation | Daily | Corsi, xG, HDCA, zone entries |
 | 5 — Social | Reddit NHL / Twitter | Per-day | Real-time | Fan sentiment, injury rumors, line news |
 | 6 — Beat Media | RSS / web scrape | Per-article | Real-time | Official line rushes, coach quotes, practice lines |
 
 Tiers 0–2e are **primary** today — they drive rankings, depth charts, live
-screens, and event-backed records. Tier 3 shift data is reserved but not enabled:
-there is no `fetch shifts` command, no bundled historical shift artifacts under
-`data/seasons/`, and the Foster sync capability matrix locks `shifts=off` until
-a source contract and fixtures exist. Tiers 4–6 are **contextual** — they
+screens, and event-backed records. Tier 3 now has a bounded historical path:
+`icecast blender --shift-season` fetches official interval rows for a team's
+completed regular-season games, caches each game, and derives pair/trio shared
+ice. There is still no general `fetch shifts` command or bundled historical
+artifact, so the Foster sync capability matrix remains `shifts=off`. Tiers 4–6 are **contextual** — they
 annotate, not override.
 
-### Tier 3 — Shifts (parked / locked off)
+### Tier 3 — Shifts (bounded historical integration)
 
 `icelines-fetch/src/shift_profile.rs` contains the domain projection for
 linemate summaries from boxscore-shaped inputs, and `icelines mates` can read a
@@ -50,13 +51,21 @@ precomputed `ShiftProfile` from the legacy Positions snapshot tier. That is not
 the same as having a supported data source.
 
 Current truth:
+- `icecast blender --shift-season YYYYyyyy` reads official shift start/end
+  intervals and stores resumable per-game cache files under
+  `<cache_dir>/shiftcharts/<season>/<game_id>.json`;
+- the generated `nhl_shift_overlap.v1` report contains exact player ice time,
+  pair overlap, trio overlap, and games shared;
+- shared deployment is an affinity signal, not proof that a player improves a
+  partner; performance multipliers remain empty without shift-aligned event or
+  xG evidence;
 - no historical shift bundles are shipped;
 - no `icelines fetch shifts` surface is mounted;
-- no live shiftchart tests or fixtures exist;
 - `sync.capabilities.shifts` accepts only `off`.
 
-Until those contracts exist, shift-aware surfaces must present roster-derived
-fallbacks or explicit deferrals rather than instructing users to fetch shifts.
+Until the remaining contracts exist, general shift-aware surfaces must present
+roster-derived fallbacks or explicit deferrals rather than instructing users to
+use the Foster sync layer. The Blender's explicit historical path is supported.
 
 Promotion requirements:
 - verified shiftchart schema fixtures for at least one completed regular-season
