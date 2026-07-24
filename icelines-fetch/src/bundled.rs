@@ -872,23 +872,37 @@ mod tests {
     }
 
     #[test]
-    fn l0_release_current_season_is_head_of_bundles() {
-        assert_eq!(
-            BUNDLED_SEASONS.first().copied(),
-            Some(CURRENT_SEASON_STR),
-            "release rollover requires CURRENT_SEASON_STR to match the newest bundled season"
+    fn l0_release_current_season_is_at_or_one_ahead_of_completed_bundles() {
+        let newest_bundle = BUNDLED_SEASONS
+            .first()
+            .copied()
+            .expect("at least one completed season must be bundled");
+        let current = icelines_core::Season::try_new(
+            CURRENT_SEASON_STR
+                .parse()
+                .expect("current season is numeric"),
+        )
+        .expect("current season is valid");
+        let bundled = icelines_core::Season::try_new(
+            newest_bundle.parse().expect("bundled season is numeric"),
+        )
+        .expect("bundled season is valid");
+        assert!(
+            current.start_year() == bundled.start_year()
+                || current.start_year() == bundled.start_year() + 1,
+            "current roster season must match or immediately follow the newest completed stats bundle"
         );
         assert!(
-            get_bios(CURRENT_SEASON_STR).is_some(),
-            "current season must carry bundled bios for cold-start release smoke"
+            get_bios(newest_bundle).is_some(),
+            "newest completed season must carry bundled bios for cold-start release smoke"
         );
         assert!(
-            get_stats(CURRENT_SEASON_STR).is_some(),
-            "current season must carry bundled stats for cold-start release smoke"
+            get_stats(newest_bundle).is_some(),
+            "newest completed season must carry bundled stats for cold-start release smoke"
         );
         assert!(
-            get_goalie_stats(CURRENT_SEASON_STR).is_some(),
-            "current season must carry bundled goalie stats for cold-start release smoke"
+            get_goalie_stats(newest_bundle).is_some(),
+            "newest completed season must carry bundled goalie stats for cold-start release smoke"
         );
         assert!(
             !BUNDLED_SEASONS.contains(&"20042005"),

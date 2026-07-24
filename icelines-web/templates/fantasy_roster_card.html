@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<article class="team-prognosis-card fantasy-roster-card"
+         style="--team-primary: {{ primary }}; --team-secondary: {{ secondary }}; --team-accent: {{ accent }};">
+    <header class="team-card-hero">
+        <div>
+            <p class="team-card-kicker">{{ kicker }}</p>
+            <h1>{{ title }}</h1>
+            <p>{{ subtitle }}</p>
+        </div>
+        <a class="team-card-json" href="{{ json_href }}">View source JSON</a>
+    </header>
+
+    <nav class="team-card-tabs" aria-label="{{ nav_label }}">
+        <a href="{{ first_href }}" {% if show_first %}aria-current="page"{% endif %}>{{ first_label }}</a>
+        <a href="{{ insider_href }}" {% if !show_first %}aria-current="page"{% endif %}>The Insider</a>
+    </nav>
+
+    <section aria-labelledby="fantasy-card-page">
+        <h2 id="fantasy-card-page">{{ page_title }}</h2>
+        <p class="team-card-deck">{{ page_summary }}</p>
+
+        {% if !lineup_groups.is_empty() %}
+        <div class="team-card-lineup">
+        {% for group in lineup_groups %}
+            <section class="team-card-lineup-group">
+                <h3>{{ group.label }}</h3>
+                <div class="team-card-slots">
+                {% for slot in group.slots %}
+                    <article class="team-card-player-tile">
+                        <span class="team-card-fallback" aria-hidden="true">{{ slot.fallback }}</span>
+                        <span class="team-card-position">{{ slot.label }}</span>
+                        <strong>{{ slot.name }}</strong>
+                        <span class="team-card-score">{{ slot.score }}</span>
+                    </article>
+                {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+        </div>
+        {% endif %}
+
+        {% for group in metric_groups %}
+        <section class="team-card-bridge">
+            <h3>{{ group.title }}</h3>
+            <div class="team-card-metric-grid">
+            {% for metric in group.metrics %}<article><span>{{ metric.label }}</span><strong>{{ metric.value }}</strong></article>{% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+
+        {% for decision in decisions %}
+        <section class="team-card-bridge">
+            <h3>{{ decision.title }}</h3>
+            <p><strong>{{ decision.recommendation }}</strong></p>
+            <ul>{% for reason in decision.rationale %}<li>{{ reason }}</li>{% endfor %}</ul>
+            <div class="team-card-metric-grid">
+            {% for alternative in decision.alternatives %}
+                <article><strong>{{ alternative.label }}</strong><small>{{ alternative.detail }}</small></article>
+            {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+
+        {% for group in player_groups %}
+        <section class="team-card-bridge">
+            <h3>{{ group.title }}</h3>
+            {% for player in group.players %}
+            <article class="team-card-insider-player">
+                <span class="team-card-fallback" aria-hidden="true">{{ player.fallback }}</span>
+                <div><strong>{{ player.name }}</strong>{% if !player.role.is_empty() %}<span>{{ player.role }}</span>{% endif %}</div>
+                <dl>{% for metric in player.metrics %}<div><dt>{{ metric.label }}</dt><dd>{{ metric.value }}</dd></div>{% endfor %}</dl>
+            </article>
+            {% endfor %}
+        </section>
+        {% endfor %}
+
+        {% for group in timeline_groups %}
+        <section class="team-card-bridge">
+            <h3>{{ group.title }}</h3>
+            <div class="team-card-metric-grid">
+            {% for item in group.items %}
+                <article><span>{{ item.effective_at }}</span><strong>{{ item.label }}</strong>{% if !item.detail.is_empty() %}<small>{{ item.detail }}</small>{% endif %}</article>
+            {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+
+        {% if !warnings.is_empty() %}<aside class="team-card-notice"><h3>Evidence warnings</h3><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></aside>{% endif %}
+        {% if !limitations.is_empty() %}<details class="team-card-method"><summary>Methodology and limitations</summary><ul>{% for limitation in limitations %}<li>{{ limitation }}</li>{% endfor %}</ul></details>{% endif %}
+        <p class="team-card-deck">Document fingerprint: <code>{{ fingerprint }}</code></p>
+    </section>
+</article>
+{% endblock %}

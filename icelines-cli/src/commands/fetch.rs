@@ -3,6 +3,7 @@ use crate::cli::{
 };
 use crate::config::Config;
 use anyhow::{anyhow, Context};
+use chrono::Utc;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::stats_catalog::{ReportKind, Tier, TIER1_REPORTS};
 use icelines_fetch::{
@@ -12,7 +13,11 @@ use icelines_fetch::{
     moneypuck,
     nhl_api::NhlApiClient,
     schema::SkaterBio,
-    snapshot::{today_date, SnapshotStore, SnapshotTier},
+    snapshot::{
+        today_date, OfficialNhlRosterCapture, OfficialNhlRosterCaptureManifest, SnapshotStore,
+        SnapshotTier, OFFICIAL_NHL_LIVE_ROSTER_MANIFEST_FILE, OFFICIAL_NHL_LIVE_ROSTER_SCHEMA,
+        OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
+    },
 };
 use sha2::{Digest, Sha256};
 
@@ -702,21 +707,16 @@ async fn do_report(
     Ok(())
 }
 
-const TEAMS: &[&str] = &[
-    "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
-    "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
-    "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
-];
-
 async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<()> {
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let today = today_date();
     let snap = format!("{season}-{today}-rosters");
+    let teams = icelines_fetch::nhl_teams_for_season(season);
 
     if dry_run {
         println!("Would create snapshot: {snap}");
-        for team in TEAMS {
+        for team in &teams {
             println!("  {team}: would fetch {}", roster_url(team, season));
         }
         return Ok(());
@@ -727,7 +727,7 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
         if let Ok(entries) = store.list() {
             if entries
                 .iter()
-                .any(|e| e.name == snap && e.sealed && e.file_count >= TEAMS.len())
+                .any(|e| e.name == snap && e.sealed && e.file_count >= teams.len())
             {
                 println!("Rosters already fetched today (use --refresh to re-fetch).");
                 println!("  Snapshot: {snap}");
@@ -735,7 +735,7 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
             }
             if entries
                 .iter()
-                .any(|e| e.name == snap && e.file_count < TEAMS.len())
+                .any(|e| e.name == snap && e.file_count < teams.len())
             {
                 println!("Roster snapshot is incomplete; resuming from verified cache.");
             }
@@ -745,7 +745,7 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
     let resumed_files: std::collections::HashMap<&str, Vec<u8>> = if refresh {
         std::collections::HashMap::new()
     } else {
-        TEAMS
+        teams
             .iter()
             .filter_map(|team| {
                 let path = store
@@ -758,13 +758,22 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
             .collect()
     };
 
+    let observed_at = Utc::now().to_rfc3339();
     store
-        .create(&snap, season, SnapshotTier::Rosters, None, &today)
+        .create_with_evidence(
+            &snap,
+            season,
+            SnapshotTier::Rosters,
+            None,
+            &today,
+            Some(observed_at.clone()),
+            Some(OFFICIAL_NHL_LIVE_ROSTER_SOURCE.to_owned()),
+        )
         .context("creating roster snapshot")?;
 
     println!("Fetching rosters → snapshot '{snap}'");
     let fletch_cache = fletch_cache_root(&cfg);
-    let requests: Vec<_> = TEAMS
+    let requests: Vec<_> = teams
         .iter()
         .filter(|team| !resumed_files.contains_key(**team))
         .map(|team| {
@@ -779,14 +788,15 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
             .await;
     let fetched_by_id: std::collections::HashMap<_, _> = fetched.into_iter().collect();
     let mut written = 0usize;
-    for team in TEAMS {
+    for team in &teams {
         let fletch_id = icelines_fetch::fletch::roster_dataset_id(team, season);
         let roster_bytes = match resumed_files.get(team) {
             Some(bytes) => bytes.clone(),
             None => match fetched_by_id.get(&fletch_id) {
                 Some(Ok(bytes)) => bytes.clone(),
                 Some(Err(e)) => {
-                    // Skip teams that didn't exist in this season (e.g. UTA before 2024-25)
+                    // Preserve an explicit partial failure if an expected
+                    // season member cannot be fetched.
                     println!("  {team}: skipped ({e:#})");
                     continue;
                 }
@@ -812,12 +822,33 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
         println!("  {team}: {count} players");
     }
 
-    if written != TEAMS.len() {
+    if written != teams.len() {
         anyhow::bail!(
             "roster snapshot incomplete: wrote {written}/{} teams; retry without --refresh to resume",
-            TEAMS.len()
+            teams.len()
         );
     }
+    let source_manifest = OfficialNhlRosterCaptureManifest {
+        schema: OFFICIAL_NHL_LIVE_ROSTER_SCHEMA.to_owned(),
+        season: season.to_owned(),
+        observed_at,
+        captures: teams
+            .iter()
+            .map(|team| OfficialNhlRosterCapture {
+                team: (*team).to_owned(),
+                source_url: roster_url(team, season),
+            })
+            .collect(),
+    };
+    store
+        .write_file(
+            &snap,
+            &SnapshotTier::Rosters,
+            OFFICIAL_NHL_LIVE_ROSTER_MANIFEST_FILE,
+            &serde_json::to_vec_pretty(&source_manifest)
+                .context("serializing official roster source manifest")?,
+        )
+        .context("writing official roster source manifest")?;
     store.seal(&snap).context("sealing roster snapshot")?;
     println!("Snapshot '{snap}' sealed and set as active.");
     Ok(())
@@ -1390,7 +1421,7 @@ async fn do_contracts(
 
     if let Some(upper_limit) = cap_limit {
         let mut roster_players = Vec::new();
-        for team in TEAMS {
+        for team in icelines_fetch::nhl_teams_for_season(season) {
             let roster: icelines_fetch::schema::RosterResponse = match store
                 .read_tier_file_any_for_season(
                     &SnapshotTier::Rosters,
@@ -1406,7 +1437,7 @@ async fn do_contracts(
                     .iter()
                     .chain(&roster.defensemen)
                     .chain(&roster.goalies)
-                    .map(|player| ((*team).to_owned(), player.id)),
+                    .map(|player| (team.to_owned(), player.id)),
             );
         }
         if roster_players.is_empty() {

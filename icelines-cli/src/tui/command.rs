@@ -67,6 +67,10 @@ pub enum Command {
     FantasySimKv {
         args: FantasySimulationCommandArgs,
     },
+    /// `team-card [NYR|SEA|DEX|DRAFT|MORNING|TRADE]` - open a shared UI-neutral card document.
+    TeamCard {
+        team: String,
+    },
     /// `fantasy daily date=YYYY-MM-DD` — hand off to the daily delta read surfaces.
     FantasyDaily {
         date: String,
@@ -492,6 +496,103 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         "simulate" | "sim" | "fantasy-sim" => Ok(Command::FantasySimKv {
             args: parse_fantasy_sim_kv(args)?,
         }),
+        "draft-card" if args.trim().is_empty() => Ok(Command::TeamCard {
+            team: "DRAFT".to_string(),
+        }),
+        "morning-card" if args.trim().is_empty() => Ok(Command::TeamCard {
+            team: "MORNING".to_string(),
+        }),
+        "trade-card" if args.trim().is_empty() => Ok(Command::TeamCard {
+            team: "TRADE".to_string(),
+        }),
+        "season-card" | "season-sim-card" if args.trim().is_empty() => Ok(Command::TeamCard {
+            team: "SIM-NYR".to_string(),
+        }),
+        "season-card" | "season-sim-card" => {
+            let team = args.trim().to_ascii_uppercase();
+            if !matches!(team.as_str(), "NYR" | "SEA") {
+                return Err(ParseError::BadFilter {
+                    details: format!("season-card supports NYR or SEA, got '{team}'"),
+                });
+            }
+            Ok(Command::TeamCard {
+                team: format!("SIM-{team}"),
+            })
+        }
+        "replay-card" if args.trim().is_empty() => Ok(Command::TeamCard {
+            team: "REPLAY-NYR".to_string(),
+        }),
+        "replay-card" => {
+            let team = args.trim().to_ascii_uppercase();
+            if !matches!(team.as_str(), "NYR" | "SEA") {
+                return Err(ParseError::BadFilter {
+                    details: format!("replay-card supports NYR or SEA, got '{team}'"),
+                });
+            }
+            Ok(Command::TeamCard {
+                team: format!("REPLAY-{team}"),
+            })
+        }
+        "movement-card" if args.trim().is_empty() => Ok(Command::TeamCard {
+            team: "MOVE-NYR".to_string(),
+        }),
+        "movement-card" => {
+            let team = args.trim().to_ascii_uppercase();
+            if !matches!(team.as_str(), "NYR" | "SEA") {
+                return Err(ParseError::BadFilter {
+                    details: format!("movement-card supports NYR or SEA, got '{team}'"),
+                });
+            }
+            Ok(Command::TeamCard {
+                team: format!("MOVE-{team}"),
+            })
+        }
+        "history-card" if args.trim().is_empty() => Ok(Command::TeamCard {
+            team: "HISTORY-NYR".to_string(),
+        }),
+        "history-card" => {
+            let team = args.trim().to_ascii_uppercase();
+            if !matches!(team.as_str(), "NYR" | "SEA") {
+                return Err(ParseError::BadFilter {
+                    details: format!("history-card supports NYR or SEA, got '{team}'"),
+                });
+            }
+            Ok(Command::TeamCard {
+                team: format!("HISTORY-{team}"),
+            })
+        }
+        "team-card" | "icecast-card" => {
+            let team = if args.trim().is_empty() {
+                "NYR"
+            } else {
+                args.trim()
+            }
+            .to_ascii_uppercase();
+            if !matches!(
+                team.as_str(),
+                "NYR"
+                    | "SEA"
+                    | "SIM-NYR"
+                    | "SIM-SEA"
+                    | "REPLAY-NYR"
+                    | "REPLAY-SEA"
+                    | "MOVE-NYR"
+                    | "MOVE-SEA"
+                    | "HISTORY-NYR"
+                    | "HISTORY-SEA"
+                    | "DEX"
+                    | "DRAFT"
+                    | "MORNING"
+                    | "TRADE"
+            ) {
+                return Err(ParseError::BadFilter {
+                    details: format!(
+                        "team-card supports NYR, SEA, SIM-NYR, SIM-SEA, REPLAY-NYR, REPLAY-SEA, MOVE-NYR, MOVE-SEA, HISTORY-NYR, HISTORY-SEA, DEX, DRAFT, MORNING, or TRADE, got '{team}'"
+                    ),
+                });
+            }
+            Ok(Command::TeamCard { team })
+        }
         "daily" | "fantasy-daily" => Ok(Command::FantasyDaily {
             date: parse_daily_date(args)?,
         }),
@@ -1525,6 +1626,17 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             ExecResult::Continue
         }
         Command::FantasySimKv { args } => exec_fantasy_sim_kv(app, args),
+        Command::TeamCard { team } => {
+            app.selected = 0;
+            set_workspace_screen(
+                app,
+                Screen::TeamCard {
+                    team,
+                    compare: false,
+                },
+            );
+            ExecResult::Continue
+        }
         Command::FantasyDaily { date } => ExecResult::Flash(format!(
             "daily fantasy delta: run `icelines fantasy daily --date {date}` or open `/api/v1/fantasy/daily?date={date}`"
         )),

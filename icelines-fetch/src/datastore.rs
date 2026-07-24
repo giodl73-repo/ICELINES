@@ -997,6 +997,8 @@ mod tests {
                 tier: SnapshotTier::Stats,
                 date: "2026-01-01".into(),
                 created_at: "2026-01-01T00:00:00Z".into(),
+                evidence_at: None,
+                evidence_source: None,
                 parent_key: None,
                 file_count: 1,
                 sealed: true,
@@ -1077,6 +1079,8 @@ mod tests {
                 tier: SnapshotTier::Stats,
                 date: "2026-01-01".into(),
                 created_at: "2026-01-01T00:00:00Z".into(),
+                evidence_at: None,
+                evidence_source: None,
                 parent_key: None,
                 file_count: 1,
                 sealed: false, // <-- unsealed; shim must skip

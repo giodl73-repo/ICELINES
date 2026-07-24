@@ -17,6 +17,24 @@ use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize, Serializ
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
+pub const OFFICIAL_NHL_LIVE_ROSTER_SOURCE: &str = "official_nhl_api_live";
+pub const OFFICIAL_NHL_LIVE_ROSTER_SCHEMA: &str = "icelines.official_roster_capture.v1";
+pub const OFFICIAL_NHL_LIVE_ROSTER_MANIFEST_FILE: &str = "_official-roster-capture.json";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OfficialNhlRosterCapture {
+    pub team: String,
+    pub source_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OfficialNhlRosterCaptureManifest {
+    pub schema: String,
+    pub season: String,
+    pub observed_at: String,
+    pub captures: Vec<OfficialNhlRosterCapture>,
+}
+
 // ── Errors ────────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Error)]
@@ -85,8 +103,14 @@ pub struct SnapshotEntry {
     pub name: String,
     pub season: String,
     pub tier: SnapshotTier,
-    pub date: String,               // YYYY-MM-DD
-    pub created_at: String,         // RFC3339
+    pub date: String,       // YYYY-MM-DD
+    pub created_at: String, // RFC3339
+    /// Upstream observation time when a trusted archive was imported later.
+    #[serde(default)]
+    pub evidence_at: Option<String>,
+    /// Bounded provenance class for the upstream observation.
+    #[serde(default)]
+    pub evidence_source: Option<String>,
     pub parent_key: Option<String>, // name of parent snapshot (tier chain)
     pub file_count: usize,
     pub sealed: bool,
@@ -456,9 +480,32 @@ impl SnapshotStore {
         parent_key: Option<String>,
         date: &str,
     ) -> Result<(), SnapshotError> {
+        self.create_with_evidence(name, season, tier, parent_key, date, None, None)
+    }
+
+    /// Create a snapshot whose upstream evidence predates local ingestion.
+    /// The caller is responsible for validating the evidence timestamp and
+    /// source before using this lower-level storage operation.
+    pub fn create_with_evidence(
+        &self,
+        name: &str,
+        season: &str,
+        tier: SnapshotTier,
+        parent_key: Option<String>,
+        date: &str,
+        evidence_at: Option<String>,
+        evidence_source: Option<String>,
+    ) -> Result<(), SnapshotError> {
         let dir = self.snapshot_dir(name);
         std::fs::create_dir_all(dir.join(tier.dir_name()))?;
 
+        let mut metadata = HashMap::new();
+        if let Some(value) = &evidence_at {
+            metadata.insert("evidence_at".to_owned(), value.clone());
+        }
+        if let Some(value) = &evidence_source {
+            metadata.insert("evidence_source".to_owned(), value.clone());
+        }
         let meta = SnapshotMeta {
             name: name.to_owned(),
             season: season.to_owned(),
@@ -466,7 +513,7 @@ impl SnapshotStore {
             created_at: now_rfc3339(),
             parent_key,
             integrity: HashMap::new(),
-            metadata: HashMap::new(),
+            metadata,
             sealed: false,
         };
         self.write_meta(name, &meta)?;
@@ -482,6 +529,8 @@ impl SnapshotStore {
             tier: meta.tier.clone(),
             date: date.to_owned(),
             created_at: meta.created_at.clone(),
+            evidence_at,
+            evidence_source,
             parent_key: meta.parent_key.clone(),
             file_count: 0,
             sealed: false,

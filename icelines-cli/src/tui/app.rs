@@ -143,6 +143,11 @@ pub enum QueryMode {
 pub enum Screen {
     Home,
     Team(String), // team abbreviation
+    /// UI-neutral IceCast prognosis card; `selected` is the zero-based page.
+    TeamCard {
+        team: String,
+        compare: bool,
+    },
     /// PlayerId-keyed player card. D6 auto-pop UX: renderer shows a
     /// placeholder if pid isn't in the active window.
     PlayerById(PlayerId),
@@ -370,6 +375,15 @@ fn mdi_focus_label(focus: crate::tui::mdi::MdiFocus) -> &'static str {
 
 impl App {
     pub fn new(no_color: bool) -> Self {
+        // The roster/schedule season can advance before a completed stats
+        // bundle exists. Start analytical screens on the newest real bundle
+        // so a cold-start TUI remains populated across that rollover.
+        let default_stats_season_id = icelines_fetch::BUNDLED_SEASONS[0];
+        let default_stats_season = Season(
+            default_stats_season_id
+                .parse()
+                .expect("bundled season IDs are validated constants"),
+        );
         Self {
             screen: Screen::Home,
             prev_screen: None,
@@ -392,7 +406,7 @@ impl App {
             queries: crate::tui::screens::queries::QueriesState::default(),
             depth_mode: icelines_core::cross_team::ScoringMode::Fantasy,
             show_admin: false,
-            active_season: icelines_core::CURRENT_SEASON_STR.to_owned(),
+            active_season: default_stats_season_id.to_owned(),
             show_season_picker: false,
             picker_selected: 0,
             show_reports_overlay: false,
@@ -427,7 +441,7 @@ impl App {
             player_records: Default::default(),
             player_streaks: Default::default(),
 
-            // Empty repo + current season as the initial typed window.
+            // Empty repo + newest completed stats season as the initial window.
             depth_filters: crate::tui::filter_state::RosterFilterState::default(),
             // `App::boot_load` populates the repo synchronously before
             // the event loop starts.
@@ -439,9 +453,9 @@ impl App {
             // cost is bounded by full active-season windows the user
             // navigates to (which is the same shape pre-UX.1).
             repo: StatsRepository::with_lru_cap(80),
-            active_season_typed: Season(icelines_core::CURRENT_SEASON),
+            active_season_typed: default_stats_season,
             active_type: SeasonType::Regular,
-            league_context_window: (Season(icelines_core::CURRENT_SEASON), SeasonType::Regular),
+            league_context_window: (default_stats_season, SeasonType::Regular),
             locked_screen: None,
             mdi: None,
         }
@@ -1284,6 +1298,55 @@ impl App {
                             "Career preset: {}  ·  [/]: cycle  ·  c: comps",
                             self.queries.career_table_preset.label(),
                         );
+                    }
+                } else if matches!(self.screen, Screen::TeamCard { .. }) && c == 'p' {
+                    self.selected = (self.selected + 1) % 2;
+                    self.status = format!("IceCast card page {} of 2", self.selected + 1);
+                } else if matches!(self.screen, Screen::TeamCard { .. }) && c == 't' {
+                    if let Screen::TeamCard { team, .. } = &mut self.screen {
+                        if matches!(
+                            team.to_ascii_uppercase().as_str(),
+                            "DEX" | "DRAFT" | "MORNING" | "TRADE"
+                        ) {
+                            self.status = "Fantasy card has no NHL team toggle".to_string();
+                        } else {
+                            let upper = team.to_ascii_uppercase();
+                            let prefix = if upper.starts_with("REPLAY-") {
+                                "REPLAY-"
+                            } else if upper.starts_with("SIM-") {
+                                "SIM-"
+                            } else if upper.starts_with("MOVE-") {
+                                "MOVE-"
+                            } else if upper.starts_with("HISTORY-") {
+                                "HISTORY-"
+                            } else {
+                                ""
+                            };
+                            let sea = upper == "SEA" || upper.ends_with("-SEA");
+                            *team = if sea {
+                                format!("{prefix}NYR")
+                            } else {
+                                format!("{prefix}SEA")
+                            };
+                            self.status = format!("IceCast card team: {team}");
+                        }
+                    }
+                } else if matches!(self.screen, Screen::TeamCard { .. }) && c == 'c' {
+                    if let Screen::TeamCard { team, compare } = &mut self.screen {
+                        if matches!(
+                            team.to_ascii_uppercase().as_str(),
+                            "DEX" | "DRAFT" | "MORNING" | "TRADE"
+                        ) {
+                            *compare = false;
+                            self.status = "Fantasy card comparison is not available".to_string();
+                        } else {
+                            *compare = !*compare;
+                            self.status = if *compare {
+                                "IceCast comparison: NYR vs SEA".to_string()
+                            } else {
+                                "IceCast comparison closed".to_string()
+                            };
+                        }
                     }
                 } else if matches!(self.screen, Screen::Depth | Screen::DepthTeam(_)) && c == 's' {
                     self.depth_mode = self.depth_mode.toggle();
@@ -4387,12 +4450,14 @@ mod tests {
         }
     }
 
-    fn seed_bracket(app: &mut App, year: u16, rounds: Vec<PlayoffRound>) {
+    fn seed_bracket(app: &mut App, _year: u16, rounds: Vec<PlayoffRound>) {
         let bracket = PlayoffBracket {
             season: app.active_season.clone(),
             current_round: None,
             rounds,
         };
+        let year = crate::tui::playoffs::playoff_year_for_season(&app.active_season)
+            .expect("fixture season has a playoff year");
         app.playoffs
             .cache
             .lock()

@@ -1,0 +1,38 @@
+{
+  "name": "Rangers and Kraken stress test",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "nyr-top-line-injury",
+      "kind": "injury",
+      "team": "NYR",
+      "player": "Example top-line forward",
+      "effective_date": "2026-11-02",
+      "end_date": "2026-11-23",
+      "strength_delta": -7.0,
+      "occurrence_probability": 0.25,
+      "label": "top-line injury scenario"
+    },
+    {
+      "id": "sea-backup-start",
+      "kind": "goalie",
+      "team": "SEA",
+      "player": "Example starting goalie",
+      "effective_date": "2027-01-16",
+      "end_date": "2027-01-16",
+      "strength_delta": -4.0,
+      "occurrence_probability": 0.5,
+      "label": "uncertain backup goalie start"
+    },
+    {
+      "id": "sea-deadline-addition",
+      "kind": "trade",
+      "team": "SEA",
+      "player": "Example deadline acquisition",
+      "effective_date": "2027-03-05",
+      "strength_delta": 5.0,
+      "occurrence_probability": 0.35,
+      "label": "hypothetical deadline acquisition"
+    }
+  ]
+}

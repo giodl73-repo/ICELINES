@@ -1,0 +1,28 @@
+{
+  "name": "Rangers and Kraken injury downside",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "nyr-shesterkin-hardest-window",
+      "kind": "injury",
+      "team": "NYR",
+      "player": "Igor Shesterkin",
+      "effective_date": "2027-02-20",
+      "end_date": "2027-03-02",
+      "strength_delta": -8.0,
+      "occurrence_probability": 1.0,
+      "label": "stress test: Shesterkin unavailable through New York's hardest five-game window"
+    },
+    {
+      "id": "sea-daccord-hardest-trip",
+      "kind": "injury",
+      "team": "SEA",
+      "player": "Joey Daccord",
+      "effective_date": "2026-10-09",
+      "end_date": "2026-10-18",
+      "strength_delta": -7.0,
+      "occurrence_probability": 1.0,
+      "label": "stress test: Daccord unavailable through Seattle's hardest five-game road trip"
+    }
+  ]
+}

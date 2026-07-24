@@ -1,0 +1,953 @@
+{
+  "schema": "card_document.v1",
+  "card_kind": "fantasy_roster",
+  "document_id": "fantasy-roster:dexters-dawgs-league:dexters-dawgs:2026-10-05",
+  "fingerprint": "e70615fcec1828c1420e28e4b4f76f066c3bf5739b0bfc3aebef2540b8664f16",
+  "title": "Dexter's Dawgs — fantasy roster",
+  "subtitle": "Dexter's 2026-27 League · Dexter's Dawgs league scoring · 2026-10-05",
+  "context": {
+    "view": {
+      "window": {
+        "season": 20262027,
+        "season_type": "regular"
+      },
+      "generated_at": "2026-10-05T14:00:00Z",
+      "source_state": [],
+      "completeness": "complete",
+      "data_generation": null
+    },
+    "evidence_at": "2026-10-05T14:00:00Z",
+    "evidence_label": "estimated",
+    "builder_version": "fantasy_roster_card.v1",
+    "methodology_versions": {
+      "assistant_rules": "fantasy_assistant_rules.v1",
+      "lineup_assignment": "fantasy_daily_lineup.v1",
+      "schedule_classes": "fantasy_schedule.v1"
+    },
+    "joins": {
+      "league_id": "dexters-dawgs-league",
+      "roster_snapshot_id": "historical-workbook-names-fixture-v1",
+      "calendar_fingerprint": "bbf04fe13ec3a4af192a95019cc0d4f842c230e5c5fc55d089e6329efb92bd82",
+      "scoring_scheme_id": "dexters-dawgs",
+      "scenario_id": null,
+      "team_ids": [
+        "dexters-dawgs"
+      ],
+      "player_ids": [
+        "alex-lyon",
+        "alexander-romanov",
+        "ben-meyers",
+        "boone-jenner",
+        "drake-batherson",
+        "elias-lindholm",
+        "emmitt-finnie",
+        "igor-shesterkin",
+        "justin-brazeau",
+        "juuse-saros",
+        "kyle-palmieri",
+        "luke-hughes",
+        "mackie-samoskevich",
+        "macklin-celebrini",
+        "nathan-mackinnon",
+        "nikita-zadorov",
+        "noah-hanifin",
+        "spencer-knight",
+        "vince-dunn",
+        "wyatt-johnston"
+      ],
+      "game_ids": []
+    },
+    "simulation": {
+      "model_id": null,
+      "model_version": null,
+      "parameter_fingerprint": null,
+      "seed": null,
+      "trials": null
+    }
+  },
+  "theme": {
+    "theme_key": "fantasy-roster",
+    "primary": "#12355B",
+    "secondary": "#DCEAF5",
+    "accent": "#2A9D8F",
+    "surface": "#FFFFFF",
+    "text": "#102A43",
+    "team_abbreviation": null,
+    "ascii_identity": "Dexter's Dawgs",
+    "minimum_text_contrast_x100": 450
+  },
+  "required_capabilities": [],
+  "pages": [
+    {
+      "id": "roster",
+      "literal_label": "Legal daily roster",
+      "display_label": "The Lineup",
+      "order": 1,
+      "accessible_summary": "Legal active, bench, IR, and IR+ assignments for Dexter's Dawgs.",
+      "sections": [
+        {
+          "section_type": "identity_header",
+          "id": "fantasy-team-identity",
+          "eyebrow": "Dexter's 2026-27 League",
+          "title": "Dexter's Dawgs",
+          "subtitle": "Daily legal roster",
+          "identities": [
+            {
+              "kind": "team",
+              "subject_id": "fantasy-team:dexters-dawgs",
+              "label": "Dexter's Dawgs",
+              "asset_id": null
+            }
+          ]
+        },
+        {
+          "section_type": "lineup",
+          "id": "fantasy-daily-lineup",
+          "title": "Active slots, bench, and injury reserve",
+          "groups": [
+            {
+              "id": "active-slots",
+              "label": "Active",
+              "kind": "active_slots",
+              "slots": [
+                {
+                  "id": "active:c1",
+                  "label": "C1 · COL · C",
+                  "subject_id": "player:nathan-mackinnon",
+                  "subject_label": "Nathan MacKinnon",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 7.88
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "7.88",
+                      "accessible_text": "Projected value 7.88",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:c2",
+                  "label": "C2 · SJS · C",
+                  "subject_id": "player:macklin-celebrini",
+                  "subject_label": "Macklin Celebrini",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 7.1
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "7.10",
+                      "accessible_text": "Projected value 7.10",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:d1",
+                  "label": "D1 · SEA · D",
+                  "subject_id": "player:vince-dunn",
+                  "subject_label": "Vince Dunn",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 5.9
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "5.90",
+                      "accessible_text": "Projected value 5.90",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:d2",
+                  "label": "D2 · NJD · D",
+                  "subject_id": "player:luke-hughes",
+                  "subject_label": "Luke Hughes",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 5.75
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "5.75",
+                      "accessible_text": "Projected value 5.75",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:d3",
+                  "label": "D3 · BOS · D",
+                  "subject_id": "player:nikita-zadorov",
+                  "subject_label": "Nikita Zadorov",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 5.2
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "5.20",
+                      "accessible_text": "Projected value 5.20",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:g1",
+                  "label": "G1 · NSH · G",
+                  "subject_id": "player:juuse-saros",
+                  "subject_label": "Juuse Saros",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 6.9
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "6.90",
+                      "accessible_text": "Projected value 6.90",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:g2",
+                  "label": "G2 · NYR · G",
+                  "subject_id": "player:igor-shesterkin",
+                  "subject_label": "Igor Shesterkin",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 6.55
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "6.55",
+                      "accessible_text": "Projected value 6.55",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:lw1",
+                  "label": "LW1 · OTT · LW/RW",
+                  "subject_id": "player:drake-batherson",
+                  "subject_label": "Drake Batherson",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 6.13
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "6.13",
+                      "accessible_text": "Projected value 6.13",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:lw2",
+                  "label": "LW2 · DET · LW",
+                  "subject_id": "player:emmitt-finnie",
+                  "subject_label": "Emmitt Finnie",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 5.85
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "5.85",
+                      "accessible_text": "Projected value 5.85",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:rw1",
+                  "label": "RW1 · DAL · C/RW",
+                  "subject_id": "player:wyatt-johnston",
+                  "subject_label": "Wyatt Johnston",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 6.4
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "6.40",
+                      "accessible_text": "Projected value 6.40",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:rw2",
+                  "label": "RW2 · FLA · RW",
+                  "subject_id": "player:mackie-samoskevich",
+                  "subject_label": "Mackie Samoskevich",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 5.4
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "5.40",
+                      "accessible_text": "Projected value 5.40",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "active:util1",
+                  "label": "UTIL1 · VGK · D",
+                  "subject_id": "player:noah-hanifin",
+                  "subject_label": "Noah Hanifin",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 5.05
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "5.05",
+                      "accessible_text": "Projected value 5.05",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            },
+            {
+              "id": "bench",
+              "label": "Bench",
+              "kind": "bench",
+              "slots": [
+                {
+                  "id": "bench:1",
+                  "label": "BN1 · NYI · RW",
+                  "subject_id": "player:kyle-palmieri",
+                  "subject_label": "Kyle Palmieri",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 4.95
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "4.95",
+                      "accessible_text": "Projected value 4.95",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "bench:2",
+                  "label": "BN2 · NYI · D",
+                  "subject_id": "player:alexander-romanov",
+                  "subject_label": "Alexander Romanov",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 4.85
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "4.85",
+                      "accessible_text": "Projected value 4.85",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "bench:3",
+                  "label": "BN3 · CHI · G",
+                  "subject_id": "player:spencer-knight",
+                  "subject_label": "Spencer Knight",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 4.7
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "4.70",
+                      "accessible_text": "Projected value 4.70",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "bench:4",
+                  "label": "BN4 · BUF · G",
+                  "subject_id": "player:alex-lyon",
+                  "subject_label": "Alex Lyon",
+                  "asset_id": null,
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "projected_value",
+                        "label": "Projected value",
+                        "value": {
+                          "decimal": 4.45
+                        },
+                        "unit": "per_game",
+                        "precision": "two_decimals",
+                        "token": null
+                      },
+                      "display_text": "4.45",
+                      "accessible_text": "Projected value 4.45",
+                      "comparison": null,
+                      "evidence_label": "estimated"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            },
+            {
+              "id": "injured-reserve",
+              "label": "IR",
+              "kind": "injured_reserve",
+              "slots": [
+                {
+                  "id": "injured-reserve:1",
+                  "label": "IR1",
+                  "subject_id": "player:boone-jenner",
+                  "subject_label": "Boone Jenner",
+                  "asset_id": null,
+                  "metrics": [],
+                  "evidence_label": "reported"
+                },
+                {
+                  "id": "injured-reserve:2",
+                  "label": "IR2",
+                  "subject_id": "player:elias-lindholm",
+                  "subject_label": "Elias Lindholm",
+                  "asset_id": null,
+                  "metrics": [],
+                  "evidence_label": "reported"
+                }
+              ]
+            },
+            {
+              "id": "injured-reserve-plus",
+              "label": "IR+",
+              "kind": "injured_reserve",
+              "slots": [
+                {
+                  "id": "injured-reserve-plus:1",
+                  "label": "IR+1",
+                  "subject_id": "player:ben-meyers",
+                  "subject_label": "Ben Meyers",
+                  "asset_id": null,
+                  "metrics": [],
+                  "evidence_label": "reported"
+                },
+                {
+                  "id": "injured-reserve-plus:2",
+                  "label": "IR+2",
+                  "subject_id": "player:justin-brazeau",
+                  "subject_label": "Justin Brazeau",
+                  "asset_id": null,
+                  "metrics": [],
+                  "evidence_label": "reported"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "roster-insider",
+      "literal_label": "Roster rules and schedule fit",
+      "display_label": "The Insider",
+      "order": 2,
+      "accessible_summary": "League rules, usable starts, move budget, waiver timing, and schedule classes.",
+      "sections": [
+        {
+          "section_type": "metric_strip",
+          "id": "roster-rules",
+          "title": "League roster and transaction rules",
+          "metrics": [
+            {
+              "metric": {
+                "key": "active_slots",
+                "label": "Active slots",
+                "value": {
+                  "integer": 12
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "12",
+              "accessible_text": "Active slots 12",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "bench_slots",
+                "label": "Bench",
+                "value": {
+                  "integer": 4
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "4",
+              "accessible_text": "Bench 4",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "ir_slots",
+                "label": "IR",
+                "value": {
+                  "integer": 2
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "2",
+              "accessible_text": "IR 2",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "ir_plus_slots",
+                "label": "IR+",
+                "value": {
+                  "integer": 2
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "2",
+              "accessible_text": "IR+ 2",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "weekly_acquisition_limit",
+                "label": "Weekly pickups",
+                "value": {
+                  "integer": 4
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "4",
+              "accessible_text": "Weekly pickups 4",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "acquisitions_remaining",
+                "label": "Pickups remaining",
+                "value": {
+                  "integer": 2
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "2",
+              "accessible_text": "Pickups remaining 2",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "waiver_days",
+                "label": "Dropped-player waivers",
+                "value": {
+                  "integer": 2
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "2",
+              "accessible_text": "Dropped-player waivers 2",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "free_agent_activation",
+                "label": "Free-agent activation",
+                "value": {
+                  "text": "Same day"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "Same day",
+              "accessible_text": "Free-agent activation Same day",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "daily-projection",
+          "title": "Today's legal lineup",
+          "metrics": [
+            {
+              "metric": {
+                "key": "usable_starts",
+                "label": "Usable starts",
+                "value": {
+                  "integer": 12
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "12",
+              "accessible_text": "Usable starts 12",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "projected_active_value",
+                "label": "Projected active value",
+                "value": {
+                  "decimal": 74.11
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "74.11",
+              "accessible_text": "Projected active value 74.11",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "missing_active_slots",
+                "label": "Open active slots",
+                "value": {
+                  "integer": 0
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "0",
+              "accessible_text": "Open active slots 0",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "overflow_players",
+                "label": "Roster overflow",
+                "value": {
+                  "integer": 0
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "0",
+              "accessible_text": "Roster overflow 0",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            }
+          ]
+        },
+        {
+          "section_type": "decision",
+          "id": "schedule-equivalence",
+          "title": "Schedule spread",
+          "recommendation": "Best calendar complement: WSH (Class 8)",
+          "rationale": [
+            "8 schedule classes across 1344 regular-season games.",
+            "Current roster utilization: 84.6% across 182 distinct dates."
+          ],
+          "alternatives": [
+            {
+              "id": "schedule-class-1",
+              "label": "Class 1: BOS, COL, DET, NYR",
+              "detail": "47.5% average within-class overlap"
+            },
+            {
+              "id": "schedule-class-2",
+              "label": "Class 2: ANA, MIN, SEA, VAN",
+              "detail": "43.2% average within-class overlap"
+            },
+            {
+              "id": "schedule-class-3",
+              "label": "Class 3: BUF, DAL, FLA, VGK",
+              "detail": "45.1% average within-class overlap"
+            },
+            {
+              "id": "schedule-class-4",
+              "label": "Class 4: CBJ, EDM, NJD, OTT",
+              "detail": "44.4% average within-class overlap"
+            },
+            {
+              "id": "schedule-class-5",
+              "label": "Class 5: CAR, CHI, NSH, SJS",
+              "detail": "42.8% average within-class overlap"
+            },
+            {
+              "id": "schedule-class-6",
+              "label": "Class 6: CGY, LAK, NYI, TOR",
+              "detail": "46.0% average within-class overlap"
+            },
+            {
+              "id": "schedule-class-7",
+              "label": "Class 7: MTL, PHI, PIT, UTA",
+              "detail": "41.9% average within-class overlap"
+            },
+            {
+              "id": "schedule-class-8",
+              "label": "Class 8: STL, TBL, WPG, WSH",
+              "detail": "40.7% average within-class overlap"
+            }
+          ],
+          "action_id": null,
+          "token": "schedule_edge",
+          "evidence_label": "confirmed"
+        },
+        {
+          "section_type": "state_notice",
+          "id": "roster-warnings",
+          "title": "Availability and roster warnings",
+          "detail": "Warnings remain attached to the sealed roster decision document.",
+          "empty_state": null,
+          "warnings": [
+            {
+              "kind": "partial_source",
+              "source": "fantasy_import",
+              "message": "Historical roster names were read from the user's 2025 workbook; fixture statuses and projected values are deterministic examples, not current claims.",
+              "recovery": []
+            },
+            {
+              "kind": "partial_source",
+              "source": "fantasy_import",
+              "message": "Refresh platform injuries, locks, eligibility, and free-agent state before acting.",
+              "recovery": []
+            }
+          ],
+          "token": "warning"
+        },
+        {
+          "section_type": "methodology",
+          "id": "fantasy-roster-methodology",
+          "title": "Methodology",
+          "methods": [
+            {
+              "key": "legal-lineup",
+              "label": "Daily assignment",
+              "version": "fantasy_daily_lineup.v1",
+              "summary": "Position eligibility, locks, availability, bench, IR, and IR+ are resolved in IceLines core before rendering."
+            },
+            {
+              "key": "schedule-fit",
+              "label": "Schedule equivalence classes",
+              "version": "fantasy_schedule.v1",
+              "summary": "Exact NHL game-date overlap groups teams so roster construction can spread usable starts across the week."
+            }
+          ],
+          "limitations": [
+            "The card is advisory and does not mutate the fantasy platform.",
+            "Free-agent and waiver timing reflects persisted league rules; platform state still controls execution."
+          ]
+        },
+        {
+          "section_type": "provenance",
+          "id": "fantasy-roster-sources",
+          "title": "Source authority",
+          "provenance_ids": [
+            "fantasy-lineup",
+            "fantasy-schedule"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "provenance": [
+    {
+      "id": "fantasy-lineup",
+      "source": "fantasy_import",
+      "label": "Persisted roster, eligibility, status, and assistant rules",
+      "state": "complete",
+      "observed_at": "2026-10-05T14:00:00Z",
+      "fingerprint": "499794d06f574c64d73d47b4cc6373aa37683fc5e1ba7ff51d0133f52e4f8b63",
+      "note": "Legal lineup for 2026-10-05"
+    },
+    {
+      "id": "fantasy-schedule",
+      "source": "schedule",
+      "label": "NHL schedule and equivalence classes",
+      "state": "complete",
+      "observed_at": "2026-10-05T14:00:00Z",
+      "fingerprint": "bbf04fe13ec3a4af192a95019cc0d4f842c230e5c5fc55d089e6329efb92bd82",
+      "note": "Calendar fit only; player quality is scored separately."
+    }
+  ],
+  "warnings": [
+    {
+      "kind": "partial_source",
+      "source": "fantasy_import",
+      "message": "Historical roster names were read from the user's 2025 workbook; fixture statuses and projected values are deterministic examples, not current claims.",
+      "recovery": []
+    },
+    {
+      "kind": "partial_source",
+      "source": "fantasy_import",
+      "message": "Refresh platform injuries, locks, eligibility, and free-agent state before acting.",
+      "recovery": []
+    }
+  ],
+  "empty_state": null
+}

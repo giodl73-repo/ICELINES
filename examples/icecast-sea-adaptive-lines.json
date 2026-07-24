@@ -1,0 +1,30 @@
+{
+  "name": "The Bench — SEA adaptive lineup",
+  "trade_deadline": null,
+  "events": [],
+  "adaptive_lineup_policies": [
+    {
+      "team": "SEA",
+      "review_games": 6,
+      "minimum_points_percentage": 0.5,
+      "max_changes": 2,
+      "choices": [
+        {
+          "id": "baseline",
+          "label": "Submitted lineup",
+          "strength_delta": 0.0
+        },
+        {
+          "id": "swap-8482259-8482665",
+          "label": "Swap Bobby McMann and Matty Beniers",
+          "strength_delta": 0.1479625536391609
+        },
+        {
+          "id": "swap-8476905-8483570",
+          "label": "Swap Ben Meyers and Chandler Stephenson",
+          "strength_delta": 0.10880297161902064
+        }
+      ]
+    }
+  ]
+}

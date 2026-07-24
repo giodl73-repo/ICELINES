@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/card_document.v1.schema.json",
+  "title": "IceLines UI-Neutral Card Document v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "card_kind",
+    "document_id",
+    "fingerprint",
+    "title",
+    "context",
+    "theme",
+    "required_capabilities",
+    "pages",
+    "assets",
+    "provenance",
+    "warnings"
+  ],
+  "properties": {
+    "schema": { "const": "card_document.v1" },
+    "card_kind": {
+      "enum": [
+        "team_prognosis",
+        "season_simulation",
+        "forecast_movement",
+        "forecast_history",
+        "fantasy_roster",
+        "fantasy_draft",
+        "fantasy_morning",
+        "fantasy_trade"
+      ]
+    },
+    "document_id": { "type": "string", "minLength": 1 },
+    "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "title": { "type": "string", "minLength": 1 },
+    "subtitle": { "type": ["string", "null"] },
+    "context": { "type": "object" },
+    "theme": { "type": "object" },
+    "required_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "rich_color",
+          "raster_assets",
+          "tables",
+          "timelines",
+          "interactive_actions"
+        ]
+      }
+    },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/page" }
+    },
+    "assets": { "type": "array", "items": { "type": "object" } },
+    "provenance": { "type": "array", "items": { "type": "object" } },
+    "warnings": { "type": "array", "items": { "type": "object" } },
+    "empty_state": { "type": ["object", "null"] }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "page": {
+      "type": "object",
+      "required": ["id", "literal_label", "order", "accessible_summary", "sections"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "literal_label": { "type": "string", "minLength": 1 },
+        "display_label": { "type": ["string", "null"] },
+        "order": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "accessible_summary": { "type": "string", "minLength": 1 },
+        "sections": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/section" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "section": {
+      "oneOf": [
+        { "$ref": "#/$defs/identity_header" },
+        { "$ref": "#/$defs/lineup" },
+        { "$ref": "#/$defs/metric_strip" },
+        { "$ref": "#/$defs/player_list" },
+        { "$ref": "#/$defs/scenario_bridge" },
+        { "$ref": "#/$defs/probability_range" },
+        { "$ref": "#/$defs/decision" },
+        { "$ref": "#/$defs/timeline" },
+        { "$ref": "#/$defs/state_notice" },
+        { "$ref": "#/$defs/methodology" },
+        { "$ref": "#/$defs/provenance_section" }
+      ]
+    },
+    "identity_header": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "identities"],
+      "properties": {
+        "section_type": { "const": "identity_header" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "identities": { "type": "array", "minItems": 1 }
+      }
+    },
+    "lineup": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "groups"],
+      "properties": {
+        "section_type": { "const": "lineup" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "groups": { "type": "array", "minItems": 1 }
+      }
+    },
+    "metric_strip": {
+      "type": "object",
+      "required": ["section_type", "id", "metrics"],
+      "properties": {
+        "section_type": { "const": "metric_strip" },
+        "id": { "type": "string" },
+        "metrics": { "type": "array", "minItems": 1 }
+      }
+    },
+    "player_list": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "rows"],
+      "properties": {
+        "section_type": { "const": "player_list" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "rows": { "type": "array", "minItems": 1 }
+      }
+    },
+    "scenario_bridge": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "from_label", "to_label", "metrics"],
+      "properties": {
+        "section_type": { "const": "scenario_bridge" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "from_label": { "type": "string" },
+        "to_label": { "type": "string" },
+        "metrics": { "type": "array", "minItems": 1 }
+      }
+    },
+    "probability_range": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "ranges"],
+      "properties": {
+        "section_type": { "const": "probability_range" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "ranges": { "type": "array", "minItems": 1 }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "recommendation", "rationale"],
+      "properties": {
+        "section_type": { "const": "decision" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "recommendation": { "type": "string" },
+        "rationale": { "type": "array", "minItems": 1 }
+      }
+    },
+    "timeline": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "items"],
+      "properties": {
+        "section_type": { "const": "timeline" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "items": { "type": "array", "minItems": 1 }
+      }
+    },
+    "state_notice": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "warnings", "token"],
+      "properties": {
+        "section_type": { "const": "state_notice" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "warnings": { "type": "array" }
+      }
+    },
+    "methodology": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "methods", "limitations"],
+      "properties": {
+        "section_type": { "const": "methodology" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "methods": { "type": "array", "minItems": 1 }
+      }
+    },
+    "provenance_section": {
+      "type": "object",
+      "required": ["section_type", "id", "title", "provenance_ids"],
+      "properties": {
+        "section_type": { "const": "provenance" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "provenance_ids": { "type": "array", "minItems": 1, "uniqueItems": true }
+      }
+    }
+  }
+}

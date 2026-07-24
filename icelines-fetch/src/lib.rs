@@ -23,6 +23,7 @@ pub mod fantasy_matchup;
 pub mod fetch_lock;
 pub mod fletch;
 pub mod game_cache;
+pub mod management_behavior_source;
 pub mod manifest;
 pub mod moneypuck;
 pub mod nhl_api;
@@ -30,11 +31,13 @@ pub mod playoffs_bundle;
 pub mod query_provider;
 pub mod records_provider;
 pub mod resolver;
+pub mod scenario_registry;
 pub mod schedule_remaining;
 pub mod schema;
 pub mod scoring_outlook_provider;
 pub mod scoring_provider;
 pub mod series_momentum_builder;
+pub mod shift_chart;
 pub mod shift_profile;
 pub mod snapshot;
 pub mod stats_loader;
@@ -59,9 +62,23 @@ pub use bundled::{
 pub use cache::Cache;
 pub use career::load_career;
 pub use error::FetchError;
+pub use management_behavior_source::{
+    fetch_team_behavior_league_evidence, BehaviorEvidenceSourceView,
+    TeamBehaviorLeagueEvidenceView, TeamBehaviorSeasonEvidenceView,
+    TEAM_BEHAVIOR_LEAGUE_EVIDENCE_SCHEMA,
+};
 pub use moneypuck::{parse_csv as parse_moneypuck_csv, MoneyPuckStats};
 pub use nhl_api::NhlApiClient;
 pub use playoffs_bundle::PlayoffsBundle;
 pub use resolver::PlayerResolver;
+pub use scenario_registry::{
+    ResolvedTeamSeasonScenario, ScenarioImportDisposition, ScenarioImportResult,
+    ScenarioRegistryStore, ScenarioRegistryStoreError,
+};
+pub use shift_chart::{
+    build_shift_overlap_report, OfficialShiftChartResponse, OfficialShiftChartRow,
+    ShiftOverlapPairRow, ShiftOverlapPlayerRow, ShiftOverlapReport, ShiftOverlapTrioRow,
+    SHIFT_CHART_SOURCE, SHIFT_OVERLAP_SCHEMA,
+};
 pub use shift_profile::{LinematePair, ShiftProfile};
-pub use teams::ALL_NHL_TEAMS;
+pub use teams::{nhl_teams_for_season, ALL_NHL_TEAMS};

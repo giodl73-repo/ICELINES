@@ -8,11 +8,13 @@ pub mod ahl_affiliate;
 pub mod analytics_cache_consumer;
 pub mod awards;
 pub mod cap_projection;
+pub mod card;
 pub mod career;
 pub mod compare;
 pub mod config;
 pub mod context;
 pub mod data_status;
+pub mod development_calibration;
 pub mod docs;
 pub mod fantasy_assistant;
 pub mod fantasy_category_matchup;
@@ -24,20 +26,27 @@ pub mod fantasy_import;
 pub mod fantasy_league;
 pub mod fantasy_matchup;
 pub mod fantasy_matchup_strategy;
+pub mod fantasy_playoff_portfolio;
 pub mod fantasy_schedule;
 pub mod fantasy_season_sim;
 pub mod fantasy_sim;
+pub mod fantasy_trade;
 pub mod favorites;
 pub mod game;
 pub mod goalies;
 pub mod home;
+pub mod isolated_impact;
 pub mod leaders;
+pub mod line_combination;
+pub mod management_behavior;
+pub mod matchup_evidence;
 pub mod mutation;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
 pub mod records;
 pub mod report;
+pub mod scenario_registry;
 pub mod schedule;
 pub mod scores;
 pub mod scoring;
@@ -48,9 +57,21 @@ pub mod snapshot;
 pub mod streaks;
 pub mod team_ceiling;
 pub mod team_depth;
+pub mod team_game_forecast;
+pub mod team_lineup;
+pub mod team_season_forecast;
 pub mod tokens;
+pub mod training_camp;
 pub mod transactions;
 
+pub use ahl_affiliate::{
+    build_ahl_affiliate_projection, classify_ahl_development_player,
+    current_ahl_affiliation_catalog, AhlAffiliatePlayerInput, AhlAffiliatePlayerView,
+    AhlAffiliateProjectionInput, AhlAffiliateProjectionView, AhlAffiliationCatalogView,
+    AhlAffiliationView, AhlDevelopmentClassification, AhlDevelopmentRuleInput, AhlLineUnitKind,
+    AhlLineUnitView, AhlProspectPoolRowView, AHL_AFFILIATE_PROJECTION_SCHEMA,
+    AHL_AFFILIATION_CATALOG_SCHEMA, AHL_AFFILIATION_SOURCE_URL, CURRENT_AHL_AFFILIATION_SEASON,
+};
 pub use analytics_cache_consumer::{
     analytics_cache_consumer_title, AnalyticsCacheConsumerMetricRow, AnalyticsCacheConsumerView,
 };
@@ -62,6 +83,32 @@ pub use cap_projection::{
     PlayerCapProjection, SalaryBasis, TeamCapProjection, TeamSeasonCapProjection,
     CAP_LIMIT_SOURCE_URL, CAP_PROJECTION_METHOD, CAP_PROJECTION_SCHEMA, CARLSSON_ANCHOR_URL,
 };
+pub use card::{
+    build_card_comparison_set, build_fantasy_draft_card, build_fantasy_morning_card,
+    build_fantasy_roster_card, build_fantasy_trade_card, build_forecast_history_card,
+    build_forecast_movement_card, build_season_simulation_card, build_team_prognosis_card,
+    parse_card_document, CardAlignedMetricRow, CardAssetFallback, CardAssetKind,
+    CardAssetReference, CardAssetState, CardAssetView, CardComparisonError, CardComparisonSetView,
+    CardComparisonWarning, CardComparisonWarningKind, CardContextView, CardDecisionAlternativeView,
+    CardDocumentError, CardDocumentView, CardIdentityJoinsView, CardIdentityKind, CardIdentityView,
+    CardKind, CardLineupGroupKind, CardLineupGroupView, CardLineupSlotView,
+    CardMethodologyItemView, CardMetricComparisonView, CardMetricView, CardPageView,
+    CardPlayerRowView, CardProbabilityRangeView, CardProvenanceView, CardRendererCapability,
+    CardSectionView, CardSimulationContextView, CardThemeView, CardTimelineItemView,
+    DecisionSectionView, FantasyDraftCardError, FantasyDraftCardInput, FantasyMorningCardError,
+    FantasyMorningCardInput, FantasyRosterCardError, FantasyRosterCardInput, FantasyTradeCardError,
+    FantasyTradeCardInput, ForecastHistoryCardError, ForecastHistoryCardInput,
+    ForecastMovementCardError, ForecastMovementCardInput, IdentityHeaderSectionView,
+    LineupSectionView, MethodologySectionView, MetricStripSectionView, PlayerListSectionView,
+    ProbabilityRangeSectionView, ProvenanceSectionView, ScenarioBridgeSectionView,
+    SeasonSimulationCardError, SeasonSimulationCardInput, StateNoticeSectionView,
+    TeamPrognosisCardError, TeamPrognosisCardInput, TeamPrognosisEventProjection,
+    TimelineSectionView, CARD_COMPARISON_SET_SCHEMA, CARD_DOCUMENT_JSON_SCHEMA,
+    CARD_DOCUMENT_SCHEMA, FANTASY_DRAFT_CARD_BUILDER_VERSION, FANTASY_MORNING_CARD_BUILDER_VERSION,
+    FANTASY_ROSTER_CARD_BUILDER_VERSION, FANTASY_TRADE_CARD_BUILDER_VERSION,
+    FORECAST_HISTORY_CARD_VERSION, FORECAST_MOVEMENT_CARD_VERSION, SEASON_SIMULATION_CARD_VERSION,
+    TEAM_PROGNOSIS_BUILDER_VERSION,
+};
 pub use career::{
     CareerRow, CareerSortKey, CareerView, CAREER_HISTORY_FETCH_COMMAND,
     CAREER_HISTORY_MISSING_STORE_MESSAGE, CAREER_HISTORY_STORE_PATH,
@@ -71,12 +118,18 @@ pub use config::{
     ConfigEntryInput, ConfigEntryRow, ConfigMutationIntent, ConfigView, SeasonTypeMutationIntent,
 };
 pub use context::{
-    AppliedFilter, Completeness, EmptyKind, EmptyState, FilterKey, FilterOp, RecoveryAction,
-    ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState, SourceKind,
-    SourceProvenance, SourceState, ViewContext, ViewWarning, ViewWindow, WarningKind,
+    AppliedFilter, Completeness, EmptyKind, EmptyState, EvidenceLabel, FilterKey, FilterOp,
+    RecoveryAction, ReportContext, ReportKind, ReportSectionRef, SortDirection, SortKey, SortState,
+    SourceKind, SourceProvenance, SourceState, ViewContext, ViewWarning, ViewWindow, WarningKind,
 };
 pub use data_status::{
     DataMutationIntent, DataMutationOperation, DataStatusEntryInput, DataStatusRow, DataStatusView,
+};
+pub use development_calibration::{
+    build_development_calibration, development_cohort_labels, DevelopmentCalibrationCohortRow,
+    DevelopmentCalibrationConfig, DevelopmentCalibrationExampleRow, DevelopmentCalibrationRateRow,
+    DevelopmentCalibrationView, DevelopmentPositionGroup, DevelopmentTransitionInput,
+    DevelopmentValueModel, DEVELOPMENT_CALIBRATION_SCHEMA,
 };
 pub use docs::DocsView;
 pub use fantasy_assistant::{
@@ -86,18 +139,18 @@ pub use fantasy_assistant::{
     fantasy_acquisition_availability, fantasy_waiver_window, import_fantasy_platform_eligibility,
     import_fantasy_taken_players, resolve_fantasy_player_status, FantasyAcquisitionAvailability,
     FantasyAcquisitionInput, FantasyAcquisitionKind, FantasyActiveSlot, FantasyActiveSlotKind,
-    FantasyAssistantRules, FantasyDailyLineupView, FantasyDraftBoardView,
-    FantasyDraftCandidateInput, FantasyDraftCandidateRow, FantasyDraftIdentityInput,
-    FantasyDraftPositionLeader, FantasyDraftValueComponents, FantasyEligibilityImportRow,
-    FantasyEligibilityImportStatus, FantasyEligibilityImportView, FantasyInjuryPlanView,
-    FantasyLineupAssignmentRow, FantasyLineupPlayerInput, FantasyMarketStatus,
-    FantasyMorningAction, FantasyMorningActionKind, FantasyMorningBriefingView,
-    FantasyObservationConfidence, FantasyObservationFreshness, FantasyPlayerAvailabilityStatus,
-    FantasyReserveAssignmentRow, FantasyResolvedPlayerStatus, FantasySleeperBoardView,
-    FantasySleeperComponents, FantasySleeperConfidence, FantasySleeperInput, FantasySleeperRow,
-    FantasyStatusObservation, FantasyTakenImportView, FantasyTakenPlayerRow,
-    FantasyTakenResolutionStatus, FantasyWaiverWindow, FantasyWeekBudgetView,
-    FantasyWeeklyMoveInput, FantasyWeeklyMoveRow, FantasyWeeklyPickupView,
+    FantasyAssistantRules, FantasyBenchAssignmentRow, FantasyDailyLineupView,
+    FantasyDraftBoardView, FantasyDraftCandidateInput, FantasyDraftCandidateRow,
+    FantasyDraftIdentityInput, FantasyDraftPositionLeader, FantasyDraftValueComponents,
+    FantasyEligibilityImportRow, FantasyEligibilityImportStatus, FantasyEligibilityImportView,
+    FantasyInjuryPlanView, FantasyLineupAssignmentRow, FantasyLineupPlayerInput,
+    FantasyMarketStatus, FantasyMorningAction, FantasyMorningActionKind,
+    FantasyMorningBriefingView, FantasyObservationConfidence, FantasyObservationFreshness,
+    FantasyPlayerAvailabilityStatus, FantasyReserveAssignmentRow, FantasyResolvedPlayerStatus,
+    FantasySleeperBoardView, FantasySleeperComponents, FantasySleeperConfidence,
+    FantasySleeperInput, FantasySleeperRow, FantasyStatusObservation, FantasyTakenImportView,
+    FantasyTakenPlayerRow, FantasyTakenResolutionStatus, FantasyWaiverWindow,
+    FantasyWeekBudgetView, FantasyWeeklyMoveInput, FantasyWeeklyMoveRow, FantasyWeeklyPickupView,
     FANTASY_ASSISTANT_RULES_SCHEMA, FANTASY_DAILY_LINEUP_SCHEMA, FANTASY_DRAFT_BOARD_SCHEMA,
     FANTASY_ELIGIBILITY_IMPORT_SCHEMA, FANTASY_INJURY_PLAN_SCHEMA, FANTASY_MORNING_BRIEFING_SCHEMA,
     FANTASY_SLEEPER_BOARD_SCHEMA, FANTASY_TAKEN_IMPORT_SCHEMA, FANTASY_WEEKLY_PICKUP_SCHEMA,
@@ -152,6 +205,13 @@ pub use fantasy_matchup_strategy::{
     FantasyMatchupStrategyPlayerInput, FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView,
     FantasyMatchupSwingInput, FantasyMatchupTeamProjection, FANTASY_MATCHUP_STRATEGY_SCHEMA,
 };
+pub use fantasy_playoff_portfolio::{
+    build_fantasy_playoff_portfolio, rank_fantasy_playoff_candidate_fits,
+    FantasyPlayoffCandidateFitRow, FantasyPlayoffPlayerInput, FantasyPlayoffPlayerRoundRow,
+    FantasyPlayoffPlayerRow, FantasyPlayoffPortfolioInput, FantasyPlayoffPortfolioView,
+    FantasyPlayoffRoundInput, FantasyPlayoffRoundRow, FantasyPlayoffTeamRow,
+    FANTASY_PLAYOFF_PORTFOLIO_SCHEMA,
+};
 pub use fantasy_schedule::{
     build_fantasy_schedule_view, FantasyDailySlateRow, FantasyRosterScheduleView,
     FantasyScheduleClassRow, FantasyScheduleComplementRow, FantasyScheduleGameInput,
@@ -174,6 +234,10 @@ pub use fantasy_sim::{
     FantasySimulationScenarioRosterInput, FantasySimulationScenarioRow, FantasySimulationTeamInput,
     FantasySimulationTeamRow, FantasySimulationView,
 };
+pub use fantasy_trade::{
+    FantasyTradeEvaluationView, FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation,
+    FANTASY_TRADE_EVALUATION_SCHEMA,
+};
 pub use favorites::{
     FavoriteMemberInput, FavoriteMemberRow, FavoriteMutationIntent, FavoritesView, WatchNoteInput,
     WatchlistMemberRow, WatchlistView,
@@ -186,7 +250,27 @@ pub use goalies::{
     GoalieLeaderboardSort, GoalieRoleFilter, GoalieRoleSignal, GoalieRow, GoaliesView,
 };
 pub use home::{HomeGoalieRow, HomeSkaterRow, HomeView};
+pub use isolated_impact::{
+    build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
+    build_isolated_scenario_impact_cached, ForcedCeilingPathRow, IsolatedEventImpactRow,
+    IsolatedImpactBaselineRow, IsolatedImpactCache, IsolatedImpactError, IsolatedImpactView,
+    ISOLATED_IMPACT_AS_OF_METHOD, ISOLATED_IMPACT_METHOD, ISOLATED_IMPACT_SCHEMA,
+};
 pub use leaders::{LeaderKind, LeaderRow, LeadersView};
+pub use line_combination::{
+    build_adaptive_lineup_policy, build_line_combination_forecast, LineCombinationCandidateView,
+    LineCombinationForecastConfig, LineCombinationForecastView, LineCombinationPairEvidenceInput,
+    LineCombinationPairEvidenceKind, LineCombinationPlayerInfluenceView,
+    LineCombinationPlayerLeaderboardsView, LineCombinationScoreView, LineCombinationUnitKind,
+    LineCombinationUnitView, LINE_COMBINATION_FORECAST_METHOD, LINE_COMBINATION_FORECAST_SCHEMA,
+};
+pub use matchup_evidence::{
+    build_opponent_style_evidence, build_player_matchup_role_evidence,
+    build_team_player_matchup_role_evidence, OpponentStyleEvidenceRow, OpponentStyleScoreView,
+    PlayerMatchupRoleEvidenceRow, PlayerRoleSeasonFactsInput, TeamPlayerMatchupRoleEvidenceView,
+    TeamStyleSeasonFactsInput, OPPONENT_STYLE_EVIDENCE_SCHEMA, PLAYER_MATCHUP_ROLE_EVIDENCE_SCHEMA,
+    TEAM_PLAYER_MATCHUP_ROLE_EVIDENCE_SCHEMA,
+};
 pub use mutation::{MutationResultView, MutationStatus};
 pub use player_card::{
     PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow, PlayerSeasonSummary,
@@ -210,6 +294,11 @@ pub use records::{
     FightRecordInput, PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView,
 };
 pub use report::{scouting_report_sections, ReportFormat, ReportView};
+pub use scenario_registry::{
+    scenario_content_sha256, validate_scenario_id, ScenarioRegistryContractError,
+    ScenarioRegistryEntryView, ScenarioRegistryReferenceView, ScenarioRegistryView,
+    ScenarioScopeView, SCENARIO_REGISTRY_ENTRY_SCHEMA, SCENARIO_REGISTRY_SCHEMA,
+};
 pub use schedule::{
     OpponentTierBreakdown, ScheduleGameRow, ScheduleMatchupRecord, ScheduleMatchupView,
     ScheduleRecord, ScheduleTeamView, ScheduleView, TeamChipView, TeamQualityLedger,
@@ -245,9 +334,9 @@ pub use streaks::{
     TeamPlayerStreakLeaderRow, TeamPlayerStreaksView,
 };
 pub use team_ceiling::{
-    build_team_ceiling, TeamCeilingError, TeamCeilingLens, TeamCeilingLensScore,
-    TeamCeilingPlayerInput, TeamCeilingPlayerRow, TeamCeilingRow, TeamCeilingView,
-    TEAM_CEILING_METHOD, TEAM_CEILING_SCHEMA,
+    build_team_ceiling, team_ceiling_player_lens_score, TeamCeilingError, TeamCeilingLens,
+    TeamCeilingLensScore, TeamCeilingPlayerInput, TeamCeilingPlayerRow, TeamCeilingRow,
+    TeamCeilingView, TEAM_CEILING_METHOD, TEAM_CEILING_SCHEMA,
 };
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
@@ -255,9 +344,80 @@ pub use team_depth::{
     TeamDepthChartView, TeamDepthView, TeamTradeImpactView, TradeImpactLine, TradeImpactPair,
     TradeImpactPlayer, TradeImpactSlot,
 };
+pub use team_game_forecast::{
+    build_team_game_forecast, build_team_game_forecast_validation, build_team_game_rolling_replay,
+    build_team_game_rolling_replay_with_opening_strengths,
+    build_team_game_rolling_replay_with_personnel, TeamForecastGameInput, TeamForecastParameters,
+    TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig,
+    TeamForecastStrengthInput, TeamGameForecastAblationRow, TeamGameForecastAccuracyRow,
+    TeamGameForecastAccuracySummary, TeamGameForecastBaselineRow, TeamGameForecastBlendRow,
+    TeamGameForecastCalibrationHoldoutRow, TeamGameForecastCalibrationObservation,
+    TeamGameForecastCalibrationRow, TeamGameForecastCalibrationSummary, TeamGameForecastFactorRow,
+    TeamGameForecastHoldoutRow, TeamGameForecastRow, TeamGameForecastSummaryRow,
+    TeamGameForecastValidationCheckRow, TeamGameForecastValidationInput,
+    TeamGameForecastValidationView, TeamGameForecastView, TeamGameMembershipAnomalyRow,
+    TeamGameMembershipIntervalRow, TeamGameOpeningPlayerRow, TeamGameOpeningRosterAuthorityRow,
+    TeamGameOpeningStrengthRow, TeamGamePairedTradeRow, TeamGamePersonnelEvidenceRow,
+    TeamGamePersonnelPlayerRow, TeamGameScheduleContext, TEAM_GAME_FORECAST_SCHEMA,
+    TEAM_GAME_FORECAST_VALIDATION_SCHEMA,
+};
+pub use team_lineup::{
+    build_team_lineup_projection, team_lineup_card_assets, team_lineup_card_section,
+    IceLinesPlayerScoreComponent, IceLinesPlayerScoreView, LineupAssignmentEvidence,
+    LineupForwardPosition, PlayerScorePositionGroup, TeamLineupDefensePairView,
+    TeamLineupForwardLineView, TeamLineupGoaliesView, TeamLineupPlayerInput, TeamLineupPlayerView,
+    TeamLineupPortraitView, TeamLineupProjectionError, TeamLineupProjectionView,
+    TeamLineupRequestedSlot, TeamLineupSpecialTeamsKind, TeamLineupSpecialTeamsUnitView,
+    TeamLineupSpecialTeamsView, TeamLineupWarningView, ICELINES_PLAYER_SCORE_METHOD,
+    ICELINES_PLAYER_SCORE_SCHEMA, TEAM_LINEUP_PROJECTION_SCHEMA,
+};
+pub use team_season_forecast::{
+    build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
+    build_team_season_forecast_movement, build_team_season_game_plan_event,
+    build_team_season_game_plan_schedule, build_team_season_game_plan_schedule_from_evidence,
+    build_team_season_plausible_trade_scenario, compare_team_season_forecast_scenarios,
+    simulate_team_season_forecast, simulate_team_season_forecast_as_of_with_scenario,
+    simulate_team_season_forecast_with_scenario, TeamSeasonAdaptiveLineupChoice,
+    TeamSeasonAdaptiveLineupChoiceSummaryRow, TeamSeasonAdaptiveLineupPolicy,
+    TeamSeasonAdaptiveLineupSummaryRow, TeamSeasonAutoPersonnelConfig,
+    TeamSeasonForecastHistoryCheckpointRow, TeamSeasonForecastHistoryMateriality,
+    TeamSeasonForecastHistoryMoverRow, TeamSeasonForecastHistoryPointRow,
+    TeamSeasonForecastHistoryTeamRow, TeamSeasonForecastHistoryTrend,
+    TeamSeasonForecastHistoryView, TeamSeasonForecastMovementRow, TeamSeasonForecastMovementView,
+    TeamSeasonForecastRow, TeamSeasonForecastView, TeamSeasonGamePlanScheduleView,
+    TeamSeasonLeagueLeaders, TeamSeasonOpeningRosterChoice,
+    TeamSeasonOpeningRosterChoiceSummaryRow, TeamSeasonOpeningRosterPolicy,
+    TeamSeasonOpeningRosterSummaryRow, TeamSeasonOpponentGamePlanInput, TeamSeasonPersonnelInput,
+    TeamSeasonPivotalGameRow, TeamSeasonPlausibleTradeConfig, TeamSeasonProbabilityLeaderRow,
+    TeamSeasonReplayCheckpointTeamRow, TeamSeasonReplayCheckpointView, TeamSeasonScenario,
+    TeamSeasonScenarioEvent, TeamSeasonScenarioEventKind, TeamSeasonScenarioImpactRow,
+    TeamSeasonScheduleStretchRow, TeamSeasonScheduledGamePlanRow, TeamSeasonSimulationConfig,
+    TeamSeasonStretchKind, TeamSeasonTradeTeamInput, TEAM_SEASON_FORECAST_HISTORY_SCHEMA,
+    TEAM_SEASON_FORECAST_MOVEMENT_SCHEMA, TEAM_SEASON_FORECAST_SCHEMA,
+    TEAM_SEASON_GAME_PLAN_SCHEDULE_SCHEMA, TEAM_SEASON_SCENARIO_SCHEMA,
+};
 pub use tokens::{
     MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision,
     ALL_SEMANTIC_TOKENS,
+};
+pub use training_camp::{
+    build_training_camp_blender_set, build_training_camp_exposure_board,
+    build_training_camp_exposure_board_with_context, build_training_camp_lineup_set,
+    build_training_camp_opening_roster_policy, simulate_training_camp,
+    simulate_training_camp_league, TrainingCampAuthorityStatus, TrainingCampBlenderBranchView,
+    TrainingCampBlenderSetView, TrainingCampCompetitionPoolStatus, TrainingCampConfig,
+    TrainingCampDisplacementView, TrainingCampExposureBoardView, TrainingCampExposureLane,
+    TrainingCampExposurePlayerView, TrainingCampExposurePressureView, TrainingCampExposureTeamView,
+    TrainingCampForecastView, TrainingCampLeagueForecastView, TrainingCampLeagueSimulationInput,
+    TrainingCampLeagueTeamInput, TrainingCampLeagueTeamView, TrainingCampLineupBranchView,
+    TrainingCampLineupSetView, TrainingCampPlayerInput, TrainingCampPlayerView,
+    TrainingCampRosterBranchView, TrainingCampRosterStatus, TrainingCampSalaryCapStatus,
+    TrainingCampSimulationInput, TrainingCampTradeProtection,
+    TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput,
+    TrainingCampTransactionPlayerInput, TRAINING_CAMP_BLENDER_SET_SCHEMA,
+    TRAINING_CAMP_EXPOSURE_BOARD_SCHEMA, TRAINING_CAMP_FORECAST_METHOD,
+    TRAINING_CAMP_FORECAST_SCHEMA, TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA,
+    TRAINING_CAMP_LINEUP_SET_SCHEMA, TRAINING_CAMP_TRANSACTION_CONTEXT_SCHEMA,
 };
 pub use transactions::{TransactionViewRow, TransactionsView};
 

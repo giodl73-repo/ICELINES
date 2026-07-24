@@ -1,10 +1,15 @@
 use crate::config::Config;
 use anyhow::Context;
+use chrono::{DateTime, Utc};
 use icelines_core::model::{Season, TeamAbbr};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{
-    build_cap_projection, build_team_ceiling, CapProjectionContractInput, CapProjectionPlayerInput,
-    CapProjectionView, SalaryBasis, TeamCeilingPlayerInput, TeamCeilingView,
+    build_cap_projection, build_team_ceiling, build_team_lineup_projection,
+    build_team_prognosis_card, team_ceiling_player_lens_score, CapProjectionContractInput,
+    CapProjectionPlayerInput, CapProjectionView, Completeness, LineupAssignmentEvidence,
+    SalaryBasis, SourceKind, SourceState, TeamCeilingLens, TeamCeilingPlayerInput, TeamCeilingView,
+    TeamLineupPlayerInput, TeamLineupPlayerView, TeamLineupProjectionView, TeamPrognosisCardInput,
+    ViewContext, ViewWindow,
 };
 use icelines_fetch::schema::{RosterPlayer, RosterResponse};
 use icelines_fetch::snapshot::SnapshotStore;
@@ -25,6 +30,22 @@ struct ReportCatalogEntry {
 }
 
 const REPORT_CATALOG: &[ReportCatalogEntry] = &[
+    ReportCatalogEntry {
+        name: "team-card",
+        status: "available",
+        canonical: "icelines report team-card --team NYR --scenario-id nyr-development-variance [--json]",
+        formats: "text,json",
+        screens: "CLI, web/TUI canonical source document",
+        notes: "Two-page Depth Chart and Insider prognosis card with paired isolated impacts.",
+    },
+    ReportCatalogEntry {
+        name: "team-lineup",
+        status: "available",
+        canonical: "icelines report team-lineup --team NYR [--json]",
+        formats: "text,json",
+        screens: "CLI, card/web/TUI source document",
+        notes: "Four lines, three defense pairs, goalies, extras, portraits, and one IceLines display score.",
+    },
     ReportCatalogEntry {
         name: "team-ceiling",
         status: "available",
@@ -169,6 +190,214 @@ pub struct TeamCeilingArgs {
     pub out: Option<PathBuf>,
 }
 
+#[derive(Debug, Clone)]
+pub struct TeamLineupArgs {
+    pub roster_season: String,
+    pub stats_season: String,
+    pub team: String,
+    pub json: bool,
+    pub out: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TeamCardArgs {
+    pub roster_season: String,
+    pub stats_season: String,
+    pub team: String,
+    pub scenario_id: String,
+    pub scenario_comparison_key: Option<String>,
+    pub trials: u32,
+    pub seed: u64,
+    pub generated_at: Option<String>,
+    pub json: bool,
+    pub out: Option<PathBuf>,
+}
+
+pub async fn run_team_card(args: TeamCardArgs) -> anyhow::Result<()> {
+    let roster_season: Season = args.roster_season.parse().map_err(|error| {
+        anyhow::anyhow!("invalid roster season '{}': {error}", args.roster_season)
+    })?;
+    let stats_season: Season = args.stats_season.parse().map_err(|error| {
+        anyhow::anyhow!("invalid stats season '{}': {error}", args.stats_season)
+    })?;
+    let team = TeamAbbr::parse(&args.team).map_err(|error| anyhow::anyhow!(error))?;
+    let lineup = load_team_lineup_view(roster_season, stats_season, &team)?;
+    let generated_at = args
+        .generated_at
+        .as_deref()
+        .map(DateTime::parse_from_rfc3339)
+        .transpose()
+        .context("--generated-at must be RFC 3339, for example 2026-07-22T12:00:00Z")?
+        .map(|timestamp| timestamp.with_timezone(&Utc))
+        .unwrap_or_else(Utc::now);
+    let season_args = super::icecast::IceCastSeasonArgs {
+        season: roster_season.0,
+        stats_season: stats_season.0,
+        teams: vec![team.as_str().to_string()],
+        trials: args.trials,
+        seed: args.seed,
+        scenario: None,
+        scenario_id: Some(args.scenario_id.clone()),
+        isolated_impacts: true,
+        auto_personnel: false,
+        trade_mode: "off".to_string(),
+        replay_mode: "frozen".to_string(),
+        through: None,
+        retrospective_opening_lineups: false,
+        all_games: false,
+        refresh: false,
+        json: true,
+        out: None,
+        game_forecast_out: None,
+    };
+    let (mut forecast, _, calendar_fingerprint) =
+        super::icecast::build_season_view(&season_args).await?;
+    let isolated_impact = forecast
+        .isolated_impact
+        .take()
+        .context("IceCast did not return requested isolated impacts")?;
+    let mut view = ViewContext::new(ViewWindow::new(roster_season, SeasonType::Regular));
+    view.generated_at = Some(generated_at);
+    view.completeness = if lineup.warnings.is_empty() {
+        Completeness::Complete
+    } else {
+        Completeness::Partial
+    };
+    view.source_state = vec![
+        SourceState::complete(SourceKind::Roster),
+        SourceState::complete(SourceKind::Schedule),
+        SourceState::complete(SourceKind::Snapshot),
+    ];
+    let card = build_team_prognosis_card(TeamPrognosisCardInput {
+        team_name: team_display_name(team.as_str()).to_string(),
+        team_abbreviation: team.as_str().to_string(),
+        lineup,
+        forecast,
+        isolated_impact,
+        view,
+        evidence_at: Some(generated_at),
+        roster_snapshot_id: None,
+        calendar_fingerprint: Some(calendar_fingerprint),
+        scenario_id: Some(args.scenario_id),
+        scenario_comparison_key: args.scenario_comparison_key,
+        event_projections: Vec::new(),
+    })
+    .map_err(anyhow::Error::new)?;
+    let output = if args.json {
+        format!("{}\n", serde_json::to_string_pretty(&card)?)
+    } else {
+        super::card_renderer::render_team_card(&card)
+    };
+    emit_report(&output, args.out.as_ref())
+}
+
+pub fn run_team_lineup(args: TeamLineupArgs) -> anyhow::Result<()> {
+    let roster_season: Season = args.roster_season.parse().map_err(|error| {
+        anyhow::anyhow!("invalid roster season '{}': {error}", args.roster_season)
+    })?;
+    let stats_season: Season = args.stats_season.parse().map_err(|error| {
+        anyhow::anyhow!("invalid stats season '{}': {error}", args.stats_season)
+    })?;
+    let team = TeamAbbr::parse(&args.team).map_err(|error| anyhow::anyhow!(error))?;
+    let view = load_team_lineup_view(roster_season, stats_season, &team)?;
+    let output = if args.json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_team_lineup(&view)
+    };
+    emit_report(&output, args.out.as_ref())
+}
+
+pub(crate) fn load_team_lineup_view(
+    roster_season: Season,
+    stats_season: Season,
+    team: &TeamAbbr,
+) -> anyhow::Result<TeamLineupProjectionView> {
+    let cfg = Config::load()?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let outcome = load_into_repo(stats_season, SeasonType::Regular, &store).map_err(|error| {
+        anyhow::anyhow!(
+            "{error}\n  Try: icelines fetch all --season {}",
+            stats_season.0
+        )
+    })?;
+    let roster = store
+        .read_tier_file_any_for_season::<RosterResponse>(
+            &SnapshotTier::Rosters,
+            &format!("{}.json", team.as_str()),
+            &roster_season.as_str(),
+        )
+        .with_context(|| {
+            format!(
+                "reading {} roster for {} — run `icelines fetch rosters --season {} --refresh`",
+                roster_season.0,
+                team.as_str(),
+                roster_season.0
+            )
+        })?;
+    let players = roster
+        .forwards
+        .iter()
+        .chain(&roster.defensemen)
+        .chain(&roster.goalies)
+        .filter_map(|player| {
+            lineup_input(
+                player,
+                team.as_str(),
+                roster_season,
+                stats_season,
+                &outcome.repo,
+            )
+        })
+        .collect();
+    build_team_lineup_projection(team.as_str(), roster_season.0, players)
+        .map_err(anyhow::Error::new)
+}
+
+fn lineup_input(
+    player: &RosterPlayer,
+    team: &str,
+    roster_season: Season,
+    stats_season: Season,
+    repo: &icelines_core::stats_repository::StatsRepository,
+) -> Option<TeamLineupPlayerInput> {
+    let ceiling = roster_input(player, team, roster_season, stats_season, repo)?;
+    let deployment = repo
+        .view(
+            icelines_core::identity::PlayerId(player.id),
+            stats_season,
+            SeasonType::Regular,
+        )
+        .and_then(|view| {
+            view.stats.time_on_ice.as_ref().map(|time| {
+                (
+                    time.pp_time_on_ice_per_game_sec as f64,
+                    time.sh_time_on_ice_per_game_sec as f64,
+                )
+            })
+        });
+    Some(TeamLineupPlayerInput {
+        player_id: ceiling.player_id,
+        display_name: ceiling.player.clone(),
+        team: ceiling.team.clone(),
+        prior_team: ceiling.prior_team.clone(),
+        primary_position: ceiling.position,
+        eligible_positions: vec![ceiling.position],
+        headshot_canonical_url: player.headshot.clone(),
+        games_played: ceiling.games_played,
+        lens_scores: TeamCeilingLens::ALL
+            .into_iter()
+            .map(|lens| (lens, team_ceiling_player_lens_score(&ceiling, lens)))
+            .collect(),
+        score_evidence: icelines_core::EvidenceLabel::Confirmed,
+        power_play_role_score: deployment.map(|value| value.0),
+        penalty_kill_role_score: deployment.map(|value| value.1),
+        special_teams_evidence: deployment.map(|_| icelines_core::EvidenceLabel::Confirmed),
+        requested_slot: None,
+        assignment_evidence: LineupAssignmentEvidence::Estimated,
+    })
+}
+
 pub fn run_team_ceiling(args: TeamCeilingArgs) -> anyhow::Result<()> {
     let roster_season: Season = args.roster_season.parse().map_err(|error| {
         anyhow::anyhow!("invalid roster season '{}': {error}", args.roster_season)
@@ -182,6 +411,25 @@ pub fn run_team_ceiling(args: TeamCeilingArgs) -> anyhow::Result<()> {
         .map(TeamAbbr::parse)
         .transpose()
         .map_err(|error| anyhow::anyhow!(error))?;
+    let mut view = load_team_ceiling_view(roster_season, stats_season)?;
+    if let Some(team) = selected_team.as_ref() {
+        view.teams.retain(|row| row.team == team.as_str());
+        if view.teams.is_empty() {
+            anyhow::bail!("team {} is absent from the ceiling report", team.as_str());
+        }
+    }
+    let output = if args.json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_team_ceiling(&view)
+    };
+    emit_report(&output, args.out.as_ref())
+}
+
+pub(crate) fn load_team_ceiling_view(
+    roster_season: Season,
+    stats_season: Season,
+) -> anyhow::Result<TeamCeilingView> {
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let outcome = load_into_repo(stats_season, SeasonType::Regular, &store).map_err(|error| {
@@ -190,7 +438,6 @@ pub fn run_team_ceiling(args: TeamCeilingArgs) -> anyhow::Result<()> {
             stats_season.0
         )
     })?;
-
     let mut current = Vec::new();
     for team in TeamAbbr::all() {
         let current_roster = store
@@ -216,20 +463,12 @@ pub fn run_team_ceiling(args: TeamCeilingArgs) -> anyhow::Result<()> {
         ));
     }
     let previous = prior_season_roster_inputs(&outcome.repo, stats_season);
-
-    let mut view = build_team_ceiling(current, previous, roster_season.0, stats_season.0)?;
-    if let Some(team) = selected_team.as_ref() {
-        view.teams.retain(|row| row.team == team.as_str());
-        if view.teams.is_empty() {
-            anyhow::bail!("team {} is absent from the ceiling report", team.as_str());
-        }
-    }
-    let output = if args.json {
-        format!("{}\n", serde_json::to_string_pretty(&view)?)
-    } else {
-        render_team_ceiling(&view)
-    };
-    emit_report(&output, args.out.as_ref())
+    Ok(build_team_ceiling(
+        current,
+        previous,
+        roster_season.0,
+        stats_season.0,
+    )?)
 }
 
 fn roster_inputs(
@@ -392,6 +631,71 @@ fn view_roster_input(
         shots_per_82: view.shots_per_82(),
         fantasy_per_82,
         goalie_quality,
+    }
+}
+
+fn render_team_lineup(view: &TeamLineupProjectionView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "{} PROJECTED LINEUP", view.team);
+    let _ = writeln!(
+        out,
+        "Roster {} · Score {} ({})",
+        view.roster_season, view.score_schema, view.score_method
+    );
+    for line in &view.forward_lines {
+        let _ = writeln!(
+            out,
+            "L{}  {:<28} {:<28} {:<28}",
+            line.line,
+            lineup_player_text(line.left_wing.as_ref()),
+            lineup_player_text(line.center.as_ref()),
+            lineup_player_text(line.right_wing.as_ref())
+        );
+    }
+    for pair in &view.defense_pairs {
+        let _ = writeln!(
+            out,
+            "D{}  {:<42} {}",
+            pair.pair,
+            lineup_player_text(pair.left.as_ref()),
+            lineup_player_text(pair.right.as_ref())
+        );
+    }
+    let _ = writeln!(
+        out,
+        "G   starter: {} · backup: {}",
+        lineup_player_text(view.goalies.starter.as_ref()),
+        lineup_player_text(view.goalies.backup.as_ref())
+    );
+    if !view.extras.is_empty() {
+        let _ = writeln!(
+            out,
+            "Extras: {}",
+            view.extras
+                .iter()
+                .map(|player| lineup_player_text(Some(player)))
+                .collect::<Vec<_>>()
+                .join(" · ")
+        );
+    }
+    for warning in &view.warnings {
+        let _ = writeln!(out, "WARN {}: {}", warning.code, warning.message);
+    }
+    out
+}
+
+fn lineup_player_text(player: Option<&TeamLineupPlayerView>) -> String {
+    player.map_or_else(
+        || "—".to_string(),
+        |player| format!("{} [{}]", player.display_name, player.score.display),
+    )
+}
+
+fn team_display_name(team: &str) -> &str {
+    match team {
+        "NYR" => "New York Rangers",
+        "SEA" => "Seattle Kraken",
+        _ => team,
     }
 }
 

@@ -2572,7 +2572,9 @@ async fn l1_depth_route_returns_200_html() {
 
 #[tokio::test]
 async fn l1_player_json_envelope_shape() {
-    let app = router(WebState::new());
+    let state = WebState::new();
+    *state.config.write().await = WebConfig::new("20252026", "regular");
+    let app = router(state);
 
     let response = app
         .oneshot(
@@ -7546,7 +7548,9 @@ async fn l1_rocket_team_streaks_json_exposes_shot_metrics() {
     let _guard = home_env_lock().await;
     let home = HomeEnvFixture::new();
     seed_streak_boxscore_and_play_by_play(home.path(), 8478402, "Connor McDavid", "EDM");
-    let app = router(WebState::new());
+    let state = WebState::new();
+    *state.config.write().await = WebConfig::new("20252026", "regular");
+    let app = router(state);
 
     let response = app
         .oneshot(
@@ -7793,7 +7797,9 @@ async fn l1_rocket_team_scoring_json_filters_team_events() {
     let _guard = home_env_lock().await;
     let data_root = DataRootEnvFixture::new();
     seed_scoring_play_by_play(&data_root.data_root(), 2025020001, "2025-10-07");
-    let app = router(WebState::new());
+    let state = WebState::new();
+    *state.config.write().await = WebConfig::new("20252026", "regular");
+    let app = router(state);
 
     let response = app
         .oneshot(

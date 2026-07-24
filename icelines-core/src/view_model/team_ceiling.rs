@@ -329,11 +329,14 @@ fn scores_for(
     players
         .iter()
         .filter(|player| predicate(player.position))
-        .filter_map(|player| player_score(player, lens))
+        .filter_map(|player| team_ceiling_player_lens_score(player, lens))
         .collect()
 }
 
-fn player_score(player: &TeamCeilingPlayerInput, lens: TeamCeilingLens) -> Option<f64> {
+pub fn team_ceiling_player_lens_score(
+    player: &TeamCeilingPlayerInput,
+    lens: TeamCeilingLens,
+) -> Option<f64> {
     if player.position == Position::Goalie {
         return player.goalie_quality;
     }
@@ -376,7 +379,7 @@ fn player_row(
         has_nhl_sample: has_sample(player),
         lens_scores: TeamCeilingLens::ALL
             .into_iter()
-            .map(|lens| (lens, player_score(player, lens)))
+            .map(|lens| (lens, team_ceiling_player_lens_score(player, lens)))
             .collect(),
     }
 }

@@ -2777,12 +2777,16 @@ mod tests {
             .unwrap();
         assert!(db.get_assistant_rules(&league_id).unwrap().is_none());
 
-        let rules = FantasyAssistantRules::configured_2026();
+        let mut rules = FantasyAssistantRules::configured_2026();
+        rules.playoff_start = Some(chrono::NaiveDate::from_ymd_opt(2027, 3, 15).unwrap());
+        rules.playoff_rounds = 3;
         db.set_assistant_rules(&league_id, &rules).unwrap();
         let loaded = db.get_assistant_rules(&league_id).unwrap().unwrap();
         assert_eq!(loaded, rules);
         assert_eq!(loaded.standard_roster_capacity(), 16);
         assert_eq!(loaded.total_capacity_with_reserve(), 20);
+        assert_eq!(loaded.playoff_start, rules.playoff_start);
+        assert_eq!(loaded.playoff_rounds, 3);
     }
 
     #[test]

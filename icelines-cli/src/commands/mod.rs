@@ -1,5 +1,6 @@
 pub mod analysis;
 pub mod awards;
+pub mod card_renderer;
 pub mod config;
 pub mod data;
 pub mod data_status;
@@ -7,6 +8,7 @@ pub mod export;
 pub mod fantasy;
 pub mod favorites;
 pub mod fetch;
+pub mod icecast;
 pub mod layout;
 pub mod mates;
 pub mod menu;

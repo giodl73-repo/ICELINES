@@ -20,6 +20,28 @@ pub const ALL_NHL_TEAMS: &[&str] = &[
     "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
 ];
 
+/// NHL franchise abbreviations that participated in a season.
+///
+/// Season-scoped fetches must not substitute today's league membership:
+/// Seattle joined in 2021-22 and Utah replaced Arizona in 2024-25.
+pub fn nhl_teams_for_season(season: &str) -> Vec<&'static str> {
+    let season = season.parse::<u32>().unwrap_or(u32::MAX);
+    let mut teams = ALL_NHL_TEAMS
+        .iter()
+        .copied()
+        .filter(|team| season >= 20212022 || *team != "SEA")
+        .map(|team| {
+            if season < 20242025 && team == "UTA" {
+                "ARI"
+            } else {
+                team
+            }
+        })
+        .collect::<Vec<_>>();
+    teams.sort_unstable();
+    teams
+}
+
 // ── ESPN → NHL abbrev mapping (Phase T.1) ─────────────────────────────────────
 //
 // ESPN's transactions feed and our NHL bios feed do not always agree on
@@ -120,6 +142,26 @@ mod tests {
     }
 
     #[test]
+    fn l0_season_membership_tracks_expansion_and_relocation() {
+        let pre_seattle = nhl_teams_for_season("20202021");
+        assert_eq!(pre_seattle.len(), 31);
+        assert!(pre_seattle.contains(&"ARI"));
+        assert!(!pre_seattle.contains(&"SEA"));
+        assert!(!pre_seattle.contains(&"UTA"));
+
+        let coyotes = nhl_teams_for_season("20232024");
+        assert_eq!(coyotes.len(), 32);
+        assert!(coyotes.contains(&"ARI"));
+        assert!(coyotes.contains(&"SEA"));
+        assert!(!coyotes.contains(&"UTA"));
+
+        let utah = nhl_teams_for_season("20242025");
+        assert_eq!(utah.len(), 32);
+        assert!(utah.contains(&"UTA"));
+        assert!(!utah.contains(&"ARI"));
+    }
+
+    #[test]
     fn l0_all_nhl_teams_uses_nhl_api_long_form() {
         // Concrete invariants around the two abbrevs that diverged
         // historically (TBL vs TB, SJS vs SJ). The NHL API uses the
@@ -143,13 +185,14 @@ mod tests {
     }
 
     #[test]
-    fn l1_all_nhl_teams_matches_bundled_bios_25_26() {
+    fn l1_all_nhl_teams_matches_newest_bundled_bios() {
         // Every team in the canonical list must produce ≥ 1 player in
-        // the current-season bundled bios. A zero count means the
+        // the newest completed-season bundled bios. A zero count means the
         // canonical abbrev disagrees with what the NHL emits and any
         // Home → Team navigation for that team will look empty.
-        let bios = crate::bundled::get_bios(icelines_core::CURRENT_SEASON_STR)
-            .expect("25-26 bios must be bundled");
+        let newest_bundle = crate::bundled::BUNDLED_SEASONS[0];
+        let bios = crate::bundled::get_bios(newest_bundle)
+            .expect("newest completed-season bios must be bundled");
         let teams_in_bios: HashSet<String> = bios
             .iter()
             .filter_map(|b| b.current_team_abbrev.clone())
@@ -176,12 +219,13 @@ mod tests {
     }
 
     #[test]
-    fn l1_all_nhl_teams_matches_bundled_goalie_stats_25_26() {
+    fn l1_all_nhl_teams_matches_newest_bundled_goalie_stats() {
         // Same coverage, goalie side — catches the case where bios and
         // goalie data drift apart. Mid-season trades are split with
         // commas (e.g. "EDM,PIT"), so we expand each entry.
-        let goalies = crate::bundled::get_goalie_stats(icelines_core::CURRENT_SEASON_STR)
-            .expect("25-26 goalie-stats must be bundled");
+        let newest_bundle = crate::bundled::BUNDLED_SEASONS[0];
+        let goalies = crate::bundled::get_goalie_stats(newest_bundle)
+            .expect("newest completed-season goalie stats must be bundled");
         let teams_in_goalies: HashSet<String> = goalies
             .iter()
             .flat_map(|g| g.team_abbrevs.split(',').map(|s| s.trim().to_owned()))

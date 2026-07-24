@@ -21,16 +21,17 @@ use icelines_core::view_model::{
 };
 use icelines_core::{
     apply_fantasy_pickup_reserve, build_fantasy_category_matchup, build_fantasy_daily_lineup,
-    build_fantasy_draft_board, build_fantasy_goalie_plan, build_fantasy_matchup_strategy,
-    build_fantasy_morning_briefing, build_fantasy_schedule_view, build_fantasy_simulation_view,
-    build_fantasy_sleeper_board, build_fantasy_week_budget,
-    build_fantasy_weekly_pickups_with_reserve_override, fantasy_acquisition_availability,
-    goalie_scheme_stats_from_view, import_fantasy_platform_eligibility,
-    import_fantasy_taken_players,
+    build_fantasy_draft_board, build_fantasy_draft_card, build_fantasy_goalie_plan,
+    build_fantasy_matchup_strategy, build_fantasy_morning_briefing, build_fantasy_morning_card,
+    build_fantasy_playoff_portfolio, build_fantasy_roster_card, build_fantasy_schedule_view,
+    build_fantasy_simulation_view, build_fantasy_sleeper_board, build_fantasy_trade_card,
+    build_fantasy_week_budget, build_fantasy_weekly_pickups_with_reserve_override,
+    fantasy_acquisition_availability, goalie_scheme_stats_from_view,
+    import_fantasy_platform_eligibility, import_fantasy_taken_players,
     model::{Position, Season},
     name::normalize_name,
-    resolve_fantasy_goalie_start, resolve_fantasy_player_status,
-    resolve_fantasy_scenario_roster_details,
+    rank_fantasy_playoff_candidate_fits, resolve_fantasy_goalie_start,
+    resolve_fantasy_player_status, resolve_fantasy_scenario_roster_details,
     scheme::{compute_fantasy_score, Scheme},
     score_fantasy_roster,
     season_stats::SeasonType,
@@ -41,20 +42,23 @@ use icelines_core::{
     FantasyCategoryMatchupView, FantasyCategoryPlayerInput, FantasyCategoryRateInput,
     FantasyCategoryRule, FantasyCategoryScope, FantasyCategorySnapshotInput,
     FantasyCategoryTeamInput, FantasyCompetitionMode, FantasyCompetitionRules,
-    FantasyDraftCandidateInput, FantasyDraftIdentityInput, FantasyGoalieGameInput,
-    FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput, FantasyGoalieStartObservation,
-    FantasyGoalieStartState, FantasyInjuryPlanView, FantasyLeagueInput, FantasyLeagueTeamInput,
-    FantasyLeagueView, FantasyLineupPlayerInput, FantasyMatchupPointsSnapshotInput,
-    FantasyMatchupStrategy, FantasyMatchupStrategyInput, FantasyMatchupStrategyPlayerInput,
-    FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView, FantasyMatchupSwingInput,
-    FantasyMatchupTiePolicy, FantasyObservationConfidence, FantasyPlayerAvailabilityStatus,
-    FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind, FantasySeasonSimConfig,
-    FantasySeasonSimPlayerInput, FantasySeasonSimView, FantasySimulationBuildInput,
-    FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
-    FantasySimulationScenarioRosterInput, FantasySimulationView, FantasySleeperBoardView,
-    FantasySleeperInput, FantasyStatusObservation, FantasyWeeklyMoveInput, RosterShape,
-    RosterShapeStatus, RosterShapeValidationView, ViewContext, ViewWindow, CURRENT_SEASON,
-    FANTASY_COMPETITION_RULES_SCHEMA,
+    FantasyDraftCandidateInput, FantasyDraftCardInput, FantasyDraftIdentityInput,
+    FantasyGoalieGameInput, FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput,
+    FantasyGoalieStartObservation, FantasyGoalieStartState, FantasyInjuryPlanView,
+    FantasyLeagueInput, FantasyLeagueTeamInput, FantasyLeagueView, FantasyLineupPlayerInput,
+    FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy, FantasyMatchupStrategyInput,
+    FantasyMatchupStrategyPlayerInput, FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView,
+    FantasyMatchupSwingInput, FantasyMatchupTiePolicy, FantasyMorningCardInput,
+    FantasyObservationConfidence, FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput,
+    FantasyPlayoffPortfolioInput, FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput,
+    FantasyRosterCardInput, FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind,
+    FantasySeasonSimConfig, FantasySeasonSimPlayerInput, FantasySeasonSimView,
+    FantasySimulationBuildInput, FantasySimulationConfidence, FantasySimulationHorizon,
+    FantasySimulationRosterTeamInput, FantasySimulationScenarioRosterInput, FantasySimulationView,
+    FantasySleeperBoardView, FantasySleeperInput, FantasyStatusObservation, FantasyTradeCardInput,
+    FantasyTradeEvaluationView, FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation,
+    FantasyWeeklyMoveInput, RosterShape, RosterShapeStatus, RosterShapeValidationView, ViewContext,
+    ViewWindow, CURRENT_SEASON, FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_TRADE_EVALUATION_SCHEMA,
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
@@ -79,6 +83,7 @@ const PENALTY_BOX_AVAILABILITY_HEADER: &str = "THE PENALTY BOX — AVAILABILITY 
 const INSIDER_MORNING_SKATE_HEADER: &str = "THE INSIDER — MORNING SKATE";
 const SCOREBOARD_FANTASY_STANDINGS_HEADER: &str = "THE SCOREBOARD — FANTASY STANDINGS";
 const BENCH_SCHEDULE_EDGE_HEADER: &str = "THE BENCH — THE GAUNTLET — FANTASY SCHEDULE EDGE";
+const BENCH_PLAYOFF_PORTFOLIO_HEADER: &str = "THE BENCH — CUP CHASE — PLAYOFF SCHEDULE PORTFOLIO";
 const FACEOFF_MATCHUP_HEADER: &str = "THE FACEOFF CIRCLE — TALE OF THE TAPE — MATCHUP PLAN";
 const FACEOFF_CATEGORY_MATCHUP_HEADER: &str =
     "THE FACEOFF CIRCLE — TALE OF THE TAPE — CATEGORY MATCHUP PLAN";
@@ -90,6 +95,8 @@ const BOARDS_TRADE_ANALYSIS_HEADER: &str = "THE BOARDS — TRADE DESK — ANALYS
 const BOARDS_TRADE_HISTORY_HEADER: &str = "THE BOARDS — TRADE HISTORY";
 const BOARDS_TRADE_OFFERS_HEADER: &str = "THE BOARDS — TRADE OFFERS";
 const BOARDS_TRADE_FINDER_HEADER: &str = "THE BOARDS — HOT STOVE — TRADE FINDER";
+const DRAFT_PLAYOFF_FIT_CANDIDATE_LIMIT: usize = 100;
+const PICKUP_PLAYOFF_FIT_CANDIDATE_LIMIT: usize = 15;
 
 #[derive(Debug, Clone)]
 pub struct ScheduleEdgeArgs {
@@ -1584,7 +1591,308 @@ pub async fn run_schedule_edge(args: ScheduleEdgeArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn load_fantasy_schedule(
+/// Rank the marked roster by legal usable starts across the final fantasy playoff weeks.
+pub async fn run_playoff_portfolio(
+    rounds: Option<usize>,
+    start: Option<NaiveDate>,
+    team_override: Option<String>,
+    league_override: Option<String>,
+    season: u32,
+    stats_season: String,
+    off_night_max_games: usize,
+    candidate_limit: usize,
+    top: usize,
+    json: bool,
+) -> anyhow::Result<()> {
+    if !(1..=16).contains(&off_night_max_games) {
+        bail!("--off-night-max-games must be between 1 and 16");
+    }
+    if start.is_some_and(|date| date.weekday() != chrono::Weekday::Mon) {
+        bail!("--start must be a Monday");
+    }
+    if candidate_limit == 0 || top == 0 {
+        bail!("--candidates and --top must be at least 1");
+    }
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    let rules = db
+        .get_assistant_rules(&league.id)?
+        .unwrap_or_else(FantasyAssistantRules::configured_2026);
+    let rounds = rounds.unwrap_or(usize::from(rules.playoff_rounds));
+    let start = start.or(rules.playoff_start);
+    if !(1..=4).contains(&rounds) {
+        bail!("--rounds must be between 1 and 4");
+    }
+    let team = if let Some(name) = team_override {
+        require_team(&db, &league.id, &name)?
+    } else {
+        db.get_user_team(&league.id)?.ok_or_else(|| {
+            anyhow::anyhow!(
+                "no user team marked; pass --team or run `icelines fantasy team-use <name>`"
+            )
+        })?
+    };
+    let roster = db.list_roster(&team.id)?;
+    if roster.is_empty() {
+        bail!("{} has no saved roster", team.name);
+    }
+    let eligibility = db
+        .list_player_eligibility(&league.id)?
+        .into_iter()
+        .map(|row| (row.player_normalized, row.positions))
+        .collect::<HashMap<_, _>>();
+    let scheme = resolve_scheme(&league.scheme)?;
+    let (outcome, stats_window, _) =
+        crate::commands::players::load_repo_for_season(Some(&stats_season), None)?;
+    let (skaters, goalies) = pools_views(&outcome.repo, stats_window);
+    let views = skaters
+        .iter()
+        .chain(&goalies)
+        .map(|view| (view.identity.name_normalized.clone(), *view))
+        .collect::<HashMap<_, _>>();
+    let all_keys = skaters
+        .iter()
+        .chain(&goalies)
+        .map(|view| view.identity.name_normalized.clone())
+        .collect::<Vec<_>>();
+    let scores = score_team(&all_keys, &skaters, &goalies, &scheme)
+        .into_iter()
+        .map(|(name, score)| (normalize_name(&name), f64::from(score)))
+        .collect::<HashMap<_, _>>();
+    let current_teams = load_current_player_team_map(Season(season)).ok();
+    let mut players = Vec::with_capacity(roster.len());
+    for key in &roster {
+        let view = views.get(key).with_context(|| {
+            format!(
+                "'{}' on {} is absent from the {stats_season} stats pool",
+                key, team.name
+            )
+        })?;
+        let gp = view.gp();
+        players.push(FantasyPlayoffPlayerInput {
+            player_key: key.clone(),
+            player: view.full_name().to_owned(),
+            nhl_team: current_teams
+                .as_ref()
+                .and_then(|teams| teams.get(key))
+                .cloned()
+                .unwrap_or_else(|| view.team_display().to_owned()),
+            positions: eligibility
+                .get(key)
+                .cloned()
+                .unwrap_or_else(|| vec![view.position()]),
+            projected_value_per_game: if gp == 0 {
+                0.0
+            } else {
+                scores.get(key).copied().unwrap_or_default() / f64::from(gp)
+            },
+        });
+    }
+    let scheduled = load_fantasy_schedule(Season(season), false).await?;
+    let games = scheduled
+        .into_iter()
+        .filter(|game| game.game_type == 2)
+        .map(|game| {
+            Ok(icelines_core::FantasyScheduleGameInput {
+                game_id: game.game_id,
+                date: NaiveDate::parse_from_str(&game.date, "%Y-%m-%d")
+                    .with_context(|| format!("invalid NHL schedule date '{}'", game.date))?,
+                away_team: game.away_abbrev,
+                home_team: game.home_abbrev,
+            })
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let season_end = games
+        .iter()
+        .map(|game| game.date)
+        .max()
+        .ok_or_else(|| anyhow::anyhow!("season {season} has no regular-season schedule"))?;
+    let final_monday =
+        season_end - Duration::days(season_end.weekday().num_days_from_monday() as i64);
+    let first_monday =
+        start.unwrap_or_else(|| final_monday - Duration::weeks(rounds.saturating_sub(1) as i64));
+    let round_labels: Vec<String> = match rounds {
+        1 => vec!["Championship".to_owned()],
+        2 => vec!["Semifinal".to_owned(), "Championship".to_owned()],
+        3 => vec![
+            "First round".to_owned(),
+            "Semifinal".to_owned(),
+            "Championship".to_owned(),
+        ],
+        count => (1..=count).map(|index| format!("Round {index}")).collect(),
+    };
+    let playoff_rounds = round_labels
+        .into_iter()
+        .enumerate()
+        .map(|(index, label)| {
+            let start = first_monday + Duration::weeks(index as i64);
+            FantasyPlayoffRoundInput {
+                label,
+                start,
+                end: start + Duration::days(6),
+            }
+        })
+        .collect();
+    let input = FantasyPlayoffPortfolioInput {
+        season,
+        fantasy_team: team.name,
+        rules,
+        off_night_max_games,
+        rounds: playoff_rounds,
+        players,
+        games,
+    };
+    let all_rostered = db
+        .list_teams(&league.id)?
+        .into_iter()
+        .map(|saved_team| db.list_roster(&saved_team.id))
+        .collect::<anyhow::Result<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .collect::<BTreeSet<_>>();
+    let mut candidates = skaters
+        .iter()
+        .chain(&goalies)
+        .filter(|view| !all_rostered.contains(view.name_normalized()))
+        .map(|view| {
+            let key = view.identity.name_normalized.clone();
+            let gp = view.gp();
+            FantasyPlayoffPlayerInput {
+                player_key: key.clone(),
+                player: view.full_name().to_owned(),
+                nhl_team: current_teams
+                    .as_ref()
+                    .and_then(|teams| teams.get(&key))
+                    .cloned()
+                    .unwrap_or_else(|| view.team_display().to_owned()),
+                positions: eligibility
+                    .get(&key)
+                    .cloned()
+                    .unwrap_or_else(|| vec![view.position()]),
+                projected_value_per_game: if gp == 0 {
+                    0.0
+                } else {
+                    scores.get(&key).copied().unwrap_or_default() / f64::from(gp)
+                },
+            }
+        })
+        .collect::<Vec<_>>();
+    candidates.sort_by(|a, b| {
+        b.projected_value_per_game
+            .total_cmp(&a.projected_value_per_game)
+            .then_with(|| a.player_key.cmp(&b.player_key))
+    });
+    candidates.truncate(candidate_limit);
+    let candidate_fits =
+        rank_fantasy_playoff_candidate_fits(&input, candidates, top).map_err(anyhow::Error::msg)?;
+    let mut view = build_fantasy_playoff_portfolio(input).map_err(anyhow::Error::msg)?;
+    view.candidate_fits = candidate_fits;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&view)?);
+    } else {
+        print_playoff_portfolio(&view);
+    }
+    Ok(())
+}
+
+pub async fn run_playoff_calendar_set(
+    start: NaiveDate,
+    rounds: u8,
+    league_override: Option<String>,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    let mut rules = db
+        .get_assistant_rules(&league.id)?
+        .unwrap_or_else(FantasyAssistantRules::configured_2026);
+    rules.playoff_start = Some(start);
+    rules.playoff_rounds = rounds;
+    rules.validate().map_err(anyhow::Error::msg)?;
+    db.set_assistant_rules(&league.id, &rules)?;
+    if json_output {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&json!({
+                "schema": "fantasy_playoff_calendar.v1",
+                "league": league.name,
+                "start": start,
+                "rounds": rounds,
+                "end": start + Duration::days(i64::from(rounds) * 7 - 1),
+                "persisted": true,
+            }))?
+        );
+    } else {
+        println!(
+            "Fantasy playoff calendar saved for '{}': {} rounds starting {}.",
+            league.name, rounds, start
+        );
+    }
+    Ok(())
+}
+
+fn print_playoff_portfolio(view: &FantasyPlayoffPortfolioView) {
+    println!("{BENCH_PLAYOFF_PORTFOLIO_HEADER}");
+    println!("{} · {}", view.fantasy_team, view.season);
+    for round in &view.rounds {
+        println!(
+            "{} {} to {} · {} usable / {} scheduled · {} quiet · {} collisions · {:.2} value",
+            round.label,
+            round.start,
+            round.end,
+            round.usable_starts,
+            round.roster_scheduled_games,
+            round.quiet_slate_starts,
+            round.bench_collisions,
+            round.projected_usable_value
+        );
+    }
+    println!();
+    println!(
+        "{:<4} {:<24} {:<4} {:>5} {:>6} {:>5} {:>5} {:>8} {:>6}",
+        "#", "Player", "NHL", "Games", "Usable", "Quiet", "Bench", "Value", "Delta"
+    );
+    for row in &view.players {
+        println!(
+            "{:<4} {:<24} {:<4} {:>5} {:>6} {:>5} {:>5} {:>8.2} {:>+6}",
+            row.playoff_rank,
+            row.player,
+            row.nhl_team,
+            row.scheduled_games,
+            row.usable_starts,
+            row.quiet_slate_starts,
+            row.bench_collisions,
+            row.projected_usable_value,
+            row.rank_delta
+        );
+    }
+    if !view.candidate_fits.is_empty() {
+        println!();
+        println!("BEST PLAYOFF FITS");
+        println!(
+            "{:<4} {:<22} {:<4} {:<22} {:>7} {:>7} {:>7}",
+            "#", "Add", "NHL", "Drop", "+Starts", "+Value", "+Score"
+        );
+        for row in &view.candidate_fits {
+            println!(
+                "{:<4} {:<22} {:<4} {:<22} {:>+7} {:>+7.2} {:>+7.2}",
+                row.rank,
+                row.add_player,
+                row.add_nhl_team,
+                row.drop_player,
+                row.usable_starts_delta,
+                row.projected_usable_value_delta,
+                row.portfolio_score_delta
+            );
+        }
+    }
+    println!();
+    for disclosure in &view.disclosures {
+        println!("- {disclosure}");
+    }
+}
+
+pub(crate) async fn load_fantasy_schedule(
     season: Season,
     refresh: bool,
 ) -> anyhow::Result<Vec<ScheduledGame>> {
@@ -3975,6 +4283,94 @@ pub async fn run_injury_plan(
     Ok(())
 }
 
+pub async fn run_roster_card(
+    date: Option<String>,
+    league_override: Option<String>,
+    season: u32,
+    stats_season: String,
+    max_age_minutes: i64,
+    off_night_max_games: usize,
+    classes: usize,
+    json: bool,
+) -> anyhow::Result<()> {
+    if !(1..=16).contains(&off_night_max_games) || !(1..=16).contains(&classes) {
+        bail!("--off-night-max-games and --classes must be between 1 and 16");
+    }
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    let rules = db
+        .get_assistant_rules(&league.id)?
+        .unwrap_or_else(FantasyAssistantRules::configured_2026);
+    let plan = build_injury_plan_view(
+        &db,
+        &league,
+        rules.clone(),
+        date,
+        stats_season,
+        max_age_minutes,
+        None,
+    )
+    .await?;
+    let timezone = rules
+        .timezone
+        .parse::<chrono_tz::Tz>()
+        .map_err(|_| anyhow::anyhow!("unsupported IANA timezone '{}'", rules.timezone))?;
+    let evidence_at = timezone
+        .from_local_datetime(&plan.date.and_hms_opt(7, 0, 0).unwrap())
+        .single()
+        .ok_or_else(|| anyhow::anyhow!("07:00 local time is ambiguous on {}", plan.date))?
+        .with_timezone(&Utc);
+    let budget = load_week_budget(&db, &league.id, &rules, evidence_at)?;
+    let fantasy_team = db.get_user_team(&league.id)?.ok_or_else(|| {
+        anyhow::anyhow!("no user team marked; run `icelines fantasy team-use <name>`")
+    })?;
+    let season = Season(season);
+    let games = load_fantasy_schedule(season, false).await?;
+    let roster_teams = resolve_user_roster_teams(season, &league_override)?;
+    let schedule = build_fantasy_schedule_view(
+        games
+            .into_iter()
+            .filter(|game| game.game_type == 2)
+            .map(|game| {
+                Ok(icelines_core::FantasyScheduleGameInput {
+                    game_id: game.game_id,
+                    date: NaiveDate::parse_from_str(&game.date, "%Y-%m-%d")
+                        .with_context(|| format!("invalid NHL schedule date '{}'", game.date))?,
+                    away_team: game.away_abbrev,
+                    home_team: game.home_abbrev,
+                })
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?,
+        season.0,
+        off_night_max_games,
+        classes,
+        roster_teams,
+    )
+    .map_err(anyhow::Error::msg)?;
+    let mut view = ViewContext::new(ViewWindow::new(season, SeasonType::Regular));
+    view.generated_at = Some(evidence_at);
+    let card = build_fantasy_roster_card(FantasyRosterCardInput {
+        league_id: league.id,
+        league_name: league.name,
+        fantasy_team_id: fantasy_team.id,
+        fantasy_team_name: fantasy_team.name,
+        scoring_scheme_id: league.scheme.clone(),
+        scoring_scheme_name: league.scheme,
+        roster_snapshot_id: None,
+        acquisitions_used_this_week: budget.acquisitions_used,
+        injury_plan: plan,
+        schedule: Some(schedule),
+        view,
+        evidence_at: Some(evidence_at),
+    })?;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&card)?);
+    } else {
+        print!("{}", super::card_renderer::render_card(&card));
+    }
+    Ok(())
+}
+
 fn print_injury_plan(plan: &FantasyInjuryPlanView) {
     println!("{} — {}", PENALTY_BOX_AVAILABILITY_HEADER, plan.date);
     for row in &plan.lineup.injured_reserve {
@@ -4019,6 +4415,7 @@ pub async fn run_morning(
     current_goalie_appearances: f64,
     material_only: bool,
     json: bool,
+    card: bool,
 ) -> anyhow::Result<()> {
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
@@ -4130,7 +4527,27 @@ pub async fn run_morning(
         )?;
     }
 
-    if json {
+    if card {
+        let mut view =
+            ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular));
+        view.generated_at = Some(generated_at);
+        let card = build_fantasy_morning_card(FantasyMorningCardInput {
+            league_id: league.id,
+            league_name: league.name,
+            fantasy_team_id: user_team.id,
+            fantasy_team_name: user_team.name,
+            scoring_scheme_id: league.scheme.clone(),
+            scoring_scheme_name: league.scheme,
+            roster_snapshot_id: None,
+            briefing,
+            view,
+        })?;
+        if json {
+            println!("{}", serde_json::to_string_pretty(&card)?);
+        } else {
+            print!("{}", super::card_renderer::render_card(&card));
+        }
+    } else if json {
         println!("{}", serde_json::to_string_pretty(&briefing)?);
     } else if briefing.suppressed_unchanged {
         println!(
@@ -4459,6 +4876,14 @@ async fn build_weekly_pickups_view(
     });
     available.truncate(candidate_limit.max(1));
     let open_roster_slot = user_roster.len() < rules.standard_roster_capacity();
+    let playoff_option_values = pickup_playoff_option_values(
+        &user_roster,
+        &available,
+        open_roster_slot,
+        &pool_by_key,
+        &team_dates,
+        &rules,
+    )?;
     let mut moves = Vec::new();
     for candidate in available {
         let waiver = db.get_waiver(&league.id, &candidate.key)?;
@@ -4501,7 +4926,10 @@ async fn build_weekly_pickups_view(
                     .copied()
                     .unwrap_or_default(),
                 category_gap_delta: 0.0,
-                future_schedule_option_value: 0.0,
+                future_schedule_option_value: playoff_option_values
+                    .get(&(candidate.key.clone(), drop_key.cloned().unwrap_or_default()))
+                    .copied()
+                    .unwrap_or_default(),
                 dropped_player_rest_of_week_value: drop_value,
                 waiver_reacquisition_cost: drop_value * 0.10,
                 pickup_budget_cost: if budget.acquisitions_remaining <= 1 {
@@ -4525,6 +4953,16 @@ async fn build_weekly_pickups_view(
         "values use completed-season per-game scoring; injuries, confirmed starts, and same-day locks require the morning evidence phase"
             .to_owned(),
     );
+    if rules.playoff_start.is_some() {
+        view.warnings.push(format!(
+            "playoff retention value evaluates the top {PICKUP_PLAYOFF_FIT_CANDIDATE_LIMIT} available candidates against every legal drop over the saved calendar and is capped at +6/-4"
+        ));
+    } else {
+        view.warnings.push(
+            "fantasy playoff calendar is not configured; future schedule option value remains zero"
+                .to_owned(),
+        );
+    }
     Ok((view, evaluation_date, sunday))
 }
 
@@ -4567,6 +5005,52 @@ pub async fn run_weekly_pickups(
 struct WeeklyRosterSimulation {
     usable_starts: usize,
     player_values: HashMap<String, f64>,
+}
+
+fn pickup_playoff_option_values(
+    roster: &[String],
+    available: &[&DraftPoolPlayer],
+    open_roster_slot: bool,
+    pool: &HashMap<String, &DraftPoolPlayer>,
+    team_dates: &HashMap<String, BTreeSet<NaiveDate>>,
+    rules: &FantasyAssistantRules,
+) -> anyhow::Result<HashMap<(String, String), f64>> {
+    let Some(start) = rules.playoff_start else {
+        return Ok(HashMap::new());
+    };
+    let end = start + Duration::days(i64::from(rules.playoff_rounds) * 7 - 1);
+    let dates = (0..=(end - start).num_days())
+        .map(|offset| start + Duration::days(offset))
+        .collect::<Vec<_>>();
+    let baseline = simulate_weekly_roster(roster, pool, team_dates, &dates, rules)?;
+    let baseline_value = baseline.player_values.values().sum::<f64>();
+    let mut values = HashMap::new();
+    for candidate in available.iter().take(PICKUP_PLAYOFF_FIT_CANDIDATE_LIMIT) {
+        let drops = if open_roster_slot {
+            std::iter::once(None)
+                .chain(roster.iter().map(Some))
+                .collect::<Vec<_>>()
+        } else {
+            roster.iter().map(Some).collect::<Vec<_>>()
+        };
+        for drop_key in drops {
+            let mut after_roster = roster.to_vec();
+            if let Some(drop_key) = drop_key {
+                after_roster.retain(|key| key != drop_key);
+            }
+            after_roster.push(candidate.key.clone());
+            let after = simulate_weekly_roster(&after_roster, pool, team_dates, &dates, rules)?;
+            let after_value = after.player_values.values().sum::<f64>();
+            let starts_delta = after.usable_starts as f64 - baseline.usable_starts as f64;
+            let value_delta = after_value - baseline_value;
+            let option_value = (starts_delta + value_delta * 0.20).clamp(-4.0, 6.0);
+            values.insert(
+                (candidate.key.clone(), drop_key.cloned().unwrap_or_default()),
+                option_value,
+            );
+        }
+    }
+    Ok(values)
 }
 
 fn simulate_weekly_roster(
@@ -4909,6 +5393,7 @@ pub async fn run_draft_board(
     stats_season: String,
     top: usize,
     json: bool,
+    card: bool,
 ) -> anyhow::Result<()> {
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
@@ -5059,6 +5544,11 @@ pub async fn run_draft_board(
         .await
         .ok();
     let (team_dates, quiet_games) = draft_schedule_metrics(schedule.as_deref().unwrap_or(&[]));
+    let playoff_fit = if rules.playoff_start.is_some() {
+        draft_playoff_fit_metrics(&user_roster, &pool, &team_dates, &rules)?
+    } else {
+        HashMap::new()
+    };
     let roster_dates = user_roster
         .iter()
         .filter_map(|key| pool.iter().find(|player| &player.key == key))
@@ -5096,6 +5586,10 @@ pub async fn run_draft_board(
                 quiet_slate_games: quiet_games.get(&player.team).copied().unwrap_or_default()
                     as f64,
                 schedule_collision_rate: collision_rate,
+                playoff_incremental_usable_starts: playoff_fit
+                    .get(&player.key)
+                    .map_or(0.0, |fit| fit.0),
+                playoff_usable_value_delta: playoff_fit.get(&player.key).map_or(0.0, |fit| fit.1),
                 risk_penalty: 0.0,
             }
         })
@@ -5132,6 +5626,18 @@ pub async fn run_draft_board(
             .warnings
             .push("2026-27 schedule was unavailable; schedule-fit components are zero".to_owned());
     }
+    if rules.playoff_start.is_none() {
+        board.warnings.push(
+            "fantasy playoff calendar is not configured; playoff-fit draft value is zero until `fantasy playoff-calendar-set`"
+                .to_owned(),
+        );
+    } else {
+        board.warnings.push(
+            format!(
+                "playoff fit reruns legal daily assignments over the saved playoff calendar for the top {DRAFT_PLAYOFF_FIT_CANDIDATE_LIMIT} completed-season candidates and is capped at +12/-8 draft-value points"
+            ),
+        );
+    }
     if current_team_map.is_none() {
         board.warnings.push(
             "current 2026-27 roster snapshots were unavailable; NHL team labels fall back to the scoring season"
@@ -5151,7 +5657,34 @@ pub async fn run_draft_board(
         ));
     }
 
-    if json {
+    if card {
+        let generated_at = Utc::now();
+        let mut view =
+            ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular));
+        view.generated_at = Some(generated_at);
+        let fantasy_team_id = user_team
+            .map(|team| team.id.clone())
+            .unwrap_or_else(|| "unmarked-roster".to_string());
+        let fantasy_team_name = user_team
+            .map(|team| team.name.clone())
+            .unwrap_or_else(|| "Unmarked roster".to_string());
+        let card = build_fantasy_draft_card(FantasyDraftCardInput {
+            league_id: league.id,
+            league_name: league.name,
+            fantasy_team_id,
+            fantasy_team_name,
+            roster_snapshot_id: None,
+            calendar_fingerprint: None,
+            board,
+            view,
+            evidence_at: Some(generated_at),
+        })?;
+        if json {
+            println!("{}", serde_json::to_string_pretty(&card)?);
+        } else {
+            print!("{}", super::card_renderer::render_card(&card));
+        }
+    } else if json {
         println!("{}", serde_json::to_string_pretty(&board)?);
     } else {
         print_draft_board(&board);
@@ -5201,6 +5734,84 @@ fn draft_schedule_metrics(
         })
         .collect();
     (dates, quiet_games)
+}
+
+fn draft_playoff_fit_metrics(
+    roster: &[String],
+    pool: &[DraftPoolPlayer],
+    team_dates: &HashMap<String, BTreeSet<NaiveDate>>,
+    rules: &FantasyAssistantRules,
+) -> anyhow::Result<HashMap<String, (f64, f64)>> {
+    let Some(start) = rules.playoff_start else {
+        return Ok(HashMap::new());
+    };
+    let end = start + Duration::days(i64::from(rules.playoff_rounds) * 7 - 1);
+    let pool_by_key = pool
+        .iter()
+        .map(|player| (player.key.as_str(), player))
+        .collect::<HashMap<_, _>>();
+    let lineup_for = |keys: &[String], date: NaiveDate| -> anyhow::Result<_> {
+        build_fantasy_daily_lineup(
+            rules.clone(),
+            keys.iter()
+                .filter_map(|key| pool_by_key.get(key.as_str()).copied())
+                .map(|player| FantasyLineupPlayerInput {
+                    player_key: player.key.clone(),
+                    display_name: player.player.clone(),
+                    nhl_team: player.team.clone(),
+                    platform_positions: player.positions.clone(),
+                    projected_value: if player.games_played == 0 {
+                        0.0
+                    } else {
+                        player.quality / f64::from(player.games_played)
+                    },
+                    has_game: team_dates
+                        .get(&player.team)
+                        .is_some_and(|dates| dates.contains(&date)),
+                    status: FantasyPlayerAvailabilityStatus::Healthy,
+                    locked_slot: None,
+                    locked: false,
+                })
+                .collect(),
+        )
+        .map_err(anyhow::Error::msg)
+    };
+    let mut baseline = BTreeMap::new();
+    let mut date = start;
+    while date <= end {
+        let lineup = lineup_for(roster, date)?;
+        baseline.insert(date, (lineup.usable_starts, lineup.projected_active_value));
+        date += Duration::days(1);
+    }
+    let roster_keys = roster.iter().map(String::as_str).collect::<BTreeSet<_>>();
+    let mut fits = HashMap::new();
+    let mut candidates = pool
+        .iter()
+        .filter(|player| !roster_keys.contains(player.key.as_str()))
+        .collect::<Vec<_>>();
+    candidates.sort_by(|a, b| {
+        b.quality
+            .total_cmp(&a.quality)
+            .then_with(|| a.key.cmp(&b.key))
+    });
+    candidates.truncate(DRAFT_PLAYOFF_FIT_CANDIDATE_LIMIT);
+    for candidate in candidates {
+        let Some(candidate_dates) = team_dates.get(&candidate.team) else {
+            continue;
+        };
+        let mut hypothetical = roster.to_vec();
+        hypothetical.push(candidate.key.clone());
+        let mut starts_delta = 0.0;
+        let mut value_delta = 0.0;
+        for game_date in candidate_dates.range(start..=end) {
+            let after = lineup_for(&hypothetical, *game_date)?;
+            let (baseline_starts, baseline_value) = baseline[game_date];
+            starts_delta += after.usable_starts as f64 - baseline_starts as f64;
+            value_delta += after.projected_active_value - baseline_value;
+        }
+        fits.insert(candidate.key.clone(), (starts_delta, value_delta));
+    }
+    Ok(fits)
 }
 
 fn goalie_schedule_contexts(
@@ -5404,6 +6015,13 @@ fn print_assistant_rules(rules: &FantasyAssistantRules) {
         rules.injury_pickup_reserve
     );
     println!("Morning: {} {}", rules.morning_time, rules.timezone);
+    println!(
+        "Fantasy playoffs: {} · {} round(s)",
+        rules
+            .playoff_start
+            .map_or_else(|| "not configured".to_owned(), |date| date.to_string()),
+        rules.playoff_rounds
+    );
 }
 
 /// `icelines fantasy roster-shape-validate [--league <league>] [--team <team>] [--json]`
@@ -5795,51 +6413,6 @@ fn row_status_label(status: FantasyImportRowStatus) -> &'static str {
 }
 
 #[derive(Debug, Clone, Serialize)]
-struct FantasyTradePlayerEvaluation {
-    player_key: String,
-    player: String,
-    nhl_team: String,
-    positions: Vec<Position>,
-    league_value: f64,
-    league_value_per_game: f64,
-    remaining_games: u32,
-    projected_remaining_value: f64,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct FantasyTradeTeamEvaluation {
-    team: String,
-    before_value: f64,
-    after_value: f64,
-    value_delta: f64,
-    remaining_games_delta: i32,
-    roster_size_after: usize,
-    standard_capacity: usize,
-    missing_active_slots_before: usize,
-    missing_active_slots_after: usize,
-    legal: bool,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct FantasyTradeEvaluation {
-    schema: String,
-    executed: bool,
-    saved_offer_id: Option<String>,
-    league: String,
-    scoring_scheme: String,
-    sending_team: String,
-    receiving_team: String,
-    sends: Vec<FantasyTradePlayerEvaluation>,
-    receives: Vec<FantasyTradePlayerEvaluation>,
-    sending_team_result: FantasyTradeTeamEvaluation,
-    receiving_team_result: FantasyTradeTeamEvaluation,
-    package_value_gap: f64,
-    package_value_gap_percent: f64,
-    recommendation: String,
-    warnings: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
 struct FantasyTradeOfferCandidate {
     rank: usize,
     opponent: String,
@@ -5986,6 +6559,7 @@ pub async fn run_trade(
     league_override: Option<String>,
     stats_season: String,
     json: bool,
+    card: bool,
 ) -> anyhow::Result<()> {
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
@@ -6229,8 +6803,8 @@ pub async fn run_trade(
         None
     };
 
-    let view = FantasyTradeEvaluation {
-        schema: "fantasy_trade_evaluation.v1".to_owned(),
+    let view = FantasyTradeEvaluationView {
+        schema: FANTASY_TRADE_EVALUATION_SCHEMA.to_owned(),
         executed: execute,
         saved_offer_id,
         league: league.name.clone(),
@@ -6246,6 +6820,29 @@ pub async fn run_trade(
         recommendation,
         warnings,
     };
+
+    if card {
+        let evaluated_at = Utc::now();
+        let mut context =
+            ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular));
+        context.generated_at = Some(evaluated_at);
+        let card = build_fantasy_trade_card(FantasyTradeCardInput {
+            league_id: league.id,
+            scoring_scheme_id: league.scheme,
+            sending_team_id: team1.id,
+            receiving_team_id: team2.id,
+            offer_id: view.saved_offer_id.clone(),
+            evaluated_at,
+            evaluation: view,
+            view: context,
+        })?;
+        if json {
+            println!("{}", serde_json::to_string_pretty(&card)?);
+        } else {
+            print!("{}", super::card_renderer::render_card(&card));
+        }
+        return Ok(());
+    }
 
     if json {
         println!("{}", serde_json::to_string_pretty(&view)?);
@@ -8147,6 +8744,129 @@ mod tests {
         assert_eq!(result.usable_starts, 1);
         assert_eq!(result.player_values.get("better"), Some(&1.0));
         assert!(!result.player_values.contains_key("bench"));
+    }
+
+    #[test]
+    fn draft_playoff_fit_uses_legal_exact_date_assignments() {
+        let anchor = DraftPoolPlayer {
+            key: "anchor".to_owned(),
+            player: "Anchor".to_owned(),
+            team: "COL".to_owned(),
+            positions: vec![Position::Center],
+            quality: 820.0,
+            games_played: 82,
+        };
+        let complement = DraftPoolPlayer {
+            key: "complement".to_owned(),
+            player: "Complement".to_owned(),
+            team: "SEA".to_owned(),
+            positions: vec![Position::Center],
+            quality: 246.0,
+            games_played: 82,
+        };
+        let collision = DraftPoolPlayer {
+            key: "collision".to_owned(),
+            player: "Collision".to_owned(),
+            team: "NYR".to_owned(),
+            positions: vec![Position::Center],
+            quality: 164.0,
+            games_played: 82,
+        };
+        let monday = NaiveDate::from_ymd_opt(2027, 3, 15).unwrap();
+        let schedules = HashMap::from([
+            (
+                "COL".to_owned(),
+                BTreeSet::from([monday, monday + Duration::days(1)]),
+            ),
+            (
+                "NYR".to_owned(),
+                BTreeSet::from([monday, monday + Duration::days(1)]),
+            ),
+            (
+                "SEA".to_owned(),
+                BTreeSet::from([monday + Duration::days(2), monday + Duration::days(3)]),
+            ),
+        ]);
+        let mut rules = FantasyAssistantRules::configured_2026();
+        rules.active_slots = BTreeMap::from([(icelines_core::FantasyActiveSlotKind::Center, 1)]);
+        rules.bench_slots = 2;
+        rules.playoff_start = Some(monday);
+        rules.playoff_rounds = 1;
+        let fits = draft_playoff_fit_metrics(
+            &[anchor.key.clone()],
+            &[anchor, complement, collision],
+            &schedules,
+            &rules,
+        )
+        .unwrap();
+
+        assert_eq!(fits["complement"], (2.0, 6.0));
+        assert_eq!(fits["collision"], (0.0, 0.0));
+    }
+
+    #[test]
+    fn pickup_playoff_option_rewards_complement_without_overvaluing_collision() {
+        let anchor = DraftPoolPlayer {
+            key: "anchor".to_owned(),
+            player: "Anchor".to_owned(),
+            team: "COL".to_owned(),
+            positions: vec![Position::Center],
+            quality: 820.0,
+            games_played: 82,
+        };
+        let complement = DraftPoolPlayer {
+            key: "complement".to_owned(),
+            player: "Complement".to_owned(),
+            team: "SEA".to_owned(),
+            positions: vec![Position::Center],
+            quality: 246.0,
+            games_played: 82,
+        };
+        let collision = DraftPoolPlayer {
+            key: "collision".to_owned(),
+            player: "Collision".to_owned(),
+            team: "NYR".to_owned(),
+            positions: vec![Position::Center],
+            quality: 164.0,
+            games_played: 82,
+        };
+        let pool = HashMap::from([
+            (anchor.key.clone(), &anchor),
+            (complement.key.clone(), &complement),
+            (collision.key.clone(), &collision),
+        ]);
+        let monday = NaiveDate::from_ymd_opt(2027, 3, 15).unwrap();
+        let schedules = HashMap::from([
+            (
+                "COL".to_owned(),
+                BTreeSet::from([monday, monday + Duration::days(1)]),
+            ),
+            (
+                "NYR".to_owned(),
+                BTreeSet::from([monday, monday + Duration::days(1)]),
+            ),
+            (
+                "SEA".to_owned(),
+                BTreeSet::from([monday + Duration::days(2), monday + Duration::days(3)]),
+            ),
+        ]);
+        let mut rules = FantasyAssistantRules::configured_2026();
+        rules.active_slots = BTreeMap::from([(icelines_core::FantasyActiveSlotKind::Center, 1)]);
+        rules.bench_slots = 2;
+        rules.playoff_start = Some(monday);
+        rules.playoff_rounds = 1;
+        let values = pickup_playoff_option_values(
+            &[anchor.key.clone()],
+            &[&complement, &collision],
+            true,
+            &pool,
+            &schedules,
+            &rules,
+        )
+        .unwrap();
+
+        assert!((values[&("complement".to_owned(), String::new())] - 3.2).abs() < f64::EPSILON);
+        assert_eq!(values[&("collision".to_owned(), String::new())], 0.0);
     }
 
     #[test]

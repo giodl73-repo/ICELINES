@@ -493,6 +493,26 @@ fn rank_weekly_move(candidate: FantasyWeeklyMoveInput) -> Result<FantasyWeeklyMo
         - candidate.waiver_reacquisition_cost
         - candidate.pickup_budget_cost
         - candidate.uncertainty_discount;
+    let mut reasons = vec![
+        format!(
+            "{:.1} incremental usable starts",
+            candidate.incremental_usable_starts
+        ),
+        format!(
+            "{:.1} projected points from those starts",
+            candidate.projected_points_from_incremental_starts
+        ),
+        format!(
+            "{:.1} rest-of-week value surrendered",
+            candidate.dropped_player_rest_of_week_value
+        ),
+    ];
+    if candidate.future_schedule_option_value != 0.0 {
+        reasons.push(format!(
+            "{:+.1} saved-playoff-calendar retention value",
+            candidate.future_schedule_option_value
+        ));
+    }
     Ok(FantasyWeeklyMoveRow {
         rank: 0,
         add_player_key: candidate.add_player_key,
@@ -501,20 +521,7 @@ fn rank_weekly_move(candidate: FantasyWeeklyMoveInput) -> Result<FantasyWeeklyMo
         drop_player: candidate.drop_player,
         incremental_usable_starts: candidate.incremental_usable_starts,
         projected_value_delta,
-        reasons: vec![
-            format!(
-                "{:.1} incremental usable starts",
-                candidate.incremental_usable_starts
-            ),
-            format!(
-                "{:.1} projected points from those starts",
-                candidate.projected_points_from_incremental_starts
-            ),
-            format!(
-                "{:.1} rest-of-week value surrendered",
-                candidate.dropped_player_rest_of_week_value
-            ),
-        ],
+        reasons,
     })
 }
 
@@ -863,6 +870,12 @@ pub struct FantasyDraftCandidateInput {
     pub quiet_slate_games: f64,
     /// Exact-date collision rate against the current roster, from 0 through 1.
     pub schedule_collision_rate: f64,
+    /// Legal active-start change over the configured fantasy playoff window.
+    #[serde(default)]
+    pub playoff_incremental_usable_starts: f64,
+    /// Legal active-lineup value change over the configured playoff window.
+    #[serde(default)]
+    pub playoff_usable_value_delta: f64,
     /// Already-scaled deduction for injury, role, or evidence uncertainty.
     pub risk_penalty: f64,
 }
@@ -877,6 +890,7 @@ pub struct FantasyDraftValueComponents {
     pub quiet_slate_value: f64,
     pub schedule_diversity: f64,
     pub collision_cost: f64,
+    pub playoff_fit_value: f64,
     pub risk_penalty: f64,
 }
 
@@ -1016,6 +1030,14 @@ fn rank_draft_candidate(
         ),
         ("quiet_slate_games", candidate.quiet_slate_games),
         ("schedule_collision_rate", candidate.schedule_collision_rate),
+        (
+            "playoff_incremental_usable_starts",
+            candidate.playoff_incremental_usable_starts,
+        ),
+        (
+            "playoff_usable_value_delta",
+            candidate.playoff_usable_value_delta,
+        ),
         ("risk_penalty", candidate.risk_penalty),
     ] {
         if !value.is_finite() {
@@ -1053,6 +1075,9 @@ fn rank_draft_candidate(
     let quiet_slate_value = candidate.quiet_slate_games * 0.75;
     let schedule_diversity = (1.0 - candidate.schedule_collision_rate) * 4.0;
     let collision_cost = candidate.schedule_collision_rate * 6.0;
+    let playoff_fit_value = (candidate.playoff_incremental_usable_starts * 1.5
+        + candidate.playoff_usable_value_delta * 0.25)
+        .clamp(-8.0, 12.0);
     let risk_penalty = candidate.risk_penalty.max(0.0);
     let components = FantasyDraftValueComponents {
         league_scored_quality: candidate.league_scored_quality,
@@ -1063,6 +1088,7 @@ fn rank_draft_candidate(
         quiet_slate_value,
         schedule_diversity,
         collision_cost,
+        playoff_fit_value,
         risk_penalty,
     };
     let draft_value = components.league_scored_quality
@@ -1072,6 +1098,7 @@ fn rank_draft_candidate(
         + components.incremental_usable_starts
         + components.quiet_slate_value
         + components.schedule_diversity
+        + components.playoff_fit_value
         - components.collision_cost
         - components.risk_penalty;
     let mut reasons = vec![format!(
@@ -1094,6 +1121,14 @@ fn rank_draft_candidate(
         "{:.0}% exact-date roster collision",
         candidate.schedule_collision_rate * 100.0
     ));
+    if candidate.playoff_incremental_usable_starts != 0.0
+        || candidate.playoff_usable_value_delta != 0.0
+    {
+        reasons.push(format!(
+            "playoff fit {:+.1} usable starts / {:+.1} active value",
+            candidate.playoff_incremental_usable_starts, candidate.playoff_usable_value_delta
+        ));
+    }
 
     Ok(FantasyDraftCandidateRow {
         rank: 0,
@@ -1311,8 +1346,15 @@ pub struct FantasyAssistantRules {
     pub injury_reserve_release_weekday: u8,
     pub waiver_days: u8,
     pub waiver_claim_counts_as_acquisition: bool,
+    #[serde(default = "default_free_agent_same_day")]
+    pub free_agent_same_day: bool,
     pub timezone: String,
     pub morning_time: String,
+    /// Monday starting the league's first fantasy playoff round.
+    #[serde(default)]
+    pub playoff_start: Option<NaiveDate>,
+    #[serde(default = "default_playoff_rounds")]
+    pub playoff_rounds: u8,
 }
 
 impl FantasyAssistantRules {
@@ -1335,8 +1377,11 @@ impl FantasyAssistantRules {
             injury_reserve_release_weekday: default_injury_reserve_release_weekday(),
             waiver_days: 2,
             waiver_claim_counts_as_acquisition: true,
+            free_agent_same_day: default_free_agent_same_day(),
             timezone: "America/Los_Angeles".to_owned(),
             morning_time: "07:00".to_owned(),
+            playoff_start: None,
+            playoff_rounds: default_playoff_rounds(),
         }
     }
 
@@ -1377,6 +1422,15 @@ impl FantasyAssistantRules {
         if self.timezone.trim().is_empty() || self.morning_time.trim().is_empty() {
             return Err("timezone and morning time are required".to_owned());
         }
+        if !(1..=4).contains(&self.playoff_rounds) {
+            return Err("fantasy playoff rounds must be between one and four".to_owned());
+        }
+        if self
+            .playoff_start
+            .is_some_and(|date| date.weekday() != chrono::Weekday::Mon)
+        {
+            return Err("fantasy playoff start must be a Monday".to_owned());
+        }
         Ok(())
     }
 
@@ -1409,6 +1463,14 @@ const fn default_injury_pickup_reserve() -> u8 {
 
 const fn default_injury_reserve_release_weekday() -> u8 {
     5
+}
+
+const fn default_free_agent_same_day() -> bool {
+    true
+}
+
+const fn default_playoff_rounds() -> u8 {
+    3
 }
 
 impl Default for FantasyAssistantRules {
@@ -2183,11 +2245,26 @@ pub struct FantasyReserveAssignmentRow {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FantasyBenchAssignmentRow {
+    pub bench_slot: String,
+    pub player_key: String,
+    pub player: String,
+    pub nhl_team: String,
+    pub platform_positions: Vec<Position>,
+    pub projected_value: f64,
+    pub has_game: bool,
+    pub status: FantasyPlayerAvailabilityStatus,
+    pub locked: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FantasyDailyLineupView {
     pub schema: String,
     pub rules: FantasyAssistantRules,
     pub active: Vec<FantasyLineupAssignmentRow>,
     pub bench: Vec<String>,
+    #[serde(default)]
+    pub bench_assignments: Vec<FantasyBenchAssignmentRow>,
     pub injured_reserve: Vec<FantasyReserveAssignmentRow>,
     pub injured_reserve_plus: Vec<FantasyReserveAssignmentRow>,
     pub overflow: Vec<String>,
@@ -2318,10 +2395,28 @@ pub fn build_fantasy_daily_lineup(
         let b_index = slot_by_id.get(&b.slot_id).copied().unwrap_or(usize::MAX);
         a_index.cmp(&b_index)
     });
-    let bench = standard
+    let bench_players = standard
         .iter()
         .filter(|player| !active.iter().any(|row| row.player_key == player.player_key))
+        .collect::<Vec<_>>();
+    let bench = bench_players
+        .iter()
         .map(|player| player.display_name.clone())
+        .collect::<Vec<_>>();
+    let bench_assignments = bench_players
+        .iter()
+        .enumerate()
+        .map(|(index, player)| FantasyBenchAssignmentRow {
+            bench_slot: format!("BN{}", index + 1),
+            player_key: player.player_key.clone(),
+            player: player.display_name.clone(),
+            nhl_team: player.nhl_team.clone(),
+            platform_positions: player.platform_positions.clone(),
+            projected_value: player.projected_value,
+            has_game: player.has_game,
+            status: player.status,
+            locked: player.locked,
+        })
         .collect::<Vec<_>>();
     if bench.len() > rules.bench_slots as usize {
         warnings.push(format!(
@@ -2366,6 +2461,7 @@ pub fn build_fantasy_daily_lineup(
         rules,
         active,
         bench,
+        bench_assignments,
         injured_reserve: ir,
         injured_reserve_plus: ir_plus,
         overflow,
@@ -2500,6 +2596,8 @@ mod tests {
             incremental_usable_starts: 1.0,
             quiet_slate_games: 1.0,
             schedule_collision_rate: 0.5,
+            playoff_incremental_usable_starts: 0.0,
+            playoff_usable_value_delta: 0.0,
             risk_penalty: 0.0,
         }
     }
@@ -2526,7 +2624,25 @@ mod tests {
         assert_eq!(rules.total_capacity_with_reserve(), 20);
         assert_eq!(rules.weekly_acquisition_limit, 4);
         assert_eq!(rules.waiver_days, 2);
+        assert_eq!(rules.playoff_start, None);
+        assert_eq!(rules.playoff_rounds, 3);
         assert!(rules.validate().is_ok());
+    }
+
+    #[test]
+    fn playoff_calendar_requires_monday_and_one_to_four_rounds() {
+        let mut rules = FantasyAssistantRules::configured_2026();
+        rules.playoff_start = Some(NaiveDate::from_ymd_opt(2027, 3, 16).unwrap());
+        assert_eq!(
+            rules.validate().unwrap_err(),
+            "fantasy playoff start must be a Monday"
+        );
+        rules.playoff_start = Some(NaiveDate::from_ymd_opt(2027, 3, 15).unwrap());
+        rules.playoff_rounds = 5;
+        assert_eq!(
+            rules.validate().unwrap_err(),
+            "fantasy playoff rounds must be between one and four"
+        );
     }
 
     #[test]
@@ -3008,10 +3124,14 @@ mod tests {
         let object = value.as_object_mut().unwrap();
         object.remove("injury_pickup_reserve");
         object.remove("injury_reserve_release_weekday");
+        object.remove("playoff_start");
+        object.remove("playoff_rounds");
 
         let rules: FantasyAssistantRules = serde_json::from_value(value).unwrap();
         assert_eq!(rules.injury_pickup_reserve, 1);
         assert_eq!(rules.injury_reserve_release_weekday, 5);
+        assert_eq!(rules.playoff_start, None);
+        assert_eq!(rules.playoff_rounds, 3);
         rules.validate().unwrap();
     }
 
@@ -3024,10 +3144,12 @@ mod tests {
             &[],
         )
         .unwrap();
+        let mut best = weekly_move("best", "bench", 8.0, true);
+        best.future_schedule_option_value = 2.0;
         let view = build_fantasy_weekly_pickups(
             budget,
             vec![
-                weekly_move("best", "bench", 8.0, true),
+                best,
                 weekly_move("less", "bench", 5.0, true),
                 weekly_move("waiver", "bench", 20.0, false),
             ],
@@ -3038,6 +3160,10 @@ mod tests {
         assert_eq!(view.rows[0].add_player_key, "best");
         assert_eq!(view.rows.len(), 2);
         assert_eq!(view.blocked_waiver_candidates, 1);
+        assert!(view.rows[0]
+            .reasons
+            .iter()
+            .any(|reason| reason.contains("saved-playoff-calendar")));
     }
 
     #[test]
@@ -3095,6 +3221,8 @@ mod tests {
         calendar.incremental_usable_starts = 4.0;
         calendar.quiet_slate_games = 10.0;
         calendar.schedule_collision_rate = 0.0;
+        calendar.playoff_incremental_usable_starts = 20.0;
+        calendar.playoff_usable_value_delta = 100.0;
         let board = build_fantasy_draft_board(
             "league-test",
             "20252026",
@@ -3109,6 +3237,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(board.rows[0].player_key, "elite");
+        assert_eq!(board.rows[1].components.playoff_fit_value, 12.0);
         assert_eq!(
             board.rows[1].best_open_slot,
             Some(FantasyActiveSlotKind::LeftWing)

@@ -16,6 +16,7 @@ pub mod queries;
 pub mod schedule;
 pub mod search;
 pub mod team;
+pub mod team_card;
 pub mod transactions;
 
 use crate::tui::app::{App, Screen};
@@ -147,6 +148,7 @@ fn render_sdi(f: &mut Frame, app: &App) {
     match &app.screen {
         Screen::Home => home::render(f, app, chunks[1]),
         Screen::Team(abbrev) => team::render(f, app, chunks[1], abbrev),
+        Screen::TeamCard { team, compare } => team_card::render(f, app, chunks[1], team, *compare),
         Screen::PlayerById(pid) => player::render_by_id(f, app, chunks[1], *pid),
         Screen::PlayerRecordsById(pid) => player_records::render_by_id(f, app, chunks[1], *pid),
         Screen::PlayerAwardsById(pid) => player_awards::render_by_id(f, app, chunks[1], *pid),
@@ -500,6 +502,7 @@ fn render_mdi_workspace(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayo
     match &app.screen {
         Screen::Home => home::render(f, app, inner),
         Screen::Team(abbrev) => team::render(f, app, inner, abbrev),
+        Screen::TeamCard { team, compare } => team_card::render(f, app, inner, team, *compare),
         Screen::PlayerById(pid) => player::render_by_id(f, app, inner, *pid),
         Screen::PlayerRecordsById(pid) => player_records::render_by_id(f, app, inner, *pid),
         Screen::PlayerAwardsById(pid) => player_awards::render_by_id(f, app, inner, *pid),
@@ -919,6 +922,7 @@ fn screen_label(s: &Screen) -> &'static str {
     match s {
         Screen::Home => "Home",
         Screen::Team(_) => "Team",
+        Screen::TeamCard { .. } => "IceCast Card",
         Screen::PlayerById(_) => "Player",
         Screen::PlayerRecordsById(_) => "Player Records",
         Screen::PlayerAwardsById(_) => "Trophy Case",
@@ -995,14 +999,15 @@ fn tab_for_screen(screen: &Screen) -> usize {
         | Screen::PlayerAwardsById(_)
         | Screen::PlayerStreaksById(_)
         | Screen::CompsById(_) => 0, // League
+        Screen::TeamCard { .. } => 5, // IceCast scenario experience
         Screen::Depth | Screen::DepthTeam(_) => 1, // Depth
         Screen::Queries | Screen::Projections | Screen::Search => 2, // Stats (default: Queries)
         Screen::Goalies | Screen::GoalieDetailById(_) => 3, // Goalies
-        Screen::Favorites => 4,                    // Favorites (Foster.2)
+        Screen::Favorites => 4,       // Favorites (Foster.2)
         Screen::Poach | Screen::FantasyGaps | Screen::FantasySim => 5, // Poach/Fantasy (Selke)
         Screen::Tonight | Screen::GameDetail(_) => 6, // Scores
         Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => 7, // Schedule
-        Screen::Transactions => 8,                 // Transactions
+        Screen::Transactions => 8,    // Transactions
         Screen::Playoffs | Screen::SeriesDetail(_) => 9, // Playoffs
         // Groups is not a tab (Phase T+1): reachable via `g` from anywhere.
         _ => 99, // no tab (Fetch, Help, Groups)
@@ -1026,6 +1031,9 @@ fn active_chrome(app: &App) -> crate::tui::chrome::ScreenChrome {
         // Phase Adams.10 — Team screen now publishes chrome with
         // sort + position filter keybinds.
         Screen::Team(_) => team::chrome(&app.team),
+        Screen::TeamCard { team, compare } => {
+            team_card::chrome(team, app.selected.min(1), *compare)
+        }
         // Phase Adams.11 — Depth + Favorites chrome.
         Screen::Depth | Screen::DepthTeam(_) => depth::chrome(app.depth_mode, &app.depth_filters),
         Screen::Favorites => favorites::chrome(&app.favorites),

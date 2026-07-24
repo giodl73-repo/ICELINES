@@ -27,12 +27,12 @@ use thiserror::Error;
 
 use crate::bundled;
 use crate::moneypuck::MoneyPuckStats;
+use crate::nhl_teams_for_season;
 use crate::schema::{
     GoalieStats, PlayerContract as LegacyContract, RosterResponse, SkaterBio, SkaterRealtime,
     SkaterStats,
 };
 use crate::snapshot::{SnapshotMetaFlags, SnapshotStore, SnapshotTier};
-use crate::ALL_NHL_TEAMS;
 
 /// Bundled-JSON file format version this binary understands. Bumps on
 /// non-`Option` field additions to existing types in the bundles.
@@ -572,7 +572,7 @@ pub fn load_into_repo(
     // roster IDs without rewriting `SeasonStats::team_stints`, so historical
     // and trade views retain their original meaning.
     if season_type == SeasonType::Regular {
-        for team in ALL_NHL_TEAMS {
+        for team in nhl_teams_for_season(&season_str) {
             let Ok(roster) = store.read_tier_file_any_for_season::<RosterResponse>(
                 &SnapshotTier::Rosters,
                 &format!("{team}.json"),
@@ -586,12 +586,7 @@ pub fn load_into_repo(
                 .chain(&roster.defensemen)
                 .chain(&roster.goalies)
                 .map(|player| PlayerId(player.id));
-            repo.set_current_roster(
-                TeamAbbr((*team).to_owned()),
-                season,
-                season_type,
-                player_ids,
-            );
+            repo.set_current_roster(TeamAbbr(team.to_owned()), season, season_type, player_ids);
         }
     }
 

@@ -1,0 +1,324 @@
+{
+  "schema": "icelines.insider_wire.episode_digest.v1",
+  "generated_at": "2026-07-23T00:00:00-07:00",
+  "status": "human_review_required",
+  "episode": {
+    "show": "32 Thoughts: The Podcast",
+    "title": "32 Final Thoughts",
+    "publisher": "Sportsnet",
+    "published_on": "2026-07-06",
+    "duration_seconds": 15697,
+    "apple_show_id": "1332150124",
+    "apple_episode_id": "1000775624388",
+    "episode_url": "https://podcasts.apple.com/us/podcast/32-final-thoughts/id1332150124?i=1000775624388&uo=4",
+    "catalog_url": "https://itunes.apple.com/lookup?id=1332150124&entity=podcastEpisode&limit=10"
+  },
+  "ingestion": {
+    "coverage": "All 32 publisher-listed team chapters.",
+    "chapter_source": "Publisher episode notes",
+    "transcription": {
+      "engine": "whisper.cpp",
+      "engine_revision": "080bbbe85230f624f0b52127f1ae1218247989f9",
+      "model": "ggml-base.en",
+      "language": "en",
+      "authority": "machine_transcript_under_review",
+      "speaker_diarization": false,
+      "full_transcript_retained": false,
+      "audio_retained": false
+    },
+    "temporary_source_hashes": {
+      "downloaded_mp3_sha256": "43896c87cf3b523b7c2d189fde8dbb45ea40b8d315c7e5276b8a62aa52bd2abc",
+      "decoded_wav_sha256": "e6a5c6d624df09368c0354b459fdfb909cfc5f8e849ddbd81e5cc90b739976d6",
+      "machine_transcript_txt_sha256": "377efa6cca4eb83b5544c1e01f552d6db30aa8c2d1577f63205e2d9d80f10713",
+      "machine_transcript_json_sha256": "6b3f267af32e989c9ae85b79d05dd8734ed5119889e62e95edb5eb3d690b7291"
+    },
+    "alignment_findings": {
+      "method": "Match each publisher chapter to the spoken team introduction in this exact downloaded rendition.",
+      "rendition_specific": true,
+      "pilot_comparison": "The pilot download placed NYR and SEA about 138-140 seconds after the publisher clock. This later download placed them 6.84 and 7.00 seconds before it. Dynamic-ad offsets cannot be reused across downloads.",
+      "parallel_timestamp_defect": "The two-processor transcription reset processor-two offsets by exactly 8050 seconds at segment index 1129. The boundary was continuous inside the non-team Thought Line, so later offsets were deterministically restored by adding 8050 seconds.",
+      "guardrail": "Bind alignment data to the audio hash. Reject negative, non-monotonic, or rendition-mismatched clocks before evidence extraction."
+    },
+    "attribution_limit": "Speaker attribution is unresolved without diarization. Reported-intel markers require audio review and attribution confirmation before promotion.",
+    "copyright_policy": "Retain paraphrased evidence markers, hashes, and provenance only; delete temporary audio and full machine transcripts after validation."
+  },
+  "chapter_alignment": [
+    {"team":"ANA","publisher_start_seconds":180,"observed_start_seconds":166.80,"delta_seconds":-13.20},
+    {"team":"BOS","publisher_start_seconds":1140,"observed_start_seconds":1158.72,"delta_seconds":18.72},
+    {"team":"BUF","publisher_start_seconds":1560,"observed_start_seconds":1574.00,"delta_seconds":14.00},
+    {"team":"CGY","publisher_start_seconds":1980,"observed_start_seconds":1978.00,"delta_seconds":-2.00},
+    {"team":"CAR","publisher_start_seconds":2400,"observed_start_seconds":2427.60,"delta_seconds":27.60},
+    {"team":"CHI","publisher_start_seconds":2880,"observed_start_seconds":2919.28,"delta_seconds":39.28},
+    {"team":"COL","publisher_start_seconds":3240,"observed_start_seconds":3276.40,"delta_seconds":36.40},
+    {"team":"CBJ","publisher_start_seconds":3660,"observed_start_seconds":3680.08,"delta_seconds":20.08},
+    {"team":"DAL","publisher_start_seconds":4260,"observed_start_seconds":4290.32,"delta_seconds":30.32},
+    {"team":"DET","publisher_start_seconds":4620,"observed_start_seconds":4636.24,"delta_seconds":16.24},
+    {"team":"EDM","publisher_start_seconds":5100,"observed_start_seconds":5116.72,"delta_seconds":16.72},
+    {"team":"FLA","publisher_start_seconds":5640,"observed_start_seconds":5671.44,"delta_seconds":31.44},
+    {"team":"LAK","publisher_start_seconds":6000,"observed_start_seconds":6011.84,"delta_seconds":11.84},
+    {"team":"MIN","publisher_start_seconds":6300,"observed_start_seconds":6300.72,"delta_seconds":0.72},
+    {"team":"MTL","publisher_start_seconds":6660,"observed_start_seconds":6645.36,"delta_seconds":-14.64},
+    {"team":"NSH","publisher_start_seconds":7200,"observed_start_seconds":7175.52,"delta_seconds":-24.48},
+    {"team":"NJD","publisher_start_seconds":8455,"observed_start_seconds":8449.72,"delta_seconds":-5.28},
+    {"team":"NYI","publisher_start_seconds":9016,"observed_start_seconds":9013.32,"delta_seconds":-2.68},
+    {"team":"NYR","publisher_start_seconds":9562,"observed_start_seconds":9555.16,"delta_seconds":-6.84},
+    {"team":"OTT","publisher_start_seconds":10010,"observed_start_seconds":10004.60,"delta_seconds":-5.40},
+    {"team":"PHI","publisher_start_seconds":10561,"observed_start_seconds":10553.24,"delta_seconds":-7.76},
+    {"team":"PIT","publisher_start_seconds":11221,"observed_start_seconds":11213.80,"delta_seconds":-7.20},
+    {"team":"SJS","publisher_start_seconds":11646,"observed_start_seconds":11641.80,"delta_seconds":-4.20},
+    {"team":"SEA","publisher_start_seconds":11986,"observed_start_seconds":11979.00,"delta_seconds":-7.00},
+    {"team":"STL","publisher_start_seconds":12425,"observed_start_seconds":12420.92,"delta_seconds":-4.08},
+    {"team":"TBL","publisher_start_seconds":12737,"observed_start_seconds":12731.88,"delta_seconds":-5.12},
+    {"team":"TOR","publisher_start_seconds":13083,"observed_start_seconds":13075.48,"delta_seconds":-7.52},
+    {"team":"UTA","publisher_start_seconds":13591,"observed_start_seconds":13582.68,"delta_seconds":-8.32},
+    {"team":"VAN","publisher_start_seconds":13915,"observed_start_seconds":13907.48,"delta_seconds":-7.52},
+    {"team":"VGK","publisher_start_seconds":14242,"observed_start_seconds":14238.44,"delta_seconds":-3.56},
+    {"team":"WSH","publisher_start_seconds":14647,"observed_start_seconds":14639.24,"delta_seconds":-7.76},
+    {"team":"WPG","publisher_start_seconds":14951,"observed_start_seconds":14951.88,"delta_seconds":0.88}
+  ],
+  "teams": [
+    {
+      "team": "ANA",
+      "markers": [
+        {"marker_id":"ana-carlsson-negotiation-exposure","observed_time_seconds":437.60,"claim_kind":"reported_intel_plus_analysis","summary":"Anaheim reportedly offered Leo Carlsson roughly $12.5 million before an approximately $15 million counter, then failed to anticipate Philadelphia's much larger offer sheet.","candidate_traits":["general_manager.contract_rigidity","general_manager.risk_recognition"],"confidence":0.70,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"ana-match-and-depth-squeeze","observed_time_seconds":684.88,"claim_kind":"host_analysis","summary":"The hosts strongly expected Anaheim to match, with the resulting cap pressure likely to reduce veteran depth and increase reliance on inexpensive young players.","candidate_traits":["team.cap_pressure","general_manager.core_asset_retention","team.young_player_dependence"],"confidence":0.63,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "BOS",
+      "markers": [
+        {"marker_id":"bos-swayman-rebound-anchor","observed_time_seconds":1184.56,"claim_kind":"host_analysis","summary":"Jeremy Swayman's rebound was framed as a major stabilizing success and the foundation of Boston's current outlook.","candidate_traits":["player.rebound_confirmed","team.goaltending_stability"],"confidence":0.64,"simulation_disposition":"scenario_input_only","corroboration_required":false},
+        {"marker_id":"bos-peterka-pick-value","observed_time_seconds":1266.48,"claim_kind":"host_analysis","summary":"The J.J. Peterka acquisition was viewed as a worthwhile use of a late first-round asset, while further progress from Boston's younger players remains necessary.","candidate_traits":["general_manager.trade_aggression","team.young_player_dependence"],"confidence":0.56,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "BUF",
+      "markers": [
+        {"marker_id":"buf-prospect-asset-protection","observed_time_seconds":1585.44,"claim_kind":"reported_context","summary":"Jarmo Kekalainen was described as unwilling to surrender current young players or prospects for a major trade target.","candidate_traits":["general_manager.core_asset_retention","general_manager.trade_aggression"],"confidence":0.66,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"buf-levi-path-resolution","observed_time_seconds":1694.88,"claim_kind":"host_analysis","summary":"Moving Devon Levi was assessed as necessary because Buffalo's goaltending depth left no constructive playing path for him or the organization.","candidate_traits":["player.opportunity_blockage","general_manager.development_path_management"],"confidence":0.58,"simulation_disposition":"historical_context_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "CGY",
+      "markers": [
+        {"marker_id":"cgy-full-rebuild-opportunity","observed_time_seconds":2083.92,"claim_kind":"host_analysis","summary":"Calgary was characterized as accepting a full rebuild in which young players must receive substantial minutes despite uneven nightly results.","candidate_traits":["general_manager.rookie_opportunity","team.rebuild_commitment"],"confidence":0.67,"simulation_disposition":"scenario_input_only","corroboration_required":false},
+        {"marker_id":"cgy-wolf-error-coverage","observed_time_seconds":2129.28,"claim_kind":"host_analysis","summary":"Dustin Wolf's early-season form was identified as important for absorbing the defensive mistakes expected from a developing roster.","candidate_traits":["team.goaltending_dependence","team.development_volatility"],"confidence":0.55,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "CAR",
+      "markers": [
+        {"marker_id":"car-creative-acquisition-search","observed_time_seconds":2495.44,"claim_kind":"reported_intel_plus_analysis","summary":"Carolina was described as continuing to seek an addition and exploring unusually creative acquisition structures, including offer-sheet-related possibilities.","candidate_traits":["general_manager.trade_aggression","general_manager.roster_creativity"],"confidence":0.67,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"car-selective-champion-upgrade","observed_time_seconds":2555.52,"claim_kind":"host_analysis","summary":"Despite few obvious holes after winning the Cup, Carolina was expected to remain selective rather than satisfied with its roster.","candidate_traits":["general_manager.contender_aggression"],"confidence":0.57,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "CHI",
+      "markers": [
+        {"marker_id":"chi-bedard-relationship-stability","observed_time_seconds":2984.88,"claim_kind":"informed_analysis","summary":"The Connor Bedard-team relationship was described as excellent, with no current reason to expect an offer-sheet pursuit.","candidate_traits":["relationship.stability","general_manager.core_asset_retention"],"confidence":0.64,"simulation_disposition":"context_only","corroboration_required":true},
+        {"marker_id":"chi-young-core-role-expansion","observed_time_seconds":3186.32,"claim_kind":"host_analysis","summary":"Full-season growth and elevated responsibility for Chicago's young core were framed as central to the next step.","candidate_traits":["general_manager.rookie_opportunity","team.development_dependence"],"confidence":0.56,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "COL",
+      "markers": [
+        {"marker_id":"col-makar-contract-flexibility","observed_time_seconds":3319.76,"claim_kind":"host_analysis","summary":"Cale Makar was expected to command an elite extension but potentially leave some cap room rather than maximize every available dollar.","candidate_traits":["player.contract_flexibility","team.cap_outlook"],"confidence":0.48,"simulation_disposition":"scenario_input_only","corroboration_required":false},
+        {"marker_id":"col-internal-opportunity-commitment","observed_time_seconds":3457.36,"claim_kind":"host_analysis","summary":"Colorado was expected to respond to playoff disappointment by giving acquired and developing players genuine internal opportunities.","candidate_traits":["general_manager.rookie_opportunity","team.internal_growth_commitment"],"confidence":0.54,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "CBJ",
+      "markers": [
+        {"marker_id":"cbj-werenski-relationship-volatility","observed_time_seconds":3694.40,"claim_kind":"informed_analysis","summary":"A post-season Zach Werenski dispute was described as emotionally driven and subsequently cooled rather than an active open wound.","candidate_traits":["relationship.volatility","relationship.repairability"],"confidence":0.55,"simulation_disposition":"historical_context_only","corroboration_required":true,"guardrail":"Do not convert a context-specific dispute into a permanent player personality trait."},
+        {"marker_id":"cbj-werenski-trade-exploration","observed_time_seconds":3846.08,"claim_kind":"reported_intel_plus_analysis","summary":"Trade destinations were reportedly explored during the dispute, indicating that Columbus was at least willing to evaluate a major core transaction before tensions eased.","candidate_traits":["general_manager.trade_aggression","general_manager.core_asset_retention"],"confidence":0.58,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "DAL",
+      "markers": [
+        {"marker_id":"dal-front-office-continuity","observed_time_seconds":4334.64,"claim_kind":"informed_analysis","summary":"Dallas was described as surprised but not panicked by a turbulent transaction week, continuing to view itself as a strong team.","candidate_traits":["general_manager.operating_stability"],"confidence":0.56,"simulation_disposition":"context_only","corroboration_required":false},
+        {"marker_id":"dal-robertson-contract-gap","observed_time_seconds":4456.56,"claim_kind":"reported_intel","summary":"The Jason Robertson negotiation was described as having a meaningful gap, approximately $12-12.5 million from Dallas versus roughly $14 million from the player side.","candidate_traits":["general_manager.contract_rigidity","player.contract_holdout_risk"],"confidence":0.68,"simulation_disposition":"candidate_contract_scenario","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "DET",
+      "markers": [
+        {"marker_id":"det-larkin-fair-value-discipline","observed_time_seconds":4718.72,"claim_kind":"informed_analysis","summary":"Steve Yzerman was characterized as preferring no Dylan Larkin trade to a poor return, particularly after market changes increased the center's value.","candidate_traits":["general_manager.fair_value_discipline","general_manager.core_asset_retention"],"confidence":0.64,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"det-current-player-return-priority","observed_time_seconds":4768.00,"claim_kind":"reported_intel_plus_analysis","summary":"Detroit reportedly wanted current NHL help rather than a futures-heavy return for Larkin, reflecting urgency to end its playoff drought.","candidate_traits":["general_manager.veteran_preference","general_manager.competitive_urgency"],"confidence":0.69,"simulation_disposition":"candidate_transaction_scenario","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "EDM",
+      "markers": [
+        {"marker_id":"edm-three-goalie-plan","observed_time_seconds":5160.72,"claim_kind":"informed_analysis","summary":"Edmonton was expected to carry three goaltenders, creating a material roster-usage and start-allocation branch.","candidate_traits":["team.goalie_rotation","general_manager.waiver_asset_protection"],"confidence":0.55,"simulation_disposition":"candidate_roster_scenario","corroboration_required":true},
+        {"marker_id":"edm-levi-due-diligence-bet","observed_time_seconds":5175.76,"claim_kind":"reported_intel_plus_analysis","summary":"The Oilers reportedly conducted extensive background work before acquiring Devon Levi, viewing him as a worthwhile change-of-environment upside bet.","candidate_traits":["general_manager.player_due_diligence","player.change_of_environment_upside"],"confidence":0.64,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "FLA",
+      "markers": [
+        {"marker_id":"fla-markstrom-coaching-reunion","observed_time_seconds":5755.04,"claim_kind":"host_analysis","summary":"Jacob Markstrom's reunion with goalie coach Robb Tallas and Florida's defensive environment were framed as strong rebound conditions.","candidate_traits":["player.coach_fit","player.rebound_context","team.goaltending_support"],"confidence":0.60,"simulation_disposition":"scenario_input_only","corroboration_required":false},
+        {"marker_id":"fla-division-favorite-outlook","observed_time_seconds":5805.92,"claim_kind":"host_analysis","summary":"Florida was assessed as a division favorite if its goaltending bet works, with the roster and system expected to remain highly dangerous.","candidate_traits":["team.contender_outlook"],"confidence":0.57,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "LAK",
+      "markers": [
+        {"marker_id":"lak-short-term-plug-strategy","observed_time_seconds":6133.04,"claim_kind":"host_analysis","summary":"Los Angeles was viewed as using veteran additions to fill current holes while preserving flexibility for a larger future acquisition.","candidate_traits":["general_manager.veteran_preference","general_manager.cap_flexibility"],"confidence":0.58,"simulation_disposition":"scenario_input_only","corroboration_required":false},
+        {"marker_id":"lak-haula-prior-pursuit","observed_time_seconds":6154.80,"claim_kind":"reported_intel","summary":"The Kings reportedly had a prior Erik Haula trade framework stopped by injury, supporting the view that the later acquisition was a sustained target rather than an opportunistic impulse.","candidate_traits":["general_manager.target_persistence"],"confidence":0.62,"simulation_disposition":"historical_context_only","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "MIN",
+      "markers": [
+        {"marker_id":"min-larkin-best-offer","observed_time_seconds":6347.12,"claim_kind":"informed_analysis","summary":"Bill Guerin was believed to have made his best available Dylan Larkin offer while refusing to overrun Detroit's valuation.","candidate_traits":["general_manager.trade_aggression","general_manager.fair_value_discipline"],"confidence":0.55,"simulation_disposition":"candidate_transaction_scenario","corroboration_required":true},
+        {"marker_id":"min-young-player-opportunity-bet","observed_time_seconds":6434.80,"claim_kind":"host_analysis","summary":"Minnesota was expected to give a young acquisition a meaningful opportunity, treating the new environment as a calculated upside bet.","candidate_traits":["general_manager.rookie_opportunity","player.change_of_environment_upside"],"confidence":0.48,"simulation_disposition":"scenario_input_only","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "MTL",
+      "markers": [
+        {"marker_id":"mtl-early-core-extension-strategy","observed_time_seconds":6733.12,"claim_kind":"host_analysis","summary":"Montreal's early long-term commitments to core players were praised as disciplined value capture before league-wide contract inflation.","candidate_traits":["general_manager.contract_proactivity","general_manager.core_asset_retention"],"confidence":0.63,"simulation_disposition":"candidate_behavior_marker","corroboration_required":false},
+        {"marker_id":"mtl-core-cap-runway","observed_time_seconds":6817.84,"claim_kind":"host_analysis","summary":"The controlled core contracts were expected to make Montreal dangerous for an extended period, although a remaining roster frustration was acknowledged.","candidate_traits":["team.cap_efficiency","team.contender_window"],"confidence":0.55,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "NSH",
+      "markers": [
+        {"marker_id":"nsh-no-chase-discipline","observed_time_seconds":7246.32,"claim_kind":"informed_analysis","summary":"Chris MacFarland's approach was characterized as adding talent and blue-line skill without chasing acquisitions that fail a value test.","candidate_traits":["general_manager.fair_value_discipline","general_manager.trade_aggression"],"confidence":0.59,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"nsh-veteran-rumor-containment","observed_time_seconds":7312.88,"claim_kind":"reported_context","summary":"Teams reportedly checked on Nashville veterans, while the organization was described as wanting to avoid subjecting those players to season-long trade speculation.","candidate_traits":["general_manager.veteran_preference","organization.player_relations"],"confidence":0.61,"simulation_disposition":"context_only","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "NJD",
+      "markers": [
+        {"marker_id":"njd-hayton-offer-sheet-escalation","observed_time_seconds":8487.32,"claim_kind":"reported_context_plus_analysis","summary":"New Jersey's Barrett Hayton offer sheet followed unsuccessful contract and trade conversations, showing willingness to escalate when conventional acquisition paths failed.","candidate_traits":["general_manager.trade_aggression","general_manager.roster_creativity"],"confidence":0.67,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"njd-lombardi-development-bet","observed_time_seconds":8671.56,"claim_kind":"host_analysis","summary":"The Amadeus Lombardi acquisition was flagged as a deliberate young-player upside bet within New Jersey's development pipeline.","candidate_traits":["general_manager.development_bet","player.change_of_environment_upside"],"confidence":0.50,"simulation_disposition":"scenario_input_only","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "NYI",
+      "markers": [
+        {"marker_id":"nyi-young-asset-protection","observed_time_seconds":9040.76,"claim_kind":"informed_analysis","summary":"The Islanders were described as protecting prospects and young NHL players while beginning a broader roster turnover.","candidate_traits":["general_manager.core_asset_retention","team.retool_commitment"],"confidence":0.60,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"nyi-avoid-prospect-blocking","observed_time_seconds":9071.80,"claim_kind":"host_analysis","summary":"Shorter veteran commitments and larger roles for Cal Ritchie and young defensemen were framed as an intentional effort not to block development paths.","candidate_traits":["general_manager.rookie_opportunity","general_manager.veteran_preference"],"confidence":0.59,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "NYR",
+      "detailed_markers_ref": "examples/insider-wire-32-final-thoughts-pilot.json#32-final-thoughts-2026-07-06-nyr",
+      "markers": [
+        {"marker_id":"nyr-drury-fox-retention-digest","observed_time_seconds":9735.80,"claim_kind":"reported_intel","summary":"Teams reportedly asked Chris Drury about Adam Fox and were firmly rebuffed, indicating strong protection of a cornerstone player.","candidate_traits":["general_manager.core_asset_retention"],"confidence":0.72,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"nyr-role-and-rookie-upside-digest","observed_time_seconds":9850.36,"claim_kind":"host_analysis","summary":"Alexis Lafreniere's larger post-Panarin role and Alberts Smits pushing for a job were identified as conditional internal upside paths, not established outcomes.","candidate_traits":["player.role_fit","player.breakout_context","player.camp_opportunity"],"confidence":0.53,"simulation_disposition":"scenario_input_only","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "OTT",
+      "markers": [
+        {"marker_id":"ott-tkachuk-role-redistribution","observed_time_seconds":10115.24,"claim_kind":"host_analysis","summary":"Brady Tkachuk's departure was treated as a major hole, with expanded opportunity for acquired and incumbent forwards forming the replacement path.","candidate_traits":["team.top_six_role_reallocation","team.leadership_loss"],"confidence":0.57,"simulation_disposition":"scenario_input_only","corroboration_required":false},
+        {"marker_id":"ott-backup-goalie-rest-need","observed_time_seconds":10304.20,"claim_kind":"host_analysis","summary":"Reliable backup minutes for Linus Ullmark were identified as critical to Ottawa's season management.","candidate_traits":["team.goalie_rotation","player.workload_risk"],"confidence":0.62,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "PHI",
+      "markers": [
+        {"marker_id":"phi-carlsson-offer-sheet-intent","observed_time_seconds":10835.56,"claim_kind":"informed_analysis","summary":"Philadelphia's record offer sheet was framed first and foremost as an aggressive attempt to acquire Leo Carlsson, with competitive disruption only a secondary benefit.","candidate_traits":["general_manager.trade_aggression","general_manager.roster_creativity"],"confidence":0.67,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"phi-franchise-center-cap-bet","observed_time_seconds":10862.60,"claim_kind":"host_analysis","summary":"The Flyers were willing to accept unprecedented cap and dressing-room consequences to pursue a franchise center.","candidate_traits":["general_manager.star_acquisition_bias","team.cap_concentration"],"confidence":0.62,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "PIT",
+      "markers": [
+        {"marker_id":"pit-young-core-accountability","observed_time_seconds":11352.76,"claim_kind":"informed_analysis","summary":"Pittsburgh was described as encouraged by its young group while requiring a major summer response from an underperforming young scorer rather than abandoning him.","candidate_traits":["organization.player_development_patience","manager.accountability"],"confidence":0.51,"simulation_disposition":"context_only","corroboration_required":true},
+        {"marker_id":"pit-robertson-trade-talks","observed_time_seconds":11400.20,"claim_kind":"reported_intel","summary":"Pittsburgh reportedly held substantive Jason Robertson trade conversations with Dallas, though the reason a deal failed remained unclear.","candidate_traits":["general_manager.trade_aggression","general_manager.star_acquisition_bias"],"confidence":0.65,"simulation_disposition":"candidate_transaction_scenario","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "SJS",
+      "markers": [
+        {"marker_id":"sjs-celebrini-early-extension-priority","observed_time_seconds":11730.52,"claim_kind":"informed_analysis","summary":"San Jose was expected to pursue a Macklin Celebrini extension before he approaches the open negotiation window, while asking for enough flexibility to keep building around him.","candidate_traits":["general_manager.contract_proactivity","general_manager.core_asset_retention"],"confidence":0.64,"simulation_disposition":"candidate_contract_scenario","corroboration_required":true},
+        {"marker_id":"sjs-nurse-veteran-preference","observed_time_seconds":11797.64,"claim_kind":"reported_intel","summary":"The Sharks reportedly preferred Darnell Nurse among available veteran defense options, indicating a deliberate choice of experienced support for the young roster.","candidate_traits":["general_manager.veteran_preference","general_manager.player_due_diligence"],"confidence":0.61,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "SEA",
+      "detailed_markers_ref": "examples/insider-wire-32-final-thoughts-pilot.json#32-final-thoughts-2026-07-06-sea",
+      "markers": [
+        {"marker_id":"sea-wright-trade-direction-digest","observed_time_seconds":12013.00,"claim_kind":"reported_intel","summary":"A Shane Wright trade was described as the likely direction, but Seattle was expected to require fair value rather than force a transaction.","candidate_traits":["general_manager.fair_value_discipline","player.trade_likelihood"],"confidence":0.78,"simulation_disposition":"candidate_transaction_scenario","corroboration_required":true},
+        {"marker_id":"sea-audit-and-youth-path-digest","observed_time_seconds":12093.40,"claim_kind":"reported_context_plus_recommendation","summary":"Seattle reportedly completed a broad internal audit; the hosts then recommended a young-core retool, which remains a scenario rather than observed policy.","candidate_traits":["organization.self_review","team.young_core_commitment"],"confidence":0.52,"simulation_disposition":"scenario_input_only","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "STL",
+      "markers": [
+        {"marker_id":"stl-flexible-offense-upside","observed_time_seconds":12533.48,"claim_kind":"host_analysis","summary":"St. Louis' additions and favorable contract structure were assessed as creating meaningful offensive improvement without severe long-term constraints.","candidate_traits":["team.offensive_upside","team.cap_flexibility"],"confidence":0.57,"simulation_disposition":"scenario_input_only","corroboration_required":false},
+        {"marker_id":"stl-dvorsky-creative-upside","observed_time_seconds":12695.72,"claim_kind":"host_analysis","summary":"Dalibor Dvorsky's creativity and scoring development were identified as a potentially important offensive elevator.","candidate_traits":["player.breakout_context","team.internal_growth_commitment"],"confidence":0.55,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "TBL",
+      "markers": [
+        {"marker_id":"tbl-kucherov-extension-exception","observed_time_seconds":12768.60,"claim_kind":"host_analysis","summary":"Although Tampa has a history of difficult veteran decisions, Nikita Kucherov was framed as an exceptional extension case because his performance has not declined.","candidate_traits":["general_manager.veteran_preference","general_manager.core_asset_retention"],"confidence":0.57,"simulation_disposition":"candidate_contract_scenario","corroboration_required":false},
+        {"marker_id":"tbl-point-hedman-return-dependence","observed_time_seconds":12866.20,"claim_kind":"host_analysis","summary":"Tampa's ceiling was described as materially dependent on Brayden Point returning to health and Victor Hedman successfully adapting his role.","candidate_traits":["team.health_dependence","player.role_adaptation"],"confidence":0.61,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "TOR",
+      "markers": [
+        {"marker_id":"tor-dry-powder-difference-maker","observed_time_seconds":13177.40,"claim_kind":"informed_analysis","summary":"Toronto was described as preserving and even restocking future assets so it can pursue another difference-maker when an opportunity emerges.","candidate_traits":["general_manager.trade_aggression","general_manager.asset_patience"],"confidence":0.62,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"tor-matthews-health-engine","observed_time_seconds":13214.44,"claim_kind":"reported_context_plus_analysis","summary":"The organization was described as still viewing Auston Matthews as its elite engine, making his health and ability to drive play the critical team dependency.","candidate_traits":["team.star_health_dependence","team.core_role_continuity"],"confidence":0.65,"simulation_disposition":"scenario_input_only","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "UTA",
+      "markers": [
+        {"marker_id":"uta-hayton-offer-sheet-decision","observed_time_seconds":13621.56,"claim_kind":"reported_intel_plus_analysis","summary":"Utah's first priority was described as resolving the Barrett Hayton offer sheet after negotiations that were reportedly far apart.","candidate_traits":["general_manager.contract_rigidity","general_manager.core_asset_retention"],"confidence":0.66,"simulation_disposition":"candidate_contract_scenario","corroboration_required":true},
+        {"marker_id":"uta-trocheck-destination-improvement","observed_time_seconds":13763.40,"claim_kind":"reported_context","summary":"Vincent Trocheck reportedly removed Utah from his no-trade list after vetoing the destination a year earlier, a positive signal about organizational attractiveness.","candidate_traits":["organization.destination_attractiveness"],"confidence":0.72,"simulation_disposition":"context_only","corroboration_required":true}
+      ]
+    },
+    {
+      "team": "VAN",
+      "markers": [
+        {"marker_id":"van-malhotra-culture-reset","observed_time_seconds":13955.48,"claim_kind":"informed_analysis","summary":"Manny Malhotra's primary task was framed as resetting a beaten-down group and establishing a visibly different operating environment.","candidate_traits":["manager.culture_reset","manager.player_motivation"],"confidence":0.58,"simulation_disposition":"candidate_management_marker","corroboration_required":true},
+        {"marker_id":"van-young-role-volatility","observed_time_seconds":13999.56,"claim_kind":"host_analysis","summary":"Vancouver was expected to assign larger responsibilities to young players, accepting significant nightly volatility as part of development.","candidate_traits":["general_manager.rookie_opportunity","team.development_volatility"],"confidence":0.62,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "VGK",
+      "markers": [
+        {"marker_id":"vgk-not-done-impact-pursuit","observed_time_seconds":14266.44,"claim_kind":"informed_analysis","summary":"Vegas was expected to keep pursuing impact moves throughout the summer because standing still does not fit its established front-office behavior.","candidate_traits":["general_manager.trade_aggression","general_manager.star_acquisition_bias"],"confidence":0.65,"simulation_disposition":"candidate_behavior_marker","corroboration_required":true},
+        {"marker_id":"vgk-leadership-contract-window","observed_time_seconds":14398.20,"claim_kind":"host_analysis","summary":"Future Mark Stone and William Karlsson decisions were identified as major leadership and contract branches for roster continuity.","candidate_traits":["general_manager.veteran_preference","team.leadership_continuity"],"confidence":0.48,"simulation_disposition":"candidate_scenario_branch","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "WSH",
+      "markers": [
+        {"marker_id":"wsh-ovechkin-role-balance","observed_time_seconds":14662.68,"claim_kind":"reported_context_plus_analysis","summary":"Alex Ovechkin's return was linked to his reaction to the deadline and young additions, creating an important even-strength role-balancing problem.","candidate_traits":["team.leadership_continuity","team.role_competition"],"confidence":0.58,"simulation_disposition":"scenario_input_only","corroboration_required":true},
+        {"marker_id":"wsh-youth-lift-outlook","observed_time_seconds":14850.44,"claim_kind":"host_analysis","summary":"Washington was expected to take a significant step if its young players assume larger roles and rise alongside the veteran additions.","candidate_traits":["team.internal_growth_commitment","team.development_dependence"],"confidence":0.60,"simulation_disposition":"scenario_input_only","corroboration_required":false}
+      ]
+    },
+    {
+      "team": "WPG",
+      "markers": [
+        {"marker_id":"wpg-compete-and-perfetti-priority","observed_time_seconds":15115.56,"claim_kind":"informed_analysis","summary":"Winnipeg was expected to retain a win-now objective, with a Cole Perfetti resolution treated as a major organizational priority.","candidate_traits":["general_manager.competitive_urgency","general_manager.core_asset_retention"],"confidence":0.62,"simulation_disposition":"candidate_contract_scenario","corroboration_required":true},
+        {"marker_id":"wpg-youth-two-center-opportunity","observed_time_seconds":15207.32,"claim_kind":"host_analysis","summary":"The Jets were expected to create genuine internal opportunity, including allowing young centers to compete for the second-line role if their performance warrants it.","candidate_traits":["general_manager.rookie_opportunity","team.internal_growth_commitment"],"confidence":0.64,"simulation_disposition":"scenario_input_only","corroboration_required":false},
+        {"marker_id":"wpg-hellebuyck-retention-difficulty","observed_time_seconds":15263.96,"claim_kind":"reported_context_plus_analysis","summary":"Convincing Connor Hellebuyck to remain was described as increasingly difficult after a prior Buffalo framework failed over draft-pick structure.","candidate_traits":["player.trade_likelihood","general_manager.fair_value_discipline","team.goaltending_transition_risk"],"confidence":0.69,"simulation_disposition":"candidate_transaction_scenario","corroboration_required":true}
+      ]
+    }
+  ],
+  "review_queue": [
+    "Verify every named entity against the audio and authoritative person or roster records.",
+    "Resolve speaker attribution before promoting reported-intel markers.",
+    "Corroborate contract figures, trade discussions, and cited reporting with primary or second reliable sources.",
+    "Keep host analysis and recommendations out of observed management behavior.",
+    "Treat relationship remarks as dated, context-specific interactions rather than permanent player traits.",
+    "Regression-test rendition-specific dynamic-ad alignment and parallel timestamp monotonicity."
+  ],
+  "episode_result": {
+    "teams": 32,
+    "markers": 65,
+    "automatically_promoted_markers": 0,
+    "detailed_pilot_teams": ["NYR", "SEA"],
+    "defects_found": ["dynamic_ad_rendition_drift", "parallel_transcription_timestamp_reset"],
+    "recommendation": "Human-review the 65 compact markers, then promote accepted evidence through the dated Insider Wire importer."
+  }
+}

@@ -1697,3 +1697,48 @@ a.team-link:hover {
         font-size: 0.82rem;
     }
 }
+/* UI-neutral team prognosis card adapter. */
+.team-prognosis-card { max-width: 1180px; margin: 1.5rem auto; padding: 0 1rem 3rem; }
+.team-card-hero { display: flex; justify-content: space-between; gap: 1rem; align-items: end; padding: 1.5rem; color: #fff; background: linear-gradient(125deg, var(--team-primary), #07111f); border-top: .4rem solid var(--team-secondary); border-radius: 1rem 1rem 0 0; }
+.team-card-hero h1 { margin: .15rem 0; color: #fff; }
+.team-card-kicker { margin: 0; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.team-card-json { color: #fff; white-space: nowrap; }
+.team-card-tabs { display: flex; gap: .5rem; padding: .75rem; background: #eef2f7; border-bottom: 1px solid #ccd4df; }
+.team-card-tabs a { padding: .65rem 1rem; color: #172033; font-weight: 800; border-radius: 999px; text-decoration: none; }
+.team-card-tabs a[aria-current="page"] { color: #fff; background: var(--team-primary); box-shadow: inset 0 -3px 0 var(--team-secondary); }
+.team-prognosis-card > section { padding: 1.25rem; background: #fff; }
+.team-card-deck { max-width: 72ch; color: #536071; }
+.team-card-lineup { display: grid; gap: 1rem; }
+.team-card-lineup-group { padding: .8rem; border: 1px solid #d9e0e9; border-radius: .8rem; }
+.team-card-lineup-group h3 { margin: 0 0 .65rem; color: var(--team-primary); }
+.team-card-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+.team-card-player-tile { position: relative; display: grid; grid-template-columns: 64px 1fr auto; grid-template-rows: auto auto; align-items: center; gap: .15rem .65rem; min-width: 0; padding: .55rem; background: #f6f8fb; border-radius: .65rem; }
+.team-card-player-tile img, .team-card-fallback { grid-row: 1 / 3; width: 58px; height: 58px; object-fit: cover; border-radius: 50%; background: var(--team-primary); color: #fff; display: grid; place-items: center; font-weight: 900; }
+.team-card-position { color: #687486; font-size: .75rem; font-weight: 800; text-transform: uppercase; }
+.team-card-score { grid-column: 3; grid-row: 1 / 3; min-width: 2.4rem; padding: .4rem; color: #fff; background: var(--team-primary); border-bottom: 3px solid var(--team-secondary); border-radius: .45rem; text-align: center; font-weight: 900; }
+.team-card-metric-grid, .team-card-insider-headlines { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.team-card-metric-grid article, .team-card-insider-headlines article { display: grid; gap: .25rem; padding: 1rem; background: #f3f6fa; border-left: 4px solid var(--team-secondary); border-radius: .4rem; }
+.team-card-metric-grid strong, .team-card-insider-headlines strong { font-size: 1.35rem; }
+.team-card-metric-grid small { color: #536071; }
+.team-card-bridge { padding: 1rem; border: 1px solid #d9e0e9; border-radius: .8rem; }
+.team-card-scenarios { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.team-card-insider-player { display: grid; grid-template-columns: 62px 1fr; gap: .6rem; padding: .75rem; margin-bottom: .65rem; border-left: 4px solid #1b8a5a; background: #f6f8fb; border-radius: .5rem; }
+.team-card-insider-player.risk { border-left-color: var(--team-secondary); }
+.team-card-insider-player img, .team-card-insider-player .team-card-fallback { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+.team-card-insider-player > div { display: grid; align-content: center; }
+.team-card-insider-player dl { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: .35rem; margin: .25rem 0 0; }
+.team-card-insider-player dl div { padding: .35rem; background: #fff; }
+.team-card-insider-player dt { color: #687486; font-size: .72rem; }
+.team-card-insider-player dd { margin: 0; font-weight: 800; }
+.team-card-notice { margin-top: 1rem; padding: .8rem 1rem; background: #fff5d8; border-left: 4px solid #d49a00; }
+.team-card-method { margin-top: 1rem; padding: .8rem; border: 1px solid #d9e0e9; }
+@media (max-width: 760px) {
+  .team-card-hero { align-items: start; flex-direction: column; }
+  .team-card-slots, .team-card-scenarios { grid-template-columns: 1fr; }
+  .team-card-tabs a { flex: 1; text-align: center; }
+}
+@media (max-width: 420px) {
+  .team-prognosis-card { margin-top: .5rem; padding-inline: .4rem; }
+  .team-card-player-tile { grid-template-columns: 50px 1fr auto; }
+  .team-card-player-tile img, .team-card-fallback { width: 46px; height: 46px; }
+}

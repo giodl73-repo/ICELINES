@@ -67,7 +67,7 @@ fn display_profile(
 ) -> anyhow::Result<()> {
     use crate::commands::output::Format;
 
-    let headers = &["rank", "partner", "shared_shifts", "co_ice_pct"];
+    let headers = &["rank", "partner", "shared_games", "coappearance_pct"];
     let rows: Vec<Vec<String>> = profile
         .top_linemates
         .iter()
@@ -77,7 +77,7 @@ fn display_profile(
             vec![
                 (i + 1).to_string(),
                 find_view_name(views, lm.partner_id),
-                lm.shared_shifts.to_string(),
+                lm.shared_games.to_string(),
                 format!("{:.1}", lm.co_ice_pct * 100.0),
             ]
         })

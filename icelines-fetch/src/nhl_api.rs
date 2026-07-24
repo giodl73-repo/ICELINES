@@ -2,7 +2,8 @@ use crate::error::FetchError;
 use crate::schema::{
     PagedResponse, PlayerContract, RosterResponse, SkaterBio, SkaterRealtime, SkaterStats,
 };
-use crate::teams::ALL_NHL_TEAMS as TEAMS;
+use crate::shift_chart::{OfficialShiftChartResponse, OfficialShiftChartRow};
+use crate::teams::nhl_teams_for_season;
 use icelines_core::{
     season_stats::SeasonType, ScoringEventInput, ShotEventKind, ShotLocation, TeamSide,
     TeamStandingInput,
@@ -222,13 +223,13 @@ impl NhlApiClient {
         self.get_json(&url).await
     }
 
-    /// Fetch rosters for all 32 NHL teams.
+    /// Fetch rosters for every franchise participating in the season.
     pub async fn fetch_all_rosters(
         &self,
         season: &str,
     ) -> Result<Vec<(String, RosterResponse)>, FetchError> {
         let mut results = Vec::new();
-        for team in TEAMS {
+        for team in nhl_teams_for_season(season) {
             let roster = self.fetch_team_roster(team, season).await?;
             results.push((team.to_string(), roster));
         }
@@ -444,6 +445,28 @@ impl NhlApiClient {
             }
         }
         Ok(games)
+    }
+
+    /// Fetch official per-player shift intervals for one NHL game.
+    pub async fn fetch_shift_chart(
+        &self,
+        game_id: u64,
+    ) -> Result<Vec<OfficialShiftChartRow>, FetchError> {
+        let url = format!(
+            "{}/shiftcharts?cayenneExp=gameId={game_id}",
+            self.base_stats
+        );
+        let response: OfficialShiftChartResponse = self.get_json(&url).await?;
+        if response.total != response.data.len() {
+            return Err(FetchError::SchemaChanged {
+                detail: format!(
+                    "{url}: total {} does not match {} interval rows",
+                    response.total,
+                    response.data.len()
+                ),
+            });
+        }
+        Ok(response.data)
     }
 
     /// Fetch current NHL standings from `/v1/standings/now`.
