@@ -2466,6 +2466,26 @@ pub enum FetchSubcommand {
         #[arg(long = "type", value_enum, default_value_t = FetchSeasonType::Regular)]
         season_type: FetchSeasonType,
     },
+    /// Fetch official AHL team rosters plus skater and goalie season stats.
+    /// Provider player IDs remain explicitly separate from NHL player IDs.
+    Ahl {
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
+        /// Restrict to an AHL team code or exact name. Repeat for multiple teams.
+        /// With no filter, fetches every team in the provider season catalog.
+        #[arg(long = "team", value_name = "AHL_CODE_OR_NAME")]
+        teams: Vec<String>,
+        /// Also export the UI-neutral snapshot to this path. The canonical
+        /// copy is always sealed in the IceLines snapshot store.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Revalidate source bytes instead of accepting a verified FLETCH cacheline.
+        #[arg(long)]
+        refresh: bool,
+        /// Print the planned fetch without making network requests or writing.
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Fetch league-wide transactions from ESPN — Phase T.3.
     /// Trades, waivers, signings, IR, recalls, reassignments. Writes
     /// transactions.json into the active snapshot store and updates the

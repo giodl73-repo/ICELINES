@@ -56,6 +56,7 @@ pub enum SnapshotError {
 pub enum SnapshotTier {
     Rosters,   // Tier 1 — 32 team rosters + headshots
     Stats,     // Tier 2 — skater bios + season stats
+    Ahl,       // Tier 2a — official AHL rosters + skater/goalie season stats
     Positions, // Tier 2b — boxscore-derived position eligibility
     Realtime,  // Tier 2c — NHL realtime stats (hits, blocks, giveaways, takeaways)
     MoneyPuck, // Tier 3b — MoneyPuck xG, CF%, FF%, xGF%
@@ -68,6 +69,7 @@ impl SnapshotTier {
         match self {
             Self::Rosters => "rosters",
             Self::Stats => "stats",
+            Self::Ahl => "ahl",
             Self::Positions => "positions",
             Self::Realtime => "realtime",
             Self::MoneyPuck => "moneypuck",
@@ -1521,6 +1523,35 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let store = SnapshotStore::new(dir.path());
         (dir, store)
+    }
+
+    #[test]
+    fn l0_ahl_is_a_sealed_season_readable_snapshot_tier() {
+        let (_dir, store) = store();
+        store
+            .create(
+                "20252026-2026-07-24-ahl",
+                "20252026",
+                SnapshotTier::Ahl,
+                None,
+                "2026-07-24",
+            )
+            .unwrap();
+        store
+            .write_file(
+                "20252026-2026-07-24-ahl",
+                &SnapshotTier::Ahl,
+                "ahl-roster-stats.json",
+                br#"{"schema":"ahl_roster_stats.v1"}"#,
+            )
+            .unwrap();
+        store.seal("20252026-2026-07-24-ahl").unwrap();
+
+        let value: serde_json::Value = store
+            .read_tier_any_for_season(&SnapshotTier::Ahl, "ahl-roster-stats.json", "20252026")
+            .unwrap();
+        assert_eq!(value["schema"], "ahl_roster_stats.v1");
+        assert_eq!(SnapshotTier::Ahl.dir_name(), "ahl");
     }
 
     #[test]

@@ -4,6 +4,7 @@
 //! display policy. CLI, TUI, web, JSON, and reports render these shapes without
 //! recomputing hockey logic.
 
+pub mod ahl_affiliate;
 pub mod analytics_cache_consumer;
 pub mod awards;
 pub mod cap_projection;

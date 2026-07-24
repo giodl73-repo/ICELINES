@@ -278,6 +278,15 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
 
     for (id_suffix, surface, source_url, target, acquisition, activation, validation) in [
         (
+            "ahl",
+            "ahl",
+            format!("icelines-ahl-hockeytech-batch://season/{season}"),
+            format!("snapshots/{season}-<date>-ahl/ahl/ahl-roster-stats.json"),
+            "generic-batch-http-cacheline-after-season",
+            "FLETCH owns verified source cachelines; ICELINES owns season/team expansion, JSONP parsing, typed validation, snapshot sealing, and affiliation joins",
+            "ICELINES validates provider-scoped identities, team codes, roster/stat shapes, counting totals, and current-season affiliation authority",
+        ),
+        (
             "transactions",
             "transactions",
             format!("icelines-espn-transactions://season/{season}"),
@@ -380,6 +389,7 @@ pub fn fletch_source_handoff_report(season: &str, season_type: &str) -> FletchSo
                     metadata(definition, "acquisition_mode").as_str(),
                     "generic-batch-http-cacheline-after-schedule"
                         | "generic-batch-http-cacheline-after-player-set"
+                        | "generic-batch-http-cacheline-after-season"
                         | "generic-window-batch-http-cacheline-after-season"
                 )
             {
@@ -456,6 +466,7 @@ pub fn fletch_query_partition_report(
                             metadata(definition, "acquisition_mode").as_str(),
                             "generic-batch-http-cacheline-after-schedule"
                                 | "generic-batch-http-cacheline-after-player-set"
+                                | "generic-batch-http-cacheline-after-season"
                                 | "generic-window-batch-http-cacheline-after-season"
                         ) =>
                     {
@@ -824,6 +835,12 @@ fn fletch_cache_index_registry_id(
     let transaction_prefix = format!("icelines.transactions.{season}.");
     let registered_id = format!("icelines.transactions.{season}");
     if dataset_id.starts_with(&transaction_prefix) && expected_ids.contains(&registered_id) {
+        return Some(registered_id);
+    }
+
+    let ahl_prefix = format!("icelines.ahl.{season}.");
+    let registered_id = format!("icelines.ahl.{season}");
+    if dataset_id.starts_with(&ahl_prefix) && expected_ids.contains(&registered_id) {
         return Some(registered_id);
     }
 
@@ -1877,8 +1894,9 @@ mod tests {
             fletch_source_handoff_gate_failures(&report),
             Vec::<String>::new()
         );
+        let requested_roster_id = roster_dataset_id("EDM", "20252026");
         assert!(report.rows.iter().any(|row| {
-            row.fletch_id == "icelines.roster.20252026.current.EDM"
+            row.fletch_id == requested_roster_id
                 && row.source_kind == "http"
                 && row.handoff_status == "generic-fetch-ready"
         }));
@@ -1897,7 +1915,10 @@ mod tests {
         );
         assert_eq!(
             roster_dataset_id("NYR", icelines_core::CURRENT_SEASON_STR),
-            "icelines.roster.20252026.current.NYR"
+            format!(
+                "icelines.roster.{}.current.NYR",
+                icelines_core::CURRENT_SEASON_STR
+            )
         );
         assert_eq!(
             roster_url("NYR", "20242025"),
@@ -1922,6 +1943,12 @@ mod tests {
             row.fletch_id == "icelines.transactions.20252026"
                 && row.source_kind == "adapter"
                 && row.acquisition_mode == "generic-window-batch-http-cacheline-after-season"
+                && row.handoff_status == "batch-expansion-ready-after-domain-set"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.ahl.20252026"
+                && row.source_kind == "adapter"
+                && row.acquisition_mode == "generic-batch-http-cacheline-after-season"
                 && row.handoff_status == "batch-expansion-ready-after-domain-set"
         }));
     }
@@ -2050,6 +2077,7 @@ mod tests {
                 test_cache_entry("icelines.transactions.20252026.2025-10-01_2025-10-31", true),
                 test_cache_entry("icelines.gamecenter.boxscore.2025020001", true),
                 test_cache_entry("icelines.player.contracts.8478402", true),
+                test_cache_entry("icelines.ahl.20252026.team.HFD.roster", true),
             ],
         )
         .expect("manifest should build");
@@ -2069,6 +2097,11 @@ mod tests {
         assert!(report.rows.iter().any(|row| {
             row.fletch_id == "icelines.contracts.20252026"
                 && row.dataset_id == "icelines.player.contracts.8478402"
+                && row.evidence_status == "indexed-verified"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.ahl.20252026"
+                && row.dataset_id == "icelines.ahl.20252026.team.HFD.roster"
                 && row.evidence_status == "indexed-verified"
         }));
     }

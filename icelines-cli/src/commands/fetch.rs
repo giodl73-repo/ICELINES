@@ -133,6 +133,13 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             dry_run,
             season_type,
         } => do_goalies(&season, dry_run, season_type).await,
+        FetchSubcommand::Ahl {
+            season,
+            teams,
+            out,
+            refresh,
+            dry_run,
+        } => do_ahl(&season, &teams, out.as_deref(), refresh, dry_run).await,
         FetchSubcommand::Transactions { season, dry_run } => {
             do_transactions(&season, dry_run).await
         }
@@ -155,6 +162,104 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             dry_run,
         } => do_report(kind, &season, season_type, no_lock, dry_run).await,
     }
+}
+
+async fn do_ahl(
+    season: &str,
+    teams: &[String],
+    out: Option<&std::path::Path>,
+    refresh: bool,
+    dry_run: bool,
+) -> anyhow::Result<()> {
+    let season_id: u32 = season
+        .parse()
+        .with_context(|| format!("AHL season must be an 8-digit value, got `{season}`"))?;
+    if season.len() != 8 {
+        return Err(anyhow!(
+            "AHL season must be an 8-digit value, got `{season}`"
+        ));
+    }
+
+    if dry_run {
+        let scope = if teams.is_empty() {
+            "all provider-catalog teams".to_owned()
+        } else {
+            teams.join(", ")
+        };
+        println!("Would resolve AHL regular season {season} from the official season catalog.");
+        println!("Would acquire roster/skater/goalie reports for {scope} through FLETCH.");
+        let snapshot_scope = if teams.is_empty() {
+            String::new()
+        } else {
+            format!("-{}", teams.join("-").to_ascii_lowercase())
+        };
+        println!("Would seal {season}-<date>-ahl{snapshot_scope}/ahl/ahl-roster-stats.json.");
+        if let Some(out) = out {
+            println!("Would also export {}", out.display());
+        }
+        return Ok(());
+    }
+
+    let cfg = Config::load().context("loading IceLines config for AHL snapshot")?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let parent = store
+        .load_manifest()
+        .context("loading snapshot manifest before AHL side-fetch")?
+        .active;
+    let snapshot =
+        icelines_fetch::ahl::AhlFeedClient::production_cached(fletch_cache_root(&cfg), refresh)
+            .fetch_roster_stats(season_id, teams)
+            .await
+            .context("fetching official AHL roster/stat snapshot")?;
+    let bytes =
+        serde_json::to_vec_pretty(&snapshot).context("serializing AHL roster/stat snapshot")?;
+    let today = today_date();
+    // A team-scoped fetch is a useful side snapshot, but must never replace the
+    // same-day full-league AHL snapshot in the manifest or on disk.
+    let snapshot_scope = if teams.is_empty() {
+        String::new()
+    } else {
+        let mut team_codes: Vec<_> = snapshot
+            .teams
+            .iter()
+            .map(|team| team.team_code.to_ascii_lowercase())
+            .collect();
+        team_codes.sort();
+        format!("-{}", team_codes.join("-"))
+    };
+    let snapshot_name = format!("{season}-{today}-ahl{snapshot_scope}");
+    store
+        .create(&snapshot_name, season, SnapshotTier::Ahl, parent, &today)
+        .context("creating AHL snapshot")?;
+    store
+        .write_file(
+            &snapshot_name,
+            &SnapshotTier::Ahl,
+            "ahl-roster-stats.json",
+            &bytes,
+        )
+        .context("writing typed AHL snapshot")?;
+    store.seal(&snapshot_name).context("sealing AHL snapshot")?;
+    if let Some(out) = out {
+        icelines_fetch::atomic_write::write_bytes_atomic(out, &bytes)
+            .with_context(|| format!("exporting AHL roster/stat snapshot to {}", out.display()))?;
+    }
+    let skaters: usize = snapshot.teams.iter().map(|team| team.skaters.len()).sum();
+    let goalies: usize = snapshot.teams.iter().map(|team| team.goalies.len()).sum();
+    let roster_players: usize = snapshot.teams.iter().map(|team| team.roster.len()).sum();
+    println!(
+        "AHL {}: {} team(s), {} roster player(s), {} skater row(s), {} goalie row(s)",
+        snapshot.provider_season_name,
+        snapshot.teams.len(),
+        roster_players,
+        skaters,
+        goalies
+    );
+    println!("Sealed snapshot '{snapshot_name}' (tier: ahl).");
+    if let Some(out) = out {
+        println!("Exported {}", out.display());
+    }
+    Ok(())
 }
 
 async fn do_fletch_quivers(
