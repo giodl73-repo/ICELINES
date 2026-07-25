@@ -316,6 +316,7 @@ icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-r
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --include-conflicts --out hartford-complete-proposals-draft.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json --attention-only
+icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json --attention-only --json --out hartford-identity-attention.json
 icelines icecast affiliate-review-apply --crosswalk hartford-official-identity-review.json --decisions hartford-review-decisions.json --json --out hartford-reviewed-identities.json
 icelines icecast affiliate-status-draft --prior-snapshot prior-ahl.json --crosswalk hartford-reviewed-identities.json --camp camp.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-status-review-draft.json
 icelines icecast affiliate-status-show --review hartford-status-review-draft.json

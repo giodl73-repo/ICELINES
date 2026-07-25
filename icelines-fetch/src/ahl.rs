@@ -16,6 +16,7 @@ use thiserror::Error;
 pub const AHL_ROSTER_STATS_SCHEMA: &str = "ahl_roster_stats.v1";
 pub const AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA: &str = "ahl_canonical_identity_catalog.v1";
 pub const AHL_IDENTITY_CROSSWALK_SCHEMA: &str = "ahl_identity_crosswalk.v1";
+pub const AHL_IDENTITY_REVIEW_INSPECTION_SCHEMA: &str = "ahl_identity_review_inspection.v1";
 pub const AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA: &str = "ahl_identity_review_decisions.v1";
 pub const AHL_PROVIDER: &str = "ahl_hockeytech_statview";
 pub const AHL_STATS_SOURCE_URL: &str = "https://theahl.com/stats/player-stats";
@@ -423,6 +424,94 @@ pub struct AhlIdentityCrosswalkView {
     pub counts: AhlIdentityCrosswalkCounts,
     pub rows: Vec<AhlIdentityCrosswalkRow>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AhlIdentityInspectionScope {
+    All,
+    Attention,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlIdentityReviewInspectionView {
+    pub schema: String,
+    pub season: u32,
+    pub provider: String,
+    pub ahl_team: String,
+    pub roster_fetched_at: String,
+    pub candidates_checked_at: String,
+    pub scope: AhlIdentityInspectionScope,
+    pub total_rows: usize,
+    pub attention_count: usize,
+    pub declared_counts: AhlIdentityCrosswalkCounts,
+    pub computed_counts: AhlIdentityCrosswalkCounts,
+    pub declared_counts_stale: bool,
+    pub rows: Vec<AhlIdentityCrosswalkRow>,
+    pub disclosures: Vec<String>,
+}
+
+/// Project a crosswalk into a read-only, UI-neutral inspection view. Filtering
+/// changes only the inspection rows; the source crosswalk remains intact.
+pub fn build_ahl_identity_review_inspection(
+    crosswalk: &AhlIdentityCrosswalkView,
+    scope: AhlIdentityInspectionScope,
+) -> Result<AhlIdentityReviewInspectionView, AhlFeedError> {
+    if crosswalk.schema != AHL_IDENTITY_CROSSWALK_SCHEMA
+        || crosswalk.provider.trim().is_empty()
+        || crosswalk.ahl_team.trim().is_empty()
+        || crosswalk.roster_fetched_at.trim().is_empty()
+    {
+        return Err(AhlFeedError::Validation(
+            "invalid AHL identity crosswalk inspection authority".to_owned(),
+        ));
+    }
+    let mut provider_ids = BTreeSet::new();
+    if crosswalk
+        .rows
+        .iter()
+        .any(|row| !provider_ids.insert(row.provider_player_id.as_str()))
+    {
+        return Err(AhlFeedError::Validation(
+            "identity inspection contains duplicate provider players".to_owned(),
+        ));
+    }
+    let computed_counts = identity_crosswalk_counts(&crosswalk.rows);
+    let attention_count = crosswalk
+        .rows
+        .iter()
+        .filter(|row| ahl_identity_row_needs_attention(row))
+        .count();
+    let rows = crosswalk
+        .rows
+        .iter()
+        .filter(|row| {
+            scope == AhlIdentityInspectionScope::All || ahl_identity_row_needs_attention(row)
+        })
+        .cloned()
+        .collect();
+    Ok(AhlIdentityReviewInspectionView {
+        schema: AHL_IDENTITY_REVIEW_INSPECTION_SCHEMA.to_owned(),
+        season: crosswalk.season,
+        provider: crosswalk.provider.clone(),
+        ahl_team: crosswalk.ahl_team.clone(),
+        roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+        candidates_checked_at: crosswalk.candidates_checked_at.clone(),
+        scope,
+        total_rows: crosswalk.rows.len(),
+        attention_count,
+        declared_counts: crosswalk.counts.clone(),
+        declared_counts_stale: crosswalk.counts != computed_counts,
+        computed_counts,
+        rows,
+        disclosures: crosswalk.disclosures.clone(),
+    })
+}
+
+pub fn ahl_identity_row_needs_attention(row: &AhlIdentityCrosswalkRow) -> bool {
+    row.review_status == AhlIdentityReviewStatus::Rejected
+        || (row.review_status == AhlIdentityReviewStatus::Pending
+            && row.match_basis != AhlIdentityMatchBasis::ExactNameAndBirthDate)
 }
 
 /// Generate a deliberately non-applicable review draft for the strongest
@@ -2202,6 +2291,43 @@ mod tests {
         assert_eq!(view.counts.reviewed, 0);
         assert_eq!(view.rows[0].nhl_player_id, Some(8_480_001));
         assert_eq!(view.rows[0].review_status, AhlIdentityReviewStatus::Pending);
+    }
+
+    #[test]
+    fn identity_inspection_owns_counts_and_attention_filtering() {
+        let mut crosswalk = build_ahl_identity_crosswalk(
+            &identity_snapshot(),
+            "Hartford Wolf Pack",
+            &identity_catalog(),
+        )
+        .unwrap();
+        crosswalk.rows[0].ahl_display_name = "A. Thompson".to_owned();
+        crosswalk.rows[0].match_basis = AhlIdentityMatchBasis::SurnameAndBirthDate;
+
+        let all = build_ahl_identity_review_inspection(&crosswalk, AhlIdentityInspectionScope::All)
+            .unwrap();
+        assert_eq!(all.schema, AHL_IDENTITY_REVIEW_INSPECTION_SCHEMA);
+        assert_eq!(all.total_rows, 1);
+        assert_eq!(all.attention_count, 1);
+        assert_eq!(all.rows.len(), 1);
+        assert_eq!(all.computed_counts.surname_and_birth_date, 1);
+        assert!(all.declared_counts_stale);
+
+        let attention =
+            build_ahl_identity_review_inspection(&crosswalk, AhlIdentityInspectionScope::Attention)
+                .unwrap();
+        assert_eq!(attention.scope, AhlIdentityInspectionScope::Attention);
+        assert_eq!(attention.total_rows, 1);
+        assert_eq!(attention.attention_count, 1);
+        assert_eq!(attention.rows.len(), 1);
+        assert_eq!(attention.rows[0].provider_player_id, "10618");
+
+        crosswalk.rows[0].match_basis = AhlIdentityMatchBasis::ExactNameAndBirthDate;
+        let routine =
+            build_ahl_identity_review_inspection(&crosswalk, AhlIdentityInspectionScope::Attention)
+                .unwrap();
+        assert_eq!(routine.attention_count, 0);
+        assert!(routine.rows.is_empty());
     }
 
     #[test]

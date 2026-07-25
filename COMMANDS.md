@@ -1161,13 +1161,15 @@ until a reviewer inspects, edits, and finalizes it.
 never covers unmatched rows, and does not weaken final reviewer authority.
 
 `icecast affiliate-review-show` is the read-only text/JSON inspection surface
-for an existing crosswalk. Its text renderer recomputes summary counts and
-shows evidence counts, notes, and discovery disclosures without changing state.
+for an existing crosswalk. IceLines projects the authoritative crosswalk into
+the UI-neutral `ahl_identity_review_inspection.v1` contract, which carries
+declared and recomputed counts, a stale-count flag, total and attention counts,
+scope, evidence, notes, and discovery disclosures without changing state.
 `--attention-only` hides routine exact-name-and-birth proposals and retains
-pending non-exact or rejected rows. It cannot be combined with `--json`, so a
-filtered report cannot be mistaken for the authoritative crosswalk. Attention
-rows include canonical NHL names, both provider birth dates, and every evidence
-URL needed for the review decision.
+pending non-exact or rejected rows. It can be combined with `--json` because
+the output is explicitly an inspection view rather than a partial authoritative
+crosswalk. Attention rows include canonical NHL names, both provider birth
+dates, and every evidence URL needed for the review decision.
 
 `icecast affiliate-review-apply` binds that finalized batch to the exact
 season/provider/team/roster-fetch crosswalk. It supports `accept_proposal`,

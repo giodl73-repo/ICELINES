@@ -48,12 +48,14 @@ use icelines_fetch::{
     ahl::{
         affiliate_projection_input_from_reviewed_crosswalk, apply_ahl_identity_review_decisions,
         build_ahl_identity_crosswalk, build_ahl_identity_review_draft_with_options,
-        enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
-        parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
-        AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
+        build_ahl_identity_review_inspection, enrich_official_nhl_landing_candidate,
+        merge_ahl_canonical_identity_catalogs, parse_official_nhl_search_candidates,
+        parse_official_nhl_search_candidates_by_surname, AhlCanonicalIdentityCandidate,
+        AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityInspectionScope,
         AhlIdentityMatchBasis, AhlIdentityReviewDecisions, AhlIdentityReviewDraftOptions,
-        AhlIdentityReviewStatus, AhlProjectionPlayerFacts, AhlRosterStatsSnapshot,
-        AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA, AHL_IDENTITY_CROSSWALK_SCHEMA,
+        AhlIdentityReviewInspectionView, AhlIdentityReviewStatus, AhlProjectionPlayerFacts,
+        AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
+        AHL_IDENTITY_CROSSWALK_SCHEMA,
     },
     ahl_rollover::{
         apply_ahl_preseason_organization_review, build_ahl_preseason_organization_review_draft,
@@ -744,7 +746,10 @@ pub async fn run_affiliate_identities(
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&view)?)
     } else {
-        render_affiliate_identities(&view, false)
+        let inspection =
+            build_ahl_identity_review_inspection(&view, AhlIdentityInspectionScope::All)
+                .map_err(anyhow::Error::msg)?;
+        render_affiliate_identities(&inspection)
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL identity review")?;
@@ -793,16 +798,20 @@ pub fn run_affiliate_review_show(
             crosswalk.schema
         );
     }
-    if attention_only && json {
-        bail!("--attention-only is a text inspection filter and cannot be combined with --json");
-    }
-    let output = if json {
-        format!("{}\n", serde_json::to_string_pretty(&crosswalk)?)
+    let scope = if attention_only {
+        AhlIdentityInspectionScope::Attention
     } else {
-        render_affiliate_identities(&crosswalk, attention_only)
+        AhlIdentityInspectionScope::All
+    };
+    let inspection =
+        build_ahl_identity_review_inspection(&crosswalk, scope).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&inspection)?)
+    } else {
+        render_affiliate_identities(&inspection)
     };
     if let Some(path) = out.as_deref() {
-        write_icecast_file(path, output.as_bytes(), "AHL identity crosswalk")?;
+        write_icecast_file(path, output.as_bytes(), "AHL identity review inspection")?;
     } else {
         print!("{output}");
     }
@@ -824,7 +833,10 @@ pub fn run_affiliate_review_apply(
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&reviewed)?)
     } else {
-        render_affiliate_identities(&reviewed, false)
+        let inspection =
+            build_ahl_identity_review_inspection(&reviewed, AhlIdentityInspectionScope::All)
+                .map_err(anyhow::Error::msg)?;
+        render_affiliate_identities(&inspection)
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "reviewed AHL identity crosswalk")?;
@@ -1607,43 +1619,9 @@ fn render_affiliate(view: &AhlAffiliateProjectionView) -> String {
     out
 }
 
-fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: bool) -> String {
+fn render_affiliate_identities(view: &AhlIdentityReviewInspectionView) -> String {
     let mut out = String::new();
-    let exact_name_and_birth_date = view
-        .rows
-        .iter()
-        .filter(|row| row.match_basis == AhlIdentityMatchBasis::ExactNameAndBirthDate)
-        .count();
-    let exact_name_only = view
-        .rows
-        .iter()
-        .filter(|row| row.match_basis == AhlIdentityMatchBasis::ExactNameOnly)
-        .count();
-    let surname_and_birth_date = view
-        .rows
-        .iter()
-        .filter(|row| row.match_basis == AhlIdentityMatchBasis::SurnameAndBirthDate)
-        .count();
-    let ambiguous = view
-        .rows
-        .iter()
-        .filter(|row| row.match_basis == AhlIdentityMatchBasis::Ambiguous)
-        .count();
-    let conflicts = view
-        .rows
-        .iter()
-        .filter(|row| row.match_basis == AhlIdentityMatchBasis::BirthDateConflict)
-        .count();
-    let unmatched = view
-        .rows
-        .iter()
-        .filter(|row| row.match_basis == AhlIdentityMatchBasis::Unmatched)
-        .count();
-    let reviewed = view
-        .rows
-        .iter()
-        .filter(|row| row.review_status == AhlIdentityReviewStatus::Reviewed)
-        .count();
+    let counts = &view.computed_counts;
     let _ = writeln!(
         out,
         "AHL IDENTITY REVIEW — {} — {}",
@@ -1652,39 +1630,26 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: 
     let _ = writeln!(
         out,
         "{} roster | {} exact name+birth | {} surname+birth | {} name-only | {} ambiguous | {} conflicts | {} unmatched | {} reviewed",
-        view.rows.len(),
-        exact_name_and_birth_date,
-        surname_and_birth_date,
-        exact_name_only,
-        ambiguous,
-        conflicts,
-        unmatched,
-        reviewed
+        view.total_rows,
+        counts.exact_name_and_birth_date,
+        counts.surname_and_birth_date,
+        counts.exact_name_only,
+        counts.ambiguous,
+        counts.conflicts,
+        counts.unmatched,
+        counts.reviewed
     );
-    if view.counts.roster_players != view.rows.len()
-        || view.counts.exact_name_and_birth_date != exact_name_and_birth_date
-        || view.counts.surname_and_birth_date != surname_and_birth_date
-        || view.counts.exact_name_only != exact_name_only
-        || view.counts.ambiguous != ambiguous
-        || view.counts.conflicts != conflicts
-        || view.counts.unmatched != unmatched
-        || view.counts.reviewed != reviewed
-    {
+    if view.declared_counts_stale {
         let _ = writeln!(out, "WARNING: declared identity counts are stale");
     }
-    let attention_count = view
-        .rows
-        .iter()
-        .filter(|row| identity_row_needs_attention(row))
-        .count();
-    if attention_only {
-        let _ = writeln!(out, "ATTENTION: {attention_count} non-routine row(s)");
+    if view.scope == AhlIdentityInspectionScope::Attention {
+        let _ = writeln!(
+            out,
+            "ATTENTION: {} non-routine row(s)",
+            view.attention_count
+        );
     }
-    for row in view
-        .rows
-        .iter()
-        .filter(|row| !attention_only || identity_row_needs_attention(row))
-    {
+    for row in &view.rows {
         let basis = match row.match_basis {
             AhlIdentityMatchBasis::ExactNameAndBirthDate => "NAME+BIRTH",
             AhlIdentityMatchBasis::SurnameAndBirthDate => "SURNAME+BD",
@@ -1710,7 +1675,7 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: 
             "{:<24} {:<10} {:<10}{} | {} source(s) | {}",
             row.ahl_display_name, basis, review, proposal, evidence, row.note
         );
-        if attention_only {
+        if view.scope == AhlIdentityInspectionScope::Attention {
             let nhl_birth_date = row.nhl_birth_date.as_deref().unwrap_or("—");
             let _ = writeln!(
                 out,
@@ -1729,12 +1694,6 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: 
         }
     }
     out
-}
-
-fn identity_row_needs_attention(row: &icelines_fetch::ahl::AhlIdentityCrosswalkRow) -> bool {
-    row.review_status == AhlIdentityReviewStatus::Rejected
-        || (row.review_status == AhlIdentityReviewStatus::Pending
-            && row.match_basis != AhlIdentityMatchBasis::ExactNameAndBirthDate)
 }
 
 fn render_affiliate_rollover(view: &AhlPreseasonRolloverView) -> String {
@@ -6174,8 +6133,9 @@ mod tests {
         TrainingCampSimulationInput,
     };
     use icelines_fetch::ahl::{
-        AhlIdentityCrosswalkCounts, AhlIdentityCrosswalkRow, AhlIdentityCrosswalkView,
-        AhlIdentityMatchBasis, AhlIdentityReviewStatus, AHL_IDENTITY_CROSSWALK_SCHEMA,
+        build_ahl_identity_review_inspection, AhlIdentityCrosswalkCounts, AhlIdentityCrosswalkRow,
+        AhlIdentityCrosswalkView, AhlIdentityInspectionScope, AhlIdentityMatchBasis,
+        AhlIdentityReviewStatus, AHL_IDENTITY_CROSSWALK_SCHEMA,
     };
     use icelines_fetch::ahl_rollover::{
         AhlPreseasonOrganizationReview, AhlPreseasonOrganizationReviewRow,
@@ -6217,19 +6177,27 @@ mod tests {
             disclosures: vec!["Official discovery remains pending.".to_owned()],
         };
 
-        let rendered = super::render_affiliate_identities(&view, false);
+        let inspection =
+            build_ahl_identity_review_inspection(&view, AhlIdentityInspectionScope::All).unwrap();
+        let rendered = super::render_affiliate_identities(&inspection);
         assert!(rendered.contains("1 roster | 1 exact name+birth | 0 surname+birth"));
         assert!(rendered.contains("WARNING: declared identity counts are stale"));
         assert!(rendered.contains("1 source(s)"));
         assert!(rendered.contains("DISCLOSURES"));
-        let attention = super::render_affiliate_identities(&view, true);
+        let inspection =
+            build_ahl_identity_review_inspection(&view, AhlIdentityInspectionScope::Attention)
+                .unwrap();
+        let attention = super::render_affiliate_identities(&inspection);
         assert!(attention.contains("ATTENTION: 0 non-routine row(s)"));
         assert!(!attention.contains("Exact Player"));
 
         let mut alias = view;
         alias.rows[0].ahl_display_name = "E. Player".to_owned();
         alias.rows[0].match_basis = AhlIdentityMatchBasis::SurnameAndBirthDate;
-        let attention = super::render_affiliate_identities(&alias, true);
+        let inspection =
+            build_ahl_identity_review_inspection(&alias, AhlIdentityInspectionScope::Attention)
+                .unwrap();
+        let attention = super::render_affiliate_identities(&inspection);
         assert!(attention.contains("8480001 Exact Player"));
         assert!(attention.contains("BIRTH  AHL 2001-01-01 | NHL 2001-01-01"));
         assert!(attention.contains("SOURCE https://example.test/player"));

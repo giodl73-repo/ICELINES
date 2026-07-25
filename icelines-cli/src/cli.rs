@@ -1198,8 +1198,8 @@ pub enum IceCastSubcommand {
     AffiliateReviewShow {
         #[arg(long, value_name = "PATH")]
         crosswalk: PathBuf,
-        /// Show only non-routine rows needing reviewer attention (text only).
-        #[arg(long, conflicts_with = "json")]
+        /// Show only non-routine rows needing reviewer attention.
+        #[arg(long)]
         attention_only: bool,
         #[arg(long)]
         json: bool,
@@ -2612,28 +2612,19 @@ mod tui_surface_tests {
                 "--crosswalk",
                 "review.json",
                 "--attention-only",
+                "--json",
                 "--out",
-                "review-attention.txt",
+                "review-attention.json",
             ])
             .expect("affiliate identity review inspection should parse");
             assert!(matches!(
                 show.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateReviewShow {
                     attention_only: true,
-                    json: false,
+                    json: true,
                     ..
                 })
             ));
-            assert!(Cli::try_parse_from([
-                "icelines",
-                "icecast",
-                "affiliate-review-show",
-                "--crosswalk",
-                "review.json",
-                "--attention-only",
-                "--json",
-            ])
-            .is_err());
 
             let apply = Cli::try_parse_from([
                 "icelines",
