@@ -431,6 +431,15 @@ pub struct AhlIdentityCrosswalkView {
 pub fn build_ahl_identity_review_draft(
     crosswalk: &AhlIdentityCrosswalkView,
 ) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
+    build_ahl_identity_review_draft_with_aliases(crosswalk, false)
+}
+
+/// Generate the same non-applicable draft with optional, fully sourced alias
+/// remap proposals. Alias rows are never converted to ordinary exact accepts.
+pub fn build_ahl_identity_review_draft_with_aliases(
+    crosswalk: &AhlIdentityCrosswalkView,
+    include_aliases: bool,
+) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
     validate_crosswalk_shape(crosswalk)?;
     Ok(AhlIdentityReviewDecisions {
         schema: AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA.to_owned(),
@@ -444,18 +453,29 @@ pub fn build_ahl_identity_review_draft(
         decisions: crosswalk
             .rows
             .iter()
-            .filter(|row| {
-                row.review_status == AhlIdentityReviewStatus::Pending
-                    && row.match_basis == AhlIdentityMatchBasis::ExactNameAndBirthDate
-            })
-            .map(|row| AhlIdentityReviewDecision {
-                provider_player_id: row.provider_player_id.clone(),
-                action: AhlIdentityReviewAction::AcceptProposal,
-                nhl_player_id: None,
-                nhl_display_name: None,
-                nhl_birth_date: None,
-                evidence_urls: Vec::new(),
-                note: "Verify the retained official NHL search and landing evidence before accepting this exact name-and-birth-date proposal.".to_owned(),
+            .filter(|row| row.review_status == AhlIdentityReviewStatus::Pending)
+            .filter_map(|row| match row.match_basis {
+                AhlIdentityMatchBasis::ExactNameAndBirthDate => Some(AhlIdentityReviewDecision {
+                    provider_player_id: row.provider_player_id.clone(),
+                    action: AhlIdentityReviewAction::AcceptProposal,
+                    nhl_player_id: None,
+                    nhl_display_name: None,
+                    nhl_birth_date: None,
+                    evidence_urls: Vec::new(),
+                    note: "Verify the retained official NHL search and landing evidence before accepting this exact name-and-birth-date proposal.".to_owned(),
+                }),
+                AhlIdentityMatchBasis::SurnameAndBirthDate if include_aliases => {
+                    Some(AhlIdentityReviewDecision {
+                        provider_player_id: row.provider_player_id.clone(),
+                        action: AhlIdentityReviewAction::SetIdentity,
+                        nhl_player_id: row.nhl_player_id,
+                        nhl_display_name: row.nhl_display_name.clone(),
+                        nhl_birth_date: row.nhl_birth_date.clone(),
+                        evidence_urls: row.evidence_urls.clone(),
+                        note: "Verify both official sources and the differing display names before approving this surname-and-birth-date alias remap.".to_owned(),
+                    })
+                }
+                _ => None,
             })
             .collect(),
     })
@@ -2263,6 +2283,16 @@ mod tests {
             .unwrap()
             .decisions
             .is_empty());
+        let alias_draft = build_ahl_identity_review_draft_with_aliases(&crosswalk, true).unwrap();
+        assert!(alias_draft.draft);
+        assert_eq!(alias_draft.decisions.len(), 1);
+        assert_eq!(
+            alias_draft.decisions[0].action,
+            AhlIdentityReviewAction::SetIdentity
+        );
+        assert_eq!(alias_draft.decisions[0].nhl_player_id, Some(8_480_001));
+        assert_eq!(alias_draft.decisions[0].evidence_urls.len(), 1);
+        assert!(apply_ahl_identity_review_decisions(&crosswalk, &alias_draft).is_err());
     }
 
     #[test]

@@ -1184,6 +1184,9 @@ pub enum IceCastSubcommand {
         /// Generated `ahl_identity_crosswalk.v1` proposal queue.
         #[arg(long, value_name = "PATH")]
         crosswalk: PathBuf,
+        /// Add sourced surname-and-birth alias remap proposals to the draft.
+        #[arg(long)]
+        include_aliases: bool,
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
@@ -2584,13 +2587,17 @@ mod tui_surface_tests {
                 "affiliate-review-draft",
                 "--crosswalk",
                 "review.json",
+                "--include-aliases",
                 "--out",
                 "decisions-draft.json",
             ])
             .expect("affiliate identity review draft should parse");
             assert!(matches!(
                 draft.command,
-                Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft { .. })
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft {
+                    include_aliases: true,
+                    ..
+                })
             ));
 
             let show = Cli::try_parse_from([

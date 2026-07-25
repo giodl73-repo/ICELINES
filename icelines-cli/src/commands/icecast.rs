@@ -47,7 +47,7 @@ use icelines_core::{
 use icelines_fetch::{
     ahl::{
         affiliate_projection_input_from_reviewed_crosswalk, apply_ahl_identity_review_decisions,
-        build_ahl_identity_crosswalk, build_ahl_identity_review_draft,
+        build_ahl_identity_crosswalk, build_ahl_identity_review_draft_with_aliases,
         enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
         parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
         AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
@@ -756,11 +756,13 @@ pub async fn run_affiliate_identities(
 
 pub fn run_affiliate_review_draft(
     crosswalk_path: PathBuf,
+    include_aliases: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let crosswalk: AhlIdentityCrosswalkView =
         read_icecast_json(&crosswalk_path, "AHL identity crosswalk")?;
-    let draft = build_ahl_identity_review_draft(&crosswalk).map_err(anyhow::Error::msg)?;
+    let draft = build_ahl_identity_review_draft_with_aliases(&crosswalk, include_aliases)
+        .map_err(anyhow::Error::msg)?;
     let output = format!("{}\n", serde_json::to_string_pretty(&draft)?);
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL identity review draft")?;

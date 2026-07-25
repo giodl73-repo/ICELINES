@@ -1018,6 +1018,7 @@ icelines icecast affiliate --input affiliate-scenario.json --json --out affiliat
 icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "Hartford Wolf Pack" --candidates examples/icecast-league-candidate-overlay-2026-27.json --json --out hartford-identity-review.json
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
+icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --out hartford-review-with-aliases-draft.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json --attention-only
 icelines icecast affiliate-review-apply --crosswalk hartford-official-identity-review.json --decisions hartford-review-decisions.json --json --out hartford-reviewed-identities.json
@@ -1150,6 +1151,10 @@ entries only for pending exact-name-and-birth-date proposals. It is deliberately
 written with `draft: true` and no reviewer/timestamp, so it cannot be applied.
 A reviewer must inspect every retained source, remove decisions they do not
 accept, set `draft: false`, and add their name plus an RFC3339 timestamp.
+`--include-aliases` additionally copies fully sourced `surname_and_birth_date`
+rows into the draft as explicit `set_identity` remaps. It never includes
+conflicts or unmatched rows, and the resulting document remains non-applicable
+until a reviewer inspects, edits, and finalizes it.
 
 `icecast affiliate-review-show` is the read-only text/JSON inspection surface
 for an existing crosswalk. Its text renderer recomputes summary counts and
