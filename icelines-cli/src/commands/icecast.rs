@@ -3811,8 +3811,12 @@ fn render_prospect_study(view: &ProspectDevelopmentStudyView) -> String {
     );
     let _ = writeln!(
         out,
-        "CLASS: {:?} · SCORE {:.1}/100 · TRAJECTORY {:?} · NHL GP {}",
-        view.classification, view.hidden_value_score, view.trajectory, view.nhl_games_played
+        "CLASS: {:?} · MARKET {:?} · SCORE {:.1}/100 · TRAJECTORY {:?} · NHL GP {}",
+        view.classification,
+        view.market_position,
+        view.hidden_value_score,
+        view.trajectory,
+        view.nhl_games_played
     );
     let _ = writeln!(out, "\nDEVELOPMENT");
     for season in &view.seasons {
@@ -3852,6 +3856,19 @@ fn render_prospect_study(view: &ProspectDevelopmentStudyView) -> String {
             component.weight * 100.0,
             component.weighted_points
         );
+    }
+    if !view.lenses.is_empty() {
+        let _ = writeln!(out, "\nDISCOVERY LENSES");
+        for lens in &view.lenses {
+            let _ = writeln!(
+                out,
+                "- {:?} / {:?} ({:.0}%): {}",
+                lens.kind,
+                lens.direction,
+                lens.strength * 100.0,
+                lens.summary
+            );
+        }
     }
     if !view.evidence.is_empty() {
         let _ = writeln!(out, "\nEVIDENCE");

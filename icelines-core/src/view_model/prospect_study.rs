@@ -38,6 +38,38 @@ pub enum ProspectHiddenValueClass {
     VisibleRiser,
     Watch,
     Cooling,
+    OverexposedCooling,
+    HypeAheadOfEvidence,
+    SmallSampleHypeRisk,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectMarketPosition {
+    Underrecognized,
+    Aligned,
+    Overexposed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectDiscoveryLensKind {
+    ProductionRiser,
+    InjuryObscured,
+    RecoveryUnproven,
+    OpportunityBacked,
+    AttentionLag,
+    AttentionAheadOfEvidence,
+    WorkloadUncertain,
+    CoolingSignal,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectDiscoveryLensDirection {
+    Upside,
+    Risk,
+    Context,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -127,6 +159,14 @@ pub struct ProspectSignalComponentView {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectDiscoveryLensView {
+    pub kind: ProspectDiscoveryLensKind,
+    pub direction: ProspectDiscoveryLensDirection,
+    pub strength: f64,
+    pub summary: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectDevelopmentStudyView {
     pub schema: String,
     pub player_id: u32,
@@ -143,9 +183,11 @@ pub struct ProspectDevelopmentStudyView {
     pub attention_score: f64,
     pub attention_basis: String,
     pub performance_attention_gap: f64,
+    pub market_position: ProspectMarketPosition,
     pub hidden_value_score: f64,
     pub classification: ProspectHiddenValueClass,
     pub components: Vec<ProspectSignalComponentView>,
+    pub lenses: Vec<ProspectDiscoveryLensView>,
     pub evidence: Vec<ProspectStudyEvidenceInput>,
     pub disclosures: Vec<String>,
 }
@@ -295,7 +337,15 @@ pub fn build_prospect_development_study(
         .sum::<f64>();
     let performance_attention_gap =
         ((production_score + trajectory_score + opportunity_score) / 3.0) - input.attention_score;
+    let market_position = if performance_attention_gap >= 0.2 {
+        ProspectMarketPosition::Underrecognized
+    } else if performance_attention_gap <= -0.2 {
+        ProspectMarketPosition::Overexposed
+    } else {
+        ProspectMarketPosition::Aligned
+    };
     let low_attention = input.attention_score <= 0.4;
+    let high_attention = input.attention_score >= 0.65;
     let classification = if trajectory == ProspectTrajectory::Rising
         && low_attention
         && input.availability == ProspectAvailabilityStatus::InjuryInterrupted
@@ -317,11 +367,97 @@ pub fn build_prospect_development_study(
         && production_score >= 0.75
     {
         ProspectHiddenValueClass::InjuryRecoveryWatch
+    } else if trajectory == ProspectTrajectory::Cooling && high_attention {
+        ProspectHiddenValueClass::OverexposedCooling
+    } else if trajectory == ProspectTrajectory::Insufficient
+        && latest_confidence < 0.75
+        && high_attention
+    {
+        ProspectHiddenValueClass::SmallSampleHypeRisk
+    } else if market_position == ProspectMarketPosition::Overexposed
+        && production_score < 0.65
+        && matches!(
+            input.opportunity,
+            ProspectOpportunityStatus::None | ProspectOpportunityStatus::Monitoring
+        )
+    {
+        ProspectHiddenValueClass::HypeAheadOfEvidence
     } else if trajectory == ProspectTrajectory::Cooling {
         ProspectHiddenValueClass::Cooling
     } else {
         ProspectHiddenValueClass::Watch
     };
+    let mut lenses = Vec::new();
+    if trajectory == ProspectTrajectory::Rising {
+        lenses.push(ProspectDiscoveryLensView {
+            kind: ProspectDiscoveryLensKind::ProductionRiser,
+            direction: ProspectDiscoveryLensDirection::Upside,
+            strength: trajectory_score,
+            summary: "Same-league scoring rate cleared the configured rising threshold.".to_owned(),
+        });
+    }
+    if input.availability == ProspectAvailabilityStatus::InjuryInterrupted {
+        lenses.push(ProspectDiscoveryLensView {
+            kind: ProspectDiscoveryLensKind::InjuryObscured,
+            direction: ProspectDiscoveryLensDirection::Context,
+            strength: opportunity_score,
+            summary: "Injury interrupted documented opportunity; it does not reduce the development signal or add score.".to_owned(),
+        });
+    }
+    if input.availability == ProspectAvailabilityStatus::Recovered
+        && trajectory == ProspectTrajectory::Insufficient
+    {
+        lenses.push(ProspectDiscoveryLensView {
+            kind: ProspectDiscoveryLensKind::RecoveryUnproven,
+            direction: ProspectDiscoveryLensDirection::Context,
+            strength: 1.0 - workload_confidence,
+            summary: "The return is productive, but the injured comparison season is too small to prove a trend.".to_owned(),
+        });
+    }
+    if matches!(
+        input.opportunity,
+        ProspectOpportunityStatus::RecallCandidate | ProspectOpportunityStatus::DebutPlanned
+    ) {
+        lenses.push(ProspectDiscoveryLensView {
+            kind: ProspectDiscoveryLensKind::OpportunityBacked,
+            direction: ProspectDiscoveryLensDirection::Upside,
+            strength: opportunity_score,
+            summary: "Documented recall or debut intent supports the performance signal."
+                .to_owned(),
+        });
+    }
+    if market_position == ProspectMarketPosition::Underrecognized {
+        lenses.push(ProspectDiscoveryLensView {
+            kind: ProspectDiscoveryLensKind::AttentionLag,
+            direction: ProspectDiscoveryLensDirection::Upside,
+            strength: performance_attention_gap.clamp(0.0, 1.0),
+            summary: "The authored attention estimate trails the combined performance and opportunity evidence.".to_owned(),
+        });
+    } else if market_position == ProspectMarketPosition::Overexposed {
+        lenses.push(ProspectDiscoveryLensView {
+            kind: ProspectDiscoveryLensKind::AttentionAheadOfEvidence,
+            direction: ProspectDiscoveryLensDirection::Risk,
+            strength: (-performance_attention_gap).clamp(0.0, 1.0),
+            summary: "The authored attention estimate is ahead of the combined performance and opportunity evidence.".to_owned(),
+        });
+    }
+    if workload_confidence < 0.75 {
+        lenses.push(ProspectDiscoveryLensView {
+            kind: ProspectDiscoveryLensKind::WorkloadUncertain,
+            direction: ProspectDiscoveryLensDirection::Risk,
+            strength: 1.0 - workload_confidence,
+            summary: "The comparable same-league workload is below the confidence gate.".to_owned(),
+        });
+    }
+    if trajectory == ProspectTrajectory::Cooling {
+        lenses.push(ProspectDiscoveryLensView {
+            kind: ProspectDiscoveryLensKind::CoolingSignal,
+            direction: ProspectDiscoveryLensDirection::Risk,
+            strength: (0.5 - trajectory_score).max(0.0) * 2.0,
+            summary: "Same-league scoring rate declined beyond the configured cooling threshold."
+                .to_owned(),
+        });
+    }
 
     Ok(ProspectDevelopmentStudyView {
         schema: PROSPECT_DEVELOPMENT_STUDY_SCHEMA.to_owned(),
@@ -339,9 +475,11 @@ pub fn build_prospect_development_study(
         attention_score: input.attention_score,
         attention_basis: input.attention_basis,
         performance_attention_gap,
+        market_position,
         hidden_value_score,
         classification,
         components,
+        lenses,
         evidence: input.evidence,
         disclosures: vec![
             "The hidden-value score combines latest production, same-league trajectory, documented opportunity, and an explicitly authored attention estimate; it is a discovery signal, not an NHL-equivalency projection.".to_owned(),
@@ -404,6 +542,14 @@ mod tests {
         assert!(view.seasons[1].same_league_ppg_change.unwrap() > 0.70);
         assert!(view.hidden_value_score > 90.0);
         assert_eq!(view.components.len(), 4);
+        assert_eq!(
+            view.market_position,
+            ProspectMarketPosition::Underrecognized
+        );
+        assert!(view
+            .lenses
+            .iter()
+            .any(|lens| lens.kind == ProspectDiscoveryLensKind::InjuryObscured));
     }
 
     #[test]
@@ -488,5 +634,106 @@ mod tests {
             view.classification,
             ProspectHiddenValueClass::InjuryRecoveryWatch
         );
+        assert!(view
+            .lenses
+            .iter()
+            .any(|lens| lens.kind == ProspectDiscoveryLensKind::RecoveryUnproven));
+    }
+
+    #[test]
+    fn attention_on_a_tiny_flash_is_flagged_as_hype_risk() {
+        let view = build_prospect_development_study(
+            study_input(
+                5,
+                6,
+                4,
+                10,
+                ProspectOpportunityStatus::Monitoring,
+                ProspectAvailabilityStatus::Healthy,
+                0.85,
+            ),
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(view.trajectory, ProspectTrajectory::Insufficient);
+        assert_eq!(
+            view.classification,
+            ProspectHiddenValueClass::SmallSampleHypeRisk
+        );
+        assert_eq!(view.market_position, ProspectMarketPosition::Overexposed);
+        assert!(view
+            .lenses
+            .iter()
+            .any(|lens| { lens.kind == ProspectDiscoveryLensKind::AttentionAheadOfEvidence }));
+        assert!(view
+            .lenses
+            .iter()
+            .any(|lens| lens.kind == ProspectDiscoveryLensKind::WorkloadUncertain));
+    }
+
+    #[test]
+    fn high_attention_and_real_decline_is_overexposed_cooling() {
+        let view = build_prospect_development_study(
+            study_input(
+                60,
+                60,
+                60,
+                30,
+                ProspectOpportunityStatus::Monitoring,
+                ProspectAvailabilityStatus::Healthy,
+                0.8,
+            ),
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(view.trajectory, ProspectTrajectory::Cooling);
+        assert_eq!(
+            view.classification,
+            ProspectHiddenValueClass::OverexposedCooling
+        );
+        assert!(view
+            .lenses
+            .iter()
+            .any(|lens| lens.kind == ProspectDiscoveryLensKind::CoolingSignal));
+    }
+
+    fn study_input(
+        prior_games: u32,
+        prior_points: u32,
+        latest_games: u32,
+        latest_points: u32,
+        opportunity: ProspectOpportunityStatus,
+        availability: ProspectAvailabilityStatus,
+        attention_score: f64,
+    ) -> ProspectDevelopmentStudyInput {
+        ProspectDevelopmentStudyInput {
+            player_id: 9,
+            player: "Test Prospect".to_owned(),
+            organization: "TST".to_owned(),
+            position: "C".to_owned(),
+            age: 21,
+            nhl_games_played: 0,
+            seasons: vec![
+                ProspectDevelopmentSeasonInput {
+                    season: 20242025,
+                    league: "AHL".to_owned(),
+                    games_played: prior_games,
+                    goals: prior_points / 2,
+                    assists: prior_points - prior_points / 2,
+                },
+                ProspectDevelopmentSeasonInput {
+                    season: 20252026,
+                    league: "AHL".to_owned(),
+                    games_played: latest_games,
+                    goals: latest_points / 2,
+                    assists: latest_points - latest_points / 2,
+                },
+            ],
+            opportunity,
+            availability,
+            attention_score,
+            attention_basis: "Test attention basis.".to_owned(),
+            evidence: Vec::new(),
+        }
     }
 }

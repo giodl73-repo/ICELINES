@@ -28,7 +28,8 @@ source URLs. The core primitive owns:
 - workload confidence;
 - rising, stable, cooling, or insufficient trajectory;
 - transparent production, trajectory, opportunity, and attention-gap lenses;
-- the 0..100 discovery score and classification; and
+- the 0..100 discovery score, market position, independent discovery lenses,
+  and summary classification; and
 - disclosures explaining what the score can and cannot claim.
 
 The CLI, TUI, web, fantasy, simulation, and cards may render or consume the
@@ -50,6 +51,48 @@ same view without recomputing those semantics.
 - `injury_recovery_watch` keeps a productive return from long-term injury
   visible when the injured comparison season is too small to prove a trend.
 - The score is a discovery signal, not an NHL-equivalency or roster forecast.
+
+## Two-sided discovery lenses
+
+The study does not force every player into a single story. It emits every
+supported active lens with an upside, risk, or context direction:
+
+| Lens | Direction | Question |
+|---|---|---|
+| `production_riser` | upside | Is same-league scoring improving with credible workload? |
+| `injury_obscured` | context | Did injury interrupt documented opportunity? |
+| `recovery_unproven` | context | Is the return promising while the injury season is too small to compare? |
+| `opportunity_backed` | upside | Did the organization document recall or debut intent? |
+| `attention_lag` | upside | Is evidence stronger than the authored attention estimate? |
+| `attention_ahead_of_evidence` | risk | Is attention stronger than performance and opportunity evidence? |
+| `workload_uncertain` | risk | Is the comparable sample below the confidence gate? |
+| `cooling_signal` | risk | Did same-league scoring decline beyond the configured threshold? |
+
+These lenses support hidden-gem classes such as `injury_obscured_riser` and
+`injury_recovery_watch`, plus skeptical classes such as
+`small_sample_hype_risk`, `hype_ahead_of_evidence`, and
+`overexposed_cooling`.
+
+## Planned additional viewpoints
+
+The next adapters can add lenses only when their required facts exist:
+
+- **depth-chart blocked** — NHL-ready evidence with no role vacancy;
+- **role-obscured scorer** — strong rate production without top-six or PP time;
+- **special-teams unlock** — credible PP/PK role change preceding raw totals;
+- **chemistry driver/passenger risk** — shift evidence showing who creates or
+  depends on teammate lift;
+- **bad-team suppressed** — individual process holding up under weak team
+  context;
+- **shooting-percentage mirage** — goals rising without repeatable shot volume;
+- **power-play dependency** — headline production overly concentrated on PP;
+- **draft-pedigree bias** — attention remains high while pro evidence lags;
+- **post-hype sleeper** — prior attention collapsed before underlying play; and
+- **age/overage inflation** — junior dominance discounted for age and league
+  context.
+
+None of these are inferred from names or prose alone. Each requires its own
+typed facts, confidence, evidence, and disclosure before activation.
 
 ## Next data step
 

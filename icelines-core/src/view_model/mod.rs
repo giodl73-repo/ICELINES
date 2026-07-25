@@ -302,9 +302,10 @@ pub use poach::{
 pub use prospect_study::{
     build_prospect_development_study, ProspectAvailabilityStatus, ProspectDevelopmentSeasonInput,
     ProspectDevelopmentSeasonView, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
-    ProspectDevelopmentStudyView, ProspectHiddenValueClass, ProspectOpportunityStatus,
-    ProspectSignalComponentView, ProspectStudyEvidenceInput, ProspectTrajectory,
-    PROSPECT_DEVELOPMENT_STUDY_SCHEMA,
+    ProspectDevelopmentStudyView, ProspectDiscoveryLensDirection, ProspectDiscoveryLensKind,
+    ProspectDiscoveryLensView, ProspectHiddenValueClass, ProspectMarketPosition,
+    ProspectOpportunityStatus, ProspectSignalComponentView, ProspectStudyEvidenceInput,
+    ProspectTrajectory, PROSPECT_DEVELOPMENT_STUDY_SCHEMA,
 };
 pub use records::{
     FightRecordInput, PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView,
