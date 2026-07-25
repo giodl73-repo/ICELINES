@@ -1187,6 +1187,16 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Inspect an existing AHL identity crosswalk without changing review state.
+    #[command(name = "affiliate-review-show")]
+    AffiliateReviewShow {
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Apply a finalized, reviewer-authored identity decision batch.
     #[command(name = "affiliate-review-apply")]
     AffiliateReviewApply {
@@ -2578,6 +2588,22 @@ mod tui_surface_tests {
             assert!(matches!(
                 draft.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft { .. })
+            ));
+
+            let show = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-show",
+                "--crosswalk",
+                "review.json",
+                "--json",
+                "--out",
+                "review-copy.json",
+            ])
+            .expect("affiliate identity review inspection should parse");
+            assert!(matches!(
+                show.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewShow { json: true, .. })
             ));
 
             let apply = Cli::try_parse_from([

@@ -53,6 +53,7 @@ use icelines_fetch::{
         AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityMatchBasis,
         AhlIdentityReviewDecisions, AhlIdentityReviewStatus, AhlProjectionPlayerFacts,
         AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
+        AHL_IDENTITY_CROSSWALK_SCHEMA,
     },
     ahl_rollover::{
         apply_ahl_preseason_organization_review, build_ahl_preseason_organization_review_draft,
@@ -763,6 +764,32 @@ pub fn run_affiliate_review_draft(
     let output = format!("{}\n", serde_json::to_string_pretty(&draft)?);
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL identity review draft")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_review_show(
+    crosswalk_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "AHL identity crosswalk")?;
+    if crosswalk.schema != AHL_IDENTITY_CROSSWALK_SCHEMA {
+        bail!(
+            "unsupported AHL identity crosswalk schema `{}`",
+            crosswalk.schema
+        );
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&crosswalk)?)
+    } else {
+        render_affiliate_identities(&crosswalk)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL identity crosswalk")?;
     } else {
         print!("{output}");
     }
@@ -1524,6 +1551,36 @@ fn render_affiliate(view: &AhlAffiliateProjectionView) -> String {
 
 fn render_affiliate_identities(view: &AhlIdentityCrosswalkView) -> String {
     let mut out = String::new();
+    let exact_name_and_birth_date = view
+        .rows
+        .iter()
+        .filter(|row| row.match_basis == AhlIdentityMatchBasis::ExactNameAndBirthDate)
+        .count();
+    let exact_name_only = view
+        .rows
+        .iter()
+        .filter(|row| row.match_basis == AhlIdentityMatchBasis::ExactNameOnly)
+        .count();
+    let ambiguous = view
+        .rows
+        .iter()
+        .filter(|row| row.match_basis == AhlIdentityMatchBasis::Ambiguous)
+        .count();
+    let conflicts = view
+        .rows
+        .iter()
+        .filter(|row| row.match_basis == AhlIdentityMatchBasis::BirthDateConflict)
+        .count();
+    let unmatched = view
+        .rows
+        .iter()
+        .filter(|row| row.match_basis == AhlIdentityMatchBasis::Unmatched)
+        .count();
+    let reviewed = view
+        .rows
+        .iter()
+        .filter(|row| row.review_status == AhlIdentityReviewStatus::Reviewed)
+        .count();
     let _ = writeln!(
         out,
         "AHL IDENTITY REVIEW — {} — {}",
@@ -1532,14 +1589,24 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView) -> String {
     let _ = writeln!(
         out,
         "{} roster | {} exact name+birth | {} name-only | {} ambiguous | {} conflicts | {} unmatched | {} reviewed",
-        view.counts.roster_players,
-        view.counts.exact_name_and_birth_date,
-        view.counts.exact_name_only,
-        view.counts.ambiguous,
-        view.counts.conflicts,
-        view.counts.unmatched,
-        view.counts.reviewed
+        view.rows.len(),
+        exact_name_and_birth_date,
+        exact_name_only,
+        ambiguous,
+        conflicts,
+        unmatched,
+        reviewed
     );
+    if view.counts.roster_players != view.rows.len()
+        || view.counts.exact_name_and_birth_date != exact_name_and_birth_date
+        || view.counts.exact_name_only != exact_name_only
+        || view.counts.ambiguous != ambiguous
+        || view.counts.conflicts != conflicts
+        || view.counts.unmatched != unmatched
+        || view.counts.reviewed != reviewed
+    {
+        let _ = writeln!(out, "WARNING: declared identity counts are stale");
+    }
     for row in &view.rows {
         let basis = match row.match_basis {
             AhlIdentityMatchBasis::ExactNameAndBirthDate => "NAME+BIRTH",
@@ -1558,11 +1625,18 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView) -> String {
             .nhl_player_id
             .map(|id| format!(" → {id}"))
             .unwrap_or_default();
+        let evidence = row.evidence_urls.len();
         let _ = writeln!(
             out,
-            "{:<24} {:<10} {:<10}{}",
-            row.ahl_display_name, basis, review, proposal
+            "{:<24} {:<10} {:<10}{} | {} source(s) | {}",
+            row.ahl_display_name, basis, review, proposal, evidence, row.note
         );
+    }
+    if !view.disclosures.is_empty() {
+        let _ = writeln!(out, "DISCLOSURES");
+        for disclosure in &view.disclosures {
+            let _ = writeln!(out, "- {disclosure}");
+        }
     }
     out
 }
@@ -6003,10 +6077,55 @@ mod tests {
         TeamSeasonReplayCheckpointTeamRow, TeamSeasonReplayCheckpointView,
         TrainingCampSimulationInput,
     };
+    use icelines_fetch::ahl::{
+        AhlIdentityCrosswalkCounts, AhlIdentityCrosswalkRow, AhlIdentityCrosswalkView,
+        AhlIdentityMatchBasis, AhlIdentityReviewStatus, AHL_IDENTITY_CROSSWALK_SCHEMA,
+    };
     use icelines_fetch::ahl_rollover::{
         AhlPreseasonOrganizationReview, AhlPreseasonOrganizationReviewRow,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     };
+
+    #[test]
+    fn affiliate_identity_renderer_recomputes_counts_and_shows_evidence() {
+        let view = AhlIdentityCrosswalkView {
+            schema: AHL_IDENTITY_CROSSWALK_SCHEMA.to_owned(),
+            season: 2025_2026,
+            provider: "ahl-api".to_owned(),
+            ahl_team: "Hartford Wolf Pack".to_owned(),
+            nhl_affiliate: Some("NYR".to_owned()),
+            roster_fetched_at: "2026-07-24T12:00:00Z".to_owned(),
+            candidates_checked_at: "2026-07-24".to_owned(),
+            counts: AhlIdentityCrosswalkCounts {
+                roster_players: 0,
+                exact_name_and_birth_date: 0,
+                exact_name_only: 0,
+                ambiguous: 0,
+                conflicts: 0,
+                unmatched: 0,
+                reviewed: 0,
+            },
+            rows: vec![AhlIdentityCrosswalkRow {
+                provider_player_id: "provider-1".to_owned(),
+                ahl_display_name: "Exact Player".to_owned(),
+                ahl_birth_date: "2001-01-01".to_owned(),
+                match_basis: AhlIdentityMatchBasis::ExactNameAndBirthDate,
+                review_status: AhlIdentityReviewStatus::Pending,
+                nhl_player_id: Some(8_480_001),
+                nhl_display_name: Some("Exact Player".to_owned()),
+                nhl_birth_date: Some("2001-01-01".to_owned()),
+                evidence_urls: vec!["https://example.test/player".to_owned()],
+                note: "Exact official match; review required.".to_owned(),
+            }],
+            disclosures: vec!["Official discovery remains pending.".to_owned()],
+        };
+
+        let rendered = super::render_affiliate_identities(&view);
+        assert!(rendered.contains("1 roster | 1 exact name+birth"));
+        assert!(rendered.contains("WARNING: declared identity counts are stale"));
+        assert!(rendered.contains("1 source(s)"));
+        assert!(rendered.contains("DISCLOSURES"));
+    }
 
     #[test]
     fn affiliate_status_review_renderer_recomputes_stale_counts() {
