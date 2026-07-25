@@ -49,10 +49,10 @@ use icelines_fetch::{
         affiliate_projection_input_from_reviewed_crosswalk, apply_ahl_identity_review_decisions,
         build_ahl_identity_crosswalk, build_ahl_identity_review_draft,
         enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
-        parse_official_nhl_search_candidates, AhlCanonicalIdentityCandidate,
-        AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityMatchBasis,
-        AhlIdentityReviewDecisions, AhlIdentityReviewStatus, AhlProjectionPlayerFacts,
-        AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
+        parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
+        AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
+        AhlIdentityMatchBasis, AhlIdentityReviewDecisions, AhlIdentityReviewStatus,
+        AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
         AHL_IDENTITY_CROSSWALK_SCHEMA,
     },
     ahl_rollover::{
@@ -723,11 +723,11 @@ pub async fn run_affiliate_identities(
     }
     let mut discovery_note = None;
     if discover_official {
-        let (catalog, exact_search_candidates, landing_enriched) =
+        let (catalog, exact_search_candidates, surname_search_candidates, landing_enriched) =
             discover_official_affiliate_identities(&snapshot, &team, refresh, cfg).await?;
         catalogs.push(catalog);
         discovery_note = Some(format!(
-            "Official NHL discovery proposed {exact_search_candidates} exact-name candidate(s); {landing_enriched} received player-landing birth-date corroboration. All proposals remain pending explicit review."
+            "Official NHL discovery proposed {exact_search_candidates} exact-name candidate(s) and {surname_search_candidates} surname fallback candidate(s); {landing_enriched} received player-landing birth-date corroboration. All proposals remain pending explicit review."
         ));
     }
     if catalogs.is_empty() {
@@ -948,7 +948,7 @@ async fn discover_official_affiliate_identities(
     team: &str,
     refresh: bool,
     cfg: &Config,
-) -> anyhow::Result<(AhlCanonicalIdentityCatalog, usize, usize)> {
+) -> anyhow::Result<(AhlCanonicalIdentityCatalog, usize, usize, usize)> {
     snapshot.validate().map_err(anyhow::Error::msg)?;
     let roster = &snapshot
         .teams
@@ -995,6 +995,51 @@ async fn discover_official_affiliate_identities(
                 .map_err(anyhow::Error::msg)?,
         );
     }
+    let exact_search_candidates = search_candidates.len();
+    let exact_names = search_candidates
+        .iter()
+        .map(|candidate| normalize_name(&candidate.display_name))
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut surname_context = BTreeMap::new();
+    let mut surname_requests = Vec::new();
+    for player in roster
+        .iter()
+        .filter(|player| !exact_names.contains(&normalize_name(&player.name)))
+    {
+        let Some(surname) = normalize_name(&player.name)
+            .split_whitespace()
+            .last()
+            .map(str::to_owned)
+        else {
+            continue;
+        };
+        let mut url = reqwest::Url::parse("https://search.d3.nhle.com/api/v1/search/player")?;
+        url.query_pairs_mut()
+            .append_pair("culture", "en-us")
+            .append_pair("limit", "20")
+            .append_pair("q", &surname);
+        let source_url = url.to_string();
+        let digest = format!("{:x}", Sha256::digest(player.name.as_bytes()));
+        let dataset_id = format!("icelines.nhl.player-search-surname.{}", &digest[..20]);
+        surname_context.insert(
+            dataset_id.clone(),
+            (player.name.clone(), source_url.clone()),
+        );
+        surname_requests.push((dataset_id, source_url));
+    }
+    let surname_results =
+        fetch_generic_http_batch_async(surname_requests, cache_root.clone(), refresh, 6).await;
+    let mut surname_search_candidates = 0;
+    for (dataset_id, result) in surname_results {
+        let (name, source_url) = surname_context
+            .get(&dataset_id)
+            .with_context(|| format!("missing surname request context for {dataset_id}"))?;
+        let bytes = result.with_context(|| format!("official NHL surname search for {name}"))?;
+        let candidates = parse_official_nhl_search_candidates_by_surname(name, source_url, &bytes)
+            .map_err(anyhow::Error::msg)?;
+        surname_search_candidates += candidates.len();
+        search_candidates.extend(candidates);
+    }
     let search_catalog = AhlCanonicalIdentityCatalog {
         schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
         checked_at: Utc::now().date_naive().to_string(),
@@ -1036,7 +1081,6 @@ async fn discover_official_affiliate_identities(
             discovered.push(candidate.clone());
         }
     }
-    let exact_search_candidates = discovered.len();
     Ok((
         AhlCanonicalIdentityCatalog {
             schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
@@ -1044,6 +1088,7 @@ async fn discover_official_affiliate_identities(
             candidates: discovered,
         },
         exact_search_candidates,
+        surname_search_candidates,
         landing_enriched,
     ))
 }
@@ -1565,6 +1610,11 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: 
         .iter()
         .filter(|row| row.match_basis == AhlIdentityMatchBasis::ExactNameOnly)
         .count();
+    let surname_and_birth_date = view
+        .rows
+        .iter()
+        .filter(|row| row.match_basis == AhlIdentityMatchBasis::SurnameAndBirthDate)
+        .count();
     let ambiguous = view
         .rows
         .iter()
@@ -1592,9 +1642,10 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: 
     );
     let _ = writeln!(
         out,
-        "{} roster | {} exact name+birth | {} name-only | {} ambiguous | {} conflicts | {} unmatched | {} reviewed",
+        "{} roster | {} exact name+birth | {} surname+birth | {} name-only | {} ambiguous | {} conflicts | {} unmatched | {} reviewed",
         view.rows.len(),
         exact_name_and_birth_date,
+        surname_and_birth_date,
         exact_name_only,
         ambiguous,
         conflicts,
@@ -1603,6 +1654,7 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: 
     );
     if view.counts.roster_players != view.rows.len()
         || view.counts.exact_name_and_birth_date != exact_name_and_birth_date
+        || view.counts.surname_and_birth_date != surname_and_birth_date
         || view.counts.exact_name_only != exact_name_only
         || view.counts.ambiguous != ambiguous
         || view.counts.conflicts != conflicts
@@ -1626,6 +1678,7 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: 
     {
         let basis = match row.match_basis {
             AhlIdentityMatchBasis::ExactNameAndBirthDate => "NAME+BIRTH",
+            AhlIdentityMatchBasis::SurnameAndBirthDate => "SURNAME+BD",
             AhlIdentityMatchBasis::ExactNameOnly => "NAME ONLY",
             AhlIdentityMatchBasis::BirthDateConflict => "CONFLICT",
             AhlIdentityMatchBasis::Ambiguous => "AMBIGUOUS",
@@ -6121,6 +6174,7 @@ mod tests {
             counts: AhlIdentityCrosswalkCounts {
                 roster_players: 0,
                 exact_name_and_birth_date: 0,
+                surname_and_birth_date: 0,
                 exact_name_only: 0,
                 ambiguous: 0,
                 conflicts: 0,
@@ -6143,7 +6197,7 @@ mod tests {
         };
 
         let rendered = super::render_affiliate_identities(&view, false);
-        assert!(rendered.contains("1 roster | 1 exact name+birth"));
+        assert!(rendered.contains("1 roster | 1 exact name+birth | 0 surname+birth"));
         assert!(rendered.contains("WARNING: declared identity counts are stale"));
         assert!(rendered.contains("1 source(s)"));
         assert!(rendered.contains("DISCLOSURES"));

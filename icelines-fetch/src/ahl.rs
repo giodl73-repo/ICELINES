@@ -136,17 +136,44 @@ pub fn parse_official_nhl_search_candidates(
     source_url: &str,
     bytes: &[u8],
 ) -> Result<Vec<AhlCanonicalIdentityCandidate>, AhlFeedError> {
+    let expected = icelines_core::normalize_name(expected_name);
+    parse_official_nhl_search_candidates_matching(expected_name, source_url, bytes, |name| {
+        icelines_core::normalize_name(name) == expected
+    })
+}
+
+/// Parse official search candidates sharing the expected surname. This is a
+/// discovery expansion only; the crosswalk still requires exact birth-date
+/// corroboration and explicit alias review.
+pub fn parse_official_nhl_search_candidates_by_surname(
+    expected_name: &str,
+    source_url: &str,
+    bytes: &[u8],
+) -> Result<Vec<AhlCanonicalIdentityCandidate>, AhlFeedError> {
+    let expected_surname = normalized_surname(expected_name).ok_or_else(|| {
+        AhlFeedError::Validation(format!("cannot derive surname from `{expected_name}`"))
+    })?;
+    parse_official_nhl_search_candidates_matching(expected_name, source_url, bytes, |name| {
+        normalized_surname(name).as_deref() == Some(expected_surname.as_str())
+    })
+}
+
+fn parse_official_nhl_search_candidates_matching(
+    expected_name: &str,
+    source_url: &str,
+    bytes: &[u8],
+    matches: impl Fn(&str) -> bool,
+) -> Result<Vec<AhlCanonicalIdentityCandidate>, AhlFeedError> {
     let rows: Vec<Value> = serde_json::from_slice(bytes).map_err(|error| {
         AhlFeedError::Schema(format!("invalid NHL player-search JSON: {error}"))
     })?;
-    let expected = icelines_core::normalize_name(expected_name);
     let mut candidates = Vec::new();
     let mut ids = BTreeSet::new();
     for row in rows {
         let Some(name) = row.get("name").and_then(Value::as_str) else {
             continue;
         };
-        if icelines_core::normalize_name(name) != expected {
+        if !matches(name) {
             continue;
         }
         let player_id = row
@@ -160,7 +187,7 @@ pub fn parse_official_nhl_search_candidates(
             .filter(|value| *value != 0)
             .ok_or_else(|| {
                 AhlFeedError::Schema(format!(
-                    "exact NHL player-search result for `{expected_name}` has no valid playerId"
+                    "matching NHL player-search result for `{expected_name}` has no valid playerId"
                 ))
             })?;
         if ids.insert(player_id) {
@@ -174,6 +201,13 @@ pub fn parse_official_nhl_search_candidates(
     }
     candidates.sort_by_key(|candidate| candidate.nhl_player_id);
     Ok(candidates)
+}
+
+fn normalized_surname(name: &str) -> Option<String> {
+    icelines_core::normalize_name(name)
+        .split_whitespace()
+        .last()
+        .map(str::to_owned)
 }
 
 /// Enrich a search proposal from the official NHL player landing response.
@@ -290,6 +324,7 @@ fn localized_default(value: Option<&Value>) -> &str {
 #[serde(rename_all = "snake_case")]
 pub enum AhlIdentityMatchBasis {
     ExactNameAndBirthDate,
+    SurnameAndBirthDate,
     ExactNameOnly,
     BirthDateConflict,
     Ambiguous,
@@ -367,6 +402,8 @@ pub struct AhlIdentityCrosswalkRow {
 pub struct AhlIdentityCrosswalkCounts {
     pub roster_players: usize,
     pub exact_name_and_birth_date: usize,
+    #[serde(default)]
+    pub surname_and_birth_date: usize,
     pub exact_name_only: usize,
     pub ambiguous: usize,
     pub conflicts: usize,
@@ -1249,11 +1286,15 @@ pub fn build_ahl_identity_crosswalk(
             AhlFeedError::Validation(format!("AHL snapshot has no team named `{ahl_team}`"))
         })?;
     let mut by_name = BTreeMap::<String, Vec<&AhlCanonicalIdentityCandidate>>::new();
+    let mut by_surname = BTreeMap::<String, Vec<&AhlCanonicalIdentityCandidate>>::new();
     for candidate in &catalog.candidates {
         by_name
             .entry(icelines_core::normalize_name(&candidate.display_name))
             .or_default()
             .push(candidate);
+        if let Some(surname) = normalized_surname(&candidate.display_name) {
+            by_surname.entry(surname).or_default().push(candidate);
+        }
     }
 
     let mut rows = team
@@ -1264,7 +1305,15 @@ pub fn build_ahl_identity_crosswalk(
                 .get(&icelines_core::normalize_name(&official.name))
                 .map(Vec::as_slice)
                 .unwrap_or_default();
-            identity_crosswalk_row(official, candidates)
+            let aliases = if candidates.is_empty() {
+                normalized_surname(&official.name)
+                    .and_then(|surname| by_surname.get(&surname))
+                    .map(Vec::as_slice)
+                    .unwrap_or_default()
+            } else {
+                &[]
+            };
+            identity_crosswalk_row(official, candidates, aliases)
         })
         .collect::<Vec<_>>();
     rows.sort_by(|a, b| {
@@ -1286,6 +1335,7 @@ pub fn build_ahl_identity_crosswalk(
         disclosures: vec![
             "AHL provider_player_id values remain provider-local and are never copied into NHL player IDs.".to_owned(),
             "Even exact normalized-name and birth-date matches are proposals until review_status is explicitly changed to reviewed.".to_owned(),
+            "Surname-and-birth-date proposals are possible aliases, never exact matches, and require an explicit sourced remap.".to_owned(),
             "Identity approval does not establish roster assignment, prospect status, professional-game totals, waivers, player value, or recall readiness.".to_owned(),
         ],
     })
@@ -1485,8 +1535,19 @@ fn validate_identity_catalog(catalog: &AhlCanonicalIdentityCatalog) -> Result<()
 fn identity_crosswalk_row(
     official: &AhlRosterPlayer,
     candidates: &[&AhlCanonicalIdentityCandidate],
+    alias_candidates: &[&AhlCanonicalIdentityCandidate],
 ) -> AhlIdentityCrosswalkRow {
     let birth_matches = candidates
+        .iter()
+        .copied()
+        .filter(|candidate| {
+            candidate
+                .birth_date
+                .as_deref()
+                .is_some_and(|date| !official.birthdate.is_empty() && date == official.birthdate)
+        })
+        .collect::<Vec<_>>();
+    let alias_birth_matches = alias_candidates
         .iter()
         .copied()
         .filter(|candidate| {
@@ -1520,6 +1581,18 @@ fn identity_crosswalk_row(
                 "Exact normalized name with incomplete birth-date corroboration; human review required.",
             )
         }
+    } else if candidates.is_empty() && alias_birth_matches.len() == 1 {
+        (
+            AhlIdentityMatchBasis::SurnameAndBirthDate,
+            Some(alias_birth_matches[0]),
+            "Official surname and birth date agree but display names differ; explicit alias review is required.",
+        )
+    } else if candidates.is_empty() && alias_birth_matches.len() > 1 {
+        (
+            AhlIdentityMatchBasis::Ambiguous,
+            None,
+            "Multiple official surname-and-birth-date candidates remain unresolved.",
+        )
     } else if candidates.is_empty() {
         (
             AhlIdentityMatchBasis::Unmatched,
@@ -1555,6 +1628,10 @@ fn identity_crosswalk_counts(rows: &[AhlIdentityCrosswalkRow]) -> AhlIdentityCro
         exact_name_and_birth_date: rows
             .iter()
             .filter(|row| row.match_basis == AhlIdentityMatchBasis::ExactNameAndBirthDate)
+            .count(),
+        surname_and_birth_date: rows
+            .iter()
+            .filter(|row| row.match_basis == AhlIdentityMatchBasis::SurnameAndBirthDate)
             .count(),
         exact_name_only: rows
             .iter()
@@ -2150,6 +2227,42 @@ mod tests {
             enrich_official_nhl_landing_candidate(&candidates[0], landing_url, landing).unwrap();
         assert_eq!(enriched.birth_date.as_deref(), Some("2002-02-18"));
         assert_eq!(enriched.evidence_urls.len(), 2);
+    }
+
+    #[test]
+    fn surname_search_builds_review_only_birth_corroborated_alias() {
+        let search_url = "https://search.d3.nhle.com/api/v1/search/player?q=Thompson";
+        let search = br#"[
+            {"playerId":"8480001","name":"A. Thompson"},
+            {"playerId":"8489999","name":"Different Player"}
+        ]"#;
+        let candidates =
+            parse_official_nhl_search_candidates_by_surname("Aidan Thompson", search_url, search)
+                .unwrap();
+        assert_eq!(candidates.len(), 1);
+
+        let catalog = AhlCanonicalIdentityCatalog {
+            schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
+            checked_at: "2026-07-25".to_owned(),
+            candidates: vec![AhlCanonicalIdentityCandidate {
+                birth_date: Some("2002-02-18".to_owned()),
+                evidence_urls: vec![search_url.to_owned()],
+                ..candidates[0].clone()
+            }],
+        };
+        let crosswalk =
+            build_ahl_identity_crosswalk(&identity_snapshot(), "Hartford Wolf Pack", &catalog)
+                .unwrap();
+        assert_eq!(
+            crosswalk.rows[0].match_basis,
+            AhlIdentityMatchBasis::SurnameAndBirthDate
+        );
+        assert_eq!(crosswalk.rows[0].nhl_player_id, Some(8_480_001));
+        assert_eq!(crosswalk.counts.surname_and_birth_date, 1);
+        assert!(build_ahl_identity_review_draft(&crosswalk)
+            .unwrap()
+            .decisions
+            .is_empty());
     }
 
     #[test]

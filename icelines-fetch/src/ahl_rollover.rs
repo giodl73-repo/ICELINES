@@ -906,6 +906,7 @@ mod tests {
             counts: AhlIdentityCrosswalkCounts {
                 roster_players: 1,
                 exact_name_and_birth_date: 1,
+                surname_and_birth_date: 0,
                 exact_name_only: 0,
                 ambiguous: 0,
                 conflicts: 0,
