@@ -206,6 +206,18 @@ async fn do_ahl(
     }
 
     let cfg = Config::load().context("loading IceLines config for AHL snapshot")?;
+    let icelines_home = cfg
+        .snapshot_dir()
+        .parent()
+        .map(|path| path.to_path_buf())
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let _lock = fetch_lock::acquire(&icelines_home, std::time::Duration::from_secs(120))
+        .with_context(|| {
+            format!(
+                "acquiring AHL fetch lock at {}/.fetch.lock",
+                icelines_home.display()
+            )
+        })?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let parent = store
         .load_manifest()

@@ -1,13 +1,13 @@
-use crate::schema::RawTransaction;
+use crate::{atomic_write::write_bytes_atomic, schema::RawTransaction};
 use anyhow::{Context, Result};
 use fletch_core::{
     adapter_handoff_report, cache_index_from_manifest, cache_index_gate_report, dry_run_flight,
     fetch_batch_to_cache_best_effort, fetch_batch_to_cache_best_effort_with_delay,
     fetch_paged_json_to_cache, fetch_plan_with_kind, fetch_to_cache, graph_from_registry,
-    read_cache_manifest_json, upsert_cache_manifest_entries, validate_registry,
-    write_cache_manifest_json, CacheEntry, CacheIndexGatePolicy, CacheManifest, CachePolicy,
-    DataFormat, FetchOptions, FletchDefinition, FletchRegistry, FreshnessPolicy, GraphNodeKind,
-    PagedJsonOptions, SourceKind, SourceSpec, FLETCH_CACHE_INDEX_SCHEMA, FLETCH_REGISTRY_SCHEMA,
+    read_cache_manifest_json, upsert_cache_manifest_entries, validate_registry, CacheEntry,
+    CacheIndexGatePolicy, CacheManifest, CachePolicy, DataFormat, FetchOptions, FletchDefinition,
+    FletchRegistry, FreshnessPolicy, GraphNodeKind, PagedJsonOptions, SourceKind, SourceSpec,
+    FLETCH_CACHE_INDEX_SCHEMA, FLETCH_REGISTRY_SCHEMA,
 };
 use icelines_core::stats_catalog::ReportKind;
 use serde::Serialize;
@@ -1025,8 +1025,14 @@ fn upsert_fletch_cache_manifest_entries(
     };
     manifest = upsert_cache_manifest_entries(manifest, entries)
         .context("upserting FLETCH cache manifest entries")?;
-    write_cache_manifest_json(&manifest_path, &manifest)
-        .with_context(|| format!("writing FLETCH cache manifest {}", manifest_path.display()))?;
+    let bytes =
+        serde_json::to_vec_pretty(&manifest).context("serializing FLETCH cache manifest")?;
+    write_bytes_atomic(&manifest_path, &bytes).with_context(|| {
+        format!(
+            "atomically writing FLETCH cache manifest {}",
+            manifest_path.display()
+        )
+    })?;
     Ok(manifest)
 }
 
@@ -2141,6 +2147,28 @@ mod tests {
         let index = fletch_cache_index_report("20252026", "regular", &manifest);
         assert_eq!(index.source_schema, FLETCH_CACHE_INDEX_SCHEMA);
         assert_eq!(index.unexpected_index_count, 1);
+    }
+
+    #[test]
+    fn cache_manifest_upsert_atomically_replaces_existing_manifest() {
+        let dir = tempfile::tempdir().unwrap();
+        let manifest_path = fletch_cache_manifest_path(dir.path());
+
+        upsert_fletch_cache_manifest_entries(
+            dir.path(),
+            [test_cache_entry("icelines.test.first", true)],
+        )
+        .expect("first manifest write should succeed");
+        upsert_fletch_cache_manifest_entries(
+            dir.path(),
+            [test_cache_entry("icelines.test.second", true)],
+        )
+        .expect("existing manifest should be replaced atomically");
+
+        let manifest = read_fletch_cache_manifest(&manifest_path)
+            .expect("replacement manifest should remain readable");
+        assert_eq!(manifest.entries.len(), 2);
+        assert!(!dir.path().join("cache-manifest.json.tmp").exists());
     }
 
     #[test]
