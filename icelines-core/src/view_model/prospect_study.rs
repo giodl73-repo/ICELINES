@@ -1,6 +1,9 @@
+use std::collections::BTreeSet;
+
 use serde::{Deserialize, Serialize};
 
 pub const PROSPECT_DEVELOPMENT_STUDY_SCHEMA: &str = "prospect_development_study.v1";
+pub const PROSPECT_DISCOVERY_BOARD_SCHEMA: &str = "prospect_discovery_board.v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -190,6 +193,165 @@ pub struct ProspectDevelopmentStudyView {
     pub lenses: Vec<ProspectDiscoveryLensView>,
     pub evidence: Vec<ProspectStudyEvidenceInput>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectDiscoveryBoardLane {
+    HiddenGem,
+    BuyerBeware,
+    Watch,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectDiscoveryBoardRow {
+    pub rank: usize,
+    pub player_id: u32,
+    pub player: String,
+    pub organization: String,
+    pub position: String,
+    pub lane: ProspectDiscoveryBoardLane,
+    pub classification: ProspectHiddenValueClass,
+    pub market_position: ProspectMarketPosition,
+    pub hidden_value_score: f64,
+    pub performance_attention_gap: f64,
+    /// Lane-relative 0..100 ordering signal. Hidden gems use hidden value;
+    /// buyer-beware rows use their strongest supported risk signal.
+    pub lane_score: f64,
+    pub lenses: Vec<ProspectDiscoveryLensView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectDiscoveryBoardView {
+    pub schema: String,
+    pub studies: usize,
+    pub hidden_gems: Vec<ProspectDiscoveryBoardRow>,
+    pub buyer_beware: Vec<ProspectDiscoveryBoardRow>,
+    pub watch: Vec<ProspectDiscoveryBoardRow>,
+    pub disclosures: Vec<String>,
+}
+
+pub fn build_prospect_discovery_board(
+    studies: Vec<ProspectDevelopmentStudyView>,
+) -> Result<ProspectDiscoveryBoardView, String> {
+    if studies.is_empty() {
+        return Err("prospect discovery board requires at least one study".to_owned());
+    }
+
+    let mut player_ids = BTreeSet::new();
+    let mut hidden_gems = Vec::new();
+    let mut buyer_beware = Vec::new();
+    let mut watch = Vec::new();
+    for study in studies {
+        if study.schema != PROSPECT_DEVELOPMENT_STUDY_SCHEMA
+            || study.player_id == 0
+            || study.player.trim().is_empty()
+            || study.organization.trim().is_empty()
+            || study.position.trim().is_empty()
+            || !study.hidden_value_score.is_finite()
+            || !(0.0..=100.0).contains(&study.hidden_value_score)
+            || !study.performance_attention_gap.is_finite()
+            || study.lenses.iter().any(|lens| {
+                !lens.strength.is_finite()
+                    || !(0.0..=1.0).contains(&lens.strength)
+                    || lens.summary.trim().is_empty()
+            })
+        {
+            return Err("invalid prospect development study supplied to board".to_owned());
+        }
+        if !player_ids.insert(study.player_id) {
+            return Err(format!(
+                "duplicate prospect development study for player {}",
+                study.player_id
+            ));
+        }
+
+        let strongest_risk = study
+            .lenses
+            .iter()
+            .filter(|lens| lens.direction == ProspectDiscoveryLensDirection::Risk)
+            .map(|lens| lens.strength)
+            .fold(0.0_f64, f64::max);
+        let has_upside = study
+            .lenses
+            .iter()
+            .any(|lens| lens.direction == ProspectDiscoveryLensDirection::Upside);
+        let buyer_beware_signal = study.market_position == ProspectMarketPosition::Overexposed
+            || matches!(
+                study.classification,
+                ProspectHiddenValueClass::OverexposedCooling
+                    | ProspectHiddenValueClass::HypeAheadOfEvidence
+                    | ProspectHiddenValueClass::SmallSampleHypeRisk
+            );
+        let hidden_gem_signal =
+            matches!(
+                study.classification,
+                ProspectHiddenValueClass::InjuryObscuredRiser
+                    | ProspectHiddenValueClass::InjuryRecoveryWatch
+                    | ProspectHiddenValueClass::HiddenRiser
+            ) || (study.market_position == ProspectMarketPosition::Underrecognized && has_upside);
+        let lane = if buyer_beware_signal {
+            ProspectDiscoveryBoardLane::BuyerBeware
+        } else if hidden_gem_signal {
+            ProspectDiscoveryBoardLane::HiddenGem
+        } else {
+            ProspectDiscoveryBoardLane::Watch
+        };
+        let lane_score = match lane {
+            ProspectDiscoveryBoardLane::BuyerBeware => {
+                strongest_risk.max((-study.performance_attention_gap).clamp(0.0, 1.0)) * 100.0
+            }
+            ProspectDiscoveryBoardLane::HiddenGem | ProspectDiscoveryBoardLane::Watch => {
+                study.hidden_value_score
+            }
+        };
+        let row = ProspectDiscoveryBoardRow {
+            rank: 0,
+            player_id: study.player_id,
+            player: study.player,
+            organization: study.organization,
+            position: study.position,
+            lane,
+            classification: study.classification,
+            market_position: study.market_position,
+            hidden_value_score: study.hidden_value_score,
+            performance_attention_gap: study.performance_attention_gap,
+            lane_score,
+            lenses: study.lenses,
+        };
+        match lane {
+            ProspectDiscoveryBoardLane::HiddenGem => hidden_gems.push(row),
+            ProspectDiscoveryBoardLane::BuyerBeware => buyer_beware.push(row),
+            ProspectDiscoveryBoardLane::Watch => watch.push(row),
+        }
+    }
+
+    for rows in [&mut hidden_gems, &mut buyer_beware, &mut watch] {
+        rows.sort_by(|left, right| {
+            right
+                .lane_score
+                .total_cmp(&left.lane_score)
+                .then_with(|| left.player.cmp(&right.player))
+                .then_with(|| left.player_id.cmp(&right.player_id))
+        });
+        for (index, row) in rows.iter_mut().enumerate() {
+            row.rank = index + 1;
+        }
+    }
+
+    Ok(ProspectDiscoveryBoardView {
+        schema: PROSPECT_DISCOVERY_BOARD_SCHEMA.to_owned(),
+        studies: player_ids.len(),
+        hidden_gems,
+        buyer_beware,
+        watch,
+        disclosures: vec![
+            "The board composes validated prospect-development studies and preserves their active discovery lenses; it does not rescore raw source data.".to_owned(),
+            "Hidden Gems require supported upside plus underrecognition or a hidden-value classification. Buyer Beware requires overexposure or an explicit hype/cooling classification.".to_owned(),
+            "Uncertain workload alone remains Watch and is never treated as negative evidence.".to_owned(),
+            "Lane scores rank candidates within a lane and are not comparable across lanes.".to_owned(),
+        ],
+    })
 }
 
 pub fn build_prospect_development_study(
@@ -695,6 +857,92 @@ mod tests {
             .lenses
             .iter()
             .any(|lens| lens.kind == ProspectDiscoveryLensKind::CoolingSignal));
+    }
+
+    #[test]
+    fn discovery_board_separates_upside_risk_and_uncertainty() {
+        let mut hidden = build_prospect_development_study(
+            study_input(
+                60,
+                30,
+                60,
+                60,
+                ProspectOpportunityStatus::RecallCandidate,
+                ProspectAvailabilityStatus::Healthy,
+                0.2,
+            ),
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+        hidden.player_id = 1;
+        hidden.player = "Hidden Prospect".to_owned();
+
+        let mut buyer = build_prospect_development_study(
+            study_input(
+                60,
+                60,
+                60,
+                30,
+                ProspectOpportunityStatus::Monitoring,
+                ProspectAvailabilityStatus::Healthy,
+                0.8,
+            ),
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+        buyer.player_id = 2;
+        buyer.player = "Overexposed Prospect".to_owned();
+
+        let mut uncertain = hidden.clone();
+        uncertain.player_id = 3;
+        uncertain.player = "Uncertain Prospect".to_owned();
+        uncertain.classification = ProspectHiddenValueClass::Watch;
+        uncertain.market_position = ProspectMarketPosition::Aligned;
+        uncertain.performance_attention_gap = 0.0;
+        uncertain.lenses = vec![ProspectDiscoveryLensView {
+            kind: ProspectDiscoveryLensKind::WorkloadUncertain,
+            direction: ProspectDiscoveryLensDirection::Risk,
+            strength: 0.8,
+            summary: "The comparable workload is uncertain.".to_owned(),
+        }];
+
+        let mut lower_hidden = hidden.clone();
+        lower_hidden.player_id = 4;
+        lower_hidden.player = "Lower Hidden Prospect".to_owned();
+        lower_hidden.hidden_value_score -= 10.0;
+
+        let board =
+            build_prospect_discovery_board(vec![uncertain, lower_hidden, buyer, hidden]).unwrap();
+        assert_eq!(board.schema, PROSPECT_DISCOVERY_BOARD_SCHEMA);
+        assert_eq!(board.studies, 4);
+        assert_eq!(board.hidden_gems[0].player, "Hidden Prospect");
+        assert_eq!(board.hidden_gems[0].rank, 1);
+        assert_eq!(board.hidden_gems[1].player, "Lower Hidden Prospect");
+        assert_eq!(board.hidden_gems[1].rank, 2);
+        assert_eq!(board.buyer_beware[0].player, "Overexposed Prospect");
+        assert_eq!(board.buyer_beware[0].rank, 1);
+        assert_eq!(board.watch[0].player, "Uncertain Prospect");
+        assert_eq!(board.watch[0].rank, 1);
+    }
+
+    #[test]
+    fn discovery_board_rejects_duplicate_player_studies() {
+        let study = build_prospect_development_study(
+            study_input(
+                60,
+                30,
+                60,
+                60,
+                ProspectOpportunityStatus::RecallCandidate,
+                ProspectAvailabilityStatus::Healthy,
+                0.2,
+            ),
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+
+        let error = build_prospect_discovery_board(vec![study.clone(), study]).unwrap_err();
+        assert!(error.contains("duplicate"));
     }
 
     fn study_input(

@@ -1031,6 +1031,8 @@ icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk 
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json --json --out firkus-study.json
+icelines icecast prospect-board --study firkus-study.json
+icelines icecast prospect-board --study firkus-study.json --study another-study.json --json --out prospect-board.json
 icelines icecast organization --input organization.json --json --out the-system.json
 icelines icecast season --team NYR --scenario nyr-camp-season.json --trials 10000 --json --out nyr-camp-season-forecast.json
 icelines icecast season --team NYR --all-games --game-forecast-out nyr-games.json

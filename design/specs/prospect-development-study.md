@@ -1,7 +1,7 @@
 # Prospect Development Study
 
 **Status:** Implemented foundation
-**Schema:** `prospect_development_study.v1`
+**Schemas:** `prospect_development_study.v1`, `prospect_discovery_board.v1`
 
 ## Purpose
 
@@ -16,6 +16,10 @@ icelines icecast prospect-study \
 icelines icecast prospect-study \
   --input examples/icecast-jagger-firkus-prospect-study.json \
   --json --out firkus-study.json
+icelines icecast prospect-board \
+  --study firkus-study.json \
+  --study another-study.json \
+  --json --out prospect-board.json
 ```
 
 ## Contract
@@ -34,6 +38,25 @@ source URLs. The core primitive owns:
 
 The CLI, TUI, web, fantasy, simulation, and cards may render or consume the
 same view without recomputing those semantics.
+
+## Discovery board
+
+`ProspectDiscoveryBoardView` composes one or more validated study artifacts into
+three independently ranked lanes:
+
+- **Hidden Gems** requires supported upside plus underrecognition, or a study
+  classification that explicitly identifies hidden or injury-obscured value;
+- **Buyer Beware** requires overexposure or an explicit hype/cooling
+  classification; and
+- **Watch** retains aligned and uncertain cases without inventing a positive or
+  negative conclusion.
+
+Every row preserves its classification, market position, hidden-value score,
+performance-attention gap, and complete set of active lenses. Hidden Gems rank
+by hidden-value score. Buyer Beware ranks by the strongest supported risk or
+negative attention-gap signal. Lane scores are not comparable across lanes.
+The builder rejects malformed schemas and duplicate player IDs, so renderers do
+not reconcile or silently overwrite studies.
 
 ## Guardrails
 

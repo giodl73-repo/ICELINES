@@ -1550,6 +1550,17 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Rank validated prospect studies into Hidden Gems, Buyer Beware, and Watch.
+    #[command(name = "prospect-board")]
+    ProspectBoard {
+        /// Repeat for each `ProspectDevelopmentStudyView` JSON artifact.
+        #[arg(long = "study", required = true, value_name = "PATH")]
+        studies: Vec<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Import complete, timestamped Internet Archive captures of official NHL opening rosters.
     #[command(name = "import-opening-rosters")]
     ImportOpeningRosters {
@@ -2883,6 +2894,34 @@ mod tui_surface_tests {
                     json: true,
                     out: Some(out),
                 }) if input == PathBuf::from("firkus.json") && out == PathBuf::from("firkus-study.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_board_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-board",
+                "--study",
+                "firkus-study.json",
+                "--study",
+                "another-study.json",
+                "--json",
+                "--out",
+                "prospect-board.json",
+            ])
+            .expect("IceCast prospect board command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectBoard {
+                    studies,
+                    json: true,
+                    out: Some(out),
+                }) if studies == vec![PathBuf::from("firkus-study.json"), PathBuf::from("another-study.json")]
+                    && out == PathBuf::from("prospect-board.json")
             ));
         });
     }

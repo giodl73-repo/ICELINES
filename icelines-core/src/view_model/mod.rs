@@ -300,12 +300,14 @@ pub use poach::{
     WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
 };
 pub use prospect_study::{
-    build_prospect_development_study, ProspectAvailabilityStatus, ProspectDevelopmentSeasonInput,
-    ProspectDevelopmentSeasonView, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
-    ProspectDevelopmentStudyView, ProspectDiscoveryLensDirection, ProspectDiscoveryLensKind,
-    ProspectDiscoveryLensView, ProspectHiddenValueClass, ProspectMarketPosition,
-    ProspectOpportunityStatus, ProspectSignalComponentView, ProspectStudyEvidenceInput,
-    ProspectTrajectory, PROSPECT_DEVELOPMENT_STUDY_SCHEMA,
+    build_prospect_development_study, build_prospect_discovery_board, ProspectAvailabilityStatus,
+    ProspectDevelopmentSeasonInput, ProspectDevelopmentSeasonView, ProspectDevelopmentStudyConfig,
+    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardLane,
+    ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectDiscoveryLensDirection,
+    ProspectDiscoveryLensKind, ProspectDiscoveryLensView, ProspectHiddenValueClass,
+    ProspectMarketPosition, ProspectOpportunityStatus, ProspectSignalComponentView,
+    ProspectStudyEvidenceInput, ProspectTrajectory, PROSPECT_DEVELOPMENT_STUDY_SCHEMA,
+    PROSPECT_DISCOVERY_BOARD_SCHEMA,
 };
 pub use records::{
     FightRecordInput, PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView,

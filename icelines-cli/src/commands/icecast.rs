@@ -10,26 +10,27 @@ use icelines_core::{
     build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
     build_line_combination_forecast, build_organization_lineup_forecast,
-    build_prospect_development_study, build_season_simulation_card, build_team_game_forecast,
-    build_team_game_forecast_validation, build_team_game_rolling_replay_with_opening_strengths,
-    build_team_player_matchup_role_evidence, build_team_season_auto_personnel_scenario,
-    build_team_season_forecast_history, build_team_season_forecast_movement,
-    build_team_season_game_plan_schedule_from_evidence, build_team_season_plausible_trade_scenario,
-    build_training_camp_blender_set, build_training_camp_exposure_board_with_context,
-    build_training_camp_lineup_set, build_training_camp_opening_roster_policy,
-    compare_team_season_forecast_scenarios, current_ahl_affiliation_catalog, model::Position,
-    model::Season, model::TeamAbbr, normalize_name, season_stats::SeasonType,
-    simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
-    simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
-    AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlLineUnitKind,
-    AhlRosterPoolAuthorityKind, DevelopmentCalibrationConfig, DevelopmentCalibrationView,
-    DevelopmentPositionGroup, DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel,
-    ForecastHistoryCardInput, ForecastMovementCardInput, LineCombinationForecastConfig,
-    LineCombinationForecastView, LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow,
-    OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
-    OrganizationPositionGroup, OrganizationUnitKind, ProspectDevelopmentStudyConfig,
-    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ScenarioScopeView,
-    SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
+    build_prospect_development_study, build_prospect_discovery_board, build_season_simulation_card,
+    build_team_game_forecast, build_team_game_forecast_validation,
+    build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
+    build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
+    build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
+    build_team_season_plausible_trade_scenario, build_training_camp_blender_set,
+    build_training_camp_exposure_board_with_context, build_training_camp_lineup_set,
+    build_training_camp_opening_roster_policy, compare_team_season_forecast_scenarios,
+    current_ahl_affiliation_catalog, model::Position, model::Season, model::TeamAbbr,
+    normalize_name, season_stats::SeasonType, simulate_team_season_forecast_as_of_with_scenario,
+    simulate_team_season_forecast_with_scenario, simulate_training_camp,
+    simulate_training_camp_league, AhlAffiliateProjectionInput, AhlAffiliateProjectionView,
+    AhlAffiliationCatalogView, AhlLineUnitKind, AhlRosterPoolAuthorityKind,
+    DevelopmentCalibrationConfig, DevelopmentCalibrationView, DevelopmentPositionGroup,
+    DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput,
+    ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
+    LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow, OrganizationLevel,
+    OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
+    OrganizationUnitKind, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
+    ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView,
+    ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
     TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
     TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
     TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
@@ -3457,6 +3458,29 @@ pub fn run_prospect_study(
     Ok(())
 }
 
+pub fn run_prospect_board(
+    study_paths: Vec<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let studies = study_paths
+        .iter()
+        .map(|path| read_icecast_json(path, "prospect development study"))
+        .collect::<anyhow::Result<Vec<ProspectDevelopmentStudyView>>>()?;
+    let view = build_prospect_discovery_board(studies).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_board(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect discovery board")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 fn load_development_transitions(
     prior_season: u32,
     target_season: u32,
@@ -3881,6 +3905,57 @@ fn render_prospect_study(view: &ProspectDevelopmentStudyView) -> String {
         let _ = writeln!(out, "- {disclosure}");
     }
     out
+}
+
+fn render_prospect_board(view: &ProspectDiscoveryBoardView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "THE INSIDER — PROSPECT DISCOVERY BOARD");
+    let _ = writeln!(out, "{} validated studies", view.studies);
+    render_prospect_board_lane(&mut out, "HIDDEN GEMS", &view.hidden_gems);
+    render_prospect_board_lane(&mut out, "BUYER BEWARE", &view.buyer_beware);
+    render_prospect_board_lane(&mut out, "WATCH", &view.watch);
+    let _ = writeln!(out, "\nDISCLOSURES");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
+    }
+    out
+}
+
+fn render_prospect_board_lane(out: &mut String, heading: &str, rows: &[ProspectDiscoveryBoardRow]) {
+    let _ = writeln!(out, "\n{heading}");
+    if rows.is_empty() {
+        let _ = writeln!(out, "No supported candidates.");
+        return;
+    }
+    for row in rows {
+        let lenses = row
+            .lenses
+            .iter()
+            .map(|lens| {
+                format!(
+                    "{:?}/{:?} {:.0}%",
+                    lens.kind,
+                    lens.direction,
+                    lens.strength * 100.0
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let _ = writeln!(
+            out,
+            "{}. {} · {} · {} · lane {:.1} · hidden {:.1} · gap {:+.2}\n   {:?} / {:?} · {}",
+            row.rank,
+            row.player,
+            row.organization,
+            row.position,
+            row.lane_score,
+            row.hidden_value_score,
+            row.performance_attention_gap,
+            row.classification,
+            row.market_position,
+            lenses
+        );
+    }
 }
 
 const OPENING_ROSTER_ARCHIVE_SCHEMA: &str = "icecast.opening_roster_archive.v1";
