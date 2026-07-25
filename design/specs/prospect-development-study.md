@@ -1,7 +1,8 @@
 # Prospect Development Study
 
 **Status:** Implemented foundation
-**Schemas:** `prospect_development_study.v1`, `prospect_discovery_board.v1`
+**Schemas:** `prospect_development_study.v1`, `prospect_discovery_board.v1`,
+`prospect_league_context.v1`, `prospect_league_discovery.v1`
 
 ## Purpose
 
@@ -20,6 +21,13 @@ icelines icecast prospect-board \
   --study firkus-study.json \
   --study another-study.json \
   --json --out prospect-board.json
+icelines icecast prospect-league \
+  --snapshot ahl-2024-25.json \
+  --snapshot ahl-2025-26.json \
+  --crosswalk reviewed-2024-cv.json \
+  --crosswalk reviewed-2025-cv.json \
+  --context examples/icecast-prospect-league-context.json \
+  --json --out league-discovery.json
 ```
 
 ## Contract
@@ -57,6 +65,30 @@ by hidden-value score. Buyer Beware ranks by the strongest supported risk or
 negative attention-gap signal. Lane scores are not comparable across lanes.
 The builder rejects malformed schemas and duplicate player IDs, so renderers do
 not reconcile or silently overwrite studies.
+
+## Reviewed league adapter
+
+`ProspectLeagueDiscoveryView` is the mainline bridge from AHL data into the
+study and board primitives. It accepts:
+
+1. two or more official `ahl_roster_stats.v1` season snapshots;
+2. reviewed `ahl_identity_crosswalk.v1` documents for the relevant season/team
+   combinations; and
+3. one `prospect_league_context.v1` document containing facts the feeds cannot
+   safely infer.
+
+The adapter joins provider-local AHL identities to canonical NHL IDs only
+through rows whose status is `reviewed`. It aggregates joined skater totals by
+season, attaches snapshot and identity provenance, builds the canonical studies,
+and composes the board without reimplementing scoring. Context players that do
+not have reviewed identity, joined skater facts, or two AHL seasons appear in a
+typed exclusion list. If no eligible study remains, the command fails instead
+of returning a zero-shaped board.
+
+The separate context file owns current organization, position, age, NHL games,
+opportunity, availability, attention estimate/basis, and supporting evidence.
+Those fields are deliberately not guessed from AHL production. A full-league
+run repeats `--crosswalk` for every reviewed affiliate-season document.
 
 ## Guardrails
 
@@ -119,7 +151,7 @@ typed facts, confidence, evidence, and disclosure before activation.
 
 ## Next data step
 
-Build league-wide studies from reviewed NHL/AHL identity joins, consecutive AHL
-season facts, transactions/injuries, official organization reporting, and a
-separately disclosed attention feed. That adapter remains distinct from this
-deterministic core contract.
+Complete reviewed crosswalk coverage for all affiliate-season documents, then
+add role, chemistry, special-teams, and sustainability fact adapters. Those
+adapters must emit typed evidence into the study rather than changing renderer
+logic.

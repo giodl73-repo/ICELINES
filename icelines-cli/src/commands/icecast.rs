@@ -65,7 +65,7 @@ use icelines_fetch::{
         AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     },
-    build_shift_overlap_report,
+    build_prospect_league_discovery, build_shift_overlap_report,
     bundled::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
         get_stats_installed, load_transactions_with_fallback,
@@ -83,7 +83,8 @@ use icelines_fetch::{
         OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
     },
     stats_loader::load_into_repo,
-    NhlApiClient, OfficialShiftChartRow, ScenarioRegistryStore, ShiftOverlapReport,
+    NhlApiClient, OfficialShiftChartRow, ProspectLeagueContext, ProspectLeagueDiscoveryView,
+    ScenarioRegistryStore, ShiftOverlapReport,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -3458,6 +3459,43 @@ pub fn run_prospect_study(
     Ok(())
 }
 
+pub fn run_prospect_league(
+    snapshot_paths: Vec<PathBuf>,
+    crosswalk_paths: Vec<PathBuf>,
+    context_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let snapshots = snapshot_paths
+        .iter()
+        .map(|path| read_icecast_json(path, "AHL roster-stats snapshot"))
+        .collect::<anyhow::Result<Vec<AhlRosterStatsSnapshot>>>()?;
+    let crosswalks = crosswalk_paths
+        .iter()
+        .map(|path| read_icecast_json(path, "reviewed AHL identity crosswalk"))
+        .collect::<anyhow::Result<Vec<AhlIdentityCrosswalkView>>>()?;
+    let context: ProspectLeagueContext =
+        read_icecast_json(&context_path, "prospect league context")?;
+    let view = build_prospect_league_discovery(
+        snapshots,
+        crosswalks,
+        context,
+        ProspectDevelopmentStudyConfig::default(),
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_league(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect league discovery")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_prospect_board(
     study_paths: Vec<PathBuf>,
     json: bool,
@@ -3901,6 +3939,36 @@ fn render_prospect_study(view: &ProspectDevelopmentStudyView) -> String {
         }
     }
     let _ = writeln!(out, "\nDISCLOSURES");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
+    }
+    out
+}
+
+fn render_prospect_league(view: &ProspectLeagueDiscoveryView) -> String {
+    let mut out = String::new();
+    let seasons = view
+        .snapshot_seasons
+        .iter()
+        .map(u32::to_string)
+        .collect::<Vec<_>>()
+        .join(", ");
+    let _ = writeln!(out, "THE INSIDER — LEAGUE PROSPECT DISCOVERY");
+    let _ = writeln!(
+        out,
+        "AHL seasons {seasons} · {} context players · {} studies · {} exclusions",
+        view.context_players,
+        view.studies.len(),
+        view.excluded.len()
+    );
+    out.push_str(&render_prospect_board(&view.board));
+    if !view.excluded.is_empty() {
+        let _ = writeln!(out, "\nEXCLUSIONS");
+        for row in &view.excluded {
+            let _ = writeln!(out, "- {} · {:?}: {}", row.player, row.reason, row.detail);
+        }
+    }
+    let _ = writeln!(out, "\nADAPTER DISCLOSURES");
     for disclosure in &view.disclosures {
         let _ = writeln!(out, "- {disclosure}");
     }

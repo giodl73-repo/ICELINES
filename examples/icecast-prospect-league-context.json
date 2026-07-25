@@ -1,0 +1,23 @@
+{
+  "schema": "prospect_league_context.v1",
+  "players": [
+    {
+      "player_id": 8483442,
+      "player": "Jagger Firkus",
+      "organization": "SEA",
+      "position": "RW",
+      "age": 22,
+      "nhl_games_played": 0,
+      "opportunity": "debut_planned",
+      "availability": "injury_interrupted",
+      "attention_score": 0.2,
+      "attention_basis": "Explicit analyst estimate: limited broad public discussion after an injury prevented the planned NHL debut.",
+      "evidence": [
+        {
+          "label": "Seattle reported 56 points in 63 games and said injury prevented Firkus from making his planned NHL debut.",
+          "source_url": "https://www.nhl.com/kraken/news/2026-nhl-draft-behind-the-scenes-seattle-kraken-draft-room"
+        }
+      ]
+    }
+  ]
+}

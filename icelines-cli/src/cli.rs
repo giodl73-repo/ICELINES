@@ -1550,6 +1550,23 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Join reviewed AHL season facts into prospect studies and a discovery board.
+    #[command(name = "prospect-league")]
+    ProspectLeague {
+        /// Repeat for each official `ahl_roster_stats.v1` season snapshot.
+        #[arg(long = "snapshot", required = true, value_name = "PATH")]
+        snapshots: Vec<PathBuf>,
+        /// Repeat for each reviewed season/team `ahl_identity_crosswalk.v1`.
+        #[arg(long = "crosswalk", required = true, value_name = "PATH")]
+        crosswalks: Vec<PathBuf>,
+        /// `prospect_league_context.v1` with separately authored non-feed facts.
+        #[arg(long, value_name = "PATH")]
+        context: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Rank validated prospect studies into Hidden Gems, Buyer Beware, and Watch.
     #[command(name = "prospect-board")]
     ProspectBoard {
@@ -2922,6 +2939,44 @@ mod tui_surface_tests {
                     out: Some(out),
                 }) if studies == vec![PathBuf::from("firkus-study.json"), PathBuf::from("another-study.json")]
                     && out == PathBuf::from("prospect-board.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_league_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-league",
+                "--snapshot",
+                "ahl-2024.json",
+                "--snapshot",
+                "ahl-2025.json",
+                "--crosswalk",
+                "reviewed-2024.json",
+                "--crosswalk",
+                "reviewed-2025.json",
+                "--context",
+                "prospects.json",
+                "--json",
+                "--out",
+                "league-discovery.json",
+            ])
+            .expect("IceCast prospect league command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectLeague {
+                    snapshots,
+                    crosswalks,
+                    context,
+                    json: true,
+                    out: Some(out),
+                }) if snapshots.len() == 2
+                    && crosswalks.len() == 2
+                    && context == PathBuf::from("prospects.json")
+                    && out == PathBuf::from("league-discovery.json")
             ));
         });
     }
