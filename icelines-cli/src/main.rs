@@ -1950,6 +1950,23 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         }) => commands::icecast::run_affiliate_input(
             snapshot, crosswalk, facts, nhl_team, ahl_team, out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateRollover {
+            prior_snapshot,
+            crosswalk,
+            camp,
+            camp_forecast,
+            config,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_rollover(
+            prior_snapshot,
+            crosswalk,
+            camp,
+            camp_forecast,
+            config,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::Organization { input, json, out }) => {
             commands::icecast::run_organization(input, json, out)?
         }

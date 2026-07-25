@@ -1187,6 +1187,29 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Reconcile a prior affiliate roster with the current NHL camp pool.
+    #[command(name = "affiliate-rollover")]
+    AffiliateRollover {
+        /// Prior-season UI-neutral `ahl_roster_stats.v1` snapshot.
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        /// Snapshot-bound `ahl_identity_crosswalk.v1`, which may retain pending rows.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// Current `training_camp_simulation` input.
+        #[arg(long, value_name = "PATH")]
+        camp: PathBuf,
+        /// Matching `training_camp_forecast.v1` output.
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        /// Target-season rollover authority, sources, and prior-player decisions.
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Combine an NHL lineup and its AHL affiliate into The System.
     Organization {
         /// UI-neutral input containing `nhl_lineup` and `ahl_affiliate` documents.
@@ -2465,6 +2488,35 @@ mod tui_surface_tests {
             assert!(matches!(
                 input.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateInput { .. })
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_affiliate_rollover_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-rollover",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--crosswalk",
+                "prior-identities.json",
+                "--camp",
+                "camp.json",
+                "--camp-forecast",
+                "camp-forecast.json",
+                "--config",
+                "rollover-config.json",
+                "--json",
+                "--out",
+                "rollover.json",
+            ])
+            .expect("affiliate rollover command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateRollover { json: true, .. })
             ));
         });
     }

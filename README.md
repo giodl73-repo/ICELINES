@@ -311,6 +311,7 @@ icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.js
 icelines icecast affiliate --input affiliate-scenario.json --json --out affiliate-lines.json
 icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "Hartford Wolf Pack" --candidates examples/icecast-league-candidate-overlay-2026-27.json --json --out hartford-identity-review.json
 icelines icecast affiliate-input --snapshot ahl-roster-stats.json --crosswalk hartford-identity-reviewed.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-affiliate-input.json
+icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk prior-identities.json --camp camp.json --camp-forecast camp-forecast.json --config rollover-config.json --json --out rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast organization --input organization.json --json --out the-system.json
 icelines icecast season --team NYR --scenario nyr-camp-season.json --trials 10000 --json --out nyr-camp-season-forecast.json

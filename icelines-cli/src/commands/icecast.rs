@@ -51,6 +51,10 @@ use icelines_fetch::{
         AhlIdentityMatchBasis, AhlIdentityReviewStatus, AhlProjectionPlayerFacts,
         AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
     },
+    ahl_rollover::{
+        build_ahl_preseason_rollover, AhlPreseasonPositionGroup, AhlPreseasonRolloverConfig,
+        AhlPreseasonRolloverView,
+    },
     build_shift_overlap_report,
     bundled::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
@@ -780,6 +784,42 @@ pub fn run_affiliate_input(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn run_affiliate_rollover(
+    prior_snapshot_path: PathBuf,
+    crosswalk_path: PathBuf,
+    camp_path: PathBuf,
+    camp_forecast_path: PathBuf,
+    config_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let prior_snapshot: AhlRosterStatsSnapshot =
+        read_icecast_json(&prior_snapshot_path, "prior AHL roster/stat snapshot")?;
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "prior AHL identity crosswalk")?;
+    let camp: TrainingCampSimulationInput =
+        read_icecast_json(&camp_path, "current training camp input")?;
+    let camp_forecast: TrainingCampForecastView =
+        read_icecast_json(&camp_forecast_path, "current training camp forecast")?;
+    let config: AhlPreseasonRolloverConfig =
+        read_icecast_json(&config_path, "AHL preseason rollover config")?;
+    let view =
+        build_ahl_preseason_rollover(&prior_snapshot, &crosswalk, &camp, &camp_forecast, &config)
+            .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_affiliate_rollover(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL preseason rollover")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_organization(
     input_path: PathBuf,
     json: bool,
@@ -1257,6 +1297,60 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView) -> String {
             "{:<24} {:<10} {:<10}{}",
             row.ahl_display_name, basis, review, proposal
         );
+    }
+    out
+}
+
+fn render_affiliate_rollover(view: &AhlPreseasonRolloverView) -> String {
+    let mut out = String::new();
+    let readiness = if view.counts.projection_ready {
+        "READY"
+    } else {
+        "NOT READY"
+    };
+    let _ = writeln!(
+        out,
+        "AHL PRESEASON ROLLOVER — {} → {} — {}",
+        view.prior_season, view.target_season, readiness
+    );
+    let _ = writeln!(out, "{} / {}", view.nhl_team, view.ahl_team);
+    let _ = writeln!(
+        out,
+        "PROJECTABLE: {}F / {}D / {}G | NEED: {}F / {}D / {}G",
+        view.counts.projectable_forwards,
+        view.counts.projectable_defensemen,
+        view.counts.projectable_goalies,
+        view.counts.forwards_needed,
+        view.counts.defensemen_needed,
+        view.counts.goalies_needed
+    );
+    let _ = writeln!(
+        out,
+        "REVIEW: {} unresolved identities | {} organization statuses | {} waiver gates",
+        view.counts.unresolved_prior_identities,
+        view.counts.prior_players_needing_organization_review,
+        view.counts.waiver_gated_candidates
+    );
+    for row in &view.players {
+        let group = match row.position_group {
+            AhlPreseasonPositionGroup::Forward => "F",
+            AhlPreseasonPositionGroup::Defense => "D",
+            AhlPreseasonPositionGroup::Goalie => "G",
+            AhlPreseasonPositionGroup::Unknown => "?",
+        };
+        let state = if row.projectable_affiliate_candidate {
+            "POOL"
+        } else if row.blockers.is_empty() {
+            "OUT"
+        } else {
+            "REVIEW"
+        };
+        let blockers = if row.blockers.is_empty() {
+            String::new()
+        } else {
+            format!(" — {}", row.blockers.join(", "))
+        };
+        let _ = writeln!(out, "{group:<2} {state:<6} {}{blockers}", row.display_name);
     }
     out
 }
