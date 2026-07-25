@@ -1187,6 +1187,9 @@ pub enum IceCastSubcommand {
         /// Add sourced surname-and-birth alias remap proposals to the draft.
         #[arg(long)]
         include_aliases: bool,
+        /// Add exact-name birth-conflict proposals for explicit review.
+        #[arg(long)]
+        include_conflicts: bool,
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
@@ -2588,6 +2591,7 @@ mod tui_surface_tests {
                 "--crosswalk",
                 "review.json",
                 "--include-aliases",
+                "--include-conflicts",
                 "--out",
                 "decisions-draft.json",
             ])
@@ -2596,6 +2600,7 @@ mod tui_surface_tests {
                 draft.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft {
                     include_aliases: true,
+                    include_conflicts: true,
                     ..
                 })
             ));

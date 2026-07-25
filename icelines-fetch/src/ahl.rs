@@ -431,7 +431,10 @@ pub struct AhlIdentityCrosswalkView {
 pub fn build_ahl_identity_review_draft(
     crosswalk: &AhlIdentityCrosswalkView,
 ) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
-    build_ahl_identity_review_draft_with_aliases(crosswalk, false)
+    build_ahl_identity_review_draft_with_options(
+        crosswalk,
+        AhlIdentityReviewDraftOptions::default(),
+    )
 }
 
 /// Generate the same non-applicable draft with optional, fully sourced alias
@@ -439,6 +442,27 @@ pub fn build_ahl_identity_review_draft(
 pub fn build_ahl_identity_review_draft_with_aliases(
     crosswalk: &AhlIdentityCrosswalkView,
     include_aliases: bool,
+) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
+    build_ahl_identity_review_draft_with_options(
+        crosswalk,
+        AhlIdentityReviewDraftOptions {
+            include_aliases,
+            ..AhlIdentityReviewDraftOptions::default()
+        },
+    )
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct AhlIdentityReviewDraftOptions {
+    pub include_aliases: bool,
+    pub include_conflicts: bool,
+}
+
+/// Generate a deliberately non-applicable decision draft. Optional lanes are
+/// proposals only and retain their distinct review semantics.
+pub fn build_ahl_identity_review_draft_with_options(
+    crosswalk: &AhlIdentityCrosswalkView,
+    options: AhlIdentityReviewDraftOptions,
 ) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
     validate_crosswalk_shape(crosswalk)?;
     Ok(AhlIdentityReviewDecisions {
@@ -464,7 +488,7 @@ pub fn build_ahl_identity_review_draft_with_aliases(
                     evidence_urls: Vec::new(),
                     note: "Verify the retained official NHL search and landing evidence before accepting this exact name-and-birth-date proposal.".to_owned(),
                 }),
-                AhlIdentityMatchBasis::SurnameAndBirthDate if include_aliases => {
+                AhlIdentityMatchBasis::SurnameAndBirthDate if options.include_aliases => {
                     Some(AhlIdentityReviewDecision {
                         provider_player_id: row.provider_player_id.clone(),
                         action: AhlIdentityReviewAction::SetIdentity,
@@ -473,6 +497,21 @@ pub fn build_ahl_identity_review_draft_with_aliases(
                         nhl_birth_date: row.nhl_birth_date.clone(),
                         evidence_urls: row.evidence_urls.clone(),
                         note: "Verify both official sources and the differing display names before approving this surname-and-birth-date alias remap.".to_owned(),
+                    })
+                }
+                AhlIdentityMatchBasis::BirthDateConflict if options.include_conflicts => {
+                    Some(AhlIdentityReviewDecision {
+                        provider_player_id: row.provider_player_id.clone(),
+                        action: AhlIdentityReviewAction::AcceptProposal,
+                        nhl_player_id: None,
+                        nhl_display_name: None,
+                        nhl_birth_date: None,
+                        evidence_urls: Vec::new(),
+                        note: format!(
+                            "Compare and preserve the conflicting provider birth dates (AHL {} / NHL {}) before accepting this identity proposal.",
+                            row.ahl_birth_date,
+                            row.nhl_birth_date.as_deref().unwrap_or("missing")
+                        ),
                     })
                 }
                 _ => None,
@@ -2382,6 +2421,23 @@ mod tests {
 
         let mut review = build_ahl_identity_review_draft(&conflict).unwrap();
         assert!(review.decisions.is_empty());
+        let conflict_draft = build_ahl_identity_review_draft_with_options(
+            &conflict,
+            AhlIdentityReviewDraftOptions {
+                include_conflicts: true,
+                ..AhlIdentityReviewDraftOptions::default()
+            },
+        )
+        .unwrap();
+        assert!(conflict_draft.draft);
+        assert_eq!(conflict_draft.decisions.len(), 1);
+        assert_eq!(
+            conflict_draft.decisions[0].action,
+            AhlIdentityReviewAction::AcceptProposal
+        );
+        assert!(conflict_draft.decisions[0].note.contains("AHL 2002-02-18"));
+        assert!(conflict_draft.decisions[0].note.contains("NHL 2001-02-18"));
+        assert!(apply_ahl_identity_review_decisions(&conflict, &conflict_draft).is_err());
         review.draft = false;
         review.reviewer = Some("Conflict Reviewer".to_owned());
         review.reviewed_at = Some("2026-07-24T20:00:00-07:00".to_owned());

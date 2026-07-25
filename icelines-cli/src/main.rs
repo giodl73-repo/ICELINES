@@ -1957,8 +1957,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft {
             crosswalk,
             include_aliases,
+            include_conflicts,
             out,
-        }) => commands::icecast::run_affiliate_review_draft(crosswalk, include_aliases, out)?,
+        }) => commands::icecast::run_affiliate_review_draft(
+            crosswalk,
+            include_aliases,
+            include_conflicts,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::AffiliateReviewShow {
             crosswalk,
             attention_only,
