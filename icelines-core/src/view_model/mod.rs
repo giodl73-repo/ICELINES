@@ -45,6 +45,7 @@ pub mod organization_lineup;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
+pub mod prospect_study;
 pub mod records;
 pub mod report;
 pub mod scenario_registry;
@@ -297,6 +298,13 @@ pub use poach::{
     PoachScore, PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchAlertRow,
     WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleMutationIntent,
     WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
+};
+pub use prospect_study::{
+    build_prospect_development_study, ProspectAvailabilityStatus, ProspectDevelopmentSeasonInput,
+    ProspectDevelopmentSeasonView, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
+    ProspectDevelopmentStudyView, ProspectHiddenValueClass, ProspectOpportunityStatus,
+    ProspectSignalComponentView, ProspectStudyEvidenceInput, ProspectTrajectory,
+    PROSPECT_DEVELOPMENT_STUDY_SCHEMA,
 };
 pub use records::{
     FightRecordInput, PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView,

@@ -1539,6 +1539,17 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Explain a prospect's development, opportunity, injury, and attention gap.
+    #[command(name = "prospect-study")]
+    ProspectStudy {
+        /// Authored `ProspectDevelopmentStudyInput` JSON with sourced context.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Import complete, timestamped Internet Archive captures of official NHL opening rosters.
     #[command(name = "import-opening-rosters")]
     ImportOpeningRosters {
@@ -2848,6 +2859,31 @@ mod tui_surface_tests {
                 }
                 other => panic!("expected development calibration command, got {other:?}"),
             }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_study_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-study",
+                "--input",
+                "firkus.json",
+                "--json",
+                "--out",
+                "firkus-study.json",
+            ])
+            .expect("IceCast prospect study command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectStudy {
+                    input,
+                    json: true,
+                    out: Some(out),
+                }) if input == PathBuf::from("firkus.json") && out == PathBuf::from("firkus-study.json")
+            ));
         });
     }
 

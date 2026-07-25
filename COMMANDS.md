@@ -1029,6 +1029,8 @@ icelines icecast affiliate-status-apply --prior-snapshot prior-ahl.json --crossw
 icelines icecast affiliate-input --snapshot ahl-roster-stats.json --crosswalk hartford-identity-reviewed.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-affiliate-input.json
 icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk prior-identities.json --camp camp.json --camp-forecast camp-forecast.json --config rollover-config.json --json --out rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
+icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json
+icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json --json --out firkus-study.json
 icelines icecast organization --input organization.json --json --out the-system.json
 icelines icecast season --team NYR --scenario nyr-camp-season.json --trials 10000 --json --out nyr-camp-season-forecast.json
 icelines icecast season --team NYR --all-games --game-forecast-out nyr-games.json

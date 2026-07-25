@@ -139,6 +139,13 @@ pub use view_model::organization_lineup::{
     OrganizationPositionGroup, OrganizationRecallCandidateView, OrganizationRecallPlanView,
     OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
 };
+pub use view_model::prospect_study::{
+    build_prospect_development_study, ProspectAvailabilityStatus, ProspectDevelopmentSeasonInput,
+    ProspectDevelopmentSeasonView, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
+    ProspectDevelopmentStudyView, ProspectHiddenValueClass, ProspectOpportunityStatus,
+    ProspectSignalComponentView, ProspectStudyEvidenceInput, ProspectTrajectory,
+    PROSPECT_DEVELOPMENT_STUDY_SCHEMA,
+};
 pub use view_model::scenario_registry::{
     scenario_content_sha256, validate_scenario_id, ScenarioRegistryContractError,
     ScenarioRegistryEntryView, ScenarioRegistryReferenceView, ScenarioRegistryView,

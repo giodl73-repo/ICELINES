@@ -10,39 +10,40 @@ use icelines_core::{
     build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
     build_line_combination_forecast, build_organization_lineup_forecast,
-    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
-    build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
-    build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
-    build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
-    build_team_season_plausible_trade_scenario, build_training_camp_blender_set,
-    build_training_camp_exposure_board_with_context, build_training_camp_lineup_set,
-    build_training_camp_opening_roster_policy, compare_team_season_forecast_scenarios,
-    current_ahl_affiliation_catalog, model::Position, model::Season, model::TeamAbbr,
-    normalize_name, season_stats::SeasonType, simulate_team_season_forecast_as_of_with_scenario,
-    simulate_team_season_forecast_with_scenario, simulate_training_camp,
-    simulate_training_camp_league, AhlAffiliateProjectionInput, AhlAffiliateProjectionView,
-    AhlAffiliationCatalogView, AhlLineUnitKind, AhlRosterPoolAuthorityKind,
-    DevelopmentCalibrationConfig, DevelopmentCalibrationView, DevelopmentPositionGroup,
-    DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput,
-    ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
-    LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow, OrganizationLevel,
-    OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
-    OrganizationUnitKind, ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput,
-    TeamDecisionProfile, TeamForecastGameInput, TeamForecastParameters,
-    TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig,
-    TeamForecastStrengthInput, TeamGameForecastCalibrationObservation, TeamGameForecastRow,
-    TeamGameForecastValidationInput, TeamGameForecastView, TeamGameOpeningPlayerRow,
-    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamLineupProjectionView,
-    TeamSeasonAutoPersonnelConfig, TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView,
-    TeamSeasonForecastView, TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig,
-    TeamSeasonScenario, TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig,
-    TeamSeasonStretchKind, TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus,
-    TrainingCampCompetitionPoolStatus, TrainingCampConfig, TrainingCampExposureBoardView,
-    TrainingCampExposureLane, TrainingCampForecastView, TrainingCampLeagueForecastView,
-    TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
-    TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
-    TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
-    ViewWindow, CURRENT_SEASON,
+    build_prospect_development_study, build_season_simulation_card, build_team_game_forecast,
+    build_team_game_forecast_validation, build_team_game_rolling_replay_with_opening_strengths,
+    build_team_player_matchup_role_evidence, build_team_season_auto_personnel_scenario,
+    build_team_season_forecast_history, build_team_season_forecast_movement,
+    build_team_season_game_plan_schedule_from_evidence, build_team_season_plausible_trade_scenario,
+    build_training_camp_blender_set, build_training_camp_exposure_board_with_context,
+    build_training_camp_lineup_set, build_training_camp_opening_roster_policy,
+    compare_team_season_forecast_scenarios, current_ahl_affiliation_catalog, model::Position,
+    model::Season, model::TeamAbbr, normalize_name, season_stats::SeasonType,
+    simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
+    simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
+    AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlLineUnitKind,
+    AhlRosterPoolAuthorityKind, DevelopmentCalibrationConfig, DevelopmentCalibrationView,
+    DevelopmentPositionGroup, DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel,
+    ForecastHistoryCardInput, ForecastMovementCardInput, LineCombinationForecastConfig,
+    LineCombinationForecastView, LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow,
+    OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
+    OrganizationPositionGroup, OrganizationUnitKind, ProspectDevelopmentStudyConfig,
+    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ScenarioScopeView,
+    SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
+    TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
+    TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
+    TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
+    TeamGameForecastView, TeamGameOpeningPlayerRow, TeamGameOpeningRosterAuthorityRow,
+    TeamGameOpeningStrengthRow, TeamLineupProjectionView, TeamSeasonAutoPersonnelConfig,
+    TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
+    TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
+    TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig, TeamSeasonStretchKind,
+    TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus, TrainingCampCompetitionPoolStatus,
+    TrainingCampConfig, TrainingCampExposureBoardView, TrainingCampExposureLane,
+    TrainingCampForecastView, TrainingCampLeagueForecastView, TrainingCampLeagueSimulationInput,
+    TrainingCampLeagueTeamInput, TrainingCampPlayerInput, TrainingCampSalaryCapStatus,
+    TrainingCampSimulationInput, TrainingCampTransactionAuthorityStatus,
+    TrainingCampTransactionContextInput, ViewContext, ViewWindow, CURRENT_SEASON,
 };
 use icelines_fetch::{
     ahl::{
@@ -3434,6 +3435,28 @@ pub fn run_development_calibration(
     Ok(())
 }
 
+pub fn run_prospect_study(
+    input_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let input: ProspectDevelopmentStudyInput =
+        read_icecast_json(&input_path, "prospect development study input")?;
+    let view = build_prospect_development_study(input, ProspectDevelopmentStudyConfig::default())
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_study(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect study")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 fn load_development_transitions(
     prior_season: u32,
     target_season: u32,
@@ -3774,6 +3797,71 @@ fn render_development_calibration(view: &DevelopmentCalibrationView) -> String {
     }
     for disclosure in &view.disclosures {
         let _ = writeln!(out, "\n- {disclosure}");
+    }
+    out
+}
+
+fn render_prospect_study(view: &ProspectDevelopmentStudyView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "THE INSIDER — PROSPECT STUDY");
+    let _ = writeln!(
+        out,
+        "{} · {} · {} · age {}",
+        view.player, view.organization, view.position, view.age
+    );
+    let _ = writeln!(
+        out,
+        "CLASS: {:?} · SCORE {:.1}/100 · TRAJECTORY {:?} · NHL GP {}",
+        view.classification, view.hidden_value_score, view.trajectory, view.nhl_games_played
+    );
+    let _ = writeln!(out, "\nDEVELOPMENT");
+    for season in &view.seasons {
+        let change = season
+            .same_league_ppg_change
+            .map(|value| format!(" · {:+.1}% vs prior {}", value * 100.0, season.league))
+            .unwrap_or_default();
+        let _ = writeln!(
+            out,
+            "{} {} · {} GP · {}-{}-{} · {:.3} P/GP{}",
+            season.season,
+            season.league,
+            season.games_played,
+            season.goals,
+            season.assists,
+            season.points,
+            season.points_per_game,
+            change
+        );
+    }
+    let _ = writeln!(
+        out,
+        "\nCONTEXT\nOpportunity: {:?} · Availability: {:?}\nAttention: {:.0}% · performance-attention gap {:+.2}",
+        view.opportunity,
+        view.availability,
+        view.attention_score * 100.0,
+        view.performance_attention_gap
+    );
+    let _ = writeln!(out, "Basis: {}", view.attention_basis);
+    let _ = writeln!(out, "\nSCORE LENSES");
+    for component in &view.components {
+        let _ = writeln!(
+            out,
+            "{:<14} {:>5.1}/100 × {:>4.0}% = {:>5.1}",
+            component.id,
+            component.score * 100.0,
+            component.weight * 100.0,
+            component.weighted_points
+        );
+    }
+    if !view.evidence.is_empty() {
+        let _ = writeln!(out, "\nEVIDENCE");
+        for item in &view.evidence {
+            let _ = writeln!(out, "- {}\n  {}", item.label, item.source_url);
+        }
+    }
+    let _ = writeln!(out, "\nDISCLOSURES");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
     }
     out
 }

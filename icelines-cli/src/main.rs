@@ -2155,6 +2155,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::ProspectStudy { input, json, out }) => {
+            commands::icecast::run_prospect_study(input, json, out)?
+        }
         Commands::Icecast(IceCastSubcommand::ImportOpeningRosters {
             manifest,
             dry_run,
