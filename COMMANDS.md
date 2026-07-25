@@ -1020,6 +1020,7 @@ icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-apply --crosswalk hartford-official-identity-review.json --decisions hartford-review-decisions.json --json --out hartford-reviewed-identities.json
 icelines icecast affiliate-status-draft --prior-snapshot prior-ahl.json --crosswalk hartford-reviewed-identities.json --camp camp.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-status-review-draft.json
+icelines icecast affiliate-status-show --review hartford-status-review-draft.json
 icelines icecast affiliate-status-apply --prior-snapshot prior-ahl.json --crosswalk hartford-reviewed-identities.json --camp camp.json --review hartford-status-review.json --config rollover-base.json --out rollover-config.json
 icelines icecast affiliate-input --snapshot ahl-roster-stats.json --crosswalk hartford-identity-reviewed.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-affiliate-input.json
 icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk prior-identities.json --camp camp.json --camp-forecast camp-forecast.json --config rollover-config.json --json --out rollover.json
@@ -1164,6 +1165,8 @@ departed, or other-league decision.
 a finalized reviewer and RFC3339 timestamp, absolute evidence URLs, notes, and
 exact row coverage. It rejects stale fingerprints and emits the sourced
 rollover config consumed by `affiliate-rollover`; it never creates a roster.
+`icecast affiliate-status-show` is the read-only text/JSON inspection surface
+for both draft and finalized review artifacts; it never changes review state.
 
 After every row is explicitly marked `reviewed`, `icecast affiliate-input`
 joins that identity artifact to separately authored projection facts keyed by

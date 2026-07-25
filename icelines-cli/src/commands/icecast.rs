@@ -58,6 +58,7 @@ use icelines_fetch::{
         apply_ahl_preseason_organization_review, build_ahl_preseason_organization_review_draft,
         build_ahl_preseason_rollover, AhlPreseasonOrganizationReview, AhlPreseasonPositionGroup,
         AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
+        AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     },
     build_shift_overlap_report,
     bundled::{
@@ -818,6 +819,32 @@ pub fn run_affiliate_status_draft(
             output.as_bytes(),
             "AHL organization-status review draft",
         )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_status_show(
+    review_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let review: AhlPreseasonOrganizationReview =
+        read_icecast_json(&review_path, "AHL organization-status review")?;
+    if review.schema != AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA {
+        bail!(
+            "unsupported AHL organization-status review schema `{}`",
+            review.schema
+        );
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&review)?)
+    } else {
+        render_affiliate_status_review(&review)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL organization-status review")?;
     } else {
         print!("{output}");
     }
@@ -1590,6 +1617,70 @@ fn render_affiliate_rollover(view: &AhlPreseasonRolloverView) -> String {
             format!(" — {}", row.blockers.join(", "))
         };
         let _ = writeln!(out, "{group:<2} {state:<6} {}{blockers}", row.display_name);
+    }
+    out
+}
+
+fn render_affiliate_status_review(view: &AhlPreseasonOrganizationReview) -> String {
+    let mut out = String::new();
+    let state = if view.draft { "DRAFT" } else { "FINAL" };
+    let identity_blockers = view
+        .rows
+        .iter()
+        .filter(|row| !row.identity_reviewed)
+        .count();
+    let decisions_required = view
+        .rows
+        .iter()
+        .filter(|row| row.identity_reviewed && row.in_current_camp == Some(false))
+        .count();
+    let _ = writeln!(
+        out,
+        "AHL ORGANIZATION STATUS — {} → {} — {state}",
+        view.prior_season, view.target_season
+    );
+    let _ = writeln!(out, "{} / {}", view.nhl_team, view.ahl_team);
+    let _ = writeln!(
+        out,
+        "{} prior players | {} identity blockers | {} decisions required",
+        view.rows.len(),
+        identity_blockers,
+        decisions_required
+    );
+    if identity_blockers != view.identity_blockers || decisions_required != view.decisions_required
+    {
+        let _ = writeln!(
+            out,
+            "WARNING: declared counts are stale ({} identity / {} decisions)",
+            view.identity_blockers, view.decisions_required
+        );
+    }
+    let reviewer = view.reviewer.as_deref().unwrap_or("—");
+    let reviewed_at = view.reviewed_at.as_deref().unwrap_or("—");
+    let _ = writeln!(out, "REVIEWER {reviewer} | REVIEWED AT {reviewed_at}");
+    let _ = writeln!(out, "CROSSWALK {}", view.crosswalk_fingerprint);
+    for row in &view.rows {
+        let status = if !row.identity_reviewed {
+            "IDENTITY"
+        } else if row.in_current_camp == Some(true) {
+            "IN CAMP"
+        } else if let Some(kind) = row.decision_kind {
+            match kind {
+                icelines_fetch::ahl_rollover::AhlPreseasonDecisionKind::Retained => "RETAINED",
+                icelines_fetch::ahl_rollover::AhlPreseasonDecisionKind::Departed => "DEPARTED",
+                icelines_fetch::ahl_rollover::AhlPreseasonDecisionKind::OtherLeague => "OTHER",
+            }
+        } else {
+            "DECIDE"
+        };
+        let nhl_id = row
+            .nhl_player_id
+            .map_or_else(|| "—".to_owned(), |id| id.to_string());
+        let _ = writeln!(
+            out,
+            "{:<24} {:<10} {:<10} {}",
+            row.display_name, status, nhl_id, row.note
+        );
     }
     out
 }
@@ -5912,6 +6003,45 @@ mod tests {
         TeamSeasonReplayCheckpointTeamRow, TeamSeasonReplayCheckpointView,
         TrainingCampSimulationInput,
     };
+    use icelines_fetch::ahl_rollover::{
+        AhlPreseasonOrganizationReview, AhlPreseasonOrganizationReviewRow,
+        AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
+    };
+
+    #[test]
+    fn affiliate_status_review_renderer_recomputes_stale_counts() {
+        let view = AhlPreseasonOrganizationReview {
+            schema: AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA.to_owned(),
+            prior_season: 2025_2026,
+            target_season: 2026_2027,
+            nhl_team: "NYR".to_owned(),
+            ahl_team: "Hartford Wolf Pack".to_owned(),
+            provider: "ahl-api".to_owned(),
+            roster_fetched_at: "2026-07-24T12:00:00Z".to_owned(),
+            crosswalk_fingerprint: "sha256:test".to_owned(),
+            draft: true,
+            reviewer: None,
+            reviewed_at: None,
+            identity_blockers: 0,
+            decisions_required: 0,
+            rows: vec![AhlPreseasonOrganizationReviewRow {
+                provider_player_id: "provider-1".to_owned(),
+                display_name: "Pending Player".to_owned(),
+                nhl_player_id: None,
+                identity_reviewed: false,
+                in_current_camp: None,
+                decision_kind: None,
+                evidence_urls: Vec::new(),
+                note: String::new(),
+            }],
+        };
+
+        let rendered = super::render_affiliate_status_review(&view);
+        assert!(rendered.contains("1 identity blockers"));
+        assert!(rendered.contains("WARNING: declared counts are stale"));
+        assert!(rendered.contains("Pending Player"));
+        assert!(rendered.contains("IDENTITY"));
+    }
 
     #[test]
     fn merge_scenarios_preserves_adaptive_lineup_policies() {

@@ -69,6 +69,9 @@ icelines icecast affiliate-status-draft `
   --nhl-team NYR --ahl-team "Hartford Wolf Pack" `
   --out status-review-draft.json
 
+icelines icecast affiliate-status-show `
+  --review status-review-draft.json
+
 icelines icecast affiliate-status-apply `
   --prior-snapshot prior-ahl.json `
   --crosswalk reviewed-identities.json `
@@ -88,5 +91,6 @@ icelines icecast affiliate-rollover `
 
 The apply command emits a sourced `AhlPreseasonRolloverConfig`; it does not
 produce a roster. The UI-neutral review and rollover documents are
-authoritative. CLI text is an inspection renderer; TUI and web review queues
-remain planned.
+authoritative. `affiliate-status-show` is a read-only inspection renderer and
+recomputes blocker counts from the rows, warning when declared counts are
+stale. TUI and web review queues remain planned.

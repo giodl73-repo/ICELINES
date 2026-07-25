@@ -1217,6 +1217,16 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Inspect an existing affiliate organization-status review artifact.
+    #[command(name = "affiliate-status-show")]
+    AffiliateStatusShow {
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Apply finalized retained/departed/other-league decisions to rollover config.
     #[command(name = "affiliate-status-apply")]
     AffiliateStatusApply {
@@ -2609,6 +2619,22 @@ mod tui_surface_tests {
             assert!(matches!(
                 status_draft.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateStatusDraft { .. })
+            ));
+
+            let status_show = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-show",
+                "--review",
+                "status-review.json",
+                "--json",
+                "--out",
+                "status-review-copy.json",
+            ])
+            .expect("affiliate organization-status review inspection should parse");
+            assert!(matches!(
+                status_show.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusShow { json: true, .. })
             ));
 
             let status_apply = Cli::try_parse_from([

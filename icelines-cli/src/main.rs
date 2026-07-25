@@ -1978,6 +1978,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             ahl_team,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateStatusShow { review, json, out }) => {
+            commands::icecast::run_affiliate_status_show(review, json, out)?
+        }
         Commands::Icecast(IceCastSubcommand::AffiliateStatusApply {
             prior_snapshot,
             crosswalk,

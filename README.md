@@ -314,6 +314,7 @@ icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-apply --crosswalk hartford-official-identity-review.json --decisions hartford-review-decisions.json --json --out hartford-reviewed-identities.json
 icelines icecast affiliate-status-draft --prior-snapshot prior-ahl.json --crosswalk hartford-reviewed-identities.json --camp camp.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-status-review-draft.json
+icelines icecast affiliate-status-show --review hartford-status-review-draft.json
 icelines icecast affiliate-status-apply --prior-snapshot prior-ahl.json --crosswalk hartford-reviewed-identities.json --camp camp.json --review hartford-status-review.json --config rollover-base.json --out rollover-config.json
 icelines icecast affiliate-input --snapshot ahl-roster-stats.json --crosswalk hartford-identity-reviewed.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-affiliate-input.json
 icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk prior-identities.json --camp camp.json --camp-forecast camp-forecast.json --config rollover-config.json --json --out rollover.json
