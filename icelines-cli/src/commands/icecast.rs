@@ -744,7 +744,7 @@ pub async fn run_affiliate_identities(
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&view)?)
     } else {
-        render_affiliate_identities(&view)
+        render_affiliate_identities(&view, false)
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL identity review")?;
@@ -772,6 +772,7 @@ pub fn run_affiliate_review_draft(
 
 pub fn run_affiliate_review_show(
     crosswalk_path: PathBuf,
+    attention_only: bool,
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
@@ -783,10 +784,13 @@ pub fn run_affiliate_review_show(
             crosswalk.schema
         );
     }
+    if attention_only && json {
+        bail!("--attention-only is a text inspection filter and cannot be combined with --json");
+    }
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&crosswalk)?)
     } else {
-        render_affiliate_identities(&crosswalk)
+        render_affiliate_identities(&crosswalk, attention_only)
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL identity crosswalk")?;
@@ -811,7 +815,7 @@ pub fn run_affiliate_review_apply(
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&reviewed)?)
     } else {
-        render_affiliate_identities(&reviewed)
+        render_affiliate_identities(&reviewed, false)
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "reviewed AHL identity crosswalk")?;
@@ -1549,7 +1553,7 @@ fn render_affiliate(view: &AhlAffiliateProjectionView) -> String {
     out
 }
 
-fn render_affiliate_identities(view: &AhlIdentityCrosswalkView) -> String {
+fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: bool) -> String {
     let mut out = String::new();
     let exact_name_and_birth_date = view
         .rows
@@ -1607,7 +1611,19 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView) -> String {
     {
         let _ = writeln!(out, "WARNING: declared identity counts are stale");
     }
-    for row in &view.rows {
+    let attention_count = view
+        .rows
+        .iter()
+        .filter(|row| identity_row_needs_attention(row))
+        .count();
+    if attention_only {
+        let _ = writeln!(out, "ATTENTION: {attention_count} non-routine row(s)");
+    }
+    for row in view
+        .rows
+        .iter()
+        .filter(|row| !attention_only || identity_row_needs_attention(row))
+    {
         let basis = match row.match_basis {
             AhlIdentityMatchBasis::ExactNameAndBirthDate => "NAME+BIRTH",
             AhlIdentityMatchBasis::ExactNameOnly => "NAME ONLY",
@@ -1639,6 +1655,12 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView) -> String {
         }
     }
     out
+}
+
+fn identity_row_needs_attention(row: &icelines_fetch::ahl::AhlIdentityCrosswalkRow) -> bool {
+    row.review_status == AhlIdentityReviewStatus::Rejected
+        || (row.review_status == AhlIdentityReviewStatus::Pending
+            && row.match_basis != AhlIdentityMatchBasis::ExactNameAndBirthDate)
 }
 
 fn render_affiliate_rollover(view: &AhlPreseasonRolloverView) -> String {
@@ -6120,11 +6142,14 @@ mod tests {
             disclosures: vec!["Official discovery remains pending.".to_owned()],
         };
 
-        let rendered = super::render_affiliate_identities(&view);
+        let rendered = super::render_affiliate_identities(&view, false);
         assert!(rendered.contains("1 roster | 1 exact name+birth"));
         assert!(rendered.contains("WARNING: declared identity counts are stale"));
         assert!(rendered.contains("1 source(s)"));
         assert!(rendered.contains("DISCLOSURES"));
+        let attention = super::render_affiliate_identities(&view, true);
+        assert!(attention.contains("ATTENTION: 0 non-routine row(s)"));
+        assert!(!attention.contains("Exact Player"));
     }
 
     #[test]

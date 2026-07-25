@@ -1019,6 +1019,7 @@ icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "H
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json
+icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json --attention-only
 icelines icecast affiliate-review-apply --crosswalk hartford-official-identity-review.json --decisions hartford-review-decisions.json --json --out hartford-reviewed-identities.json
 icelines icecast affiliate-status-draft --prior-snapshot prior-ahl.json --crosswalk hartford-reviewed-identities.json --camp camp.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-status-review-draft.json
 icelines icecast affiliate-status-show --review hartford-status-review-draft.json
@@ -1149,6 +1150,9 @@ accept, set `draft: false`, and add their name plus an RFC3339 timestamp.
 `icecast affiliate-review-show` is the read-only text/JSON inspection surface
 for an existing crosswalk. Its text renderer recomputes summary counts and
 shows evidence counts, notes, and discovery disclosures without changing state.
+`--attention-only` hides routine exact-name-and-birth proposals and retains
+pending non-exact or rejected rows. It cannot be combined with `--json`, so a
+filtered report cannot be mistaken for the authoritative crosswalk.
 
 `icecast affiliate-review-apply` binds that finalized batch to the exact
 season/provider/team/roster-fetch crosswalk. It supports `accept_proposal`,

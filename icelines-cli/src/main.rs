@@ -1959,9 +1959,10 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         }
         Commands::Icecast(IceCastSubcommand::AffiliateReviewShow {
             crosswalk,
+            attention_only,
             json,
             out,
-        }) => commands::icecast::run_affiliate_review_show(crosswalk, json, out)?,
+        }) => commands::icecast::run_affiliate_review_show(crosswalk, attention_only, json, out)?,
         Commands::Icecast(IceCastSubcommand::AffiliateReviewApply {
             crosswalk,
             decisions,
