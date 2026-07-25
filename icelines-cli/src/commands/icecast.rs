@@ -1690,16 +1690,28 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView, attention_only: 
             AhlIdentityReviewStatus::Reviewed => "REVIEWED",
             AhlIdentityReviewStatus::Rejected => "REJECTED",
         };
-        let proposal = row
-            .nhl_player_id
-            .map(|id| format!(" → {id}"))
-            .unwrap_or_default();
+        let proposal = match (row.nhl_player_id, row.nhl_display_name.as_deref()) {
+            (Some(id), Some(name)) => format!(" → {id} {name}"),
+            (Some(id), None) => format!(" → {id}"),
+            (None, _) => String::new(),
+        };
         let evidence = row.evidence_urls.len();
         let _ = writeln!(
             out,
             "{:<24} {:<10} {:<10}{} | {} source(s) | {}",
             row.ahl_display_name, basis, review, proposal, evidence, row.note
         );
+        if attention_only {
+            let nhl_birth_date = row.nhl_birth_date.as_deref().unwrap_or("—");
+            let _ = writeln!(
+                out,
+                "  BIRTH  AHL {} | NHL {}",
+                row.ahl_birth_date, nhl_birth_date
+            );
+            for url in &row.evidence_urls {
+                let _ = writeln!(out, "  SOURCE {url}");
+            }
+        }
     }
     if !view.disclosures.is_empty() {
         let _ = writeln!(out, "DISCLOSURES");
@@ -6204,6 +6216,14 @@ mod tests {
         let attention = super::render_affiliate_identities(&view, true);
         assert!(attention.contains("ATTENTION: 0 non-routine row(s)"));
         assert!(!attention.contains("Exact Player"));
+
+        let mut alias = view;
+        alias.rows[0].ahl_display_name = "E. Player".to_owned();
+        alias.rows[0].match_basis = AhlIdentityMatchBasis::SurnameAndBirthDate;
+        let attention = super::render_affiliate_identities(&alias, true);
+        assert!(attention.contains("8480001 Exact Player"));
+        assert!(attention.contains("BIRTH  AHL 2001-01-01 | NHL 2001-01-01"));
+        assert!(attention.contains("SOURCE https://example.test/player"));
     }
 
     #[test]

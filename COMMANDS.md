@@ -1156,7 +1156,9 @@ for an existing crosswalk. Its text renderer recomputes summary counts and
 shows evidence counts, notes, and discovery disclosures without changing state.
 `--attention-only` hides routine exact-name-and-birth proposals and retains
 pending non-exact or rejected rows. It cannot be combined with `--json`, so a
-filtered report cannot be mistaken for the authoritative crosswalk.
+filtered report cannot be mistaken for the authoritative crosswalk. Attention
+rows include canonical NHL names, both provider birth dates, and every evidence
+URL needed for the review decision.
 
 `icecast affiliate-review-apply` binds that finalized batch to the exact
 season/provider/team/roster-fetch crosswalk. It supports `accept_proposal`,
