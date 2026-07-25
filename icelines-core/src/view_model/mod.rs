@@ -41,6 +41,7 @@ pub mod line_combination;
 pub mod management_behavior;
 pub mod matchup_evidence;
 pub mod mutation;
+pub mod organization_lineup;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
@@ -272,6 +273,12 @@ pub use matchup_evidence::{
     TEAM_PLAYER_MATCHUP_ROLE_EVIDENCE_SCHEMA,
 };
 pub use mutation::{MutationResultView, MutationStatus};
+pub use organization_lineup::{
+    build_organization_lineup_forecast, OrganizationBlockedPlayerView, OrganizationLevel,
+    OrganizationLineupCountsView, OrganizationLineupForecastInput, OrganizationLineupForecastView,
+    OrganizationPositionGroup, OrganizationRecallCandidateView, OrganizationRecallPlanView,
+    OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
+};
 pub use player_card::{
     PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow, PlayerSeasonSummary,
 };

@@ -1933,6 +1933,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::Affiliate { input, json, out }) => {
             commands::icecast::run_affiliate(input, json, out)?
         }
+        Commands::Icecast(IceCastSubcommand::Organization { input, json, out }) => {
+            commands::icecast::run_organization(input, json, out)?
+        }
         Commands::Icecast(IceCastSubcommand::Blender {
             lineup,
             pair_evidence,

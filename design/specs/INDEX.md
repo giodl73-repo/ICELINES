@@ -32,6 +32,7 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 | [line-combination-simulation.md](line-combination-simulation.md) | Implemented (foundation) | The Blender and The Bench are implemented; The Cut training-camp roster selection and per-trial roster propagation are specified next. |
 | [management-behavior-simulation.md](management-behavior-simulation.md) | Implemented (foundation) | Separate GM roster tendencies from manager deployment behavior; build opponent-style, matchup-line, checking-line, and bilateral-fatigue game plans. |
 | [ahl-affiliate-development.md](ahl-affiliate-development.md) | Implemented (foundation) | Affiliate 12F/6D/2G lines enforce the sourced AHL 12-of-18 development-player rule; official roster and cross-league career-game ingestion remains. |
+| [organization-lineup-forecast.md](organization-lineup-forecast.md) | Implemented (foundation) | The System joins complete NHL and AHL lineups into one UI-neutral 8F-line/6D-pair/4-goalie document with recall ladders. |
 | [brand-the-rink.md](brand-the-rink.md) | Implemented | Canonical IceLines product language: The Rink navigation, Ice product family, The Insider voice/evidence labels, and hockey report names. |
 | [group-management.md](group-management.md) | Implemented | Player watchlists: SQLite, CRUD, TUI g/f keys |
 | [player-analysis.md](player-analysis.md) | Implemented | PlayerFilter, similarity search, career arc |

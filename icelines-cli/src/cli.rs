@@ -1151,6 +1151,16 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Combine an NHL lineup and its AHL affiliate into The System.
+    Organization {
+        /// UI-neutral input containing `nhl_lineup` and `ahl_affiliate` documents.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Rank lineup alternatives in The Blender and write a reusable Bench scenario.
     Blender {
         /// UI-neutral `team_lineup_projection.v1` JSON document.
@@ -2346,6 +2356,31 @@ mod tui_surface_tests {
                     assert!(json);
                 }
                 other => panic!("expected team lineup report, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_organization_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "organization",
+                "--input",
+                "organization.json",
+                "--json",
+                "--out",
+                "the-system.json",
+            ])
+            .expect("organization lineup command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Organization { input, json, out }) => {
+                    assert_eq!(input, PathBuf::from("organization.json"));
+                    assert!(json);
+                    assert_eq!(out, Some(PathBuf::from("the-system.json")));
+                }
+                other => panic!("expected IceCast organization command, got {other:?}"),
             }
         });
     }

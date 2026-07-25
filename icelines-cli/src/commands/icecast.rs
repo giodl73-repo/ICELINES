@@ -9,23 +9,25 @@ use icelines_core::{
     apply_team_behavior_research, build_adaptive_lineup_policy, build_ahl_affiliate_projection,
     build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
-    build_line_combination_forecast, build_season_simulation_card, build_team_game_forecast,
-    build_team_game_forecast_validation, build_team_game_rolling_replay_with_opening_strengths,
-    build_team_player_matchup_role_evidence, build_team_season_auto_personnel_scenario,
-    build_team_season_forecast_history, build_team_season_forecast_movement,
-    build_team_season_game_plan_schedule_from_evidence, build_team_season_plausible_trade_scenario,
-    build_training_camp_blender_set, build_training_camp_exposure_board_with_context,
-    build_training_camp_lineup_set, build_training_camp_opening_roster_policy,
-    compare_team_season_forecast_scenarios, current_ahl_affiliation_catalog, model::Position,
-    model::Season, model::TeamAbbr, normalize_name, season_stats::SeasonType,
-    simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
-    simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
-    AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlLineUnitKind,
-    DevelopmentCalibrationConfig, DevelopmentCalibrationView, DevelopmentPositionGroup,
-    DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput,
-    ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
-    LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow, ScenarioScopeView,
-    SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
+    build_line_combination_forecast, build_organization_lineup_forecast,
+    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
+    build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
+    build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
+    build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
+    build_team_season_plausible_trade_scenario, build_training_camp_blender_set,
+    build_training_camp_exposure_board_with_context, build_training_camp_lineup_set,
+    build_training_camp_opening_roster_policy, compare_team_season_forecast_scenarios,
+    current_ahl_affiliation_catalog, model::Position, model::Season, model::TeamAbbr,
+    normalize_name, season_stats::SeasonType, simulate_team_season_forecast_as_of_with_scenario,
+    simulate_team_season_forecast_with_scenario, simulate_training_camp,
+    simulate_training_camp_league, AhlAffiliateProjectionInput, AhlAffiliateProjectionView,
+    AhlAffiliationCatalogView, AhlLineUnitKind, DevelopmentCalibrationConfig,
+    DevelopmentCalibrationView, DevelopmentPositionGroup, DevelopmentTransitionInput,
+    DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput, ForecastMovementCardInput,
+    LineCombinationForecastConfig, LineCombinationForecastView, LineCombinationPairEvidenceInput,
+    OpponentStyleEvidenceRow, OrganizationLevel, OrganizationLineupForecastInput,
+    OrganizationLineupForecastView, OrganizationPositionGroup, OrganizationUnitKind,
+    ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
     TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
     TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
     TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
@@ -683,6 +685,27 @@ pub fn run_affiliate(input_path: PathBuf, json: bool, out: Option<PathBuf>) -> a
     Ok(())
 }
 
+pub fn run_organization(
+    input_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let input: OrganizationLineupForecastInput =
+        read_icecast_json(&input_path, "organization lineup input")?;
+    let view = build_organization_lineup_forecast(&input).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_organization(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "organization lineup forecast")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_affiliate_map(json: bool, out: Option<PathBuf>) -> anyhow::Result<()> {
     let view = current_ahl_affiliation_catalog();
     let output = if json {
@@ -1105,6 +1128,71 @@ fn render_affiliate_map(view: &AhlAffiliationCatalogView) -> String {
         let _ = writeln!(out, "{:<3}  {}", row.nhl_team, row.ahl_team);
     }
     let _ = writeln!(out, "SOURCE  {}", view.source_url);
+    out
+}
+
+fn render_organization(view: &OrganizationLineupForecastView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "THE SYSTEM — {} / {} — {}",
+        view.nhl_team, view.ahl_team, view.season
+    );
+    let _ = writeln!(
+        out,
+        "{} FORWARD LINES  {} DEFENSE PAIRS  {} GOALTENDERS",
+        view.counts.forward_lines, view.counts.defense_pairs, view.counts.goalies
+    );
+    for level in [OrganizationLevel::Nhl, OrganizationLevel::Ahl] {
+        let heading = match level {
+            OrganizationLevel::Nhl => "NHL",
+            OrganizationLevel::Ahl => "AHL",
+        };
+        let team = if level == OrganizationLevel::Nhl {
+            &view.nhl_team
+        } else {
+            &view.ahl_team
+        };
+        let _ = writeln!(out, "\n{heading} — {team}");
+        for unit in view.units.iter().filter(|unit| unit.level == level) {
+            let label = match unit.kind {
+                OrganizationUnitKind::ForwardLine => format!("F{}", unit.unit),
+                OrganizationUnitKind::DefensePair => format!("D{}", unit.unit),
+                OrganizationUnitKind::Goalies => "G".to_owned(),
+            };
+            let score = unit
+                .average_score
+                .map(|value| format!("  [{value:.1}]"))
+                .unwrap_or_default();
+            let _ = writeln!(out, "{label:<3} {}{score}", unit.player_names.join(" — "));
+        }
+    }
+    let _ = writeln!(out, "\nFIRST RECALL");
+    for plan in &view.recall_plan {
+        let group = match plan.position_group {
+            OrganizationPositionGroup::Forward => "F",
+            OrganizationPositionGroup::Defense => "D",
+            OrganizationPositionGroup::Goalie => "G",
+        };
+        let name = plan.first_recall_name.as_deref().unwrap_or("no candidate");
+        let _ = writeln!(
+            out,
+            "{group:<2} {name}  ({} candidates)",
+            plan.candidate_count
+        );
+    }
+    if !view.blocked_players.is_empty() {
+        let _ = writeln!(out, "\nAHL DEPTH OUTSIDE DRESSED LINEUP");
+        for player in &view.blocked_players {
+            let _ = writeln!(
+                out,
+                "- {} ({}) — {}",
+                player.display_name,
+                player.primary_position.abbreviation(),
+                player.blocked_reason
+            );
+        }
+    }
     out
 }
 

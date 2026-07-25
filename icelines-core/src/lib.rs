@@ -132,6 +132,12 @@ pub use view_model::matchup_evidence::{
     TeamStyleSeasonFactsInput, OPPONENT_STYLE_EVIDENCE_SCHEMA, PLAYER_MATCHUP_ROLE_EVIDENCE_SCHEMA,
     TEAM_PLAYER_MATCHUP_ROLE_EVIDENCE_SCHEMA,
 };
+pub use view_model::organization_lineup::{
+    build_organization_lineup_forecast, OrganizationBlockedPlayerView, OrganizationLevel,
+    OrganizationLineupCountsView, OrganizationLineupForecastInput, OrganizationLineupForecastView,
+    OrganizationPositionGroup, OrganizationRecallCandidateView, OrganizationRecallPlanView,
+    OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
+};
 pub use view_model::scenario_registry::{
     scenario_content_sha256, validate_scenario_id, ScenarioRegistryContractError,
     ScenarioRegistryEntryView, ScenarioRegistryReferenceView, ScenarioRegistryView,

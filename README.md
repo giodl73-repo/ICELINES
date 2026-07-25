@@ -310,6 +310,7 @@ icelines icecast bubble --input league-camp.json --transaction-context transacti
 icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.json --transaction-context examples/icecast-transaction-context-nyr-sea-2026-27.json --top 10 --json --out league-bubble-sourced.json
 icelines icecast affiliate --input affiliate-scenario.json --json --out affiliate-lines.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
+icelines icecast organization --input organization.json --json --out the-system.json
 icelines icecast season --team NYR --scenario nyr-camp-season.json --trials 10000 --json --out nyr-camp-season-forecast.json
 icelines icecast season --team NYR --all-games --game-forecast-out nyr-games.json
 icelines icecast bench --forecast nyr-games.json --lineup examples/team-lineup-nyr-2026-27.json --profile nyr-decision-profile.json --style-evidence opponent-styles.json --scenario-out nyr-game-plans.json --json --out nyr-bench-schedule.json
