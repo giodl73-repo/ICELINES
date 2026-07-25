@@ -1102,8 +1102,13 @@ ordinary transaction or waiver lane.
 
 `icecast affiliate` builds `ahl_affiliate_projection.v1` for the associated
 AHL club. It selects 12 forwards, six defensemen, and two goaltenders, then
-emits four forward lines, three defense pairs, and the goalie tandem. The
-season-scoped rule authority defaults to the AHL's official development rule:
+emits four forward lines, three defense pairs, and the goalie tandem. Output
+carries explicit roster-pool authority. Official snapshot adapters set
+`official_snapshot`; sourced camp/prior-season pools use
+`preseason_projection`; authored what-if pools use `authored_scenario`; older
+inputs without the field remain `unspecified`/no-read. Preseason authority
+requires a date, absolute sources, and a methodology note. The season-scoped
+rule authority defaults to the AHL's official development rule:
 at least 12 of 18 dressed skaters must have 260 or fewer professional
 regular-season games as measured at the start of the season. Missing
 professional-game totals fail closed; age, NHL waiver status, and AHL rookie

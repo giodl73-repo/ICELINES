@@ -8,7 +8,8 @@ use crate::model::Position;
 
 use super::ahl_affiliate::{
     current_ahl_affiliation_catalog, AhlAffiliatePlayerView, AhlAffiliateProjectionView,
-    AhlLineUnitKind, AHL_AFFILIATE_PROJECTION_SCHEMA, CURRENT_AHL_AFFILIATION_SEASON,
+    AhlLineUnitKind, AhlRosterPoolAuthority, AHL_AFFILIATE_PROJECTION_SCHEMA,
+    CURRENT_AHL_AFFILIATION_SEASON,
 };
 use super::team_lineup::{
     TeamLineupPlayerView, TeamLineupProjectionView, TeamLineupSpecialTeamsView,
@@ -111,6 +112,8 @@ pub struct OrganizationLineupForecastView {
     pub blocked_players: Vec<OrganizationBlockedPlayerView>,
     pub nhl_special_teams: TeamLineupSpecialTeamsView,
     pub ahl_development_rule_compliant: bool,
+    #[serde(default)]
+    pub ahl_pool_authority: AhlRosterPoolAuthority,
     pub nhl_lineup: TeamLineupProjectionView,
     pub ahl_affiliate: AhlAffiliateProjectionView,
     pub disclosures: Vec<String>,
@@ -219,6 +222,7 @@ pub fn build_organization_lineup_forecast(
         blocked_players,
         nhl_special_teams: input.nhl_lineup.special_teams.clone(),
         ahl_development_rule_compliant: input.ahl_affiliate.development_rule_compliant,
+        ahl_pool_authority: input.ahl_affiliate.pool_authority.clone(),
         nhl_lineup: input.nhl_lineup.clone(),
         ahl_affiliate: input.ahl_affiliate.clone(),
         disclosures: vec![
@@ -604,6 +608,7 @@ mod tests {
             ahl_team: "Hartford Wolf Pack".to_owned(),
             season: 20262027,
             rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: Default::default(),
             players,
         })
         .unwrap();

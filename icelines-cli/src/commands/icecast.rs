@@ -21,27 +21,28 @@ use icelines_core::{
     normalize_name, season_stats::SeasonType, simulate_team_season_forecast_as_of_with_scenario,
     simulate_team_season_forecast_with_scenario, simulate_training_camp,
     simulate_training_camp_league, AhlAffiliateProjectionInput, AhlAffiliateProjectionView,
-    AhlAffiliationCatalogView, AhlLineUnitKind, DevelopmentCalibrationConfig,
-    DevelopmentCalibrationView, DevelopmentPositionGroup, DevelopmentTransitionInput,
-    DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput, ForecastMovementCardInput,
-    LineCombinationForecastConfig, LineCombinationForecastView, LineCombinationPairEvidenceInput,
-    OpponentStyleEvidenceRow, OrganizationLevel, OrganizationLineupForecastInput,
-    OrganizationLineupForecastView, OrganizationPositionGroup, OrganizationUnitKind,
-    ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
-    TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
-    TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
-    TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
-    TeamGameForecastView, TeamGameOpeningPlayerRow, TeamGameOpeningRosterAuthorityRow,
-    TeamGameOpeningStrengthRow, TeamLineupProjectionView, TeamSeasonAutoPersonnelConfig,
-    TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
-    TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
-    TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig, TeamSeasonStretchKind,
-    TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus, TrainingCampCompetitionPoolStatus,
-    TrainingCampConfig, TrainingCampExposureBoardView, TrainingCampExposureLane,
-    TrainingCampForecastView, TrainingCampLeagueForecastView, TrainingCampLeagueSimulationInput,
-    TrainingCampLeagueTeamInput, TrainingCampPlayerInput, TrainingCampSalaryCapStatus,
-    TrainingCampSimulationInput, TrainingCampTransactionAuthorityStatus,
-    TrainingCampTransactionContextInput, ViewContext, ViewWindow, CURRENT_SEASON,
+    AhlAffiliationCatalogView, AhlLineUnitKind, AhlRosterPoolAuthorityKind,
+    DevelopmentCalibrationConfig, DevelopmentCalibrationView, DevelopmentPositionGroup,
+    DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput,
+    ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
+    LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow, OrganizationLevel,
+    OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
+    OrganizationUnitKind, ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput,
+    TeamDecisionProfile, TeamForecastGameInput, TeamForecastParameters,
+    TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig,
+    TeamForecastStrengthInput, TeamGameForecastCalibrationObservation, TeamGameForecastRow,
+    TeamGameForecastValidationInput, TeamGameForecastView, TeamGameOpeningPlayerRow,
+    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamLineupProjectionView,
+    TeamSeasonAutoPersonnelConfig, TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView,
+    TeamSeasonForecastView, TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig,
+    TeamSeasonScenario, TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig,
+    TeamSeasonStretchKind, TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus,
+    TrainingCampCompetitionPoolStatus, TrainingCampConfig, TrainingCampExposureBoardView,
+    TrainingCampExposureLane, TrainingCampForecastView, TrainingCampLeagueForecastView,
+    TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
+    TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
+    TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
+    ViewWindow, CURRENT_SEASON,
 };
 use icelines_fetch::{
     ahl::{
@@ -1155,6 +1156,11 @@ fn render_affiliate(view: &AhlAffiliateProjectionView) -> String {
     );
     let _ = writeln!(
         out,
+        "POOL AUTHORITY: {}",
+        ahl_pool_authority_label(view.pool_authority.kind)
+    );
+    let _ = writeln!(
+        out,
         "DEVELOPMENT RULE: {} development + {} veterans (max {}) | {} veteran slots unused | {} veterans scratched",
         view.development_skaters,
         view.veteran_skaters,
@@ -1281,6 +1287,11 @@ fn render_organization(view: &OrganizationLineupForecastView) -> String {
         "{} FORWARD LINES  {} DEFENSE PAIRS  {} GOALTENDERS",
         view.counts.forward_lines, view.counts.defense_pairs, view.counts.goalies
     );
+    let _ = writeln!(
+        out,
+        "AHL POOL: {}",
+        ahl_pool_authority_label(view.ahl_pool_authority.kind)
+    );
     for level in [OrganizationLevel::Nhl, OrganizationLevel::Ahl] {
         let heading = match level {
             OrganizationLevel::Nhl => "NHL",
@@ -1332,6 +1343,15 @@ fn render_organization(view: &OrganizationLineupForecastView) -> String {
         }
     }
     out
+}
+
+fn ahl_pool_authority_label(kind: AhlRosterPoolAuthorityKind) -> &'static str {
+    match kind {
+        AhlRosterPoolAuthorityKind::OfficialSnapshot => "OFFICIAL SNAPSHOT",
+        AhlRosterPoolAuthorityKind::PreseasonProjection => "PRESEASON PROJECTION",
+        AhlRosterPoolAuthorityKind::AuthoredScenario => "AUTHORED SCENARIO",
+        AhlRosterPoolAuthorityKind::Unspecified => "NO READ",
+    }
 }
 
 fn render_camp(view: &TrainingCampForecastView) -> String {

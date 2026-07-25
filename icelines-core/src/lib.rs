@@ -93,8 +93,9 @@ pub use view_model::ahl_affiliate::{
     current_ahl_affiliation_catalog, AhlAffiliatePlayerInput, AhlAffiliatePlayerView,
     AhlAffiliateProjectionInput, AhlAffiliateProjectionView, AhlAffiliationCatalogView,
     AhlAffiliationView, AhlDevelopmentClassification, AhlDevelopmentRuleInput, AhlLineUnitKind,
-    AhlLineUnitView, AhlProspectPoolRowView, AHL_AFFILIATE_PROJECTION_SCHEMA,
-    AHL_AFFILIATION_CATALOG_SCHEMA, AHL_AFFILIATION_SOURCE_URL, CURRENT_AHL_AFFILIATION_SEASON,
+    AhlLineUnitView, AhlProspectPoolRowView, AhlRosterPoolAuthority, AhlRosterPoolAuthorityKind,
+    AHL_AFFILIATE_PROJECTION_SCHEMA, AHL_AFFILIATION_CATALOG_SCHEMA, AHL_AFFILIATION_SOURCE_URL,
+    CURRENT_AHL_AFFILIATION_SEASON,
 };
 pub use view_model::isolated_impact::{
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,

@@ -762,6 +762,15 @@ pub fn affiliate_projection_input_from_snapshot(
         ahl_team: team.team_name.clone(),
         season: snapshot.season,
         rule,
+        pool_authority: icelines_core::AhlRosterPoolAuthority {
+            kind: icelines_core::AhlRosterPoolAuthorityKind::OfficialSnapshot,
+            as_of: Some(snapshot.fetched_at.clone()),
+            source_urls: vec![snapshot.roster_source_url.clone()],
+            note: Some(format!(
+                "Official {} roster snapshot for {}",
+                snapshot.provider, team.team_name
+            )),
+        },
         players,
     };
     Ok(input)
@@ -1506,6 +1515,10 @@ mod tests {
         .unwrap();
         assert_eq!(input.players[0].player_id, 8_480_001);
         assert_eq!(input.players[0].display_name, "Aidan Thompson");
+        assert_eq!(
+            input.pool_authority.kind,
+            icelines_core::AhlRosterPoolAuthorityKind::OfficialSnapshot
+        );
         assert!(affiliate_projection_input_from_snapshot(
             &snapshot,
             "NYR",

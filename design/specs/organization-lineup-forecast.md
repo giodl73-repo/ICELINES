@@ -17,7 +17,8 @@ An `organization_lineup_forecast.v1` contains:
 - NHL extras and AHL players outside the dressed lineup;
 - forward, defense, and goalie recall ladders and a first-recall plan;
 - the NHL special-teams projection; and
-- both source documents, disclosures, evidence labels, and development-rule status.
+- both source documents, disclosures, evidence labels, development-rule
+  status, and explicit AHL roster-pool authority.
 
 The builder accepts one JSON object with existing UI-neutral documents:
 
@@ -63,6 +64,10 @@ is supplied. Real NYR/Hartford and SEA/Coachella forecasts also require a
 reviewed NHL/AHL identity crosswalk and a complete organizational candidate
 pool; the engine must not invent player IDs or treat an empty current roster
 feed as a complete camp roster.
+
+The System may render a sourced preseason projection before the official AHL
+roster publishes, but its top-level `ahl_pool_authority` and renderer label must
+remain `preseason_projection`, never `official_snapshot`.
 
 ## Next increments
 

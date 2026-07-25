@@ -44,6 +44,9 @@ facts.
 `ahl_affiliate_projection.v1` contains:
 
 - NHL and AHL team identity and season;
+- roster-pool authority (`official_snapshot`, `preseason_projection`,
+  `authored_scenario`, or `unspecified`/no-read), including date, sources, and
+  methodology where applicable;
 - dated rule authority;
 - assigned organizational player pool;
 - start-of-season professional-game totals;
@@ -144,3 +147,16 @@ duplicate identities, and current-affiliation disagreement are rejected.
 
 Official surfaces: <https://theahl.com/stats/roster> and
 <https://theahl.com/stats/player-stats>.
+
+## Preseason pool authority
+
+Before the official AHL roster publishes, IceLines may forecast from a
+`preseason_projection` pool assembled from camp candidates, prior affiliate
+incumbents, and sourced organization changes. That authority requires an as-of
+date, at least one absolute source URL, and a methodology note. Its disclosure
+must state that it is not an official AHL roster.
+
+An `official_snapshot` pool is assigned only by the reviewed snapshot adapter.
+An `authored_scenario` requires an explicit scenario note. Older documents
+without authority metadata deserialize as `unspecified` and render as no-read;
+they are never silently promoted to official evidence.

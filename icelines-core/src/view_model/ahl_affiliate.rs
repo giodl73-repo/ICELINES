@@ -104,6 +104,27 @@ pub enum AhlDevelopmentClassification {
     Veteran,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AhlRosterPoolAuthorityKind {
+    OfficialSnapshot,
+    PreseasonProjection,
+    AuthoredScenario,
+    #[default]
+    Unspecified,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlRosterPoolAuthority {
+    pub kind: AhlRosterPoolAuthorityKind,
+    #[serde(default)]
+    pub as_of: Option<String>,
+    #[serde(default)]
+    pub source_urls: Vec<String>,
+    #[serde(default)]
+    pub note: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AhlAffiliatePlayerInput {
     pub player_id: u32,
@@ -137,6 +158,8 @@ pub struct AhlAffiliateProjectionInput {
     pub ahl_team: String,
     pub season: u32,
     pub rule: AhlDevelopmentRuleInput,
+    #[serde(default)]
+    pub pool_authority: AhlRosterPoolAuthority,
     pub players: Vec<AhlAffiliatePlayerInput>,
 }
 
@@ -196,6 +219,8 @@ pub struct AhlAffiliateProjectionView {
     pub ahl_team: String,
     pub season: u32,
     pub rule: AhlDevelopmentRuleInput,
+    #[serde(default)]
+    pub pool_authority: AhlRosterPoolAuthority,
     pub dressed_skaters: usize,
     pub dressed_goalies: usize,
     pub development_skaters: usize,
@@ -456,6 +481,7 @@ pub fn build_ahl_affiliate_projection(
         ahl_team: input.ahl_team.clone(),
         season: input.season,
         rule: input.rule.clone(),
+        pool_authority: input.pool_authority.clone(),
         dressed_skaters: input.rule.dressed_skaters,
         dressed_goalies: 2,
         development_skaters,
@@ -471,6 +497,7 @@ pub fn build_ahl_affiliate_projection(
         players,
         lines,
         disclosures: vec![
+            pool_authority_disclosure(&input.pool_authority),
             "The AHL development rule is enforced on the 18 dressed skaters; goaltenders do not count toward the twelve-player development minimum.".to_owned(),
             "Organizational prospect status and recall readiness are explicit inputs; AHL development-rule eligibility does not automatically make a player a prospect.".to_owned(),
             "Professional-game classification uses regular-season totals fixed at the start of the season and must be supplied from authority; IceLines does not infer missing totals from age or NHL games alone.".to_owned(),
@@ -590,6 +617,27 @@ fn line_view(
     }
 }
 
+fn pool_authority_disclosure(authority: &AhlRosterPoolAuthority) -> String {
+    match authority.kind {
+        AhlRosterPoolAuthorityKind::OfficialSnapshot => format!(
+            "The affiliate player pool comes from an official roster snapshot as of {}.",
+            authority.as_of.as_deref().unwrap_or("an unspecified date")
+        ),
+        AhlRosterPoolAuthorityKind::PreseasonProjection => format!(
+            "The affiliate player pool is a preseason projection as of {}; it is not an official AHL roster.",
+            authority.as_of.as_deref().unwrap_or("an unspecified date")
+        ),
+        AhlRosterPoolAuthorityKind::AuthoredScenario => {
+            "The affiliate player pool is an authored scenario, not an official AHL roster."
+                .to_owned()
+        }
+        AhlRosterPoolAuthorityKind::Unspecified => {
+            "Affiliate player-pool authority is unspecified; treat lineup membership as a no-read scenario assumption."
+                .to_owned()
+        }
+    }
+}
+
 fn validate(input: &AhlAffiliateProjectionInput) -> Result<(), String> {
     if input.nhl_team.trim().is_empty() || input.ahl_team.trim().is_empty() {
         return Err("affiliate projection requires NHL and AHL team labels".to_owned());
@@ -605,6 +653,65 @@ fn validate(input: &AhlAffiliateProjectionInput) -> Result<(), String> {
         || input.rule.checked_at.trim().is_empty()
     {
         return Err("affiliate development rule requires dated absolute authority".to_owned());
+    }
+    let authority = &input.pool_authority;
+    if authority
+        .source_urls
+        .iter()
+        .any(|url| !(url.starts_with("https://") || url.starts_with("http://")))
+    {
+        return Err("affiliate roster-pool authority requires absolute source URLs".to_owned());
+    }
+    match authority.kind {
+        AhlRosterPoolAuthorityKind::OfficialSnapshot => {
+            if authority
+                .as_of
+                .as_deref()
+                .is_none_or(|value| value.trim().is_empty())
+                || authority.source_urls.is_empty()
+            {
+                return Err(
+                    "official affiliate roster-pool authority requires a date and source URL"
+                        .to_owned(),
+                );
+            }
+        }
+        AhlRosterPoolAuthorityKind::PreseasonProjection => {
+            if authority
+                .as_of
+                .as_deref()
+                .is_none_or(|value| value.trim().is_empty())
+                || authority.source_urls.is_empty()
+                || authority
+                    .note
+                    .as_deref()
+                    .is_none_or(|value| value.trim().is_empty())
+            {
+                return Err("preseason affiliate roster-pool authority requires a date, source URL, and methodology note".to_owned());
+            }
+        }
+        AhlRosterPoolAuthorityKind::AuthoredScenario => {
+            if authority
+                .note
+                .as_deref()
+                .is_none_or(|value| value.trim().is_empty())
+            {
+                return Err(
+                    "authored affiliate roster-pool authority requires a scenario note".to_owned(),
+                );
+            }
+        }
+        AhlRosterPoolAuthorityKind::Unspecified => {
+            if authority.as_of.is_some()
+                || !authority.source_urls.is_empty()
+                || authority.note.is_some()
+            {
+                return Err(
+                    "unspecified affiliate roster-pool authority cannot carry claimed evidence"
+                        .to_owned(),
+                );
+            }
+        }
     }
     if input.season == CURRENT_AHL_AFFILIATION_SEASON {
         let catalog = current_ahl_affiliation_catalog();
@@ -705,10 +812,28 @@ mod tests {
             ahl_team: "Hartford Wolf Pack".to_owned(),
             season: 20262027,
             rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: AhlRosterPoolAuthority {
+                kind: AhlRosterPoolAuthorityKind::PreseasonProjection,
+                as_of: Some("2026-07-24".to_owned()),
+                source_urls: vec!["https://example.test/camp-pool".to_owned()],
+                note: Some("Camp candidates plus prior affiliate incumbents.".to_owned()),
+            },
             players,
         })
         .unwrap();
         assert_eq!(view.dressed_skaters, 18);
+        assert_eq!(
+            view.pool_authority.kind,
+            AhlRosterPoolAuthorityKind::PreseasonProjection
+        );
+        assert!(view.disclosures[0].contains("not an official AHL roster"));
+        let mut legacy = serde_json::to_value(&view).unwrap();
+        legacy.as_object_mut().unwrap().remove("pool_authority");
+        let legacy: AhlAffiliateProjectionView = serde_json::from_value(legacy).unwrap();
+        assert_eq!(
+            legacy.pool_authority.kind,
+            AhlRosterPoolAuthorityKind::Unspecified
+        );
         assert_eq!(view.development_skaters, 12);
         assert_eq!(view.veteran_skaters, 6);
         assert!(view.development_rule_compliant);
@@ -739,6 +864,7 @@ mod tests {
             ahl_team: "Coachella Valley Firebirds".to_owned(),
             season: 20262027,
             rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: Default::default(),
             players: vec![row],
         })
         .unwrap_err();
@@ -788,6 +914,7 @@ mod tests {
             ahl_team: "Coachella Valley Firebirds".to_owned(),
             season: CURRENT_AHL_AFFILIATION_SEASON,
             rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: Default::default(),
             players: Vec::new(),
         })
         .unwrap_err();
@@ -803,9 +930,29 @@ mod tests {
             ahl_team: "Coachella Valley Firebirds".to_owned(),
             season: CURRENT_AHL_AFFILIATION_SEASON,
             rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: Default::default(),
             players: vec![row],
         })
         .unwrap_err();
         assert!(error.contains("invalid player row"));
+    }
+
+    #[test]
+    fn preseason_pool_authority_requires_dated_sources_and_methodology() {
+        let input = AhlAffiliateProjectionInput {
+            nhl_team: "NYR".to_owned(),
+            ahl_team: "Hartford Wolf Pack".to_owned(),
+            season: CURRENT_AHL_AFFILIATION_SEASON,
+            rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: AhlRosterPoolAuthority {
+                kind: AhlRosterPoolAuthorityKind::PreseasonProjection,
+                as_of: Some("2026-07-24".to_owned()),
+                source_urls: vec!["relative-source".to_owned()],
+                note: Some("camp projection".to_owned()),
+            },
+            players: Vec::new(),
+        };
+        let error = validate(&input).unwrap_err();
+        assert!(error.contains("absolute source URLs"));
     }
 }
