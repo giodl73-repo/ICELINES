@@ -1151,6 +1151,42 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Propose a reviewable AHL-provider to NHL-player identity crosswalk.
+    #[command(name = "affiliate-identities")]
+    AffiliateIdentities {
+        /// UI-neutral `ahl_roster_stats.v1` snapshot.
+        #[arg(long, value_name = "PATH")]
+        snapshot: PathBuf,
+        /// Exact AHL team name from the snapshot.
+        #[arg(long, value_name = "AHL_TEAM")]
+        team: String,
+        /// Canonical identity catalog or sourced league camp candidate overlay.
+        #[arg(long, value_name = "PATH")]
+        candidates: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Join reviewed AHL identities to separate projection facts.
+    #[command(name = "affiliate-input")]
+    AffiliateInput {
+        /// UI-neutral `ahl_roster_stats.v1` snapshot.
+        #[arg(long, value_name = "PATH")]
+        snapshot: PathBuf,
+        /// Fully reviewed `ahl_identity_crosswalk.v1` document.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// JSON array of projection facts keyed by AHL provider player ID.
+        #[arg(long, value_name = "PATH")]
+        facts: PathBuf,
+        #[arg(long, value_name = "NHL_TEAM")]
+        nhl_team: String,
+        #[arg(long, value_name = "AHL_TEAM")]
+        ahl_team: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Combine an NHL lineup and its AHL affiliate into The System.
     Organization {
         /// UI-neutral input containing `nhl_lineup` and `ahl_affiliate` documents.
@@ -2382,6 +2418,54 @@ mod tui_surface_tests {
                 }
                 other => panic!("expected IceCast organization command, got {other:?}"),
             }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_affiliate_identity_surfaces_parse() {
+        with_large_stack(|| {
+            let review = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-identities",
+                "--snapshot",
+                "ahl.json",
+                "--team",
+                "Hartford Wolf Pack",
+                "--candidates",
+                "candidates.json",
+                "--json",
+                "--out",
+                "review.json",
+            ])
+            .expect("affiliate identity review command should parse");
+            assert!(matches!(
+                review.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateIdentities { json: true, .. })
+            ));
+
+            let input = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-input",
+                "--snapshot",
+                "ahl.json",
+                "--crosswalk",
+                "reviewed.json",
+                "--facts",
+                "facts.json",
+                "--nhl-team",
+                "NYR",
+                "--ahl-team",
+                "Hartford Wolf Pack",
+                "--out",
+                "affiliate-input.json",
+            ])
+            .expect("reviewed affiliate input command should parse");
+            assert!(matches!(
+                input.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateInput { .. })
+            ));
         });
     }
 

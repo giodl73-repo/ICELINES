@@ -1015,6 +1015,8 @@ icelines icecast bubble --input league-camp.json --top 10 --json --out league-bu
 icelines icecast bubble --input league-camp.json --transaction-context transaction-context.json --top 10 --json --out league-bubble.json
 icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.json --transaction-context examples/icecast-transaction-context-nyr-sea-2026-27.json --top 10 --json --out league-bubble-sourced.json
 icelines icecast affiliate --input affiliate-scenario.json --json --out affiliate-lines.json
+icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "Hartford Wolf Pack" --candidates examples/icecast-league-candidate-overlay-2026-27.json --json --out hartford-identity-review.json
+icelines icecast affiliate-input --snapshot ahl-roster-stats.json --crosswalk hartford-identity-reviewed.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-affiliate-input.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast organization --input organization.json --json --out the-system.json
 icelines icecast season --team NYR --scenario nyr-camp-season.json --trials 10000 --json --out nyr-camp-season-forecast.json
@@ -1106,6 +1108,24 @@ at least 12 of 18 dressed skaters must have 260 or fewer professional
 regular-season games as measured at the start of the season. Missing
 professional-game totals fail closed; age, NHL waiver status, and AHL rookie
 status are not substitutes for the development-rule calculation.
+
+`icecast affiliate-identities` compares one official AHL roster with either an
+`ahl_canonical_identity_catalog.v1` or the existing sourced league camp
+candidate overlay. It emits `ahl_identity_crosswalk.v1`. Exact normalized-name
+and birth-date matches remain `pending`; they are proposals, never automatic
+approval. Ambiguity, missing candidates, and birth-date conflicts remain
+structured review states, and provider-local AHL IDs are never copied into NHL
+identity fields.
+
+After every row is explicitly marked `reviewed`, `icecast affiliate-input`
+joins that identity artifact to separately authored projection facts keyed by
+AHL provider ID. The join rejects missing/extra identities, altered official
+names or birth dates, duplicate NHL IDs, missing evidence URLs, stale snapshot
+authority, an empty official roster, or any pending/rejected row. A zero-row
+review artifact can document preseason source coverage but cannot certify a
+projection pool. Its JSON output feeds `icecast affiliate`; identity review
+does not establish player value, assignment,
+prospect status, professional-game totals, waivers, or recall readiness.
 
 `icecast affiliate-map` emits the dated `ahl_affiliation_catalog.v1` authority
 used to connect all 32 NHL organizations to their current AHL affiliates. For

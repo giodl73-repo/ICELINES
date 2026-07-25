@@ -1933,6 +1933,23 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::Affiliate { input, json, out }) => {
             commands::icecast::run_affiliate(input, json, out)?
         }
+        Commands::Icecast(IceCastSubcommand::AffiliateIdentities {
+            snapshot,
+            team,
+            candidates,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_identities(snapshot, team, candidates, json, out)?,
+        Commands::Icecast(IceCastSubcommand::AffiliateInput {
+            snapshot,
+            crosswalk,
+            facts,
+            nhl_team,
+            ahl_team,
+            out,
+        }) => commands::icecast::run_affiliate_input(
+            snapshot, crosswalk, facts, nhl_team, ahl_team, out,
+        )?,
         Commands::Icecast(IceCastSubcommand::Organization { input, json, out }) => {
             commands::icecast::run_organization(input, json, out)?
         }

@@ -66,7 +66,8 @@ feed as a complete camp roster.
 
 ## Next increments
 
-1. Ingest reviewed official AHL roster identities and cross-league career games.
+1. Populate reviewed Hartford and Coachella Valley identity artifacts when
+   official 2026-27 roster coverage is complete, then add cross-league career games.
 2. Add evidence-labeled AHL PP/PK role inputs and units.
 3. Simulate injury/recall/demotion cascades through both levels.
 4. Feed organization branches into The Blender, The Bench, and IceCast season

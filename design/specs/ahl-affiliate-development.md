@@ -1,8 +1,9 @@
 # AHL affiliate and development-pool projection
 
 Status: implemented core constraint, 32-team affiliation authority,
-UI-neutral projection, verified source caching, and durable AHL snapshots;
-professional-game and historical-affiliation expansion remains.
+UI-neutral projection, verified source caching, durable AHL snapshots, and a
+reviewed provider-to-NHL identity workflow; professional-game and
+historical-affiliation expansion remains.
 
 ## Purpose
 
@@ -71,10 +72,31 @@ to college, junior, European, contract, or roster constraints.
 6. The resulting AHL role and line quality feed prospect development,
    recall-readiness, and NHL injury-replacement simulations.
 
+## Reviewed identity bridge
+
+`ahl_identity_crosswalk.v1` binds an official roster snapshot and exact AHL
+team to canonical NHL identity candidates with evidence URLs. Matching is
+deterministic and review-oriented:
+
+- exact normalized name plus birth date is proposed, never auto-approved;
+- name-only matches remain lower-confidence proposals;
+- ambiguity, birth-date conflict, and no-match are explicit states;
+- all rows begin `pending`; and
+- only a complete artifact whose rows are explicitly `reviewed` can feed the
+  projection adapter.
+
+An empty preseason roster can still produce a zero-coverage audit artifact,
+but it cannot be certified or joined into a projection input.
+
+Identity facts remain separate from scenario facts. A reviewed identity does
+not prove AHL assignment, prospect status, professional-game totals, waivers,
+projection score, or recall readiness. `affiliate-input` joins those separate
+facts only after exact snapshot coverage and evidence validation.
+
 ## Data work remaining
 
-- populate reviewed provider-to-NHL identity crosswalks and projection
-  enrichments for official affiliate rosters;
+- populate reviewed team artifacts for official affiliate rosters as they are
+  published, beginning with Hartford and Coachella Valley;
 - add dated historical NHL/AHL affiliation catalogs rather than applying the
   current association map to old seasons;
 - build a sourced start-of-season professional-game ledger across NHL, AHL,

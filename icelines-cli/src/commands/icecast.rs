@@ -44,6 +44,12 @@ use icelines_core::{
     TrainingCampTransactionContextInput, ViewContext, ViewWindow, CURRENT_SEASON,
 };
 use icelines_fetch::{
+    ahl::{
+        affiliate_projection_input_from_reviewed_crosswalk, build_ahl_identity_crosswalk,
+        AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
+        AhlIdentityMatchBasis, AhlIdentityReviewStatus, AhlProjectionPlayerFacts,
+        AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
+    },
     build_shift_overlap_report,
     bundled::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
@@ -685,6 +691,94 @@ pub fn run_affiliate(input_path: PathBuf, json: bool, out: Option<PathBuf>) -> a
     Ok(())
 }
 
+pub fn run_affiliate_identities(
+    snapshot_path: PathBuf,
+    team: String,
+    candidates_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let snapshot: AhlRosterStatsSnapshot =
+        read_icecast_json(&snapshot_path, "AHL roster/stat snapshot")?;
+    let candidate_bytes = std::fs::read(&candidates_path).with_context(|| {
+        format!(
+            "read canonical NHL identity candidates {}",
+            candidates_path.display()
+        )
+    })?;
+    let candidates: AhlCanonicalIdentityCatalog = match serde_json::from_slice(&candidate_bytes) {
+        Ok(catalog) => catalog,
+        Err(catalog_error) => {
+            let overlay: LeagueCampCandidateOverlay = serde_json::from_slice(&candidate_bytes)
+                    .with_context(|| {
+                        format!(
+                            "parse canonical identity catalog ({catalog_error}) or camp candidate overlay {}",
+                            candidates_path.display()
+                        )
+                    })?;
+            AhlCanonicalIdentityCatalog {
+                schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
+                checked_at: overlay.checked_at,
+                candidates: overlay
+                    .candidates
+                    .into_iter()
+                    .map(|row| AhlCanonicalIdentityCandidate {
+                        nhl_player_id: row.player_id,
+                        display_name: row.display_name,
+                        birth_date: row.birth_date,
+                        evidence_urls: vec![row.source_url],
+                    })
+                    .collect(),
+            }
+        }
+    };
+    let view =
+        build_ahl_identity_crosswalk(&snapshot, &team, &candidates).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_affiliate_identities(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL identity review")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_input(
+    snapshot_path: PathBuf,
+    crosswalk_path: PathBuf,
+    facts_path: PathBuf,
+    nhl_team: String,
+    ahl_team: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let snapshot: AhlRosterStatsSnapshot =
+        read_icecast_json(&snapshot_path, "AHL roster/stat snapshot")?;
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "reviewed AHL identity crosswalk")?;
+    let facts: Vec<AhlProjectionPlayerFacts> =
+        read_icecast_json(&facts_path, "AHL projection facts")?;
+    let input = affiliate_projection_input_from_reviewed_crosswalk(
+        &snapshot,
+        &nhl_team,
+        &ahl_team,
+        icelines_core::AhlDevelopmentRuleInput::default(),
+        &crosswalk,
+        &facts,
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&input)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL affiliate projection input")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_organization(
     input_path: PathBuf,
     json: bool,
@@ -1113,6 +1207,50 @@ fn render_affiliate(view: &AhlAffiliateProjectionView) -> String {
                 player.blocked_reason.as_deref().unwrap_or("unknown")
             );
         }
+    }
+    out
+}
+
+fn render_affiliate_identities(view: &AhlIdentityCrosswalkView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "AHL IDENTITY REVIEW — {} — {}",
+        view.ahl_team, view.season
+    );
+    let _ = writeln!(
+        out,
+        "{} roster | {} exact name+birth | {} name-only | {} ambiguous | {} conflicts | {} unmatched | {} reviewed",
+        view.counts.roster_players,
+        view.counts.exact_name_and_birth_date,
+        view.counts.exact_name_only,
+        view.counts.ambiguous,
+        view.counts.conflicts,
+        view.counts.unmatched,
+        view.counts.reviewed
+    );
+    for row in &view.rows {
+        let basis = match row.match_basis {
+            AhlIdentityMatchBasis::ExactNameAndBirthDate => "NAME+BIRTH",
+            AhlIdentityMatchBasis::ExactNameOnly => "NAME ONLY",
+            AhlIdentityMatchBasis::BirthDateConflict => "CONFLICT",
+            AhlIdentityMatchBasis::Ambiguous => "AMBIGUOUS",
+            AhlIdentityMatchBasis::Unmatched => "UNMATCHED",
+        };
+        let review = match row.review_status {
+            AhlIdentityReviewStatus::Pending => "PENDING",
+            AhlIdentityReviewStatus::Reviewed => "REVIEWED",
+            AhlIdentityReviewStatus::Rejected => "REJECTED",
+        };
+        let proposal = row
+            .nhl_player_id
+            .map(|id| format!(" → {id}"))
+            .unwrap_or_default();
+        let _ = writeln!(
+            out,
+            "{:<24} {:<10} {:<10}{}",
+            row.ahl_display_name, basis, review, proposal
+        );
     }
     out
 }
