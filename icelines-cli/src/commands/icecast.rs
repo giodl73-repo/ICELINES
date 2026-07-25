@@ -55,8 +55,9 @@ use icelines_fetch::{
         AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
     },
     ahl_rollover::{
-        build_ahl_preseason_rollover, AhlPreseasonPositionGroup, AhlPreseasonRolloverConfig,
-        AhlPreseasonRolloverView,
+        apply_ahl_preseason_organization_review, build_ahl_preseason_organization_review_draft,
+        build_ahl_preseason_rollover, AhlPreseasonOrganizationReview, AhlPreseasonPositionGroup,
+        AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
     },
     build_shift_overlap_report,
     bundled::{
@@ -786,6 +787,67 @@ pub fn run_affiliate_review_apply(
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "reviewed AHL identity crosswalk")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_status_draft(
+    prior_snapshot_path: PathBuf,
+    crosswalk_path: PathBuf,
+    camp_path: PathBuf,
+    nhl_team: String,
+    ahl_team: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let snapshot: AhlRosterStatsSnapshot =
+        read_icecast_json(&prior_snapshot_path, "prior AHL roster/stat snapshot")?;
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "AHL identity crosswalk")?;
+    let camp: TrainingCampSimulationInput =
+        read_icecast_json(&camp_path, "current training camp input")?;
+    let draft = build_ahl_preseason_organization_review_draft(
+        &snapshot, &crosswalk, &camp, &nhl_team, &ahl_team,
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&draft)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "AHL organization-status review draft",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_status_apply(
+    prior_snapshot_path: PathBuf,
+    crosswalk_path: PathBuf,
+    camp_path: PathBuf,
+    review_path: PathBuf,
+    config_path: PathBuf,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let snapshot: AhlRosterStatsSnapshot =
+        read_icecast_json(&prior_snapshot_path, "prior AHL roster/stat snapshot")?;
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "reviewed AHL identity crosswalk")?;
+    let camp: TrainingCampSimulationInput =
+        read_icecast_json(&camp_path, "current training camp input")?;
+    let review: AhlPreseasonOrganizationReview =
+        read_icecast_json(&review_path, "AHL organization-status review")?;
+    let config: AhlPreseasonRolloverConfig =
+        read_icecast_json(&config_path, "AHL preseason rollover config")?;
+    let applied =
+        apply_ahl_preseason_organization_review(&snapshot, &crosswalk, &camp, &config, &review)
+            .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&applied)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "sourced AHL rollover config")?;
     } else {
         print!("{output}");
     }

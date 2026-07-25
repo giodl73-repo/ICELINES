@@ -1201,6 +1201,38 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Generate a non-applicable prior-affiliate organization-status draft.
+    #[command(name = "affiliate-status-draft")]
+    AffiliateStatusDraft {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp: PathBuf,
+        #[arg(long, value_name = "NHL_TEAM")]
+        nhl_team: String,
+        #[arg(long, value_name = "AHL_TEAM")]
+        ahl_team: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply finalized retained/departed/other-league decisions to rollover config.
+    #[command(name = "affiliate-status-apply")]
+    AffiliateStatusApply {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Join reviewed AHL identities to separate projection facts.
     #[command(name = "affiliate-input")]
     AffiliateInput {
@@ -2554,6 +2586,52 @@ mod tui_surface_tests {
             assert!(matches!(
                 apply.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateReviewApply { json: true, .. })
+            ));
+
+            let status_draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-draft",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--crosswalk",
+                "reviewed.json",
+                "--camp",
+                "camp.json",
+                "--nhl-team",
+                "NYR",
+                "--ahl-team",
+                "Hartford Wolf Pack",
+                "--out",
+                "status-draft.json",
+            ])
+            .expect("affiliate organization-status review draft should parse");
+            assert!(matches!(
+                status_draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusDraft { .. })
+            ));
+
+            let status_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-apply",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--crosswalk",
+                "reviewed.json",
+                "--camp",
+                "camp.json",
+                "--review",
+                "status-review.json",
+                "--config",
+                "rollover-base.json",
+                "--out",
+                "rollover-config.json",
+            ])
+            .expect("affiliate organization-status review application should parse");
+            assert!(matches!(
+                status_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusApply { .. })
             ));
 
             let input = Cli::try_parse_from([

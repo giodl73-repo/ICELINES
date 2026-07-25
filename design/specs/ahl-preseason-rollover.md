@@ -18,10 +18,21 @@ fill an affiliate lineup.
   and optional sourced decisions for prior players retained, departed, or
   assigned to another league.
 
+Organization-status decisions are authored through a separate
+`ahl_preseason_organization_review.v1` gate. Its draft is bound to the exact
+historical snapshot, current camp, and SHA-256 fingerprint of the reviewed
+identity crosswalk. Any later identity approval or remap makes the draft stale.
+
 The prior crosswalk must exactly cover the official roster. Reviewed canonical
 NHL identities are unique. Camp input and forecast player sets must match.
 Prior-player decisions require reviewed identities, absolute evidence URLs, and
 notes.
+
+The generated draft is deliberately non-applicable. A reviewer must first
+finish every identity decision, then mark each reviewed prior-only player as
+`retained`, `departed`, or `other_league`, attach source URLs and a note, set
+`draft: false`, and add their name plus an RFC3339 timestamp. Current-camp
+players cannot receive redundant organization-status decisions.
 
 The explicit NHL team binding is required because some historical AHL catalog
 rows do not carry affiliation metadata. When a prior snapshot does include an
@@ -51,6 +62,21 @@ contracts, injuries, final assignment rights, and player projections.
 ## Surface
 
 ```powershell
+icelines icecast affiliate-status-draft `
+  --prior-snapshot prior-ahl.json `
+  --crosswalk reviewed-identities.json `
+  --camp camp.json `
+  --nhl-team NYR --ahl-team "Hartford Wolf Pack" `
+  --out status-review-draft.json
+
+icelines icecast affiliate-status-apply `
+  --prior-snapshot prior-ahl.json `
+  --crosswalk reviewed-identities.json `
+  --camp camp.json `
+  --review status-review.json `
+  --config rollover-base.json `
+  --out rollover-config.json
+
 icelines icecast affiliate-rollover `
   --prior-snapshot prior-ahl.json `
   --crosswalk prior-identities.json `
@@ -60,5 +86,7 @@ icelines icecast affiliate-rollover `
   --json --out rollover.json
 ```
 
-The UI-neutral `ahl_preseason_rollover.v1` report is authoritative. CLI text is
-an inspection renderer; TUI and web review queues remain planned.
+The apply command emits a sourced `AhlPreseasonRolloverConfig`; it does not
+produce a roster. The UI-neutral review and rollover documents are
+authoritative. CLI text is an inspection renderer; TUI and web review queues
+remain planned.
