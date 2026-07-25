@@ -16,6 +16,7 @@ use thiserror::Error;
 pub const AHL_ROSTER_STATS_SCHEMA: &str = "ahl_roster_stats.v1";
 pub const AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA: &str = "ahl_canonical_identity_catalog.v1";
 pub const AHL_IDENTITY_CROSSWALK_SCHEMA: &str = "ahl_identity_crosswalk.v1";
+pub const AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA: &str = "ahl_identity_review_decisions.v1";
 pub const AHL_PROVIDER: &str = "ahl_hockeytech_statview";
 pub const AHL_STATS_SOURCE_URL: &str = "https://theahl.com/stats/player-stats";
 pub const AHL_ROSTER_SOURCE_URL: &str = "https://theahl.com/stats/roster";
@@ -293,6 +294,7 @@ pub enum AhlIdentityMatchBasis {
     BirthDateConflict,
     Ambiguous,
     Unmatched,
+    ReviewedOverride,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -301,6 +303,46 @@ pub enum AhlIdentityReviewStatus {
     Pending,
     Reviewed,
     Rejected,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AhlIdentityReviewAction {
+    AcceptProposal,
+    SetIdentity,
+    Reject,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlIdentityReviewDecision {
+    pub provider_player_id: String,
+    pub action: AhlIdentityReviewAction,
+    #[serde(default)]
+    pub nhl_player_id: Option<u32>,
+    #[serde(default)]
+    pub nhl_display_name: Option<String>,
+    #[serde(default)]
+    pub nhl_birth_date: Option<String>,
+    #[serde(default)]
+    pub evidence_urls: Vec<String>,
+    pub note: String,
+}
+
+/// Separately authored approval authority. A generated draft has `draft=true`
+/// and cannot be applied until a reviewer finalizes its identity and timestamp.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlIdentityReviewDecisions {
+    pub schema: String,
+    pub season: u32,
+    pub provider: String,
+    pub ahl_team: String,
+    pub roster_fetched_at: String,
+    pub draft: bool,
+    #[serde(default)]
+    pub reviewer: Option<String>,
+    #[serde(default)]
+    pub reviewed_at: Option<String>,
+    pub decisions: Vec<AhlIdentityReviewDecision>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -344,6 +386,261 @@ pub struct AhlIdentityCrosswalkView {
     pub counts: AhlIdentityCrosswalkCounts,
     pub rows: Vec<AhlIdentityCrosswalkRow>,
     pub disclosures: Vec<String>,
+}
+
+/// Generate a deliberately non-applicable review draft for the strongest
+/// proposals only. The reviewer must inspect it, set `draft=false`, and add
+/// reviewer/timestamp authority before application.
+pub fn build_ahl_identity_review_draft(
+    crosswalk: &AhlIdentityCrosswalkView,
+) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
+    validate_crosswalk_shape(crosswalk)?;
+    Ok(AhlIdentityReviewDecisions {
+        schema: AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA.to_owned(),
+        season: crosswalk.season,
+        provider: crosswalk.provider.clone(),
+        ahl_team: crosswalk.ahl_team.clone(),
+        roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+        draft: true,
+        reviewer: None,
+        reviewed_at: None,
+        decisions: crosswalk
+            .rows
+            .iter()
+            .filter(|row| {
+                row.review_status == AhlIdentityReviewStatus::Pending
+                    && row.match_basis == AhlIdentityMatchBasis::ExactNameAndBirthDate
+            })
+            .map(|row| AhlIdentityReviewDecision {
+                provider_player_id: row.provider_player_id.clone(),
+                action: AhlIdentityReviewAction::AcceptProposal,
+                nhl_player_id: None,
+                nhl_display_name: None,
+                nhl_birth_date: None,
+                evidence_urls: Vec::new(),
+                note: "Verify the retained official NHL search and landing evidence before accepting this exact name-and-birth-date proposal.".to_owned(),
+            })
+            .collect(),
+    })
+}
+
+/// Apply an explicit review batch while preserving all untouched rows as-is.
+pub fn apply_ahl_identity_review_decisions(
+    crosswalk: &AhlIdentityCrosswalkView,
+    review: &AhlIdentityReviewDecisions,
+) -> Result<AhlIdentityCrosswalkView, AhlFeedError> {
+    validate_crosswalk_shape(crosswalk)?;
+    validate_review_authority(crosswalk, review)?;
+    let reviewer = review.reviewer.as_deref().expect("validated reviewer");
+    let reviewed_at = review.reviewed_at.as_deref().expect("validated timestamp");
+    let mut output = crosswalk.clone();
+    let mut resulting_nhl_ids = output
+        .rows
+        .iter()
+        .filter(|row| row.review_status == AhlIdentityReviewStatus::Reviewed)
+        .filter_map(|row| row.nhl_player_id)
+        .collect::<BTreeSet<_>>();
+    let mut by_provider = output
+        .rows
+        .iter_mut()
+        .map(|row| (row.provider_player_id.clone(), row))
+        .collect::<BTreeMap<_, _>>();
+    for decision in &review.decisions {
+        let row = by_provider
+            .get_mut(&decision.provider_player_id)
+            .expect("validated provider decision");
+        if row.review_status == AhlIdentityReviewStatus::Reviewed {
+            if let Some(id) = row.nhl_player_id {
+                resulting_nhl_ids.remove(&id);
+            }
+        }
+        match decision.action {
+            AhlIdentityReviewAction::AcceptProposal => {
+                let id = row.nhl_player_id.ok_or_else(|| {
+                    AhlFeedError::Validation(format!(
+                        "identity {} has no proposal to accept",
+                        row.provider_player_id
+                    ))
+                })?;
+                if row
+                    .nhl_display_name
+                    .as_deref()
+                    .is_none_or(|name| name.trim().is_empty())
+                    || row.evidence_urls.is_empty()
+                {
+                    return Err(AhlFeedError::Validation(format!(
+                        "identity {} proposal lacks NHL name/evidence",
+                        row.provider_player_id
+                    )));
+                }
+                if !resulting_nhl_ids.insert(id) {
+                    return Err(AhlFeedError::Validation(format!(
+                        "review decisions duplicate NHL player {id}"
+                    )));
+                }
+                row.review_status = AhlIdentityReviewStatus::Reviewed;
+            }
+            AhlIdentityReviewAction::SetIdentity => {
+                let id = decision
+                    .nhl_player_id
+                    .filter(|id| *id != 0)
+                    .ok_or_else(|| {
+                        AhlFeedError::Validation(format!(
+                            "set_identity decision {} has no NHL player ID",
+                            row.provider_player_id
+                        ))
+                    })?;
+                let name = decision
+                    .nhl_display_name
+                    .as_deref()
+                    .filter(|name| !icelines_core::normalize_name(name).is_empty())
+                    .ok_or_else(|| {
+                        AhlFeedError::Validation(format!(
+                            "set_identity decision {} has no NHL display name",
+                            row.provider_player_id
+                        ))
+                    })?;
+                if decision.evidence_urls.is_empty()
+                    || decision
+                        .evidence_urls
+                        .iter()
+                        .any(|url| !absolute_http_url(url))
+                    || decision.nhl_birth_date.as_deref().is_some_and(|date| {
+                        chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").is_err()
+                    })
+                    || !resulting_nhl_ids.insert(id)
+                {
+                    return Err(AhlFeedError::Validation(format!(
+                        "set_identity decision {} has invalid or duplicate evidence",
+                        row.provider_player_id
+                    )));
+                }
+                row.match_basis = reviewed_match_basis(
+                    &row.ahl_display_name,
+                    &row.ahl_birth_date,
+                    name,
+                    decision.nhl_birth_date.as_deref(),
+                );
+                row.review_status = AhlIdentityReviewStatus::Reviewed;
+                row.nhl_player_id = Some(id);
+                row.nhl_display_name = Some(name.to_owned());
+                row.nhl_birth_date.clone_from(&decision.nhl_birth_date);
+                row.evidence_urls.clone_from(&decision.evidence_urls);
+            }
+            AhlIdentityReviewAction::Reject => {
+                row.review_status = AhlIdentityReviewStatus::Rejected;
+            }
+        }
+        row.note = format!(
+            "{} Review {} by {} at {}: {}",
+            row.note,
+            match decision.action {
+                AhlIdentityReviewAction::AcceptProposal => "accepted proposal",
+                AhlIdentityReviewAction::SetIdentity => "set identity",
+                AhlIdentityReviewAction::Reject => "rejected proposal",
+            },
+            reviewer,
+            reviewed_at,
+            decision.note.trim()
+        );
+    }
+    output.counts = identity_crosswalk_counts(&output.rows);
+    output.disclosures.push(format!(
+        "Applied {} explicit identity review decision(s) by {} at {}; untouched rows retain their prior review status.",
+        review.decisions.len(), reviewer, reviewed_at
+    ));
+    Ok(output)
+}
+
+fn validate_crosswalk_shape(crosswalk: &AhlIdentityCrosswalkView) -> Result<(), AhlFeedError> {
+    if crosswalk.schema != AHL_IDENTITY_CROSSWALK_SCHEMA
+        || crosswalk.provider.trim().is_empty()
+        || crosswalk.ahl_team.trim().is_empty()
+        || crosswalk.roster_fetched_at.trim().is_empty()
+        || crosswalk.rows.len() != crosswalk.counts.roster_players
+    {
+        return Err(AhlFeedError::Validation(
+            "invalid AHL identity crosswalk review authority".to_owned(),
+        ));
+    }
+    let mut ids = BTreeSet::new();
+    if crosswalk
+        .rows
+        .iter()
+        .any(|row| !ids.insert(row.provider_player_id.as_str()))
+    {
+        return Err(AhlFeedError::Validation(
+            "identity crosswalk contains duplicate provider players".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_review_authority(
+    crosswalk: &AhlIdentityCrosswalkView,
+    review: &AhlIdentityReviewDecisions,
+) -> Result<(), AhlFeedError> {
+    if review.schema != AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA
+        || review.season != crosswalk.season
+        || review.provider != crosswalk.provider
+        || review.ahl_team != crosswalk.ahl_team
+        || review.roster_fetched_at != crosswalk.roster_fetched_at
+        || review.draft
+        || review
+            .reviewer
+            .as_deref()
+            .is_none_or(|value| value.trim().is_empty())
+        || review
+            .reviewed_at
+            .as_deref()
+            .is_none_or(|value| chrono::DateTime::parse_from_rfc3339(value).is_err())
+        || review.decisions.is_empty()
+    {
+        return Err(AhlFeedError::Validation(
+            "identity review decisions are draft, unbound, empty, or missing reviewer authority"
+                .to_owned(),
+        ));
+    }
+    let official_ids = crosswalk
+        .rows
+        .iter()
+        .map(|row| row.provider_player_id.as_str())
+        .collect::<BTreeSet<_>>();
+    let mut decision_ids = BTreeSet::new();
+    for decision in &review.decisions {
+        if !official_ids.contains(decision.provider_player_id.as_str())
+            || !decision_ids.insert(decision.provider_player_id.as_str())
+            || decision.note.trim().is_empty()
+            || (decision.action != AhlIdentityReviewAction::SetIdentity
+                && (decision.nhl_player_id.is_some()
+                    || decision.nhl_display_name.is_some()
+                    || decision.nhl_birth_date.is_some()
+                    || !decision.evidence_urls.is_empty()))
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "invalid identity review decision for provider player {}",
+                decision.provider_player_id
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn reviewed_match_basis(
+    ahl_name: &str,
+    ahl_birth_date: &str,
+    nhl_name: &str,
+    nhl_birth_date: Option<&str>,
+) -> AhlIdentityMatchBasis {
+    if icelines_core::normalize_name(ahl_name) != icelines_core::normalize_name(nhl_name) {
+        AhlIdentityMatchBasis::ReviewedOverride
+    } else if !ahl_birth_date.is_empty() && nhl_birth_date == Some(ahl_birth_date) {
+        AhlIdentityMatchBasis::ExactNameAndBirthDate
+    } else if !ahl_birth_date.is_empty() && nhl_birth_date.is_some() {
+        AhlIdentityMatchBasis::BirthDateConflict
+    } else {
+        AhlIdentityMatchBasis::ExactNameOnly
+    }
 }
 
 /// Scenario and player-value facts stay separate from identity review.
@@ -1123,10 +1420,15 @@ pub fn validate_reviewed_ahl_identity_crosswalk(
                 .is_none_or(|name| name.trim().is_empty())
             || row.evidence_urls.is_empty()
             || row.evidence_urls.iter().any(|url| !absolute_http_url(url))
-            || row
-                .nhl_birth_date
-                .as_deref()
-                .is_some_and(|date| !source.birthdate.is_empty() && date != source.birthdate)
+            || row.nhl_birth_date.as_deref().is_some_and(|date| {
+                !source.birthdate.is_empty()
+                    && date != source.birthdate
+                    && !matches!(
+                        row.match_basis,
+                        AhlIdentityMatchBasis::BirthDateConflict
+                            | AhlIdentityMatchBasis::ReviewedOverride
+                    )
+            })
         {
             return Err(AhlFeedError::Validation(format!(
                 "reviewed identity {} has invalid or conflicting NHL evidence",
@@ -1767,6 +2069,64 @@ mod tests {
     }
 
     #[test]
+    fn review_draft_cannot_apply_until_reviewer_finalizes_it() {
+        let snapshot = identity_snapshot();
+        let crosswalk =
+            build_ahl_identity_crosswalk(&snapshot, "Hartford Wolf Pack", &identity_catalog())
+                .unwrap();
+        let mut review = build_ahl_identity_review_draft(&crosswalk).unwrap();
+        assert!(review.draft);
+        assert_eq!(review.decisions.len(), 1);
+        assert!(apply_ahl_identity_review_decisions(&crosswalk, &review).is_err());
+
+        review.draft = false;
+        review.reviewer = Some("Test Reviewer".to_owned());
+        review.reviewed_at = Some("2026-07-24T20:00:00-07:00".to_owned());
+        let reviewed = apply_ahl_identity_review_decisions(&crosswalk, &review).unwrap();
+        assert_eq!(
+            reviewed.rows[0].review_status,
+            AhlIdentityReviewStatus::Reviewed
+        );
+        assert_eq!(reviewed.counts.reviewed, 1);
+        validate_reviewed_ahl_identity_crosswalk(&snapshot, "Hartford Wolf Pack", &reviewed)
+            .unwrap();
+    }
+
+    #[test]
+    fn explicit_set_identity_supports_sourced_alias_override() {
+        let mut catalog = identity_catalog();
+        catalog.candidates.clear();
+        let crosswalk =
+            build_ahl_identity_crosswalk(&identity_snapshot(), "Hartford Wolf Pack", &catalog)
+                .unwrap();
+        let review = AhlIdentityReviewDecisions {
+            schema: AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA.to_owned(),
+            season: crosswalk.season,
+            provider: crosswalk.provider.clone(),
+            ahl_team: crosswalk.ahl_team.clone(),
+            roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+            draft: false,
+            reviewer: Some("Test Reviewer".to_owned()),
+            reviewed_at: Some("2026-07-24T20:00:00-07:00".to_owned()),
+            decisions: vec![AhlIdentityReviewDecision {
+                provider_player_id: "10618".to_owned(),
+                action: AhlIdentityReviewAction::SetIdentity,
+                nhl_player_id: Some(8_480_001),
+                nhl_display_name: Some("A. Thompson".to_owned()),
+                nhl_birth_date: Some("2002-02-18".to_owned()),
+                evidence_urls: vec!["https://www.nhl.com/player/8480001".to_owned()],
+                note: "Reviewed documented alias.".to_owned(),
+            }],
+        };
+        let reviewed = apply_ahl_identity_review_decisions(&crosswalk, &review).unwrap();
+        assert_eq!(
+            reviewed.rows[0].match_basis,
+            AhlIdentityMatchBasis::ReviewedOverride
+        );
+        assert_eq!(reviewed.rows[0].nhl_player_id, Some(8_480_001));
+    }
+
+    #[test]
     fn official_search_and_landing_build_birth_corroborated_proposal() {
         let search_url = "https://search.d3.nhle.com/api/v1/search/player?q=Aidan%20Thompson";
         let search = br#"[
@@ -1876,6 +2236,25 @@ mod tests {
             conflict.rows[0].nhl_birth_date.as_deref(),
             Some("2001-02-18")
         );
+
+        let mut review = build_ahl_identity_review_draft(&conflict).unwrap();
+        assert!(review.decisions.is_empty());
+        review.draft = false;
+        review.reviewer = Some("Conflict Reviewer".to_owned());
+        review.reviewed_at = Some("2026-07-24T20:00:00-07:00".to_owned());
+        review.decisions.push(AhlIdentityReviewDecision {
+            provider_player_id: "10618".to_owned(),
+            action: AhlIdentityReviewAction::AcceptProposal,
+            nhl_player_id: None,
+            nhl_display_name: None,
+            nhl_birth_date: None,
+            evidence_urls: Vec::new(),
+            note: "Confirmed the NHL identity and retained both conflicting source dates."
+                .to_owned(),
+        });
+        let reviewed = apply_ahl_identity_review_decisions(&conflict, &review).unwrap();
+        validate_reviewed_ahl_identity_crosswalk(&snapshot, "Hartford Wolf Pack", &reviewed)
+            .unwrap();
     }
 
     #[test]

@@ -1954,6 +1954,15 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             )
             .await?
         }
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft { crosswalk, out }) => {
+            commands::icecast::run_affiliate_review_draft(crosswalk, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewApply {
+            crosswalk,
+            decisions,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_apply(crosswalk, decisions, json, out)?,
         Commands::Icecast(IceCastSubcommand::AffiliateInput {
             snapshot,
             crosswalk,

@@ -1017,6 +1017,8 @@ icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.js
 icelines icecast affiliate --input affiliate-scenario.json --json --out affiliate-lines.json
 icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "Hartford Wolf Pack" --candidates examples/icecast-league-candidate-overlay-2026-27.json --json --out hartford-identity-review.json
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
+icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
+icelines icecast affiliate-review-apply --crosswalk hartford-official-identity-review.json --decisions hartford-review-decisions.json --json --out hartford-reviewed-identities.json
 icelines icecast affiliate-input --snapshot ahl-roster-stats.json --crosswalk hartford-identity-reviewed.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-affiliate-input.json
 icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk prior-identities.json --camp camp.json --camp-forecast camp-forecast.json --config rollover-config.json --json --out rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
@@ -1132,6 +1134,22 @@ be merged with `--candidates`. Discovery improves the review queue but never
 changes `review_status`; even exact name-and-birth matches remain pending until
 explicitly reviewed. `--refresh` forces both official discovery layers to be
 reacquired.
+
+`icecast affiliate-review-draft` emits a separate
+`ahl_identity_review_decisions.v1` document containing `accept_proposal`
+entries only for pending exact-name-and-birth-date proposals. It is deliberately
+written with `draft: true` and no reviewer/timestamp, so it cannot be applied.
+A reviewer must inspect every retained source, remove decisions they do not
+accept, set `draft: false`, and add their name plus an RFC3339 timestamp.
+
+`icecast affiliate-review-apply` binds that finalized batch to the exact
+season/provider/team/roster-fetch crosswalk. It supports `accept_proposal`,
+explicit sourced `set_identity` alias/remaps, and `reject`; rejects unknown or
+duplicate provider IDs, duplicate resulting NHL IDs, invalid evidence URLs,
+empty notes, stale bindings, draft documents, and missing reviewer authority.
+Untouched rows retain their prior status. Every applied row records reviewer,
+timestamp, action, and note; accepting a birth-date conflict remains explicit
+rather than hiding either source date.
 
 After every row is explicitly marked `reviewed`, `icecast affiliate-input`
 joins that identity artifact to separately authored projection facts keyed by

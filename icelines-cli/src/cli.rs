@@ -1178,6 +1178,29 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Generate a non-applicable review draft for exact AHL identity proposals.
+    #[command(name = "affiliate-review-draft")]
+    AffiliateReviewDraft {
+        /// Generated `ahl_identity_crosswalk.v1` proposal queue.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply a finalized, reviewer-authored identity decision batch.
+    #[command(name = "affiliate-review-apply")]
+    AffiliateReviewApply {
+        /// Generated `ahl_identity_crosswalk.v1` proposal queue.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// Finalized `ahl_identity_review_decisions.v1` document.
+        #[arg(long, value_name = "PATH")]
+        decisions: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Join reviewed AHL identities to separate projection facts.
     #[command(name = "affiliate-input")]
     AffiliateInput {
@@ -2498,6 +2521,39 @@ mod tui_surface_tests {
                     refresh: true,
                     ..
                 })
+            ));
+
+            let draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-draft",
+                "--crosswalk",
+                "review.json",
+                "--out",
+                "decisions-draft.json",
+            ])
+            .expect("affiliate identity review draft should parse");
+            assert!(matches!(
+                draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft { .. })
+            ));
+
+            let apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-apply",
+                "--crosswalk",
+                "review.json",
+                "--decisions",
+                "decisions.json",
+                "--json",
+                "--out",
+                "reviewed.json",
+            ])
+            .expect("affiliate identity review application should parse");
+            assert!(matches!(
+                apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewApply { json: true, .. })
             ));
 
             let input = Cli::try_parse_from([

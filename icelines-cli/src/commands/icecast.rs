@@ -46,12 +46,13 @@ use icelines_core::{
 };
 use icelines_fetch::{
     ahl::{
-        affiliate_projection_input_from_reviewed_crosswalk, build_ahl_identity_crosswalk,
+        affiliate_projection_input_from_reviewed_crosswalk, apply_ahl_identity_review_decisions,
+        build_ahl_identity_crosswalk, build_ahl_identity_review_draft,
         enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
         parse_official_nhl_search_candidates, AhlCanonicalIdentityCandidate,
         AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityMatchBasis,
-        AhlIdentityReviewStatus, AhlProjectionPlayerFacts, AhlRosterStatsSnapshot,
-        AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
+        AhlIdentityReviewDecisions, AhlIdentityReviewStatus, AhlProjectionPlayerFacts,
+        AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
     },
     ahl_rollover::{
         build_ahl_preseason_rollover, AhlPreseasonPositionGroup, AhlPreseasonRolloverConfig,
@@ -750,6 +751,47 @@ pub async fn run_affiliate_identities(
     Ok(())
 }
 
+pub fn run_affiliate_review_draft(
+    crosswalk_path: PathBuf,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "AHL identity crosswalk")?;
+    let draft = build_ahl_identity_review_draft(&crosswalk).map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&draft)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL identity review draft")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_review_apply(
+    crosswalk_path: PathBuf,
+    decisions_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "AHL identity crosswalk")?;
+    let decisions: AhlIdentityReviewDecisions =
+        read_icecast_json(&decisions_path, "AHL identity review decisions")?;
+    let reviewed =
+        apply_ahl_identity_review_decisions(&crosswalk, &decisions).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&reviewed)?)
+    } else {
+        render_affiliate_identities(&reviewed)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "reviewed AHL identity crosswalk")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 fn read_affiliate_identity_catalog(path: &Path) -> anyhow::Result<AhlCanonicalIdentityCatalog> {
     let candidate_bytes = std::fs::read(path)
         .with_context(|| format!("read canonical NHL identity candidates {}", path.display()))?;
@@ -1416,6 +1458,7 @@ fn render_affiliate_identities(view: &AhlIdentityCrosswalkView) -> String {
             AhlIdentityMatchBasis::BirthDateConflict => "CONFLICT",
             AhlIdentityMatchBasis::Ambiguous => "AMBIGUOUS",
             AhlIdentityMatchBasis::Unmatched => "UNMATCHED",
+            AhlIdentityMatchBasis::ReviewedOverride => "OVERRIDE",
         };
         let review = match row.review_status {
             AhlIdentityReviewStatus::Pending => "PENDING",

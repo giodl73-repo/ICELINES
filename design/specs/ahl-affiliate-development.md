@@ -105,6 +105,18 @@ proposal to exact-name-and-birth-date evidence. All discovered rows remain
 `pending` until explicitly reviewed. An authored catalog may be merged by NHL
 player ID; conflicting names or birth dates are rejected.
 
+Approval uses a separate `ahl_identity_review_decisions.v1` authority rather
+than editing generated rows in place. IceLines can draft `accept_proposal`
+decisions for exact name-and-birth proposals, but the draft is non-applicable
+until a reviewer inspects the evidence, sets `draft=false`, and supplies their
+identity and an RFC3339 review timestamp. Final application supports accepting
+the retained proposal, setting a different evidence-linked NHL identity for an
+alias/remap, or rejecting the proposal. The batch is bound to the exact
+season/provider/team/roster fetch; partial batches leave untouched rows
+unchanged, and duplicate provider or resulting NHL identities fail closed.
+Applied rows preserve reviewer, timestamp, action, note, and conflicting source
+dates in the resulting crosswalk.
+
 ## Data work remaining
 
 - populate reviewed team artifacts for official affiliate rosters as they are
