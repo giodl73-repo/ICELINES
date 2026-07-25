@@ -1160,9 +1160,19 @@ pub enum IceCastSubcommand {
         /// Exact AHL team name from the snapshot.
         #[arg(long, value_name = "AHL_TEAM")]
         team: String,
-        /// Canonical identity catalog or sourced league camp candidate overlay.
-        #[arg(long, value_name = "PATH")]
-        candidates: PathBuf,
+        /// Canonical identity catalog or sourced league camp candidate overlay to merge.
+        #[arg(
+            long,
+            value_name = "PATH",
+            required_unless_present = "discover_official"
+        )]
+        candidates: Option<PathBuf>,
+        /// Discover exact-name proposals through official NHL search and player landing records.
+        #[arg(long)]
+        discover_official: bool,
+        /// Refresh official NHL discovery cachelines instead of accepting cached bytes.
+        #[arg(long, requires = "discover_official")]
+        refresh: bool,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -2465,6 +2475,29 @@ mod tui_surface_tests {
             assert!(matches!(
                 review.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateIdentities { json: true, .. })
+            ));
+
+            let discovered = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-identities",
+                "--snapshot",
+                "ahl.json",
+                "--team",
+                "Hartford Wolf Pack",
+                "--discover-official",
+                "--refresh",
+                "--json",
+            ])
+            .expect("official affiliate identity discovery should parse without a catalog");
+            assert!(matches!(
+                discovered.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateIdentities {
+                    candidates: None,
+                    discover_official: true,
+                    refresh: true,
+                    ..
+                })
             ));
 
             let input = Cli::try_parse_from([

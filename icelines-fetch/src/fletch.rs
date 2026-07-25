@@ -314,6 +314,24 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             "ICELINES validates career landing parsing, multi-league history merge, and preserved existing entries",
         ),
         (
+            "player-search",
+            "player-search",
+            "icelines-nhl-player-search-batch://from-provider-roster-names".to_string(),
+            "~/.icelines/data/.fletch + ahl_identity_crosswalk.v1 review artifact".to_string(),
+            "generic-batch-http-cacheline-after-provider-roster",
+            "ICELINES owns provider-name expansion, exact-name filtering, player-landing corroboration, and explicit human review",
+            "ICELINES preserves provider-local IDs, accepts only exact normalized-name proposals, validates landing ID/name/birth date, and never auto-approves a crosswalk",
+        ),
+        (
+            "player-landing",
+            "player-landing",
+            "icelines-player-landing-batch://from-resolved-player-ids".to_string(),
+            "~/.icelines/data/.fletch/objects".to_string(),
+            "generic-batch-http-cacheline-after-player-set",
+            "FLETCH owns reusable per-player landing bytes; ICELINES consumers own career, contract, and identity semantics",
+            "ICELINES validates player ID and consumer-specific landing fields before any derived artifact is accepted",
+        ),
+        (
             "boxscore",
             "boxscore",
             "icelines-gamecenter-batch://boxscore/from-schedule-date".to_string(),
@@ -823,6 +841,8 @@ fn fletch_cache_index_registry_id(
     for (prefix, registered_suffix) in [
         ("icelines.player.contracts.", "contracts"),
         ("icelines.player.career.", "career"),
+        ("icelines.player.landing.", "player-landing"),
+        ("icelines.nhl.player-search.", "player-search"),
         ("icelines.gamecenter.boxscore.", "boxscore"),
         ("icelines.gamecenter.play-by-play.", "play-by-play"),
     ] {
@@ -1972,6 +1992,15 @@ mod tests {
                 && row.acquisition_mode == "generic-batch-http-cacheline-after-player-set"
                 && row.handoff_status == "batch-expansion-ready-after-domain-set"
         }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.player-search.20252026"
+                && row.acquisition_mode == "generic-batch-http-cacheline-after-provider-roster"
+                && row.handoff_status == "batch-expansion-ready-after-domain-set"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.player-landing.20252026"
+                && row.handoff_status == "batch-expansion-ready-after-domain-set"
+        }));
     }
 
     #[test]
@@ -2083,6 +2112,8 @@ mod tests {
                 test_cache_entry("icelines.transactions.20252026.2025-10-01_2025-10-31", true),
                 test_cache_entry("icelines.gamecenter.boxscore.2025020001", true),
                 test_cache_entry("icelines.player.contracts.8478402", true),
+                test_cache_entry("icelines.nhl.player-search.abcdef", true),
+                test_cache_entry("icelines.player.landing.8482193", true),
                 test_cache_entry("icelines.ahl.20252026.team.HFD.roster", true),
             ],
         )
@@ -2103,6 +2134,16 @@ mod tests {
         assert!(report.rows.iter().any(|row| {
             row.fletch_id == "icelines.contracts.20252026"
                 && row.dataset_id == "icelines.player.contracts.8478402"
+                && row.evidence_status == "indexed-verified"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.player-search.20252026"
+                && row.dataset_id == "icelines.nhl.player-search.abcdef"
+                && row.evidence_status == "indexed-verified"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.player-landing.20252026"
+                && row.dataset_id == "icelines.player.landing.8482193"
                 && row.evidence_status == "indexed-verified"
         }));
         assert!(report.rows.iter().any(|row| {

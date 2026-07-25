@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::io::Read as _;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
@@ -47,9 +47,11 @@ use icelines_core::{
 use icelines_fetch::{
     ahl::{
         affiliate_projection_input_from_reviewed_crosswalk, build_ahl_identity_crosswalk,
-        AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
-        AhlIdentityMatchBasis, AhlIdentityReviewStatus, AhlProjectionPlayerFacts,
-        AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
+        enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
+        parse_official_nhl_search_candidates, AhlCanonicalIdentityCandidate,
+        AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityMatchBasis,
+        AhlIdentityReviewStatus, AhlProjectionPlayerFacts, AhlRosterStatsSnapshot,
+        AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
     },
     ahl_rollover::{
         build_ahl_preseason_rollover, AhlPreseasonPositionGroup, AhlPreseasonRolloverConfig,
@@ -60,8 +62,11 @@ use icelines_fetch::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
         get_stats_installed, load_transactions_with_fallback,
     },
-    fetch_team_behavior_league_evidence,
-    fletch::roster_url,
+    fetch_lock, fetch_team_behavior_league_evidence,
+    fletch::{
+        fetch_generic_http_batch_async, fetch_player_landing_batch_bytes_async, player_landing_url,
+        roster_url, FletchPlayerLandingArtifact,
+    },
     nhl_api::ScheduledGame,
     schema::{GoalieStats, LocalizedString, RosterPlayer, RosterResponse, SkaterBio, SkaterStats},
     snapshot::{
@@ -696,32 +701,69 @@ pub fn run_affiliate(input_path: PathBuf, json: bool, out: Option<PathBuf>) -> a
     Ok(())
 }
 
-pub fn run_affiliate_identities(
+pub async fn run_affiliate_identities(
     snapshot_path: PathBuf,
     team: String,
-    candidates_path: PathBuf,
+    candidates_path: Option<PathBuf>,
+    discover_official: bool,
+    refresh: bool,
     json: bool,
     out: Option<PathBuf>,
+    cfg: &Config,
 ) -> anyhow::Result<()> {
     let snapshot: AhlRosterStatsSnapshot =
         read_icecast_json(&snapshot_path, "AHL roster/stat snapshot")?;
-    let candidate_bytes = std::fs::read(&candidates_path).with_context(|| {
-        format!(
-            "read canonical NHL identity candidates {}",
-            candidates_path.display()
-        )
-    })?;
-    let candidates: AhlCanonicalIdentityCatalog = match serde_json::from_slice(&candidate_bytes) {
-        Ok(catalog) => catalog,
+    let mut catalogs = Vec::new();
+    if let Some(candidates_path) = candidates_path.as_deref() {
+        catalogs.push(read_affiliate_identity_catalog(candidates_path)?);
+    }
+    let mut discovery_note = None;
+    if discover_official {
+        let (catalog, exact_search_candidates, landing_enriched) =
+            discover_official_affiliate_identities(&snapshot, &team, refresh, cfg).await?;
+        catalogs.push(catalog);
+        discovery_note = Some(format!(
+            "Official NHL discovery proposed {exact_search_candidates} exact-name candidate(s); {landing_enriched} received player-landing birth-date corroboration. All proposals remain pending explicit review."
+        ));
+    }
+    if catalogs.is_empty() {
+        bail!("affiliate identity review requires --candidates or --discover-official");
+    }
+    let checked_at = Utc::now().date_naive().to_string();
+    let candidates =
+        merge_ahl_canonical_identity_catalogs(checked_at, &catalogs).map_err(anyhow::Error::msg)?;
+    let mut view =
+        build_ahl_identity_crosswalk(&snapshot, &team, &candidates).map_err(anyhow::Error::msg)?;
+    if let Some(note) = discovery_note {
+        view.disclosures.push(note);
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_affiliate_identities(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL identity review")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn read_affiliate_identity_catalog(path: &Path) -> anyhow::Result<AhlCanonicalIdentityCatalog> {
+    let candidate_bytes = std::fs::read(path)
+        .with_context(|| format!("read canonical NHL identity candidates {}", path.display()))?;
+    match serde_json::from_slice(&candidate_bytes) {
+        Ok(catalog) => Ok(catalog),
         Err(catalog_error) => {
             let overlay: LeagueCampCandidateOverlay = serde_json::from_slice(&candidate_bytes)
-                    .with_context(|| {
-                        format!(
-                            "parse canonical identity catalog ({catalog_error}) or camp candidate overlay {}",
-                            candidates_path.display()
-                        )
-                    })?;
-            AhlCanonicalIdentityCatalog {
+                .with_context(|| {
+                    format!(
+                        "parse canonical identity catalog ({catalog_error}) or camp candidate overlay {}",
+                        path.display()
+                    )
+                })?;
+            Ok(AhlCanonicalIdentityCatalog {
                 schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
                 checked_at: overlay.checked_at,
                 candidates: overlay
@@ -734,22 +776,114 @@ pub fn run_affiliate_identities(
                         evidence_urls: vec![row.source_url],
                     })
                     .collect(),
-            }
+            })
         }
-    };
-    let view =
-        build_ahl_identity_crosswalk(&snapshot, &team, &candidates).map_err(anyhow::Error::msg)?;
-    let output = if json {
-        format!("{}\n", serde_json::to_string_pretty(&view)?)
-    } else {
-        render_affiliate_identities(&view)
-    };
-    if let Some(path) = out.as_deref() {
-        write_icecast_file(path, output.as_bytes(), "AHL identity review")?;
-    } else {
-        print!("{output}");
     }
-    Ok(())
+}
+
+async fn discover_official_affiliate_identities(
+    snapshot: &AhlRosterStatsSnapshot,
+    team: &str,
+    refresh: bool,
+    cfg: &Config,
+) -> anyhow::Result<(AhlCanonicalIdentityCatalog, usize, usize)> {
+    snapshot.validate().map_err(anyhow::Error::msg)?;
+    let roster = &snapshot
+        .teams
+        .iter()
+        .find(|row| row.team_name == team)
+        .with_context(|| format!("AHL snapshot has no team named `{team}`"))?
+        .roster;
+    let icelines_home = cfg
+        .snapshot_dir()
+        .parent()
+        .map(std::path::Path::to_path_buf)
+        .unwrap_or_else(|| cfg.snapshot_dir());
+    let _lock = fetch_lock::acquire(&icelines_home, std::time::Duration::from_secs(120))
+        .context("acquiring official identity discovery fetch lock")?;
+    let cache_root = icelines_home.join("data").join(".fletch");
+    let mut request_context = BTreeMap::new();
+    let mut requests = Vec::new();
+    for player in roster {
+        let normalized_name = normalize_name(&player.name);
+        let mut url = reqwest::Url::parse("https://search.d3.nhle.com/api/v1/search/player")?;
+        url.query_pairs_mut()
+            .append_pair("culture", "en-us")
+            .append_pair("limit", "20")
+            .append_pair("q", &normalized_name);
+        let source_url = url.to_string();
+        let digest = format!("{:x}", Sha256::digest(normalized_name.as_bytes()));
+        let dataset_id = format!("icelines.nhl.player-search.{}", &digest[..20]);
+        request_context.insert(
+            dataset_id.clone(),
+            (player.name.clone(), source_url.clone()),
+        );
+        requests.push((dataset_id, source_url));
+    }
+    let search_results =
+        fetch_generic_http_batch_async(requests, cache_root.clone(), refresh, 6).await;
+    let mut search_candidates = Vec::new();
+    for (dataset_id, result) in search_results {
+        let (name, source_url) = request_context
+            .get(&dataset_id)
+            .with_context(|| format!("missing request context for {dataset_id}"))?;
+        let bytes = result.with_context(|| format!("official NHL player search for {name}"))?;
+        search_candidates.extend(
+            parse_official_nhl_search_candidates(name, source_url, &bytes)
+                .map_err(anyhow::Error::msg)?,
+        );
+    }
+    let search_catalog = AhlCanonicalIdentityCatalog {
+        schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
+        checked_at: Utc::now().date_naive().to_string(),
+        candidates: search_candidates,
+    };
+    let search_catalog = merge_ahl_canonical_identity_catalogs(
+        Utc::now().date_naive().to_string(),
+        &[search_catalog],
+    )
+    .map_err(anyhow::Error::msg)?;
+    let ids = search_catalog
+        .candidates
+        .iter()
+        .map(|candidate| candidate.nhl_player_id)
+        .collect::<Vec<_>>();
+    let landing_bytes = fetch_player_landing_batch_bytes_async(
+        ids,
+        FletchPlayerLandingArtifact::Landing,
+        cache_root,
+        refresh,
+        50,
+    )
+    .await?;
+    let mut landing_enriched = 0;
+    let mut discovered = Vec::with_capacity(search_catalog.candidates.len());
+    for candidate in &search_catalog.candidates {
+        if let Some(bytes) = landing_bytes.get(&candidate.nhl_player_id) {
+            let landing_url = player_landing_url(
+                "https://api-web.nhle.com/v1",
+                candidate.nhl_player_id,
+                FletchPlayerLandingArtifact::Landing,
+            );
+            discovered.push(
+                enrich_official_nhl_landing_candidate(candidate, &landing_url, bytes)
+                    .map_err(anyhow::Error::msg)?,
+            );
+            landing_enriched += 1;
+        } else {
+            discovered.push(candidate.clone());
+        }
+    }
+    let exact_search_candidates = discovered.len();
+    Ok((
+        AhlCanonicalIdentityCatalog {
+            schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
+            checked_at: Utc::now().date_naive().to_string(),
+            candidates: discovered,
+        },
+        exact_search_candidates,
+        landing_enriched,
+    ))
 }
 
 pub fn run_affiliate_input(

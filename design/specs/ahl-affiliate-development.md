@@ -96,6 +96,15 @@ not prove AHL assignment, prospect status, professional-game totals, waivers,
 projection score, or recall readiness. `affiliate-input` joins those separate
 facts only after exact snapshot coverage and evidence validation.
 
+Official discovery is a review-queue accelerator, not an approval mechanism.
+For each AHL roster name, IceLines acquires the official NHL player-search
+response through FLETCH, retains only exact normalized-name results, and then
+acquires the corresponding official NHL player landing document. Landing
+player ID/name conflicts fail closed; a valid landing birth date upgrades the
+proposal to exact-name-and-birth-date evidence. All discovered rows remain
+`pending` until explicitly reviewed. An authored catalog may be merged by NHL
+player ID; conflicting names or birth dates are rejected.
+
 ## Data work remaining
 
 - populate reviewed team artifacts for official affiliate rosters as they are

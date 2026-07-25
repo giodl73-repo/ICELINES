@@ -1937,9 +1937,23 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             snapshot,
             team,
             candidates,
+            discover_official,
+            refresh,
             json,
             out,
-        }) => commands::icecast::run_affiliate_identities(snapshot, team, candidates, json, out)?,
+        }) => {
+            commands::icecast::run_affiliate_identities(
+                snapshot,
+                team,
+                candidates,
+                discover_official,
+                refresh,
+                json,
+                out,
+                &cfg,
+            )
+            .await?
+        }
         Commands::Icecast(IceCastSubcommand::AffiliateInput {
             snapshot,
             crosswalk,
