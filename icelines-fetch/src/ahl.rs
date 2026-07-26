@@ -497,6 +497,7 @@ pub enum AhlIdentityLeagueRoutineReviewKind {
     Exact,
     Aliases,
     Conflicts,
+    CollisionRemaps,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1413,9 +1414,14 @@ pub fn apply_ahl_identity_league_routine_review(
     AhlFeedError,
 > {
     validate_ahl_identity_league_crosswalk(league)?;
-    if kind == AhlIdentityLeagueRoutineReviewKind::Conflicts {
+    if matches!(
+        kind,
+        AhlIdentityLeagueRoutineReviewKind::Conflicts
+            | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps
+    ) {
         return Err(AhlFeedError::Validation(
-            "conflict review requires targeted NHL IDs and additional evidence".to_owned(),
+            "conflict and collision-remap reviews require targeted NHL IDs and additional evidence"
+                .to_owned(),
         ));
     }
     let reviewer = reviewer.into();
@@ -1439,7 +1445,8 @@ pub fn apply_ahl_identity_league_routine_review(
                     AhlIdentityLeagueRoutineReviewKind::Aliases => {
                         row.match_basis == AhlIdentityMatchBasis::SurnameAndBirthDate
                     }
-                    AhlIdentityLeagueRoutineReviewKind::Conflicts => false,
+                    AhlIdentityLeagueRoutineReviewKind::Conflicts
+                    | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps => false,
                 }
         });
         if !eligible {
@@ -1453,7 +1460,8 @@ pub fn apply_ahl_identity_league_routine_review(
             AhlIdentityLeagueRoutineReviewKind::Aliases => {
                 build_ahl_alias_identity_review(crosswalk, reviewer.clone(), reviewed_at.clone())?
             }
-            AhlIdentityLeagueRoutineReviewKind::Conflicts => {
+            AhlIdentityLeagueRoutineReviewKind::Conflicts
+            | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps => {
                 unreachable!("conflict reviews are rejected before routine league review")
             }
         };
@@ -1596,6 +1604,173 @@ pub fn apply_ahl_identity_league_conflict_review(
             ],
         },
     ))
+}
+
+/// Atomically replace one demonstrably collided NHL proposal across every
+/// affected team in a league envelope. The canonical identity must share the
+/// AHL birth date and surname, while the displaced proposal must differ by at
+/// least the collision-review threshold.
+#[allow(clippy::too_many_arguments)]
+pub fn apply_ahl_identity_league_collision_remap(
+    league: &AhlIdentityLeagueCrosswalkView,
+    proposed_nhl_player_id: u32,
+    canonical_nhl_player_id: u32,
+    canonical_display_name: impl Into<String>,
+    canonical_birth_date: impl Into<String>,
+    evidence_urls: &[String],
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+    note: impl Into<String>,
+) -> Result<
+    (
+        AhlIdentityLeagueCrosswalkView,
+        AhlIdentityLeagueReviewDecisionsView,
+    ),
+    AhlFeedError,
+> {
+    validate_ahl_identity_league_crosswalk(league)?;
+    let canonical_display_name = canonical_display_name.into();
+    let canonical_birth_date = canonical_birth_date.into();
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    let note = note.into();
+    let canonical_date = chrono::NaiveDate::parse_from_str(&canonical_birth_date, "%Y-%m-%d")
+        .map_err(|_| {
+            AhlFeedError::Validation(
+                "collision remap requires a canonical YYYY-MM-DD birth date".to_owned(),
+            )
+        })?;
+    if proposed_nhl_player_id == 0
+        || canonical_nhl_player_id == 0
+        || proposed_nhl_player_id == canonical_nhl_player_id
+        || normalize_ahl_identity_name(&canonical_display_name).is_empty()
+        || normalized_surname(&canonical_display_name).is_none()
+        || evidence_urls.is_empty()
+        || evidence_urls.iter().any(|url| !absolute_http_url(url))
+        || reviewer.trim().is_empty()
+        || chrono::DateTime::parse_from_rfc3339(&reviewed_at).is_err()
+        || note.trim().is_empty()
+    {
+        return Err(AhlFeedError::Validation(
+            "collision remap requires distinct non-zero NHL IDs, canonical identity/date, new evidence, reviewer, timestamp, and rationale authority".to_owned(),
+        ));
+    }
+
+    let mut output = league.clone();
+    let mut batches = Vec::new();
+    let mut skipped_teams = Vec::new();
+    let mut applied_decisions = 0usize;
+    for crosswalk in &mut output.crosswalks {
+        let mut decisions = Vec::new();
+        for row in crosswalk
+            .rows
+            .iter()
+            .filter(|row| row.nhl_player_id == Some(proposed_nhl_player_id))
+        {
+            let proposed_date = row
+                .nhl_birth_date
+                .as_deref()
+                .and_then(|date| chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").ok())
+                .ok_or_else(|| AhlFeedError::Validation(format!(
+                    "collision proposal {proposed_nhl_player_id} lacks a valid retained NHL birth date"
+                )))?;
+            let ahl_date = chrono::NaiveDate::parse_from_str(&row.ahl_birth_date, "%Y-%m-%d")
+                .map_err(|_| {
+                    AhlFeedError::Validation(format!(
+                        "collision proposal {proposed_nhl_player_id} lacks a valid AHL birth date"
+                    ))
+                })?;
+            let delta_days = (ahl_date - proposed_date).num_days().unsigned_abs();
+            if row.review_status != AhlIdentityReviewStatus::Pending
+                || row.match_basis != AhlIdentityMatchBasis::BirthDateConflict
+                || delta_days < u64::from(AHL_IDENTITY_COLLISION_DELTA_DAYS)
+                || ahl_date != canonical_date
+                || normalized_surname(&row.ahl_display_name)
+                    != normalized_surname(&canonical_display_name)
+                || evidence_urls
+                    .iter()
+                    .all(|url| row.evidence_urls.contains(url))
+            {
+                return Err(AhlFeedError::Validation(format!(
+                    "collision proposal {proposed_nhl_player_id} is ineligible or lacks canonical equal-date/surname evidence"
+                )));
+            }
+            let mut retained_evidence = row.evidence_urls.iter().cloned().collect::<BTreeSet<_>>();
+            retained_evidence.extend(evidence_urls.iter().cloned());
+            decisions.push(AhlIdentityReviewDecision {
+                provider_player_id: row.provider_player_id.clone(),
+                action: AhlIdentityReviewAction::SetIdentity,
+                nhl_player_id: Some(canonical_nhl_player_id),
+                nhl_display_name: Some(canonical_display_name.clone()),
+                nhl_birth_date: Some(canonical_birth_date.clone()),
+                evidence_urls: retained_evidence.into_iter().collect(),
+                note: format!(
+                    "Replaced collided NHL proposal `{}` ({}, {}) with canonical NHL `{}` ({}, {}) for AHL `{}` ({}, {}-day displaced-date delta). Evidence-backed collision rationale: {}",
+                    row.nhl_display_name.as_deref().unwrap_or("unknown"),
+                    proposed_nhl_player_id,
+                    row.nhl_birth_date.as_deref().unwrap_or("unknown"),
+                    canonical_display_name,
+                    canonical_nhl_player_id,
+                    canonical_birth_date,
+                    row.ahl_display_name,
+                    row.provider_player_id,
+                    delta_days,
+                    note.trim()
+                ),
+            });
+        }
+        if decisions.is_empty() {
+            skipped_teams.push(crosswalk.ahl_team.clone());
+            continue;
+        }
+        let batch = AhlIdentityReviewDecisions {
+            schema: AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA.to_owned(),
+            season: crosswalk.season,
+            provider: crosswalk.provider.clone(),
+            ahl_team: crosswalk.ahl_team.clone(),
+            roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+            draft: false,
+            reviewer: Some(reviewer.clone()),
+            reviewed_at: Some(reviewed_at.clone()),
+            decisions,
+        };
+        applied_decisions += batch.decisions.len();
+        *crosswalk = apply_ahl_identity_review_decisions(crosswalk, &batch)?;
+        batches.push(batch);
+    }
+    if applied_decisions == 0 {
+        return Err(AhlFeedError::Validation(format!(
+            "league collision remap found no eligible proposal for NHL player {proposed_nhl_player_id}"
+        )));
+    }
+    let eligible_teams = batches.len();
+    output.disclosures.push(format!(
+        "Applied collision remap from NHL {} to NHL {}: {} decision(s) across {} eligible team(s) by {} at {}; {} team(s) had no selected collision row.",
+        proposed_nhl_player_id,
+        canonical_nhl_player_id,
+        applied_decisions,
+        eligible_teams,
+        reviewer,
+        reviewed_at,
+        skipped_teams.len()
+    ));
+    Ok((output, AhlIdentityLeagueReviewDecisionsView {
+        schema: AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA.to_owned(),
+        season: league.season,
+        provider: league.provider.clone(),
+        roster_fetched_at: league.roster_fetched_at.clone(),
+        kind: AhlIdentityLeagueRoutineReviewKind::CollisionRemaps,
+        reviewer,
+        reviewed_at,
+        eligible_teams,
+        skipped_teams,
+        applied_decisions,
+        batches,
+        disclosures: vec![
+            "A collision remap changes only the NHL identity mapping; it never rejects or removes the AHL player.".to_owned(),
+            "The displaced proposal, both source dates, threshold delta, canonical identity, and unioned evidence remain in each decision audit note.".to_owned(),
+        ],
+    }))
 }
 
 /// Build an applicable rejection batch for explicitly selected pending rows.
@@ -4486,6 +4661,55 @@ mod tests {
             "League Conflict Reviewer",
             "2026-07-26T20:05:00Z",
             "No matching proposal should fail atomically.",
+        )
+        .is_err());
+        assert_eq!(
+            league.crosswalks[0].rows[0].review_status,
+            AhlIdentityReviewStatus::Pending
+        );
+    }
+
+    #[test]
+    fn league_collision_remap_replaces_mapping_without_rejecting_ahl_player() {
+        let snapshot = identity_snapshot();
+        let mut catalog = identity_catalog();
+        catalog.candidates[0].birth_date = Some("1991-02-18".to_owned());
+        let league = build_ahl_identity_league_crosswalk(&snapshot, &catalog).unwrap();
+        let evidence = vec!["https://api-web.nhle.com/v1/player/8489998/landing".to_owned()];
+        let (reviewed, audit) = apply_ahl_identity_league_collision_remap(
+            &league,
+            8_480_001,
+            8_489_998,
+            "A. Thompson",
+            "2002-02-18",
+            &evidence,
+            "Collision Reviewer",
+            "2026-07-26T21:00:00Z",
+            "Official landing evidence identifies the younger same-surname player.",
+        )
+        .unwrap();
+        let row = &reviewed.crosswalks[0].rows[0];
+        assert_eq!(
+            audit.kind,
+            AhlIdentityLeagueRoutineReviewKind::CollisionRemaps
+        );
+        assert_eq!(audit.applied_decisions, 1);
+        assert_eq!(row.review_status, AhlIdentityReviewStatus::Reviewed);
+        assert_eq!(row.nhl_player_id, Some(8_489_998));
+        assert_eq!(row.nhl_birth_date.as_deref(), Some("2002-02-18"));
+        assert!(row.note.contains("Replaced collided NHL proposal"));
+        assert!(audit.disclosures[0].contains("never rejects"));
+
+        assert!(apply_ahl_identity_league_collision_remap(
+            &league,
+            8_480_001,
+            8_489_998,
+            "Different Surname",
+            "2002-02-18",
+            &evidence,
+            "Collision Reviewer",
+            "2026-07-26T21:00:00Z",
+            "A mismatched surname must fail atomically.",
         )
         .is_err());
         assert_eq!(

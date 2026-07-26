@@ -1025,6 +1025,7 @@ icelines icecast affiliate-review-exact-league --league-crosswalk ahl-league-ide
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer "alias-pilot" --reviewed-at 2026-07-25T13:00:00Z --decisions-out hartford-alias-decisions.json --json --out hartford-alias-reviewed.json
 icelines icecast affiliate-review-aliases-league --league-crosswalk ahl-league-exact-reviewed.json --reviewer "league-alias-pilot" --reviewed-at 2026-07-25T13:30:00Z --decisions-out ahl-league-alias-decisions.json --json --out ahl-league-alias-reviewed.json
 icelines icecast affiliate-review-conflicts-league --league-crosswalk ahl-league-alias-reviewed.json --nhl-player-id 8482739 --evidence-url https://theahl.com/stats/player/9166 --evidence-url https://www.nhl.com/flyers/news/flyers-acquire-brett-harrison-jackson-edward-from-boston-in-exchange-for-alexis-gendron-massimo-rizzo --reviewer "league-conflict-pilot" --reviewed-at 2026-07-26T20:10:00Z --note "official NHL club transaction evidence controls the canonical NHL birth date while the AHL provider date remains retained" --decisions-out ahl-league-conflict-decisions.json --json --out ahl-league-conflict-reviewed.json
+icelines icecast affiliate-review-collision-league --league-crosswalk ahl-league-conflict-reviewed.json --proposed-nhl-player-id 8475366 --canonical-nhl-player-id 8484302 --canonical-name "Matt Brown" --canonical-birth-date 1999-08-09 --evidence-url https://api-web.nhle.com/v1/player/8484302/landing --evidence-url https://www.phantomshockey.com/wp-content/uploads/2023/10/2023-Phantoms-Training-Camp-Roster.pdf --reviewer "league-collision-pilot" --reviewed-at 2026-07-26T21:10:00Z --note "official records identify the younger same-name player" --decisions-out ahl-league-collision-decisions.json --json --out ahl-league-collision-reviewed.json
 icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
 icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
 icelines icecast affiliate-review-league --league-crosswalk ahl-2023-reviewed.json --league-crosswalk ahl-2024-reviewed.json --league-crosswalk ahl-2025-reviewed.json --json --out ahl-three-season-identity-review.json
@@ -1217,6 +1218,15 @@ evidence, reviewer, timestamp, and rationale; emits explicit `set_identity`
 decisions; unions retained and new evidence; and records both conflicting dates
 in every decision note. Every requested NHL ID must be eligible or the atomic
 league transformation fails.
+`icecast affiliate-review-collision-league` is the separate correction lane for
+the exception board's `investigate_identity_collision` action. It selects the
+displaced proposal ID and an explicit canonical identity, then remaps every
+eligible league appearance atomically. The displaced date must differ from the
+AHL date by at least 1,460 days; the canonical date must equal the AHL date;
+the surnames must agree; and new absolute evidence, reviewer, timestamp, and
+rationale are mandatory. Its audit retains the displaced ID/date and evidence
+alongside the canonical mapping. It changes only the NHL mapping and never
+rejects or removes the AHL player.
 `icecast affiliate-review-reject` closes only
 selected pending NHL identity mappings and requires repeatable provider IDs,
 reviewer, timestamp, and an evidence-backed rationale. It does not assert that

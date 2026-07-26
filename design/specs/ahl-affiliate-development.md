@@ -178,12 +178,21 @@ operation fails without returning a partially reviewed envelope.
 Generic `accept_proposal` decisions cannot apply birth-date conflicts, even if
 an inspection draft is manually finalized.
 
-The league exact, alias, and targeted conflict commands apply atomically to the
+The league exact, alias, targeted conflict, and collision-remap commands apply atomically to the
 league acquisition envelope. Their `ahl_identity_league_review_decisions.v1`
 audit retains the original team-bound decision batches, reviewer, timestamp,
 eligible-team count, skipped teams, and total applied decisions. A bad child
 fails the whole transformation; a team with no eligible rows is a recorded
 skip rather than an error.
+
+Collision remediation is distinct from accepting a disputed source date or
+rejecting an AHL person. `affiliate-review-collision-league` replaces one
+same-name NHL proposal across all affected team-season rows only when the
+displaced proposal is at least 1,460 days from the AHL birth date, the supplied
+canonical identity has the same surname and exact AHL birth date, and novel
+absolute evidence plus reviewer authority are present. Every decision retains
+the displaced identity, both dates, date delta, canonical identity, and unioned
+evidence. A validation failure leaves the league envelope unchanged.
 
 `affiliate-review-league` owns the cross-team expansion view. Its
 `ahl_identity_league_review.v1` contract aggregates snapshot-bound crosswalks,

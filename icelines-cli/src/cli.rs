@@ -1325,6 +1325,37 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Replace a probable same-name collision with the sourced canonical NHL identity.
+    #[command(name = "affiliate-review-collision-league")]
+    AffiliateReviewCollisionLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Incorrect NHL proposal selected by the exception board.
+        #[arg(long, value_name = "ID")]
+        proposed_nhl_player_id: u32,
+        #[arg(long, value_name = "ID")]
+        canonical_nhl_player_id: u32,
+        #[arg(long)]
+        canonical_name: String,
+        #[arg(long)]
+        canonical_birth_date: String,
+        /// Additional absolute source URL supporting the remap; repeat as needed.
+        #[arg(long = "evidence-url", value_name = "URL", required = true)]
+        evidence_urls: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Reject selected pending NHL identity mappings with retained review authority.
     #[command(name = "affiliate-review-reject")]
     AffiliateReviewReject {
@@ -3010,6 +3041,46 @@ mod tui_surface_tests {
                 }) if nhl_player_id == [8_482_739]
                     && evidence_urls.len() == 2
                     && reviewer == "league-conflict-pilot"
+            ));
+
+            let collision_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-collision-league",
+                "--league-crosswalk",
+                "league-conflict-reviewed.json",
+                "--proposed-nhl-player-id",
+                "8475366",
+                "--canonical-nhl-player-id",
+                "8484302",
+                "--canonical-name",
+                "Matt Brown",
+                "--canonical-birth-date",
+                "1999-08-09",
+                "--evidence-url",
+                "https://api-web.nhle.com/v1/player/8484302/landing",
+                "--reviewer",
+                "league-collision-pilot",
+                "--reviewed-at",
+                "2026-07-26T21:10:00Z",
+                "--note",
+                "official landing record identifies the younger same-name player",
+                "--decisions-out",
+                "league-collision-decisions.json",
+                "--json",
+                "--out",
+                "league-collision-reviewed.json",
+            ])
+            .expect("collision league affiliate identity review should parse");
+            assert!(matches!(
+                collision_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewCollisionLeague {
+                    proposed_nhl_player_id: 8_475_366,
+                    canonical_nhl_player_id: 8_484_302,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "league-collision-pilot"
             ));
 
             let reject = Cli::try_parse_from([
