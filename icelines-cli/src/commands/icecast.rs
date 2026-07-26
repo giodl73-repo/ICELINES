@@ -10,8 +10,8 @@ use icelines_core::{
     build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
     build_line_combination_forecast, build_organization_lineup_forecast,
-    build_prospect_development_study, build_prospect_discovery_board, build_season_simulation_card,
-    build_team_game_forecast, build_team_game_forecast_validation,
+    build_prospect_development_study, build_prospect_discovery_board, build_prospect_program_board,
+    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -30,7 +30,8 @@ use icelines_core::{
     OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
     OrganizationUnitKind, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
     ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView,
-    ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
+    ProspectProgramBoardConfig, ProspectProgramBoardView, ScenarioScopeView,
+    SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
     TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
     TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
     TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
@@ -91,7 +92,7 @@ use icelines_fetch::{
     },
     stats_loader::load_into_repo,
     NhlApiClient, OfficialShiftChartRow, ProspectLeagueContext, ProspectLeagueDiscoveryView,
-    ScenarioRegistryStore, ShiftOverlapReport,
+    ScenarioRegistryStore, ShiftOverlapReport, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -4203,6 +4204,54 @@ pub fn run_prospect_league(
     Ok(())
 }
 
+pub fn run_prospect_program(
+    league_discovery_paths: Vec<PathBuf>,
+    study_paths: Vec<PathBuf>,
+    prior_board_path: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    if league_discovery_paths.is_empty() && study_paths.is_empty() {
+        bail!("prospect program requires at least one --league-discovery or --study artifact");
+    }
+    let mut studies = Vec::new();
+    for path in league_discovery_paths {
+        let discovery: ProspectLeagueDiscoveryView =
+            read_icecast_json(&path, "prospect league discovery")?;
+        if discovery.schema != PROSPECT_LEAGUE_DISCOVERY_SCHEMA {
+            bail!(
+                "invalid prospect league discovery schema in {}",
+                path.display()
+            );
+        }
+        studies.extend(discovery.studies);
+    }
+    for path in study_paths {
+        studies.push(read_icecast_json(&path, "prospect development study")?);
+    }
+    let prior = prior_board_path
+        .as_deref()
+        .map(|path| read_icecast_json(path, "prior prospect program board"))
+        .transpose()?;
+    let view = build_prospect_program_board(
+        studies,
+        prior.as_ref(),
+        ProspectProgramBoardConfig::default(),
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_program(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect program board")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_prospect_board(
     study_paths: Vec<PathBuf>,
     json: bool,
@@ -4676,6 +4725,83 @@ fn render_prospect_league(view: &ProspectLeagueDiscoveryView) -> String {
         }
     }
     let _ = writeln!(out, "\nADAPTER DISCLOSURES");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
+    }
+    out
+}
+
+fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "THE SYSTEM — PROSPECT PROGRAMS");
+    let _ = writeln!(
+        out,
+        "{} scope ({}) · season {} · {} organizations · {} studies",
+        view.scope,
+        view.source_leagues.join(", "),
+        view.as_of_season,
+        view.organizations,
+        view.studies
+    );
+    for (heading, rank_of, score_of, rank_delta_of, score_delta_of) in [
+        (
+            "THE PIPELINE — COMBINED",
+            (|row: &icelines_core::ProspectProgramOrganizationView| row.pipeline_rank)
+                as fn(&icelines_core::ProspectProgramOrganizationView) -> usize,
+            (|row: &icelines_core::ProspectProgramOrganizationView| row.pipeline_score)
+                as fn(&icelines_core::ProspectProgramOrganizationView) -> f64,
+            (|row: &icelines_core::ProspectProgramOrganizationView| row.pipeline_rank_delta)
+                as fn(&icelines_core::ProspectProgramOrganizationView) -> Option<i32>,
+            (|row: &icelines_core::ProspectProgramOrganizationView| row.pipeline_score_delta)
+                as fn(&icelines_core::ProspectProgramOrganizationView) -> Option<f64>,
+        ),
+        (
+            "THE DEPTH CHART — POOL",
+            |row| row.pool_rank,
+            |row| row.pool_score,
+            |row| row.pool_rank_delta,
+            |row| row.pool_score_delta,
+        ),
+        (
+            "THE FACTORY — DEVELOPMENT",
+            |row| row.development_rank,
+            |row| row.development_score,
+            |row| row.development_rank_delta,
+            |row| row.development_score_delta,
+        ),
+    ] {
+        let _ = writeln!(out, "\n{heading}");
+        let mut rows = view.programs.iter().collect::<Vec<_>>();
+        rows.sort_by_key(|row| rank_of(row));
+        for row in rows {
+            let rank_delta = rank_delta_of(row)
+                .map(|value| format!("{value:+}"))
+                .unwrap_or_else(|| "new".to_owned());
+            let score_delta = score_delta_of(row)
+                .map(|value| format!("{value:+.2}"))
+                .unwrap_or_else(|| "new".to_owned());
+            let leaders = row
+                .top_prospects
+                .iter()
+                .take(3)
+                .map(|prospect| prospect.player.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
+            let _ = writeln!(
+                out,
+                "{}. {} · {:.2} · rank Δ {} · score Δ {} · {} prospects · confidence {:.1}\n   {}",
+                rank_of(row),
+                row.organization,
+                score_of(row),
+                rank_delta,
+                score_delta,
+                row.prospect_count,
+                row.components.confidence,
+                leaders
+            );
+        }
+    }
+    let _ = writeln!(out, "\nDISCLOSURES");
     for disclosure in &view.disclosures {
         let _ = writeln!(out, "- {disclosure}");
     }

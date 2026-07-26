@@ -2,7 +2,8 @@
 
 **Status:** Implemented foundation
 **Schemas:** `prospect_development_study.v1`, `prospect_discovery_board.v1`,
-`prospect_league_context.v1`, `prospect_league_discovery.v1`
+`prospect_league_context.v1`, `prospect_league_discovery.v1`,
+`prospect_program_board.v1`
 
 ## Purpose
 
@@ -28,6 +29,9 @@ icelines icecast prospect-league \
   --crosswalk reviewed-2025-cv.json \
   --context examples/icecast-prospect-league-context.json \
   --json --out league-discovery.json
+icelines icecast prospect-program \
+  --league-discovery league-discovery.json \
+  --json --out prospect-programs.json
 ```
 
 ## Contract
@@ -89,6 +93,30 @@ The separate context file owns current organization, position, age, NHL games,
 opportunity, availability, attention estimate/basis, and supporting evidence.
 Those fields are deliberately not guessed from AHL production. A full-league
 run repeats `--crosswalk` for every reviewed affiliate-season document.
+
+## Prospect program board
+
+`ProspectProgramBoardView` aggregates canonical prospect studies by
+organization into three independent frozen ranks:
+
+- **Pool / The Depth Chart** combines the top-three observed signal, quality
+  depth, and positional balance;
+- **Development / The Factory** combines same-league trajectory evidence with
+  workload confidence and observed program breadth; and
+- **Pipeline / The Pipeline** combines Pool, Development, documented
+  readiness, and confidence.
+
+The observed player signal uses production, trajectory, and documented
+opportunity components. It deliberately excludes hidden-value and attention-gap
+scores because underrecognition is not prospect talent or ceiling. Missing
+depth lowers depth and confidence instead of being imputed. The optional prior
+board supplies rank and score deltas only; positive delta means improvement.
+
+The initial board scope is explicitly `ahl_observed`. It accepts one or more
+`prospect_league_discovery.v1` artifacts plus optional canonical studies from
+future adapters. It is not an all-system NHL ranking until goalie, CHL, NCAA,
+European, junior, and NHL-rostered prospect adapters provide equivalent typed
+facts. This limitation is part of the output contract, not renderer prose.
 
 ## Guardrails
 

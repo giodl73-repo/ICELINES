@@ -140,14 +140,17 @@ pub use view_model::organization_lineup::{
     OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
 };
 pub use view_model::prospect_study::{
-    build_prospect_development_study, build_prospect_discovery_board, ProspectAvailabilityStatus,
-    ProspectDevelopmentSeasonInput, ProspectDevelopmentSeasonView, ProspectDevelopmentStudyConfig,
-    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardLane,
-    ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectDiscoveryLensDirection,
-    ProspectDiscoveryLensKind, ProspectDiscoveryLensView, ProspectHiddenValueClass,
-    ProspectMarketPosition, ProspectOpportunityStatus, ProspectSignalComponentView,
-    ProspectStudyEvidenceInput, ProspectTrajectory, PROSPECT_DEVELOPMENT_STUDY_SCHEMA,
-    PROSPECT_DISCOVERY_BOARD_SCHEMA,
+    build_prospect_development_study, build_prospect_discovery_board, build_prospect_program_board,
+    ProspectAvailabilityStatus, ProspectDevelopmentSeasonInput, ProspectDevelopmentSeasonView,
+    ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
+    ProspectDiscoveryBoardLane, ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView,
+    ProspectDiscoveryLensDirection, ProspectDiscoveryLensKind, ProspectDiscoveryLensView,
+    ProspectHiddenValueClass, ProspectMarketPosition, ProspectOpportunityStatus,
+    ProspectProgramBoardConfig, ProspectProgramBoardView, ProspectProgramComponentsView,
+    ProspectProgramOrganizationView, ProspectProgramPositionCountsView,
+    ProspectProgramTopProspectView, ProspectSignalComponentView, ProspectStudyEvidenceInput,
+    ProspectTrajectory, PROSPECT_DEVELOPMENT_STUDY_SCHEMA, PROSPECT_DISCOVERY_BOARD_SCHEMA,
+    PROSPECT_PROGRAM_BOARD_SCHEMA,
 };
 pub use view_model::scenario_registry::{
     scenario_content_sha256, validate_scenario_id, ScenarioRegistryContractError,

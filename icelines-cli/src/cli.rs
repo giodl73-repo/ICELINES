@@ -1806,6 +1806,23 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Rank organizations by observed prospect pool, development, and pipeline signals.
+    #[command(name = "prospect-program")]
+    ProspectProgram {
+        /// Repeat for each `prospect_league_discovery.v1` artifact.
+        #[arg(long = "league-discovery", value_name = "PATH")]
+        league_discoveries: Vec<PathBuf>,
+        /// Add a canonical `prospect_development_study.v1` from another adapter.
+        #[arg(long = "study", value_name = "PATH")]
+        studies: Vec<PathBuf>,
+        /// Optional prior `prospect_program_board.v1` used only for rank deltas.
+        #[arg(long, value_name = "PATH")]
+        prior_board: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Rank validated prospect studies into Hidden Gems, Buyer Beware, and Watch.
     #[command(name = "prospect-board")]
     ProspectBoard {
@@ -3579,6 +3596,40 @@ mod tui_surface_tests {
                     && crosswalks.len() == 2
                     && context == PathBuf::from("prospects.json")
                     && out == PathBuf::from("league-discovery.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_program_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-program",
+                "--league-discovery",
+                "league-discovery.json",
+                "--study",
+                "college-study.json",
+                "--prior-board",
+                "prior-program-board.json",
+                "--json",
+                "--out",
+                "program-board.json",
+            ])
+            .expect("IceCast prospect program command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectProgram {
+                    league_discoveries,
+                    studies,
+                    prior_board: Some(prior),
+                    json: true,
+                    out: Some(out),
+                }) if league_discoveries == vec![PathBuf::from("league-discovery.json")]
+                    && studies == vec![PathBuf::from("college-study.json")]
+                    && prior == PathBuf::from("prior-program-board.json")
+                    && out == PathBuf::from("program-board.json")
             ));
         });
     }

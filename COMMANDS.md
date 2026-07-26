@@ -1045,6 +1045,8 @@ icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json --json --out firkus-study.json
 icelines icecast prospect-league --snapshot ahl-2024-25.json --snapshot ahl-2025-26.json --crosswalk reviewed-2024-cv.json --crosswalk reviewed-2025-cv.json --context examples/icecast-prospect-league-context.json --json --out league-discovery.json
+icelines icecast prospect-program --league-discovery league-discovery.json --json --out prospect-programs.json
+icelines icecast prospect-program --league-discovery league-discovery.json --study college-prospect-study.json --prior-board prior-prospect-programs.json --out prospect-programs.txt
 icelines icecast prospect-board --study firkus-study.json
 icelines icecast prospect-board --study firkus-study.json --study another-study.json --json --out prospect-board.json
 icelines icecast organization --input organization.json --json --out the-system.json

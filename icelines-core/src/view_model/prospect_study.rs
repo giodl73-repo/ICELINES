@@ -1,9 +1,10 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
 pub const PROSPECT_DEVELOPMENT_STUDY_SCHEMA: &str = "prospect_development_study.v1";
 pub const PROSPECT_DISCOVERY_BOARD_SCHEMA: &str = "prospect_discovery_board.v1";
+pub const PROSPECT_PROGRAM_BOARD_SCHEMA: &str = "prospect_program_board.v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -229,6 +230,409 @@ pub struct ProspectDiscoveryBoardView {
     pub buyer_beware: Vec<ProspectDiscoveryBoardRow>,
     pub watch: Vec<ProspectDiscoveryBoardRow>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramBoardConfig {
+    pub pool_weight: f64,
+    pub development_weight: f64,
+    pub readiness_weight: f64,
+    pub confidence_weight: f64,
+    pub expected_depth: usize,
+}
+
+impl Default for ProspectProgramBoardConfig {
+    fn default() -> Self {
+        Self {
+            pool_weight: 0.45,
+            development_weight: 0.30,
+            readiness_weight: 0.15,
+            confidence_weight: 0.10,
+            expected_depth: 10,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramTopProspectView {
+    pub player_id: u32,
+    pub player: String,
+    pub position: String,
+    pub observed_signal_score: f64,
+    pub trajectory: ProspectTrajectory,
+    pub opportunity: ProspectOpportunityStatus,
+    pub workload_confidence: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramPositionCountsView {
+    pub forwards: usize,
+    pub defensemen: usize,
+    pub goalies: usize,
+    pub other: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramComponentsView {
+    pub elite_signal: f64,
+    pub quality_depth: f64,
+    pub development: f64,
+    pub readiness: f64,
+    pub positional_balance: f64,
+    pub confidence: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramOrganizationView {
+    pub organization: String,
+    pub prospect_count: usize,
+    pub positions: ProspectProgramPositionCountsView,
+    pub components: ProspectProgramComponentsView,
+    pub pool_score: f64,
+    pub development_score: f64,
+    pub pipeline_score: f64,
+    pub pool_rank: usize,
+    pub development_rank: usize,
+    pub pipeline_rank: usize,
+    /// Positive means the organization improved relative to the prior board.
+    pub pool_rank_delta: Option<i32>,
+    pub development_rank_delta: Option<i32>,
+    pub pipeline_rank_delta: Option<i32>,
+    pub pool_score_delta: Option<f64>,
+    pub development_score_delta: Option<f64>,
+    pub pipeline_score_delta: Option<f64>,
+    pub top_prospects: Vec<ProspectProgramTopProspectView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramBoardView {
+    pub schema: String,
+    pub scope: String,
+    pub source_leagues: Vec<String>,
+    pub as_of_season: u32,
+    pub organizations: usize,
+    pub studies: usize,
+    /// Sorted by `pipeline_rank`; consumers may independently sort on either
+    /// other frozen rank without recomputing scores.
+    pub programs: Vec<ProspectProgramOrganizationView>,
+    pub disclosures: Vec<String>,
+}
+
+/// Aggregate canonical prospect studies into organization-level Pool,
+/// Development, and Pipeline rankings. Hidden-value/attention scores are
+/// deliberately excluded because underrecognition is not prospect quality.
+pub fn build_prospect_program_board(
+    studies: Vec<ProspectDevelopmentStudyView>,
+    prior: Option<&ProspectProgramBoardView>,
+    config: ProspectProgramBoardConfig,
+) -> Result<ProspectProgramBoardView, String> {
+    let weight_sum = config.pool_weight
+        + config.development_weight
+        + config.readiness_weight
+        + config.confidence_weight;
+    if studies.is_empty()
+        || config.expected_depth == 0
+        || [
+            config.pool_weight,
+            config.development_weight,
+            config.readiness_weight,
+            config.confidence_weight,
+        ]
+        .iter()
+        .any(|weight| !weight.is_finite() || *weight < 0.0)
+        || (weight_sum - 1.0).abs() > 1e-9
+    {
+        return Err("invalid prospect program board input or configuration".to_owned());
+    }
+    if let Some(board) = prior {
+        let mut organizations = BTreeSet::new();
+        if board.schema != PROSPECT_PROGRAM_BOARD_SCHEMA
+            || board.organizations != board.programs.len()
+            || board.programs.iter().any(|row| {
+                row.organization.trim().is_empty()
+                    || !organizations.insert(row.organization.as_str())
+                    || row.pool_rank == 0
+                    || row.development_rank == 0
+                    || row.pipeline_rank == 0
+            })
+        {
+            return Err("invalid prior prospect program board".to_owned());
+        }
+    }
+
+    let mut player_ids = BTreeSet::new();
+    let mut source_leagues = BTreeSet::new();
+    let mut by_organization = BTreeMap::<String, Vec<ProspectDevelopmentStudyView>>::new();
+    let mut as_of_season = 0_u32;
+    for study in studies {
+        if study.schema != PROSPECT_DEVELOPMENT_STUDY_SCHEMA
+            || study.player_id == 0
+            || !player_ids.insert(study.player_id)
+            || study.player.trim().is_empty()
+            || study.organization.trim().is_empty()
+            || study.position.trim().is_empty()
+            || !study.workload_confidence.is_finite()
+            || !(0.0..=1.0).contains(&study.workload_confidence)
+            || study.seasons.is_empty()
+            || study.seasons.iter().any(|season| season.season == 0)
+        {
+            return Err("invalid or duplicate prospect study supplied to program board".to_owned());
+        }
+        for required in ["production", "trajectory", "opportunity"] {
+            if study
+                .components
+                .iter()
+                .filter(|row| row.id == required)
+                .count()
+                != 1
+            {
+                return Err(format!(
+                    "prospect {} lacks unique {required} program component",
+                    study.player_id
+                ));
+            }
+        }
+        if study
+            .components
+            .iter()
+            .any(|row| !row.score.is_finite() || !(0.0..=1.0).contains(&row.score))
+        {
+            return Err("prospect program component score is outside 0..1".to_owned());
+        }
+        as_of_season = as_of_season.max(
+            study
+                .seasons
+                .iter()
+                .map(|season| season.season)
+                .max()
+                .unwrap_or(0),
+        );
+        source_leagues.extend(study.seasons.iter().map(|season| season.league.clone()));
+        by_organization
+            .entry(study.organization.clone())
+            .or_default()
+            .push(study);
+    }
+
+    let mut programs = Vec::with_capacity(by_organization.len());
+    for (organization, organization_studies) in by_organization {
+        let mut observed = organization_studies
+            .iter()
+            .map(|study| {
+                let production = prospect_component_score(study, "production");
+                let trajectory = prospect_component_score(study, "trajectory");
+                let opportunity = prospect_component_score(study, "opportunity");
+                let score = 100.0 * (0.50 * production + 0.25 * trajectory + 0.25 * opportunity);
+                (study, score, trajectory, opportunity)
+            })
+            .collect::<Vec<_>>();
+        observed.sort_by(|left, right| {
+            right
+                .1
+                .total_cmp(&left.1)
+                .then_with(|| left.0.player.cmp(&right.0.player))
+                .then_with(|| left.0.player_id.cmp(&right.0.player_id))
+        });
+
+        let elite_weights = [0.50, 0.30, 0.20];
+        let elite_signal = elite_weights
+            .iter()
+            .enumerate()
+            .map(|(index, weight)| observed.get(index).map_or(0.0, |row| row.1 * weight))
+            .sum::<f64>();
+        let quality_depth = observed
+            .iter()
+            .take(config.expected_depth)
+            .map(|row| row.1)
+            .sum::<f64>()
+            / config.expected_depth as f64;
+        let development =
+            observed.iter().map(|row| row.2 * 100.0).sum::<f64>() / observed.len() as f64;
+        let readiness = observed
+            .iter()
+            .take(5)
+            .map(|row| row.3 * 100.0)
+            .sum::<f64>()
+            / 5.0;
+        let confidence_mean = observed
+            .iter()
+            .map(|row| row.0.workload_confidence)
+            .sum::<f64>()
+            / observed.len() as f64;
+        let breadth = (observed.len() as f64 / config.expected_depth as f64).min(1.0);
+        let confidence = confidence_mean * breadth * 100.0;
+
+        let mut positions = ProspectProgramPositionCountsView {
+            forwards: 0,
+            defensemen: 0,
+            goalies: 0,
+            other: 0,
+        };
+        for study in &organization_studies {
+            match prospect_position_group(&study.position) {
+                "F" => positions.forwards += 1,
+                "D" => positions.defensemen += 1,
+                "G" => positions.goalies += 1,
+                _ => positions.other += 1,
+            }
+        }
+        let positional_balance = 100.0
+            * (0.50 * (positions.forwards as f64 / 3.0).min(1.0)
+                + 0.35 * (positions.defensemen as f64 / 2.0).min(1.0)
+                + 0.15 * (positions.goalies as f64).min(1.0));
+        let pool_score = 0.55 * elite_signal + 0.30 * quality_depth + 0.15 * positional_balance;
+        let development_score = 0.80 * development * breadth + 0.20 * confidence;
+        let pipeline_score = config.pool_weight * pool_score
+            + config.development_weight * development_score
+            + config.readiness_weight * readiness
+            + config.confidence_weight * confidence;
+        let top_prospects = observed
+            .iter()
+            .take(5)
+            .map(|row| ProspectProgramTopProspectView {
+                player_id: row.0.player_id,
+                player: row.0.player.clone(),
+                position: row.0.position.clone(),
+                observed_signal_score: round_program_score(row.1),
+                trajectory: row.0.trajectory,
+                opportunity: row.0.opportunity,
+                workload_confidence: row.0.workload_confidence,
+            })
+            .collect();
+        programs.push(ProspectProgramOrganizationView {
+            organization,
+            prospect_count: organization_studies.len(),
+            positions,
+            components: ProspectProgramComponentsView {
+                elite_signal: round_program_score(elite_signal),
+                quality_depth: round_program_score(quality_depth),
+                development: round_program_score(development),
+                readiness: round_program_score(readiness),
+                positional_balance: round_program_score(positional_balance),
+                confidence: round_program_score(confidence),
+            },
+            pool_score: round_program_score(pool_score),
+            development_score: round_program_score(development_score),
+            pipeline_score: round_program_score(pipeline_score),
+            pool_rank: 0,
+            development_rank: 0,
+            pipeline_rank: 0,
+            pool_rank_delta: None,
+            development_rank_delta: None,
+            pipeline_rank_delta: None,
+            pool_score_delta: None,
+            development_score_delta: None,
+            pipeline_score_delta: None,
+            top_prospects,
+        });
+    }
+
+    assign_program_rank(
+        &mut programs,
+        |row| row.pool_score,
+        |row, rank| row.pool_rank = rank,
+    );
+    assign_program_rank(
+        &mut programs,
+        |row| row.development_score,
+        |row, rank| row.development_rank = rank,
+    );
+    assign_program_rank(
+        &mut programs,
+        |row| row.pipeline_score,
+        |row, rank| row.pipeline_rank = rank,
+    );
+    if let Some(prior) = prior {
+        let prior_by_org = prior
+            .programs
+            .iter()
+            .map(|row| (row.organization.as_str(), row))
+            .collect::<BTreeMap<_, _>>();
+        for row in &mut programs {
+            if let Some(previous) = prior_by_org.get(row.organization.as_str()) {
+                row.pool_rank_delta = Some(previous.pool_rank as i32 - row.pool_rank as i32);
+                row.development_rank_delta =
+                    Some(previous.development_rank as i32 - row.development_rank as i32);
+                row.pipeline_rank_delta =
+                    Some(previous.pipeline_rank as i32 - row.pipeline_rank as i32);
+                row.pool_score_delta =
+                    Some(round_program_score(row.pool_score - previous.pool_score));
+                row.development_score_delta = Some(round_program_score(
+                    row.development_score - previous.development_score,
+                ));
+                row.pipeline_score_delta = Some(round_program_score(
+                    row.pipeline_score - previous.pipeline_score,
+                ));
+            }
+        }
+    }
+    programs.sort_by_key(|row| row.pipeline_rank);
+
+    let source_leagues = source_leagues.into_iter().collect::<Vec<_>>();
+    let scope = if source_leagues.len() == 1 && source_leagues[0].eq_ignore_ascii_case("AHL") {
+        "ahl_observed"
+    } else {
+        "multi_league_observed"
+    };
+    Ok(ProspectProgramBoardView {
+        schema: PROSPECT_PROGRAM_BOARD_SCHEMA.to_owned(),
+        scope: scope.to_owned(),
+        source_leagues,
+        as_of_season,
+        organizations: programs.len(),
+        studies: player_ids.len(),
+        programs,
+        disclosures: vec![
+            "This foundation ranks only supplied canonical prospect studies; its current league adapter is AHL-skater observed and is not yet a complete NHL organizational prospect-pool ranking.".to_owned(),
+            "Pool score combines top-three observed signal, quality depth, and positional balance. Development score combines same-league trajectory, workload confidence, and observed program breadth.".to_owned(),
+            "Pipeline score combines Pool, Development, documented readiness, and confidence. Missing depth lowers depth and confidence rather than being silently imputed.".to_owned(),
+            "Hidden-value and public-attention scores are excluded because underrecognition is not prospect quality or ceiling.".to_owned(),
+            "Goalies require a goalie-development adapter; CHL, NCAA, European, junior, and NHL-rostered prospects require their own typed fact adapters before this can claim all-system coverage.".to_owned(),
+            "Positive rank or score delta means improvement from the optional prior board; organizations absent from that board retain null deltas.".to_owned(),
+        ],
+    })
+}
+
+fn prospect_component_score(study: &ProspectDevelopmentStudyView, id: &str) -> f64 {
+    study
+        .components
+        .iter()
+        .find(|row| row.id == id)
+        .expect("validated prospect program component")
+        .score
+}
+
+fn prospect_position_group(position: &str) -> &'static str {
+    match position.trim().to_ascii_uppercase().as_str() {
+        "D" | "LD" | "RD" => "D",
+        "G" => "G",
+        "F" | "C" | "LW" | "RW" | "W" => "F",
+        _ => "OTHER",
+    }
+}
+
+fn round_program_score(value: f64) -> f64 {
+    (value * 100.0).round() / 100.0
+}
+
+fn assign_program_rank(
+    programs: &mut [ProspectProgramOrganizationView],
+    score: impl Fn(&ProspectProgramOrganizationView) -> f64,
+    assign: impl Fn(&mut ProspectProgramOrganizationView, usize),
+) {
+    let mut indices = (0..programs.len()).collect::<Vec<_>>();
+    indices.sort_by(|left, right| {
+        score(&programs[*right])
+            .total_cmp(&score(&programs[*left]))
+            .then_with(|| {
+                programs[*left]
+                    .organization
+                    .cmp(&programs[*right].organization)
+            })
+    });
+    for (offset, index) in indices.into_iter().enumerate() {
+        assign(&mut programs[index], offset + 1);
+    }
 }
 
 pub fn build_prospect_discovery_board(
@@ -654,6 +1058,105 @@ pub fn build_prospect_development_study(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn program_board_ranks_three_views_and_computes_prior_deltas() {
+        let prior = build_prospect_program_board(
+            vec![
+                program_study(1, "SEA", "RW", 8, 0.2),
+                program_study(2, "NYR", "D", 24, 0.2),
+            ],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let current = build_prospect_program_board(
+            vec![
+                program_study(1, "SEA", "RW", 26, 0.2),
+                program_study(2, "NYR", "D", 7, 0.2),
+            ],
+            Some(&prior),
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+
+        assert_eq!(current.schema, PROSPECT_PROGRAM_BOARD_SCHEMA);
+        assert_eq!(current.scope, "ahl_observed");
+        assert_eq!(current.organizations, 2);
+        assert_eq!(current.programs[0].organization, "SEA");
+        assert_eq!(current.programs[0].pipeline_rank, 1);
+        assert_eq!(current.programs[0].pipeline_rank_delta, Some(1));
+        assert_eq!(current.programs[1].pipeline_rank_delta, Some(-1));
+        assert!(current.programs[0].pipeline_score_delta.unwrap() > 0.0);
+        assert!(current.programs[1].pipeline_score_delta.unwrap() < 0.0);
+        assert!(current.programs[0].pool_score > current.programs[1].pool_score);
+        assert_eq!(current.programs[0].positions.forwards, 1);
+        assert_eq!(current.programs[1].positions.defensemen, 1);
+    }
+
+    #[test]
+    fn program_board_does_not_treat_attention_as_talent() {
+        let low_attention = program_study(10, "AAA", "C", 18, 0.1);
+        let high_attention = program_study(20, "BBB", "C", 18, 0.9);
+        assert_ne!(
+            low_attention.hidden_value_score,
+            high_attention.hidden_value_score
+        );
+        let board = build_prospect_program_board(
+            vec![low_attention, high_attention],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            board.programs[0].pipeline_score,
+            board.programs[1].pipeline_score
+        );
+        assert_eq!(board.programs[0].organization, "AAA");
+        assert!(board.disclosures.iter().any(|row| row.contains("excluded")));
+    }
+
+    fn program_study(
+        player_id: u32,
+        organization: &str,
+        position: &str,
+        latest_points: u32,
+        attention_score: f64,
+    ) -> ProspectDevelopmentStudyView {
+        build_prospect_development_study(
+            ProspectDevelopmentStudyInput {
+                player_id,
+                player: format!("Prospect {player_id}"),
+                organization: organization.to_owned(),
+                position: position.to_owned(),
+                age: 21,
+                nhl_games_played: 0,
+                seasons: vec![
+                    ProspectDevelopmentSeasonInput {
+                        season: 20242025,
+                        league: "AHL".to_owned(),
+                        games_played: 40,
+                        goals: 5,
+                        assists: 5,
+                    },
+                    ProspectDevelopmentSeasonInput {
+                        season: 20252026,
+                        league: "AHL".to_owned(),
+                        games_played: 40,
+                        goals: latest_points / 2,
+                        assists: latest_points - latest_points / 2,
+                    },
+                ],
+                opportunity: ProspectOpportunityStatus::RecallCandidate,
+                availability: ProspectAvailabilityStatus::Healthy,
+                attention_score,
+                attention_basis: "Test attention estimate.".to_owned(),
+                evidence: vec![],
+            },
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap()
+    }
 
     #[test]
     fn firkus_is_an_injury_obscured_riser_with_transparent_components() {
