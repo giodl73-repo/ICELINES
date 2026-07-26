@@ -547,6 +547,69 @@ pub struct AhlIdentityReviewDraftOptions {
     pub include_conflicts: bool,
 }
 
+/// Build an applicable review batch only for pending exact-name-and-birth-date
+/// proposals with retained absolute HTTP evidence. Every non-exact row remains
+/// untouched for manual inspection.
+pub fn build_ahl_exact_identity_review(
+    crosswalk: &AhlIdentityCrosswalkView,
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
+    validate_crosswalk_shape(crosswalk)?;
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    if reviewer.trim().is_empty() || chrono::DateTime::parse_from_rfc3339(&reviewed_at).is_err() {
+        return Err(AhlFeedError::Validation(
+            "exact identity review requires reviewer and RFC3339 timestamp authority".to_owned(),
+        ));
+    }
+    let mut decisions = Vec::new();
+    for row in crosswalk.rows.iter().filter(|row| {
+        row.review_status == AhlIdentityReviewStatus::Pending
+            && row.match_basis == AhlIdentityMatchBasis::ExactNameAndBirthDate
+    }) {
+        let nhl_name = row.nhl_display_name.as_deref().unwrap_or("");
+        if row.nhl_player_id.is_none()
+            || icelines_core::normalize_name(&row.ahl_display_name)
+                != icelines_core::normalize_name(nhl_name)
+            || row.ahl_birth_date.is_empty()
+            || row.nhl_birth_date.as_deref() != Some(row.ahl_birth_date.as_str())
+            || row.evidence_urls.is_empty()
+            || row.evidence_urls.iter().any(|url| !absolute_http_url(url))
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "exact identity {} lacks matching name, birth date, or retained evidence",
+                row.provider_player_id
+            )));
+        }
+        decisions.push(AhlIdentityReviewDecision {
+            provider_player_id: row.provider_player_id.clone(),
+            action: AhlIdentityReviewAction::AcceptProposal,
+            nhl_player_id: None,
+            nhl_display_name: None,
+            nhl_birth_date: None,
+            evidence_urls: Vec::new(),
+            note: "Confirmed exact normalized name, exact birth date, canonical NHL ID, and retained official identity evidence; non-exact rows were intentionally excluded from this batch.".to_owned(),
+        });
+    }
+    if decisions.is_empty() {
+        return Err(AhlFeedError::Validation(
+            "exact identity review contains no eligible pending proposals".to_owned(),
+        ));
+    }
+    Ok(AhlIdentityReviewDecisions {
+        schema: AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA.to_owned(),
+        season: crosswalk.season,
+        provider: crosswalk.provider.clone(),
+        ahl_team: crosswalk.ahl_team.clone(),
+        roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+        draft: false,
+        reviewer: Some(reviewer),
+        reviewed_at: Some(reviewed_at),
+        decisions,
+    })
+}
+
 /// Generate a deliberately non-applicable decision draft. Optional lanes are
 /// proposals only and retain their distinct review semantics.
 pub fn build_ahl_identity_review_draft_with_options(
@@ -2352,6 +2415,39 @@ mod tests {
         assert_eq!(reviewed.counts.reviewed, 1);
         validate_reviewed_ahl_identity_crosswalk(&snapshot, "Hartford Wolf Pack", &reviewed)
             .unwrap();
+    }
+
+    #[test]
+    fn exact_review_applies_only_verified_exact_rows() {
+        let snapshot = identity_snapshot();
+        let mut crosswalk =
+            build_ahl_identity_crosswalk(&snapshot, "Hartford Wolf Pack", &identity_catalog())
+                .unwrap();
+        let mut alias = crosswalk.rows[0].clone();
+        alias.provider_player_id = "alias-1".to_owned();
+        alias.ahl_display_name = "A. Thompson".to_owned();
+        alias.match_basis = AhlIdentityMatchBasis::SurnameAndBirthDate;
+        crosswalk.rows.push(alias);
+        crosswalk.counts.roster_players = 2;
+
+        let review = build_ahl_exact_identity_review(
+            &crosswalk,
+            "Exact Evidence Pilot",
+            "2026-07-25T12:00:00Z",
+        )
+        .unwrap();
+        assert!(!review.draft);
+        assert_eq!(review.decisions.len(), 1);
+        assert_eq!(review.decisions[0].provider_player_id, "10618");
+        let reviewed = apply_ahl_identity_review_decisions(&crosswalk, &review).unwrap();
+        assert_eq!(
+            reviewed.rows[0].review_status,
+            AhlIdentityReviewStatus::Reviewed
+        );
+        assert_eq!(
+            reviewed.rows[1].review_status,
+            AhlIdentityReviewStatus::Pending
+        );
     }
 
     #[test]

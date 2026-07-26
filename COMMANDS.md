@@ -1018,6 +1018,7 @@ icelines icecast affiliate --input affiliate-scenario.json --json --out affiliat
 icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "Hartford Wolf Pack" --candidates examples/icecast-league-candidate-overlay-2026-27.json --json --out hartford-identity-review.json
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
+icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer "identity-pilot" --reviewed-at 2026-07-25T12:00:00Z --decisions-out hartford-exact-decisions.json --json --out hartford-exact-reviewed.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --out hartford-review-with-aliases-draft.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --include-conflicts --out hartford-complete-proposals-draft.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json

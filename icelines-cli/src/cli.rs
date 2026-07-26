@@ -1193,6 +1193,27 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Accept only sourced exact-name-and-birth-date AHL identity proposals.
+    #[command(name = "affiliate-review-exact")]
+    AffiliateReviewExact {
+        /// Generated `ahl_identity_crosswalk.v1` proposal queue.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// Human or process authority recorded on every applied decision.
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        /// Optionally retain the applicable exact-only decision document.
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        /// Reviewed crosswalk output; stdout is used when omitted.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Inspect an existing AHL identity crosswalk without changing review state.
     #[command(name = "affiliate-review-show")]
     AffiliateReviewShow {
@@ -2642,6 +2663,32 @@ mod tui_surface_tests {
                     include_conflicts: true,
                     ..
                 })
+            ));
+
+            let exact = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-exact",
+                "--crosswalk",
+                "review.json",
+                "--reviewer",
+                "identity-pilot",
+                "--reviewed-at",
+                "2026-07-25T12:00:00Z",
+                "--decisions-out",
+                "exact-decisions.json",
+                "--json",
+                "--out",
+                "exact-reviewed.json",
+            ])
+            .expect("exact affiliate identity review should parse");
+            assert!(matches!(
+                exact.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewExact {
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "identity-pilot"
             ));
 
             let show = Cli::try_parse_from([

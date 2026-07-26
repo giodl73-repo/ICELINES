@@ -117,10 +117,19 @@ unchanged, and duplicate provider or resulting NHL identities fail closed.
 Applied rows preserve reviewer, timestamp, action, note, and conflicting source
 dates in the resulting crosswalk.
 
+`affiliate-review-exact` is the narrow bulk-review surface for an explicit
+reviewer. It creates an applicable, timestamp-bound decision batch only for
+pending `exact_name_and_birth_date` rows after rechecking normalized names,
+equal provider/NHL birth dates, canonical NHL IDs, and retained absolute source
+URLs. It then applies that batch through the same canonical decision function.
+Alias, conflict, ambiguous, unmatched, rejected, and already-reviewed rows are
+never included. The optional decision output preserves the exact applied
+authority for audit and replay.
+
 ## Data work remaining
 
-- populate reviewed team artifacts for official affiliate rosters as they are
-  published, beginning with Hartford and Coachella Valley;
+- complete the manual exception review after exact-only Hartford and Coachella
+  Valley historical pilot batches, then expand the same coverage league-wide;
 - add dated historical NHL/AHL affiliation catalogs rather than applying the
   current association map to old seasons;
 - build a sourced start-of-season professional-game ledger across NHL, AHL,

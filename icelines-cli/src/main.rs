@@ -1965,6 +1965,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             include_conflicts,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewExact {
+            crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_exact(
+            crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::AffiliateReviewShow {
             crosswalk,
             attention_only,

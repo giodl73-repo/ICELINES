@@ -49,14 +49,14 @@ use icelines_core::{
 use icelines_fetch::{
     ahl::{
         affiliate_projection_input_from_reviewed_crosswalk, apply_ahl_identity_review_decisions,
-        build_ahl_identity_crosswalk, build_ahl_identity_review_draft_with_options,
-        build_ahl_identity_review_inspection, enrich_official_nhl_landing_candidate,
-        merge_ahl_canonical_identity_catalogs, parse_official_nhl_search_candidates,
-        parse_official_nhl_search_candidates_by_surname, AhlCanonicalIdentityCandidate,
-        AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityInspectionScope,
-        AhlIdentityMatchBasis, AhlIdentityReviewDecisions, AhlIdentityReviewDraftOptions,
-        AhlIdentityReviewInspectionView, AhlIdentityReviewStatus, AhlProjectionPlayerFacts,
-        AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
+        build_ahl_exact_identity_review, build_ahl_identity_crosswalk,
+        build_ahl_identity_review_draft_with_options, build_ahl_identity_review_inspection,
+        enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
+        parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
+        AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
+        AhlIdentityInspectionScope, AhlIdentityMatchBasis, AhlIdentityReviewDecisions,
+        AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView, AhlIdentityReviewStatus,
+        AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
         AHL_IDENTITY_CROSSWALK_SCHEMA,
     },
     ahl_rollover::{
@@ -781,6 +781,48 @@ pub fn run_affiliate_review_draft(
     let output = format!("{}\n", serde_json::to_string_pretty(&draft)?);
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL identity review draft")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_review_exact(
+    crosswalk_path: PathBuf,
+    reviewer: String,
+    reviewed_at: String,
+    decisions_out: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "AHL identity crosswalk")?;
+    let decisions = build_ahl_exact_identity_review(&crosswalk, reviewer, reviewed_at)
+        .map_err(anyhow::Error::msg)?;
+    if let Some(path) = decisions_out.as_deref() {
+        let bytes = format!("{}\n", serde_json::to_string_pretty(&decisions)?);
+        write_icecast_file(
+            path,
+            bytes.as_bytes(),
+            "exact AHL identity review decisions",
+        )?;
+    }
+    let reviewed =
+        apply_ahl_identity_review_decisions(&crosswalk, &decisions).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&reviewed)?)
+    } else {
+        let inspection =
+            build_ahl_identity_review_inspection(&reviewed, AhlIdentityInspectionScope::All)
+                .map_err(anyhow::Error::msg)?;
+        render_affiliate_identities(&inspection)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "exact-reviewed AHL identity crosswalk",
+        )?;
     } else {
         print!("{output}");
     }
