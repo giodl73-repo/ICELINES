@@ -1025,6 +1025,7 @@ icelines icecast affiliate-review-exact-league --league-crosswalk ahl-league-ide
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer "alias-pilot" --reviewed-at 2026-07-25T13:00:00Z --decisions-out hartford-alias-decisions.json --json --out hartford-alias-reviewed.json
 icelines icecast affiliate-review-aliases-league --league-crosswalk ahl-league-exact-reviewed.json --reviewer "league-alias-pilot" --reviewed-at 2026-07-25T13:30:00Z --decisions-out ahl-league-alias-decisions.json --json --out ahl-league-alias-reviewed.json
 icelines icecast affiliate-review-conflicts-league --league-crosswalk ahl-league-alias-reviewed.json --nhl-player-id 8482739 --evidence-url https://theahl.com/stats/player/9166 --evidence-url https://www.nhl.com/flyers/news/flyers-acquire-brett-harrison-jackson-edward-from-boston-in-exchange-for-alexis-gendron-massimo-rizzo --reviewer "league-conflict-pilot" --reviewed-at 2026-07-26T20:10:00Z --note "official NHL club transaction evidence controls the canonical NHL birth date while the AHL provider date remains retained" --decisions-out ahl-league-conflict-decisions.json --json --out ahl-league-conflict-reviewed.json
+icelines icecast affiliate-review-birth-date-league --league-crosswalk ahl-league-conflict-reviewed.json --nhl-player-id 8484115 --canonical-birth-date 1999-04-17 --evidence-url https://www.iowawild.com/players/detail/zmolek-1 --evidence-url https://bsubeavers.com/sports/mens-ice-hockey/roster/will-zmolek/15025 --reviewer "league-date-pilot" --reviewed-at 2026-07-26T22:50:00Z --note "official AHL club and college records agree with the provider date" --decisions-out ahl-league-date-decisions.json --json --out ahl-league-date-reviewed.json
 icelines icecast affiliate-review-collision-league --league-crosswalk ahl-league-conflict-reviewed.json --proposed-nhl-player-id 8475366 --canonical-nhl-player-id 8484302 --canonical-name "Matt Brown" --canonical-birth-date 1999-08-09 --evidence-url https://api-web.nhle.com/v1/player/8484302/landing --evidence-url https://www.phantomshockey.com/wp-content/uploads/2023/10/2023-Phantoms-Training-Camp-Roster.pdf --reviewer "league-collision-pilot" --reviewed-at 2026-07-26T21:10:00Z --note "official records identify the younger same-name player" --decisions-out ahl-league-collision-decisions.json --json --out ahl-league-collision-reviewed.json
 icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
 icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
@@ -1218,6 +1219,12 @@ evidence, reviewer, timestamp, and rationale; emits explicit `set_identity`
 decisions; unions retained and new evidence; and records both conflicting dates
 in every decision note. Every requested NHL ID must be eligible or the atomic
 league transformation fails.
+`icecast affiliate-review-birth-date-league` handles the inverse authority
+case: the NHL identity is correct, but independent official sources support the
+AHL date rather than the displaced NHL landing date. It preserves the NHL ID,
+requires an exact normalized name, requires the supplied canonical date to
+equal the AHL date and differ from the NHL proposal, unions novel absolute
+evidence, and records both dates in an atomic league audit.
 `icecast affiliate-review-collision-league` is the separate correction lane for
 the exception board's `investigate_identity_collision` action. It selects the
 displaced proposal ID and an explicit canonical identity, then remaps every

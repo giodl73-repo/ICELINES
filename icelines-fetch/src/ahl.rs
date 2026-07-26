@@ -497,6 +497,7 @@ pub enum AhlIdentityLeagueRoutineReviewKind {
     Exact,
     Aliases,
     Conflicts,
+    BirthDateCorrections,
     CollisionRemaps,
 }
 
@@ -1417,6 +1418,7 @@ pub fn apply_ahl_identity_league_routine_review(
     if matches!(
         kind,
         AhlIdentityLeagueRoutineReviewKind::Conflicts
+            | AhlIdentityLeagueRoutineReviewKind::BirthDateCorrections
             | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps
     ) {
         return Err(AhlFeedError::Validation(
@@ -1446,6 +1448,7 @@ pub fn apply_ahl_identity_league_routine_review(
                         row.match_basis == AhlIdentityMatchBasis::SurnameAndBirthDate
                     }
                     AhlIdentityLeagueRoutineReviewKind::Conflicts
+                    | AhlIdentityLeagueRoutineReviewKind::BirthDateCorrections
                     | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps => false,
                 }
         });
@@ -1461,6 +1464,7 @@ pub fn apply_ahl_identity_league_routine_review(
                 build_ahl_alias_identity_review(crosswalk, reviewer.clone(), reviewed_at.clone())?
             }
             AhlIdentityLeagueRoutineReviewKind::Conflicts
+            | AhlIdentityLeagueRoutineReviewKind::BirthDateCorrections
             | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps => {
                 unreachable!("conflict reviews are rejected before routine league review")
             }
@@ -1604,6 +1608,162 @@ pub fn apply_ahl_identity_league_conflict_review(
             ],
         },
     ))
+}
+
+/// Atomically correct the canonical birth date for one NHL identity across
+/// every affected team while preserving the NHL ID and displaced source date.
+#[allow(clippy::too_many_arguments)]
+pub fn apply_ahl_identity_league_birth_date_correction(
+    league: &AhlIdentityLeagueCrosswalkView,
+    nhl_player_id: u32,
+    canonical_birth_date: impl Into<String>,
+    evidence_urls: &[String],
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+    note: impl Into<String>,
+) -> Result<
+    (
+        AhlIdentityLeagueCrosswalkView,
+        AhlIdentityLeagueReviewDecisionsView,
+    ),
+    AhlFeedError,
+> {
+    validate_ahl_identity_league_crosswalk(league)?;
+    let canonical_birth_date = canonical_birth_date.into();
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    let note = note.into();
+    let canonical_date = chrono::NaiveDate::parse_from_str(&canonical_birth_date, "%Y-%m-%d")
+        .map_err(|_| {
+            AhlFeedError::Validation(
+                "birth-date correction requires a canonical YYYY-MM-DD date".to_owned(),
+            )
+        })?;
+    if nhl_player_id == 0
+        || evidence_urls.is_empty()
+        || evidence_urls.iter().any(|url| !absolute_http_url(url))
+        || reviewer.trim().is_empty()
+        || chrono::DateTime::parse_from_rfc3339(&reviewed_at).is_err()
+        || note.trim().is_empty()
+    {
+        return Err(AhlFeedError::Validation(
+            "birth-date correction requires an NHL ID, canonical date, new evidence, reviewer, timestamp, and rationale authority".to_owned(),
+        ));
+    }
+
+    let mut output = league.clone();
+    let mut batches = Vec::new();
+    let mut skipped_teams = Vec::new();
+    let mut applied_decisions = 0usize;
+    for crosswalk in &mut output.crosswalks {
+        let mut decisions = Vec::new();
+        for row in crosswalk
+            .rows
+            .iter()
+            .filter(|row| row.nhl_player_id == Some(nhl_player_id))
+        {
+            let displaced_date = row
+                .nhl_birth_date
+                .as_deref()
+                .and_then(|date| chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").ok())
+                .ok_or_else(|| {
+                    AhlFeedError::Validation(format!(
+                        "birth-date correction {nhl_player_id} lacks a valid displaced NHL date"
+                    ))
+                })?;
+            let ahl_date = chrono::NaiveDate::parse_from_str(&row.ahl_birth_date, "%Y-%m-%d")
+                .map_err(|_| {
+                    AhlFeedError::Validation(format!(
+                        "birth-date correction {nhl_player_id} lacks a valid AHL date"
+                    ))
+                })?;
+            let nhl_display_name = row.nhl_display_name.as_deref().unwrap_or("");
+            if row.review_status != AhlIdentityReviewStatus::Pending
+                || row.match_basis != AhlIdentityMatchBasis::BirthDateConflict
+                || canonical_date != ahl_date
+                || canonical_date == displaced_date
+                || normalize_ahl_identity_name(nhl_display_name).is_empty()
+                || normalize_ahl_identity_name(&row.ahl_display_name)
+                    != normalize_ahl_identity_name(nhl_display_name)
+                || evidence_urls
+                    .iter()
+                    .all(|url| row.evidence_urls.contains(url))
+            {
+                return Err(AhlFeedError::Validation(format!(
+                    "birth-date correction {nhl_player_id} is ineligible or lacks exact-name/equal-AHL-date evidence"
+                )));
+            }
+            let mut retained_evidence = row.evidence_urls.iter().cloned().collect::<BTreeSet<_>>();
+            retained_evidence.extend(evidence_urls.iter().cloned());
+            decisions.push(AhlIdentityReviewDecision {
+                provider_player_id: row.provider_player_id.clone(),
+                action: AhlIdentityReviewAction::SetIdentity,
+                nhl_player_id: Some(nhl_player_id),
+                nhl_display_name: Some(nhl_display_name.to_owned()),
+                nhl_birth_date: Some(canonical_birth_date.clone()),
+                evidence_urls: retained_evidence.into_iter().collect(),
+                note: format!(
+                    "Corrected canonical birth date for NHL `{}` ({}) from displaced source date {} to AHL-corroborated date {} for provider player `{}`. Evidence-backed date rationale: {}",
+                    nhl_display_name,
+                    nhl_player_id,
+                    displaced_date,
+                    canonical_birth_date,
+                    row.provider_player_id,
+                    note.trim()
+                ),
+            });
+        }
+        if decisions.is_empty() {
+            skipped_teams.push(crosswalk.ahl_team.clone());
+            continue;
+        }
+        let batch = AhlIdentityReviewDecisions {
+            schema: AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA.to_owned(),
+            season: crosswalk.season,
+            provider: crosswalk.provider.clone(),
+            ahl_team: crosswalk.ahl_team.clone(),
+            roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+            draft: false,
+            reviewer: Some(reviewer.clone()),
+            reviewed_at: Some(reviewed_at.clone()),
+            decisions,
+        };
+        applied_decisions += batch.decisions.len();
+        *crosswalk = apply_ahl_identity_review_decisions(crosswalk, &batch)?;
+        batches.push(batch);
+    }
+    if applied_decisions == 0 {
+        return Err(AhlFeedError::Validation(format!(
+            "league birth-date correction found no eligible proposal for NHL player {nhl_player_id}"
+        )));
+    }
+    let eligible_teams = batches.len();
+    output.disclosures.push(format!(
+        "Applied canonical birth-date correction for NHL {}: {} decision(s) across {} eligible team(s) by {} at {}; {} team(s) had no selected conflict row.",
+        nhl_player_id,
+        applied_decisions,
+        eligible_teams,
+        reviewer,
+        reviewed_at,
+        skipped_teams.len()
+    ));
+    Ok((output, AhlIdentityLeagueReviewDecisionsView {
+        schema: AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA.to_owned(),
+        season: league.season,
+        provider: league.provider.clone(),
+        roster_fetched_at: league.roster_fetched_at.clone(),
+        kind: AhlIdentityLeagueRoutineReviewKind::BirthDateCorrections,
+        reviewer,
+        reviewed_at,
+        eligible_teams,
+        skipped_teams,
+        applied_decisions,
+        batches,
+        disclosures: vec![
+            "A birth-date correction preserves the NHL identity while replacing only its canonical date with the equal AHL date supported by additional authority.".to_owned(),
+            "The displaced NHL source date and unioned evidence remain visible in every decision audit note.".to_owned(),
+        ],
+    }))
 }
 
 /// Atomically replace one demonstrably collided NHL proposal across every
@@ -4661,6 +4821,53 @@ mod tests {
             "League Conflict Reviewer",
             "2026-07-26T20:05:00Z",
             "No matching proposal should fail atomically.",
+        )
+        .is_err());
+        assert_eq!(
+            league.crosswalks[0].rows[0].review_status,
+            AhlIdentityReviewStatus::Pending
+        );
+    }
+
+    #[test]
+    fn league_birth_date_correction_preserves_identity_and_replaces_only_date() {
+        let snapshot = identity_snapshot();
+        let mut catalog = identity_catalog();
+        catalog.candidates[0].birth_date = Some("2002-02-03".to_owned());
+        let league = build_ahl_identity_league_crosswalk(&snapshot, &catalog).unwrap();
+        let evidence = vec!["https://example.test/club/aidan-thompson".to_owned()];
+        let (reviewed, audit) = apply_ahl_identity_league_birth_date_correction(
+            &league,
+            8_480_001,
+            "2002-02-18",
+            &evidence,
+            "Date Reviewer",
+            "2026-07-26T22:45:00Z",
+            "Official club and college records agree with the provider date.",
+        )
+        .unwrap();
+        let row = &reviewed.crosswalks[0].rows[0];
+        assert_eq!(
+            audit.kind,
+            AhlIdentityLeagueRoutineReviewKind::BirthDateCorrections
+        );
+        assert_eq!(row.review_status, AhlIdentityReviewStatus::Reviewed);
+        assert_eq!(row.nhl_player_id, Some(8_480_001));
+        assert_eq!(row.nhl_birth_date.as_deref(), Some("2002-02-18"));
+        assert_eq!(
+            row.match_basis,
+            AhlIdentityMatchBasis::ExactNameAndBirthDate
+        );
+        assert!(row.note.contains("2002-02-03"));
+
+        assert!(apply_ahl_identity_league_birth_date_correction(
+            &league,
+            8_480_001,
+            "2002-02-19",
+            &evidence,
+            "Date Reviewer",
+            "2026-07-26T22:45:00Z",
+            "A correction that disagrees with the AHL date must fail atomically.",
         )
         .is_err());
         assert_eq!(

@@ -1325,6 +1325,32 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Correct a canonical NHL birth date while preserving the NHL identity.
+    #[command(name = "affiliate-review-birth-date-league")]
+    AffiliateReviewBirthDateLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "ID")]
+        nhl_player_id: u32,
+        #[arg(long)]
+        canonical_birth_date: String,
+        /// Additional absolute source URL supporting the corrected date; repeat as needed.
+        #[arg(long = "evidence-url", value_name = "URL", required = true)]
+        evidence_urls: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Replace a probable same-name collision with the sourced canonical NHL identity.
     #[command(name = "affiliate-review-collision-league")]
     AffiliateReviewCollisionLeague {
@@ -3041,6 +3067,43 @@ mod tui_surface_tests {
                 }) if nhl_player_id == [8_482_739]
                     && evidence_urls.len() == 2
                     && reviewer == "league-conflict-pilot"
+            ));
+
+            let birth_date_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-birth-date-league",
+                "--league-crosswalk",
+                "league-conflict-reviewed.json",
+                "--nhl-player-id",
+                "8484115",
+                "--canonical-birth-date",
+                "1999-04-17",
+                "--evidence-url",
+                "https://www.iowawild.com/players/detail/zmolek-1",
+                "--reviewer",
+                "league-date-pilot",
+                "--reviewed-at",
+                "2026-07-26T22:50:00Z",
+                "--note",
+                "official club and college sources agree with the provider date",
+                "--decisions-out",
+                "league-date-decisions.json",
+                "--json",
+                "--out",
+                "league-date-reviewed.json",
+            ])
+            .expect("birth-date league affiliate identity review should parse");
+            assert!(matches!(
+                birth_date_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewBirthDateLeague {
+                    nhl_player_id: 8_484_115,
+                    canonical_birth_date,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if canonical_birth_date == "1999-04-17"
+                    && reviewer == "league-date-pilot"
             ));
 
             let collision_league = Cli::try_parse_from([
