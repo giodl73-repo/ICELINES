@@ -1095,6 +1095,13 @@ fn fetch_generic_http_bytes_unindexed(
     cache_root: &Path,
     force: bool,
 ) -> Result<(Vec<u8>, Option<CacheEntry>)> {
+    if !force {
+        if let Some(bytes) = read_verified_fletch_cache_bytes(cache_root, &fletch_id)
+            .with_context(|| format!("reading cached FLETCH object for {fletch_id}"))?
+        {
+            return Ok((bytes, None));
+        }
+    }
     let mut plan = fetch_plan_with_kind(fletch_id.clone(), source_url, SourceKind::Http)
         .with_context(|| format!("building FLETCH fetch plan for {fletch_id}"))?;
     plan.cache_policy = CachePolicy {
@@ -1155,9 +1162,42 @@ pub async fn fetch_generic_http_batch_async(
     max_concurrency: usize,
 ) -> Vec<(String, Result<Vec<u8>>)> {
     let cache_root = cache_root.into();
+    let mut fetched = Vec::new();
+    let mut pending = requests;
+    if !force {
+        let manifest_path = fletch_cache_manifest_path(&cache_root);
+        if manifest_path.exists() {
+            match read_fletch_cache_manifest(&manifest_path) {
+                Ok(manifest) => {
+                    let cached = manifest
+                        .entries
+                        .into_iter()
+                        .filter(|entry| entry.verified)
+                        .map(|entry| (entry.dataset_id.clone(), entry))
+                        .collect::<BTreeMap<_, _>>();
+                    let mut missing = Vec::new();
+                    for (dataset_id, source_url) in pending {
+                        let bytes = cached.get(&dataset_id).and_then(|entry| {
+                            std::fs::read(cache_root.join(&entry.relative_path)).ok()
+                        });
+                        if let Some(bytes) = bytes {
+                            fetched.push((dataset_id, Ok(bytes)));
+                        } else {
+                            missing.push((dataset_id, source_url));
+                        }
+                    }
+                    pending = missing;
+                }
+                Err(error) => {
+                    fetched.push(("fletch-manifest".to_owned(), Err(error)));
+                    pending.clear();
+                }
+            }
+        }
+    }
     let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(max_concurrency.max(1)));
     let mut tasks = tokio::task::JoinSet::new();
-    for (dataset_id, source_url) in requests {
+    for (dataset_id, source_url) in pending {
         let task_id = dataset_id.clone();
         let root = cache_root.clone();
         let semaphore = semaphore.clone();
@@ -1176,7 +1216,6 @@ pub async fn fetch_generic_http_batch_async(
         });
     }
 
-    let mut fetched = Vec::new();
     let mut entries = Vec::new();
     while let Some(joined) = tasks.join_next().await {
         match joined {
@@ -1408,7 +1447,34 @@ pub fn fetch_player_landing_batch_bytes_with_base(
     force: bool,
     delay_between_items_ms: u64,
 ) -> Result<BTreeMap<u32, Vec<u8>>> {
-    let plans = player_ids
+    let mut bytes_by_player = BTreeMap::new();
+    let mut pending_ids = player_ids.to_vec();
+    if !force {
+        let manifest_path = fletch_cache_manifest_path(cache_root);
+        if manifest_path.exists() {
+            let manifest = read_fletch_cache_manifest(&manifest_path)?;
+            let cached = manifest
+                .entries
+                .into_iter()
+                .filter(|entry| entry.verified)
+                .map(|entry| (entry.dataset_id.clone(), entry))
+                .collect::<BTreeMap<_, _>>();
+            pending_ids.retain(|player_id| {
+                let dataset_id = format!("icelines.player.{}.{player_id}", artifact.id_segment());
+                let Some(entry) = cached.get(&dataset_id) else {
+                    return true;
+                };
+                match std::fs::read(cache_root.join(&entry.relative_path)) {
+                    Ok(bytes) => {
+                        bytes_by_player.insert(*player_id, bytes);
+                        false
+                    }
+                    Err(_) => true,
+                }
+            });
+        }
+    }
+    let plans = pending_ids
         .iter()
         .map(|player_id| {
             let fletch_id = format!("icelines.player.{}.{player_id}", artifact.id_segment());
@@ -1434,6 +1500,9 @@ pub fn fetch_player_landing_batch_bytes_with_base(
             Ok((*player_id, plan))
         })
         .collect::<Result<Vec<_>>>()?;
+    if plans.is_empty() {
+        return Ok(bytes_by_player);
+    }
     let plan_only = plans
         .iter()
         .map(|(_, plan)| plan.clone())
@@ -1465,7 +1534,6 @@ pub fn fetch_player_landing_batch_bytes_with_base(
         .iter()
         .map(|(player_id, plan)| (plan.dataset_id.clone(), *player_id))
         .collect::<BTreeMap<_, _>>();
-    let mut bytes_by_player = BTreeMap::new();
     for outcome in &outcome.outcomes {
         let Some(player_id) = player_by_dataset.get(&outcome.entry.dataset_id) else {
             continue;
@@ -2233,14 +2301,20 @@ mod tests {
         );
         mock.assert_hits(1);
 
-        let cached = fetch_generic_http_bytes(
+        let cached =
+            fetch_generic_http_bytes(fletch_id, server.url("/source.csv"), dir.path(), false)
+                .expect("verified cache should be used without source revalidation");
+        assert_eq!(cached, fetched);
+        mock.assert_hits(1);
+
+        let cached_offline = fetch_generic_http_bytes(
             fletch_id,
             "http://127.0.0.1:9/source.csv",
             dir.path(),
             false,
         )
         .expect("offline fallback should reuse the cached object");
-        assert_eq!(cached, fetched);
+        assert_eq!(cached_offline, fetched);
 
         let forced =
             fetch_generic_http_bytes(fletch_id, "http://127.0.0.1:9/source.csv", dir.path(), true);
@@ -2401,6 +2475,19 @@ mod tests {
             serde_json::from_slice::<serde_json::Value>(&bytes[&8477934]).unwrap()["playerId"],
             8477934
         );
+        first.assert_hits(1);
+        second.assert_hits(1);
+
+        let cached = fetch_player_landing_batch_bytes_with_base(
+            &server.base_url(),
+            &[8478402, 8477934],
+            FletchPlayerLandingArtifact::Landing,
+            dir.path(),
+            false,
+            1,
+        )
+        .unwrap();
+        assert_eq!(cached, bytes);
         first.assert_hits(1);
         second.assert_hits(1);
     }

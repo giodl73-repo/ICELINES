@@ -314,9 +314,12 @@ icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford
 icelines icecast affiliate-identities-league --snapshot ahl-season.json --discover-official --json --out ahl-league-identity-crosswalk.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer identity-pilot --reviewed-at 2026-07-25T12:00:00Z --json --out hartford-exact-reviewed.json
+icelines icecast affiliate-review-exact-league --league-crosswalk ahl-league-identity-crosswalk.json --reviewer league-identity-pilot --reviewed-at 2026-07-25T12:30:00Z --json --out ahl-league-exact-reviewed.json
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer alias-pilot --reviewed-at 2026-07-25T13:00:00Z --json --out hartford-alias-reviewed.json
+icelines icecast affiliate-review-aliases-league --league-crosswalk ahl-league-exact-reviewed.json --reviewer league-alias-pilot --reviewed-at 2026-07-25T13:30:00Z --json --out ahl-league-alias-reviewed.json
 icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer exception-pilot --reviewed-at 2026-07-25T14:00:00Z --note "AHL-only player without a canonical NHL identity" --json --out hartford-exception-reviewed.json
 icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
+icelines icecast affiliate-review-league --league-crosswalk ahl-2023-reviewed.json --league-crosswalk ahl-2024-reviewed.json --league-crosswalk ahl-2025-reviewed.json --json --out ahl-three-season-identity-review.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --out hartford-review-with-aliases-draft.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --include-conflicts --out hartford-complete-proposals-draft.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json

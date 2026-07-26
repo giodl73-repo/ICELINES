@@ -1020,9 +1020,12 @@ icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford
 icelines icecast affiliate-identities-league --snapshot ahl-season.json --discover-official --json --out ahl-league-identity-crosswalk.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer "identity-pilot" --reviewed-at 2026-07-25T12:00:00Z --decisions-out hartford-exact-decisions.json --json --out hartford-exact-reviewed.json
+icelines icecast affiliate-review-exact-league --league-crosswalk ahl-league-identity-crosswalk.json --reviewer "league-identity-pilot" --reviewed-at 2026-07-25T12:30:00Z --decisions-out ahl-league-exact-decisions.json --json --out ahl-league-exact-reviewed.json
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer "alias-pilot" --reviewed-at 2026-07-25T13:00:00Z --decisions-out hartford-alias-decisions.json --json --out hartford-alias-reviewed.json
+icelines icecast affiliate-review-aliases-league --league-crosswalk ahl-league-exact-reviewed.json --reviewer "league-alias-pilot" --reviewed-at 2026-07-25T13:30:00Z --decisions-out ahl-league-alias-decisions.json --json --out ahl-league-alias-reviewed.json
 icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
 icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
+icelines icecast affiliate-review-league --league-crosswalk ahl-2023-reviewed.json --league-crosswalk ahl-2024-reviewed.json --league-crosswalk ahl-2025-reviewed.json --json --out ahl-three-season-identity-review.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --out hartford-review-with-aliases-draft.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --include-conflicts --out hartford-complete-proposals-draft.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json
@@ -1154,7 +1157,9 @@ Both source shapes are cached through FLETCH and can be merged with
 `--candidates`. Discovery improves the review queue but never changes
 `review_status`; even exact name-and-birth matches remain pending until
 explicitly reviewed. `--refresh` forces both official discovery layers to be
-reacquired.
+reacquired; without it, league discovery reads verified cachelines first and
+fetches only missing search or landing objects. Bounded batches commit manifest
+checkpoints throughout league acquisition so interrupted runs are resumable.
 
 `icecast affiliate-identities-league` applies the same discovery and evidence
 rules to every team in a sealed season snapshot and emits
@@ -1163,6 +1168,13 @@ normalized roster name across clubs before cached acquisition, and landing
 records are fetched once per canonical NHL ID. The envelope retains one
 snapshot-bound child crosswalk per team, total roster appearances, and unique
 AHL provider-player coverage. It proposes identities only; no row is approved.
+Compatible repeated NHL candidates returned by distinct name searches merge by
+NHL ID with all evidence retained; identity conflicts fail closed.
+
+`icecast affiliate-review-league` accepts repeated team `--crosswalk` inputs,
+repeated `--league-crosswalk` envelopes, or both. League envelopes are flattened
+without changing their child team queues, enabling one multi-season coverage
+and recurring-exception report without manual extraction.
 
 `icecast affiliate-review-draft` emits a separate
 `ahl_identity_review_decisions.v1` document containing `accept_proposal`
@@ -1188,6 +1200,13 @@ the underlying AHL person is invalid: AHL-only players and feed-classified
 non-player personnel remain distinguishable in the retained note. Repeatable
 `--evidence-url` values are validated as absolute URLs and retained as
 structured row evidence instead of being buried only in prose.
+
+`icecast affiliate-review-exact-league` and
+`icecast affiliate-review-aliases-league` apply those same narrow evidence
+rules atomically across an `ahl_identity_league_crosswalk.v1` envelope. Teams
+without eligible rows are recorded as skipped. The optional decisions output
+is an `ahl_identity_league_review_decisions.v1` audit containing every original
+team-bound batch; the updated league envelope and audit are separate artifacts.
 
 `icecast affiliate-review-league` composes any number of independently
 snapshot-bound team-season crosswalks into the UI-neutral
@@ -2272,6 +2291,13 @@ HockeyTech player IDs are serialized only as `provider_player_id`: they are
 not NHL IDs and require an explicit identity crosswalk. The current season can
 attach the dated NHL/AHL affiliation catalog; historical rows remain
 league-neutral until a historical affiliation catalog is supplied.
+Mixed other-team rows in a provider-filtered report and goalie scoring rows in
+the skater report are excluded from typed team stats with reasons retained in
+`source_warnings`; a report containing only other-team players fails closed.
+Compatible duplicate roster rows that differ only by jersey history or forward
+position collapse to one player with the ambiguous number omitted and forward
+side generalized to `F`; those changes are audited and identity conflicts still
+fail closed.
 All source responses pass through verified FLETCH cachelines; the canonical
 typed result is sealed at `<snapshot>/ahl/ahl-roster-stats.json`. `--out` is an
 optional additional export, and `--refresh` forces source revalidation.

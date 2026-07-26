@@ -1236,6 +1236,22 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Accept exact identity proposals across every eligible team in a league envelope.
+    #[command(name = "affiliate-review-exact-league")]
+    AffiliateReviewExactLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long)]
+        reviewer: String,
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Approve sourced surname-and-birth-date AHL identity aliases as remaps.
     #[command(name = "affiliate-review-aliases")]
     AffiliateReviewAliases {
@@ -1244,6 +1260,22 @@ pub enum IceCastSubcommand {
         #[arg(long)]
         reviewer: String,
         /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Approve sourced aliases across every eligible team in a league envelope.
+    #[command(name = "affiliate-review-aliases-league")]
+    AffiliateReviewAliasesLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long)]
+        reviewer: String,
         #[arg(long)]
         reviewed_at: String,
         #[arg(long, value_name = "PATH")]
@@ -1283,8 +1315,11 @@ pub enum IceCastSubcommand {
     #[command(name = "affiliate-review-league")]
     AffiliateReviewLeague {
         /// Repeat for each reviewed or in-progress team-season crosswalk.
-        #[arg(long = "crosswalk", required = true, value_name = "PATH")]
+        #[arg(long = "crosswalk", value_name = "PATH")]
         crosswalks: Vec<PathBuf>,
+        /// Repeat for each league crosswalk envelope; child team queues are flattened.
+        #[arg(long = "league-crosswalk", value_name = "PATH")]
+        league_crosswalks: Vec<PathBuf>,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -2791,6 +2826,32 @@ mod tui_surface_tests {
                 }) if reviewer == "identity-pilot"
             ));
 
+            let exact_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-exact-league",
+                "--league-crosswalk",
+                "ahl-league.json",
+                "--reviewer",
+                "league-exact-pilot",
+                "--reviewed-at",
+                "2026-07-25T12:30:00Z",
+                "--decisions-out",
+                "league-exact-decisions.json",
+                "--json",
+                "--out",
+                "league-exact-reviewed.json",
+            ])
+            .expect("exact league affiliate identity review should parse");
+            assert!(matches!(
+                exact_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewExactLeague {
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "league-exact-pilot"
+            ));
+
             let aliases = Cli::try_parse_from([
                 "icelines",
                 "icecast",
@@ -2815,6 +2876,32 @@ mod tui_surface_tests {
                     json: true,
                     ..
                 }) if reviewer == "alias-pilot"
+            ));
+
+            let aliases_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-aliases-league",
+                "--league-crosswalk",
+                "league-exact-reviewed.json",
+                "--reviewer",
+                "league-alias-pilot",
+                "--reviewed-at",
+                "2026-07-25T13:30:00Z",
+                "--decisions-out",
+                "league-alias-decisions.json",
+                "--json",
+                "--out",
+                "league-alias-reviewed.json",
+            ])
+            .expect("alias league affiliate identity review should parse");
+            assert!(matches!(
+                aliases_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewAliasesLeague {
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "league-alias-pilot"
             ));
 
             let reject = Cli::try_parse_from([
@@ -2870,9 +2957,31 @@ mod tui_surface_tests {
                 league.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateReviewLeague {
                     crosswalks,
+                    league_crosswalks,
                     json: true,
                     ..
-                }) if crosswalks.len() == 2
+                }) if crosswalks.len() == 2 && league_crosswalks.is_empty()
+            ));
+
+            let league_envelopes = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-league",
+                "--league-crosswalk",
+                "ahl-2024.json",
+                "--league-crosswalk",
+                "ahl-2025.json",
+                "--json",
+            ])
+            .expect("affiliate league envelopes should parse");
+            assert!(matches!(
+                league_envelopes.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewLeague {
+                    crosswalks,
+                    league_crosswalks,
+                    json: true,
+                    ..
+                }) if crosswalks.is_empty() && league_crosswalks.len() == 2
             ));
 
             let show = Cli::try_parse_from([

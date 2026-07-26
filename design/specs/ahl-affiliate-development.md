@@ -104,11 +104,19 @@ player ID/name conflicts fail closed; a valid landing birth date upgrades the
 proposal to exact-name-and-birth-date evidence. All discovered rows remain
 `pending` until explicitly reviewed. An authored catalog may be merged by NHL
 player ID; conflicting names or birth dates are rejected.
+Non-refresh discovery reads hash-verified search and landing cachelines without
+revalidating every source, then acquires only missing objects. `--refresh`
+retains the explicit full-revalidation path. League acquisition checkpoints
+bounded search and landing batches into the shared manifest, so an interrupted
+run resumes from completed chunks rather than restarting a league-sized batch.
 
 `affiliate-identities-league` scales that acquisition boundary to a complete
 season snapshot. It deduplicates official search by normalized AHL roster name
 across teams and player landing acquisition by NHL ID, then emits
 `ahl_identity_league_crosswalk.v1` with one unchanged review queue per club.
+When distinct roster-name searches return the same NHL player, their compatible
+candidate evidence is merged by NHL ID before the strict canonical catalog is
+validated; conflicting names or birth dates still fail closed.
 The envelope distinguishes roster appearances from unique AHL provider IDs and
 does not introduce league-level approval authority.
 
@@ -142,6 +150,13 @@ mapping with rejection of the AHL person. Its required note carries the
 evidence-backed AHL-only, non-player, or other exclusion rationale into the
 crosswalk, while repeatable absolute evidence URLs remain structured on the
 rejected row for every renderer and downstream audit.
+
+The league exact and alias commands apply those routines atomically to the
+league acquisition envelope. Their `ahl_identity_league_review_decisions.v1`
+audit retains the original team-bound decision batches, reviewer, timestamp,
+eligible-team count, skipped teams, and total applied decisions. A bad child
+fails the whole transformation; a team with no eligible rows is a recorded
+skip rather than an error.
 
 `affiliate-review-league` owns the cross-team expansion view. Its
 `ahl_identity_league_review.v1` contract aggregates snapshot-bound crosswalks,
@@ -177,11 +192,20 @@ three separate shapes per selected team: the season roster, skater totals, and
 goalie totals. The output is the UI-neutral `ahl_roster_stats.v1` contract.
 
 The parser recognizes the feed's non-player goalie aggregate rows (`Empty Net`
-and `Totals`) but rejects any other row missing provider identity. Team-code
-mismatches, duplicate team/player IDs, malformed counting stats, and skater
-point totals that do not equal goals plus assists fail closed before an atomic
-write. `provider_player_id` is explicitly AHL-scoped and is never treated as an
-NHL `player_id`.
+and `Totals`) but rejects any other row missing provider identity. HockeyTech
+can include a small number of conditioning-loan or other-team rows in a
+team-filtered report and includes goalie scoring rows in its skater report.
+IceLines excludes those rows from the typed team collections and retains an
+auditable reason in `source_warnings`; separate goalie totals remain canonical.
+A report containing only other-team players still fails closed. Duplicate
+team IDs, conflicting duplicate player identities, malformed counting stats,
+and skater point totals that do not equal goals plus assists also fail before
+an atomic write. Compatible duplicate roster rows caused by in-season
+jersey-number or forward-position changes collapse to one player, omit an
+ambiguous jersey number, generalize conflicting forward sides to `F`, and
+retain those decisions in `source_warnings`.
+`provider_player_id` is explicitly AHL-scoped and is never treated as an NHL
+`player_id`.
 
 Team-filtered acquisitions receive a deterministic team-code suffix on their
 snapshot name. This preserves the canonical full-league season snapshot when a

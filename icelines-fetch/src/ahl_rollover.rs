@@ -893,6 +893,7 @@ mod tests {
                 }],
                 skaters: Vec::new(),
                 goalies: Vec::new(),
+                source_warnings: Vec::new(),
             }],
         };
         let crosswalk = AhlIdentityCrosswalkView {

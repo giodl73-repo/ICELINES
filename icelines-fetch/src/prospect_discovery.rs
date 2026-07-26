@@ -503,6 +503,7 @@ mod tests {
                     shots: 100,
                 }],
                 goalies: vec![],
+                source_warnings: vec![],
             }],
         }
     }

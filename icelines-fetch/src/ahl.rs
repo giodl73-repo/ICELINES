@@ -17,6 +17,8 @@ pub const AHL_ROSTER_STATS_SCHEMA: &str = "ahl_roster_stats.v1";
 pub const AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA: &str = "ahl_canonical_identity_catalog.v1";
 pub const AHL_IDENTITY_CROSSWALK_SCHEMA: &str = "ahl_identity_crosswalk.v1";
 pub const AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA: &str = "ahl_identity_league_crosswalk.v1";
+pub const AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA: &str =
+    "ahl_identity_league_review_decisions.v1";
 pub const AHL_IDENTITY_REVIEW_INSPECTION_SCHEMA: &str = "ahl_identity_review_inspection.v1";
 pub const AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA: &str = "ahl_identity_review_decisions.v1";
 pub const AHL_IDENTITY_LEAGUE_REVIEW_SCHEMA: &str = "ahl_identity_league_review.v1";
@@ -73,6 +75,9 @@ pub struct AhlTeamRosterStats {
     pub roster: Vec<AhlRosterPlayer>,
     pub skaters: Vec<AhlSkaterSeasonRow>,
     pub goalies: Vec<AhlGoalieSeasonRow>,
+    /// Provider rows excluded from typed team stats with an auditable reason.
+    #[serde(default)]
+    pub source_warnings: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -272,8 +277,9 @@ pub fn merge_ahl_canonical_identity_catalogs(
     let checked_at = checked_at.into();
     let mut merged = BTreeMap::<u32, AhlCanonicalIdentityCandidate>::new();
     for catalog in catalogs {
-        validate_identity_catalog(catalog)?;
+        validate_identity_catalog_authority(catalog)?;
         for candidate in &catalog.candidates {
+            validate_identity_candidate(candidate)?;
             match merged.entry(candidate.nhl_player_id) {
                 std::collections::btree_map::Entry::Vacant(entry) => {
                     entry.insert(candidate.clone());
@@ -439,6 +445,29 @@ pub struct AhlIdentityLeagueCrosswalkView {
     pub roster_appearances: usize,
     pub unique_provider_players: usize,
     pub crosswalks: Vec<AhlIdentityCrosswalkView>,
+    pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AhlIdentityLeagueRoutineReviewKind {
+    Exact,
+    Aliases,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlIdentityLeagueReviewDecisionsView {
+    pub schema: String,
+    pub season: u32,
+    pub provider: String,
+    pub roster_fetched_at: String,
+    pub kind: AhlIdentityLeagueRoutineReviewKind,
+    pub reviewer: String,
+    pub reviewed_at: String,
+    pub eligible_teams: usize,
+    pub skipped_teams: Vec<String>,
+    pub applied_decisions: usize,
+    pub batches: Vec<AhlIdentityReviewDecisions>,
     pub disclosures: Vec<String>,
 }
 
@@ -958,6 +987,92 @@ pub fn build_ahl_alias_identity_review(
     })
 }
 
+/// Atomically apply one routine review lane to every eligible child crosswalk
+/// in a league envelope and retain the per-team decision batches as authority.
+pub fn apply_ahl_identity_league_routine_review(
+    league: &AhlIdentityLeagueCrosswalkView,
+    kind: AhlIdentityLeagueRoutineReviewKind,
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+) -> Result<
+    (
+        AhlIdentityLeagueCrosswalkView,
+        AhlIdentityLeagueReviewDecisionsView,
+    ),
+    AhlFeedError,
+> {
+    validate_ahl_identity_league_crosswalk(league)?;
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    if reviewer.trim().is_empty() || chrono::DateTime::parse_from_rfc3339(&reviewed_at).is_err() {
+        return Err(AhlFeedError::Validation(
+            "league identity review requires reviewer and RFC3339 timestamp authority".to_owned(),
+        ));
+    }
+    let mut output = league.clone();
+    let mut batches = Vec::new();
+    let mut skipped_teams = Vec::new();
+    let mut applied_decisions = 0usize;
+    for crosswalk in &mut output.crosswalks {
+        let eligible = crosswalk.rows.iter().any(|row| {
+            row.review_status == AhlIdentityReviewStatus::Pending
+                && match kind {
+                    AhlIdentityLeagueRoutineReviewKind::Exact => {
+                        row.match_basis == AhlIdentityMatchBasis::ExactNameAndBirthDate
+                    }
+                    AhlIdentityLeagueRoutineReviewKind::Aliases => {
+                        row.match_basis == AhlIdentityMatchBasis::SurnameAndBirthDate
+                    }
+                }
+        });
+        if !eligible {
+            skipped_teams.push(crosswalk.ahl_team.clone());
+            continue;
+        }
+        let decisions = match kind {
+            AhlIdentityLeagueRoutineReviewKind::Exact => {
+                build_ahl_exact_identity_review(crosswalk, reviewer.clone(), reviewed_at.clone())?
+            }
+            AhlIdentityLeagueRoutineReviewKind::Aliases => {
+                build_ahl_alias_identity_review(crosswalk, reviewer.clone(), reviewed_at.clone())?
+            }
+        };
+        applied_decisions += decisions.decisions.len();
+        *crosswalk = apply_ahl_identity_review_decisions(crosswalk, &decisions)?;
+        batches.push(decisions);
+    }
+    let eligible_teams = batches.len();
+    output.disclosures.push(format!(
+        "Applied league {:?} review: {} decision(s) across {} eligible team(s) by {} at {}; {} team(s) had no eligible rows.",
+        kind,
+        applied_decisions,
+        eligible_teams,
+        reviewer,
+        reviewed_at,
+        skipped_teams.len()
+    ));
+    Ok((
+        output,
+        AhlIdentityLeagueReviewDecisionsView {
+            schema: AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA.to_owned(),
+            season: league.season,
+            provider: league.provider.clone(),
+            roster_fetched_at: league.roster_fetched_at.clone(),
+            kind,
+            reviewer,
+            reviewed_at,
+            eligible_teams,
+            skipped_teams,
+            applied_decisions,
+            batches,
+            disclosures: vec![
+                "Each batch remains bound to its original season, provider, team, and roster fetch. Teams without eligible rows are recorded rather than treated as failures.".to_owned(),
+                "League routine review is atomic: invalid evidence in any eligible child prevents an updated envelope from being returned.".to_owned(),
+            ],
+        },
+    ))
+}
+
 /// Build an applicable rejection batch for explicitly selected pending rows.
 /// A rejection closes only the proposed NHL identity mapping; its required
 /// note must explain whether the source row is an AHL-only player, non-player,
@@ -1251,6 +1366,51 @@ fn validate_crosswalk_shape(crosswalk: &AhlIdentityCrosswalkView) -> Result<(), 
     Ok(())
 }
 
+fn validate_ahl_identity_league_crosswalk(
+    league: &AhlIdentityLeagueCrosswalkView,
+) -> Result<(), AhlFeedError> {
+    if league.schema != AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA
+        || league.provider.trim().is_empty()
+        || league.roster_fetched_at.trim().is_empty()
+        || league.teams != league.crosswalks.len()
+    {
+        return Err(AhlFeedError::Validation(
+            "invalid AHL identity league crosswalk authority".to_owned(),
+        ));
+    }
+    let mut teams = BTreeSet::new();
+    let mut provider_players = BTreeSet::new();
+    let mut roster_appearances = 0usize;
+    for crosswalk in &league.crosswalks {
+        validate_crosswalk_shape(crosswalk)?;
+        if crosswalk.season != league.season
+            || crosswalk.provider != league.provider
+            || crosswalk.roster_fetched_at != league.roster_fetched_at
+            || !teams.insert(crosswalk.ahl_team.as_str())
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "league identity child binding mismatch for {}",
+                crosswalk.ahl_team
+            )));
+        }
+        roster_appearances += crosswalk.rows.len();
+        provider_players.extend(
+            crosswalk
+                .rows
+                .iter()
+                .map(|row| row.provider_player_id.as_str()),
+        );
+    }
+    if roster_appearances != league.roster_appearances
+        || provider_players.len() != league.unique_provider_players
+    {
+        return Err(AhlFeedError::Validation(
+            "league identity envelope coverage counts are stale".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
 fn validate_review_authority(
     crosswalk: &AhlIdentityCrosswalkView,
     review: &AhlIdentityReviewDecisions,
@@ -1485,15 +1645,17 @@ impl AhlFeedClient {
         let affiliate_by_name = current_affiliates_for(season);
         let mut output = Vec::with_capacity(teams.len());
         for team in teams {
-            let mut roster = self
+            let (mut roster, mut source_warnings) = self
                 .fetch_roster(season, &provider_season.id, &team)
                 .await?;
-            let mut skaters = self
+            let (mut skaters, skater_warnings) = self
                 .fetch_skaters(season, &provider_season.id, &team)
                 .await?;
-            let mut goalies = self
+            source_warnings.extend(skater_warnings);
+            let (mut goalies, goalie_warnings) = self
                 .fetch_goalies(season, &provider_season.id, &team)
                 .await?;
+            source_warnings.extend(goalie_warnings);
             roster.sort_by(|a, b| {
                 a.position_group
                     .cmp(&b.position_group)
@@ -1522,6 +1684,7 @@ impl AhlFeedClient {
                 roster,
                 skaters,
                 goalies,
+                source_warnings,
             });
         }
 
@@ -1584,7 +1747,7 @@ impl AhlFeedClient {
         season: u32,
         provider_season_id: &str,
         team: &ProviderTeam,
-    ) -> Result<Vec<AhlSkaterSeasonRow>, AhlFeedError> {
+    ) -> Result<(Vec<AhlSkaterSeasonRow>, Vec<String>), AhlFeedError> {
         let value = self
             .fetch_player_report(
                 &format!("icelines.ahl.{season}.team.{}.skaters", team.team_code),
@@ -1594,10 +1757,12 @@ impl AhlFeedClient {
                 "points",
             )
             .await?;
-        report_rows(&value)?
+        let (rows, warnings) = team_report_rows(&value, &team.team_code, "skater", true)?;
+        let parsed = rows
             .into_iter()
             .map(|row| parse_skater(row, &team.team_code))
-            .collect()
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok((parsed, warnings))
     }
 
     async fn fetch_roster(
@@ -1605,7 +1770,7 @@ impl AhlFeedClient {
         season: u32,
         provider_season_id: &str,
         team: &ProviderTeam,
-    ) -> Result<Vec<AhlRosterPlayer>, AhlFeedError> {
+    ) -> Result<(Vec<AhlRosterPlayer>, Vec<String>), AhlFeedError> {
         let dataset_id = format!("icelines.ahl.{season}.team.{}.roster", team.team_code);
         let value = self
             .get_feed(
@@ -1621,10 +1786,11 @@ impl AhlFeedClient {
                 ],
             )
             .await?;
-        roster_rows(&value)?
+        let players = roster_rows(&value)?
             .into_iter()
             .map(|(group, row)| parse_roster_player(group, row))
-            .collect()
+            .collect::<Result<Vec<_>, _>>()?;
+        deduplicate_roster_players(players, &team.team_code)
     }
 
     async fn fetch_goalies(
@@ -1632,7 +1798,7 @@ impl AhlFeedClient {
         season: u32,
         provider_season_id: &str,
         team: &ProviderTeam,
-    ) -> Result<Vec<AhlGoalieSeasonRow>, AhlFeedError> {
+    ) -> Result<(Vec<AhlGoalieSeasonRow>, Vec<String>), AhlFeedError> {
         let value = self
             .fetch_player_report(
                 &format!("icelines.ahl.{season}.team.{}.goalies", team.team_code),
@@ -1642,10 +1808,12 @@ impl AhlFeedClient {
                 "wins",
             )
             .await?;
-        report_rows(&value)?
+        let (rows, warnings) = team_report_rows(&value, &team.team_code, "goalie", false)?;
+        let parsed = rows
             .into_iter()
             .map(|row| parse_goalie(row, &team.team_code))
-            .collect()
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok((parsed, warnings))
     }
 
     async fn fetch_player_report(
@@ -2145,6 +2313,23 @@ pub fn validate_reviewed_ahl_identity_crosswalk(
 }
 
 fn validate_identity_catalog(catalog: &AhlCanonicalIdentityCatalog) -> Result<(), AhlFeedError> {
+    validate_identity_catalog_authority(catalog)?;
+    let mut ids = BTreeSet::new();
+    for candidate in &catalog.candidates {
+        validate_identity_candidate(candidate)?;
+        if !ids.insert(candidate.nhl_player_id) {
+            return Err(AhlFeedError::Validation(
+                "canonical NHL identity catalog contains invalid or duplicate candidates"
+                    .to_owned(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_identity_catalog_authority(
+    catalog: &AhlCanonicalIdentityCatalog,
+) -> Result<(), AhlFeedError> {
     if catalog.schema != AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA
         || catalog.checked_at.trim().is_empty()
     {
@@ -2152,26 +2337,27 @@ fn validate_identity_catalog(catalog: &AhlCanonicalIdentityCatalog) -> Result<()
             "invalid canonical NHL identity catalog authority".to_owned(),
         ));
     }
-    let mut ids = BTreeSet::new();
-    for candidate in &catalog.candidates {
-        if candidate.nhl_player_id == 0
-            || !ids.insert(candidate.nhl_player_id)
-            || icelines_core::normalize_name(&candidate.display_name).is_empty()
-            || candidate.evidence_urls.is_empty()
-            || candidate
-                .evidence_urls
-                .iter()
-                .any(|url| !absolute_http_url(url))
-            || candidate
-                .birth_date
-                .as_deref()
-                .is_some_and(|date| chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").is_err())
-        {
-            return Err(AhlFeedError::Validation(
-                "canonical NHL identity catalog contains invalid or duplicate candidates"
-                    .to_owned(),
-            ));
-        }
+    Ok(())
+}
+
+fn validate_identity_candidate(
+    candidate: &AhlCanonicalIdentityCandidate,
+) -> Result<(), AhlFeedError> {
+    if candidate.nhl_player_id == 0
+        || icelines_core::normalize_name(&candidate.display_name).is_empty()
+        || candidate.evidence_urls.is_empty()
+        || candidate
+            .evidence_urls
+            .iter()
+            .any(|url| !absolute_http_url(url))
+        || candidate
+            .birth_date
+            .as_deref()
+            .is_some_and(|date| chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").is_err())
+    {
+        return Err(AhlFeedError::Validation(
+            "canonical NHL identity catalog contains invalid or duplicate candidates".to_owned(),
+        ));
     }
     Ok(())
 }
@@ -2435,6 +2621,55 @@ fn report_rows(value: &Value) -> Result<Vec<&Value>, AhlFeedError> {
     Ok(rows)
 }
 
+fn team_report_rows<'a>(
+    value: &'a Value,
+    expected_team: &str,
+    report_kind: &str,
+    exclude_goalies: bool,
+) -> Result<(Vec<&'a Value>, Vec<String>), AhlFeedError> {
+    let rows = report_rows(value)?;
+    let mut retained = Vec::new();
+    let mut wrong_team = Vec::new();
+    let mut goalie_scoring_rows = Vec::new();
+    for row in rows {
+        let actual_team = string_field(row, "team_code")?;
+        let identity = format!(
+            "{} #{}",
+            string_field(row, "name")?,
+            string_field(row, "player_id")?
+        );
+        if actual_team != expected_team {
+            wrong_team.push(format!("{identity} ({actual_team})"));
+        } else if exclude_goalies && string_field(row, "position")? == "G" {
+            goalie_scoring_rows.push(identity);
+        } else {
+            retained.push(row);
+        }
+    }
+    if retained.is_empty() && !wrong_team.is_empty() {
+        return Err(AhlFeedError::Validation(format!(
+            "{report_kind} report for {expected_team} contained only other-team rows: {}",
+            wrong_team.join(", ")
+        )));
+    }
+    let mut warnings = Vec::new();
+    if !wrong_team.is_empty() {
+        warnings.push(format!(
+            "Excluded {} other-team row(s) from the {report_kind} report for {expected_team}: {}.",
+            wrong_team.len(),
+            wrong_team.join(", ")
+        ));
+    }
+    if !goalie_scoring_rows.is_empty() {
+        warnings.push(format!(
+            "Excluded {} goalie scoring row(s) from the skater report for {expected_team}; typed goalie totals come from the separate goalie report: {}.",
+            goalie_scoring_rows.len(),
+            goalie_scoring_rows.join(", ")
+        ));
+    }
+    Ok((retained, warnings))
+}
+
 fn roster_rows(value: &Value) -> Result<Vec<(&str, &Value)>, AhlFeedError> {
     let reports = value
         .get("roster")
@@ -2467,6 +2702,81 @@ fn roster_rows(value: &Value) -> Result<Vec<(&str, &Value)>, AhlFeedError> {
         }
     }
     Ok(rows)
+}
+
+fn deduplicate_roster_players(
+    players: Vec<AhlRosterPlayer>,
+    team_code: &str,
+) -> Result<(Vec<AhlRosterPlayer>, Vec<String>), AhlFeedError> {
+    let mut retained: Vec<AhlRosterPlayer> = Vec::new();
+    let mut index_by_id = BTreeMap::new();
+    let mut warnings = Vec::new();
+    for player in players {
+        let Some(existing_index) = index_by_id.get(&player.provider_player_id).copied() else {
+            index_by_id.insert(player.provider_player_id.clone(), retained.len());
+            retained.push(player);
+            continue;
+        };
+        let existing = &mut retained[existing_index];
+        let existing_jersey = existing.jersey_number.clone();
+        let duplicate_jersey = player.jersey_number.clone();
+        let existing_position = existing.position.clone();
+        let duplicate_position = player.position.clone();
+        let mut comparable_existing = existing.clone();
+        let mut comparable_duplicate = player.clone();
+        comparable_existing.jersey_number.clear();
+        comparable_duplicate.jersey_number.clear();
+        comparable_existing.position.clear();
+        comparable_duplicate.position.clear();
+        if comparable_existing != comparable_duplicate {
+            return Err(AhlFeedError::Validation(format!(
+                "conflicting duplicate roster rows for {} #{} on {team_code}",
+                player.name, player.provider_player_id
+            )));
+        }
+        let position_changed = existing_position != duplicate_position;
+        if position_changed
+            && !(is_forward_roster_position(&existing_position)
+                && is_forward_roster_position(&duplicate_position))
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "conflicting duplicate roster positions `{existing_position}` and `{duplicate_position}` for {} #{} on {team_code}",
+                player.name, player.provider_player_id
+            )));
+        }
+        let jersey_changed = existing_jersey != duplicate_jersey;
+        if position_changed || jersey_changed {
+            let mut changes = Vec::new();
+            if position_changed {
+                existing.position = "F".to_owned();
+                changes.push(format!(
+                    "forward positions `{existing_position}` and `{duplicate_position}` were generalized to `F`"
+                ));
+            }
+            if jersey_changed {
+                existing.jersey_number.clear();
+                changes.push(format!(
+                    "jersey numbers `{existing_jersey}` and `{duplicate_jersey}` were omitted"
+                ));
+            }
+            warnings.push(format!(
+                "Collapsed compatible duplicate roster rows for {} #{} on {team_code}; {}.",
+                player.name,
+                player.provider_player_id,
+                changes.join(" and ")
+            ));
+        } else {
+            warnings.push(format!(
+                "Collapsed an exact duplicate roster row for {} #{} on {team_code}.",
+                player.name, player.provider_player_id
+            ));
+        }
+    }
+    Ok((retained, warnings))
+}
+
+fn is_forward_roster_position(position: &str) -> bool {
+    matches!(position, "F" | "C" | "LW" | "RW")
 }
 
 fn parse_roster_player(group: &str, row: &Value) -> Result<AhlRosterPlayer, AhlFeedError> {
@@ -2631,6 +2941,80 @@ mod tests {
     }
 
     #[test]
+    fn team_report_filter_retains_typed_rows_and_audits_provider_contamination() {
+        let value = serde_json::json!([{"sections": [{"data": [
+            {"row": {"player_id": "1", "name": "Chicago Forward", "team_code": "CHI", "position": "F"}},
+            {"row": {"player_id": "2", "name": "Chicago Goalie", "team_code": "CHI", "position": "G"}},
+            {"row": {"player_id": "3", "name": "Loaned Goalie", "team_code": "SYR", "position": "G"}}
+        ]}]}]);
+
+        let (rows, warnings) = team_report_rows(&value, "CHI", "skater", true).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(string_field(rows[0], "name").unwrap(), "Chicago Forward");
+        assert_eq!(warnings.len(), 2);
+        assert!(warnings[0].contains("Loaned Goalie #3 (SYR)"));
+        assert!(warnings[1].contains("Chicago Goalie #2"));
+    }
+
+    #[test]
+    fn team_report_filter_fails_when_every_player_belongs_to_another_team() {
+        let value = serde_json::json!([{"sections": [{"data": [
+            {"row": {"player_id": "3", "name": "Loaned Goalie", "team_code": "SYR"}}
+        ]}]}]);
+
+        let error = team_report_rows(&value, "CHI", "goalie", false).unwrap_err();
+
+        assert!(error.to_string().contains("contained only other-team rows"));
+        assert!(error.to_string().contains("Loaned Goalie #3 (SYR)"));
+    }
+
+    #[test]
+    fn roster_filter_collapses_compatible_jersey_history_but_rejects_conflicts() {
+        let player = AhlRosterPlayer {
+            provider: AHL_PROVIDER.to_owned(),
+            provider_player_id: "9657".to_owned(),
+            name: "Chris Jandric".to_owned(),
+            position_group: "Defenders".to_owned(),
+            position: "D".to_owned(),
+            jersey_number: "7".to_owned(),
+            handedness: "L".to_owned(),
+            height: "5-11".to_owned(),
+            weight_pounds: "181".to_owned(),
+            birthdate: "1998-10-03".to_owned(),
+            birthplace: "Prince George, BC".to_owned(),
+        };
+        let mut renumbered = player.clone();
+        renumbered.jersey_number = "37".to_owned();
+
+        let (players, warnings) =
+            deduplicate_roster_players(vec![player.clone(), renumbered], "LAV").unwrap();
+
+        assert_eq!(players.len(), 1);
+        assert!(players[0].jersey_number.is_empty());
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("jersey numbers `7` and `37` were omitted"));
+
+        let mut center = player.clone();
+        center.provider_player_id = "6354".to_owned();
+        center.name = "Danton Heinen".to_owned();
+        center.position_group = "Forwards".to_owned();
+        center.position = "C".to_owned();
+        let mut wing = center.clone();
+        wing.position = "LW".to_owned();
+        let (players, warnings) = deduplicate_roster_players(vec![center, wing], "CLE").unwrap();
+        assert_eq!(players[0].position, "F");
+        assert!(warnings[0].contains("forward positions `C` and `LW` were generalized to `F`"));
+
+        let mut conflicting = player.clone();
+        conflicting.birthdate = "1998-10-04".to_owned();
+        let error = deduplicate_roster_players(vec![player, conflicting], "LAV").unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("conflicting duplicate roster rows"));
+    }
+
+    #[test]
     fn season_labels_are_annual_and_validated() {
         assert_eq!(season_label(20262027).unwrap(), "2026-27 Regular Season");
         assert!(season_label(20262028).is_err());
@@ -2758,6 +3142,7 @@ mod tests {
                 }],
                 skaters: Vec::new(),
                 goalies: Vec::new(),
+                source_warnings: Vec::new(),
             }],
         }
     }
@@ -3024,6 +3409,58 @@ mod tests {
     }
 
     #[test]
+    fn league_exact_review_retains_child_batches_and_skips_empty_lanes() {
+        let league =
+            build_ahl_identity_league_crosswalk(&identity_snapshot(), &identity_catalog()).unwrap();
+        let (reviewed, audit) = apply_ahl_identity_league_routine_review(
+            &league,
+            AhlIdentityLeagueRoutineReviewKind::Exact,
+            "League Exact Reviewer",
+            "2026-07-25T17:00:00Z",
+        )
+        .unwrap();
+        assert_eq!(audit.schema, AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA);
+        assert_eq!(audit.applied_decisions, 1);
+        assert_eq!(audit.eligible_teams, 1);
+        assert_eq!(audit.batches.len(), 1);
+        assert_eq!(
+            reviewed.crosswalks[0].rows[0].review_status,
+            AhlIdentityReviewStatus::Reviewed
+        );
+
+        let (_, alias_audit) = apply_ahl_identity_league_routine_review(
+            &reviewed,
+            AhlIdentityLeagueRoutineReviewKind::Aliases,
+            "League Alias Reviewer",
+            "2026-07-25T18:00:00Z",
+        )
+        .unwrap();
+        assert_eq!(alias_audit.applied_decisions, 0);
+        assert_eq!(alias_audit.skipped_teams, ["Hartford Wolf Pack"]);
+    }
+
+    #[test]
+    fn league_alias_review_preserves_explicit_remaps() {
+        let mut league =
+            build_ahl_identity_league_crosswalk(&identity_snapshot(), &identity_catalog()).unwrap();
+        league.crosswalks[0].rows[0].ahl_display_name = "A. Thompson".to_owned();
+        league.crosswalks[0].rows[0].match_basis = AhlIdentityMatchBasis::SurnameAndBirthDate;
+        league.crosswalks[0].counts = identity_crosswalk_counts(&league.crosswalks[0].rows);
+        let (reviewed, audit) = apply_ahl_identity_league_routine_review(
+            &league,
+            AhlIdentityLeagueRoutineReviewKind::Aliases,
+            "League Alias Reviewer",
+            "2026-07-25T18:00:00Z",
+        )
+        .unwrap();
+        assert_eq!(audit.applied_decisions, 1);
+        assert_eq!(
+            reviewed.crosswalks[0].rows[0].match_basis,
+            AhlIdentityMatchBasis::ReviewedOverride
+        );
+    }
+
+    #[test]
     fn explicit_set_identity_supports_sourced_alias_override() {
         let mut catalog = identity_catalog();
         catalog.candidates.clear();
@@ -3143,6 +3580,17 @@ mod tests {
             merged.candidates[0].birth_date.as_deref(),
             Some("2002-02-18")
         );
+
+        let mut repeated_search_catalog = identity_catalog();
+        let mut repeated_candidate = repeated_search_catalog.candidates[0].clone();
+        repeated_candidate.evidence_urls =
+            vec!["https://search.d3.nhle.com/player/a-thompson".to_owned()];
+        repeated_search_catalog.candidates.push(repeated_candidate);
+        let merged =
+            merge_ahl_canonical_identity_catalogs("2026-07-24", &[repeated_search_catalog])
+                .unwrap();
+        assert_eq!(merged.candidates.len(), 1);
+        assert_eq!(merged.candidates[0].evidence_urls.len(), 2);
 
         let mut conflicting = search_catalog;
         conflicting.candidates[0].display_name = "Different Player".to_owned();

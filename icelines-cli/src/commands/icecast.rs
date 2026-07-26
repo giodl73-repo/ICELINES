@@ -48,7 +48,8 @@ use icelines_core::{
 };
 use icelines_fetch::{
     ahl::{
-        affiliate_projection_input_from_reviewed_crosswalk, apply_ahl_identity_review_decisions,
+        affiliate_projection_input_from_reviewed_crosswalk,
+        apply_ahl_identity_league_routine_review, apply_ahl_identity_review_decisions,
         build_ahl_alias_identity_review, build_ahl_exact_identity_review,
         build_ahl_identity_crosswalk, build_ahl_identity_league_crosswalk,
         build_ahl_identity_league_review, build_ahl_identity_rejection_review,
@@ -56,10 +57,11 @@ use icelines_fetch::{
         enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
         parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
         AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
-        AhlIdentityInspectionScope, AhlIdentityLeagueReviewView, AhlIdentityMatchBasis,
-        AhlIdentityReviewDecisions, AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView,
-        AhlIdentityReviewStatus, AhlProjectionPlayerFacts, AhlRosterStatsSnapshot,
-        AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA, AHL_IDENTITY_CROSSWALK_SCHEMA,
+        AhlIdentityInspectionScope, AhlIdentityLeagueCrosswalkView, AhlIdentityLeagueReviewView,
+        AhlIdentityLeagueRoutineReviewKind, AhlIdentityMatchBasis, AhlIdentityReviewDecisions,
+        AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView, AhlIdentityReviewStatus,
+        AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
+        AHL_IDENTITY_CROSSWALK_SCHEMA,
     },
     ahl_rollover::{
         apply_ahl_preseason_organization_review, build_ahl_preseason_organization_review_draft,
@@ -934,6 +936,86 @@ pub fn run_affiliate_review_aliases(
     Ok(())
 }
 
+pub fn run_affiliate_review_exact_league(
+    league_crosswalk_path: PathBuf,
+    reviewer: String,
+    reviewed_at: String,
+    decisions_out: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    run_affiliate_review_routine_league(
+        league_crosswalk_path,
+        AhlIdentityLeagueRoutineReviewKind::Exact,
+        reviewer,
+        reviewed_at,
+        decisions_out,
+        json,
+        out,
+    )
+}
+
+pub fn run_affiliate_review_aliases_league(
+    league_crosswalk_path: PathBuf,
+    reviewer: String,
+    reviewed_at: String,
+    decisions_out: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    run_affiliate_review_routine_league(
+        league_crosswalk_path,
+        AhlIdentityLeagueRoutineReviewKind::Aliases,
+        reviewer,
+        reviewed_at,
+        decisions_out,
+        json,
+        out,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_affiliate_review_routine_league(
+    league_crosswalk_path: PathBuf,
+    kind: AhlIdentityLeagueRoutineReviewKind,
+    reviewer: String,
+    reviewed_at: String,
+    decisions_out: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let league: AhlIdentityLeagueCrosswalkView =
+        read_icecast_json(&league_crosswalk_path, "AHL league identity crosswalk")?;
+    let (reviewed, decisions) =
+        apply_ahl_identity_league_routine_review(&league, kind, reviewer, reviewed_at)
+            .map_err(anyhow::Error::msg)?;
+    if let Some(path) = decisions_out.as_deref() {
+        let bytes = format!("{}\n", serde_json::to_string_pretty(&decisions)?);
+        write_icecast_file(
+            path,
+            bytes.as_bytes(),
+            "AHL league identity review decisions",
+        )?;
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&reviewed)?)
+    } else {
+        let review =
+            build_ahl_identity_league_review(&reviewed.crosswalks).map_err(anyhow::Error::msg)?;
+        render_affiliate_identity_league(&review)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "reviewed AHL league identity crosswalk",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_affiliate_review_reject(
     crosswalk_path: PathBuf,
     provider_player_ids: Vec<String>,
@@ -988,13 +1070,22 @@ pub fn run_affiliate_review_reject(
 
 pub fn run_affiliate_review_league(
     crosswalk_paths: Vec<PathBuf>,
+    league_crosswalk_paths: Vec<PathBuf>,
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    let crosswalks = crosswalk_paths
+    if crosswalk_paths.is_empty() && league_crosswalk_paths.is_empty() {
+        bail!("affiliate league review requires --crosswalk or --league-crosswalk");
+    }
+    let mut crosswalks = crosswalk_paths
         .iter()
         .map(|path| read_icecast_json(path, "AHL identity crosswalk"))
         .collect::<anyhow::Result<Vec<AhlIdentityCrosswalkView>>>()?;
+    for path in &league_crosswalk_paths {
+        let envelope: AhlIdentityLeagueCrosswalkView =
+            read_icecast_json(path, "AHL league identity crosswalk")?;
+        crosswalks.extend(envelope.crosswalks);
+    }
     let view = build_ahl_identity_league_review(&crosswalks).map_err(anyhow::Error::msg)?;
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&view)?)
@@ -1249,7 +1340,7 @@ async fn discover_official_affiliate_identities_for_teams(
         }
     }
     let search_results =
-        fetch_generic_http_batch_async(requests, cache_root.clone(), refresh, 6).await;
+        fetch_identity_search_cachelines(requests, cache_root.clone(), refresh).await;
     let mut search_candidates = Vec::new();
     for (dataset_id, result) in search_results {
         let (name, source_url) = request_context
@@ -1299,7 +1390,7 @@ async fn discover_official_affiliate_identities_for_teams(
         }
     }
     let surname_results =
-        fetch_generic_http_batch_async(surname_requests, cache_root.clone(), refresh, 6).await;
+        fetch_identity_search_cachelines(surname_requests, cache_root.clone(), refresh).await;
     let mut surname_search_candidates = 0;
     for (dataset_id, result) in surname_results {
         let (name, source_url) = surname_context
@@ -1326,14 +1417,7 @@ async fn discover_official_affiliate_identities_for_teams(
         .iter()
         .map(|candidate| candidate.nhl_player_id)
         .collect::<Vec<_>>();
-    let landing_bytes = fetch_player_landing_batch_bytes_async(
-        ids,
-        FletchPlayerLandingArtifact::Landing,
-        cache_root,
-        refresh,
-        50,
-    )
-    .await?;
+    let landing_bytes = fetch_identity_landing_cachelines(ids, cache_root, refresh).await?;
     let mut landing_enriched = 0;
     let mut discovered = Vec::with_capacity(search_catalog.candidates.len());
     for candidate in &search_catalog.candidates {
@@ -1362,6 +1446,44 @@ async fn discover_official_affiliate_identities_for_teams(
         surname_search_candidates,
         landing_enriched,
     ))
+}
+
+const IDENTITY_SEARCH_BATCH_SIZE: usize = 200;
+const IDENTITY_LANDING_BATCH_SIZE: usize = 100;
+
+async fn fetch_identity_search_cachelines(
+    requests: Vec<(String, String)>,
+    cache_root: PathBuf,
+    refresh: bool,
+) -> Vec<(String, anyhow::Result<Vec<u8>>)> {
+    let mut results = Vec::with_capacity(requests.len());
+    for chunk in requests.chunks(IDENTITY_SEARCH_BATCH_SIZE) {
+        results.extend(
+            fetch_generic_http_batch_async(chunk.to_vec(), cache_root.clone(), refresh, 6).await,
+        );
+    }
+    results
+}
+
+async fn fetch_identity_landing_cachelines(
+    player_ids: Vec<u32>,
+    cache_root: PathBuf,
+    refresh: bool,
+) -> anyhow::Result<BTreeMap<u32, Vec<u8>>> {
+    let mut results = BTreeMap::new();
+    for chunk in player_ids.chunks(IDENTITY_LANDING_BATCH_SIZE) {
+        results.extend(
+            fetch_player_landing_batch_bytes_async(
+                chunk.to_vec(),
+                FletchPlayerLandingArtifact::Landing,
+                cache_root.clone(),
+                refresh,
+                50,
+            )
+            .await?,
+        );
+    }
+    Ok(results)
 }
 
 pub fn run_affiliate_input(

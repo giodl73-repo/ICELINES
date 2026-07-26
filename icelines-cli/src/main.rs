@@ -1999,6 +1999,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewExactLeague {
+            league_crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_exact_league(
+            league_crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::AffiliateReviewAliases {
             crosswalk,
             reviewer,
@@ -2008,6 +2023,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             out,
         }) => commands::icecast::run_affiliate_review_aliases(
             crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewAliasesLeague {
+            league_crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_aliases_league(
+            league_crosswalk,
             reviewer,
             reviewed_at,
             decisions_out,
@@ -2037,9 +2067,15 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         )?,
         Commands::Icecast(IceCastSubcommand::AffiliateReviewLeague {
             crosswalks,
+            league_crosswalks,
             json,
             out,
-        }) => commands::icecast::run_affiliate_review_league(crosswalks, json, out)?,
+        }) => commands::icecast::run_affiliate_review_league(
+            crosswalks,
+            league_crosswalks,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::AffiliateReviewShow {
             crosswalk,
             attention_only,
