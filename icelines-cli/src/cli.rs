@@ -1365,6 +1365,16 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Rank the read-only league identity exception queue by review leverage.
+    #[command(name = "affiliate-review-board")]
+    AffiliateReviewBoard {
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Inspect an existing AHL identity crosswalk without changing review state.
     #[command(name = "affiliate-review-show")]
     AffiliateReviewShow {
@@ -3080,6 +3090,26 @@ mod tui_surface_tests {
                     json: true,
                     ..
                 }) if crosswalks.is_empty() && league_crosswalks.len() == 2
+            ));
+
+            let board = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-board",
+                "--review",
+                "league-review.json",
+                "--json",
+                "--out",
+                "league-exception-board.json",
+            ])
+            .expect("affiliate identity exception board should parse");
+            assert!(matches!(
+                board.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewBoard {
+                    review,
+                    json: true,
+                    ..
+                }) if review == PathBuf::from("league-review.json")
             ));
 
             let show = Cli::try_parse_from([

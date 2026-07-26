@@ -2108,6 +2108,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewBoard { review, json, out }) => {
+            commands::icecast::run_affiliate_review_board(review, json, out)?
+        }
         Commands::Icecast(IceCastSubcommand::AffiliateReviewShow {
             crosswalk,
             attention_only,

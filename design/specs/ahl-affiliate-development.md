@@ -193,10 +193,21 @@ Resolved basis points include explicit mapping rejections; canonical-identity
 basis points count only reviewed NHL mappings. The aggregate is read-only and
 cannot turn coverage reporting into review authority.
 
+`affiliate-review-board` is the UI-neutral triage projection over that queue.
+Each row carries a deterministic priority score, recommended action,
+occurrence count, distinct seasons and teams, retained evidence, and structured
+conflicting date pairs. Routine exact and alias wins receive the highest base
+scores, with collision-scale date conflicts receiving a dedicated
+investigation action ahead of ordinary birth conflicts, ambiguity, missing
+canonical evidence, and rejected-mapping audits. An absolute date delta of at
+least 1,460 days is collision-scale. Recurrence adds bounded appearance,
+season, and team leverage; a conflict with a canonical ID, date pair, and two
+retained sources receives an evidence-readiness bonus. The board never creates
+review authority.
+
 ## Data work remaining
 
-- run the new league acquisition/review pipeline over three full historical
-  AHL snapshots and resolve its evidence queues; retain Conor McCollum as
+- continue resolving the three-season historical evidence queue; retain Conor McCollum as
   pending unless stronger date authority emerges;
 - add dated historical NHL/AHL affiliation catalogs rather than applying the
   current association map to old seasons;

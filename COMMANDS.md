@@ -1028,6 +1028,7 @@ icelines icecast affiliate-review-conflicts-league --league-crosswalk ahl-league
 icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
 icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
 icelines icecast affiliate-review-league --league-crosswalk ahl-2023-reviewed.json --league-crosswalk ahl-2024-reviewed.json --league-crosswalk ahl-2025-reviewed.json --json --out ahl-three-season-identity-review.json
+icelines icecast affiliate-review-board --review ahl-three-season-identity-review.json --json --out ahl-identity-exception-board.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --out hartford-review-with-aliases-draft.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --include-conflicts --out hartford-complete-proposals-draft.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json
@@ -1241,6 +1242,15 @@ rows are grouped by canonical NHL ID when present, otherwise by normalized AHL
 name plus birth date. This surface is read-only and never creates approval
 authority.
 
+`icecast affiliate-review-board` projects that league review into the
+UI-neutral `ahl_identity_exception_board.v1` triage contract. It recommends a
+review action, retains teams/seasons/conflicting date pairs and evidence, and
+ranks recurring multi-season exceptions ahead of lower-leverage one-offs. Its
+published score is deterministic and read-only; rank never grants review
+authority. Conflict pairs expose their absolute day delta; a delta of at least
+1,460 days recommends identity-collision investigation rather than a date
+override.
+
 `icecast affiliate-review-show` is the read-only text/JSON inspection surface
 for an existing crosswalk. IceLines projects the authoritative crosswalk into
 the UI-neutral `ahl_identity_review_inspection.v1` contract, which carries
@@ -1258,8 +1268,8 @@ explicit sourced `set_identity` alias/remaps, and `reject`; rejects unknown or
 duplicate provider IDs, duplicate resulting NHL IDs, invalid evidence URLs,
 empty notes, stale bindings, draft documents, and missing reviewer authority.
 Untouched rows retain their prior status. Every applied row records reviewer,
-timestamp, action, and note; accepting a birth-date conflict remains explicit
-rather than hiding either source date.
+timestamp, action, and note. Birth-date conflicts reject `accept_proposal` and
+require the targeted sourced `set_identity` workflow.
 
 `icecast affiliate-status-draft` emits the second, non-applicable
 `ahl_preseason_organization_review.v1` gate for every prior affiliate player.

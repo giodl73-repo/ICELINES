@@ -23,6 +23,8 @@ pub const AHL_IDENTITY_LEAGUE_REVIEW_DRAFT_SCHEMA: &str = "ahl_identity_league_r
 pub const AHL_IDENTITY_REVIEW_INSPECTION_SCHEMA: &str = "ahl_identity_review_inspection.v1";
 pub const AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA: &str = "ahl_identity_review_decisions.v1";
 pub const AHL_IDENTITY_LEAGUE_REVIEW_SCHEMA: &str = "ahl_identity_league_review.v1";
+pub const AHL_IDENTITY_EXCEPTION_BOARD_SCHEMA: &str = "ahl_identity_exception_board.v1";
+pub const AHL_IDENTITY_COLLISION_DELTA_DAYS: u32 = 1_460;
 pub const AHL_PROVIDER: &str = "ahl_hockeytech_statview";
 pub const AHL_STATS_SOURCE_URL: &str = "https://theahl.com/stats/player-stats";
 pub const AHL_ROSTER_SOURCE_URL: &str = "https://theahl.com/stats/roster";
@@ -658,6 +660,54 @@ pub struct AhlIdentityLeagueReviewView {
     pub disclosures: Vec<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AhlIdentityExceptionAction {
+    ApplyRoutineExact,
+    ApplyRoutineAlias,
+    ResolveBirthDateConflict,
+    InvestigateIdentityCollision,
+    InspectAmbiguous,
+    AcquireCanonicalEvidence,
+    AuditRejectedMapping,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlIdentityConflictDatePair {
+    pub ahl_birth_date: String,
+    pub nhl_birth_date: String,
+    pub absolute_delta_days: u32,
+    pub appearances: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlIdentityExceptionBoardRow {
+    pub rank: usize,
+    pub priority_score: u16,
+    pub identity_key: String,
+    pub ahl_display_name: String,
+    pub nhl_player_id: Option<u32>,
+    pub nhl_display_name: Option<String>,
+    pub occurrences: usize,
+    pub seasons: Vec<u32>,
+    pub ahl_teams: Vec<String>,
+    pub review_statuses: Vec<AhlIdentityReviewStatus>,
+    pub match_bases: Vec<AhlIdentityMatchBasis>,
+    pub recommended_action: AhlIdentityExceptionAction,
+    pub conflict_date_pairs: Vec<AhlIdentityConflictDatePair>,
+    pub evidence_urls: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlIdentityExceptionBoardView {
+    pub schema: String,
+    pub source_schema: String,
+    pub groups: usize,
+    pub appearances: usize,
+    pub rows: Vec<AhlIdentityExceptionBoardRow>,
+    pub disclosures: Vec<String>,
+}
+
 pub fn build_ahl_identity_league_review(
     crosswalks: &[AhlIdentityCrosswalkView],
 ) -> Result<AhlIdentityLeagueReviewView, AhlFeedError> {
@@ -807,6 +857,209 @@ pub fn build_ahl_identity_league_review(
             "League coverage composes independently reviewed, snapshot-bound team-season crosswalks; it does not create or approve identity decisions.".to_owned(),
             "Attention groups contain every pending or rejected appearance. Canonical NHL IDs are the strongest grouping key; AHL name plus birth date is used only when no NHL ID exists.".to_owned(),
             "Resolved coverage includes explicit mapping rejections, while canonical identity coverage counts only reviewed NHL identities.".to_owned(),
+        ],
+    })
+}
+
+/// Rank the read-only league exception queue by review leverage. This board
+/// creates no identity authority and never changes review state.
+pub fn build_ahl_identity_exception_board(
+    review: &AhlIdentityLeagueReviewView,
+) -> Result<AhlIdentityExceptionBoardView, AhlFeedError> {
+    if review.schema != AHL_IDENTITY_LEAGUE_REVIEW_SCHEMA {
+        return Err(AhlFeedError::Validation(
+            "identity exception board requires an AHL league review authority".to_owned(),
+        ));
+    }
+    let mut rows = Vec::with_capacity(review.attention_groups.len());
+    let mut identity_keys = BTreeSet::new();
+    for group in &review.attention_groups {
+        if group.identity_key.trim().is_empty()
+            || !identity_keys.insert(group.identity_key.as_str())
+            || group.occurrences == 0
+            || group.occurrences != group.appearances.len()
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "identity exception group `{}` has stale occurrence coverage",
+                group.identity_key
+            )));
+        }
+        let pending_bases = group
+            .appearances
+            .iter()
+            .filter(|appearance| appearance.review_status == AhlIdentityReviewStatus::Pending)
+            .map(|appearance| appearance.match_basis)
+            .collect::<Vec<_>>();
+        let mut collision_scale_delta = false;
+        for appearance in group.appearances.iter().filter(|appearance| {
+            appearance.review_status == AhlIdentityReviewStatus::Pending
+                && appearance.match_basis == AhlIdentityMatchBasis::BirthDateConflict
+        }) {
+            let Some(nhl_birth_date) = appearance.nhl_birth_date.as_deref() else {
+                continue;
+            };
+            let ahl_date =
+                chrono::NaiveDate::parse_from_str(&appearance.ahl_birth_date, "%Y-%m-%d").map_err(
+                    |_| {
+                        AhlFeedError::Validation(format!(
+                            "identity exception {} has invalid AHL conflict date",
+                            group.identity_key
+                        ))
+                    },
+                )?;
+            let nhl_date =
+                chrono::NaiveDate::parse_from_str(nhl_birth_date, "%Y-%m-%d").map_err(|_| {
+                    AhlFeedError::Validation(format!(
+                        "identity exception {} has invalid NHL conflict date",
+                        group.identity_key
+                    ))
+                })?;
+            if u32::try_from((ahl_date - nhl_date).num_days().unsigned_abs()).unwrap_or(u32::MAX)
+                >= AHL_IDENTITY_COLLISION_DELTA_DAYS
+            {
+                collision_scale_delta = true;
+            }
+        }
+        let recommended_action =
+            if pending_bases.contains(&AhlIdentityMatchBasis::ExactNameAndBirthDate) {
+                AhlIdentityExceptionAction::ApplyRoutineExact
+            } else if pending_bases.contains(&AhlIdentityMatchBasis::SurnameAndBirthDate) {
+                AhlIdentityExceptionAction::ApplyRoutineAlias
+            } else if pending_bases.contains(&AhlIdentityMatchBasis::BirthDateConflict)
+                && collision_scale_delta
+            {
+                AhlIdentityExceptionAction::InvestigateIdentityCollision
+            } else if pending_bases.contains(&AhlIdentityMatchBasis::BirthDateConflict) {
+                AhlIdentityExceptionAction::ResolveBirthDateConflict
+            } else if pending_bases.contains(&AhlIdentityMatchBasis::Ambiguous) {
+                AhlIdentityExceptionAction::InspectAmbiguous
+            } else if !pending_bases.is_empty() {
+                AhlIdentityExceptionAction::AcquireCanonicalEvidence
+            } else {
+                AhlIdentityExceptionAction::AuditRejectedMapping
+            };
+        let seasons = group
+            .appearances
+            .iter()
+            .map(|appearance| appearance.season)
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let ahl_teams = group
+            .appearances
+            .iter()
+            .map(|appearance| appearance.ahl_team.clone())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let mut date_pair_counts = BTreeMap::<(String, String), usize>::new();
+        for appearance in group
+            .appearances
+            .iter()
+            .filter(|appearance| appearance.match_basis == AhlIdentityMatchBasis::BirthDateConflict)
+        {
+            if let Some(nhl_birth_date) = appearance.nhl_birth_date.as_deref() {
+                *date_pair_counts
+                    .entry((appearance.ahl_birth_date.clone(), nhl_birth_date.to_owned()))
+                    .or_default() += 1;
+            }
+        }
+        let mut conflict_date_pairs = Vec::with_capacity(date_pair_counts.len());
+        for ((ahl_birth_date, nhl_birth_date), appearances) in date_pair_counts {
+            let ahl_date =
+                chrono::NaiveDate::parse_from_str(&ahl_birth_date, "%Y-%m-%d").map_err(|_| {
+                    AhlFeedError::Validation(format!(
+                        "identity exception {} has invalid AHL conflict date",
+                        group.identity_key
+                    ))
+                })?;
+            let nhl_date =
+                chrono::NaiveDate::parse_from_str(&nhl_birth_date, "%Y-%m-%d").map_err(|_| {
+                    AhlFeedError::Validation(format!(
+                        "identity exception {} has invalid NHL conflict date",
+                        group.identity_key
+                    ))
+                })?;
+            conflict_date_pairs.push(AhlIdentityConflictDatePair {
+                ahl_birth_date,
+                nhl_birth_date,
+                absolute_delta_days: u32::try_from((ahl_date - nhl_date).num_days().unsigned_abs())
+                    .unwrap_or(u32::MAX),
+                appearances,
+            });
+        }
+        let base_score = match recommended_action {
+            AhlIdentityExceptionAction::ApplyRoutineExact => 80u16,
+            AhlIdentityExceptionAction::InvestigateIdentityCollision => 75,
+            AhlIdentityExceptionAction::ApplyRoutineAlias => 70,
+            AhlIdentityExceptionAction::ResolveBirthDateConflict => 60,
+            AhlIdentityExceptionAction::InspectAmbiguous => 50,
+            AhlIdentityExceptionAction::AcquireCanonicalEvidence => 40,
+            AhlIdentityExceptionAction::AuditRejectedMapping => 20,
+        };
+        let recurrence_score = u16::try_from(group.occurrences.min(20)).unwrap_or(20) * 5;
+        let season_score = u16::try_from(seasons.len().saturating_sub(1).min(10)).unwrap_or(10) * 8;
+        let team_score = u16::try_from(ahl_teams.len().saturating_sub(1).min(10)).unwrap_or(10) * 4;
+        let evidence_ready_score = if recommended_action
+            == AhlIdentityExceptionAction::ResolveBirthDateConflict
+            && group.nhl_player_id.is_some()
+            && !conflict_date_pairs.is_empty()
+            && group.evidence_urls.len() >= 2
+        {
+            10
+        } else {
+            0
+        };
+        rows.push(AhlIdentityExceptionBoardRow {
+            rank: 0,
+            priority_score: base_score
+                + recurrence_score
+                + season_score
+                + team_score
+                + evidence_ready_score,
+            identity_key: group.identity_key.clone(),
+            ahl_display_name: group.ahl_display_name.clone(),
+            nhl_player_id: group.nhl_player_id,
+            nhl_display_name: group.nhl_display_name.clone(),
+            occurrences: group.occurrences,
+            seasons,
+            ahl_teams,
+            review_statuses: group.review_statuses.clone(),
+            match_bases: group.match_bases.clone(),
+            recommended_action,
+            conflict_date_pairs,
+            evidence_urls: group.evidence_urls.clone(),
+        });
+    }
+    rows.sort_by(|left, right| {
+        right
+            .priority_score
+            .cmp(&left.priority_score)
+            .then_with(|| right.occurrences.cmp(&left.occurrences))
+            .then_with(|| left.ahl_display_name.cmp(&right.ahl_display_name))
+            .then_with(|| left.identity_key.cmp(&right.identity_key))
+    });
+    for (index, row) in rows.iter_mut().enumerate() {
+        row.rank = index + 1;
+    }
+    let appearances = rows.iter().map(|row| row.occurrences).sum::<usize>();
+    if appearances != review.pending + review.rejected {
+        return Err(AhlFeedError::Validation(
+            "identity exception board source coverage does not match pending plus rejected rows"
+                .to_owned(),
+        ));
+    }
+    Ok(AhlIdentityExceptionBoardView {
+        schema: AHL_IDENTITY_EXCEPTION_BOARD_SCHEMA.to_owned(),
+        source_schema: review.schema.clone(),
+        groups: rows.len(),
+        appearances,
+        rows,
+        disclosures: vec![
+            "The exception board is read-only triage: priority never approves, rejects, or remaps an identity.".to_owned(),
+            "Priority score = action base (routine exact 80, identity-collision investigation 75, routine alias 70, birth conflict 60, ambiguous 50, missing evidence 40, rejected audit 20) + 5 per appearance (max 20) + 8 per additional season (max 10) + 4 per additional team (max 10) + 10 for a conflict with canonical ID, date pair, and at least two retained sources.".to_owned(),
+            format!("A pending birth conflict with an absolute date delta of at least {} days is triaged as an identity-collision investigation; this threshold creates no rejection or remap authority.", AHL_IDENTITY_COLLISION_DELTA_DAYS),
+            "Ranks are deterministic; ties use occurrence count, AHL display name, then identity key.".to_owned(),
         ],
     })
 }
@@ -3742,6 +3995,82 @@ mod tests {
         assert_eq!(league.attention_groups[0].appearances[1].season, 20262027);
         assert_eq!(league.summaries[0].ahl_team, "Hartford Wolf Pack");
         assert_eq!(league.summaries[1].ahl_team, "Bridgeport Islanders");
+    }
+
+    #[test]
+    fn exception_board_ranks_recurring_conflicts_and_retains_date_pairs() {
+        let mut first = build_ahl_identity_crosswalk(
+            &identity_snapshot(),
+            "Hartford Wolf Pack",
+            &identity_catalog(),
+        )
+        .unwrap();
+        first.season = 20252026;
+        first.rows[0].match_basis = AhlIdentityMatchBasis::BirthDateConflict;
+        first.rows[0].ahl_birth_date = "2002-02-17".to_owned();
+        first.rows[0]
+            .evidence_urls
+            .push("https://example.test/club/player-8480001".to_owned());
+        first.counts = identity_crosswalk_counts(&first.rows);
+
+        let mut second = first.clone();
+        second.season = 20262027;
+        second.roster_fetched_at = "2026-07-25T15:00:00Z".to_owned();
+
+        let mut exact = build_ahl_identity_crosswalk(
+            &identity_snapshot(),
+            "Hartford Wolf Pack",
+            &identity_catalog(),
+        )
+        .unwrap();
+        exact.ahl_team = "Bridgeport Islanders".to_owned();
+        exact.rows[0].nhl_player_id = Some(8_480_002);
+        let mut collision = exact.clone();
+        collision.ahl_team = "Springfield Thunderbirds".to_owned();
+        collision.rows[0].nhl_player_id = Some(8_480_003);
+        collision.rows[0].match_basis = AhlIdentityMatchBasis::BirthDateConflict;
+        collision.rows[0].ahl_birth_date = "1990-01-01".to_owned();
+        collision.counts = identity_crosswalk_counts(&collision.rows);
+        let review = build_ahl_identity_league_review(&[collision, exact, second, first]).unwrap();
+        let board = build_ahl_identity_exception_board(&review).unwrap();
+
+        assert_eq!(board.schema, AHL_IDENTITY_EXCEPTION_BOARD_SCHEMA);
+        assert_eq!(board.groups, 3);
+        assert_eq!(board.appearances, 4);
+        assert_eq!(board.rows[0].rank, 1);
+        assert_eq!(board.rows[0].occurrences, 2);
+        assert_eq!(
+            board.rows[0].recommended_action,
+            AhlIdentityExceptionAction::ResolveBirthDateConflict
+        );
+        assert_eq!(board.rows[0].conflict_date_pairs.len(), 1);
+        assert_eq!(
+            board.rows[0].conflict_date_pairs[0].ahl_birth_date,
+            "2002-02-17"
+        );
+        assert_eq!(board.rows[0].conflict_date_pairs[0].appearances, 2);
+        assert_eq!(board.rows[0].conflict_date_pairs[0].absolute_delta_days, 1);
+        assert_eq!(
+            board.rows[1].recommended_action,
+            AhlIdentityExceptionAction::ApplyRoutineExact
+        );
+        let collision = board
+            .rows
+            .iter()
+            .find(|row| row.nhl_player_id == Some(8_480_003))
+            .unwrap();
+        assert_eq!(
+            collision.recommended_action,
+            AhlIdentityExceptionAction::InvestigateIdentityCollision
+        );
+        assert!(collision.conflict_date_pairs[0].absolute_delta_days >= 1_460);
+
+        let mut stale = review;
+        stale.attention_groups[0].occurrences += 1;
+        assert!(build_ahl_identity_exception_board(&stale)
+            .unwrap_err()
+            .to_string()
+            .contains("stale occurrence"));
     }
 
     #[test]
