@@ -49,16 +49,17 @@ use icelines_core::{
 use icelines_fetch::{
     ahl::{
         affiliate_projection_input_from_reviewed_crosswalk, ahl_identity_search_name_variants,
-        apply_ahl_identity_league_routine_review, apply_ahl_identity_review_decisions,
-        build_ahl_alias_identity_review, build_ahl_exact_identity_review,
-        build_ahl_identity_crosswalk, build_ahl_identity_league_crosswalk,
-        build_ahl_identity_league_review, build_ahl_identity_league_review_draft,
-        build_ahl_identity_rejection_review, build_ahl_identity_review_draft_with_options,
-        build_ahl_identity_review_inspection, enrich_official_nhl_landing_candidate,
-        merge_ahl_canonical_identity_catalogs, normalize_ahl_identity_name,
-        parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
-        AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
-        AhlIdentityInspectionScope, AhlIdentityLeagueCrosswalkView, AhlIdentityLeagueReviewView,
+        apply_ahl_identity_league_conflict_review, apply_ahl_identity_league_routine_review,
+        apply_ahl_identity_review_decisions, build_ahl_alias_identity_review,
+        build_ahl_exact_identity_review, build_ahl_identity_crosswalk,
+        build_ahl_identity_league_crosswalk, build_ahl_identity_league_review,
+        build_ahl_identity_league_review_draft, build_ahl_identity_rejection_review,
+        build_ahl_identity_review_draft_with_options, build_ahl_identity_review_inspection,
+        enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
+        normalize_ahl_identity_name, parse_official_nhl_search_candidates,
+        parse_official_nhl_search_candidates_by_surname, AhlCanonicalIdentityCandidate,
+        AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityInspectionScope,
+        AhlIdentityLeagueCrosswalkView, AhlIdentityLeagueReviewView,
         AhlIdentityLeagueRoutineReviewKind, AhlIdentityMatchBasis, AhlIdentityReviewDecisions,
         AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView, AhlIdentityReviewStatus,
         AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
@@ -998,6 +999,56 @@ pub fn run_affiliate_review_aliases_league(
         json,
         out,
     )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_affiliate_review_conflicts_league(
+    league_crosswalk_path: PathBuf,
+    nhl_player_ids: Vec<u32>,
+    evidence_urls: Vec<String>,
+    reviewer: String,
+    reviewed_at: String,
+    note: String,
+    decisions_out: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let league: AhlIdentityLeagueCrosswalkView =
+        read_icecast_json(&league_crosswalk_path, "AHL league identity crosswalk")?;
+    let (reviewed, decisions) = apply_ahl_identity_league_conflict_review(
+        &league,
+        &nhl_player_ids,
+        &evidence_urls,
+        reviewer,
+        reviewed_at,
+        note,
+    )
+    .map_err(anyhow::Error::msg)?;
+    if let Some(path) = decisions_out.as_deref() {
+        let bytes = format!("{}\n", serde_json::to_string_pretty(&decisions)?);
+        write_icecast_file(
+            path,
+            bytes.as_bytes(),
+            "AHL league identity conflict review decisions",
+        )?;
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&reviewed)?)
+    } else {
+        let review =
+            build_ahl_identity_league_review(&reviewed.crosswalks).map_err(anyhow::Error::msg)?;
+        render_affiliate_identity_league(&review)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "conflict-reviewed AHL league identity crosswalk",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

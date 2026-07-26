@@ -1024,6 +1024,7 @@ icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-r
 icelines icecast affiliate-review-exact-league --league-crosswalk ahl-league-identity-crosswalk.json --reviewer "league-identity-pilot" --reviewed-at 2026-07-25T12:30:00Z --decisions-out ahl-league-exact-decisions.json --json --out ahl-league-exact-reviewed.json
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer "alias-pilot" --reviewed-at 2026-07-25T13:00:00Z --decisions-out hartford-alias-decisions.json --json --out hartford-alias-reviewed.json
 icelines icecast affiliate-review-aliases-league --league-crosswalk ahl-league-exact-reviewed.json --reviewer "league-alias-pilot" --reviewed-at 2026-07-25T13:30:00Z --decisions-out ahl-league-alias-decisions.json --json --out ahl-league-alias-reviewed.json
+icelines icecast affiliate-review-conflicts-league --league-crosswalk ahl-league-alias-reviewed.json --nhl-player-id 8482739 --evidence-url https://theahl.com/stats/player/9166 --evidence-url https://www.nhl.com/flyers/news/flyers-acquire-brett-harrison-jackson-edward-from-boston-in-exchange-for-alexis-gendron-massimo-rizzo --reviewer "league-conflict-pilot" --reviewed-at 2026-07-26T20:10:00Z --note "official NHL club transaction evidence controls the canonical NHL birth date while the AHL provider date remains retained" --decisions-out ahl-league-conflict-decisions.json --json --out ahl-league-conflict-reviewed.json
 icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
 icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
 icelines icecast affiliate-review-league --league-crosswalk ahl-2023-reviewed.json --league-crosswalk ahl-2024-reviewed.json --league-crosswalk ahl-2025-reviewed.json --json --out ahl-three-season-identity-review.json
@@ -1201,12 +1202,21 @@ conflicts or unmatched rows, and the resulting document remains non-applicable
 until a reviewer inspects, edits, and finalizes it.
 `--include-conflicts` adds exact-name birth-conflict rows as explicit
 `accept_proposal` decisions whose notes preserve both dates. It remains opt-in,
-never covers unmatched rows, and does not weaken final reviewer authority.
+never covers unmatched rows, and is inspection-only: final application rejects
+birth conflicts unless they are converted to explicit sourced `set_identity`
+decisions through the targeted conflict workflow.
 
 `icecast affiliate-review-aliases` is the applicable counterpart for sourced
 surname-and-equal-birth-date aliases. It revalidates the name distinction,
 shared surname and date, canonical ID, and absolute evidence before recording
-an explicit `set_identity` remap. `icecast affiliate-review-reject` closes only
+an explicit `set_identity` remap.
+`icecast affiliate-review-conflicts-league` selects proposed NHL IDs but touches
+only pending `birth_date_conflict` rows. It requires additional absolute
+evidence, reviewer, timestamp, and rationale; emits explicit `set_identity`
+decisions; unions retained and new evidence; and records both conflicting dates
+in every decision note. Every requested NHL ID must be eligible or the atomic
+league transformation fails.
+`icecast affiliate-review-reject` closes only
 selected pending NHL identity mappings and requires repeatable provider IDs,
 reviewer, timestamp, and an evidence-backed rationale. It does not assert that
 the underlying AHL person is invalid: AHL-only players and feed-classified
@@ -1214,9 +1224,10 @@ non-player personnel remain distinguishable in the retained note. Repeatable
 `--evidence-url` values are validated as absolute URLs and retained as
 structured row evidence instead of being buried only in prose.
 
-`icecast affiliate-review-exact-league` and
-`icecast affiliate-review-aliases-league` apply those same narrow evidence
-rules atomically across an `ahl_identity_league_crosswalk.v1` envelope. Teams
+`icecast affiliate-review-exact-league`,
+`icecast affiliate-review-aliases-league`, and the targeted conflict command
+apply narrow evidence rules atomically across an
+`ahl_identity_league_crosswalk.v1` envelope. Teams
 without eligible rows are recorded as skipped. The optional decisions output
 is an `ahl_identity_league_review_decisions.v1` audit containing every original
 team-bound batch; the updated league envelope and audit are separate artifacts.

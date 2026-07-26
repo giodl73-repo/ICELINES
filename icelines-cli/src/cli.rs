@@ -1299,6 +1299,32 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Resolve selected league birth-date conflicts with explicit sourced overrides.
+    #[command(name = "affiliate-review-conflicts-league")]
+    AffiliateReviewConflictsLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Proposed canonical NHL player ID; repeat to resolve multiple identities.
+        #[arg(long, value_name = "ID", required = true)]
+        nhl_player_id: Vec<u32>,
+        /// Additional absolute source URL supporting the override; repeat as needed.
+        #[arg(long = "evidence-url", value_name = "URL", required = true)]
+        evidence_urls: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        /// Evidence-backed explanation for selecting the canonical NHL identity/date.
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Reject selected pending NHL identity mappings with retained review authority.
     #[command(name = "affiliate-review-reject")]
     AffiliateReviewReject {
@@ -2936,6 +2962,44 @@ mod tui_surface_tests {
                     json: true,
                     ..
                 }) if reviewer == "league-alias-pilot"
+            ));
+
+            let conflicts_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-conflicts-league",
+                "--league-crosswalk",
+                "league-alias-reviewed.json",
+                "--nhl-player-id",
+                "8482739",
+                "--evidence-url",
+                "https://example.test/ahl/brett-harrison",
+                "--evidence-url",
+                "https://example.test/nhl/brett-harrison",
+                "--reviewer",
+                "league-conflict-pilot",
+                "--reviewed-at",
+                "2026-07-26T20:10:00Z",
+                "--note",
+                "official NHL club evidence controls the canonical date",
+                "--decisions-out",
+                "league-conflict-decisions.json",
+                "--json",
+                "--out",
+                "league-conflict-reviewed.json",
+            ])
+            .expect("conflict league affiliate identity review should parse");
+            assert!(matches!(
+                conflicts_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewConflictsLeague {
+                    nhl_player_id,
+                    evidence_urls,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if nhl_player_id == [8_482_739]
+                    && evidence_urls.len() == 2
+                    && reviewer == "league-conflict-pilot"
             ));
 
             let reject = Cli::try_parse_from([

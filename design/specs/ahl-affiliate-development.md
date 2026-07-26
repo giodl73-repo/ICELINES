@@ -167,7 +167,18 @@ evidence-backed AHL-only, non-player, or other exclusion rationale into the
 crosswalk, while repeatable absolute evidence URLs remain structured on the
 rejected row for every renderer and downstream audit.
 
-The league exact and alias commands apply those routines atomically to the
+Birth-date conflicts use a separate targeted league authority rather than the
+routine exact or alias lanes. A reviewer selects proposed NHL IDs and supplies
+new absolute evidence plus a timestamped rationale. IceLines rechecks that
+every selected row is pending with `birth_date_conflict`, copies the proposed
+canonical ID/name/date into an explicit `set_identity` decision, unions the
+retained and new evidence, and records both provider dates in the note. Every
+requested NHL ID must match at least one eligible team row or the entire league
+operation fails without returning a partially reviewed envelope.
+Generic `accept_proposal` decisions cannot apply birth-date conflicts, even if
+an inspection draft is manually finalized.
+
+The league exact, alias, and targeted conflict commands apply atomically to the
 league acquisition envelope. Their `ahl_identity_league_review_decisions.v1`
 audit retains the original team-bound decision batches, reviewer, timestamp,
 eligible-team count, skipped teams, and total applied decisions. A bad child

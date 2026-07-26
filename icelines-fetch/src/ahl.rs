@@ -494,6 +494,7 @@ pub struct AhlIdentityLeagueCrosswalkView {
 pub enum AhlIdentityLeagueRoutineReviewKind {
     Exact,
     Aliases,
+    Conflicts,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1044,6 +1045,106 @@ pub fn build_ahl_alias_identity_review(
     })
 }
 
+/// Build an applicable, evidence-backed override for selected pending birth
+/// date conflicts. The proposed NHL identity is retained explicitly while the
+/// provider and NHL dates remain visible in the decision note.
+pub fn build_ahl_identity_conflict_review(
+    crosswalk: &AhlIdentityCrosswalkView,
+    nhl_player_ids: &[u32],
+    evidence_urls: &[String],
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+    note: impl Into<String>,
+) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
+    validate_crosswalk_shape(crosswalk)?;
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    let note = note.into();
+    let requested_ids = nhl_player_ids.iter().copied().collect::<BTreeSet<_>>();
+    if nhl_player_ids.is_empty()
+        || requested_ids.len() != nhl_player_ids.len()
+        || requested_ids.contains(&0)
+        || reviewer.trim().is_empty()
+        || note.trim().is_empty()
+        || evidence_urls.is_empty()
+        || evidence_urls.iter().any(|url| !absolute_http_url(url))
+        || chrono::DateTime::parse_from_rfc3339(&reviewed_at).is_err()
+    {
+        return Err(AhlFeedError::Validation(
+            "identity conflict review requires unique NHL IDs, new evidence, reviewer, timestamp, and rationale authority".to_owned(),
+        ));
+    }
+    let mut matched_ids = BTreeSet::new();
+    let mut decisions = Vec::new();
+    for row in crosswalk.rows.iter().filter(|row| {
+        row.nhl_player_id
+            .is_some_and(|id| requested_ids.contains(&id))
+    }) {
+        let Some(nhl_player_id) = row.nhl_player_id else {
+            unreachable!("filtered conflict row has an NHL player ID")
+        };
+        let nhl_display_name = row.nhl_display_name.as_deref().unwrap_or("");
+        let nhl_birth_date = row.nhl_birth_date.as_deref().unwrap_or("");
+        if !matched_ids.insert(nhl_player_id)
+            || row.review_status != AhlIdentityReviewStatus::Pending
+            || row.match_basis != AhlIdentityMatchBasis::BirthDateConflict
+            || normalize_ahl_identity_name(nhl_display_name).is_empty()
+            || chrono::NaiveDate::parse_from_str(&row.ahl_birth_date, "%Y-%m-%d").is_err()
+            || chrono::NaiveDate::parse_from_str(nhl_birth_date, "%Y-%m-%d").is_err()
+            || row.ahl_birth_date == nhl_birth_date
+            || row.evidence_urls.is_empty()
+            || row.evidence_urls.iter().any(|url| !absolute_http_url(url))
+            || evidence_urls
+                .iter()
+                .all(|url| row.evidence_urls.contains(url))
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "identity conflict proposal {nhl_player_id} is duplicate, ineligible, or lacks retained source dates/evidence"
+            )));
+        }
+        let mut retained_evidence = row.evidence_urls.iter().cloned().collect::<BTreeSet<_>>();
+        retained_evidence.extend(evidence_urls.iter().cloned());
+        decisions.push(AhlIdentityReviewDecision {
+            provider_player_id: row.provider_player_id.clone(),
+            action: AhlIdentityReviewAction::SetIdentity,
+            nhl_player_id: Some(nhl_player_id),
+            nhl_display_name: Some(nhl_display_name.to_owned()),
+            nhl_birth_date: Some(nhl_birth_date.to_owned()),
+            evidence_urls: retained_evidence.into_iter().collect(),
+            note: format!(
+                "Confirmed AHL `{}` as NHL `{}` ({}) while retaining conflicting source dates AHL {} and NHL {}. Evidence-backed conflict rationale: {}",
+                row.ahl_display_name,
+                nhl_display_name,
+                nhl_player_id,
+                row.ahl_birth_date,
+                nhl_birth_date,
+                note.trim()
+            ),
+        });
+    }
+    if matched_ids != requested_ids {
+        let missing = requested_ids
+            .difference(&matched_ids)
+            .map(u32::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(AhlFeedError::Validation(format!(
+            "identity conflict review found no eligible proposal for NHL player(s) {missing}"
+        )));
+    }
+    Ok(AhlIdentityReviewDecisions {
+        schema: AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA.to_owned(),
+        season: crosswalk.season,
+        provider: crosswalk.provider.clone(),
+        ahl_team: crosswalk.ahl_team.clone(),
+        roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+        draft: false,
+        reviewer: Some(reviewer),
+        reviewed_at: Some(reviewed_at),
+        decisions,
+    })
+}
+
 /// Atomically apply one routine review lane to every eligible child crosswalk
 /// in a league envelope and retain the per-team decision batches as authority.
 pub fn apply_ahl_identity_league_routine_review(
@@ -1059,6 +1160,11 @@ pub fn apply_ahl_identity_league_routine_review(
     AhlFeedError,
 > {
     validate_ahl_identity_league_crosswalk(league)?;
+    if kind == AhlIdentityLeagueRoutineReviewKind::Conflicts {
+        return Err(AhlFeedError::Validation(
+            "conflict review requires targeted NHL IDs and additional evidence".to_owned(),
+        ));
+    }
     let reviewer = reviewer.into();
     let reviewed_at = reviewed_at.into();
     if reviewer.trim().is_empty() || chrono::DateTime::parse_from_rfc3339(&reviewed_at).is_err() {
@@ -1080,6 +1186,7 @@ pub fn apply_ahl_identity_league_routine_review(
                     AhlIdentityLeagueRoutineReviewKind::Aliases => {
                         row.match_basis == AhlIdentityMatchBasis::SurnameAndBirthDate
                     }
+                    AhlIdentityLeagueRoutineReviewKind::Conflicts => false,
                 }
         });
         if !eligible {
@@ -1092,6 +1199,9 @@ pub fn apply_ahl_identity_league_routine_review(
             }
             AhlIdentityLeagueRoutineReviewKind::Aliases => {
                 build_ahl_alias_identity_review(crosswalk, reviewer.clone(), reviewed_at.clone())?
+            }
+            AhlIdentityLeagueRoutineReviewKind::Conflicts => {
+                unreachable!("conflict reviews are rejected before routine league review")
             }
         };
         applied_decisions += decisions.decisions.len();
@@ -1125,6 +1235,111 @@ pub fn apply_ahl_identity_league_routine_review(
             disclosures: vec![
                 "Each batch remains bound to its original season, provider, team, and roster fetch. Teams without eligible rows are recorded rather than treated as failures.".to_owned(),
                 "League routine review is atomic: invalid evidence in any eligible child prevents an updated envelope from being returned.".to_owned(),
+            ],
+        },
+    ))
+}
+
+/// Atomically resolve selected proposed NHL identities across a league
+/// envelope. Only pending birth-date conflicts are eligible, and every
+/// requested NHL ID must match at least one child row.
+pub fn apply_ahl_identity_league_conflict_review(
+    league: &AhlIdentityLeagueCrosswalkView,
+    nhl_player_ids: &[u32],
+    evidence_urls: &[String],
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+    note: impl Into<String>,
+) -> Result<
+    (
+        AhlIdentityLeagueCrosswalkView,
+        AhlIdentityLeagueReviewDecisionsView,
+    ),
+    AhlFeedError,
+> {
+    validate_ahl_identity_league_crosswalk(league)?;
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    let note = note.into();
+    let requested_ids = nhl_player_ids.iter().copied().collect::<BTreeSet<_>>();
+    if nhl_player_ids.is_empty()
+        || requested_ids.len() != nhl_player_ids.len()
+        || requested_ids.contains(&0)
+    {
+        return Err(AhlFeedError::Validation(
+            "league identity conflict review requires unique non-zero NHL player IDs".to_owned(),
+        ));
+    }
+    let mut output = league.clone();
+    let mut matched_ids = BTreeSet::new();
+    let mut batches = Vec::new();
+    let mut skipped_teams = Vec::new();
+    let mut applied_decisions = 0usize;
+    for crosswalk in &mut output.crosswalks {
+        let team_ids = crosswalk
+            .rows
+            .iter()
+            .filter(|row| {
+                row.review_status == AhlIdentityReviewStatus::Pending
+                    && row.match_basis == AhlIdentityMatchBasis::BirthDateConflict
+            })
+            .filter_map(|row| row.nhl_player_id)
+            .filter(|id| requested_ids.contains(id))
+            .collect::<BTreeSet<_>>();
+        if team_ids.is_empty() {
+            skipped_teams.push(crosswalk.ahl_team.clone());
+            continue;
+        }
+        let team_ids = team_ids.into_iter().collect::<Vec<_>>();
+        let decisions = build_ahl_identity_conflict_review(
+            crosswalk,
+            &team_ids,
+            evidence_urls,
+            reviewer.clone(),
+            reviewed_at.clone(),
+            note.clone(),
+        )?;
+        matched_ids.extend(team_ids);
+        applied_decisions += decisions.decisions.len();
+        *crosswalk = apply_ahl_identity_review_decisions(crosswalk, &decisions)?;
+        batches.push(decisions);
+    }
+    if matched_ids != requested_ids {
+        let missing = requested_ids
+            .difference(&matched_ids)
+            .map(u32::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(AhlFeedError::Validation(format!(
+            "league identity conflict review found no eligible proposal for NHL player(s) {missing}"
+        )));
+    }
+    let eligible_teams = batches.len();
+    output.disclosures.push(format!(
+        "Applied targeted league conflict review: {} decision(s) across {} eligible team(s) by {} at {}; {} team(s) had no selected conflict row.",
+        applied_decisions,
+        eligible_teams,
+        reviewer,
+        reviewed_at,
+        skipped_teams.len()
+    ));
+    Ok((
+        output,
+        AhlIdentityLeagueReviewDecisionsView {
+            schema: AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA.to_owned(),
+            season: league.season,
+            provider: league.provider.clone(),
+            roster_fetched_at: league.roster_fetched_at.clone(),
+            kind: AhlIdentityLeagueRoutineReviewKind::Conflicts,
+            reviewer,
+            reviewed_at,
+            eligible_teams,
+            skipped_teams,
+            applied_decisions,
+            batches,
+            disclosures: vec![
+                "Every batch uses explicit set_identity decisions, retains both conflicting source dates in its note, and unions retained proposal evidence with the reviewer-supplied sources.".to_owned(),
+                "League conflict review is atomic: every requested NHL ID must have an eligible pending birth-date conflict, or no updated envelope is returned.".to_owned(),
             ],
         },
     ))
@@ -1344,6 +1559,12 @@ pub fn apply_ahl_identity_review_decisions(
         }
         match decision.action {
             AhlIdentityReviewAction::AcceptProposal => {
+                if row.match_basis == AhlIdentityMatchBasis::BirthDateConflict {
+                    return Err(AhlFeedError::Validation(format!(
+                        "identity {} birth-date conflict requires an explicit sourced set_identity review",
+                        row.provider_player_id
+                    )));
+                }
                 let id = row.nhl_player_id.ok_or_else(|| {
                     AhlFeedError::Validation(format!(
                         "identity {} has no proposal to accept",
@@ -3838,9 +4059,110 @@ mod tests {
             note: "Confirmed the NHL identity and retained both conflicting source dates."
                 .to_owned(),
         });
-        let reviewed = apply_ahl_identity_review_decisions(&conflict, &review).unwrap();
+        assert!(apply_ahl_identity_review_decisions(&conflict, &review)
+            .unwrap_err()
+            .to_string()
+            .contains("set_identity"));
+    }
+
+    #[test]
+    fn targeted_conflict_review_retains_both_dates_and_additional_evidence() {
+        let snapshot = identity_snapshot();
+        let mut catalog = identity_catalog();
+        catalog.candidates[0].birth_date = Some("2001-02-18".to_owned());
+        let conflict =
+            build_ahl_identity_crosswalk(&snapshot, "Hartford Wolf Pack", &catalog).unwrap();
+        let evidence = vec!["https://example.test/club/player-8480001".to_owned()];
+        let decisions = build_ahl_identity_conflict_review(
+            &conflict,
+            &[8_480_001],
+            &evidence,
+            "Conflict Reviewer",
+            "2026-07-26T20:00:00Z",
+            "The NHL club transaction record controls the canonical NHL birth date.",
+        )
+        .unwrap();
+        assert_eq!(decisions.decisions.len(), 1);
+        let decision = &decisions.decisions[0];
+        assert_eq!(decision.action, AhlIdentityReviewAction::SetIdentity);
+        assert_eq!(decision.nhl_player_id, Some(8_480_001));
+        assert!(decision.note.contains("AHL 2002-02-18"));
+        assert!(decision.note.contains("NHL 2001-02-18"));
+        assert!(decision.evidence_urls.contains(&evidence[0]));
+        assert!(conflict.rows[0]
+            .evidence_urls
+            .iter()
+            .all(|url| decision.evidence_urls.contains(url)));
+
+        let reviewed = apply_ahl_identity_review_decisions(&conflict, &decisions).unwrap();
+        assert_eq!(
+            reviewed.rows[0].review_status,
+            AhlIdentityReviewStatus::Reviewed
+        );
+        assert_eq!(
+            reviewed.rows[0].match_basis,
+            AhlIdentityMatchBasis::BirthDateConflict
+        );
         validate_reviewed_ahl_identity_crosswalk(&snapshot, "Hartford Wolf Pack", &reviewed)
             .unwrap();
+        assert!(build_ahl_identity_conflict_review(
+            &conflict,
+            &[8_499_999],
+            &evidence,
+            "Conflict Reviewer",
+            "2026-07-26T20:00:00Z",
+            "No matching proposal should fail.",
+        )
+        .is_err());
+        assert!(build_ahl_identity_conflict_review(
+            &conflict,
+            &[8_480_001],
+            &conflict.rows[0].evidence_urls,
+            "Conflict Reviewer",
+            "2026-07-26T20:00:00Z",
+            "A conflict cannot be resolved without additional evidence.",
+        )
+        .unwrap_err()
+        .to_string()
+        .contains("evidence"));
+    }
+
+    #[test]
+    fn league_conflict_review_is_targeted_and_atomic() {
+        let snapshot = identity_snapshot();
+        let mut catalog = identity_catalog();
+        catalog.candidates[0].birth_date = Some("2001-02-18".to_owned());
+        let league = build_ahl_identity_league_crosswalk(&snapshot, &catalog).unwrap();
+        let evidence = vec!["https://example.test/club/player-8480001".to_owned()];
+        let (reviewed, audit) = apply_ahl_identity_league_conflict_review(
+            &league,
+            &[8_480_001],
+            &evidence,
+            "League Conflict Reviewer",
+            "2026-07-26T20:05:00Z",
+            "The NHL club transaction record controls the canonical NHL birth date.",
+        )
+        .unwrap();
+        assert_eq!(audit.kind, AhlIdentityLeagueRoutineReviewKind::Conflicts);
+        assert_eq!(audit.eligible_teams, 1);
+        assert_eq!(audit.applied_decisions, 1);
+        assert_eq!(
+            reviewed.crosswalks[0].rows[0].review_status,
+            AhlIdentityReviewStatus::Reviewed
+        );
+        assert!(apply_ahl_identity_league_conflict_review(
+            &league,
+            &[8_499_999],
+            &evidence,
+            "League Conflict Reviewer",
+            "2026-07-26T20:05:00Z",
+            "No matching proposal should fail atomically.",
+        )
+        .is_err());
+        assert_eq!(
+            league.crosswalks[0].rows[0].review_status,
+            AhlIdentityReviewStatus::Pending
+        );
     }
 
     #[test]
