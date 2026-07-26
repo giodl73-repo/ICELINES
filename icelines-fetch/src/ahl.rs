@@ -16,6 +16,7 @@ use thiserror::Error;
 pub const AHL_ROSTER_STATS_SCHEMA: &str = "ahl_roster_stats.v1";
 pub const AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA: &str = "ahl_canonical_identity_catalog.v1";
 pub const AHL_IDENTITY_CROSSWALK_SCHEMA: &str = "ahl_identity_crosswalk.v1";
+pub const AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA: &str = "ahl_identity_league_crosswalk.v1";
 pub const AHL_IDENTITY_REVIEW_INSPECTION_SCHEMA: &str = "ahl_identity_review_inspection.v1";
 pub const AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA: &str = "ahl_identity_review_decisions.v1";
 pub const AHL_IDENTITY_LEAGUE_REVIEW_SCHEMA: &str = "ahl_identity_league_review.v1";
@@ -425,6 +426,64 @@ pub struct AhlIdentityCrosswalkView {
     pub counts: AhlIdentityCrosswalkCounts,
     pub rows: Vec<AhlIdentityCrosswalkRow>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlIdentityLeagueCrosswalkView {
+    pub schema: String,
+    pub season: u32,
+    pub provider: String,
+    pub roster_fetched_at: String,
+    pub candidates_checked_at: String,
+    pub teams: usize,
+    pub roster_appearances: usize,
+    pub unique_provider_players: usize,
+    pub crosswalks: Vec<AhlIdentityCrosswalkView>,
+    pub disclosures: Vec<String>,
+}
+
+/// Build every team identity queue in a season snapshot against one canonical
+/// candidate catalog. Review state remains pending in each child crosswalk.
+pub fn build_ahl_identity_league_crosswalk(
+    snapshot: &AhlRosterStatsSnapshot,
+    candidates: &AhlCanonicalIdentityCatalog,
+) -> Result<AhlIdentityLeagueCrosswalkView, AhlFeedError> {
+    snapshot.validate()?;
+    let mut team_names = snapshot
+        .teams
+        .iter()
+        .map(|team| team.team_name.clone())
+        .collect::<Vec<_>>();
+    team_names.sort();
+    let mut crosswalks = Vec::with_capacity(team_names.len());
+    let mut unique_provider_players = BTreeSet::new();
+    let mut roster_appearances = 0usize;
+    for team_name in team_names {
+        let crosswalk = build_ahl_identity_crosswalk(snapshot, &team_name, candidates)?;
+        roster_appearances += crosswalk.rows.len();
+        unique_provider_players.extend(
+            crosswalk
+                .rows
+                .iter()
+                .map(|row| row.provider_player_id.clone()),
+        );
+        crosswalks.push(crosswalk);
+    }
+    Ok(AhlIdentityLeagueCrosswalkView {
+        schema: AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA.to_owned(),
+        season: snapshot.season,
+        provider: snapshot.provider.clone(),
+        roster_fetched_at: snapshot.fetched_at.clone(),
+        candidates_checked_at: candidates.checked_at.clone(),
+        teams: crosswalks.len(),
+        roster_appearances,
+        unique_provider_players: unique_provider_players.len(),
+        crosswalks,
+        disclosures: vec![
+            "League identity acquisition applies one canonical candidate catalog to every team in the sealed AHL season snapshot; every proposal remains pending explicit review.".to_owned(),
+            "Roster appearances count team-season rows. Unique provider players deduplicate AHL provider IDs across clubs without claiming NHL identity.".to_owned(),
+        ],
+    })
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -2947,6 +3006,21 @@ mod tests {
         assert!(error
             .to_string()
             .contains("duplicate league identity crosswalk"));
+    }
+
+    #[test]
+    fn league_crosswalk_builds_every_snapshot_team_without_approving_rows() {
+        let snapshot = identity_snapshot();
+        let league = build_ahl_identity_league_crosswalk(&snapshot, &identity_catalog()).unwrap();
+        assert_eq!(league.schema, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA);
+        assert_eq!(league.teams, 1);
+        assert_eq!(league.roster_appearances, 1);
+        assert_eq!(league.unique_provider_players, 1);
+        assert_eq!(league.crosswalks[0].ahl_team, "Hartford Wolf Pack");
+        assert_eq!(
+            league.crosswalks[0].rows[0].review_status,
+            AhlIdentityReviewStatus::Pending
+        );
     }
 
     #[test]

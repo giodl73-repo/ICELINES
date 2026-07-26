@@ -1178,6 +1178,28 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Propose identity crosswalks for every team in an AHL season snapshot.
+    #[command(name = "affiliate-identities-league")]
+    AffiliateIdentitiesLeague {
+        #[arg(long, value_name = "PATH")]
+        snapshot: PathBuf,
+        /// Canonical identity catalog or sourced league camp candidate overlay to merge.
+        #[arg(
+            long,
+            value_name = "PATH",
+            required_unless_present = "discover_official"
+        )]
+        candidates: Option<PathBuf>,
+        /// Discover proposals through deduplicated official NHL search and landing records.
+        #[arg(long)]
+        discover_official: bool,
+        #[arg(long, requires = "discover_official")]
+        refresh: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Generate a non-applicable review draft for exact AHL identity proposals.
     #[command(name = "affiliate-review-draft")]
     AffiliateReviewDraft {
@@ -2694,6 +2716,30 @@ mod tui_surface_tests {
                     candidates: None,
                     discover_official: true,
                     refresh: true,
+                    ..
+                })
+            ));
+
+            let league_discovered = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-identities-league",
+                "--snapshot",
+                "ahl-season.json",
+                "--discover-official",
+                "--refresh",
+                "--json",
+                "--out",
+                "ahl-league-crosswalk.json",
+            ])
+            .expect("official league affiliate identity discovery should parse");
+            assert!(matches!(
+                league_discovered.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateIdentitiesLeague {
+                    candidates: None,
+                    discover_official: true,
+                    refresh: true,
+                    json: true,
                     ..
                 })
             ));

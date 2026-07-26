@@ -1017,6 +1017,7 @@ icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.js
 icelines icecast affiliate --input affiliate-scenario.json --json --out affiliate-lines.json
 icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "Hartford Wolf Pack" --candidates examples/icecast-league-candidate-overlay-2026-27.json --json --out hartford-identity-review.json
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
+icelines icecast affiliate-identities-league --snapshot ahl-season.json --discover-official --json --out ahl-league-identity-crosswalk.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer "identity-pilot" --reviewed-at 2026-07-25T12:00:00Z --decisions-out hartford-exact-decisions.json --json --out hartford-exact-reviewed.json
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer "alias-pilot" --reviewed-at 2026-07-25T13:00:00Z --decisions-out hartford-alias-decisions.json --json --out hartford-alias-reviewed.json
@@ -1154,6 +1155,14 @@ Both source shapes are cached through FLETCH and can be merged with
 `review_status`; even exact name-and-birth matches remain pending until
 explicitly reviewed. `--refresh` forces both official discovery layers to be
 reacquired.
+
+`icecast affiliate-identities-league` applies the same discovery and evidence
+rules to every team in a sealed season snapshot and emits
+`ahl_identity_league_crosswalk.v1`. Search requests are deduplicated by
+normalized roster name across clubs before cached acquisition, and landing
+records are fetched once per canonical NHL ID. The envelope retains one
+snapshot-bound child crosswalk per team, total roster appearances, and unique
+AHL provider-player coverage. It proposes identities only; no row is approved.
 
 `icecast affiliate-review-draft` emits a separate
 `ahl_identity_review_decisions.v1` document containing `accept_proposal`

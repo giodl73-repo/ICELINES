@@ -68,6 +68,14 @@ shortcuts.
 
 ## League coverage proof
 
+The new `icecast affiliate-identities-league` acquisition surface was first
+replayed against the sealed 2025–26 snapshot. One cache-first run produced two
+child queues covering 82 roster appearances and 82 unique AHL provider players:
+Coachella Valley retained 34 exact proposals, two aliases, one conflict, and one
+unmatched row; Hartford retained 39 exact proposals, one alias, three conflicts,
+and one unmatched row. All 82 rows remained pending, proving batch acquisition
+does not inherit review authority.
+
 The six final crosswalks were also composed through
 `icecast affiliate-review-league`. The UI-neutral league board independently
 recomputed 266 appearances, 262 reviewed mappings, three explicit rejections,

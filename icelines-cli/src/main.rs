@@ -1954,6 +1954,25 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             )
             .await?
         }
+        Commands::Icecast(IceCastSubcommand::AffiliateIdentitiesLeague {
+            snapshot,
+            candidates,
+            discover_official,
+            refresh,
+            json,
+            out,
+        }) => {
+            commands::icecast::run_affiliate_identities_league(
+                snapshot,
+                candidates,
+                discover_official,
+                refresh,
+                json,
+                out,
+                &cfg,
+            )
+            .await?
+        }
         Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft {
             crosswalk,
             include_aliases,

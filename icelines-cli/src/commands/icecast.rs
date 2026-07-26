@@ -50,16 +50,16 @@ use icelines_fetch::{
     ahl::{
         affiliate_projection_input_from_reviewed_crosswalk, apply_ahl_identity_review_decisions,
         build_ahl_alias_identity_review, build_ahl_exact_identity_review,
-        build_ahl_identity_crosswalk, build_ahl_identity_league_review,
-        build_ahl_identity_rejection_review, build_ahl_identity_review_draft_with_options,
-        build_ahl_identity_review_inspection, enrich_official_nhl_landing_candidate,
-        merge_ahl_canonical_identity_catalogs, parse_official_nhl_search_candidates,
-        parse_official_nhl_search_candidates_by_surname, AhlCanonicalIdentityCandidate,
-        AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityInspectionScope,
-        AhlIdentityLeagueReviewView, AhlIdentityMatchBasis, AhlIdentityReviewDecisions,
-        AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView, AhlIdentityReviewStatus,
-        AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
-        AHL_IDENTITY_CROSSWALK_SCHEMA,
+        build_ahl_identity_crosswalk, build_ahl_identity_league_crosswalk,
+        build_ahl_identity_league_review, build_ahl_identity_rejection_review,
+        build_ahl_identity_review_draft_with_options, build_ahl_identity_review_inspection,
+        enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
+        parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
+        AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
+        AhlIdentityInspectionScope, AhlIdentityLeagueReviewView, AhlIdentityMatchBasis,
+        AhlIdentityReviewDecisions, AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView,
+        AhlIdentityReviewStatus, AhlProjectionPlayerFacts, AhlRosterStatsSnapshot,
+        AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA, AHL_IDENTITY_CROSSWALK_SCHEMA,
     },
     ahl_rollover::{
         apply_ahl_preseason_organization_review, build_ahl_preseason_organization_review_draft,
@@ -764,6 +764,67 @@ pub async fn run_affiliate_identities(
     Ok(())
 }
 
+pub async fn run_affiliate_identities_league(
+    snapshot_path: PathBuf,
+    candidates_path: Option<PathBuf>,
+    discover_official: bool,
+    refresh: bool,
+    json: bool,
+    out: Option<PathBuf>,
+    cfg: &Config,
+) -> anyhow::Result<()> {
+    let snapshot: AhlRosterStatsSnapshot =
+        read_icecast_json(&snapshot_path, "AHL roster/stat snapshot")?;
+    snapshot.validate().map_err(anyhow::Error::msg)?;
+    let mut catalogs = Vec::new();
+    if let Some(candidates_path) = candidates_path.as_deref() {
+        catalogs.push(read_affiliate_identity_catalog(candidates_path)?);
+    }
+    let mut discovery_note = None;
+    if discover_official {
+        let teams = snapshot
+            .teams
+            .iter()
+            .map(|team| team.team_name.clone())
+            .collect::<Vec<_>>();
+        let (catalog, exact_search_candidates, surname_search_candidates, landing_enriched) =
+            discover_official_affiliate_identities_for_teams(&snapshot, &teams, refresh, cfg)
+                .await?;
+        catalogs.push(catalog);
+        discovery_note = Some(format!(
+            "Deduplicated official NHL discovery across {} AHL team(s) proposed {exact_search_candidates} exact-name candidate(s) and {surname_search_candidates} surname fallback candidate(s); {landing_enriched} received player-landing birth-date corroboration. All proposals remain pending explicit review.",
+            teams.len()
+        ));
+    }
+    if catalogs.is_empty() {
+        bail!("league affiliate identity review requires --candidates or --discover-official");
+    }
+    let candidates =
+        merge_ahl_canonical_identity_catalogs(Utc::now().date_naive().to_string(), &catalogs)
+            .map_err(anyhow::Error::msg)?;
+    let mut view =
+        build_ahl_identity_league_crosswalk(&snapshot, &candidates).map_err(anyhow::Error::msg)?;
+    if let Some(note) = discovery_note {
+        for crosswalk in &mut view.crosswalks {
+            crosswalk.disclosures.push(note.clone());
+        }
+        view.disclosures.push(note);
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        let review =
+            build_ahl_identity_league_review(&view.crosswalks).map_err(anyhow::Error::msg)?;
+        render_affiliate_identity_league(&review)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL league identity crosswalk")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_affiliate_review_draft(
     crosswalk_path: PathBuf,
     include_aliases: bool,
@@ -1134,13 +1195,31 @@ async fn discover_official_affiliate_identities(
     refresh: bool,
     cfg: &Config,
 ) -> anyhow::Result<(AhlCanonicalIdentityCatalog, usize, usize, usize)> {
+    discover_official_affiliate_identities_for_teams(snapshot, &[team.to_owned()], refresh, cfg)
+        .await
+}
+
+async fn discover_official_affiliate_identities_for_teams(
+    snapshot: &AhlRosterStatsSnapshot,
+    teams: &[String],
+    refresh: bool,
+    cfg: &Config,
+) -> anyhow::Result<(AhlCanonicalIdentityCatalog, usize, usize, usize)> {
     snapshot.validate().map_err(anyhow::Error::msg)?;
-    let roster = &snapshot
-        .teams
-        .iter()
-        .find(|row| row.team_name == team)
-        .with_context(|| format!("AHL snapshot has no team named `{team}`"))?
-        .roster;
+    if teams.is_empty() {
+        bail!("official AHL identity discovery requires at least one team");
+    }
+    let mut roster = Vec::new();
+    for team in teams {
+        roster.extend(
+            &snapshot
+                .teams
+                .iter()
+                .find(|row| row.team_name == *team)
+                .with_context(|| format!("AHL snapshot has no team named `{team}`"))?
+                .roster,
+        );
+    }
     let icelines_home = cfg
         .snapshot_dir()
         .parent()
@@ -1151,7 +1230,7 @@ async fn discover_official_affiliate_identities(
     let cache_root = icelines_home.join("data").join(".fletch");
     let mut request_context = BTreeMap::new();
     let mut requests = Vec::new();
-    for player in roster {
+    for player in &roster {
         let normalized_name = normalize_name(&player.name);
         let mut url = reqwest::Url::parse("https://search.d3.nhle.com/api/v1/search/player")?;
         url.query_pairs_mut()
@@ -1161,11 +1240,13 @@ async fn discover_official_affiliate_identities(
         let source_url = url.to_string();
         let digest = format!("{:x}", Sha256::digest(normalized_name.as_bytes()));
         let dataset_id = format!("icelines.nhl.player-search.{}", &digest[..20]);
-        request_context.insert(
-            dataset_id.clone(),
-            (player.name.clone(), source_url.clone()),
-        );
-        requests.push((dataset_id, source_url));
+        if !request_context.contains_key(&dataset_id) {
+            request_context.insert(
+                dataset_id.clone(),
+                (player.name.clone(), source_url.clone()),
+            );
+            requests.push((dataset_id, source_url));
+        }
     }
     let search_results =
         fetch_generic_http_batch_async(requests, cache_root.clone(), refresh, 6).await;
@@ -1204,13 +1285,18 @@ async fn discover_official_affiliate_identities(
             .append_pair("limit", "20")
             .append_pair("q", &surname);
         let source_url = url.to_string();
-        let digest = format!("{:x}", Sha256::digest(player.name.as_bytes()));
-        let dataset_id = format!("icelines.nhl.player-search-surname.{}", &digest[..20]);
-        surname_context.insert(
-            dataset_id.clone(),
-            (player.name.clone(), source_url.clone()),
+        let digest = format!(
+            "{:x}",
+            Sha256::digest(normalize_name(&player.name).as_bytes())
         );
-        surname_requests.push((dataset_id, source_url));
+        let dataset_id = format!("icelines.nhl.player-search-surname.{}", &digest[..20]);
+        if !surname_context.contains_key(&dataset_id) {
+            surname_context.insert(
+                dataset_id.clone(),
+                (player.name.clone(), source_url.clone()),
+            );
+            surname_requests.push((dataset_id, source_url));
+        }
     }
     let surname_results =
         fetch_generic_http_batch_async(surname_requests, cache_root.clone(), refresh, 6).await;

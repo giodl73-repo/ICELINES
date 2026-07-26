@@ -105,6 +105,13 @@ proposal to exact-name-and-birth-date evidence. All discovered rows remain
 `pending` until explicitly reviewed. An authored catalog may be merged by NHL
 player ID; conflicting names or birth dates are rejected.
 
+`affiliate-identities-league` scales that acquisition boundary to a complete
+season snapshot. It deduplicates official search by normalized AHL roster name
+across teams and player landing acquisition by NHL ID, then emits
+`ahl_identity_league_crosswalk.v1` with one unchanged review queue per club.
+The envelope distinguishes roster appearances from unique AHL provider IDs and
+does not introduce league-level approval authority.
+
 Approval uses a separate `ahl_identity_review_decisions.v1` authority rather
 than editing generated rows in place. IceLines can draft `accept_proposal`
 decisions for exact name-and-birth proposals, but the draft is non-applicable
@@ -146,9 +153,9 @@ cannot turn coverage reporting into review authority.
 
 ## Data work remaining
 
-- resolve the deliberately pending Conor McCollum date conflict if stronger
-  authority emerges, then expand the Hartford/Coachella review pattern
-  league-wide;
+- run the new league acquisition/review pipeline over three full historical
+  AHL snapshots and resolve its evidence queues; retain Conor McCollum as
+  pending unless stronger date authority emerges;
 - add dated historical NHL/AHL affiliation catalogs rather than applying the
   current association map to old seasons;
 - build a sourced start-of-season professional-game ledger across NHL, AHL,
