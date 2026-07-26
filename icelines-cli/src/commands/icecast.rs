@@ -50,12 +50,13 @@ use icelines_fetch::{
     ahl::{
         affiliate_projection_input_from_reviewed_crosswalk, apply_ahl_identity_review_decisions,
         build_ahl_alias_identity_review, build_ahl_exact_identity_review,
-        build_ahl_identity_crosswalk, build_ahl_identity_rejection_review,
-        build_ahl_identity_review_draft_with_options, build_ahl_identity_review_inspection,
-        enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
-        parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
-        AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
-        AhlIdentityInspectionScope, AhlIdentityMatchBasis, AhlIdentityReviewDecisions,
+        build_ahl_identity_crosswalk, build_ahl_identity_league_review,
+        build_ahl_identity_rejection_review, build_ahl_identity_review_draft_with_options,
+        build_ahl_identity_review_inspection, enrich_official_nhl_landing_candidate,
+        merge_ahl_canonical_identity_catalogs, parse_official_nhl_search_candidates,
+        parse_official_nhl_search_candidates_by_surname, AhlCanonicalIdentityCandidate,
+        AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityInspectionScope,
+        AhlIdentityLeagueReviewView, AhlIdentityMatchBasis, AhlIdentityReviewDecisions,
         AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView, AhlIdentityReviewStatus,
         AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
         AHL_IDENTITY_CROSSWALK_SCHEMA,
@@ -875,6 +876,7 @@ pub fn run_affiliate_review_aliases(
 pub fn run_affiliate_review_reject(
     crosswalk_path: PathBuf,
     provider_player_ids: Vec<String>,
+    evidence_urls: Vec<String>,
     reviewer: String,
     reviewed_at: String,
     note: String,
@@ -887,6 +889,7 @@ pub fn run_affiliate_review_reject(
     let decisions = build_ahl_identity_rejection_review(
         &crosswalk,
         &provider_player_ids,
+        &evidence_urls,
         reviewer,
         reviewed_at,
         note,
@@ -916,6 +919,29 @@ pub fn run_affiliate_review_reject(
             output.as_bytes(),
             "rejection-reviewed AHL identity crosswalk",
         )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_review_league(
+    crosswalk_paths: Vec<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let crosswalks = crosswalk_paths
+        .iter()
+        .map(|path| read_icecast_json(path, "AHL identity crosswalk"))
+        .collect::<anyhow::Result<Vec<AhlIdentityCrosswalkView>>>()?;
+    let view = build_ahl_identity_league_review(&crosswalks).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_affiliate_identity_league(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL league identity review")?;
     } else {
         print!("{output}");
     }
@@ -1823,6 +1849,79 @@ fn render_affiliate_identities(view: &AhlIdentityReviewInspectionView) -> String
             for url in &row.evidence_urls {
                 let _ = writeln!(out, "  SOURCE {url}");
             }
+        }
+    }
+    if !view.disclosures.is_empty() {
+        let _ = writeln!(out, "DISCLOSURES");
+        for disclosure in &view.disclosures {
+            let _ = writeln!(out, "- {disclosure}");
+        }
+    }
+    out
+}
+
+fn render_affiliate_identity_league(view: &AhlIdentityLeagueReviewView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "AHL IDENTITY LEAGUE REVIEW");
+    let _ = writeln!(
+        out,
+        "{} crosswalks | {} appearances | {} reviewed | {} rejected | {} pending | {:.2}% resolved | {:.2}% canonical",
+        view.crosswalks,
+        view.roster_appearances,
+        view.reviewed,
+        view.rejected,
+        view.pending,
+        f64::from(view.resolved_basis_points) / 100.0,
+        f64::from(view.canonical_identity_basis_points) / 100.0,
+    );
+    let _ = writeln!(out, "TEAM-SEASON COVERAGE");
+    for summary in &view.summaries {
+        let stale = if summary.declared_counts_stale {
+            " | STALE COUNTS"
+        } else {
+            ""
+        };
+        let affiliate = summary.nhl_affiliate.as_deref().unwrap_or("—");
+        let _ = writeln!(
+            out,
+            "{} {:<28} NHL {:<4} | {:>3} roster | {:>3} reviewed | {:>2} rejected | {:>2} pending{}",
+            summary.season,
+            summary.ahl_team,
+            affiliate,
+            summary.roster_players,
+            summary.reviewed,
+            summary.rejected,
+            summary.pending,
+            stale,
+        );
+    }
+    let _ = writeln!(out, "ATTENTION GROUPS ({})", view.attention_groups.len());
+    for group in &view.attention_groups {
+        let proposal = group
+            .nhl_player_id
+            .map(|id| format!(" → NHL {id}"))
+            .unwrap_or_default();
+        let _ = writeln!(
+            out,
+            "{}{} | {} appearance(s) | {:?} | {:?} | {} source(s)",
+            group.ahl_display_name,
+            proposal,
+            group.occurrences,
+            group.review_statuses,
+            group.match_bases,
+            group.evidence_urls.len(),
+        );
+        for appearance in &group.appearances {
+            let _ = writeln!(
+                out,
+                "  {} {} #{} | AHL {} / NHL {} | {}",
+                appearance.season,
+                appearance.ahl_team,
+                appearance.provider_player_id,
+                appearance.ahl_birth_date,
+                appearance.nhl_birth_date.as_deref().unwrap_or("—"),
+                appearance.note,
+            );
         }
     }
     if !view.disclosures.is_empty() {

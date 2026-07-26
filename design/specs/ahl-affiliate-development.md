@@ -133,7 +133,16 @@ applies the result as an explicit identity override. `affiliate-review-reject`
 handles selected pending exceptions without conflating rejection of an NHL
 mapping with rejection of the AHL person. Its required note carries the
 evidence-backed AHL-only, non-player, or other exclusion rationale into the
-crosswalk.
+crosswalk, while repeatable absolute evidence URLs remain structured on the
+rejected row for every renderer and downstream audit.
+
+`affiliate-review-league` owns the cross-team expansion view. Its
+`ahl_identity_league_review.v1` contract aggregates snapshot-bound crosswalks,
+recomputes team and league coverage, flags stale declared counts, and groups
+every pending or rejected appearance into a deterministic exception queue.
+Resolved basis points include explicit mapping rejections; canonical-identity
+basis points count only reviewed NHL mappings. The aggregate is read-only and
+cannot turn coverage reporting into review authority.
 
 ## Data work remaining
 

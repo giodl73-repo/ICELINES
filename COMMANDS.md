@@ -1020,7 +1020,8 @@ icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer "identity-pilot" --reviewed-at 2026-07-25T12:00:00Z --decisions-out hartford-exact-decisions.json --json --out hartford-exact-reviewed.json
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer "alias-pilot" --reviewed-at 2026-07-25T13:00:00Z --decisions-out hartford-alias-decisions.json --json --out hartford-alias-reviewed.json
-icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
+icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
+icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --out hartford-review-with-aliases-draft.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --include-conflicts --out hartford-complete-proposals-draft.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json
@@ -1175,7 +1176,18 @@ an explicit `set_identity` remap. `icecast affiliate-review-reject` closes only
 selected pending NHL identity mappings and requires repeatable provider IDs,
 reviewer, timestamp, and an evidence-backed rationale. It does not assert that
 the underlying AHL person is invalid: AHL-only players and feed-classified
-non-player personnel remain distinguishable in the retained note.
+non-player personnel remain distinguishable in the retained note. Repeatable
+`--evidence-url` values are validated as absolute URLs and retained as
+structured row evidence instead of being buried only in prose.
+
+`icecast affiliate-review-league` composes any number of independently
+snapshot-bound team-season crosswalks into the UI-neutral
+`ahl_identity_league_review.v1` coverage board. It reports reviewed, rejected,
+pending, resolved, and canonical-identity coverage by team-season and overall.
+Every pending or rejected appearance enters the attention queue; recurring
+rows are grouped by canonical NHL ID when present, otherwise by normalized AHL
+name plus birth date. This surface is read-only and never creates approval
+authority.
 
 `icecast affiliate-review-show` is the read-only text/JSON inspection surface
 for an existing crosswalk. IceLines projects the authoritative crosswalk into

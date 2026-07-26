@@ -1239,6 +1239,9 @@ pub enum IceCastSubcommand {
         /// AHL provider player ID to reject; repeat for multiple rows sharing one rationale.
         #[arg(long, value_name = "ID", required = true)]
         provider_player_id: Vec<String>,
+        /// Absolute source URL supporting the rejection; repeat as needed.
+        #[arg(long = "evidence-url", value_name = "URL")]
+        evidence_urls: Vec<String>,
         #[arg(long)]
         reviewer: String,
         /// RFC3339 review timestamp.
@@ -1249,6 +1252,17 @@ pub enum IceCastSubcommand {
         note: String,
         #[arg(long, value_name = "PATH")]
         decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Aggregate team-season crosswalks into league coverage and exception groups.
+    #[command(name = "affiliate-review-league")]
+    AffiliateReviewLeague {
+        /// Repeat for each reviewed or in-progress team-season crosswalk.
+        #[arg(long = "crosswalk", required = true, value_name = "PATH")]
+        crosswalks: Vec<PathBuf>,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -2765,6 +2779,8 @@ mod tui_surface_tests {
                 "alias-reviewed.json",
                 "--provider-player-id",
                 "11069",
+                "--evidence-url",
+                "https://example.test/stalletti",
                 "--reviewer",
                 "exception-pilot",
                 "--reviewed-at",
@@ -2782,10 +2798,35 @@ mod tui_surface_tests {
                 reject.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateReviewReject {
                     provider_player_id,
+                    evidence_urls,
                     reviewer,
                     json: true,
                     ..
-                }) if provider_player_id == ["11069"] && reviewer == "exception-pilot"
+                }) if provider_player_id == ["11069"]
+                    && evidence_urls == ["https://example.test/stalletti"]
+                    && reviewer == "exception-pilot"
+            ));
+
+            let league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-league",
+                "--crosswalk",
+                "hartford-2025.json",
+                "--crosswalk",
+                "coachella-2025.json",
+                "--json",
+                "--out",
+                "league-review.json",
+            ])
+            .expect("affiliate league identity review should parse");
+            assert!(matches!(
+                league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewLeague {
+                    crosswalks,
+                    json: true,
+                    ..
+                }) if crosswalks.len() == 2
             ));
 
             let show = Cli::try_parse_from([

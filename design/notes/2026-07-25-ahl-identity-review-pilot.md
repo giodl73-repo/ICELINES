@@ -26,8 +26,8 @@ The exact-only review accepted 244 of 266 roster appearances (91.7%). The
 evidence-by-evidence pass then approved all nine alias appearances, adjudicated
 nine of ten birth-conflict appearances while preserving both provider dates,
 and explicitly rejected three NHL mappings. The final state is 262 reviewed,
-three rejected, and one pending appearance: 98.5% of rows are resolved and
-98.9% have canonical NHL identities. No ambiguous rows were found.
+three rejected, and one pending appearance: 99.6% of rows are resolved and
+98.5% have canonical NHL identities. No ambiguous rows were found.
 
 ## Unique manual exceptions
 
@@ -65,6 +65,17 @@ study, no exclusions, and ranked Jagger Firkus as `injury_obscured_riser` in
 Hidden Gems at 98.0. This proves the reviewed historical identity stream
 reaches the canonical study and board primitives without provider-ID
 shortcuts.
+
+## League coverage proof
+
+The six final crosswalks were also composed through
+`icecast affiliate-review-league`. The UI-neutral league board independently
+recomputed 266 appearances, 262 reviewed mappings, three explicit rejections,
+and one pending conflict: 99.62% resolved and 98.50% canonical-identity
+coverage. Its four deterministic attention groups are Chris Cameron, Chris
+Ortiz, Conor McCollum, and Vince Stalletti. Each now carries two structured
+evidence URLs; exception authority is no longer available only by parsing the
+review note.
 
 ## Expansion rule
 

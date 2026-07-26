@@ -1998,6 +1998,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::AffiliateReviewReject {
             crosswalk,
             provider_player_id,
+            evidence_urls,
             reviewer,
             reviewed_at,
             note,
@@ -2007,6 +2008,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         }) => commands::icecast::run_affiliate_review_reject(
             crosswalk,
             provider_player_id,
+            evidence_urls,
             reviewer,
             reviewed_at,
             note,
@@ -2014,6 +2016,11 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewLeague {
+            crosswalks,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_league(crosswalks, json, out)?,
         Commands::Icecast(IceCastSubcommand::AffiliateReviewShow {
             crosswalk,
             attention_only,
