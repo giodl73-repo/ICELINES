@@ -1044,7 +1044,9 @@ icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk 
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json --json --out firkus-study.json
+icelines icecast prospect-context --snapshot ahl-2023-24.json --snapshot ahl-2024-25.json --snapshot ahl-2025-26.json --league-crosswalk reviewed-league-2023-24.json --league-crosswalk reviewed-league-2024-25.json --league-crosswalk reviewed-league-2025-26.json --affiliations ahl-affiliations-2025-26.json --as-of 2026-09-15 --max-age 24 --json --out prospect-context.json
 icelines icecast prospect-league --snapshot ahl-2024-25.json --snapshot ahl-2025-26.json --crosswalk reviewed-2024-cv.json --crosswalk reviewed-2025-cv.json --context examples/icecast-prospect-league-context.json --json --out league-discovery.json
+icelines icecast prospect-league --snapshot ahl-2023-24.json --snapshot ahl-2024-25.json --snapshot ahl-2025-26.json --crosswalk reviewed-league-2023-24.json --crosswalk reviewed-league-2024-25.json --crosswalk reviewed-league-2025-26.json --context prospect-context.json --json --out league-discovery.json
 icelines icecast prospect-program --league-discovery league-discovery.json --json --out prospect-programs.json
 icelines icecast prospect-program --league-discovery league-discovery.json --study college-prospect-study.json --prior-board prior-prospect-programs.json --out prospect-programs.txt
 icelines icecast prospect-board --study firkus-study.json

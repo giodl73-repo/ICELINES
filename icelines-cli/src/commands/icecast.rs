@@ -66,6 +66,7 @@ use icelines_fetch::{
         AhlIdentityReviewDecisions, AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView,
         AhlIdentityReviewStatus, AhlProjectionPlayerFacts, AhlRosterStatsSnapshot,
         AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA, AHL_IDENTITY_CROSSWALK_SCHEMA,
+        AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
     },
     ahl_rollover::{
         apply_ahl_preseason_organization_review, build_ahl_preseason_organization_review_draft,
@@ -73,7 +74,8 @@ use icelines_fetch::{
         AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     },
-    build_prospect_league_discovery, build_shift_overlap_report,
+    build_prospect_league_context_draft, build_prospect_league_discovery,
+    build_shift_overlap_report,
     bundled::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
         get_stats_installed, load_transactions_with_fallback,
@@ -91,8 +93,9 @@ use icelines_fetch::{
         OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
     },
     stats_loader::load_into_repo,
-    NhlApiClient, OfficialShiftChartRow, ProspectLeagueContext, ProspectLeagueDiscoveryView,
-    ScenarioRegistryStore, ShiftOverlapReport, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
+    NhlApiClient, OfficialShiftChartRow, ProspectLeagueContext, ProspectLeagueContextDraftConfig,
+    ProspectLeagueDiscoveryView, ScenarioRegistryStore, ShiftOverlapReport,
+    PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -4167,6 +4170,53 @@ pub fn run_prospect_study(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn run_prospect_context(
+    snapshot_paths: Vec<PathBuf>,
+    league_crosswalk_paths: Vec<PathBuf>,
+    affiliations_path: PathBuf,
+    as_of: String,
+    max_age: u8,
+    minimum_ahl_seasons: usize,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let snapshots = snapshot_paths
+        .iter()
+        .map(|path| read_icecast_json(path, "AHL roster-stats snapshot"))
+        .collect::<anyhow::Result<Vec<AhlRosterStatsSnapshot>>>()?;
+    let league_crosswalks = league_crosswalk_paths
+        .iter()
+        .map(|path| read_icecast_json(path, "reviewed AHL league identity crosswalk"))
+        .collect::<anyhow::Result<Vec<AhlIdentityLeagueCrosswalkView>>>()?;
+    let affiliations: AhlAffiliationCatalogView =
+        read_icecast_json(&affiliations_path, "dated AHL affiliation catalog")?;
+    let as_of_date = NaiveDate::parse_from_str(&as_of, "%Y-%m-%d")
+        .with_context(|| format!("invalid --as-of date {as_of}; expected YYYY-MM-DD"))?;
+    let view = build_prospect_league_context_draft(
+        snapshots,
+        league_crosswalks,
+        affiliations,
+        ProspectLeagueContextDraftConfig {
+            max_age,
+            as_of_date,
+            minimum_ahl_seasons,
+        },
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_context(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect context draft")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_prospect_league(
     snapshot_paths: Vec<PathBuf>,
     crosswalk_paths: Vec<PathBuf>,
@@ -4178,10 +4228,7 @@ pub fn run_prospect_league(
         .iter()
         .map(|path| read_icecast_json(path, "AHL roster-stats snapshot"))
         .collect::<anyhow::Result<Vec<AhlRosterStatsSnapshot>>>()?;
-    let crosswalks = crosswalk_paths
-        .iter()
-        .map(|path| read_icecast_json(path, "reviewed AHL identity crosswalk"))
-        .collect::<anyhow::Result<Vec<AhlIdentityCrosswalkView>>>()?;
+    let crosswalks = read_prospect_crosswalks(&crosswalk_paths)?;
     let context: ProspectLeagueContext =
         read_icecast_json(&context_path, "prospect league context")?;
     let view = build_prospect_league_discovery(
@@ -4202,6 +4249,36 @@ pub fn run_prospect_league(
         print!("{output}");
     }
     Ok(())
+}
+
+fn read_prospect_crosswalks(paths: &[PathBuf]) -> anyhow::Result<Vec<AhlIdentityCrosswalkView>> {
+    let mut crosswalks = Vec::new();
+    for path in paths {
+        let bytes = std::fs::read(path)
+            .with_context(|| format!("read reviewed AHL identity artifact {}", path.display()))?;
+        let value: serde_json::Value = serde_json::from_slice(&bytes)
+            .with_context(|| format!("parse reviewed AHL identity artifact {}", path.display()))?;
+        match value.get("schema").and_then(serde_json::Value::as_str) {
+            Some(AHL_IDENTITY_CROSSWALK_SCHEMA) => {
+                crosswalks.push(serde_json::from_value(value).with_context(|| {
+                    format!("decode AHL identity crosswalk {}", path.display())
+                })?);
+            }
+            Some(AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA) => {
+                let league: AhlIdentityLeagueCrosswalkView = serde_json::from_value(value)
+                    .with_context(|| {
+                        format!("decode AHL league identity crosswalk {}", path.display())
+                    })?;
+                crosswalks.extend(league.crosswalks);
+            }
+            schema => bail!(
+                "unsupported AHL identity schema {} in {}",
+                schema.unwrap_or("<missing>"),
+                path.display()
+            ),
+        }
+    }
+    Ok(crosswalks)
 }
 
 pub fn run_prospect_program(
@@ -4692,6 +4769,45 @@ fn render_prospect_study(view: &ProspectDevelopmentStudyView) -> String {
         let _ = writeln!(out, "\nEVIDENCE");
         for item in &view.evidence {
             let _ = writeln!(out, "- {}\n  {}", item.label, item.source_url);
+        }
+    }
+    let _ = writeln!(out, "\nDISCLOSURES");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
+    }
+    out
+}
+
+fn render_prospect_context(view: &ProspectLeagueContext) -> String {
+    let mut out = String::new();
+    let mut by_organization = BTreeMap::<&str, usize>::new();
+    for player in &view.players {
+        *by_organization
+            .entry(player.organization.as_str())
+            .or_default() += 1;
+    }
+    let _ = writeln!(out, "THE SYSTEM — AHL PROSPECT CONTEXT");
+    let _ = writeln!(
+        out,
+        "Authority: {:?} · as of {} · {} players · {} organizations · {} exclusions",
+        view.authority,
+        view.as_of_date.as_deref().unwrap_or("unspecified"),
+        view.players.len(),
+        by_organization.len(),
+        view.exclusions.len()
+    );
+    let _ = writeln!(out, "\nORGANIZATION COVERAGE");
+    for (organization, players) in by_organization {
+        let _ = writeln!(out, "{organization:<4} {players:>3} observed skaters");
+    }
+    if !view.exclusions.is_empty() {
+        let _ = writeln!(out, "\nEXCLUSIONS");
+        for row in &view.exclusions {
+            let _ = writeln!(
+                out,
+                "- {} ({}) · {:?}: {}",
+                row.player, row.player_id, row.reason, row.detail
+            );
         }
     }
     let _ = writeln!(out, "\nDISCLOSURES");

@@ -5,20 +5,31 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use chrono::{Datelike, NaiveDate};
 use icelines_core::{
-    build_prospect_development_study, build_prospect_discovery_board, ProspectAvailabilityStatus,
-    ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyView,
-    ProspectDiscoveryBoardView, ProspectOpportunityStatus, ProspectStudyEvidenceInput,
+    build_prospect_development_study, build_prospect_discovery_board, AhlAffiliationCatalogView,
+    ProspectAvailabilityStatus, ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig,
+    ProspectDevelopmentStudyView, ProspectDiscoveryBoardView, ProspectOpportunityStatus,
+    ProspectStudyEvidenceInput, AHL_AFFILIATION_CATALOG_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::ahl::{
-    AhlIdentityCrosswalkView, AhlIdentityReviewStatus, AhlRosterStatsSnapshot,
-    AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_ROSTER_STATS_SCHEMA,
+    AhlIdentityCrosswalkView, AhlIdentityLeagueCrosswalkView, AhlIdentityReviewStatus,
+    AhlRosterStatsSnapshot, AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
+    AHL_ROSTER_STATS_SCHEMA,
 };
 
 pub const PROSPECT_LEAGUE_CONTEXT_SCHEMA: &str = "prospect_league_context.v1";
 pub const PROSPECT_LEAGUE_DISCOVERY_SCHEMA: &str = "prospect_league_discovery.v1";
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectLeagueContextAuthority {
+    #[default]
+    Authored,
+    ObservedDraft,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectLeaguePlayerContext {
@@ -39,7 +50,55 @@ pub struct ProspectLeaguePlayerContext {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectLeagueContext {
     pub schema: String,
+    #[serde(default)]
+    pub authority: ProspectLeagueContextAuthority,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub as_of_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub snapshot_seasons: Vec<u32>,
     pub players: Vec<ProspectLeaguePlayerContext>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub exclusions: Vec<ProspectLeagueContextExclusionView>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct ProspectLeagueContextDraftConfig {
+    pub max_age: u8,
+    pub as_of_date: NaiveDate,
+    pub minimum_ahl_seasons: usize,
+}
+
+impl Default for ProspectLeagueContextDraftConfig {
+    fn default() -> Self {
+        Self {
+            max_age: 24,
+            as_of_date: NaiveDate::from_ymd_opt(2026, 9, 15).expect("valid default date"),
+            minimum_ahl_seasons: 2,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectLeagueContextExclusionReason {
+    GoalieAdapterRequired,
+    MissingAffiliation,
+    AmbiguousOrganization,
+    MissingBirthDate,
+    InvalidBirthDate,
+    AboveMaximumAge,
+    FewerThanMinimumAhlSeasons,
+    MissingLatestSkaterStats,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectLeagueContextExclusionView {
+    pub player_id: u32,
+    pub player: String,
+    pub reason: ProspectLeagueContextExclusionReason,
+    pub detail: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -76,6 +135,370 @@ struct ReviewedSeasonIdentity {
     provider_player_id: String,
     display_name: String,
     evidence_urls: Vec<String>,
+}
+
+/// Build a conservative, machine-generated context draft from reviewed league
+/// identities. The draft is directly consumable by `prospect-league`, while
+/// neutral defaults make the absence of authored injury/opportunity/attention
+/// research explicit and prevent those fields from manufacturing upside.
+pub fn build_prospect_league_context_draft(
+    mut snapshots: Vec<AhlRosterStatsSnapshot>,
+    league_crosswalks: Vec<AhlIdentityLeagueCrosswalkView>,
+    affiliations: AhlAffiliationCatalogView,
+    config: ProspectLeagueContextDraftConfig,
+) -> Result<ProspectLeagueContext, String> {
+    if snapshots.len() < config.minimum_ahl_seasons
+        || config.minimum_ahl_seasons < 2
+        || config.max_age == 0
+        || affiliations.schema != AHL_AFFILIATION_CATALOG_SCHEMA
+        || affiliations.affiliations.is_empty()
+    {
+        return Err("invalid prospect league context draft inputs".to_owned());
+    }
+    snapshots.sort_by_key(|snapshot| snapshot.season);
+    let mut snapshot_seasons = BTreeSet::new();
+    for snapshot in &snapshots {
+        if snapshot.schema != AHL_ROSTER_STATS_SCHEMA
+            || snapshot.provider.trim().is_empty()
+            || !snapshot_seasons.insert(snapshot.season)
+        {
+            return Err("invalid or duplicate AHL snapshot for context draft".to_owned());
+        }
+    }
+    let latest_season = *snapshot_seasons
+        .iter()
+        .next_back()
+        .expect("validated snapshots");
+    let latest_snapshot = snapshots
+        .iter()
+        .find(|snapshot| snapshot.season == latest_season)
+        .expect("latest snapshot exists");
+    if affiliations.season != latest_season
+        || affiliations.checked_at.trim().is_empty()
+        || !(affiliations.source_url.starts_with("https://")
+            || affiliations.source_url.starts_with("http://"))
+    {
+        return Err(format!(
+            "affiliation catalog must be sourced and match latest snapshot season {latest_season}"
+        ));
+    }
+
+    let mut affiliation_by_team = BTreeMap::new();
+    for row in affiliations.affiliations {
+        if row.nhl_team.trim().is_empty()
+            || row.ahl_team.trim().is_empty()
+            || affiliation_by_team
+                .insert(row.ahl_team, row.nhl_team)
+                .is_some()
+        {
+            return Err("invalid or duplicate AHL team in affiliation catalog".to_owned());
+        }
+    }
+
+    let mut crosswalk_by_season = BTreeMap::new();
+    for league in league_crosswalks {
+        let Some(snapshot) = snapshots.iter().find(|row| row.season == league.season) else {
+            return Err(format!(
+                "AHL league crosswalk season {} has no supplied snapshot",
+                league.season
+            ));
+        };
+        if league.schema != AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA
+            || league.provider != snapshot.provider
+            || league.teams != league.crosswalks.len()
+            || crosswalk_by_season
+                .insert(league.season, league.crosswalks)
+                .is_some()
+        {
+            return Err("invalid or duplicate AHL league crosswalk".to_owned());
+        }
+    }
+    if !snapshot_seasons
+        .iter()
+        .all(|season| crosswalk_by_season.contains_key(season))
+    {
+        return Err("every context-draft snapshot requires a league crosswalk".to_owned());
+    }
+
+    #[derive(Default)]
+    struct Candidate {
+        names: BTreeSet<String>,
+        birth_dates: BTreeSet<String>,
+        observed_seasons: BTreeSet<u32>,
+        latest_teams: BTreeSet<String>,
+        latest_active_teams: BTreeSet<String>,
+        latest_positions: BTreeMap<String, usize>,
+        latest_active_positions: BTreeMap<String, usize>,
+        evidence_urls: BTreeSet<String>,
+        latest_is_goalie: bool,
+    }
+
+    let mut candidates = BTreeMap::<u32, Candidate>::new();
+    for (season, crosswalks) in &crosswalk_by_season {
+        let snapshot = snapshots
+            .iter()
+            .find(|row| row.season == *season)
+            .expect("crosswalk snapshot validated");
+        for crosswalk in crosswalks {
+            if crosswalk.schema != AHL_IDENTITY_CROSSWALK_SCHEMA
+                || crosswalk.season != *season
+                || crosswalk.provider != snapshot.provider
+            {
+                return Err("invalid child AHL identity crosswalk".to_owned());
+            }
+            let Some(team) = snapshot
+                .teams
+                .iter()
+                .find(|team| team.team_name == crosswalk.ahl_team)
+            else {
+                return Err(format!(
+                    "AHL crosswalk team {} is absent from season {} snapshot",
+                    crosswalk.ahl_team, season
+                ));
+            };
+            for row in crosswalk
+                .rows
+                .iter()
+                .filter(|row| row.review_status == AhlIdentityReviewStatus::Reviewed)
+            {
+                let (Some(player_id), Some(name)) =
+                    (row.nhl_player_id, row.nhl_display_name.as_ref())
+                else {
+                    return Err("reviewed AHL identity lacks canonical identity".to_owned());
+                };
+                let candidate = candidates.entry(player_id).or_default();
+                candidate.names.insert(name.clone());
+                if let Some(birth_date) = row.nhl_birth_date.as_ref() {
+                    candidate.birth_dates.insert(birth_date.clone());
+                }
+                candidate.evidence_urls.extend(row.evidence_urls.clone());
+                let skater_rows = team
+                    .skaters
+                    .iter()
+                    .filter(|skater| {
+                        skater.provider_player_id == row.provider_player_id
+                            && skater.games_played > 0
+                    })
+                    .collect::<Vec<_>>();
+                if !skater_rows.is_empty() {
+                    candidate.observed_seasons.insert(*season);
+                    if *season == latest_season {
+                        candidate.latest_teams.insert(crosswalk.ahl_team.clone());
+                        for skater in skater_rows {
+                            *candidate
+                                .latest_positions
+                                .entry(skater.position.trim().to_ascii_uppercase())
+                                .or_default() += skater.games_played as usize;
+                            if skater.active {
+                                candidate
+                                    .latest_active_teams
+                                    .insert(crosswalk.ahl_team.clone());
+                                *candidate
+                                    .latest_active_positions
+                                    .entry(skater.position.trim().to_ascii_uppercase())
+                                    .or_default() += skater.games_played as usize;
+                            }
+                        }
+                    }
+                } else if *season == latest_season
+                    && team.goalies.iter().any(|goalie| {
+                        goalie.provider_player_id == row.provider_player_id
+                            && goalie.games_played > 0
+                    })
+                {
+                    candidate.latest_teams.insert(crosswalk.ahl_team.clone());
+                    candidate.latest_is_goalie = true;
+                }
+            }
+        }
+    }
+
+    let mut players = Vec::new();
+    let mut exclusions = Vec::new();
+    for (player_id, candidate) in candidates
+        .into_iter()
+        .filter(|(_, candidate)| !candidate.latest_teams.is_empty())
+    {
+        let normalized_names = candidate
+            .names
+            .iter()
+            .map(|name| icelines_core::normalize_name(name))
+            .collect::<BTreeSet<_>>();
+        if normalized_names.len() != 1 || candidate.birth_dates.len() > 1 {
+            return Err(format!(
+                "reviewed canonical identity conflicts across seasons for player {player_id}"
+            ));
+        }
+        let latest_teams = if candidate.latest_active_teams.is_empty() {
+            &candidate.latest_teams
+        } else {
+            &candidate.latest_active_teams
+        };
+        let latest_positions = if candidate.latest_active_positions.is_empty() {
+            &candidate.latest_positions
+        } else {
+            &candidate.latest_active_positions
+        };
+        let player = candidate
+            .names
+            .iter()
+            .next()
+            .cloned()
+            .unwrap_or_else(|| format!("Player {player_id}"));
+        let exclude = |reason, detail| ProspectLeagueContextExclusionView {
+            player_id,
+            player: player.clone(),
+            reason,
+            detail,
+        };
+        if candidate.latest_is_goalie && latest_positions.is_empty() {
+            exclusions.push(exclude(
+                ProspectLeagueContextExclusionReason::GoalieAdapterRequired,
+                "Latest observed AHL role is goalie; goalie development requires its own adapter."
+                    .to_owned(),
+            ));
+            continue;
+        }
+        if candidate.observed_seasons.len() < config.minimum_ahl_seasons {
+            exclusions.push(exclude(
+                ProspectLeagueContextExclusionReason::FewerThanMinimumAhlSeasons,
+                format!(
+                    "{} reviewed AHL season(s) observed; {} required.",
+                    candidate.observed_seasons.len(),
+                    config.minimum_ahl_seasons
+                ),
+            ));
+            continue;
+        }
+        if latest_positions.is_empty() {
+            exclusions.push(exclude(
+                ProspectLeagueContextExclusionReason::MissingLatestSkaterStats,
+                "No positive-games skater row joined in the latest snapshot.".to_owned(),
+            ));
+            continue;
+        }
+        let organizations = latest_teams
+            .iter()
+            .filter_map(|team| affiliation_by_team.get(team).cloned())
+            .collect::<BTreeSet<_>>();
+        if latest_teams
+            .iter()
+            .any(|team| !affiliation_by_team.contains_key(team))
+        {
+            exclusions.push(exclude(
+                ProspectLeagueContextExclusionReason::MissingAffiliation,
+                format!(
+                    "Latest AHL team(s) lack a dated affiliation mapping: {}.",
+                    latest_teams.iter().cloned().collect::<Vec<_>>().join(", ")
+                ),
+            ));
+            continue;
+        }
+        if organizations.len() != 1 {
+            exclusions.push(exclude(
+                ProspectLeagueContextExclusionReason::AmbiguousOrganization,
+                "Latest AHL appearances map to more than one NHL organization.".to_owned(),
+            ));
+            continue;
+        }
+        let Some(birth_date_text) = candidate.birth_dates.iter().next() else {
+            exclusions.push(exclude(
+                ProspectLeagueContextExclusionReason::MissingBirthDate,
+                "Reviewed canonical identity has no birth date.".to_owned(),
+            ));
+            continue;
+        };
+        let Ok(birth_date) = NaiveDate::parse_from_str(birth_date_text, "%Y-%m-%d") else {
+            exclusions.push(exclude(
+                ProspectLeagueContextExclusionReason::InvalidBirthDate,
+                format!("Canonical birth date is invalid: {birth_date_text}."),
+            ));
+            continue;
+        };
+        let age = config.as_of_date.year()
+            - birth_date.year()
+            - i32::from(
+                (config.as_of_date.month(), config.as_of_date.day())
+                    < (birth_date.month(), birth_date.day()),
+            );
+        if age < 0 || age > i32::from(u8::MAX) {
+            exclusions.push(exclude(
+                ProspectLeagueContextExclusionReason::InvalidBirthDate,
+                format!("Canonical birth date is implausible: {birth_date_text}."),
+            ));
+            continue;
+        }
+        if age > i32::from(config.max_age) {
+            exclusions.push(exclude(
+                ProspectLeagueContextExclusionReason::AboveMaximumAge,
+                format!(
+                    "Age {age} exceeds the configured maximum {}.",
+                    config.max_age
+                ),
+            ));
+            continue;
+        }
+        let position = latest_positions
+            .iter()
+            .max_by(|left, right| left.1.cmp(right.1).then_with(|| right.0.cmp(left.0)))
+            .map(|row| row.0.clone())
+            .expect("latest position validated");
+        let mut evidence = candidate
+            .evidence_urls
+            .into_iter()
+            .map(|source_url| ProspectStudyEvidenceInput {
+                label: format!("Reviewed AHL-to-NHL identity evidence for {player}."),
+                source_url,
+            })
+            .collect::<Vec<_>>();
+        evidence.push(ProspectStudyEvidenceInput {
+            label: format!(
+                "Official AHL {latest_season} snapshot records {player} in the selected organization."
+            ),
+            source_url: latest_snapshot.source_url.clone(),
+        });
+        players.push(ProspectLeaguePlayerContext {
+            player_id,
+            player,
+            organization: organizations.into_iter().next().expect("one organization"),
+            position,
+            age: age as u8,
+            nhl_games_played: 0,
+            opportunity: ProspectOpportunityStatus::None,
+            availability: ProspectAvailabilityStatus::Unknown,
+            attention_score: 0.5,
+            attention_basis: "Neutral machine-generated placeholder; replace with sourced analyst context before using attention-sensitive discovery lanes.".to_owned(),
+            evidence,
+        });
+    }
+    players.sort_by(|left, right| {
+        left.organization
+            .cmp(&right.organization)
+            .then_with(|| left.player.cmp(&right.player))
+            .then_with(|| left.player_id.cmp(&right.player_id))
+    });
+    exclusions.sort_by(|left, right| {
+        left.player
+            .cmp(&right.player)
+            .then_with(|| left.player_id.cmp(&right.player_id))
+    });
+    if players.is_empty() {
+        return Err("no eligible players remained in prospect context draft".to_owned());
+    }
+    Ok(ProspectLeagueContext {
+        schema: PROSPECT_LEAGUE_CONTEXT_SCHEMA.to_owned(),
+        authority: ProspectLeagueContextAuthority::ObservedDraft,
+        as_of_date: Some(config.as_of_date.to_string()),
+        snapshot_seasons: snapshot_seasons.into_iter().collect(),
+        players,
+        exclusions,
+        disclosures: vec![
+            "Observed draft includes only reviewed canonical skaters appearing in the latest supplied AHL snapshot, at or below the configured age ceiling, with the configured minimum observed AHL seasons.".to_owned(),
+            "Organization comes from the supplied dated affiliation catalog; missing or conflicting mappings are explicit exclusions.".to_owned(),
+            "NHL games are not inferred by the AHL adapter and remain zero placeholders; opportunity is none, availability unknown, and attention neutral until separately sourced enrichment is applied.".to_owned(),
+            "Goalies are excluded until a goalie-specific development adapter supplies comparable evidence.".to_owned(),
+        ],
+    })
 }
 
 pub fn build_prospect_league_discovery(
@@ -334,6 +757,17 @@ fn validate_authorities(
         }
     }
     let mut player_ids = BTreeSet::new();
+    if context.authority == ProspectLeagueContextAuthority::ObservedDraft
+        && context.players.iter().any(|player| {
+            player.opportunity != ProspectOpportunityStatus::None
+                || player.availability != ProspectAvailabilityStatus::Unknown
+                || (player.attention_score - 0.5).abs() > f64::EPSILON
+        })
+    {
+        return Err(
+            "observed prospect context draft contains non-neutral authored fields".to_owned(),
+        );
+    }
     if context.players.iter().any(|player| {
         player.player_id == 0
             || !player_ids.insert(player.player_id)
@@ -366,10 +800,15 @@ mod tests {
     fn reviewed_two_season_facts_build_board_and_report_exclusions() {
         let context = ProspectLeagueContext {
             schema: PROSPECT_LEAGUE_CONTEXT_SCHEMA.to_owned(),
+            authority: ProspectLeagueContextAuthority::Authored,
+            as_of_date: None,
+            snapshot_seasons: vec![],
             players: vec![
                 player_context(10, "Joined Prospect"),
                 player_context(20, "Missing Prospect"),
             ],
+            exclusions: vec![],
+            disclosures: vec![],
         };
         let view = build_prospect_league_discovery(
             vec![
@@ -400,6 +839,53 @@ mod tests {
     }
 
     #[test]
+    fn observed_context_draft_selects_reviewed_two_season_young_skater() {
+        let snapshots = vec![
+            snapshot(20242025, 10, 40, 10, 10),
+            snapshot(20252026, 10, 40, 20, 20),
+        ];
+        let leagues = vec![
+            league_crosswalk(crosswalk(20242025, 10, "Joined Prospect")),
+            league_crosswalk(crosswalk(20252026, 10, "Joined Prospect")),
+        ];
+        let context = build_prospect_league_context_draft(
+            snapshots,
+            leagues,
+            AhlAffiliationCatalogView {
+                schema: AHL_AFFILIATION_CATALOG_SCHEMA.to_owned(),
+                season: 20252026,
+                checked_at: "2026-07-26".to_owned(),
+                source_url: "https://theahl.com/nhl-affiliations".to_owned(),
+                affiliations: vec![icelines_core::AhlAffiliationView {
+                    nhl_team: "SEA".to_owned(),
+                    ahl_team: "Coachella Valley Firebirds".to_owned(),
+                }],
+            },
+            ProspectLeagueContextDraftConfig {
+                max_age: 24,
+                as_of_date: NaiveDate::from_ymd_opt(2026, 9, 15).unwrap(),
+                minimum_ahl_seasons: 2,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            context.authority,
+            ProspectLeagueContextAuthority::ObservedDraft
+        );
+        assert_eq!(context.snapshot_seasons, [20242025, 20252026]);
+        assert_eq!(context.players.len(), 1);
+        assert_eq!(context.players[0].player_id, 10);
+        assert_eq!(context.players[0].organization, "SEA");
+        assert_eq!(context.players[0].age, 22);
+        assert_eq!(
+            context.players[0].opportunity,
+            ProspectOpportunityStatus::None
+        );
+        assert!(context.exclusions.is_empty());
+    }
+
+    #[test]
     fn pending_identity_does_not_join() {
         let mut row = crosswalk(20242025, 10, "Joined Prospect");
         row.rows[0].review_status = AhlIdentityReviewStatus::Pending;
@@ -411,7 +897,12 @@ mod tests {
             vec![row, crosswalk(20252026, 10, "Joined Prospect")],
             ProspectLeagueContext {
                 schema: PROSPECT_LEAGUE_CONTEXT_SCHEMA.to_owned(),
+                authority: ProspectLeagueContextAuthority::Authored,
+                as_of_date: None,
+                snapshot_seasons: vec![],
                 players: vec![player_context(10, "Joined Prospect")],
+                exclusions: vec![],
+                disclosures: vec![],
             },
             ProspectDevelopmentStudyConfig::default(),
         )
@@ -433,7 +924,12 @@ mod tests {
             vec![duplicate, crosswalk(20252026, 10, "Joined Prospect")],
             ProspectLeagueContext {
                 schema: PROSPECT_LEAGUE_CONTEXT_SCHEMA.to_owned(),
+                authority: ProspectLeagueContextAuthority::Authored,
+                as_of_date: None,
+                snapshot_seasons: vec![],
                 players: vec![player_context(10, "Joined Prospect")],
+                exclusions: vec![],
+                disclosures: vec![],
             },
             ProspectDevelopmentStudyConfig::default(),
         )
@@ -539,6 +1035,21 @@ mod tests {
                 evidence_urls: vec!["https://example.com/identity".to_owned()],
                 note: "Reviewed test identity.".to_owned(),
             }],
+            disclosures: vec![],
+        }
+    }
+
+    fn league_crosswalk(crosswalk: AhlIdentityCrosswalkView) -> AhlIdentityLeagueCrosswalkView {
+        AhlIdentityLeagueCrosswalkView {
+            schema: AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA.to_owned(),
+            season: crosswalk.season,
+            provider: crosswalk.provider.clone(),
+            roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+            candidates_checked_at: crosswalk.candidates_checked_at.clone(),
+            teams: 1,
+            roster_appearances: crosswalk.rows.len(),
+            unique_provider_players: crosswalk.rows.len(),
+            crosswalks: vec![crosswalk],
             disclosures: vec![],
         }
     }

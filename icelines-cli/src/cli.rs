@@ -1789,13 +1789,39 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Generate a conservative all-team AHL prospect context from reviewed identities.
+    #[command(name = "prospect-context")]
+    ProspectContext {
+        /// Repeat for each official `ahl_roster_stats.v1` season snapshot.
+        #[arg(long = "snapshot", required = true, value_name = "PATH")]
+        snapshots: Vec<PathBuf>,
+        /// Repeat for each reviewed `ahl_identity_league_crosswalk.v1` season envelope.
+        #[arg(long = "league-crosswalk", required = true, value_name = "PATH")]
+        league_crosswalks: Vec<PathBuf>,
+        /// Dated `ahl_affiliation_catalog.v1` mapping the latest AHL clubs to NHL organizations.
+        #[arg(long, value_name = "PATH")]
+        affiliations: PathBuf,
+        /// Age calculation date in YYYY-MM-DD form.
+        #[arg(long, default_value = "2026-09-15")]
+        as_of: String,
+        /// Oldest player retained in the observed prospect draft.
+        #[arg(long, default_value_t = 24)]
+        max_age: u8,
+        /// Minimum number of joined AHL seasons required.
+        #[arg(long, default_value_t = 2)]
+        minimum_ahl_seasons: usize,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Join reviewed AHL season facts into prospect studies and a discovery board.
     #[command(name = "prospect-league")]
     ProspectLeague {
         /// Repeat for each official `ahl_roster_stats.v1` season snapshot.
         #[arg(long = "snapshot", required = true, value_name = "PATH")]
         snapshots: Vec<PathBuf>,
-        /// Repeat for each reviewed season/team `ahl_identity_crosswalk.v1`.
+        /// Repeat for each reviewed team crosswalk or league crosswalk envelope.
         #[arg(long = "crosswalk", required = true, value_name = "PATH")]
         crosswalks: Vec<PathBuf>,
         /// `prospect_league_context.v1` with separately authored non-feed facts.
@@ -3596,6 +3622,54 @@ mod tui_surface_tests {
                     && crosswalks.len() == 2
                     && context == PathBuf::from("prospects.json")
                     && out == PathBuf::from("league-discovery.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_context_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-context",
+                "--snapshot",
+                "ahl-2024.json",
+                "--snapshot",
+                "ahl-2025.json",
+                "--league-crosswalk",
+                "league-2024.json",
+                "--league-crosswalk",
+                "league-2025.json",
+                "--affiliations",
+                "affiliations.json",
+                "--as-of",
+                "2026-09-15",
+                "--max-age",
+                "24",
+                "--minimum-ahl-seasons",
+                "2",
+                "--json",
+                "--out",
+                "prospect-context.json",
+            ])
+            .expect("IceCast prospect context command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectContext {
+                    snapshots,
+                    league_crosswalks,
+                    affiliations,
+                    as_of,
+                    max_age: 24,
+                    minimum_ahl_seasons: 2,
+                    json: true,
+                    out: Some(out),
+                }) if snapshots.len() == 2
+                    && league_crosswalks.len() == 2
+                    && affiliations == PathBuf::from("affiliations.json")
+                    && as_of == "2026-09-15"
+                    && out == PathBuf::from("prospect-context.json")
             ));
         });
     }

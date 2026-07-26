@@ -22,6 +22,16 @@ icelines icecast prospect-board \
   --study firkus-study.json \
   --study another-study.json \
   --json --out prospect-board.json
+icelines icecast prospect-context \
+  --snapshot ahl-2023-24.json \
+  --snapshot ahl-2024-25.json \
+  --snapshot ahl-2025-26.json \
+  --league-crosswalk reviewed-league-2023-24.json \
+  --league-crosswalk reviewed-league-2024-25.json \
+  --league-crosswalk reviewed-league-2025-26.json \
+  --affiliations ahl-affiliations-2025-26.json \
+  --as-of 2026-09-15 --max-age 24 \
+  --json --out prospect-context.json
 icelines icecast prospect-league \
   --snapshot ahl-2024-25.json \
   --snapshot ahl-2025-26.json \
@@ -91,8 +101,26 @@ of returning a zero-shaped board.
 
 The separate context file owns current organization, position, age, NHL games,
 opportunity, availability, attention estimate/basis, and supporting evidence.
-Those fields are deliberately not guessed from AHL production. A full-league
-run repeats `--crosswalk` for every reviewed affiliate-season document.
+Those fields are deliberately not guessed from AHL production.
+
+`prospect-context` can now create an `observed_draft` context for the whole AHL
+from official season snapshots, reviewed league crosswalk envelopes, and a
+dated affiliation catalog. It retains only skaters appearing in the latest
+snapshot at or below the configured age ceiling with at least two joined AHL
+seasons. Provider `active` state resolves the current organization after an
+in-season AHL trade; multiple active organizations remain an explicit
+exclusion. Goalies, older players, one-season samples, missing affiliations,
+and unresolved assignments are preserved in typed exclusions.
+
+The generated artifact uses neutral placeholders for the facts the AHL adapter
+cannot establish: NHL games remain zero, opportunity is `none`, availability is
+`unknown`, and attention is 0.5. Its `observed_draft` authority fails validation
+if those fields become non-neutral without first being promoted to authored
+context. Consequently the draft is suitable for the attention-independent
+program ranking, but Hidden Gems and Buyer Beware require separate sourced
+enrichment. `prospect-league --crosswalk` accepts either individual reviewed
+team crosswalks or reviewed league envelopes and flattens the latter without
+weakening the reviewed-only join.
 
 ## Prospect program board
 
@@ -117,6 +145,10 @@ The initial board scope is explicitly `ahl_observed`. It accepts one or more
 future adapters. It is not an all-system NHL ranking until goalie, CHL, NCAA,
 European, junior, and NHL-rostered prospect adapters provide equivalent typed
 facts. This limitation is part of the output contract, not renderer prose.
+
+The production path has been exercised over three official AHL seasons and 32
+NHL organizations. That result is a complete all-organization AHL-skater
+comparison, not a complete organizational prospect-system ranking.
 
 ## Guardrails
 
