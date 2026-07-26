@@ -101,7 +101,16 @@ For each AHL roster name, IceLines acquires the official NHL player-search
 response through FLETCH, retains only exact normalized-name results, and then
 acquires the corresponding official NHL player landing document. Landing
 player ID/name conflicts fail closed; a valid landing birth date upgrades the
-proposal to exact-name-and-birth-date evidence. All discovered rows remain
+proposal to exact-name-and-birth-date evidence. Identity normalization is
+scoped to this bridge: diacritics are folded and
+hyphens become word boundaries while apostrophes and periods are ignored, so
+provider punctuation variants compare equally. Birth dates and canonical IDs
+remain separate gates; the global IceLines name-search normalizer is unchanged.
+The rule is comparison-only; established official search queries and FLETCH
+dataset keys remain unchanged. Discovery additionally acquires a
+straight-apostrophe query variant for curly-apostrophe provider names because
+the official search index can distinguish the forms.
+All discovered rows remain
 `pending` until explicitly reviewed. An authored catalog may be merged by NHL
 player ID; conflicting names or birth dates are rejected.
 Non-refresh discovery reads hash-verified search and landing cachelines without

@@ -48,17 +48,17 @@ use icelines_core::{
 };
 use icelines_fetch::{
     ahl::{
-        affiliate_projection_input_from_reviewed_crosswalk,
+        affiliate_projection_input_from_reviewed_crosswalk, ahl_identity_search_name_variants,
         apply_ahl_identity_league_routine_review, apply_ahl_identity_review_decisions,
         build_ahl_alias_identity_review, build_ahl_exact_identity_review,
         build_ahl_identity_crosswalk, build_ahl_identity_league_crosswalk,
         build_ahl_identity_league_review, build_ahl_identity_league_review_draft,
         build_ahl_identity_rejection_review, build_ahl_identity_review_draft_with_options,
         build_ahl_identity_review_inspection, enrich_official_nhl_landing_candidate,
-        merge_ahl_canonical_identity_catalogs, parse_official_nhl_search_candidates,
-        parse_official_nhl_search_candidates_by_surname, AhlCanonicalIdentityCandidate,
-        AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView, AhlIdentityInspectionScope,
-        AhlIdentityLeagueCrosswalkView, AhlIdentityLeagueReviewView,
+        merge_ahl_canonical_identity_catalogs, normalize_ahl_identity_name,
+        parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
+        AhlCanonicalIdentityCandidate, AhlCanonicalIdentityCatalog, AhlIdentityCrosswalkView,
+        AhlIdentityInspectionScope, AhlIdentityLeagueCrosswalkView, AhlIdentityLeagueReviewView,
         AhlIdentityLeagueRoutineReviewKind, AhlIdentityMatchBasis, AhlIdentityReviewDecisions,
         AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView, AhlIdentityReviewStatus,
         AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
@@ -1348,21 +1348,23 @@ async fn discover_official_affiliate_identities_for_teams(
     let mut request_context = BTreeMap::new();
     let mut requests = Vec::new();
     for player in &roster {
-        let normalized_name = normalize_name(&player.name);
-        let mut url = reqwest::Url::parse("https://search.d3.nhle.com/api/v1/search/player")?;
-        url.query_pairs_mut()
-            .append_pair("culture", "en-us")
-            .append_pair("limit", "20")
-            .append_pair("q", &normalized_name);
-        let source_url = url.to_string();
-        let digest = format!("{:x}", Sha256::digest(normalized_name.as_bytes()));
-        let dataset_id = format!("icelines.nhl.player-search.{}", &digest[..20]);
-        if !request_context.contains_key(&dataset_id) {
-            request_context.insert(
-                dataset_id.clone(),
-                (player.name.clone(), source_url.clone()),
-            );
-            requests.push((dataset_id, source_url));
+        for search_name in ahl_identity_search_name_variants(&player.name) {
+            let normalized_name = normalize_name(&search_name);
+            let mut url = reqwest::Url::parse("https://search.d3.nhle.com/api/v1/search/player")?;
+            url.query_pairs_mut()
+                .append_pair("culture", "en-us")
+                .append_pair("limit", "20")
+                .append_pair("q", &normalized_name);
+            let source_url = url.to_string();
+            let digest = format!("{:x}", Sha256::digest(normalized_name.as_bytes()));
+            let dataset_id = format!("icelines.nhl.player-search.{}", &digest[..20]);
+            if !request_context.contains_key(&dataset_id) {
+                request_context.insert(
+                    dataset_id.clone(),
+                    (player.name.clone(), source_url.clone()),
+                );
+                requests.push((dataset_id, source_url));
+            }
         }
     }
     let search_results =
@@ -1381,19 +1383,16 @@ async fn discover_official_affiliate_identities_for_teams(
     let exact_search_candidates = search_candidates.len();
     let exact_names = search_candidates
         .iter()
-        .map(|candidate| normalize_name(&candidate.display_name))
+        .map(|candidate| normalize_ahl_identity_name(&candidate.display_name))
         .collect::<std::collections::BTreeSet<_>>();
     let mut surname_context = BTreeMap::new();
     let mut surname_requests = Vec::new();
     for player in roster
         .iter()
-        .filter(|player| !exact_names.contains(&normalize_name(&player.name)))
+        .filter(|player| !exact_names.contains(&normalize_ahl_identity_name(&player.name)))
     {
-        let Some(surname) = normalize_name(&player.name)
-            .split_whitespace()
-            .last()
-            .map(str::to_owned)
-        else {
+        let normalized_name = normalize_name(&player.name);
+        let Some(surname) = normalized_name.split_whitespace().last().map(str::to_owned) else {
             continue;
         };
         let mut url = reqwest::Url::parse("https://search.d3.nhle.com/api/v1/search/player")?;
@@ -1402,10 +1401,7 @@ async fn discover_official_affiliate_identities_for_teams(
             .append_pair("limit", "20")
             .append_pair("q", &surname);
         let source_url = url.to_string();
-        let digest = format!(
-            "{:x}",
-            Sha256::digest(normalize_name(&player.name).as_bytes())
-        );
+        let digest = format!("{:x}", Sha256::digest(normalized_name.as_bytes()));
         let dataset_id = format!("icelines.nhl.player-search-surname.{}", &digest[..20]);
         if !surname_context.contains_key(&dataset_id) {
             surname_context.insert(

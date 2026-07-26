@@ -1154,6 +1154,11 @@ player landing endpoint. When exact-name search is empty, it also searches the
 surname and retains only a unique surname-and-birth-date proposal as the
 distinct `surname_and_birth_date` basis. Alias proposals remain outside the
 automatic exact-match decision draft and require an explicit sourced remap.
+The identity bridge treats hyphens as word boundaries and ignores apostrophes
+and periods without changing the global player-search normalizer.
+This comparison-only rule leaves established official query and FLETCH cache
+keys unchanged. Curly-apostrophe names also receive a straight-apostrophe
+search variant because the official search index can distinguish those forms.
 Both source shapes are cached through FLETCH and can be merged with
 `--candidates`. Discovery improves the review queue but never changes
 `review_status`; even exact name-and-birth matches remain pending until

@@ -137,6 +137,46 @@ pub struct AhlCanonicalIdentityCandidate {
     pub evidence_urls: Vec<String>,
 }
 
+/// Canonicalize provider formatting differences for identity comparison.
+/// Hyphens become word boundaries while apostrophes and periods are ignored,
+/// so provider punctuation variants compare equally without changing global
+/// name search.
+pub fn normalize_ahl_identity_name(name: &str) -> String {
+    let normalized = icelines_core::normalize_name(name);
+    let mut identity = String::with_capacity(normalized.len());
+    let mut pending_boundary = false;
+    for character in normalized.chars() {
+        if character.is_alphanumeric() {
+            if pending_boundary && !identity.is_empty() {
+                identity.push(' ');
+            }
+            identity.push(character);
+            pending_boundary = false;
+        } else if character.is_whitespace() || character == '-' {
+            pending_boundary = true;
+        }
+    }
+    identity
+}
+
+/// Return provider search spellings without discarding the supplied form.
+/// Some official search indexes distinguish curly and straight apostrophes
+/// even though the resulting identities compare equally.
+pub fn ahl_identity_search_name_variants(name: &str) -> Vec<String> {
+    let straight_apostrophes = name
+        .chars()
+        .map(|character| match character {
+            '‘' | '’' => '\'',
+            _ => character,
+        })
+        .collect::<String>();
+    if straight_apostrophes == name {
+        vec![name.to_owned()]
+    } else {
+        vec![name.to_owned(), straight_apostrophes]
+    }
+}
+
 /// Parse exact-name candidates from the official NHL player-search response.
 /// Search results establish a player ID/name proposal only; birth-date
 /// corroboration comes from the matching NHL player landing document.
@@ -145,9 +185,9 @@ pub fn parse_official_nhl_search_candidates(
     source_url: &str,
     bytes: &[u8],
 ) -> Result<Vec<AhlCanonicalIdentityCandidate>, AhlFeedError> {
-    let expected = icelines_core::normalize_name(expected_name);
+    let expected = normalize_ahl_identity_name(expected_name);
     parse_official_nhl_search_candidates_matching(expected_name, source_url, bytes, |name| {
-        icelines_core::normalize_name(name) == expected
+        normalize_ahl_identity_name(name) == expected
     })
 }
 
@@ -213,7 +253,7 @@ fn parse_official_nhl_search_candidates_matching(
 }
 
 fn normalized_surname(name: &str) -> Option<String> {
-    icelines_core::normalize_name(name)
+    normalize_ahl_identity_name(name)
         .split_whitespace()
         .last()
         .map(str::to_owned)
@@ -236,8 +276,8 @@ pub fn enrich_official_nhl_landing_candidate(
     let display_name = format!("{first_name} {last_name}").trim().to_owned();
     if player_id != Some(candidate.nhl_player_id)
         || display_name.is_empty()
-        || icelines_core::normalize_name(&display_name)
-            != icelines_core::normalize_name(&candidate.display_name)
+        || normalize_ahl_identity_name(&display_name)
+            != normalize_ahl_identity_name(&candidate.display_name)
     {
         return Err(AhlFeedError::Validation(format!(
             "NHL landing identity conflicts with search proposal {} ({})",
@@ -287,8 +327,8 @@ pub fn merge_ahl_canonical_identity_catalogs(
                 }
                 std::collections::btree_map::Entry::Occupied(mut entry) => {
                     let current = entry.get_mut();
-                    if icelines_core::normalize_name(&current.display_name)
-                        != icelines_core::normalize_name(&candidate.display_name)
+                    if normalize_ahl_identity_name(&current.display_name)
+                        != normalize_ahl_identity_name(&candidate.display_name)
                         || matches!(
                             (&current.birth_date, &candidate.birth_date),
                             (Some(left), Some(right)) if left != right
@@ -690,7 +730,7 @@ pub fn build_ahl_identity_league_review(
                 || {
                     format!(
                         "ahl:{}:{}",
-                        icelines_core::normalize_name(&row.ahl_display_name),
+                        normalize_ahl_identity_name(&row.ahl_display_name),
                         row.ahl_birth_date
                     )
                 },
@@ -897,8 +937,8 @@ pub fn build_ahl_exact_identity_review(
     }) {
         let nhl_name = row.nhl_display_name.as_deref().unwrap_or("");
         if row.nhl_player_id.is_none()
-            || icelines_core::normalize_name(&row.ahl_display_name)
-                != icelines_core::normalize_name(nhl_name)
+            || normalize_ahl_identity_name(&row.ahl_display_name)
+                != normalize_ahl_identity_name(nhl_name)
             || row.ahl_birth_date.is_empty()
             || row.nhl_birth_date.as_deref() != Some(row.ahl_birth_date.as_str())
             || row.evidence_urls.is_empty()
@@ -961,8 +1001,8 @@ pub fn build_ahl_alias_identity_review(
         let nhl_name = row.nhl_display_name.as_deref().unwrap_or("");
         if row.nhl_player_id.is_none()
             || normalized_surname(&row.ahl_display_name) != normalized_surname(nhl_name)
-            || icelines_core::normalize_name(&row.ahl_display_name)
-                == icelines_core::normalize_name(nhl_name)
+            || normalize_ahl_identity_name(&row.ahl_display_name)
+                == normalize_ahl_identity_name(nhl_name)
             || row.ahl_birth_date.is_empty()
             || row.nhl_birth_date.as_deref() != Some(row.ahl_birth_date.as_str())
             || row.evidence_urls.is_empty()
@@ -1341,7 +1381,7 @@ pub fn apply_ahl_identity_review_decisions(
                 let name = decision
                     .nhl_display_name
                     .as_deref()
-                    .filter(|name| !icelines_core::normalize_name(name).is_empty())
+                    .filter(|name| !normalize_ahl_identity_name(name).is_empty())
                     .ok_or_else(|| {
                         AhlFeedError::Validation(format!(
                             "set_identity decision {} has no NHL display name",
@@ -1536,7 +1576,7 @@ fn reviewed_match_basis(
     nhl_name: &str,
     nhl_birth_date: Option<&str>,
 ) -> AhlIdentityMatchBasis {
-    if icelines_core::normalize_name(ahl_name) != icelines_core::normalize_name(nhl_name) {
+    if normalize_ahl_identity_name(ahl_name) != normalize_ahl_identity_name(nhl_name) {
         AhlIdentityMatchBasis::ReviewedOverride
     } else if !ahl_birth_date.is_empty() && nhl_birth_date == Some(ahl_birth_date) {
         AhlIdentityMatchBasis::ExactNameAndBirthDate
@@ -2164,7 +2204,7 @@ pub fn build_ahl_identity_crosswalk(
     let mut by_surname = BTreeMap::<String, Vec<&AhlCanonicalIdentityCandidate>>::new();
     for candidate in &catalog.candidates {
         by_name
-            .entry(icelines_core::normalize_name(&candidate.display_name))
+            .entry(normalize_ahl_identity_name(&candidate.display_name))
             .or_default()
             .push(candidate);
         if let Some(surname) = normalized_surname(&candidate.display_name) {
@@ -2177,7 +2217,7 @@ pub fn build_ahl_identity_crosswalk(
         .iter()
         .map(|official| {
             let candidates = by_name
-                .get(&icelines_core::normalize_name(&official.name))
+                .get(&normalize_ahl_identity_name(&official.name))
                 .map(Vec::as_slice)
                 .unwrap_or_default();
             let aliases = if candidates.is_empty() {
@@ -2407,7 +2447,7 @@ fn validate_identity_candidate(
     candidate: &AhlCanonicalIdentityCandidate,
 ) -> Result<(), AhlFeedError> {
     if candidate.nhl_player_id == 0
-        || icelines_core::normalize_name(&candidate.display_name).is_empty()
+        || normalize_ahl_identity_name(&candidate.display_name).is_empty()
         || candidate.evidence_urls.is_empty()
         || candidate
             .evidence_urls
@@ -2994,6 +3034,47 @@ mod tests {
         assert_eq!(player.provider_player_id, "7669");
         assert_eq!(player.points, 55);
         assert_eq!(player.plus_minus, -9);
+    }
+
+    #[test]
+    fn identity_name_normalization_handles_provider_punctuation_variants() {
+        assert_eq!(
+            normalize_ahl_identity_name("Ryan O’Rourke"),
+            normalize_ahl_identity_name("Ryan O'Rourke")
+        );
+        assert_eq!(
+            normalize_ahl_identity_name("Alex Kannok Leipert"),
+            normalize_ahl_identity_name("Alex Kannok-Leipert")
+        );
+        assert_eq!(
+            normalize_ahl_identity_name("C.J. Smith"),
+            normalize_ahl_identity_name("CJ Smith")
+        );
+        assert_eq!(
+            normalize_ahl_identity_name("Jack O'Brien"),
+            normalize_ahl_identity_name("Jack OBrien")
+        );
+
+        let candidates = parse_official_nhl_search_candidates(
+            "Ryan O’Rourke",
+            "https://search.d3.nhle.com/player/ryan-o-rourke",
+            br#"[{"playerId":"8482123","name":"Ryan O'Rourke"}]"#,
+        )
+        .unwrap();
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].nhl_player_id, 8_482_123);
+    }
+
+    #[test]
+    fn identity_search_variants_retain_source_and_add_straight_apostrophes() {
+        assert_eq!(
+            ahl_identity_search_name_variants("Ryan O’Rourke"),
+            vec!["Ryan O’Rourke".to_owned(), "Ryan O'Rourke".to_owned()]
+        );
+        assert_eq!(
+            ahl_identity_search_name_variants("Alex Kannok Leipert"),
+            vec!["Alex Kannok Leipert".to_owned()]
+        );
     }
 
     #[test]
