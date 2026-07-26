@@ -1019,6 +1019,7 @@ icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "H
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
 icelines icecast affiliate-identities-league --snapshot ahl-season.json --discover-official --json --out ahl-league-identity-crosswalk.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
+icelines icecast affiliate-review-draft-league --league-crosswalk ahl-league-exact-alias-reviewed.json --include-conflicts --out ahl-league-exception-drafts.json
 icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer "identity-pilot" --reviewed-at 2026-07-25T12:00:00Z --decisions-out hartford-exact-decisions.json --json --out hartford-exact-reviewed.json
 icelines icecast affiliate-review-exact-league --league-crosswalk ahl-league-identity-crosswalk.json --reviewer "league-identity-pilot" --reviewed-at 2026-07-25T12:30:00Z --decisions-out ahl-league-exact-decisions.json --json --out ahl-league-exact-reviewed.json
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer "alias-pilot" --reviewed-at 2026-07-25T13:00:00Z --decisions-out hartford-alias-decisions.json --json --out hartford-alias-reviewed.json
@@ -1175,6 +1176,13 @@ NHL ID with all evidence retained; identity conflicts fail closed.
 repeated `--league-crosswalk` envelopes, or both. League envelopes are flattened
 without changing their child team queues, enabling one multi-season coverage
 and recurring-exception report without manual extraction.
+
+`icecast affiliate-review-draft-league` creates one non-applicable decision
+envelope across a league crosswalk. `--include-conflicts` drafts retained
+birth-date-conflict proposals for human inspection; `--include-aliases` can add
+still-pending surname remaps. Empty team batches are skipped and every pending
+unmatched or ambiguous row is counted in `pending_without_proposal`. The command
+never changes review state or supplies reviewer authority.
 
 `icecast affiliate-review-draft` emits a separate
 `ahl_identity_review_decisions.v1` document containing `accept_proposal`

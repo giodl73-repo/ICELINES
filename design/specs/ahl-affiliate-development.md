@@ -132,6 +132,13 @@ unchanged, and duplicate provider or resulting NHL identities fail closed.
 Applied rows preserve reviewer, timestamp, action, note, and conflicting source
 dates in the resulting crosswalk.
 
+League exception drafting preserves that boundary. The
+`ahl_identity_league_review_draft.v1` envelope contains only `draft=true`
+per-team batches, counts pending rows that have no proposal, and never mutates
+the source league crosswalk. Birth-date conflicts can be included for explicit
+inspection; unmatched and ambiguous identities require new evidence or a
+separate evidence-backed rejection.
+
 `affiliate-review-exact` is the narrow bulk-review surface for an explicit
 reviewer. It creates an applicable, timestamp-bound decision batch only for
 pending `exact_name_and_birth_date` rows after rechecking normalized names,

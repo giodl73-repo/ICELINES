@@ -1984,6 +1984,17 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             include_conflicts,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewDraftLeague {
+            league_crosswalk,
+            include_aliases,
+            include_conflicts,
+            out,
+        }) => commands::icecast::run_affiliate_review_draft_league(
+            league_crosswalk,
+            include_aliases,
+            include_conflicts,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::AffiliateReviewExact {
             crosswalk,
             reviewer,

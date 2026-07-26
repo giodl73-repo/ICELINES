@@ -313,6 +313,7 @@ icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "H
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
 icelines icecast affiliate-identities-league --snapshot ahl-season.json --discover-official --json --out ahl-league-identity-crosswalk.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
+icelines icecast affiliate-review-draft-league --league-crosswalk ahl-league-exact-alias-reviewed.json --include-conflicts --out ahl-league-exception-drafts.json
 icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer identity-pilot --reviewed-at 2026-07-25T12:00:00Z --json --out hartford-exact-reviewed.json
 icelines icecast affiliate-review-exact-league --league-crosswalk ahl-league-identity-crosswalk.json --reviewer league-identity-pilot --reviewed-at 2026-07-25T12:30:00Z --json --out ahl-league-exact-reviewed.json
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer alias-pilot --reviewed-at 2026-07-25T13:00:00Z --json --out hartford-alias-reviewed.json

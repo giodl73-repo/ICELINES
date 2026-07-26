@@ -19,6 +19,7 @@ pub const AHL_IDENTITY_CROSSWALK_SCHEMA: &str = "ahl_identity_crosswalk.v1";
 pub const AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA: &str = "ahl_identity_league_crosswalk.v1";
 pub const AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA: &str =
     "ahl_identity_league_review_decisions.v1";
+pub const AHL_IDENTITY_LEAGUE_REVIEW_DRAFT_SCHEMA: &str = "ahl_identity_league_review_draft.v1";
 pub const AHL_IDENTITY_REVIEW_INSPECTION_SCHEMA: &str = "ahl_identity_review_inspection.v1";
 pub const AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA: &str = "ahl_identity_review_decisions.v1";
 pub const AHL_IDENTITY_LEAGUE_REVIEW_SCHEMA: &str = "ahl_identity_league_review.v1";
@@ -467,6 +468,22 @@ pub struct AhlIdentityLeagueReviewDecisionsView {
     pub eligible_teams: usize,
     pub skipped_teams: Vec<String>,
     pub applied_decisions: usize,
+    pub batches: Vec<AhlIdentityReviewDecisions>,
+    pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlIdentityLeagueReviewDraftView {
+    pub schema: String,
+    pub season: u32,
+    pub provider: String,
+    pub roster_fetched_at: String,
+    pub include_aliases: bool,
+    pub include_conflicts: bool,
+    pub eligible_teams: usize,
+    pub skipped_teams: Vec<String>,
+    pub proposed_decisions: usize,
+    pub pending_without_proposal: usize,
     pub batches: Vec<AhlIdentityReviewDecisions>,
     pub disclosures: Vec<String>,
 }
@@ -1206,6 +1223,52 @@ pub fn build_ahl_identity_review_draft_with_options(
                 _ => None,
             })
             .collect(),
+    })
+}
+
+/// Build one non-applicable draft envelope across every child team queue.
+/// Pending rows without a draftable proposal remain explicitly counted.
+pub fn build_ahl_identity_league_review_draft(
+    league: &AhlIdentityLeagueCrosswalkView,
+    options: AhlIdentityReviewDraftOptions,
+) -> Result<AhlIdentityLeagueReviewDraftView, AhlFeedError> {
+    validate_ahl_identity_league_crosswalk(league)?;
+    let mut batches = Vec::new();
+    let mut skipped_teams = Vec::new();
+    let mut proposed_decisions = 0usize;
+    let mut pending_without_proposal = 0usize;
+    for crosswalk in &league.crosswalks {
+        let draft = build_ahl_identity_review_draft_with_options(crosswalk, options)?;
+        let pending = crosswalk
+            .rows
+            .iter()
+            .filter(|row| row.review_status == AhlIdentityReviewStatus::Pending)
+            .count();
+        proposed_decisions += draft.decisions.len();
+        pending_without_proposal += pending.saturating_sub(draft.decisions.len());
+        if draft.decisions.is_empty() {
+            skipped_teams.push(crosswalk.ahl_team.clone());
+        } else {
+            batches.push(draft);
+        }
+    }
+    Ok(AhlIdentityLeagueReviewDraftView {
+        schema: AHL_IDENTITY_LEAGUE_REVIEW_DRAFT_SCHEMA.to_owned(),
+        season: league.season,
+        provider: league.provider.clone(),
+        roster_fetched_at: league.roster_fetched_at.clone(),
+        include_aliases: options.include_aliases,
+        include_conflicts: options.include_conflicts,
+        eligible_teams: batches.len(),
+        skipped_teams,
+        proposed_decisions,
+        pending_without_proposal,
+        batches,
+        disclosures: vec![
+            "Every child batch is draft=true and cannot be applied until a reviewer inspects its evidence and adds explicit reviewer/timestamp authority.".to_owned(),
+            "Pending rows without a draftable proposal remain counted; unmatched and ambiguous identities require new evidence or an explicit rejection workflow.".to_owned(),
+            "League drafting does not alter the source envelope or any child review status.".to_owned(),
+        ],
     })
 }
 
@@ -3697,6 +3760,50 @@ mod tests {
         let reviewed = apply_ahl_identity_review_decisions(&conflict, &review).unwrap();
         validate_reviewed_ahl_identity_crosswalk(&snapshot, "Hartford Wolf Pack", &reviewed)
             .unwrap();
+    }
+
+    #[test]
+    fn league_review_draft_separates_conflict_proposals_from_unmatched_rows() {
+        let snapshot = identity_snapshot();
+        let mut catalog = identity_catalog();
+        catalog.candidates[0].birth_date = Some("2001-02-18".to_owned());
+        let league = build_ahl_identity_league_crosswalk(&snapshot, &catalog).unwrap();
+
+        let draft = build_ahl_identity_league_review_draft(
+            &league,
+            AhlIdentityReviewDraftOptions {
+                include_conflicts: true,
+                ..AhlIdentityReviewDraftOptions::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(draft.eligible_teams, 1);
+        assert_eq!(draft.proposed_decisions, 1);
+        assert_eq!(draft.pending_without_proposal, 0);
+        assert!(draft.batches[0].draft);
+
+        let mut unmatched = league;
+        let row = &mut unmatched.crosswalks[0].rows[0];
+        row.match_basis = AhlIdentityMatchBasis::Unmatched;
+        row.nhl_player_id = None;
+        row.nhl_display_name = None;
+        row.nhl_birth_date = None;
+        row.evidence_urls.clear();
+        row.note = "No canonical NHL identity candidate.".to_owned();
+        unmatched.crosswalks[0].counts = identity_crosswalk_counts(&unmatched.crosswalks[0].rows);
+        let draft = build_ahl_identity_league_review_draft(
+            &unmatched,
+            AhlIdentityReviewDraftOptions {
+                include_conflicts: true,
+                ..AhlIdentityReviewDraftOptions::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(draft.eligible_teams, 0);
+        assert_eq!(draft.proposed_decisions, 0);
+        assert_eq!(draft.pending_without_proposal, 1);
+        assert_eq!(draft.skipped_teams, ["Hartford Wolf Pack"]);
     }
 
     #[test]

@@ -1215,6 +1215,20 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Generate non-applicable review drafts across a league identity envelope.
+    #[command(name = "affiliate-review-draft-league")]
+    AffiliateReviewDraftLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Add sourced surname-and-birth alias remap proposals to the draft.
+        #[arg(long)]
+        include_aliases: bool,
+        /// Add exact-name birth-conflict proposals for explicit review.
+        #[arg(long)]
+        include_conflicts: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Accept only sourced exact-name-and-birth-date AHL identity proposals.
     #[command(name = "affiliate-review-exact")]
     AffiliateReviewExact {
@@ -2795,6 +2809,26 @@ mod tui_surface_tests {
                 draft.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft {
                     include_aliases: true,
+                    include_conflicts: true,
+                    ..
+                })
+            ));
+
+            let league_draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-draft-league",
+                "--league-crosswalk",
+                "ahl-reviewed.json",
+                "--include-conflicts",
+                "--out",
+                "ahl-exception-drafts.json",
+            ])
+            .expect("league affiliate identity review draft should parse");
+            assert!(matches!(
+                league_draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewDraftLeague {
+                    include_aliases: false,
                     include_conflicts: true,
                     ..
                 })
