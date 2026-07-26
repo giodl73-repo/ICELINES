@@ -49,7 +49,8 @@ use icelines_core::{
 use icelines_fetch::{
     ahl::{
         affiliate_projection_input_from_reviewed_crosswalk, apply_ahl_identity_review_decisions,
-        build_ahl_exact_identity_review, build_ahl_identity_crosswalk,
+        build_ahl_alias_identity_review, build_ahl_exact_identity_review,
+        build_ahl_identity_crosswalk, build_ahl_identity_rejection_review,
         build_ahl_identity_review_draft_with_options, build_ahl_identity_review_inspection,
         enrich_official_nhl_landing_candidate, merge_ahl_canonical_identity_catalogs,
         parse_official_nhl_search_candidates, parse_official_nhl_search_candidates_by_surname,
@@ -822,6 +823,98 @@ pub fn run_affiliate_review_exact(
             path,
             output.as_bytes(),
             "exact-reviewed AHL identity crosswalk",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_review_aliases(
+    crosswalk_path: PathBuf,
+    reviewer: String,
+    reviewed_at: String,
+    decisions_out: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "AHL identity crosswalk")?;
+    let decisions = build_ahl_alias_identity_review(&crosswalk, reviewer, reviewed_at)
+        .map_err(anyhow::Error::msg)?;
+    if let Some(path) = decisions_out.as_deref() {
+        let bytes = format!("{}\n", serde_json::to_string_pretty(&decisions)?);
+        write_icecast_file(
+            path,
+            bytes.as_bytes(),
+            "alias AHL identity review decisions",
+        )?;
+    }
+    let reviewed =
+        apply_ahl_identity_review_decisions(&crosswalk, &decisions).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&reviewed)?)
+    } else {
+        let inspection =
+            build_ahl_identity_review_inspection(&reviewed, AhlIdentityInspectionScope::All)
+                .map_err(anyhow::Error::msg)?;
+        render_affiliate_identities(&inspection)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "alias-reviewed AHL identity crosswalk",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_review_reject(
+    crosswalk_path: PathBuf,
+    provider_player_ids: Vec<String>,
+    reviewer: String,
+    reviewed_at: String,
+    note: String,
+    decisions_out: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "AHL identity crosswalk")?;
+    let decisions = build_ahl_identity_rejection_review(
+        &crosswalk,
+        &provider_player_ids,
+        reviewer,
+        reviewed_at,
+        note,
+    )
+    .map_err(anyhow::Error::msg)?;
+    if let Some(path) = decisions_out.as_deref() {
+        let bytes = format!("{}\n", serde_json::to_string_pretty(&decisions)?);
+        write_icecast_file(
+            path,
+            bytes.as_bytes(),
+            "rejected AHL identity mapping decisions",
+        )?;
+    }
+    let reviewed =
+        apply_ahl_identity_review_decisions(&crosswalk, &decisions).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&reviewed)?)
+    } else {
+        let inspection =
+            build_ahl_identity_review_inspection(&reviewed, AhlIdentityInspectionScope::All)
+                .map_err(anyhow::Error::msg)?;
+        render_affiliate_identities(&inspection)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "rejection-reviewed AHL identity crosswalk",
         )?;
     } else {
         print!("{output}");

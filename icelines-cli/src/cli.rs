@@ -1214,6 +1214,46 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Approve sourced surname-and-birth-date AHL identity aliases as remaps.
+    #[command(name = "affiliate-review-aliases")]
+    AffiliateReviewAliases {
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Reject selected pending NHL identity mappings with retained review authority.
+    #[command(name = "affiliate-review-reject")]
+    AffiliateReviewReject {
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// AHL provider player ID to reject; repeat for multiple rows sharing one rationale.
+        #[arg(long, value_name = "ID", required = true)]
+        provider_player_id: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        /// Evidence-backed explanation; rejection applies only to the NHL identity mapping.
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Inspect an existing AHL identity crosswalk without changing review state.
     #[command(name = "affiliate-review-show")]
     AffiliateReviewShow {
@@ -2689,6 +2729,63 @@ mod tui_surface_tests {
                     json: true,
                     ..
                 }) if reviewer == "identity-pilot"
+            ));
+
+            let aliases = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-aliases",
+                "--crosswalk",
+                "exact-reviewed.json",
+                "--reviewer",
+                "alias-pilot",
+                "--reviewed-at",
+                "2026-07-25T13:00:00Z",
+                "--decisions-out",
+                "alias-decisions.json",
+                "--json",
+                "--out",
+                "alias-reviewed.json",
+            ])
+            .expect("alias affiliate identity review should parse");
+            assert!(matches!(
+                aliases.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewAliases {
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "alias-pilot"
+            ));
+
+            let reject = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-reject",
+                "--crosswalk",
+                "alias-reviewed.json",
+                "--provider-player-id",
+                "11069",
+                "--reviewer",
+                "exception-pilot",
+                "--reviewed-at",
+                "2026-07-25T14:00:00Z",
+                "--note",
+                "official team evidence identifies non-player personnel",
+                "--decisions-out",
+                "reject-decisions.json",
+                "--json",
+                "--out",
+                "rejection-reviewed.json",
+            ])
+            .expect("affiliate identity rejection review should parse");
+            assert!(matches!(
+                reject.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewReject {
+                    provider_player_id,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if provider_player_id == ["11069"] && reviewer == "exception-pilot"
             ));
 
             let show = Cli::try_parse_from([

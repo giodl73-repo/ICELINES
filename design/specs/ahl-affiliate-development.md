@@ -126,10 +126,20 @@ Alias, conflict, ambiguous, unmatched, rejected, and already-reviewed rows are
 never included. The optional decision output preserves the exact applied
 authority for audit and replay.
 
+`affiliate-review-aliases` provides the equally narrow sourced-alias batch: it
+requires a distinct full name, equal normalized surname and birth date,
+canonical NHL ID, retained absolute evidence, reviewer, and timestamp, and
+applies the result as an explicit identity override. `affiliate-review-reject`
+handles selected pending exceptions without conflating rejection of an NHL
+mapping with rejection of the AHL person. Its required note carries the
+evidence-backed AHL-only, non-player, or other exclusion rationale into the
+crosswalk.
+
 ## Data work remaining
 
-- complete the manual exception review after exact-only Hartford and Coachella
-  Valley historical pilot batches, then expand the same coverage league-wide;
+- resolve the deliberately pending Conor McCollum date conflict if stronger
+  authority emerges, then expand the Hartford/Coachella review pattern
+  league-wide;
 - add dated historical NHL/AHL affiliation catalogs rather than applying the
   current association map to old seasons;
 - build a sourced start-of-season professional-game ledger across NHL, AHL,

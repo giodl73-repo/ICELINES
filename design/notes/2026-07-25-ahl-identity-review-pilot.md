@@ -2,8 +2,9 @@
 
 **Run date:** 2026-07-25 local / 2026-07-26 UTC  
 **Seasons:** 2023–24, 2024–25, 2025–26  
-**Review authority:** `IceLines exact-evidence pilot` at
-`2026-07-26T00:20:47Z`
+**Review authorities:** `IceLines exact-evidence pilot`, `IceLines
+alias-evidence pilot`, `IceLines conflict-evidence pilot`, and `IceLines
+exception-evidence pilot`, all at `2026-07-26T00:20:47Z`
 
 ## Result
 
@@ -21,9 +22,12 @@ six snapshot-bound identity queues.
 | 2025–26 | Hartford | 44 | 39 | 1 | 3 | 1 |
 | **Total appearances** | | **266** | **244** | **9** | **10** | **3** |
 
-The exact-only review accepted 244 of 266 roster appearances (91.7%). All 22
-non-exact appearances remain pending. No ambiguous rows were found and no
-non-exact row was reviewed accidentally.
+The exact-only review accepted 244 of 266 roster appearances (91.7%). The
+evidence-by-evidence pass then approved all nine alias appearances, adjudicated
+nine of ten birth-conflict appearances while preserving both provider dates,
+and explicitly rejected three NHL mappings. The final state is 262 reviewed,
+three rejected, and one pending appearance: 98.5% of rows are resolved and
+98.9% have canonical NHL identities. No ambiguous rows were found.
 
 ## Unique manual exceptions
 
@@ -37,21 +41,36 @@ The 22 pending appearances reduce to 18 unique players:
   Gavin Hain, Grant Gabriele, and Justin Janicke; and
 - unmatched: Chris Cameron, Chris Ortiz, and Vince Stalletti.
 
-These rows require separate evidence-by-evidence accept/remap/reject decisions.
-They were deliberately excluded from the exact batch.
+These rows were deliberately excluded from the exact batch. The alias pass
+revalidated shared surnames, equal birth dates, canonical IDs, and retained
+official evidence before applying explicit remaps. Exact-name conflict reviews
+retained the disagreeing AHL and NHL dates rather than laundering them into
+exact matches. Conor McCollum remains pending because the AHL date, NHL date,
+and additional public evidence disagree.
+
+Chris Cameron and Chris Ortiz were rejected only as NHL identity mappings:
+official club evidence supports them as legitimate AHL-only players for which
+the NHL-linked adapter has no canonical ID. Vince Stalletti was rejected as a
+non-player after official team evidence identified him as coaching staff. The
+AHL provider had placed him in the `Goalies` roster section with a player ID,
+position, and jersey, so IceLines did not add a brittle role/name/age parser
+exception that could hide legitimate zero-game players.
 
 ## Discovery proof
 
-The three snapshots, six exact-reviewed crosswalks, and the sourced prospect
-context were passed through `icecast prospect-league`. The resulting
-`prospect_league_discovery.v1` artifact contained one eligible study, no
-exclusions, and ranked Jagger Firkus as `injury_obscured_riser` in Hidden Gems
-at 98.0. This proves the reviewed historical identity stream reaches the
-canonical study and board primitives without provider-ID shortcuts.
+The three snapshots, six final crosswalks, and the sourced prospect context
+were passed through `icecast prospect-league` after exception adjudication.
+The resulting `prospect_league_discovery.v1` artifact contained one eligible
+study, no exclusions, and ranked Jagger Firkus as `injury_obscured_riser` in
+Hidden Gems at 98.0. This proves the reviewed historical identity stream
+reaches the canonical study and board primitives without provider-ID
+shortcuts.
 
 ## Expansion rule
 
-League-wide expansion should repeat this exact-only pass first, publish the
-coverage and unique exception queue, then review aliases/conflicts/unmatched
-rows separately. A season/team is not "complete" until every context-relevant
-player is reviewed or explicitly excluded.
+League-wide expansion should repeat the exact pass first, publish the coverage
+and unique exception queue, then use the narrow alias and rejection surfaces
+plus reviewer-authored conflict batches. A season/team is not "complete" until
+every context-relevant player is reviewed or explicitly excluded. The pilot's
+one deliberately pending identity demonstrates that unresolved evidence stays
+visible instead of being forced through for nominal 100% coverage.

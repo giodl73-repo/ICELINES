@@ -1019,6 +1019,8 @@ icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "H
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer "identity-pilot" --reviewed-at 2026-07-25T12:00:00Z --decisions-out hartford-exact-decisions.json --json --out hartford-exact-reviewed.json
+icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer "alias-pilot" --reviewed-at 2026-07-25T13:00:00Z --decisions-out hartford-alias-decisions.json --json --out hartford-alias-reviewed.json
+icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --out hartford-review-with-aliases-draft.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --include-conflicts --out hartford-complete-proposals-draft.json
 icelines icecast affiliate-review-show --crosswalk hartford-official-identity-review.json
@@ -1165,6 +1167,15 @@ until a reviewer inspects, edits, and finalizes it.
 `--include-conflicts` adds exact-name birth-conflict rows as explicit
 `accept_proposal` decisions whose notes preserve both dates. It remains opt-in,
 never covers unmatched rows, and does not weaken final reviewer authority.
+
+`icecast affiliate-review-aliases` is the applicable counterpart for sourced
+surname-and-equal-birth-date aliases. It revalidates the name distinction,
+shared surname and date, canonical ID, and absolute evidence before recording
+an explicit `set_identity` remap. `icecast affiliate-review-reject` closes only
+selected pending NHL identity mappings and requires repeatable provider IDs,
+reviewer, timestamp, and an evidence-backed rationale. It does not assert that
+the underlying AHL person is invalid: AHL-only players and feed-classified
+non-player personnel remain distinguishable in the retained note.
 
 `icecast affiliate-review-show` is the read-only text/JSON inspection surface
 for an existing crosswalk. IceLines projects the authoritative crosswalk into

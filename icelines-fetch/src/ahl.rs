@@ -610,6 +610,145 @@ pub fn build_ahl_exact_identity_review(
     })
 }
 
+/// Build an applicable review batch only for pending surname-and-birth-date
+/// alias proposals. The canonical identity and retained evidence are copied
+/// into explicit `set_identity` decisions so the name difference survives.
+pub fn build_ahl_alias_identity_review(
+    crosswalk: &AhlIdentityCrosswalkView,
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
+    validate_crosswalk_shape(crosswalk)?;
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    if reviewer.trim().is_empty() || chrono::DateTime::parse_from_rfc3339(&reviewed_at).is_err() {
+        return Err(AhlFeedError::Validation(
+            "alias identity review requires reviewer and RFC3339 timestamp authority".to_owned(),
+        ));
+    }
+    let mut decisions = Vec::new();
+    for row in crosswalk.rows.iter().filter(|row| {
+        row.review_status == AhlIdentityReviewStatus::Pending
+            && row.match_basis == AhlIdentityMatchBasis::SurnameAndBirthDate
+    }) {
+        let nhl_name = row.nhl_display_name.as_deref().unwrap_or("");
+        if row.nhl_player_id.is_none()
+            || normalized_surname(&row.ahl_display_name) != normalized_surname(nhl_name)
+            || icelines_core::normalize_name(&row.ahl_display_name)
+                == icelines_core::normalize_name(nhl_name)
+            || row.ahl_birth_date.is_empty()
+            || row.nhl_birth_date.as_deref() != Some(row.ahl_birth_date.as_str())
+            || row.evidence_urls.is_empty()
+            || row.evidence_urls.iter().any(|url| !absolute_http_url(url))
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "alias identity {} lacks matching surname, birth date, or retained evidence",
+                row.provider_player_id
+            )));
+        }
+        decisions.push(AhlIdentityReviewDecision {
+            provider_player_id: row.provider_player_id.clone(),
+            action: AhlIdentityReviewAction::SetIdentity,
+            nhl_player_id: row.nhl_player_id,
+            nhl_display_name: row.nhl_display_name.clone(),
+            nhl_birth_date: row.nhl_birth_date.clone(),
+            evidence_urls: row.evidence_urls.clone(),
+            note: format!(
+                "Confirmed AHL alias `{}` maps to canonical NHL identity `{}` by surname, equal birth date, canonical ID, and retained official evidence.",
+                row.ahl_display_name, nhl_name
+            ),
+        });
+    }
+    if decisions.is_empty() {
+        return Err(AhlFeedError::Validation(
+            "alias identity review contains no eligible pending proposals".to_owned(),
+        ));
+    }
+    Ok(AhlIdentityReviewDecisions {
+        schema: AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA.to_owned(),
+        season: crosswalk.season,
+        provider: crosswalk.provider.clone(),
+        ahl_team: crosswalk.ahl_team.clone(),
+        roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+        draft: false,
+        reviewer: Some(reviewer),
+        reviewed_at: Some(reviewed_at),
+        decisions,
+    })
+}
+
+/// Build an applicable rejection batch for explicitly selected pending rows.
+/// A rejection closes only the proposed NHL identity mapping; its required
+/// note must explain whether the source row is an AHL-only player, non-player,
+/// or otherwise unsuitable for the NHL-linked adapter.
+pub fn build_ahl_identity_rejection_review(
+    crosswalk: &AhlIdentityCrosswalkView,
+    provider_player_ids: &[String],
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+    note: impl Into<String>,
+) -> Result<AhlIdentityReviewDecisions, AhlFeedError> {
+    validate_crosswalk_shape(crosswalk)?;
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    let note = note.into();
+    if provider_player_ids.is_empty()
+        || reviewer.trim().is_empty()
+        || note.trim().is_empty()
+        || chrono::DateTime::parse_from_rfc3339(&reviewed_at).is_err()
+    {
+        return Err(AhlFeedError::Validation(
+            "identity rejection review requires rows, reviewer, timestamp, and note authority"
+                .to_owned(),
+        ));
+    }
+    let rows = crosswalk
+        .rows
+        .iter()
+        .map(|row| (row.provider_player_id.as_str(), row))
+        .collect::<BTreeMap<_, _>>();
+    let mut seen = BTreeSet::new();
+    let mut decisions = Vec::new();
+    for provider_player_id in provider_player_ids {
+        let row = rows.get(provider_player_id.as_str()).ok_or_else(|| {
+            AhlFeedError::Validation(format!(
+                "identity rejection references unknown provider player {provider_player_id}"
+            ))
+        })?;
+        if !seen.insert(provider_player_id.as_str())
+            || row.review_status != AhlIdentityReviewStatus::Pending
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "identity rejection row {provider_player_id} is duplicate or not pending"
+            )));
+        }
+        decisions.push(AhlIdentityReviewDecision {
+            provider_player_id: provider_player_id.clone(),
+            action: AhlIdentityReviewAction::Reject,
+            nhl_player_id: None,
+            nhl_display_name: None,
+            nhl_birth_date: None,
+            evidence_urls: Vec::new(),
+            note: format!(
+                "Rejected NHL identity mapping for AHL row `{}`: {}",
+                row.ahl_display_name,
+                note.trim()
+            ),
+        });
+    }
+    Ok(AhlIdentityReviewDecisions {
+        schema: AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA.to_owned(),
+        season: crosswalk.season,
+        provider: crosswalk.provider.clone(),
+        ahl_team: crosswalk.ahl_team.clone(),
+        roster_fetched_at: crosswalk.roster_fetched_at.clone(),
+        draft: false,
+        reviewer: Some(reviewer),
+        reviewed_at: Some(reviewed_at),
+        decisions,
+    })
+}
+
 /// Generate a deliberately non-applicable decision draft. Optional lanes are
 /// proposals only and retain their distinct review semantics.
 pub fn build_ahl_identity_review_draft_with_options(
@@ -2448,6 +2587,70 @@ mod tests {
             reviewed.rows[1].review_status,
             AhlIdentityReviewStatus::Pending
         );
+    }
+
+    #[test]
+    fn alias_review_preserves_the_explicit_name_remap() {
+        let mut crosswalk = build_ahl_identity_crosswalk(
+            &identity_snapshot(),
+            "Hartford Wolf Pack",
+            &identity_catalog(),
+        )
+        .unwrap();
+        crosswalk.rows[0].ahl_display_name = "A. Thompson".to_owned();
+        crosswalk.rows[0].match_basis = AhlIdentityMatchBasis::SurnameAndBirthDate;
+
+        let review = build_ahl_alias_identity_review(
+            &crosswalk,
+            "Alias Evidence Pilot",
+            "2026-07-25T13:00:00Z",
+        )
+        .unwrap();
+        assert_eq!(review.decisions.len(), 1);
+        assert_eq!(
+            review.decisions[0].action,
+            AhlIdentityReviewAction::SetIdentity
+        );
+        assert_eq!(
+            review.decisions[0].nhl_display_name.as_deref(),
+            Some("Aidan Thompson")
+        );
+        let reviewed = apply_ahl_identity_review_decisions(&crosswalk, &review).unwrap();
+        assert_eq!(
+            reviewed.rows[0].review_status,
+            AhlIdentityReviewStatus::Reviewed
+        );
+        assert_eq!(
+            reviewed.rows[0].match_basis,
+            AhlIdentityMatchBasis::ReviewedOverride
+        );
+        assert!(reviewed.rows[0].note.contains("A. Thompson"));
+    }
+
+    #[test]
+    fn rejection_review_closes_only_selected_pending_identity_mapping() {
+        let mut catalog = identity_catalog();
+        catalog.candidates.clear();
+        let crosswalk =
+            build_ahl_identity_crosswalk(&identity_snapshot(), "Hartford Wolf Pack", &catalog)
+                .unwrap();
+        let review = build_ahl_identity_rejection_review(
+            &crosswalk,
+            &["10618".to_owned()],
+            "Exception Reviewer",
+            "2026-07-25T14:00:00Z",
+            "official club evidence identifies an AHL-only player without a canonical NHL ID",
+        )
+        .unwrap();
+        assert_eq!(review.decisions.len(), 1);
+        assert_eq!(review.decisions[0].action, AhlIdentityReviewAction::Reject);
+        assert!(review.decisions[0].note.contains("NHL identity mapping"));
+        let reviewed = apply_ahl_identity_review_decisions(&crosswalk, &review).unwrap();
+        assert_eq!(
+            reviewed.rows[0].review_status,
+            AhlIdentityReviewStatus::Rejected
+        );
+        assert_eq!(reviewed.rows[0].nhl_player_id, None);
     }
 
     #[test]
