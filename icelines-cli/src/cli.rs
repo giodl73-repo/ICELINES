@@ -1897,6 +1897,23 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Measure organization rank sensitivity across prospect graduation boundaries.
+    #[command(name = "prospect-program-sensitivity")]
+    ProspectProgramSensitivity {
+        #[arg(long = "league-discovery", value_name = "PATH")]
+        league_discoveries: Vec<PathBuf>,
+        #[arg(long = "career-discovery", value_name = "PATH")]
+        career_discoveries: Vec<PathBuf>,
+        #[arg(long = "study", value_name = "PATH")]
+        studies: Vec<PathBuf>,
+        /// NHL-GP graduation boundaries to compare.
+        #[arg(long, value_delimiter = ',', default_value = "25,50,82")]
+        thresholds: Vec<u32>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Rank validated prospect studies into Hidden Gems, Buyer Beware, and Watch.
     #[command(name = "prospect-board")]
     ProspectBoard {
@@ -3757,6 +3774,42 @@ mod tui_surface_tests {
                     && studies == vec![PathBuf::from("college-study.json")]
                     && prior == PathBuf::from("prior-program-board.json")
                     && out == PathBuf::from("program-board.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_program_sensitivity_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-program-sensitivity",
+                "--league-discovery",
+                "league.json",
+                "--career-discovery",
+                "career.json",
+                "--thresholds",
+                "25,50,82",
+                "--json",
+                "--out",
+                "sensitivity.json",
+            ])
+            .expect("IceCast prospect program sensitivity command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectProgramSensitivity {
+                    league_discoveries,
+                    career_discoveries,
+                    studies,
+                    thresholds,
+                    json: true,
+                    out: Some(out),
+                }) if league_discoveries == vec![PathBuf::from("league.json")]
+                    && career_discoveries == vec![PathBuf::from("career.json")]
+                    && studies.is_empty()
+                    && thresholds == vec![25, 50, 82]
+                    && out == PathBuf::from("sensitivity.json")
             ));
         });
     }

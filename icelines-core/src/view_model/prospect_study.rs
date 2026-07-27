@@ -6,6 +6,7 @@ pub const PROSPECT_DEVELOPMENT_STUDY_SCHEMA: &str = "prospect_development_study.
 pub const PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA: &str = "prospect_goalie_development_study.v1";
 pub const PROSPECT_DISCOVERY_BOARD_SCHEMA: &str = "prospect_discovery_board.v1";
 pub const PROSPECT_PROGRAM_BOARD_SCHEMA: &str = "prospect_program_board.v2";
+pub const PROSPECT_PROGRAM_SENSITIVITY_SCHEMA: &str = "prospect_program_sensitivity.v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -583,6 +584,160 @@ pub struct ProspectProgramBoardView {
     /// other frozen rank without recomputing scores.
     pub programs: Vec<ProspectProgramOrganizationView>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramSensitivityPointView {
+    pub maximum_nhl_games_played: u32,
+    pub pipeline_rank: usize,
+    pub pipeline_score: f64,
+    pub pool_rank: usize,
+    pub development_rank: usize,
+    pub ranked_studies: usize,
+    pub graduated_studies: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramSensitivityOrganizationView {
+    pub organization: String,
+    pub best_pipeline_rank: usize,
+    pub worst_pipeline_rank: usize,
+    pub pipeline_rank_span: usize,
+    pub minimum_pipeline_score: f64,
+    pub maximum_pipeline_score: f64,
+    pub pipeline_score_span: f64,
+    pub points: Vec<ProspectProgramSensitivityPointView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramSensitivityView {
+    pub schema: String,
+    pub source_schema: String,
+    pub thresholds: Vec<u32>,
+    pub organizations: usize,
+    pub supplied_studies: usize,
+    pub programs: Vec<ProspectProgramSensitivityOrganizationView>,
+    pub disclosures: Vec<String>,
+}
+
+/// Rebuild the same supplied population under multiple explicit NHL-GP
+/// graduation boundaries and freeze the resulting rank/score ranges. This
+/// measures definition sensitivity; it does not select a preferred threshold.
+pub fn build_prospect_program_sensitivity_with_goalies(
+    studies: Vec<ProspectDevelopmentStudyView>,
+    goalie_studies: Vec<ProspectGoalieDevelopmentStudyView>,
+    mut thresholds: Vec<u32>,
+    base_config: ProspectProgramBoardConfig,
+) -> Result<ProspectProgramSensitivityView, String> {
+    if thresholds.len() < 2 {
+        return Err("prospect program sensitivity requires at least two thresholds".to_owned());
+    }
+    thresholds.sort_unstable();
+    if thresholds.windows(2).any(|pair| pair[0] == pair[1]) {
+        return Err("prospect program sensitivity thresholds must be unique".to_owned());
+    }
+    let mut boards = Vec::with_capacity(thresholds.len());
+    for threshold in &thresholds {
+        boards.push(build_prospect_program_board_with_goalies(
+            studies.clone(),
+            goalie_studies.clone(),
+            None,
+            ProspectProgramBoardConfig {
+                maximum_nhl_games_played: *threshold,
+                ..base_config
+            },
+        )?);
+    }
+    let supplied_studies = boards[0].studies;
+    let organizations = boards[0].organizations;
+    if boards.iter().any(|board| {
+        board.studies != supplied_studies
+            || board.organizations != organizations
+            || board.schema != PROSPECT_PROGRAM_BOARD_SCHEMA
+    }) {
+        return Err("prospect program sensitivity boards have inconsistent populations".to_owned());
+    }
+
+    let mut programs = Vec::with_capacity(organizations);
+    for organization in boards[0]
+        .programs
+        .iter()
+        .map(|program| program.organization.as_str())
+    {
+        let mut points = Vec::with_capacity(boards.len());
+        for board in &boards {
+            let program = board
+                .programs
+                .iter()
+                .find(|program| program.organization == organization)
+                .ok_or_else(|| {
+                    format!("organization {organization} missing from sensitivity board")
+                })?;
+            points.push(ProspectProgramSensitivityPointView {
+                maximum_nhl_games_played: board.maximum_nhl_games_played,
+                pipeline_rank: program.pipeline_rank,
+                pipeline_score: program.pipeline_score,
+                pool_rank: program.pool_rank,
+                development_rank: program.development_rank,
+                ranked_studies: program.prospect_count,
+                graduated_studies: program.graduated_count,
+            });
+        }
+        let best_pipeline_rank = points
+            .iter()
+            .map(|point| point.pipeline_rank)
+            .min()
+            .expect("validated thresholds");
+        let worst_pipeline_rank = points
+            .iter()
+            .map(|point| point.pipeline_rank)
+            .max()
+            .expect("validated thresholds");
+        let minimum_pipeline_score = points
+            .iter()
+            .map(|point| point.pipeline_score)
+            .fold(f64::INFINITY, f64::min);
+        let maximum_pipeline_score = points
+            .iter()
+            .map(|point| point.pipeline_score)
+            .fold(f64::NEG_INFINITY, f64::max);
+        programs.push(ProspectProgramSensitivityOrganizationView {
+            organization: organization.to_owned(),
+            best_pipeline_rank,
+            worst_pipeline_rank,
+            pipeline_rank_span: worst_pipeline_rank - best_pipeline_rank,
+            minimum_pipeline_score,
+            maximum_pipeline_score,
+            pipeline_score_span: round_program_score(
+                maximum_pipeline_score - minimum_pipeline_score,
+            ),
+            points,
+        });
+    }
+    programs.sort_by(|left, right| {
+        right
+            .pipeline_rank_span
+            .cmp(&left.pipeline_rank_span)
+            .then_with(|| {
+                right
+                    .pipeline_score_span
+                    .total_cmp(&left.pipeline_score_span)
+            })
+            .then_with(|| left.organization.cmp(&right.organization))
+    });
+    Ok(ProspectProgramSensitivityView {
+        schema: PROSPECT_PROGRAM_SENSITIVITY_SCHEMA.to_owned(),
+        source_schema: PROSPECT_PROGRAM_BOARD_SCHEMA.to_owned(),
+        thresholds,
+        organizations,
+        supplied_studies,
+        programs,
+        disclosures: vec![
+            "Each point rebuilds the identical supplied study population with only the regular-season NHL-GP graduation boundary changed.".to_owned(),
+            "Rank span measures sensitivity to the prospect definition across the supplied thresholds; it is not uncertainty in player performance or a confidence interval.".to_owned(),
+            "No threshold is selected as correct. Consumers must display the tested boundaries when presenting a sensitivity conclusion.".to_owned(),
+        ],
+    })
 }
 
 /// Aggregate canonical prospect studies into organization-level Pool,
@@ -1511,6 +1666,50 @@ mod tests {
         assert_eq!(program.top_prospects[0].player_id, 10);
         assert_eq!(program.graduates[0].player_id, 20);
         assert_eq!(program.graduates[0].nhl_games_played, 51);
+    }
+
+    #[test]
+    fn program_sensitivity_freezes_rank_range_across_gp_boundaries() {
+        let weak_reserve = program_study(10, "AAA", "C", 8, 0.5);
+        let mut strong_graduate = program_study(20, "AAA", "RW", 60, 0.5);
+        strong_graduate.nhl_games_played = 51;
+        let stable_program = program_study(30, "BBB", "D", 24, 0.5);
+        let view = build_prospect_program_sensitivity_with_goalies(
+            vec![weak_reserve, strong_graduate, stable_program],
+            vec![],
+            vec![82, 25, 50],
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(view.schema, PROSPECT_PROGRAM_SENSITIVITY_SCHEMA);
+        assert_eq!(view.thresholds, vec![25, 50, 82]);
+        assert_eq!(view.organizations, 2);
+        assert_eq!(view.supplied_studies, 3);
+        let aaa = view
+            .programs
+            .iter()
+            .find(|program| program.organization == "AAA")
+            .unwrap();
+        assert_eq!(aaa.best_pipeline_rank, 1);
+        assert_eq!(aaa.worst_pipeline_rank, 2);
+        assert_eq!(aaa.pipeline_rank_span, 1);
+        assert_eq!(aaa.points[0].ranked_studies, 1);
+        assert_eq!(aaa.points[0].graduated_studies, 1);
+        assert_eq!(aaa.points[2].ranked_studies, 2);
+        assert_eq!(aaa.points[2].graduated_studies, 0);
+        assert!(aaa.pipeline_score_span > 0.0);
+    }
+
+    #[test]
+    fn program_sensitivity_rejects_duplicate_thresholds() {
+        let error = build_prospect_program_sensitivity_with_goalies(
+            vec![program_study(10, "AAA", "C", 8, 0.5)],
+            vec![],
+            vec![50, 50],
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap_err();
+        assert!(error.contains("unique"));
     }
 
     #[test]

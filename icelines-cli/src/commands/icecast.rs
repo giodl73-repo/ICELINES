@@ -11,8 +11,8 @@ use icelines_core::{
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
     build_line_combination_forecast, build_organization_lineup_forecast,
     build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_program_board_with_goalies, build_season_simulation_card,
-    build_team_game_forecast, build_team_game_forecast_validation,
+    build_prospect_program_board_with_goalies, build_prospect_program_sensitivity_with_goalies,
+    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -31,7 +31,8 @@ use icelines_core::{
     OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
     OrganizationUnitKind, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
     ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView,
-    ProspectGoalieDevelopmentStudyConfig, ProspectProgramBoardConfig, ProspectProgramBoardView,
+    ProspectGoalieDevelopmentStudyConfig, ProspectGoalieDevelopmentStudyView,
+    ProspectProgramBoardConfig, ProspectProgramBoardView, ProspectProgramSensitivityView,
     ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
     TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
     TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
@@ -4475,6 +4476,77 @@ pub fn run_prospect_program(
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
+    let (studies, goalie_studies) =
+        load_prospect_program_inputs(league_discovery_paths, career_discovery_paths, study_paths)?;
+    let prior = prior_board_path
+        .as_deref()
+        .map(|path| read_icecast_json(path, "prior prospect program board"))
+        .transpose()?;
+    let view = build_prospect_program_board_with_goalies(
+        studies,
+        goalie_studies,
+        prior.as_ref(),
+        ProspectProgramBoardConfig {
+            maximum_nhl_games_played: maximum_nhl_games,
+            ..ProspectProgramBoardConfig::default()
+        },
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_program(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect program board")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_prospect_program_sensitivity(
+    league_discovery_paths: Vec<PathBuf>,
+    career_discovery_paths: Vec<PathBuf>,
+    study_paths: Vec<PathBuf>,
+    thresholds: Vec<u32>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let (studies, goalie_studies) =
+        load_prospect_program_inputs(league_discovery_paths, career_discovery_paths, study_paths)?;
+    let view = build_prospect_program_sensitivity_with_goalies(
+        studies,
+        goalie_studies,
+        thresholds,
+        ProspectProgramBoardConfig::default(),
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_program_sensitivity(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "IceCast prospect program sensitivity",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn load_prospect_program_inputs(
+    league_discovery_paths: Vec<PathBuf>,
+    career_discovery_paths: Vec<PathBuf>,
+    study_paths: Vec<PathBuf>,
+) -> anyhow::Result<(
+    Vec<ProspectDevelopmentStudyView>,
+    Vec<ProspectGoalieDevelopmentStudyView>,
+)> {
     if league_discovery_paths.is_empty()
         && career_discovery_paths.is_empty()
         && study_paths.is_empty()
@@ -4551,31 +4623,7 @@ pub fn run_prospect_program(
     for path in study_paths {
         studies.push(read_icecast_json(&path, "prospect development study")?);
     }
-    let prior = prior_board_path
-        .as_deref()
-        .map(|path| read_icecast_json(path, "prior prospect program board"))
-        .transpose()?;
-    let view = build_prospect_program_board_with_goalies(
-        studies,
-        goalie_studies,
-        prior.as_ref(),
-        ProspectProgramBoardConfig {
-            maximum_nhl_games_played: maximum_nhl_games,
-            ..ProspectProgramBoardConfig::default()
-        },
-    )
-    .map_err(anyhow::Error::msg)?;
-    let output = if json {
-        format!("{}\n", serde_json::to_string_pretty(&view)?)
-    } else {
-        render_prospect_program(&view)
-    };
-    if let Some(path) = out.as_deref() {
-        write_icecast_file(path, output.as_bytes(), "IceCast prospect program board")?;
-    } else {
-        print!("{output}");
-    }
-    Ok(())
+    Ok((studies, goalie_studies))
 }
 
 pub fn run_prospect_board(
@@ -5219,6 +5267,56 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
                 "- {organization} · {player} ({position}) · {nhl_games} NHL GP"
             );
         }
+    }
+    let _ = writeln!(out, "\nDISCLOSURES");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
+    }
+    out
+}
+
+fn render_prospect_program_sensitivity(view: &ProspectProgramSensitivityView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "THE SYSTEM — PROSPECT DEFINITION SENSITIVITY");
+    let _ = writeln!(
+        out,
+        "{} supplied studies · {} organizations · NHL GP thresholds {}",
+        view.supplied_studies,
+        view.organizations,
+        view.thresholds
+            .iter()
+            .map(u32::to_string)
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    for program in &view.programs {
+        let points = program
+            .points
+            .iter()
+            .map(|point| {
+                format!(
+                    "{} GP: #{} / {:.2} ({} ranked, {} graduated)",
+                    point.maximum_nhl_games_played,
+                    point.pipeline_rank,
+                    point.pipeline_score,
+                    point.ranked_studies,
+                    point.graduated_studies
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" · ");
+        let _ = writeln!(
+            out,
+            "{} · rank {}–{} (span {}) · score {:.2}–{:.2} (span {:.2})\n   {}",
+            program.organization,
+            program.best_pipeline_rank,
+            program.worst_pipeline_rank,
+            program.pipeline_rank_span,
+            program.minimum_pipeline_score,
+            program.maximum_pipeline_score,
+            program.pipeline_score_span,
+            points
+        );
     }
     let _ = writeln!(out, "\nDISCLOSURES");
     for disclosure in &view.disclosures {

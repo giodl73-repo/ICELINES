@@ -4,7 +4,7 @@
 **Schemas:** `prospect_development_study.v1`, `prospect_discovery_board.v1`,
 `prospect_league_context.v1`, `prospect_league_discovery.v1`,
 `prospect_goalie_development_study.v1`, `prospect_career_discovery.v1`,
-`prospect_program_board.v2`
+`prospect_program_board.v2`, `prospect_program_sensitivity.v1`
 
 ## Purpose
 
@@ -58,6 +58,11 @@ icelines icecast prospect-program \
   --career-discovery career-discovery.json \
   --maximum-nhl-games 50 \
   --json --out prospect-programs.json
+icelines icecast prospect-program-sensitivity \
+  --league-discovery league-discovery.json \
+  --career-discovery career-discovery.json \
+  --thresholds 25,50,82 \
+  --json --out prospect-program-sensitivity.json
 ```
 
 ## Contract
@@ -216,6 +221,23 @@ or top-prospect rankings. The board publishes supplied, ranked, and graduated
 counts plus the exact threshold. This is an IceLines population rule, not a
 claim about NHL rookie eligibility. Prior-board deltas require the same
 threshold so population changes cannot masquerade as program improvement.
+
+`ProspectProgramSensitivityView` rebuilds the identical supplied studies across
+two or more unique graduation thresholds. For each organization it freezes the
+pipeline, pool, and development ranks, pipeline score, ranked count, and
+graduated count at every boundary, plus the best/worst pipeline rank and numeric
+rank/score spans. It deliberately does not label a threshold as correct or
+convert definition sensitivity into performance uncertainty. The default CLI
+comparison uses 25, 50, and 82 NHL games; callers may supply other boundaries.
+
+On the July 2026 all-organization proof, Seattle ranked first at all three
+default boundaries; its score ranged only from 56.14 to 57.05. The Rangers
+retained the same 15 ranked studies and a 45.65 score at every boundary, while
+their relative rank moved from 11th to 12th to 16th as other organizations
+admitted more experienced players. San Jose was the most definition-sensitive
+organization in that run, spanning ranks 15–27 and 34.16–45.86. This distinction
+between stable team evidence and changing relative rank is why the artifact
+publishes both score and rank ranges.
 
 An AHL-only board is `ahl_observed`; recognized career studies change the scope
 to `multi_league_observed` and list the actual source leagues. The program

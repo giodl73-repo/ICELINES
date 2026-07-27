@@ -2424,6 +2424,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::ProspectProgramSensitivity {
+            league_discoveries,
+            career_discoveries,
+            studies,
+            thresholds,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_program_sensitivity(
+            league_discoveries,
+            career_discoveries,
+            studies,
+            thresholds,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::ProspectBoard { studies, json, out }) => {
             commands::icecast::run_prospect_board(studies, json, out)?
         }
