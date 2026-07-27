@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::io::Read as _;
 use std::path::{Path, PathBuf};
@@ -31,8 +31,8 @@ use icelines_core::{
     OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
     OrganizationUnitKind, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
     ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView,
-    ProspectProgramBoardConfig, ProspectProgramBoardView, ScenarioScopeView,
-    SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
+    ProspectGoalieDevelopmentStudyConfig, ProspectProgramBoardConfig, ProspectProgramBoardView,
+    ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
     TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
     TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
     TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
@@ -75,12 +75,13 @@ use icelines_fetch::{
         AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     },
-    build_prospect_league_context_draft, build_prospect_league_discovery,
-    build_shift_overlap_report,
+    build_prospect_career_discovery, build_prospect_league_context_draft,
+    build_prospect_league_discovery, build_shift_overlap_report,
     bundled::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
         get_stats_installed, load_transactions_with_fallback,
     },
+    career_landing::CareerHistoryStore,
     fetch_lock, fetch_team_behavior_league_evidence,
     fletch::{
         fetch_generic_http_batch_async, fetch_player_landing_batch_bytes_async, player_landing_url,
@@ -94,9 +95,9 @@ use icelines_fetch::{
         OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
     },
     stats_loader::load_into_repo,
-    NhlApiClient, OfficialShiftChartRow, ProspectLeagueContext, ProspectLeagueContextDraftConfig,
-    ProspectLeagueDiscoveryView, ScenarioRegistryStore, ShiftOverlapReport,
-    PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
+    NhlApiClient, OfficialShiftChartRow, ProspectCareerDiscoveryView, ProspectLeagueContext,
+    ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView, ScenarioRegistryStore,
+    ShiftOverlapReport, PROSPECT_CAREER_DISCOVERY_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -4252,6 +4253,40 @@ pub fn run_prospect_league(
     Ok(())
 }
 
+pub fn run_prospect_career(
+    context_path: PathBuf,
+    career_history_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let context: ProspectLeagueContext =
+        read_icecast_json(&context_path, "prospect career context")?;
+    let store = CareerHistoryStore::load(&career_history_path).with_context(|| {
+        format!(
+            "read career history store {}",
+            career_history_path.display()
+        )
+    })?;
+    let view = build_prospect_career_discovery(
+        context,
+        &store,
+        ProspectDevelopmentStudyConfig::default(),
+        ProspectGoalieDevelopmentStudyConfig::default(),
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_career(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect career discovery")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 fn read_prospect_crosswalks(paths: &[PathBuf]) -> anyhow::Result<Vec<AhlIdentityCrosswalkView>> {
     let mut crosswalks = Vec::new();
     for path in paths {
@@ -4284,16 +4319,21 @@ fn read_prospect_crosswalks(paths: &[PathBuf]) -> anyhow::Result<Vec<AhlIdentity
 
 pub fn run_prospect_program(
     league_discovery_paths: Vec<PathBuf>,
+    career_discovery_paths: Vec<PathBuf>,
     study_paths: Vec<PathBuf>,
     prior_board_path: Option<PathBuf>,
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    if league_discovery_paths.is_empty() && study_paths.is_empty() {
-        bail!("prospect program requires at least one --league-discovery or --study artifact");
+    if league_discovery_paths.is_empty()
+        && career_discovery_paths.is_empty()
+        && study_paths.is_empty()
+    {
+        bail!("prospect program requires at least one discovery or study artifact");
     }
     let mut studies = Vec::new();
     let mut goalie_studies = Vec::new();
+    let mut supplied_player_ids = BTreeSet::new();
     for path in league_discovery_paths {
         let discovery: ProspectLeagueDiscoveryView =
             read_icecast_json(&path, "prospect league discovery")?;
@@ -4303,8 +4343,38 @@ pub fn run_prospect_program(
                 path.display()
             );
         }
-        studies.extend(discovery.studies);
-        goalie_studies.extend(discovery.goalie_studies);
+        for study in discovery.studies {
+            supplied_player_ids.insert(study.player_id);
+            studies.push(study);
+        }
+        for study in discovery.goalie_studies {
+            supplied_player_ids.insert(study.player_id);
+            goalie_studies.push(study);
+        }
+    }
+    for path in career_discovery_paths {
+        let discovery: ProspectCareerDiscoveryView =
+            read_icecast_json(&path, "prospect career discovery")?;
+        if discovery.schema != PROSPECT_CAREER_DISCOVERY_SCHEMA {
+            bail!(
+                "invalid prospect career discovery schema in {}",
+                path.display()
+            );
+        }
+        // Reviewed AHL snapshots remain authoritative when both adapters cover
+        // the same player. Career discovery fills organizations' non-AHL gaps.
+        studies.extend(
+            discovery
+                .studies
+                .into_iter()
+                .filter(|study| supplied_player_ids.insert(study.player_id)),
+        );
+        goalie_studies.extend(
+            discovery
+                .goalie_studies
+                .into_iter()
+                .filter(|study| supplied_player_ids.insert(study.player_id)),
+        );
     }
     for path in study_paths {
         studies.push(read_icecast_json(&path, "prospect development study")?);
@@ -4833,6 +4903,31 @@ fn render_prospect_league(view: &ProspectLeagueDiscoveryView) -> String {
     let _ = writeln!(
         out,
         "AHL seasons {seasons} · {} context players · {} skater studies · {} goalie studies · {} exclusions",
+        view.context_players,
+        view.studies.len(),
+        view.goalie_studies.len(),
+        view.excluded.len()
+    );
+    out.push_str(&render_prospect_board(&view.board));
+    if !view.excluded.is_empty() {
+        let _ = writeln!(out, "\nEXCLUSIONS");
+        for row in &view.excluded {
+            let _ = writeln!(out, "- {} · {:?}: {}", row.player, row.reason, row.detail);
+        }
+    }
+    let _ = writeln!(out, "\nADAPTER DISCLOSURES");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
+    }
+    out
+}
+
+fn render_prospect_career(view: &ProspectCareerDiscoveryView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "THE INSIDER — MULTI-LEAGUE PROSPECT DISCOVERY");
+    let _ = writeln!(
+        out,
+        "{} context players · {} skater studies · {} goalie studies · {} exclusions",
         view.context_players,
         view.studies.len(),
         view.goalie_studies.len(),

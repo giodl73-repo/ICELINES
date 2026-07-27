@@ -2380,14 +2380,22 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         }) => commands::icecast::run_prospect_league(snapshots, crosswalks, context, json, out)?,
+        Commands::Icecast(IceCastSubcommand::ProspectCareer {
+            context,
+            career_history,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_career(context, career_history, json, out)?,
         Commands::Icecast(IceCastSubcommand::ProspectProgram {
             league_discoveries,
+            career_discoveries,
             studies,
             prior_board,
             json,
             out,
         }) => commands::icecast::run_prospect_program(
             league_discoveries,
+            career_discoveries,
             studies,
             prior_board,
             json,

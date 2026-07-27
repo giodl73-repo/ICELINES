@@ -1832,12 +1832,29 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Adapt cached official multi-league career totals into prospect studies.
+    #[command(name = "prospect-career")]
+    ProspectCareer {
+        /// `prospect_league_context.v1` with authored player context.
+        #[arg(long, value_name = "PATH")]
+        context: PathBuf,
+        /// Cached `career_history.json` populated from official NHL player landing feeds.
+        #[arg(long = "career-history", value_name = "PATH")]
+        career_history: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Rank organizations by observed prospect pool, development, and pipeline signals.
     #[command(name = "prospect-program")]
     ProspectProgram {
         /// Repeat for each `prospect_league_discovery.v1` artifact.
         #[arg(long = "league-discovery", value_name = "PATH")]
         league_discoveries: Vec<PathBuf>,
+        /// Repeat for each `prospect_career_discovery.v1` CHL/NCAA/Europe artifact.
+        #[arg(long = "career-discovery", value_name = "PATH")]
+        career_discoveries: Vec<PathBuf>,
         /// Add a canonical `prospect_development_study.v1` from another adapter.
         #[arg(long = "study", value_name = "PATH")]
         studies: Vec<PathBuf>,
@@ -3683,6 +3700,8 @@ mod tui_surface_tests {
                 "prospect-program",
                 "--league-discovery",
                 "league-discovery.json",
+                "--career-discovery",
+                "career-discovery.json",
                 "--study",
                 "college-study.json",
                 "--prior-board",
@@ -3696,14 +3715,46 @@ mod tui_surface_tests {
                 cli.command,
                 Commands::Icecast(IceCastSubcommand::ProspectProgram {
                     league_discoveries,
+                    career_discoveries,
                     studies,
                     prior_board: Some(prior),
                     json: true,
                     out: Some(out),
                 }) if league_discoveries == vec![PathBuf::from("league-discovery.json")]
+                    && career_discoveries == vec![PathBuf::from("career-discovery.json")]
                     && studies == vec![PathBuf::from("college-study.json")]
                     && prior == PathBuf::from("prior-program-board.json")
                     && out == PathBuf::from("program-board.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_career_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-career",
+                "--context",
+                "prospect-context.json",
+                "--career-history",
+                "career_history.json",
+                "--json",
+                "--out",
+                "career-discovery.json",
+            ])
+            .expect("IceCast prospect career command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectCareer {
+                    context,
+                    career_history,
+                    json: true,
+                    out: Some(out),
+                }) if context == PathBuf::from("prospect-context.json")
+                    && career_history == PathBuf::from("career_history.json")
+                    && out == PathBuf::from("career-discovery.json")
             ));
         });
     }

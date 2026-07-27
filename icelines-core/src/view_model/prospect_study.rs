@@ -901,11 +901,11 @@ pub fn build_prospect_program_board(
         studies: player_ids.len(),
         programs,
         disclosures: vec![
-            "This foundation ranks only supplied canonical prospect studies; its current league adapter is AHL skater-and-goalie observed and is not yet a complete NHL organizational prospect-pool ranking.".to_owned(),
+            "This foundation ranks only supplied canonical prospect studies. The source_leagues and scope fields state the observed coverage; absent prospects are not silently imputed.".to_owned(),
             "Pool score combines top-three observed signal, quality depth, and positional balance. Development score workload-weights same-league trajectory, then applies evidence coverage so uncertainty is not treated as failure.".to_owned(),
             "Pipeline score combines Pool, Development, documented readiness, and confidence. Missing depth lowers depth and confidence rather than being silently imputed.".to_owned(),
             "Hidden-value and public-attention scores are excluded because underrecognition is not prospect quality or ceiling.".to_owned(),
-            "Supplied goalie studies use a separate save-percentage, goals-against-average, and workload adapter. CHL, NCAA, European, junior, and NHL-rostered prospects still require typed fact adapters before this can claim all-system coverage.".to_owned(),
+            "Supplied goalie studies use a separate save-percentage, goals-against-average, and workload adapter. Multi-league input does not by itself claim complete organizational coverage; every eligible player must still be supplied through a typed fact adapter.".to_owned(),
             "Positive rank or score delta means improvement from the optional prior board; organizations absent from that board retain null deltas.".to_owned(),
         ],
     })
@@ -956,10 +956,6 @@ fn assign_program_rank(
 pub fn build_prospect_discovery_board(
     studies: Vec<ProspectDevelopmentStudyView>,
 ) -> Result<ProspectDiscoveryBoardView, String> {
-    if studies.is_empty() {
-        return Err("prospect discovery board requires at least one study".to_owned());
-    }
-
     let mut player_ids = BTreeSet::new();
     let mut hidden_gems = Vec::new();
     let mut buyer_beware = Vec::new();
@@ -1821,6 +1817,15 @@ mod tests {
 
         let error = build_prospect_discovery_board(vec![study.clone(), study]).unwrap_err();
         assert!(error.contains("duplicate"));
+    }
+
+    #[test]
+    fn discovery_board_can_represent_an_audited_empty_result() {
+        let board = build_prospect_discovery_board(vec![]).unwrap();
+        assert_eq!(board.studies, 0);
+        assert!(board.hidden_gems.is_empty());
+        assert!(board.buyer_beware.is_empty());
+        assert!(board.watch.is_empty());
     }
 
     fn study_input(

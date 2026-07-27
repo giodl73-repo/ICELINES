@@ -29,6 +29,7 @@ pub mod manifest;
 pub mod moneypuck;
 pub mod nhl_api;
 pub mod playoffs_bundle;
+pub mod prospect_career;
 pub mod prospect_discovery;
 pub mod query_provider;
 pub mod records_provider;
@@ -72,6 +73,10 @@ pub use management_behavior_source::{
 pub use moneypuck::{parse_csv as parse_moneypuck_csv, MoneyPuckStats};
 pub use nhl_api::NhlApiClient;
 pub use playoffs_bundle::PlayoffsBundle;
+pub use prospect_career::{
+    build_prospect_career_discovery, ProspectCareerDiscoveryView, ProspectCareerExclusionReason,
+    ProspectCareerExclusionView, PROSPECT_CAREER_DISCOVERY_SCHEMA,
+};
 pub use prospect_discovery::{
     build_prospect_league_context_draft, build_prospect_league_discovery, ProspectLeagueContext,
     ProspectLeagueContextAuthority, ProspectLeagueContextDraftConfig,

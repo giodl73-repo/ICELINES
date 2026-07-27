@@ -3,7 +3,8 @@
 **Status:** Implemented foundation
 **Schemas:** `prospect_development_study.v1`, `prospect_discovery_board.v1`,
 `prospect_league_context.v1`, `prospect_league_discovery.v1`,
-`prospect_goalie_development_study.v1`, `prospect_program_board.v1`
+`prospect_goalie_development_study.v1`, `prospect_career_discovery.v1`,
+`prospect_program_board.v1`
 
 ## Purpose
 
@@ -39,8 +40,13 @@ icelines icecast prospect-league \
   --crosswalk reviewed-2025-cv.json \
   --context examples/icecast-prospect-league-context.json \
   --json --out league-discovery.json
+icelines icecast prospect-career \
+  --context prospect-context.json \
+  --career-history ~/.icelines/career_history.json \
+  --json --out career-discovery.json
 icelines icecast prospect-program \
   --league-discovery league-discovery.json \
+  --career-discovery career-discovery.json \
   --json --out prospect-programs.json
 ```
 
@@ -96,8 +102,8 @@ through rows whose status is `reviewed`. It aggregates joined skater totals by
 season, attaches snapshot and identity provenance, builds the canonical studies,
 and composes the board without reimplementing scoring. Context players that do
 not have reviewed identity, joined skater facts, or two AHL seasons appear in a
-typed exclusion list. If no eligible study remains, the command fails instead
-of returning a zero-shaped board.
+typed exclusion list. An audited adapter result may contain a canonical empty
+board when every supplied player is excluded, so absence remains inspectable.
 
 The separate context file owns current organization, position, age, NHL games,
 opportunity, availability, attention estimate/basis, and supporting evidence.
@@ -140,6 +146,25 @@ an AHL results-and-workload development signal rather than a complete goalie
 talent model. Program development averages are workload-weighted; a two-game
 sample lowers evidence coverage instead of being treated as poor development.
 
+## Multi-league career adapter
+
+`ProspectCareerDiscoveryView` bridges the cached official NHL player landing
+history into the same skater, goalie, discovery-board, and program-board
+primitives. It recognizes regular-season CHL and other classified junior rows,
+NCAA/conference rows, and European professional rows. NHL, AHL, ECHL,
+international tournaments, playoffs, and unclassified leagues are excluded.
+
+Split-team stints are aggregated within a season and league, the official
+landing URL is attached as evidence, and every missing or unusable player stays
+visible through a typed exclusion. Raw trends still compare only within the
+same league. An OHL-to-NCAA or SHL-to-North-America move is therefore
+`insufficient`, not an invented rise or decline; no league-equivalency factor is
+applied.
+
+`prospect-program --career-discovery` composes these studies with reviewed AHL
+discovery. When both adapters contain the same player, reviewed AHL facts take
+precedence and career discovery fills gaps, preventing duplicate program credit.
+
 ## Prospect program board
 
 `ProspectProgramBoardView` aggregates canonical prospect studies by
@@ -158,12 +183,13 @@ scores because underrecognition is not prospect talent or ceiling. Missing
 depth lowers depth and confidence instead of being imputed. The optional prior
 board supplies rank and score deltas only; positive delta means improvement.
 
-The initial board scope is explicitly `ahl_observed`. It accepts one or more
-`prospect_league_discovery.v1` artifacts plus optional canonical studies from
-future adapters. AHL goalies now use their own typed adapter. It is not an
-all-system NHL ranking until CHL, NCAA, European, junior, and NHL-rostered
-prospect adapters provide equivalent typed facts. This limitation is part of
-the output contract, not renderer prose.
+An AHL-only board is `ahl_observed`; recognized career studies change the scope
+to `multi_league_observed` and list the actual source leagues. The program
+command accepts `prospect_league_discovery.v1` and
+`prospect_career_discovery.v1` artifacts plus optional canonical studies. It is
+not an all-system NHL ranking until supplied context and career cache cover the
+complete organizational pools, including NHL-rostered prospects. This
+limitation is part of the output contract, not renderer prose.
 
 The production path has been exercised over three official AHL seasons and 32
 NHL organizations. That result is a complete all-organization, eligible
@@ -233,7 +259,7 @@ typed facts, confidence, evidence, and disclosure before activation.
 
 ## Next data step
 
-Complete reviewed crosswalk coverage for all affiliate-season documents, then
-add role, chemistry, special-teams, and sustainability fact adapters. Those
+Expand authored all-organization context and cached landing coverage, then add
+role, chemistry, special-teams, and sustainability fact adapters. Those
 adapters must emit typed evidence into the study rather than changing renderer
 logic.
