@@ -1832,6 +1832,33 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Generate neutral multi-league prospect context from the league camp pool.
+    #[command(name = "prospect-career-context")]
+    ProspectCareerContext {
+        /// `training_camp_league_forecast.v1` selecting the prospect pool.
+        #[arg(long = "camp-forecast", value_name = "PATH")]
+        camp_forecast: PathBuf,
+        /// Current canonical roster identity map containing birth dates.
+        #[arg(long, value_name = "PATH")]
+        rosters: PathBuf,
+        /// Season bios used to cover camp fallback candidates.
+        #[arg(long, value_name = "PATH")]
+        bios: PathBuf,
+        /// Optional sourced camp-candidate overlay used by the camp forecast.
+        #[arg(long = "candidate-overlay", value_name = "PATH")]
+        candidate_overlay: Option<PathBuf>,
+        /// Optional career cache whose official landing birth dates fill identity gaps.
+        #[arg(long = "career-history", value_name = "PATH")]
+        career_history: Option<PathBuf>,
+        #[arg(long, default_value = "2026-09-15")]
+        as_of: String,
+        #[arg(long, default_value_t = 24)]
+        max_age: u8,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Adapt cached official multi-league career totals into prospect studies.
     #[command(name = "prospect-career")]
     ProspectCareer {
@@ -3760,6 +3787,70 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_icecast_prospect_career_context_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-career-context",
+                "--camp-forecast",
+                "camp.json",
+                "--rosters",
+                "rosters.json",
+                "--bios",
+                "bios.json",
+                "--career-history",
+                "career.json",
+                "--json",
+                "--out",
+                "context.json",
+            ])
+            .expect("IceCast prospect career context command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectCareerContext {
+                    camp_forecast,
+                    rosters,
+                    bios,
+                    candidate_overlay: None,
+                    career_history: Some(career_history),
+                    json: true,
+                    out: Some(out),
+                    ..
+                }) if camp_forecast == PathBuf::from("camp.json")
+                    && rosters == PathBuf::from("rosters.json")
+                    && bios == PathBuf::from("bios.json")
+                    && career_history == PathBuf::from("career.json")
+                    && out == PathBuf::from("context.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fetch_career_camp_target_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fetch",
+                "career",
+                "--camp-forecast",
+                "camp.json",
+                "--dry-run",
+            ])
+            .expect("fetch career camp target should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fetch(FetchSubcommand::Career {
+                    dry_run: true,
+                    bundled_seasons: 0,
+                    prospect_context: None,
+                    camp_forecast: Some(path),
+                }) if path == PathBuf::from("camp.json")
+            ));
+        });
+    }
+
+    #[test]
     fn l0_icecast_opening_roster_archive_import_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -5224,6 +5315,12 @@ pub enum FetchSubcommand {
         /// and union the pids. 0 (default) = use active snapshot.
         #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u8).range(0..=38))]
         bundled_seasons: u8,
+        /// Restrict acquisition to player IDs in a `prospect_league_context.v1` file.
+        #[arg(long = "prospect-context", value_name = "PATH")]
+        prospect_context: Option<PathBuf>,
+        /// Restrict acquisition to prospects in a `training_camp_league_forecast.v1` file.
+        #[arg(long = "camp-forecast", value_name = "PATH")]
+        camp_forecast: Option<PathBuf>,
     },
     /// Fetch boxscores for one date and write score events to the
     /// EventStream (Phase Foster.3). With --for-favorites, only

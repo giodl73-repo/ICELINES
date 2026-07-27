@@ -40,8 +40,17 @@ icelines icecast prospect-league \
   --crosswalk reviewed-2025-cv.json \
   --context examples/icecast-prospect-league-context.json \
   --json --out league-discovery.json
+icelines fetch career \
+  --camp-forecast league-training-camp.json
+icelines icecast prospect-career-context \
+  --camp-forecast league-training-camp.json \
+  --rosters data/rosters.json \
+  --bios data/seasons/20252026/bios.json \
+  --candidate-overlay league-candidate-overlay.json \
+  --career-history ~/.icelines/career_history.json \
+  --json --out career-context.json
 icelines icecast prospect-career \
-  --context prospect-context.json \
+  --context career-context.json \
   --career-history ~/.icelines/career_history.json \
   --json --out career-discovery.json
 icelines icecast prospect-program \
@@ -161,6 +170,21 @@ same league. An OHL-to-NCAA or SHL-to-North-America move is therefore
 `insufficient`, not an invented rise or decline; no league-equivalency factor is
 applied.
 
+`fetch career --camp-forecast` resolves the distinct prospect IDs in a
+`training_camp_league_forecast.v1` artifact instead of limiting acquisition to
+current NHL rosters. The career cache retains official landing birth dates
+beside career totals, allowing players absent from current roster and season-bio
+files to remain addressable on later runs.
+
+`prospect-career-context` converts that same camp pool into an
+`observed_draft` context. Roster, bio, overlay, and cached landing identity facts
+may supply birth dates; cached regular-season NHL stints supply NHL games
+played. Camp probabilities and scores do not become development, opportunity,
+availability, or attention evidence. Players with missing identity, excessive
+age, or multiple camp organizations remain typed exclusions. Like the AHL
+draft, its opportunity, availability, and attention fields must stay neutral
+unless the artifact is deliberately promoted to authored context.
+
 `prospect-program --career-discovery` composes these studies with reviewed AHL
 discovery. When both adapters contain the same player, reviewed AHL facts take
 precedence and career discovery fills gaps, preventing duplicate program credit.
@@ -197,6 +221,16 @@ multi-season AHL skater-and-goalie comparison, not a complete organizational
 prospect-system ranking. The July 2026 proof retained 352 skaters and 31
 goalies; every other candidate remained visible through the context exclusion
 audit.
+
+The July 2026 camp-to-career proof fetched 147 distinct prospect histories from
+the 32-team camp artifact with no acquisition skips. The neutral context
+retained all 147 players across 31 organizations (Florida's supplied camp pool
+contained no prospect-flagged players). Career adaptation produced 138 skater
+studies, six goalie studies, and three typed insufficient-history exclusions
+across 15 observed source leagues. Composing those facts with the AHL board
+produced a 32-organization `multi_league_observed` program board. These counts
+prove adapter coverage for that dated input; they are not a claim that every
+organization's complete reserve list was supplied.
 
 ## Guardrails
 

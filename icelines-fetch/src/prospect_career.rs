@@ -6,21 +6,202 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use chrono::{Datelike, NaiveDate};
 use icelines_core::career_history::{CareerGameType, CareerHistory, LeagueTier};
 use icelines_core::{
     build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_goalie_development_study, ProspectDevelopmentSeasonInput,
-    ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
-    ProspectDiscoveryBoardView, ProspectGoalieDevelopmentSeasonInput,
+    build_prospect_goalie_development_study, ProspectAvailabilityStatus,
+    ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
+    ProspectDevelopmentStudyView, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentSeasonInput,
     ProspectGoalieDevelopmentStudyConfig, ProspectGoalieDevelopmentStudyInput,
-    ProspectGoalieDevelopmentStudyView, ProspectStudyEvidenceInput,
+    ProspectGoalieDevelopmentStudyView, ProspectOpportunityStatus, ProspectStudyEvidenceInput,
+    TrainingCampLeagueForecastView, TrainingCampPlayerView, TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::career_landing::CareerHistoryStore;
-use crate::prospect_discovery::{ProspectLeagueContext, PROSPECT_LEAGUE_CONTEXT_SCHEMA};
+use crate::prospect_discovery::{
+    ProspectLeagueContext, ProspectLeagueContextAuthority, ProspectLeagueContextExclusionReason,
+    ProspectLeagueContextExclusionView, ProspectLeaguePlayerContext,
+    PROSPECT_LEAGUE_CONTEXT_SCHEMA,
+};
 
 pub const PROSPECT_CAREER_DISCOVERY_SCHEMA: &str = "prospect_career_discovery.v1";
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectCareerContextIdentityInput {
+    pub player_id: u32,
+    pub birth_date: String,
+    #[serde(default)]
+    pub nhl_games_played: u32,
+    #[serde(default)]
+    pub evidence: Vec<ProspectStudyEvidenceInput>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectCareerContextDraftConfig {
+    pub as_of_date: NaiveDate,
+    pub max_age: u8,
+}
+
+impl Default for ProspectCareerContextDraftConfig {
+    fn default() -> Self {
+        Self {
+            as_of_date: NaiveDate::from_ymd_opt(2026, 9, 15).expect("valid default date"),
+            max_age: 24,
+        }
+    }
+}
+
+/// Create neutral prospect context from the league training-camp pool. The
+/// camp's prospect flag selects the pool, while identity facts only establish
+/// age and optional NHL workload. Forecast probability never becomes authored
+/// opportunity, availability, or public-attention evidence.
+pub fn build_prospect_career_context_draft(
+    forecast: TrainingCampLeagueForecastView,
+    identities: Vec<ProspectCareerContextIdentityInput>,
+    config: ProspectCareerContextDraftConfig,
+) -> Result<ProspectLeagueContext, String> {
+    if forecast.schema != TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA
+        || forecast.season == 0
+        || forecast.teams.is_empty()
+        || config.max_age == 0
+    {
+        return Err("invalid prospect career context draft inputs".to_owned());
+    }
+    let mut identity_by_id = BTreeMap::new();
+    for identity in identities {
+        if identity.player_id == 0
+            || identity.birth_date.trim().is_empty()
+            || identity.evidence.iter().any(|item| {
+                item.label.trim().is_empty()
+                    || !(item.source_url.starts_with("https://")
+                        || item.source_url.starts_with("http://"))
+            })
+            || identity_by_id
+                .insert(identity.player_id, identity)
+                .is_some()
+        {
+            return Err("invalid or duplicate prospect career identity".to_owned());
+        }
+    }
+
+    let mut candidates = BTreeMap::<u32, Vec<(String, TrainingCampPlayerView)>>::new();
+    for team in forecast.teams {
+        let Some(team_forecast) = team.forecast else {
+            continue;
+        };
+        if !team_forecast.team.eq_ignore_ascii_case(&team.team)
+            || team_forecast.season != forecast.season
+        {
+            return Err("team training-camp forecast does not match league envelope".to_owned());
+        }
+        for player in team_forecast
+            .players
+            .into_iter()
+            .filter(|player| player.prospect)
+        {
+            candidates
+                .entry(player.player_id)
+                .or_default()
+                .push((team.team.clone(), player));
+        }
+    }
+
+    let mut players = Vec::new();
+    let mut exclusions = Vec::new();
+    for (player_id, mut appearances) in candidates {
+        if appearances.len() != 1 {
+            appearances.sort_by(|left, right| left.0.cmp(&right.0));
+            exclusions.push(ProspectLeagueContextExclusionView {
+                player_id,
+                player: appearances
+                    .first()
+                    .map(|(_, player)| player.display_name.clone())
+                    .unwrap_or_else(|| player_id.to_string()),
+                reason: ProspectLeagueContextExclusionReason::AmbiguousOrganization,
+                detail: format!(
+                    "Prospect appears in multiple camp organizations: {}",
+                    appearances
+                        .iter()
+                        .map(|(team, _)| team.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ),
+            });
+            continue;
+        }
+        let (organization, player) = appearances.pop().expect("one validated appearance");
+        let Some(identity) = identity_by_id.get(&player_id) else {
+            exclusions.push(ProspectLeagueContextExclusionView {
+                player_id,
+                player: player.display_name,
+                reason: ProspectLeagueContextExclusionReason::MissingBirthDate,
+                detail: "No dated roster or candidate-overlay identity supplied a birth date"
+                    .to_owned(),
+            });
+            continue;
+        };
+        let Ok(birth_date) = NaiveDate::parse_from_str(&identity.birth_date, "%Y-%m-%d") else {
+            exclusions.push(ProspectLeagueContextExclusionView {
+                player_id,
+                player: player.display_name,
+                reason: ProspectLeagueContextExclusionReason::InvalidBirthDate,
+                detail: format!("Invalid identity birth date {}", identity.birth_date),
+            });
+            continue;
+        };
+        let age = age_on(birth_date, config.as_of_date);
+        if age > u32::from(config.max_age) {
+            exclusions.push(ProspectLeagueContextExclusionView {
+                player_id,
+                player: player.display_name,
+                reason: ProspectLeagueContextExclusionReason::AboveMaximumAge,
+                detail: format!("Age {age} exceeds maximum {}", config.max_age),
+            });
+            continue;
+        }
+        players.push(ProspectLeaguePlayerContext {
+            player_id,
+            player: player.display_name,
+            organization,
+            position: player.primary_position.abbreviation().to_owned(),
+            age: age as u8,
+            nhl_games_played: identity.nhl_games_played,
+            opportunity: ProspectOpportunityStatus::None,
+            availability: ProspectAvailabilityStatus::Unknown,
+            attention_score: 0.5,
+            attention_basis:
+                "Neutral observed-draft placeholder; authored attention research not supplied"
+                    .to_owned(),
+            evidence: identity.evidence.clone(),
+        });
+    }
+    players.sort_by_key(|player| player.player_id);
+    exclusions.sort_by_key(|row| row.player_id);
+    Ok(ProspectLeagueContext {
+        schema: PROSPECT_LEAGUE_CONTEXT_SCHEMA.to_owned(),
+        authority: ProspectLeagueContextAuthority::ObservedDraft,
+        as_of_date: Some(config.as_of_date.to_string()),
+        snapshot_seasons: vec![forecast.season],
+        players,
+        exclusions,
+        disclosures: vec![
+            "The pool contains players marked as prospects by the supplied league training-camp artifact. Automatic camp pools use age-based prospect estimates; this is a coverage draft, not an authored scouting list.".to_owned(),
+            "Birth date and optional NHL workload come from supplied identity facts. Camp make probability and projected score do not become opportunity, attention, or development evidence.".to_owned(),
+            "Opportunity is none, availability is unknown, and attention is neutral 0.5 until separately sourced research promotes this draft to authored context.".to_owned(),
+            "Players missing usable identity facts, above the age ceiling, or assigned to multiple organizations remain visible as typed exclusions.".to_owned(),
+        ],
+    })
+}
+
+fn age_on(birth_date: NaiveDate, as_of: NaiveDate) -> u32 {
+    let mut age = as_of.year() - birth_date.year();
+    if (as_of.month(), as_of.day()) < (birth_date.month(), birth_date.day()) {
+        age -= 1;
+    }
+    age.max(0) as u32
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -63,11 +244,30 @@ pub fn build_prospect_career_discovery(
     }
     let context_players = context.players.len();
     let mut ids = BTreeSet::new();
+    if context.authority == ProspectLeagueContextAuthority::ObservedDraft
+        && context.players.iter().any(|row| {
+            row.opportunity != ProspectOpportunityStatus::None
+                || row.availability != ProspectAvailabilityStatus::Unknown
+                || (row.attention_score - 0.5).abs() > f64::EPSILON
+        })
+    {
+        return Err(
+            "observed prospect context draft contains non-neutral authored fields".to_owned(),
+        );
+    }
     if context.players.iter().any(|row| {
         row.player_id == 0
             || row.player.trim().is_empty()
             || row.organization.trim().is_empty()
             || row.position.trim().is_empty()
+            || !row.attention_score.is_finite()
+            || !(0.0..=1.0).contains(&row.attention_score)
+            || row.attention_basis.trim().is_empty()
+            || row.evidence.iter().any(|item| {
+                item.label.trim().is_empty()
+                    || !(item.source_url.starts_with("https://")
+                        || item.source_url.starts_with("http://"))
+            })
             || !ids.insert(row.player_id)
     }) {
         return Err("invalid or duplicate prospect career context player".to_owned());
@@ -166,7 +366,8 @@ pub fn build_prospect_career_discovery(
             "Facts come from cached official NHL player landing career totals; prospect opportunity, availability, attention, organization, and position remain separately authored context.".to_owned(),
             "Eligible rows are recognized junior, college, and non-North-American professional leagues. NHL, AHL, ECHL, international tournaments, playoffs, and unclassified leagues are excluded.".to_owned(),
             "Trajectory comparisons are same-league only. No league-equivalency multiplier is applied across CHL, NCAA, or European leagues.".to_owned(),
-            "Multiple teams in the same season and league are aggregated. Goalie rates are games-played weighted because the landing feed does not provide enough shared fields to reconstruct every historical rate exactly.".to_owned(),
+            "Multiple teams in the same season and league are aggregated. If multiple eligible leagues appear in one season, the highest-workload league is retained so unlike competition is not blended into one rate.".to_owned(),
+            "Goalie rates are games-played weighted because the landing feed does not provide enough shared fields to reconstruct every historical rate exactly.".to_owned(),
         ],
     })
 }
@@ -202,18 +403,27 @@ fn skater_seasons(history: &CareerHistory) -> Vec<ProspectDevelopmentSeasonInput
         row.1 = row.1.saturating_add(goals);
         row.2 = row.2.saturating_add(assists);
     }
-    rows.into_iter()
-        .filter(|(_, (gp, _, _))| *gp > 0)
-        .map(
-            |((season, league), (games_played, goals, assists))| ProspectDevelopmentSeasonInput {
-                season,
-                league,
-                games_played,
-                goals,
-                assists,
-            },
-        )
-        .collect()
+    let mut seasons = BTreeMap::<u32, ProspectDevelopmentSeasonInput>::new();
+    for ((season, league), (games_played, goals, assists)) in
+        rows.into_iter().filter(|(_, (gp, _, _))| *gp > 0)
+    {
+        let candidate = ProspectDevelopmentSeasonInput {
+            season,
+            league,
+            games_played,
+            goals,
+            assists,
+        };
+        let replace = seasons.get(&season).is_none_or(|current| {
+            candidate.games_played > current.games_played
+                || (candidate.games_played == current.games_played
+                    && candidate.league < current.league)
+        });
+        if replace {
+            seasons.insert(season, candidate);
+        }
+    }
+    seasons.into_values().collect()
 }
 
 fn goalie_seasons(history: &CareerHistory) -> Vec<ProspectGoalieDevelopmentSeasonInput> {
@@ -232,18 +442,27 @@ fn goalie_seasons(history: &CareerHistory) -> Vec<ProspectGoalieDevelopmentSeaso
         row.1 += f64::from(save) * f64::from(stint.gp);
         row.2 += f64::from(gaa) * f64::from(stint.gp);
     }
-    rows.into_iter()
-        .filter(|(_, (gp, _, _))| *gp > 0)
-        .map(|((season, league), (games_played, save_sum, gaa_sum))| {
-            ProspectGoalieDevelopmentSeasonInput {
-                season,
-                league,
-                games_played,
-                save_percentage: save_sum / f64::from(games_played),
-                goals_against_average: gaa_sum / f64::from(games_played),
-            }
-        })
-        .collect()
+    let mut seasons = BTreeMap::<u32, ProspectGoalieDevelopmentSeasonInput>::new();
+    for ((season, league), (games_played, save_sum, gaa_sum)) in
+        rows.into_iter().filter(|(_, (gp, _, _))| *gp > 0)
+    {
+        let candidate = ProspectGoalieDevelopmentSeasonInput {
+            season,
+            league,
+            games_played,
+            save_percentage: save_sum / f64::from(games_played),
+            goals_against_average: gaa_sum / f64::from(games_played),
+        };
+        let replace = seasons.get(&season).is_none_or(|current| {
+            candidate.games_played > current.games_played
+                || (candidate.games_played == current.games_played
+                    && candidate.league < current.league)
+        });
+        if replace {
+            seasons.insert(season, candidate);
+        }
+    }
+    seasons.into_values().collect()
 }
 
 fn exclusion(
@@ -318,6 +537,83 @@ mod tests {
         }
     }
 
+    fn camp_forecast() -> TrainingCampLeagueForecastView {
+        serde_json::from_str(
+            r#"{
+            "schema": "training_camp_league_forecast.v1",
+            "season": 20262027,
+            "teams_requested": 1,
+            "teams_simulated": 1,
+            "teams_degraded": 0,
+            "teams_augmented": 0,
+            "teams_failed": 0,
+            "teams": [{
+                "team": "SEA",
+                "authority_status": "confirmed_pool",
+                "competition_pool_status": "authored",
+                "current_roster_candidates": 1,
+                "sourced_overlay_candidates": 0,
+                "fallback_candidates": 0,
+                "forecast": {
+                    "schema": "training_camp_forecast.v1",
+                    "method": "seeded_constrained_camp.v2",
+                    "team": "SEA",
+                    "season": 20262027,
+                    "trials": 1,
+                    "seed": 1,
+                    "decision_profile_id": null,
+                    "valid_trials": 1,
+                    "incomplete_trials": 0,
+                    "roster_shape": "test",
+                    "opening_roster_size": 1,
+                    "dressed_roster_size": 1,
+                    "salary_cap_upper_limit": null,
+                    "salary_cap_status": "no_read",
+                    "players": [{
+                        "player_id": 11,
+                        "display_name": "Camp Prospect",
+                        "primary_position": "Center",
+                        "source_league": "WHL",
+                        "incumbent": false,
+                        "rookie_eligible": true,
+                        "prospect": true,
+                        "pre_camp_make_probability": null,
+                        "pre_camp_track": "bubble",
+                        "roster_prior_delta": 0.0,
+                        "minimum_forward_role": null,
+                        "waiver_exempt": true,
+                        "cap_hit": null,
+                        "cap_hit_source": null,
+                        "projected_score": 50.0,
+                        "gp_confidence": 0.5,
+                        "camp_mean": 50.0,
+                        "management_behavior_delta": 0.0,
+                        "average_sampled_camp_score": 50.0,
+                        "make_probability": 0.5,
+                        "cut_probability": 0.5,
+                        "unavailable_probability": 0.0,
+                        "selection_loss_probability": 0.5,
+                        "dressed_probability": 0.4,
+                        "healthy_scratch_probability": 0.1,
+                        "waiver_exposure_probability": 0.0,
+                        "status": "bubble",
+                        "displaced_incumbents": [],
+                        "evidence_label": "estimated"
+                    }],
+                    "most_common_rosters": [],
+                    "modal_opening_roster_ids": [11],
+                    "warnings": [],
+                    "disclosures": []
+                },
+                "error": null,
+                "authority_warnings": []
+            }],
+            "disclosures": []
+        }"#,
+        )
+        .expect("minimal league camp forecast")
+    }
+
     fn player(id: u32, name: &str) -> ProspectLeaguePlayerContext {
         ProspectLeaguePlayerContext {
             player_id: id,
@@ -359,6 +655,64 @@ mod tests {
             view.studies[0].evidence[0].source_url,
             "https://api-web.nhle.com/v1/player/7/landing"
         );
+    }
+
+    #[test]
+    fn drafts_neutral_context_from_camp_prospect_identity() {
+        let view = build_prospect_career_context_draft(
+            camp_forecast(),
+            vec![ProspectCareerContextIdentityInput {
+                player_id: 11,
+                birth_date: "2005-01-02".to_owned(),
+                nhl_games_played: 7,
+                evidence: vec![],
+            }],
+            ProspectCareerContextDraftConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            view.authority,
+            ProspectLeagueContextAuthority::ObservedDraft
+        );
+        assert_eq!(view.players.len(), 1);
+        assert_eq!(view.players[0].organization, "SEA");
+        assert_eq!(view.players[0].nhl_games_played, 7);
+        assert_eq!(view.players[0].opportunity, ProspectOpportunityStatus::None);
+        assert_eq!(
+            view.players[0].availability,
+            ProspectAvailabilityStatus::Unknown
+        );
+        assert_eq!(view.players[0].attention_score, 0.5);
+    }
+
+    #[test]
+    fn same_season_uses_highest_workload_league() {
+        let history = CareerHistory {
+            player_id: 12,
+            stints: vec![
+                stint(20232024, "WHL", 10, 5, 5),
+                stint(20232024, "OHL", 40, 10, 20),
+                stint(20242025, "OHL", 50, 20, 30),
+            ],
+        };
+        let seasons = skater_seasons(&history);
+        assert_eq!(seasons.len(), 2);
+        assert_eq!(seasons[0].league, "OHL");
+        assert_eq!(seasons[0].games_played, 40);
+    }
+
+    #[test]
+    fn observed_context_rejects_authored_signal_leakage() {
+        let mut draft = context(vec![player(13, "Leaked")]);
+        draft.authority = ProspectLeagueContextAuthority::ObservedDraft;
+        let error = build_prospect_career_discovery(
+            draft,
+            &CareerHistoryStore::new(),
+            ProspectDevelopmentStudyConfig::default(),
+            ProspectGoalieDevelopmentStudyConfig::default(),
+        )
+        .unwrap_err();
+        assert!(error.contains("non-neutral"));
     }
 
     #[test]

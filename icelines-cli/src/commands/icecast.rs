@@ -75,8 +75,9 @@ use icelines_fetch::{
         AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     },
-    build_prospect_career_discovery, build_prospect_league_context_draft,
-    build_prospect_league_discovery, build_shift_overlap_report,
+    build_prospect_career_context_draft, build_prospect_career_discovery,
+    build_prospect_league_context_draft, build_prospect_league_discovery,
+    build_shift_overlap_report,
     bundled::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
         get_stats_installed, load_transactions_with_fallback,
@@ -95,7 +96,8 @@ use icelines_fetch::{
         OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
     },
     stats_loader::load_into_repo,
-    NhlApiClient, OfficialShiftChartRow, ProspectCareerDiscoveryView, ProspectLeagueContext,
+    NhlApiClient, OfficialShiftChartRow, ProspectCareerContextDraftConfig,
+    ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectLeagueContext,
     ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView, ScenarioRegistryStore,
     ShiftOverlapReport, PROSPECT_CAREER_DISCOVERY_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
@@ -4253,6 +4255,153 @@ pub fn run_prospect_league(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn run_prospect_career_context(
+    camp_forecast_path: PathBuf,
+    rosters_path: PathBuf,
+    bios_path: PathBuf,
+    candidate_overlay_path: Option<PathBuf>,
+    career_history_path: Option<PathBuf>,
+    as_of: String,
+    max_age: u8,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let forecast: TrainingCampLeagueForecastView =
+        read_icecast_json(&camp_forecast_path, "league training-camp forecast")?;
+    let roster_map: BTreeMap<String, LeagueRosterIdentity> =
+        serde_json::from_slice(&std::fs::read(&rosters_path).with_context(|| {
+            format!("read league roster identities {}", rosters_path.display())
+        })?)
+        .with_context(|| format!("parse league roster identities {}", rosters_path.display()))?;
+    let bios: Vec<SkaterBio> = serde_json::from_slice(
+        &std::fs::read(&bios_path)
+            .with_context(|| format!("read prospect identity bios {}", bios_path.display()))?,
+    )
+    .with_context(|| format!("parse prospect identity bios {}", bios_path.display()))?;
+
+    let mut identities = BTreeMap::<u32, ProspectCareerContextIdentityInput>::new();
+    for bio in bios {
+        if let Some(birth_date) = bio.birth_date {
+            identities.insert(
+                bio.player_id,
+                ProspectCareerContextIdentityInput {
+                    player_id: bio.player_id,
+                    birth_date,
+                    nhl_games_played: 0,
+                    evidence: vec![],
+                },
+            );
+        }
+    }
+    for identity in roster_map.into_values() {
+        if let Some(birth_date) = identity.birth_date {
+            identities.insert(
+                identity.player_id,
+                ProspectCareerContextIdentityInput {
+                    player_id: identity.player_id,
+                    birth_date,
+                    nhl_games_played: 0,
+                    evidence: vec![],
+                },
+            );
+        }
+    }
+    if let Some(path) = candidate_overlay_path.as_deref() {
+        let overlay: LeagueCampCandidateOverlay =
+            serde_json::from_slice(&std::fs::read(path).with_context(|| {
+                format!("read league camp candidate overlay {}", path.display())
+            })?)
+            .with_context(|| format!("parse league camp candidate overlay {}", path.display()))?;
+        validate_league_camp_candidate_overlay(&overlay).map_err(anyhow::Error::msg)?;
+        for candidate in overlay.candidates {
+            if let Some(birth_date) = candidate.birth_date {
+                identities.insert(
+                    candidate.player_id,
+                    ProspectCareerContextIdentityInput {
+                        player_id: candidate.player_id,
+                        birth_date,
+                        nhl_games_played: 0,
+                        evidence: vec![icelines_core::ProspectStudyEvidenceInput {
+                            label: "Sourced training-camp candidate identity".to_owned(),
+                            source_url: candidate.source_url,
+                        }],
+                    },
+                );
+            }
+        }
+    }
+    if let Some(path) = career_history_path.as_deref() {
+        let store = CareerHistoryStore::load(path)
+            .with_context(|| format!("read career history store {}", path.display()))?;
+        for player_id in store
+            .birth_dates
+            .keys()
+            .filter_map(|key| key.parse::<u32>().ok())
+        {
+            if let Some(birth_date) = store.birth_date(player_id) {
+                let mut evidence = identities
+                    .remove(&player_id)
+                    .map(|identity| identity.evidence)
+                    .unwrap_or_default();
+                evidence.push(icelines_core::ProspectStudyEvidenceInput {
+                    label: "Official NHL player landing identity".to_owned(),
+                    source_url: format!("https://api-web.nhle.com/v1/player/{player_id}/landing"),
+                });
+                let nhl_games_played = store
+                    .get(player_id)
+                    .map(|history| {
+                        history
+                            .stints
+                            .iter()
+                            .filter(|stint| {
+                                stint.game_type
+                                    == icelines_core::career_history::CareerGameType::Regular
+                                    && stint.league.as_str().eq_ignore_ascii_case("NHL")
+                            })
+                            .fold(0_u32, |total, stint| total.saturating_add(stint.gp))
+                    })
+                    .unwrap_or_default();
+                identities.insert(
+                    player_id,
+                    ProspectCareerContextIdentityInput {
+                        player_id,
+                        birth_date: birth_date.to_owned(),
+                        nhl_games_played,
+                        evidence,
+                    },
+                );
+            }
+        }
+    }
+    let as_of_date = NaiveDate::parse_from_str(&as_of, "%Y-%m-%d")
+        .with_context(|| format!("invalid --as-of date {as_of}; expected YYYY-MM-DD"))?;
+    let view = build_prospect_career_context_draft(
+        forecast,
+        identities.into_values().collect(),
+        ProspectCareerContextDraftConfig {
+            as_of_date,
+            max_age,
+        },
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_context(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "IceCast prospect career context draft",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_prospect_career(
     context_path: PathBuf,
     career_history_path: PathBuf,
@@ -4860,7 +5009,7 @@ fn render_prospect_context(view: &ProspectLeagueContext) -> String {
             .entry(player.organization.as_str())
             .or_default() += 1;
     }
-    let _ = writeln!(out, "THE SYSTEM — AHL PROSPECT CONTEXT");
+    let _ = writeln!(out, "THE SYSTEM — PROSPECT CONTEXT");
     let _ = writeln!(
         out,
         "Authority: {:?} · as of {} · {} players · {} organizations · {} exclusions",
@@ -4872,7 +5021,7 @@ fn render_prospect_context(view: &ProspectLeagueContext) -> String {
     );
     let _ = writeln!(out, "\nORGANIZATION COVERAGE");
     for (organization, players) in by_organization {
-        let _ = writeln!(out, "{organization:<4} {players:>3} observed skaters");
+        let _ = writeln!(out, "{organization:<4} {players:>3} observed players");
     }
     if !view.exclusions.is_empty() {
         let _ = writeln!(out, "\nEXCLUSIONS");

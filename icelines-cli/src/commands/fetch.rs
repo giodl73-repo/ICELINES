@@ -131,7 +131,17 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
         FetchSubcommand::Career {
             dry_run,
             bundled_seasons,
-        } => do_career(dry_run, bundled_seasons).await,
+            prospect_context,
+            camp_forecast,
+        } => {
+            do_career(
+                dry_run,
+                bundled_seasons,
+                prospect_context.as_deref(),
+                camp_forecast.as_deref(),
+            )
+            .await
+        }
         FetchSubcommand::Goalies {
             season,
             refresh: _,
@@ -1481,7 +1491,12 @@ async fn do_contracts(
 /// `CareerHistory`, and writes the merged result to
 /// `~/.icelines/career_history.json` (single global blob — career
 /// history is per-player, not per-season).
-async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
+async fn do_career(
+    dry_run: bool,
+    bundled_seasons: u8,
+    prospect_context_path: Option<&std::path::Path>,
+    camp_forecast_path: Option<&std::path::Path>,
+) -> anyhow::Result<()> {
     use icelines_fetch::career_landing::CareerHistoryStore;
 
     let cfg = Config::load()?;
@@ -1495,21 +1510,83 @@ async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
     // - bundled_seasons == 0: read the active stats snapshot's
     //   bios.json. Used for the user's local refresh after pulling
     //   new stats.
-    let player_ids_result: anyhow::Result<Vec<u32>> = if bundled_seasons > 0 {
-        Ok(union_pids_from_bundled(bundled_seasons))
-    } else {
-        store
-            .read_tier::<Vec<SkaterBio>>(&SnapshotTier::Stats, "bios.json")
-            .context("reading bios.json from active Stats snapshot")
-            .map(|bios| bios.iter().map(|b| b.player_id).collect())
-    };
+    let target_modes = usize::from(prospect_context_path.is_some())
+        + usize::from(camp_forecast_path.is_some())
+        + usize::from(bundled_seasons > 0);
+    if target_modes > 1 {
+        anyhow::bail!(
+            "choose only one of --prospect-context, --camp-forecast, or --bundled-seasons"
+        );
+    }
+    let player_ids_result: anyhow::Result<Vec<u32>> =
+        if let Some(context_path) = prospect_context_path {
+            let context: icelines_fetch::ProspectLeagueContext =
+                serde_json::from_slice(&std::fs::read(context_path).with_context(|| {
+                    format!("read prospect context {}", context_path.display())
+                })?)
+                .with_context(|| format!("parse prospect context {}", context_path.display()))?;
+            if context.schema != icelines_fetch::PROSPECT_LEAGUE_CONTEXT_SCHEMA {
+                anyhow::bail!(
+                    "invalid prospect context schema in {}",
+                    context_path.display()
+                );
+            }
+            Ok(context
+                .players
+                .into_iter()
+                .map(|player| player.player_id)
+                .collect())
+        } else if let Some(forecast_path) = camp_forecast_path {
+            let forecast: icelines_core::TrainingCampLeagueForecastView = serde_json::from_slice(
+                &std::fs::read(forecast_path)
+                    .with_context(|| format!("read camp forecast {}", forecast_path.display()))?,
+            )
+            .with_context(|| format!("parse camp forecast {}", forecast_path.display()))?;
+            if forecast.schema != icelines_core::TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA {
+                anyhow::bail!(
+                    "invalid camp forecast schema in {}",
+                    forecast_path.display()
+                );
+            }
+            let mut ids = std::collections::BTreeSet::new();
+            for team in forecast.teams {
+                if let Some(team_forecast) = team.forecast {
+                    ids.extend(
+                        team_forecast
+                            .players
+                            .into_iter()
+                            .filter(|player| player.prospect)
+                            .map(|player| player.player_id),
+                    );
+                }
+            }
+            Ok(ids.into_iter().collect())
+        } else if bundled_seasons > 0 {
+            Ok(union_pids_from_bundled(bundled_seasons))
+        } else {
+            store
+                .read_tier::<Vec<SkaterBio>>(&SnapshotTier::Stats, "bios.json")
+                .context("reading bios.json from active Stats snapshot")
+                .map(|bios| bios.iter().map(|b| b.player_id).collect())
+        };
 
     if dry_run {
+        if (prospect_context_path.is_some() || camp_forecast_path.is_some())
+            && player_ids_result.is_err()
+        {
+            return player_ids_result
+                .map(|_| ())
+                .context("could not resolve explicit player set for `fetch career --dry-run`");
+        }
         let n = player_ids_result.as_ref().map(|p| p.len()).unwrap_or(0);
         let est_secs = (n.max(700) as f64 * 0.06).ceil() as u64;
         println!("Would fetch career history for {n} players.");
         if bundled_seasons > 0 {
             println!("Source: union of last {bundled_seasons} bundled seasons (skaters + goalies)");
+        } else if let Some(context_path) = prospect_context_path {
+            println!("Source: prospect context {}", context_path.display());
+        } else if let Some(forecast_path) = camp_forecast_path {
+            println!("Source: camp prospects in {}", forecast_path.display());
         }
         println!("Endpoint: /v1/player/{{id}}/landing.seasonTotals (50ms delay between calls)");
         println!("Estimated time: ~{est_secs}s");
@@ -1542,6 +1619,7 @@ async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
     .await
     .context("fetching player landing career batch through FLETCH")?;
     let mut histories = Vec::with_capacity(landing_by_player.len());
+    let mut birth_dates = Vec::new();
     let mut skipped = Vec::new();
     for player_id in &player_ids {
         let Some(raw_bytes) = landing_by_player.get(player_id) else {
@@ -1555,6 +1633,9 @@ async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
                 continue;
             }
         };
+        if let Some(birth_date) = raw.get("birthDate").and_then(serde_json::Value::as_str) {
+            birth_dates.push((*player_id, birth_date.to_owned()));
+        }
         match icelines_fetch::career_landing::parse_career_history(*player_id, &raw) {
             Ok(history) => histories.push(history),
             Err(error) => skipped.push((*player_id, error.to_string())),
@@ -1567,6 +1648,9 @@ async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
     let mut blob = CareerHistoryStore::load(&path).context("loading existing career_history")?;
     for h in &histories {
         blob.upsert(h.clone());
+    }
+    for (player_id, birth_date) in birth_dates {
+        blob.upsert_birth_date(player_id, birth_date);
     }
     blob.stamp_now();
     blob.save(&path).context("saving career_history.json")?;

@@ -74,8 +74,10 @@ pub use moneypuck::{parse_csv as parse_moneypuck_csv, MoneyPuckStats};
 pub use nhl_api::NhlApiClient;
 pub use playoffs_bundle::PlayoffsBundle;
 pub use prospect_career::{
-    build_prospect_career_discovery, ProspectCareerDiscoveryView, ProspectCareerExclusionReason,
-    ProspectCareerExclusionView, PROSPECT_CAREER_DISCOVERY_SCHEMA,
+    build_prospect_career_context_draft, build_prospect_career_discovery,
+    ProspectCareerContextDraftConfig, ProspectCareerContextIdentityInput,
+    ProspectCareerDiscoveryView, ProspectCareerExclusionReason, ProspectCareerExclusionView,
+    PROSPECT_CAREER_DISCOVERY_SCHEMA,
 };
 pub use prospect_discovery::{
     build_prospect_league_context_draft, build_prospect_league_discovery, ProspectLeagueContext,
