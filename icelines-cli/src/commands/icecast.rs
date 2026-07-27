@@ -10,8 +10,9 @@ use icelines_core::{
     build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
     build_line_combination_forecast, build_organization_lineup_forecast,
-    build_prospect_development_study, build_prospect_discovery_board, build_prospect_program_board,
-    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
+    build_prospect_development_study, build_prospect_discovery_board,
+    build_prospect_program_board_with_goalies, build_season_simulation_card,
+    build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -4292,6 +4293,7 @@ pub fn run_prospect_program(
         bail!("prospect program requires at least one --league-discovery or --study artifact");
     }
     let mut studies = Vec::new();
+    let mut goalie_studies = Vec::new();
     for path in league_discovery_paths {
         let discovery: ProspectLeagueDiscoveryView =
             read_icecast_json(&path, "prospect league discovery")?;
@@ -4302,6 +4304,7 @@ pub fn run_prospect_program(
             );
         }
         studies.extend(discovery.studies);
+        goalie_studies.extend(discovery.goalie_studies);
     }
     for path in study_paths {
         studies.push(read_icecast_json(&path, "prospect development study")?);
@@ -4310,8 +4313,9 @@ pub fn run_prospect_program(
         .as_deref()
         .map(|path| read_icecast_json(path, "prior prospect program board"))
         .transpose()?;
-    let view = build_prospect_program_board(
+    let view = build_prospect_program_board_with_goalies(
         studies,
+        goalie_studies,
         prior.as_ref(),
         ProspectProgramBoardConfig::default(),
     )
@@ -4828,9 +4832,10 @@ fn render_prospect_league(view: &ProspectLeagueDiscoveryView) -> String {
     let _ = writeln!(out, "THE INSIDER — LEAGUE PROSPECT DISCOVERY");
     let _ = writeln!(
         out,
-        "AHL seasons {seasons} · {} context players · {} studies · {} exclusions",
+        "AHL seasons {seasons} · {} context players · {} skater studies · {} goalie studies · {} exclusions",
         view.context_players,
         view.studies.len(),
+        view.goalie_studies.len(),
         view.excluded.len()
     );
     out.push_str(&render_prospect_board(&view.board));

@@ -300,17 +300,21 @@ pub use poach::{
     WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
 };
 pub use prospect_study::{
-    build_prospect_development_study, build_prospect_discovery_board, build_prospect_program_board,
-    ProspectAvailabilityStatus, ProspectDevelopmentSeasonInput, ProspectDevelopmentSeasonView,
-    ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
-    ProspectDiscoveryBoardLane, ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView,
-    ProspectDiscoveryLensDirection, ProspectDiscoveryLensKind, ProspectDiscoveryLensView,
+    build_prospect_development_study, build_prospect_discovery_board,
+    build_prospect_goalie_development_study, build_prospect_program_board,
+    build_prospect_program_board_with_goalies, ProspectAvailabilityStatus,
+    ProspectDevelopmentSeasonInput, ProspectDevelopmentSeasonView, ProspectDevelopmentStudyConfig,
+    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardLane,
+    ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectDiscoveryLensDirection,
+    ProspectDiscoveryLensKind, ProspectDiscoveryLensView, ProspectGoalieDevelopmentSeasonInput,
+    ProspectGoalieDevelopmentSeasonView, ProspectGoalieDevelopmentStudyConfig,
+    ProspectGoalieDevelopmentStudyInput, ProspectGoalieDevelopmentStudyView,
     ProspectHiddenValueClass, ProspectMarketPosition, ProspectOpportunityStatus,
     ProspectProgramBoardConfig, ProspectProgramBoardView, ProspectProgramComponentsView,
     ProspectProgramOrganizationView, ProspectProgramPositionCountsView,
     ProspectProgramTopProspectView, ProspectSignalComponentView, ProspectStudyEvidenceInput,
     ProspectTrajectory, PROSPECT_DEVELOPMENT_STUDY_SCHEMA, PROSPECT_DISCOVERY_BOARD_SCHEMA,
-    PROSPECT_PROGRAM_BOARD_SCHEMA,
+    PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA, PROSPECT_PROGRAM_BOARD_SCHEMA,
 };
 pub use records::{
     FightRecordInput, PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView,

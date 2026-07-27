@@ -3,7 +3,7 @@
 **Status:** Implemented foundation
 **Schemas:** `prospect_development_study.v1`, `prospect_discovery_board.v1`,
 `prospect_league_context.v1`, `prospect_league_discovery.v1`,
-`prospect_program_board.v1`
+`prospect_goalie_development_study.v1`, `prospect_program_board.v1`
 
 ## Purpose
 
@@ -107,10 +107,11 @@ Those fields are deliberately not guessed from AHL production.
 from official season snapshots, reviewed league crosswalk envelopes, and a
 dated affiliation catalog. It retains only skaters appearing in the latest
 snapshot at or below the configured age ceiling with at least two joined AHL
-seasons. Provider `active` state resolves the current organization after an
+seasons. Skaters and goalies use the same reviewed identity and dated
+organization boundary. Provider `active` state resolves the current organization after an
 in-season AHL trade; multiple active organizations remain an explicit
-exclusion. Goalies, older players, one-season samples, missing affiliations,
-and unresolved assignments are preserved in typed exclusions.
+exclusion. Older players, one-season samples, missing affiliations, and
+unresolved assignments are preserved in typed exclusions.
 
 The generated artifact uses neutral placeholders for the facts the AHL adapter
 cannot establish: NHL games remain zero, opportunity is `none`, availability is
@@ -121,6 +122,23 @@ program ranking, but Hidden Gems and Buyer Beware require separate sourced
 enrichment. `prospect-league --crosswalk` accepts either individual reviewed
 team crosswalks or reviewed league envelopes and flattens the latter without
 weakening the reviewed-only join.
+
+## Goalie development adapter
+
+`ProspectGoalieDevelopmentStudyView` keeps goalie development native. Current
+performance combines save percentage (70%) and inverse goals-against average
+(30%), then applies latest-season workload confidence. Same-league trajectory
+combines save-percentage change and GAA improvement only when both seasons clear
+the goalie comparison workload. Opportunity and availability remain separate
+context facts.
+
+Goalie studies enter Pool, Development, Pipeline, positional balance, confidence,
+and top-prospect rows. They do not enter the skater-oriented Hidden Gems or Buyer
+Beware lanes because the observed draft has no sourced goalie attention context.
+Team defense and shot quality are not yet isolated, so the adapter is explicitly
+an AHL results-and-workload development signal rather than a complete goalie
+talent model. Program development averages are workload-weighted; a two-game
+sample lowers evidence coverage instead of being treated as poor development.
 
 ## Prospect program board
 
@@ -142,13 +160,17 @@ board supplies rank and score deltas only; positive delta means improvement.
 
 The initial board scope is explicitly `ahl_observed`. It accepts one or more
 `prospect_league_discovery.v1` artifacts plus optional canonical studies from
-future adapters. It is not an all-system NHL ranking until goalie, CHL, NCAA,
-European, junior, and NHL-rostered prospect adapters provide equivalent typed
-facts. This limitation is part of the output contract, not renderer prose.
+future adapters. AHL goalies now use their own typed adapter. It is not an
+all-system NHL ranking until CHL, NCAA, European, junior, and NHL-rostered
+prospect adapters provide equivalent typed facts. This limitation is part of
+the output contract, not renderer prose.
 
 The production path has been exercised over three official AHL seasons and 32
-NHL organizations. That result is a complete all-organization AHL-skater
-comparison, not a complete organizational prospect-system ranking.
+NHL organizations. That result is a complete all-organization, eligible
+multi-season AHL skater-and-goalie comparison, not a complete organizational
+prospect-system ranking. The July 2026 proof retained 352 skaters and 31
+goalies; every other candidate remained visible through the context exclusion
+audit.
 
 ## Guardrails
 

@@ -7,10 +7,13 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{Datelike, NaiveDate};
 use icelines_core::{
-    build_prospect_development_study, build_prospect_discovery_board, AhlAffiliationCatalogView,
-    ProspectAvailabilityStatus, ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig,
-    ProspectDevelopmentStudyView, ProspectDiscoveryBoardView, ProspectOpportunityStatus,
-    ProspectStudyEvidenceInput, AHL_AFFILIATION_CATALOG_SCHEMA,
+    build_prospect_development_study, build_prospect_discovery_board,
+    build_prospect_goalie_development_study, AhlAffiliationCatalogView, ProspectAvailabilityStatus,
+    ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyView,
+    ProspectDiscoveryBoardView, ProspectGoalieDevelopmentSeasonInput,
+    ProspectGoalieDevelopmentStudyConfig, ProspectGoalieDevelopmentStudyInput,
+    ProspectGoalieDevelopmentStudyView, ProspectOpportunityStatus, ProspectStudyEvidenceInput,
+    AHL_AFFILIATION_CATALOG_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 
@@ -106,6 +109,7 @@ pub struct ProspectLeagueContextExclusionView {
 pub enum ProspectLeagueExclusionReason {
     MissingReviewedIdentity,
     MissingAhlSkaterStats,
+    MissingAhlGoalieStats,
     FewerThanTwoAhlSeasons,
 }
 
@@ -123,6 +127,8 @@ pub struct ProspectLeagueDiscoveryView {
     pub snapshot_seasons: Vec<u32>,
     pub context_players: usize,
     pub studies: Vec<ProspectDevelopmentStudyView>,
+    #[serde(default)]
+    pub goalie_studies: Vec<ProspectGoalieDevelopmentStudyView>,
     pub excluded: Vec<ProspectLeagueExclusionView>,
     pub board: ProspectDiscoveryBoardView,
     pub disclosures: Vec<String>,
@@ -230,7 +236,6 @@ pub fn build_prospect_league_context_draft(
         latest_positions: BTreeMap<String, usize>,
         latest_active_positions: BTreeMap<String, usize>,
         evidence_urls: BTreeSet<String>,
-        latest_is_goalie: bool,
     }
 
     let mut candidates = BTreeMap::<u32, Candidate>::new();
@@ -300,14 +305,36 @@ pub fn build_prospect_league_context_draft(
                             }
                         }
                     }
-                } else if *season == latest_season
-                    && team.goalies.iter().any(|goalie| {
-                        goalie.provider_player_id == row.provider_player_id
-                            && goalie.games_played > 0
-                    })
-                {
-                    candidate.latest_teams.insert(crosswalk.ahl_team.clone());
-                    candidate.latest_is_goalie = true;
+                } else {
+                    let goalie_rows = team
+                        .goalies
+                        .iter()
+                        .filter(|goalie| {
+                            goalie.provider_player_id == row.provider_player_id
+                                && goalie.games_played > 0
+                        })
+                        .collect::<Vec<_>>();
+                    if !goalie_rows.is_empty() {
+                        candidate.observed_seasons.insert(*season);
+                        if *season == latest_season {
+                            candidate.latest_teams.insert(crosswalk.ahl_team.clone());
+                            for goalie in goalie_rows {
+                                *candidate
+                                    .latest_positions
+                                    .entry("G".to_owned())
+                                    .or_default() += goalie.games_played as usize;
+                                if goalie.active {
+                                    candidate
+                                        .latest_active_teams
+                                        .insert(crosswalk.ahl_team.clone());
+                                    *candidate
+                                        .latest_active_positions
+                                        .entry("G".to_owned())
+                                        .or_default() += goalie.games_played as usize;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -351,14 +378,6 @@ pub fn build_prospect_league_context_draft(
             reason,
             detail,
         };
-        if candidate.latest_is_goalie && latest_positions.is_empty() {
-            exclusions.push(exclude(
-                ProspectLeagueContextExclusionReason::GoalieAdapterRequired,
-                "Latest observed AHL role is goalie; goalie development requires its own adapter."
-                    .to_owned(),
-            ));
-            continue;
-        }
         if candidate.observed_seasons.len() < config.minimum_ahl_seasons {
             exclusions.push(exclude(
                 ProspectLeagueContextExclusionReason::FewerThanMinimumAhlSeasons,
@@ -373,7 +392,7 @@ pub fn build_prospect_league_context_draft(
         if latest_positions.is_empty() {
             exclusions.push(exclude(
                 ProspectLeagueContextExclusionReason::MissingLatestSkaterStats,
-                "No positive-games skater row joined in the latest snapshot.".to_owned(),
+                "No positive-games player row joined in the latest snapshot.".to_owned(),
             ));
             continue;
         }
@@ -493,10 +512,10 @@ pub fn build_prospect_league_context_draft(
         players,
         exclusions,
         disclosures: vec![
-            "Observed draft includes only reviewed canonical skaters appearing in the latest supplied AHL snapshot, at or below the configured age ceiling, with the configured minimum observed AHL seasons.".to_owned(),
+            "Observed draft includes only reviewed canonical players appearing in the latest supplied AHL snapshot, at or below the configured age ceiling, with the configured minimum observed AHL seasons.".to_owned(),
             "Organization comes from the supplied dated affiliation catalog; missing or conflicting mappings are explicit exclusions.".to_owned(),
             "NHL games are not inferred by the AHL adapter and remain zero placeholders; opportunity is none, availability unknown, and attention neutral until separately sourced enrichment is applied.".to_owned(),
-            "Goalies are excluded until a goalie-specific development adapter supplies comparable evidence.".to_owned(),
+            "Goalies enter the context only when two reviewed AHL seasons exist; their save-percentage, goals-against-average, and workload evidence is scored by the separate goalie adapter.".to_owned(),
         ],
     })
 }
@@ -558,6 +577,7 @@ pub fn build_prospect_league_discovery(
     }
 
     let mut studies = Vec::new();
+    let mut goalie_studies = Vec::new();
     let mut excluded = Vec::new();
     for player in context.players {
         let Some(player_identities) = identities.get(&player.player_id) else {
@@ -577,6 +597,127 @@ pub fn build_prospect_league_discovery(
                 "reviewed AHL identity name conflicts with context for player {}",
                 player.player_id
             ));
+        }
+
+        if player.position.eq_ignore_ascii_case("G") {
+            let mut season_totals = BTreeMap::<u32, (u32, u32, u32, u32, u64)>::new();
+            let mut snapshot_evidence = BTreeSet::<(String, String)>::new();
+            let mut identity_evidence = BTreeSet::<String>::new();
+            for identity in player_identities {
+                let snapshot = snapshots
+                    .iter()
+                    .find(|snapshot| snapshot.season == identity.season)
+                    .expect("crosswalk season validated against snapshots");
+                let team = snapshot
+                    .teams
+                    .iter()
+                    .find(|team| team.team_name == identity.ahl_team)
+                    .expect("crosswalk team validated against snapshot");
+                for row in team.goalies.iter().filter(|row| {
+                    row.provider_player_id == identity.provider_player_id && row.games_played > 0
+                }) {
+                    let Some(seconds) = parse_ahl_minutes_seconds(&row.minutes_played) else {
+                        return Err(format!(
+                            "invalid AHL goalie minutes {} for player {}",
+                            row.minutes_played, player.player_id
+                        ));
+                    };
+                    let totals = season_totals.entry(snapshot.season).or_default();
+                    totals.0 = totals.0.saturating_add(row.games_played);
+                    totals.1 = totals.1.saturating_add(row.shots_against);
+                    totals.2 = totals.2.saturating_add(row.saves);
+                    totals.3 = totals.3.saturating_add(row.goals_against);
+                    totals.4 = totals.4.saturating_add(seconds);
+                    snapshot_evidence.insert((
+                        format!(
+                            "Official AHL {} goalie snapshot includes {} with {}.",
+                            snapshot.season, player.player, identity.ahl_team
+                        ),
+                        snapshot.source_url.clone(),
+                    ));
+                }
+                identity_evidence.extend(identity.evidence_urls.clone());
+            }
+            if season_totals.is_empty()
+                || season_totals
+                    .values()
+                    .any(|(_, shots, _, _, seconds)| *shots == 0 || *seconds == 0)
+            {
+                excluded.push(ProspectLeagueExclusionView {
+                    player_id: player.player_id,
+                    player: player.player,
+                    reason: ProspectLeagueExclusionReason::MissingAhlGoalieStats,
+                    detail:
+                        "Reviewed identity rows did not join to complete AHL goalie season facts."
+                            .to_owned(),
+                });
+                continue;
+            }
+            if season_totals.len() < 2 {
+                excluded.push(ProspectLeagueExclusionView {
+                    player_id: player.player_id,
+                    player: player.player,
+                    reason: ProspectLeagueExclusionReason::FewerThanTwoAhlSeasons,
+                    detail: format!(
+                        "Only {} reviewed AHL goalie season joined; the study requires at least two.",
+                        season_totals.len()
+                    ),
+                });
+                continue;
+            }
+            let mut evidence = player.evidence;
+            evidence.extend(
+                snapshot_evidence
+                    .into_iter()
+                    .map(|(label, source_url)| ProspectStudyEvidenceInput { label, source_url }),
+            );
+            for source_url in identity_evidence {
+                evidence.push(ProspectStudyEvidenceInput {
+                    label: format!(
+                        "Reviewed AHL-to-NHL identity evidence for {}.",
+                        player.player
+                    ),
+                    source_url,
+                });
+            }
+            evidence.sort_by(|left, right| {
+                left.source_url
+                    .cmp(&right.source_url)
+                    .then_with(|| left.label.cmp(&right.label))
+            });
+            evidence.dedup_by(|left, right| {
+                left.source_url == right.source_url && left.label == right.label
+            });
+            let seasons = season_totals
+                .into_iter()
+                .map(
+                    |(season, (games_played, shots, saves, goals_against, seconds))| {
+                        ProspectGoalieDevelopmentSeasonInput {
+                            season,
+                            league: "AHL".to_owned(),
+                            games_played,
+                            save_percentage: f64::from(saves) / f64::from(shots),
+                            goals_against_average: f64::from(goals_against) * 3_600.0
+                                / seconds as f64,
+                        }
+                    },
+                )
+                .collect();
+            goalie_studies.push(build_prospect_goalie_development_study(
+                ProspectGoalieDevelopmentStudyInput {
+                    player_id: player.player_id,
+                    player: player.player,
+                    organization: player.organization,
+                    age: player.age,
+                    nhl_games_played: player.nhl_games_played,
+                    seasons,
+                    opportunity: player.opportunity,
+                    availability: player.availability,
+                    evidence,
+                },
+                ProspectGoalieDevelopmentStudyConfig::default(),
+            )?);
+            continue;
         }
 
         let mut season_totals = BTreeMap::<u32, (u32, u32, u32)>::new();
@@ -688,6 +829,7 @@ pub fn build_prospect_league_discovery(
     }
 
     studies.sort_by_key(|study| study.player_id);
+    goalie_studies.sort_by_key(|study| study.player_id);
     excluded.sort_by_key(|row| row.player_id);
     if studies.is_empty() {
         return Err("no eligible prospect studies remained after reviewed AHL joins".to_owned());
@@ -696,17 +838,25 @@ pub fn build_prospect_league_discovery(
     Ok(ProspectLeagueDiscoveryView {
         schema: PROSPECT_LEAGUE_DISCOVERY_SCHEMA.to_owned(),
         snapshot_seasons,
-        context_players: studies.len() + excluded.len(),
+        context_players: studies.len() + goalie_studies.len() + excluded.len(),
         studies,
+        goalie_studies,
         excluded,
         board,
         disclosures: vec![
             "AHL production is joined only through reviewed season/team identity crosswalk rows; provider-local IDs are never treated as NHL IDs.".to_owned(),
             "Organization, position, age, NHL games, opportunity, availability, and public attention remain explicit authored context rather than feed-derived guesses.".to_owned(),
-            "Candidates without two joined AHL seasons are reported as exclusions and cannot enter the discovery board.".to_owned(),
+            "Candidates without two joined AHL seasons are reported as exclusions. Goalie studies feed program ranking but remain outside skater-only Hidden Gems and Buyer Beware lanes.".to_owned(),
             "Multiple reviewed team segments in one season are summed; source snapshot and identity evidence remain attached to each study.".to_owned(),
         ],
     })
+}
+
+fn parse_ahl_minutes_seconds(value: &str) -> Option<u64> {
+    let (minutes, seconds) = value.trim().split_once(':')?;
+    let minutes = minutes.parse::<u64>().ok()?;
+    let seconds = seconds.parse::<u64>().ok()?;
+    (seconds < 60).then_some(minutes.saturating_mul(60).saturating_add(seconds))
 }
 
 fn validate_authorities(
@@ -792,8 +942,8 @@ fn validate_authorities(
 mod tests {
     use super::*;
     use crate::ahl::{
-        AhlIdentityCrosswalkCounts, AhlIdentityCrosswalkRow, AhlIdentityMatchBasis,
-        AhlSkaterSeasonRow, AhlTeamRosterStats, AHL_PROVIDER,
+        AhlGoalieSeasonRow, AhlIdentityCrosswalkCounts, AhlIdentityCrosswalkRow,
+        AhlIdentityMatchBasis, AhlSkaterSeasonRow, AhlTeamRosterStats, AHL_PROVIDER,
     };
 
     #[test]
@@ -883,6 +1033,39 @@ mod tests {
             ProspectOpportunityStatus::None
         );
         assert!(context.exclusions.is_empty());
+    }
+
+    #[test]
+    fn reviewed_goalie_facts_build_native_goalie_study() {
+        let mut goalie_context = player_context(30, "Goalie Prospect");
+        goalie_context.position = "G".to_owned();
+        let view = build_prospect_league_discovery(
+            vec![
+                mixed_snapshot(20242025, 0.898, 3.15),
+                mixed_snapshot(20252026, 0.914, 2.61),
+            ],
+            vec![mixed_crosswalk(20242025), mixed_crosswalk(20252026)],
+            ProspectLeagueContext {
+                schema: PROSPECT_LEAGUE_CONTEXT_SCHEMA.to_owned(),
+                authority: ProspectLeagueContextAuthority::Authored,
+                as_of_date: None,
+                snapshot_seasons: vec![],
+                players: vec![player_context(10, "Joined Prospect"), goalie_context],
+                exclusions: vec![],
+                disclosures: vec![],
+            },
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+
+        assert_eq!(view.studies.len(), 1);
+        assert_eq!(view.goalie_studies.len(), 1);
+        assert_eq!(view.goalie_studies[0].player_id, 30);
+        assert_eq!(
+            view.goalie_studies[0].trajectory,
+            icelines_core::ProspectTrajectory::Rising
+        );
+        assert!(view.goalie_studies[0].seasons[1].save_percentage > 0.913);
     }
 
     #[test]
@@ -1037,6 +1220,45 @@ mod tests {
             }],
             disclosures: vec![],
         }
+    }
+
+    fn mixed_snapshot(
+        season: u32,
+        save_percentage: f64,
+        goals_against_average: f64,
+    ) -> AhlRosterStatsSnapshot {
+        let mut snapshot = snapshot(season, 10, 40, 10, 10);
+        snapshot.teams[0].goalies.push(AhlGoalieSeasonRow {
+            provider: AHL_PROVIDER.to_owned(),
+            provider_player_id: "30".to_owned(),
+            name: "Goalie Prospect".to_owned(),
+            team_code: "CV".to_owned(),
+            active: true,
+            rookie: false,
+            games_played: 30,
+            minutes_played: "1800:00".to_owned(),
+            wins: 18,
+            losses: 10,
+            overtime_losses: 2,
+            shots_against: 900,
+            saves: (900.0 * save_percentage).round() as u32,
+            goals_against: (goals_against_average * 30.0).round() as u32,
+            shutouts: 2,
+            save_percentage,
+            goals_against_average,
+        });
+        snapshot
+    }
+
+    fn mixed_crosswalk(season: u32) -> AhlIdentityCrosswalkView {
+        let mut crosswalk = crosswalk(season, 10, "Joined Prospect");
+        let mut goalie = crosswalk.rows[0].clone();
+        goalie.provider_player_id = "30".to_owned();
+        goalie.ahl_display_name = "Goalie Prospect".to_owned();
+        goalie.nhl_player_id = Some(30);
+        goalie.nhl_display_name = Some("Goalie Prospect".to_owned());
+        crosswalk.rows.push(goalie);
+        crosswalk
     }
 
     fn league_crosswalk(crosswalk: AhlIdentityCrosswalkView) -> AhlIdentityLeagueCrosswalkView {
