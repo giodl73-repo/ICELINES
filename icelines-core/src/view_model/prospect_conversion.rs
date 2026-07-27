@@ -8,7 +8,13 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use super::prospect_study::ProspectStudyEvidenceInput;
+use crate::career_history::{CareerGameType, CareerHistory};
+
+use super::prospect_study::{
+    ProspectDevelopmentStudyView, ProspectGoalieDevelopmentStudyView, ProspectStudyEvidenceInput,
+    PROSPECT_DEVELOPMENT_STUDY_SCHEMA, PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA,
+    PROSPECT_PROGRAM_SCORING_METHOD,
+};
 
 pub const PROSPECT_CONVERSION_INPUT_SCHEMA: &str = "prospect_conversion_input.v1";
 pub const PROSPECT_CONVERSION_BOARD_SCHEMA: &str = "prospect_conversion_board.v1";
@@ -42,6 +48,14 @@ pub struct ProspectConversionBaselineInput {
     pub observed_signal_score: f64,
     /// 0..1 workload confidence attached to the frozen prospect study.
     pub workload_confidence: f64,
+    pub evidence: Vec<ProspectStudyEvidenceInput>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectConversionPerformanceInput {
+    pub player_id: u32,
+    pub score: f64,
+    pub basis: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -101,6 +115,7 @@ impl Default for ProspectConversionConfig {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectConversionInput {
     pub schema: String,
+    pub baseline_basis: String,
     pub baselines: Vec<ProspectConversionBaselineInput>,
     pub outcomes: Vec<ProspectNhlOutcomeInput>,
     #[serde(default)]
@@ -161,6 +176,7 @@ pub struct ProspectConversionOrganizationView {
 pub struct ProspectConversionBoardView {
     pub schema: String,
     pub source_schema: String,
+    pub baseline_basis: String,
     pub methodology: ProspectConversionMethodologyView,
     pub baseline_seasons: Vec<u32>,
     pub through_season: u32,
@@ -171,11 +187,202 @@ pub struct ProspectConversionBoardView {
     pub disclosures: Vec<String>,
 }
 
+/// Adapt complete frozen prospect-study cohorts and official NHL landing
+/// histories into the conversion contract. Only regular-season NHL stints
+/// strictly after the baseline season and through the declared outcome season
+/// count. Missing NHL TOI is rejected rather than converted into zero role.
+pub fn adapt_prospect_conversion_input(
+    studies: &[ProspectDevelopmentStudyView],
+    goalie_studies: &[ProspectGoalieDevelopmentStudyView],
+    histories: &[CareerHistory],
+    baseline_season: u32,
+    through_season: u32,
+    performances: &[ProspectConversionPerformanceInput],
+    config: ProspectConversionConfig,
+) -> Result<ProspectConversionInput, String> {
+    let baseline_start = season_start_year(baseline_season)
+        .ok_or_else(|| "invalid prospect conversion baseline season".to_owned())?;
+    let through_start = season_start_year(through_season)
+        .ok_or_else(|| "invalid prospect conversion through season".to_owned())?;
+    if through_start.saturating_sub(baseline_start) < u32::from(config.minimum_horizon_seasons) {
+        return Err("prospect conversion adaptation horizon is too short".to_owned());
+    }
+    if studies.is_empty() && goalie_studies.is_empty() {
+        return Err("prospect conversion adaptation requires frozen studies".to_owned());
+    }
+
+    let mut history_by_player = BTreeMap::new();
+    for history in histories {
+        if history.player_id == 0
+            || history_by_player
+                .insert(history.player_id, history)
+                .is_some()
+        {
+            return Err("invalid or duplicate prospect conversion career history".to_owned());
+        }
+    }
+    let mut performance_by_player = BTreeMap::new();
+    for performance in performances {
+        if performance.player_id == 0
+            || !performance.score.is_finite()
+            || !(0.0..=100.0).contains(&performance.score)
+            || performance.basis.trim().is_empty()
+            || performance_by_player
+                .insert(performance.player_id, performance)
+                .is_some()
+        {
+            return Err("invalid or duplicate prospect conversion performance".to_owned());
+        }
+    }
+
+    let mut sources = Vec::with_capacity(studies.len() + goalie_studies.len());
+    for study in studies {
+        if study.schema != PROSPECT_DEVELOPMENT_STUDY_SCHEMA
+            || study.seasons.is_empty()
+            || study
+                .seasons
+                .iter()
+                .any(|season| season.season > baseline_season)
+        {
+            return Err("invalid or post-baseline skater study".to_owned());
+        }
+        sources.push(ConversionBaselineSource {
+            player_id: study.player_id,
+            player: &study.player,
+            organization: &study.organization,
+            position: &study.position,
+            workload_confidence: study.workload_confidence,
+            components: &study.components,
+            evidence: &study.evidence,
+        });
+    }
+    for study in goalie_studies {
+        if study.schema != PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA
+            || study.position != "G"
+            || study.seasons.is_empty()
+            || study
+                .seasons
+                .iter()
+                .any(|season| season.season > baseline_season)
+        {
+            return Err("invalid or post-baseline goalie study".to_owned());
+        }
+        sources.push(ConversionBaselineSource {
+            player_id: study.player_id,
+            player: &study.player,
+            organization: &study.organization,
+            position: &study.position,
+            workload_confidence: study.workload_confidence,
+            components: &study.components,
+            evidence: &study.evidence,
+        });
+    }
+
+    let mut player_ids = BTreeSet::new();
+    let mut baselines = Vec::with_capacity(sources.len());
+    let mut outcomes = Vec::with_capacity(sources.len());
+    for source in sources {
+        if source.player_id == 0 || !player_ids.insert(source.player_id) {
+            return Err("invalid or duplicate prospect conversion study player".to_owned());
+        }
+        let history = history_by_player.get(&source.player_id).ok_or_else(|| {
+            format!(
+                "missing official NHL career history for prospect {}",
+                source.player_id
+            )
+        })?;
+        let observed_signal_score = observed_signal_score(source.components)?;
+        baselines.push(ProspectConversionBaselineInput {
+            player_id: source.player_id,
+            player: source.player.clone(),
+            organization: source.organization.clone(),
+            position: source.position.clone(),
+            baseline_season,
+            observed_signal_score,
+            workload_confidence: source.workload_confidence,
+            evidence: source.evidence.to_vec(),
+        });
+
+        let goalie = position_group(source.position) == "G";
+        let mut nhl_games_played = 0_u32;
+        let mut nhl_toi_seconds = 0_u64;
+        for stint in history.stints.iter().filter(|stint| {
+            stint.game_type == CareerGameType::Regular
+                && stint.league.as_str().eq_ignore_ascii_case("NHL")
+                && stint.season.0 > baseline_season
+                && stint.season.0 <= through_season
+        }) {
+            nhl_games_played = nhl_games_played.saturating_add(stint.gp);
+            let stint_toi = if goalie {
+                stint.time_on_ice_sec.map(u64::from)
+            } else {
+                stint
+                    .avg_toi_sec
+                    .map(|seconds| u64::from(seconds) * u64::from(stint.gp))
+            };
+            if stint.gp > 0 && stint_toi.is_none() {
+                return Err(format!(
+                    "missing NHL time on ice for prospect {} season {}",
+                    source.player_id, stint.season.0
+                ));
+            }
+            nhl_toi_seconds = nhl_toi_seconds.saturating_add(stint_toi.unwrap_or(0));
+        }
+        let performance = performance_by_player.get(&source.player_id);
+        outcomes.push(ProspectNhlOutcomeInput {
+            player_id: source.player_id,
+            through_season,
+            nhl_games_played,
+            nhl_toi_seconds,
+            performance_score: performance.map(|row| row.score),
+            performance_basis: performance.map(|row| row.basis.clone()),
+            disposition: ProspectConversionDisposition::Unknown,
+            evidence: vec![ProspectStudyEvidenceInput {
+                label: "Official NHL player landing career totals".to_owned(),
+                source_url: format!(
+                    "https://api-web.nhle.com/v1/player/{}/landing",
+                    source.player_id
+                ),
+            }],
+        });
+    }
+    if performance_by_player
+        .keys()
+        .any(|player_id| !player_ids.contains(player_id))
+    {
+        return Err("prospect conversion performance contains an unknown player".to_owned());
+    }
+    baselines.sort_by_key(|row| row.player_id);
+    outcomes.sort_by_key(|row| row.player_id);
+    let input = ProspectConversionInput {
+        schema: PROSPECT_CONVERSION_INPUT_SCHEMA.to_owned(),
+        baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
+        baselines,
+        outcomes,
+        config,
+    };
+    build_prospect_conversion_board(&input)?;
+    Ok(input)
+}
+
+struct ConversionBaselineSource<'a> {
+    player_id: u32,
+    player: &'a String,
+    organization: &'a String,
+    position: &'a String,
+    workload_confidence: f64,
+    components: &'a [super::prospect_study::ProspectSignalComponentView],
+    evidence: &'a [ProspectStudyEvidenceInput],
+}
+
 pub fn build_prospect_conversion_board(
     input: &ProspectConversionInput,
 ) -> Result<ProspectConversionBoardView, String> {
     validate_config(input.config)?;
-    if input.schema != PROSPECT_CONVERSION_INPUT_SCHEMA || input.baselines.is_empty() {
+    if input.schema != PROSPECT_CONVERSION_INPUT_SCHEMA
+        || input.baseline_basis.trim().is_empty()
+        || input.baselines.is_empty()
+    {
         return Err("invalid prospect conversion input".to_owned());
     }
 
@@ -194,6 +401,12 @@ pub fn build_prospect_conversion_board(
             || !(0.0..=100.0).contains(&baseline.observed_signal_score)
             || !baseline.workload_confidence.is_finite()
             || !(0.0..=1.0).contains(&baseline.workload_confidence)
+            || baseline.evidence.is_empty()
+            || baseline.evidence.iter().any(|item| {
+                item.label.trim().is_empty()
+                    || !(item.source_url.starts_with("https://")
+                        || item.source_url.starts_with("http://"))
+            })
             || baselines.insert(baseline.player_id, baseline).is_some()
         {
             return Err("invalid or duplicate prospect conversion baseline".to_owned());
@@ -207,13 +420,13 @@ pub fn build_prospect_conversion_board(
             || outcome
                 .performance_score
                 .is_some_and(|score| !score.is_finite() || !(0.0..=100.0).contains(&score))
-            || !matches!(
+            || (!matches!(
                 (&outcome.performance_score, &outcome.performance_basis),
                 (Some(_), Some(basis)) if !basis.trim().is_empty()
             ) && !matches!(
                 (&outcome.performance_score, &outcome.performance_basis),
                 (None, None)
-            )
+            ))
             || outcome.evidence.is_empty()
             || outcome.evidence.iter().any(|item| {
                 item.label.trim().is_empty()
@@ -426,6 +639,7 @@ pub fn build_prospect_conversion_board(
     Ok(ProspectConversionBoardView {
         schema: PROSPECT_CONVERSION_BOARD_SCHEMA.to_owned(),
         source_schema: PROSPECT_CONVERSION_INPUT_SCHEMA.to_owned(),
+        baseline_basis: input.baseline_basis.clone(),
         methodology: ProspectConversionMethodologyView {
             method: PROSPECT_CONVERSION_METHOD.to_owned(),
             config: input.config,
@@ -445,6 +659,34 @@ pub fn build_prospect_conversion_board(
             "This is cohort conversion, not proof that an organization caused or prevented an individual outcome.".to_owned(),
         ],
     })
+}
+
+fn observed_signal_score(
+    components: &[super::prospect_study::ProspectSignalComponentView],
+) -> Result<f64, String> {
+    let component = |id: &str| {
+        let matches = components
+            .iter()
+            .filter(|component| component.id == id)
+            .collect::<Vec<_>>();
+        if matches.len() != 1
+            || !matches[0].score.is_finite()
+            || !(0.0..=1.0).contains(&matches[0].score)
+        {
+            None
+        } else {
+            Some(matches[0].score)
+        }
+    };
+    let production = component("production")
+        .ok_or_else(|| "prospect conversion study lacks unique production component".to_owned())?;
+    let trajectory = component("trajectory")
+        .ok_or_else(|| "prospect conversion study lacks unique trajectory component".to_owned())?;
+    let opportunity = component("opportunity")
+        .ok_or_else(|| "prospect conversion study lacks unique opportunity component".to_owned())?;
+    Ok(round_score(
+        100.0 * (0.50 * production + 0.25 * trajectory + 0.25 * opportunity),
+    ))
 }
 
 fn validate_config(config: ProspectConversionConfig) -> Result<(), String> {
@@ -535,6 +777,10 @@ mod tests {
             baseline_season: 20222023,
             observed_signal_score: signal,
             workload_confidence: 1.0,
+            evidence: vec![ProspectStudyEvidenceInput {
+                label: "Frozen prospect study".to_owned(),
+                source_url: format!("https://example.com/prospects/{player_id}"),
+            }],
         }
     }
 
@@ -567,6 +813,7 @@ mod tests {
         };
         let input = ProspectConversionInput {
             schema: PROSPECT_CONVERSION_INPUT_SCHEMA.to_owned(),
+            baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
             baselines: vec![
                 baseline(1, "SEA", "RW", 60.0),
                 baseline(2, "NYR", "D", 60.0),
@@ -579,6 +826,7 @@ mod tests {
         };
         let view = build_prospect_conversion_board(&input).unwrap();
         assert_eq!(view.schema, PROSPECT_CONVERSION_BOARD_SCHEMA);
+        assert_eq!(view.baseline_basis, PROSPECT_PROGRAM_SCORING_METHOD);
         assert_eq!(view.ranked_organizations, 2);
         assert_eq!(view.programs[0].organization, "SEA");
         assert_eq!(view.programs[0].conversion_rank, Some(1));
@@ -595,6 +843,7 @@ mod tests {
         };
         let input = ProspectConversionInput {
             schema: PROSPECT_CONVERSION_INPUT_SCHEMA.to_owned(),
+            baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
             baselines: vec![baseline(1, "SEA", "RW", 60.0)],
             outcomes: vec![outcome(1, 82, 900, None)],
             config,
@@ -619,6 +868,7 @@ mod tests {
         weak_baseline.workload_confidence = 0.4;
         let input = ProspectConversionInput {
             schema: PROSPECT_CONVERSION_INPUT_SCHEMA.to_owned(),
+            baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
             baselines: vec![weak_baseline],
             outcomes: vec![outcome(1, 82, 900, Some(80.0))],
             config: ProspectConversionConfig::default(),
@@ -646,6 +896,7 @@ mod tests {
     fn rejects_short_horizons_and_mismatched_player_sets() {
         let mut input = ProspectConversionInput {
             schema: PROSPECT_CONVERSION_INPUT_SCHEMA.to_owned(),
+            baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
             baselines: vec![baseline(1, "SEA", "RW", 60.0)],
             outcomes: vec![outcome(1, 82, 900, Some(80.0))],
             config: ProspectConversionConfig::default(),
@@ -659,5 +910,153 @@ mod tests {
         assert!(build_prospect_conversion_board(&input)
             .unwrap_err()
             .contains("identical players"));
+    }
+
+    #[test]
+    fn adapts_frozen_study_and_only_post_baseline_nhl_outcomes() {
+        use super::super::prospect_study::{
+            ProspectAvailabilityStatus, ProspectHiddenValueClass, ProspectMarketPosition,
+            ProspectNhlGamesAuthority, ProspectOpportunityStatus, ProspectSignalComponentView,
+            ProspectTrajectory,
+        };
+        use crate::career_history::{CareerStint, LeagueAbbrev};
+        use crate::model::Season;
+
+        let components = vec![
+            ProspectSignalComponentView {
+                id: "production".to_owned(),
+                score: 0.8,
+                weight: 0.4,
+                weighted_points: 32.0,
+            },
+            ProspectSignalComponentView {
+                id: "trajectory".to_owned(),
+                score: 0.6,
+                weight: 0.3,
+                weighted_points: 18.0,
+            },
+            ProspectSignalComponentView {
+                id: "opportunity".to_owned(),
+                score: 0.7,
+                weight: 0.2,
+                weighted_points: 14.0,
+            },
+        ];
+        let study = ProspectDevelopmentStudyView {
+            schema: PROSPECT_DEVELOPMENT_STUDY_SCHEMA.to_owned(),
+            player_id: 1,
+            player: "Prospect One".to_owned(),
+            organization: "SEA".to_owned(),
+            position: "RW".to_owned(),
+            age: 20,
+            nhl_games_played: 5,
+            nhl_games_authority: ProspectNhlGamesAuthority::Observed,
+            seasons: vec![
+                super::super::prospect_study::ProspectDevelopmentSeasonView {
+                    season: 20222023,
+                    league: "AHL".to_owned(),
+                    games_played: 40,
+                    goals: 20,
+                    assists: 20,
+                    points: 40,
+                    points_per_game: 1.0,
+                    same_league_ppg_delta: None,
+                    same_league_ppg_change: None,
+                },
+            ],
+            trajectory: ProspectTrajectory::Rising,
+            workload_confidence: 1.0,
+            opportunity: ProspectOpportunityStatus::RecallCandidate,
+            availability: ProspectAvailabilityStatus::Healthy,
+            attention_score: 0.5,
+            attention_basis: "Test".to_owned(),
+            performance_attention_gap: 0.1,
+            market_position: ProspectMarketPosition::Aligned,
+            hidden_value_score: 64.0,
+            classification: ProspectHiddenValueClass::Watch,
+            components,
+            lenses: vec![],
+            evidence: vec![ProspectStudyEvidenceInput {
+                label: "Frozen study".to_owned(),
+                source_url: "https://example.com/frozen/1".to_owned(),
+            }],
+            disclosures: vec![],
+        };
+        let stint = |season, gp, avg_toi_sec| CareerStint {
+            season: Season(season),
+            league: LeagueAbbrev::new("NHL"),
+            team: "Seattle Kraken".to_owned(),
+            game_type: CareerGameType::Regular,
+            sequence: 1,
+            gp,
+            goals: Some(10),
+            assists: Some(10),
+            points: Some(20),
+            pim: None,
+            plus_minus: None,
+            power_play_goals: None,
+            power_play_points: None,
+            shorthanded_goals: None,
+            shorthanded_points: None,
+            game_winning_goals: None,
+            ot_goals: None,
+            shots: None,
+            shooting_pct: None,
+            avg_toi_sec,
+            faceoff_win_pct: None,
+            games_started: None,
+            wins: None,
+            losses: None,
+            ot_losses: None,
+            goals_against: None,
+            goals_against_avg: None,
+            save_pct: None,
+            shots_against: None,
+            shutouts: None,
+            time_on_ice_sec: None,
+        };
+        let history = CareerHistory {
+            player_id: 1,
+            stints: vec![
+                stint(20222023, 5, Some(600)),
+                stint(20232024, 40, Some(900)),
+            ],
+        };
+        let input = adapt_prospect_conversion_input(
+            &[study.clone()],
+            &[],
+            &[history.clone()],
+            20222023,
+            20252026,
+            &[ProspectConversionPerformanceInput {
+                player_id: 1,
+                score: 75.0,
+                basis: "IceLines NHL value".to_owned(),
+            }],
+            ProspectConversionConfig {
+                minimum_rankable_players: 1,
+                ..ProspectConversionConfig::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(input.baseline_basis, PROSPECT_PROGRAM_SCORING_METHOD);
+        assert_eq!(input.baselines[0].observed_signal_score, 72.5);
+        assert_eq!(input.outcomes[0].nhl_games_played, 40);
+        assert_eq!(input.outcomes[0].nhl_toi_seconds, 36_000);
+        assert_eq!(input.outcomes[0].performance_score, Some(75.0));
+
+        let mut incomplete_history = history;
+        incomplete_history.stints[1].avg_toi_sec = None;
+        let error = adapt_prospect_conversion_input(
+            &[study],
+            &[],
+            &[incomplete_history],
+            20222023,
+            20252026,
+            &[],
+            ProspectConversionConfig::default(),
+        )
+        .unwrap_err();
+        assert!(error.contains("missing NHL time on ice"));
     }
 }

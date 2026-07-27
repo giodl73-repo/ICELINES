@@ -271,6 +271,14 @@ value measure with an explicit basis. Missing performance is never imputed: it
 reduces outcome coverage, and an organization below the configured coverage
 floor remains unranked.
 
+`adapt_prospect_conversion_input` consumes the complete frozen skater and goalie
+study cohorts rather than the top-five summaries on a program board. It applies
+the program method's same production/trajectory/opportunity signal, copies the
+baseline evidence, and totals only official regular-season NHL stints after the
+baseline season through the declared outcome season. Missing career history or
+TOI fails adaptation instead of becoming a zero-value outcome. Optional player
+performance must arrive as an explicit 0..100 score with its named basis.
+
 Each player retains baseline season and confidence, outcome season, arrival,
 role, performance, realized value, conversion delta, efficiency index,
 established-player state, disposition, and evidence URLs. Organization rows

@@ -140,9 +140,10 @@ pub use view_model::organization_lineup::{
     OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
 };
 pub use view_model::prospect_conversion::{
-    build_prospect_conversion_board, ProspectConversionBaselineInput, ProspectConversionBoardView,
-    ProspectConversionConfig, ProspectConversionDisposition, ProspectConversionInput,
-    ProspectConversionMethodologyView, ProspectConversionOrganizationView,
+    adapt_prospect_conversion_input, build_prospect_conversion_board,
+    ProspectConversionBaselineInput, ProspectConversionBoardView, ProspectConversionConfig,
+    ProspectConversionDisposition, ProspectConversionInput, ProspectConversionMethodologyView,
+    ProspectConversionOrganizationView, ProspectConversionPerformanceInput,
     ProspectConversionPlayerView, ProspectConversionRankBlocker, ProspectNhlOutcomeInput,
     PROSPECT_CONVERSION_BOARD_SCHEMA, PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
 };
