@@ -240,6 +240,15 @@ review authority.
 
 Official affiliation authority: <https://theahl.com/nhl-affiliations>.
 
+Historical replay uses season-dated catalogs rather than applying the current
+affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves
+the official 2021-22 shared Charlotte affiliation as two relationship rows
+(Florida and Seattle); consumers must not silently collapse shared custody to
+one organization. Prospect cohort construction attributes organization from
+the latest season in its frozen observation window, while retaining earlier
+affiliations as provenance.
+
+
 ## Official AHL ingestion
 
 `icelines fetch ahl` resolves `YYYYYYYY` to the matching regular season in the

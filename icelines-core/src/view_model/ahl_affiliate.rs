@@ -908,6 +908,33 @@ mod tests {
     }
 
     #[test]
+    fn historical_affiliation_catalog_preserves_shared_affiliates() {
+        let catalog: AhlAffiliationCatalogView = serde_json::from_str(include_str!(
+            "../../../examples/ahl-affiliations-2021-22.json"
+        ))
+        .expect("valid historical affiliation catalog");
+        let charlotte_organizations = catalog
+            .affiliations
+            .iter()
+            .filter(|row| row.ahl_team == "Charlotte Checkers")
+            .map(|row| row.nhl_team.as_str())
+            .collect::<BTreeSet<_>>();
+
+        assert_eq!(catalog.season, 20212022);
+        assert_eq!(catalog.affiliations.len(), 32);
+        assert_eq!(
+            catalog
+                .affiliations
+                .iter()
+                .map(|row| row.ahl_team.as_str())
+                .collect::<BTreeSet<_>>()
+                .len(),
+            31
+        );
+        assert_eq!(charlotte_organizations, BTreeSet::from(["FLA", "SEA"]));
+    }
+
+    #[test]
     fn current_projection_rejects_the_wrong_affiliate() {
         let error = build_ahl_affiliate_projection(&AhlAffiliateProjectionInput {
             nhl_team: "NYR".to_owned(),

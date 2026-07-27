@@ -527,6 +527,7 @@ pub fn build_prospect_league_discovery(
     config: ProspectDevelopmentStudyConfig,
 ) -> Result<ProspectLeagueDiscoveryView, String> {
     validate_authorities(&snapshots, &crosswalks, &context)?;
+    let context_authority = context.authority;
     snapshots.sort_by_key(|snapshot| snapshot.season);
     let snapshot_seasons = snapshots
         .iter()
@@ -834,7 +835,16 @@ pub fn build_prospect_league_discovery(
     if studies.is_empty() {
         return Err("no eligible prospect studies remained after reviewed AHL joins".to_owned());
     }
-    let board = build_prospect_discovery_board(studies.clone())?;
+    let mut board = build_prospect_discovery_board(studies.clone())?;
+    if context_authority == ProspectLeagueContextAuthority::ObservedDraft {
+        board.hidden_gems.clear();
+        board.buyer_beware.clear();
+        board.watch.clear();
+        board.disclosures.push(
+            "Discovery lanes are suppressed because observed-draft context has no sourced public-attention authority; the underlying studies remain available for attention-independent program analysis."
+                .to_owned(),
+        );
+    }
     Ok(ProspectLeagueDiscoveryView {
         schema: PROSPECT_LEAGUE_DISCOVERY_SCHEMA.to_owned(),
         snapshot_seasons,
@@ -848,6 +858,7 @@ pub fn build_prospect_league_discovery(
             "Organization, position, age, NHL games, opportunity, availability, and public attention remain explicit authored context rather than feed-derived guesses.".to_owned(),
             "Candidates without two joined AHL seasons are reported as exclusions. Goalie studies feed program ranking but remain outside skater-only Hidden Gems and Buyer Beware lanes.".to_owned(),
             "Multiple reviewed team segments in one season are summed; source snapshot and identity evidence remain attached to each study.".to_owned(),
+            "Observed-draft context suppresses all discovery-board lanes until public-attention context is separately sourced; neutral placeholders cannot create Hidden Gem, Buyer Beware, or Watch recommendations.".to_owned(),
         ],
     })
 }
@@ -1033,6 +1044,56 @@ mod tests {
             ProspectOpportunityStatus::None
         );
         assert!(context.exclusions.is_empty());
+    }
+
+    #[test]
+    fn observed_context_draft_cannot_create_attention_sensitive_board_lanes() {
+        let snapshots = vec![
+            snapshot(20242025, 10, 40, 2, 3),
+            snapshot(20252026, 10, 40, 1, 2),
+        ];
+        let crosswalks = vec![
+            crosswalk(20242025, 10, "Joined Prospect"),
+            crosswalk(20252026, 10, "Joined Prospect"),
+        ];
+        let context = build_prospect_league_context_draft(
+            snapshots.clone(),
+            crosswalks.iter().cloned().map(league_crosswalk).collect(),
+            AhlAffiliationCatalogView {
+                schema: AHL_AFFILIATION_CATALOG_SCHEMA.to_owned(),
+                season: 20252026,
+                checked_at: "2026-07-26".to_owned(),
+                source_url: "https://theahl.com/nhl-affiliations".to_owned(),
+                affiliations: vec![icelines_core::AhlAffiliationView {
+                    nhl_team: "SEA".to_owned(),
+                    ahl_team: "Coachella Valley Firebirds".to_owned(),
+                }],
+            },
+            ProspectLeagueContextDraftConfig {
+                max_age: 24,
+                as_of_date: NaiveDate::from_ymd_opt(2026, 9, 15).unwrap(),
+                minimum_ahl_seasons: 2,
+            },
+        )
+        .unwrap();
+
+        let view = build_prospect_league_discovery(
+            snapshots,
+            crosswalks,
+            context,
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+
+        assert_eq!(view.studies.len(), 1);
+        assert!(view.board.hidden_gems.is_empty());
+        assert!(view.board.buyer_beware.is_empty());
+        assert!(view.board.watch.is_empty());
+        assert!(view
+            .board
+            .disclosures
+            .iter()
+            .any(|row| row.contains("observed-draft context")));
     }
 
     #[test]

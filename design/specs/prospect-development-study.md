@@ -142,6 +142,23 @@ in-season AHL trade; multiple active organizations remain an explicit
 exclusion. Older players, one-season samples, missing affiliations, and
 unresolved assignments are preserved in typed exclusions.
 
+Historical calibration freezes the observation window instead of leaking
+current affiliations or later performance into the cohort. For example, a
+2021-22 + 2022-23 baseline supplies both official snapshots and both reviewed
+identity envelopes, uses the dated 2022-23 affiliation catalog because it is
+the latest season in that window, and sets an as-of date immediately after the
+window. Earlier shared affiliations remain auditable historical provenance.
+Names that cannot be joined through a reviewed canonical identity are coverage
+gaps, not failed prospects; they remain absent from the scored cohort until
+reviewed rather than receiving a zero outcome.
+
+Historical identity proposals may use a later reviewed
+`ahl_identity_league_crosswalk.v1` envelope as their canonical candidate
+authority. Only its reviewed rows are extracted, duplicate appearances merge by
+canonical NHL player ID, and conflicting canonical names or birth dates fail
+closed. This lets replay reuse prior human review before official discovery is
+reserved for the unresolved exception queue.
+
 The generated artifact uses neutral placeholders for the facts the AHL adapter
 cannot establish: NHL games remain zero, opportunity is `none`, availability is
 `unknown`, and attention is 0.5. Its `observed_draft` authority fails validation
@@ -151,6 +168,12 @@ program ranking, but Hidden Gems and Buyer Beware require separate sourced
 enrichment. `prospect-league --crosswalk` accepts either individual reviewed
 team crosswalks or reviewed league envelopes and flattens the latter without
 weakening the reviewed-only join.
+
+When that `observed_draft` context is consumed, all discovery-board lanes are
+empty by contract. The production and trajectory studies remain available for
+program ranking, but neutral attention placeholders cannot label a player a
+Hidden Gem, Buyer Beware, or Watch recommendation. Supplying authored, sourced
+attention context re-enables the normal board composition.
 
 ## Goalie development adapter
 

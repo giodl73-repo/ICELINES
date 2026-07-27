@@ -1473,32 +1473,66 @@ pub fn run_affiliate_status_apply(
 fn read_affiliate_identity_catalog(path: &Path) -> anyhow::Result<AhlCanonicalIdentityCatalog> {
     let candidate_bytes = std::fs::read(path)
         .with_context(|| format!("read canonical NHL identity candidates {}", path.display()))?;
-    match serde_json::from_slice(&candidate_bytes) {
-        Ok(catalog) => Ok(catalog),
-        Err(catalog_error) => {
-            let overlay: LeagueCampCandidateOverlay = serde_json::from_slice(&candidate_bytes)
-                .with_context(|| {
-                    format!(
-                        "parse canonical identity catalog ({catalog_error}) or camp candidate overlay {}",
-                        path.display()
-                    )
-                })?;
-            Ok(AhlCanonicalIdentityCatalog {
-                schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
-                checked_at: overlay.checked_at,
-                candidates: overlay
-                    .candidates
-                    .into_iter()
-                    .map(|row| AhlCanonicalIdentityCandidate {
-                        nhl_player_id: row.player_id,
-                        display_name: row.display_name,
-                        birth_date: row.birth_date,
-                        evidence_urls: vec![row.source_url],
-                    })
-                    .collect(),
-            })
-        }
+    if let Ok(catalog) = serde_json::from_slice(&candidate_bytes) {
+        return Ok(catalog);
     }
+    if let Ok(overlay) = serde_json::from_slice::<LeagueCampCandidateOverlay>(&candidate_bytes) {
+        return Ok(AhlCanonicalIdentityCatalog {
+            schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
+            checked_at: overlay.checked_at,
+            candidates: overlay
+                .candidates
+                .into_iter()
+                .map(|row| AhlCanonicalIdentityCandidate {
+                    nhl_player_id: row.player_id,
+                    display_name: row.display_name,
+                    birth_date: row.birth_date,
+                    evidence_urls: vec![row.source_url],
+                })
+                .collect(),
+        });
+    }
+    if let Ok(league) = serde_json::from_slice::<AhlIdentityLeagueCrosswalkView>(&candidate_bytes) {
+        if league.schema != AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA {
+            bail!("invalid reviewed AHL league identity envelope schema");
+        }
+        let catalog = AhlCanonicalIdentityCatalog {
+            schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
+            checked_at: league.candidates_checked_at,
+            candidates: league
+                .crosswalks
+                .into_iter()
+                .flat_map(|crosswalk| crosswalk.rows)
+                .filter(|row| row.review_status == AhlIdentityReviewStatus::Reviewed)
+                .map(|row| {
+                    let nhl_player_id = row.nhl_player_id.with_context(|| {
+                        format!(
+                            "reviewed AHL identity {} lacks canonical player ID",
+                            row.provider_player_id
+                        )
+                    })?;
+                    let display_name = row.nhl_display_name.with_context(|| {
+                        format!(
+                            "reviewed AHL identity {} lacks canonical display name",
+                            row.provider_player_id
+                        )
+                    })?;
+                    Ok(AhlCanonicalIdentityCandidate {
+                        nhl_player_id,
+                        display_name,
+                        birth_date: row.nhl_birth_date,
+                        evidence_urls: row.evidence_urls,
+                    })
+                })
+                .collect::<anyhow::Result<Vec<_>>>()?,
+        };
+        return merge_ahl_canonical_identity_catalogs(catalog.checked_at.clone(), &[catalog])
+            .map_err(anyhow::Error::msg);
+    }
+    bail!(
+        "parse canonical identity catalog, camp candidate overlay, or reviewed AHL league identity envelope {}",
+        path.display()
+    )
 }
 
 async fn discover_official_affiliate_identities(
@@ -9128,5 +9162,83 @@ mod tests {
             assert!(value.is_finite());
             assert!((20.0..=90.0).contains(&value));
         }
+    }
+
+    #[test]
+    fn reviewed_league_crosswalk_can_seed_historical_identity_candidates() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("reviewed-league.json");
+        let row = |provider_player_id: &str, review_status: &str, source: &str| {
+            serde_json::json!({
+                "provider_player_id": provider_player_id,
+                "ahl_display_name": "Example Player",
+                "ahl_birth_date": "2001-02-03",
+                "match_basis": "exact_name_and_birth_date",
+                "review_status": review_status,
+                "nhl_player_id": 8480001,
+                "nhl_display_name": "Example Player",
+                "nhl_birth_date": "2001-02-03",
+                "evidence_urls": [source],
+                "note": "fixture"
+            })
+        };
+        let crosswalk = |team: &str, rows: Vec<serde_json::Value>| {
+            serde_json::json!({
+                "schema": "ahl_identity_crosswalk.v1",
+                "season": 20232024,
+                "provider": "ahl_hockeytech_statview",
+                "ahl_team": team,
+                "nhl_affiliate": null,
+                "roster_fetched_at": "2024-06-01T00:00:00Z",
+                "candidates_checked_at": "2024-06-02",
+                "counts": {
+                    "roster_players": rows.len(),
+                    "exact_name_and_birth_date": rows.len(),
+                    "surname_and_birth_date": 0,
+                    "exact_name_only": 0,
+                    "ambiguous": 0,
+                    "conflicts": 0,
+                    "unmatched": 0,
+                    "reviewed": rows.iter().filter(|row| row["review_status"] == "reviewed").count()
+                },
+                "rows": rows,
+                "disclosures": []
+            })
+        };
+        let document = serde_json::json!({
+            "schema": "ahl_identity_league_crosswalk.v1",
+            "season": 20232024,
+            "provider": "ahl_hockeytech_statview",
+            "roster_fetched_at": "2024-06-01T00:00:00Z",
+            "candidates_checked_at": "2024-06-02",
+            "teams": 2,
+            "roster_appearances": 3,
+            "unique_provider_players": 2,
+            "crosswalks": [
+                crosswalk("Team One", vec![
+                    row("one", "reviewed", "https://example.com/one"),
+                    row("pending", "pending", "https://example.com/pending")
+                ]),
+                crosswalk("Team Two", vec![
+                    row("two", "reviewed", "https://example.com/two")
+                ])
+            ],
+            "disclosures": []
+        });
+        icelines_fetch::snapshot::atomic_write_bytes(
+            &path,
+            serde_json::to_vec_pretty(&document).unwrap().as_slice(),
+        )
+        .unwrap();
+
+        let catalog = super::read_affiliate_identity_catalog(&path).unwrap();
+
+        assert_eq!(catalog.checked_at, "2024-06-02");
+        assert_eq!(catalog.candidates.len(), 1);
+        assert_eq!(catalog.candidates[0].nhl_player_id, 8480001);
+        assert_eq!(
+            catalog.candidates[0].evidence_urls,
+            ["https://example.com/one", "https://example.com/two"]
+        );
     }
 }
