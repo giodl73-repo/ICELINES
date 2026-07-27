@@ -141,11 +141,13 @@ pub use view_model::organization_lineup::{
 };
 pub use view_model::prospect_conversion::{
     adapt_prospect_conversion_input, build_prospect_conversion_board,
-    ProspectConversionBaselineInput, ProspectConversionBoardView, ProspectConversionConfig,
-    ProspectConversionDisposition, ProspectConversionInput, ProspectConversionMethodologyView,
-    ProspectConversionOrganizationView, ProspectConversionPerformanceDocument,
-    ProspectConversionPerformanceInput, ProspectConversionPlayerView,
-    ProspectConversionRankBlocker, ProspectNhlOutcomeInput, PROSPECT_CONVERSION_BOARD_SCHEMA,
+    ProspectConversionBaselineInput, ProspectConversionBoardView,
+    ProspectConversionCalibrationBandView, ProspectConversionConfig, ProspectConversionDisposition,
+    ProspectConversionInput, ProspectConversionMethodologyView, ProspectConversionOrganizationView,
+    ProspectConversionPerformanceDocument, ProspectConversionPerformanceInput,
+    ProspectConversionPlayerView, ProspectConversionRankBlocker,
+    ProspectConversionSignalCalibrationView, ProspectConversionSignalInput,
+    ProspectConversionSignalKind, ProspectNhlOutcomeInput, PROSPECT_CONVERSION_BOARD_SCHEMA,
     PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
     PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };

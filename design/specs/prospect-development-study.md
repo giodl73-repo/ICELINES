@@ -5,8 +5,8 @@
 `prospect_league_context.v1`, `prospect_league_discovery.v1`,
 `prospect_goalie_development_study.v1`, `prospect_career_discovery.v1`,
 `prospect_program_board.v2`, `prospect_program_sensitivity.v1`,
-`prospect_program_history.v1`, `prospect_conversion_input.v1`,
-`prospect_conversion_performance.v1`, `prospect_conversion_board.v1`
+`prospect_program_history.v1`, `prospect_conversion_input.v2`,
+`prospect_conversion_performance.v1`, `prospect_conversion_board.v2`
 
 ## Purpose
 
@@ -318,6 +318,16 @@ baseline and realized scores, baseline confidence, coverage, efficiency, an
 optional rank, and typed rank blockers.
 Trade or retention status does not add value until a separate sourced return
 model exists.
+
+Version 2 also retains the frozen production, trajectory, and opportunity
+component scores and publishes cohort-level signal calibration beside overall
+signal and workload confidence. Each row reports Pearson association with NHL
+arrival, established-player status, and normalized role, plus tie-safe bottom-
+and top-quartile arrival, establishment, and role results. A component with no
+variation is explicitly non-informative and receives null correlations and no
+quartile comparison. These are descriptive associations over the frozen cohort,
+not causal claims or fitted probabilities. The performance score remains a
+separate optional authority and is not inferred from arrival or role.
 
 The default method requires a three-season horizon, treats 82 skater games or
 40 goalie games as established, and caps the efficiency index while applying a

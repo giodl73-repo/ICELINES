@@ -16,8 +16,8 @@ use super::prospect_study::{
     PROSPECT_PROGRAM_SCORING_METHOD,
 };
 
-pub const PROSPECT_CONVERSION_INPUT_SCHEMA: &str = "prospect_conversion_input.v1";
-pub const PROSPECT_CONVERSION_BOARD_SCHEMA: &str = "prospect_conversion_board.v1";
+pub const PROSPECT_CONVERSION_INPUT_SCHEMA: &str = "prospect_conversion_input.v2";
+pub const PROSPECT_CONVERSION_BOARD_SCHEMA: &str = "prospect_conversion_board.v2";
 pub const PROSPECT_CONVERSION_PERFORMANCE_SCHEMA: &str = "prospect_conversion_performance.v1";
 pub const PROSPECT_CONVERSION_METHOD: &str = "prospect_conversion_observed.v1";
 
@@ -63,6 +63,45 @@ pub struct ProspectConversionPerformanceInput {
 pub struct ProspectConversionPerformanceDocument {
     pub schema: String,
     pub scores: Vec<ProspectConversionPerformanceInput>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectConversionSignalKind {
+    Overall,
+    Production,
+    Trajectory,
+    Opportunity,
+    WorkloadConfidence,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectConversionSignalInput {
+    pub player_id: u32,
+    /// Frozen 0..1 component scores from the baseline prospect study.
+    pub production_score: f64,
+    pub trajectory_score: f64,
+    pub opportunity_score: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectConversionCalibrationBandView {
+    pub players: usize,
+    pub arrival_rate: f64,
+    pub established_rate: f64,
+    pub mean_role_score: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectConversionSignalCalibrationView {
+    pub signal: ProspectConversionSignalKind,
+    pub sample_size: usize,
+    pub informative: bool,
+    pub arrival_correlation: Option<f64>,
+    pub established_correlation: Option<f64>,
+    pub role_correlation: Option<f64>,
+    pub bottom_quartile: Option<ProspectConversionCalibrationBandView>,
+    pub top_quartile: Option<ProspectConversionCalibrationBandView>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -125,6 +164,11 @@ pub struct ProspectConversionInput {
     pub baseline_basis: String,
     pub baselines: Vec<ProspectConversionBaselineInput>,
     pub outcomes: Vec<ProspectNhlOutcomeInput>,
+    /// Optional frozen component scores used only for descriptive calibration.
+    /// Older authored inputs may omit them; the overall and confidence rows
+    /// remain available.
+    #[serde(default)]
+    pub calibration_signals: Vec<ProspectConversionSignalInput>,
     #[serde(default)]
     pub config: ProspectConversionConfig,
 }
@@ -190,6 +234,7 @@ pub struct ProspectConversionBoardView {
     pub organizations: usize,
     pub players: usize,
     pub ranked_organizations: usize,
+    pub signal_calibration: Vec<ProspectConversionSignalCalibrationView>,
     pub programs: Vec<ProspectConversionOrganizationView>,
     pub disclosures: Vec<String>,
 }
@@ -288,6 +333,7 @@ pub fn adapt_prospect_conversion_input(
     let mut player_ids = BTreeSet::new();
     let mut baselines = Vec::with_capacity(sources.len());
     let mut outcomes = Vec::with_capacity(sources.len());
+    let mut calibration_signals = Vec::with_capacity(sources.len());
     for source in sources {
         if source.player_id == 0 || !player_ids.insert(source.player_id) {
             return Err("invalid or duplicate prospect conversion study player".to_owned());
@@ -299,6 +345,12 @@ pub fn adapt_prospect_conversion_input(
             )
         })?;
         let observed_signal_score = observed_signal_score(source.components)?;
+        calibration_signals.push(ProspectConversionSignalInput {
+            player_id: source.player_id,
+            production_score: component_score(source.components, "production")?,
+            trajectory_score: component_score(source.components, "trajectory")?,
+            opportunity_score: component_score(source.components, "opportunity")?,
+        });
         baselines.push(ProspectConversionBaselineInput {
             player_id: source.player_id,
             player: source.player.clone(),
@@ -366,6 +418,7 @@ pub fn adapt_prospect_conversion_input(
         baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
         baselines,
         outcomes,
+        calibration_signals,
         config,
     };
     build_prospect_conversion_board(&input)?;
@@ -455,6 +508,34 @@ pub fn build_prospect_conversion_board(
         );
     }
 
+    let mut calibration_signals = BTreeMap::new();
+    for signal in &input.calibration_signals {
+        if signal.player_id == 0
+            || [
+                signal.production_score,
+                signal.trajectory_score,
+                signal.opportunity_score,
+            ]
+            .iter()
+            .any(|score| !score.is_finite() || !(0.0..=1.0).contains(score))
+            || calibration_signals
+                .insert(signal.player_id, signal)
+                .is_some()
+        {
+            return Err("invalid or duplicate prospect conversion calibration signal".to_owned());
+        }
+    }
+    if !calibration_signals.is_empty()
+        && (calibration_signals.len() != baselines.len()
+            || baselines
+                .keys()
+                .any(|player_id| !calibration_signals.contains_key(player_id)))
+    {
+        return Err(
+            "prospect conversion calibration signals must cover every baseline player".to_owned(),
+        );
+    }
+
     let through_seasons = outcomes
         .values()
         .map(|outcome| outcome.through_season)
@@ -467,7 +548,7 @@ pub fn build_prospect_conversion_board(
     let mut baseline_seasons = BTreeSet::new();
     let mut by_organization = BTreeMap::<String, Vec<ProspectConversionPlayerView>>::new();
 
-    for (player_id, baseline) in baselines {
+    for (&player_id, baseline) in &baselines {
         let outcome = outcomes[&player_id];
         let baseline_start = season_start_year(baseline.baseline_season).expect("validated season");
         let horizon_seasons = through_start.saturating_sub(baseline_start);
@@ -642,6 +723,7 @@ pub fn build_prospect_conversion_board(
             .cmp(&right.conversion_rank.unwrap_or(usize::MAX))
             .then_with(|| left.organization.cmp(&right.organization))
     });
+    let signal_calibration = build_signal_calibration(&baselines, &calibration_signals, &programs);
 
     Ok(ProspectConversionBoardView {
         schema: PROSPECT_CONVERSION_BOARD_SCHEMA.to_owned(),
@@ -656,6 +738,7 @@ pub fn build_prospect_conversion_board(
         organizations: programs.len(),
         players: input.baselines.len(),
         ranked_organizations: rankable.len(),
+        signal_calibration,
         programs,
         disclosures: vec![
             "Conversion compares a frozen attention-free prospect signal with later observed NHL arrival, role, and optional canonical performance evidence.".to_owned(),
@@ -664,36 +747,219 @@ pub fn build_prospect_conversion_board(
             "The efficiency index compares realized value with baseline signal using a disclosed denominator floor and cap; it rewards over-delivery without allowing tiny baselines to explode.".to_owned(),
             "Retention and trade disposition are reported but do not add value without a separately sourced return model.".to_owned(),
             "This is cohort conversion, not proof that an organization caused or prevented an individual outcome.".to_owned(),
+            "Signal calibration is descriptive association over this frozen cohort. Correlations and quartile outcome rates do not establish causation; constant signals are marked non-informative rather than assigned a numeric result.".to_owned(),
         ],
     })
+}
+
+fn build_signal_calibration(
+    baselines: &BTreeMap<u32, &ProspectConversionBaselineInput>,
+    component_signals: &BTreeMap<u32, &ProspectConversionSignalInput>,
+    programs: &[ProspectConversionOrganizationView],
+) -> Vec<ProspectConversionSignalCalibrationView> {
+    let results = programs
+        .iter()
+        .flat_map(|program| &program.player_results)
+        .map(|player| (player.player_id, player))
+        .collect::<BTreeMap<_, _>>();
+    let mut signal_sets = vec![
+        (
+            ProspectConversionSignalKind::Overall,
+            baselines
+                .iter()
+                .map(|(player_id, row)| (*player_id, row.observed_signal_score / 100.0))
+                .collect::<Vec<_>>(),
+        ),
+        (
+            ProspectConversionSignalKind::WorkloadConfidence,
+            baselines
+                .iter()
+                .map(|(player_id, row)| (*player_id, row.workload_confidence))
+                .collect::<Vec<_>>(),
+        ),
+    ];
+    if !component_signals.is_empty() {
+        let components: [(
+            ProspectConversionSignalKind,
+            fn(&ProspectConversionSignalInput) -> f64,
+        ); 3] = [
+            (
+                ProspectConversionSignalKind::Production,
+                |row: &ProspectConversionSignalInput| row.production_score,
+            ),
+            (
+                ProspectConversionSignalKind::Trajectory,
+                |row: &ProspectConversionSignalInput| row.trajectory_score,
+            ),
+            (
+                ProspectConversionSignalKind::Opportunity,
+                |row: &ProspectConversionSignalInput| row.opportunity_score,
+            ),
+        ];
+        for (kind, value) in components {
+            signal_sets.push((
+                kind,
+                component_signals
+                    .iter()
+                    .map(|(player_id, row)| (*player_id, value(row)))
+                    .collect(),
+            ));
+        }
+    }
+    signal_sets.sort_by_key(|(kind, _)| *kind);
+    signal_sets
+        .into_iter()
+        .map(|(kind, values)| signal_calibration_row(kind, values, &results))
+        .collect()
+}
+
+fn signal_calibration_row(
+    signal: ProspectConversionSignalKind,
+    mut values: Vec<(u32, f64)>,
+    results: &BTreeMap<u32, &ProspectConversionPlayerView>,
+) -> ProspectConversionSignalCalibrationView {
+    values.sort_by(|left, right| {
+        left.1
+            .total_cmp(&right.1)
+            .then_with(|| left.0.cmp(&right.0))
+    });
+    let informative = values.len() >= 4
+        && values
+            .first()
+            .zip(values.last())
+            .is_some_and(|(low, high)| high.1 - low.1 > f64::EPSILON);
+    let x = values.iter().map(|(_, value)| *value).collect::<Vec<_>>();
+    let outcome = |player_id: u32| results[&player_id];
+    let arrival = values
+        .iter()
+        .map(|(player_id, _)| {
+            if outcome(*player_id).nhl_games_played > 0 {
+                1.0
+            } else {
+                0.0
+            }
+        })
+        .collect::<Vec<_>>();
+    let established = values
+        .iter()
+        .map(|(player_id, _)| {
+            if outcome(*player_id).established {
+                1.0
+            } else {
+                0.0
+            }
+        })
+        .collect::<Vec<_>>();
+    let role = values
+        .iter()
+        .map(|(player_id, _)| outcome(*player_id).role_score)
+        .collect::<Vec<_>>();
+    let (bottom_quartile, top_quartile) = if informative {
+        let last = values.len() - 1;
+        let low_cutoff = values[last / 4].1;
+        let high_cutoff = values[(3 * last) / 4].1;
+        if low_cutoff < high_cutoff {
+            (
+                Some(calibration_band(
+                    values
+                        .iter()
+                        .filter(|(_, value)| *value <= low_cutoff)
+                        .map(|(player_id, _)| outcome(*player_id)),
+                )),
+                Some(calibration_band(
+                    values
+                        .iter()
+                        .filter(|(_, value)| *value >= high_cutoff)
+                        .map(|(player_id, _)| outcome(*player_id)),
+                )),
+            )
+        } else {
+            (None, None)
+        }
+    } else {
+        (None, None)
+    };
+    ProspectConversionSignalCalibrationView {
+        signal,
+        sample_size: values.len(),
+        informative,
+        arrival_correlation: pearson_correlation(&x, &arrival).map(round_ratio),
+        established_correlation: pearson_correlation(&x, &established).map(round_ratio),
+        role_correlation: pearson_correlation(&x, &role).map(round_ratio),
+        bottom_quartile,
+        top_quartile,
+    }
+}
+
+fn calibration_band<'a>(
+    players: impl Iterator<Item = &'a ProspectConversionPlayerView>,
+) -> ProspectConversionCalibrationBandView {
+    let players = players.collect::<Vec<_>>();
+    let count = players.len();
+    ProspectConversionCalibrationBandView {
+        players: count,
+        arrival_rate: round_ratio(
+            players
+                .iter()
+                .filter(|player| player.nhl_games_played > 0)
+                .count() as f64
+                / count as f64,
+        ),
+        established_rate: round_ratio(
+            players.iter().filter(|player| player.established).count() as f64 / count as f64,
+        ),
+        mean_role_score: round_score(
+            players.iter().map(|player| player.role_score).sum::<f64>() / count as f64,
+        ),
+    }
+}
+
+fn pearson_correlation(left: &[f64], right: &[f64]) -> Option<f64> {
+    if left.len() != right.len() || left.len() < 2 {
+        return None;
+    }
+    let left_mean = left.iter().sum::<f64>() / left.len() as f64;
+    let right_mean = right.iter().sum::<f64>() / right.len() as f64;
+    let (mut numerator, mut left_variance, mut right_variance) = (0.0, 0.0, 0.0);
+    for (left, right) in left.iter().zip(right) {
+        let left_delta = left - left_mean;
+        let right_delta = right - right_mean;
+        numerator += left_delta * right_delta;
+        left_variance += left_delta * left_delta;
+        right_variance += right_delta * right_delta;
+    }
+    (left_variance > f64::EPSILON && right_variance > f64::EPSILON)
+        .then(|| numerator / (left_variance * right_variance).sqrt())
 }
 
 fn observed_signal_score(
     components: &[super::prospect_study::ProspectSignalComponentView],
 ) -> Result<f64, String> {
-    let component = |id: &str| {
-        let matches = components
-            .iter()
-            .filter(|component| component.id == id)
-            .collect::<Vec<_>>();
-        if matches.len() != 1
-            || !matches[0].score.is_finite()
-            || !(0.0..=1.0).contains(&matches[0].score)
-        {
-            None
-        } else {
-            Some(matches[0].score)
-        }
-    };
-    let production = component("production")
-        .ok_or_else(|| "prospect conversion study lacks unique production component".to_owned())?;
-    let trajectory = component("trajectory")
-        .ok_or_else(|| "prospect conversion study lacks unique trajectory component".to_owned())?;
-    let opportunity = component("opportunity")
-        .ok_or_else(|| "prospect conversion study lacks unique opportunity component".to_owned())?;
+    let production = component_score(components, "production")?;
+    let trajectory = component_score(components, "trajectory")?;
+    let opportunity = component_score(components, "opportunity")?;
     Ok(round_score(
         100.0 * (0.50 * production + 0.25 * trajectory + 0.25 * opportunity),
     ))
+}
+
+fn component_score(
+    components: &[super::prospect_study::ProspectSignalComponentView],
+    id: &str,
+) -> Result<f64, String> {
+    let matches = components
+        .iter()
+        .filter(|component| component.id == id)
+        .collect::<Vec<_>>();
+    if matches.len() != 1
+        || !matches[0].score.is_finite()
+        || !(0.0..=1.0).contains(&matches[0].score)
+    {
+        return Err(format!(
+            "prospect conversion study lacks unique {id} component"
+        ));
+    }
+    Ok(matches[0].score)
 }
 
 fn validate_config(config: ProspectConversionConfig) -> Result<(), String> {
@@ -829,6 +1095,7 @@ mod tests {
                 outcome(1, 82, 900, Some(80.0)),
                 outcome(2, 20, 600, Some(40.0)),
             ],
+            calibration_signals: vec![],
             config,
         };
         let view = build_prospect_conversion_board(&input).unwrap();
@@ -853,6 +1120,7 @@ mod tests {
             baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
             baselines: vec![baseline(1, "SEA", "RW", 60.0)],
             outcomes: vec![outcome(1, 82, 900, None)],
+            calibration_signals: vec![],
             config,
         };
         let view = build_prospect_conversion_board(&input).unwrap();
@@ -870,6 +1138,59 @@ mod tests {
     }
 
     #[test]
+    fn calibrates_frozen_signals_without_inventing_constant_signal_results() {
+        let baselines = (1..=8)
+            .map(|player_id| baseline(player_id, "SEA", "RW", f64::from(player_id) * 10.0))
+            .collect::<Vec<_>>();
+        let outcomes = (1..=8)
+            .map(|player_id| {
+                if player_id >= 5 {
+                    outcome(player_id, 20 * player_id, 900, Some(60.0))
+                } else {
+                    outcome(player_id, 0, 0, Some(40.0))
+                }
+            })
+            .collect::<Vec<_>>();
+        let calibration_signals = (1..=8)
+            .map(|player_id| ProspectConversionSignalInput {
+                player_id,
+                production_score: f64::from(player_id) / 10.0,
+                trajectory_score: f64::from(9 - player_id) / 10.0,
+                opportunity_score: 0.0,
+            })
+            .collect();
+        let view = build_prospect_conversion_board(&ProspectConversionInput {
+            schema: PROSPECT_CONVERSION_INPUT_SCHEMA.to_owned(),
+            baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
+            baselines,
+            outcomes,
+            calibration_signals,
+            config: ProspectConversionConfig::default(),
+        })
+        .unwrap();
+
+        let production = view
+            .signal_calibration
+            .iter()
+            .find(|row| row.signal == ProspectConversionSignalKind::Production)
+            .unwrap();
+        assert!(production.informative);
+        assert!(production.arrival_correlation.unwrap() > 0.8);
+        assert!(
+            production.top_quartile.as_ref().unwrap().arrival_rate
+                > production.bottom_quartile.as_ref().unwrap().arrival_rate
+        );
+        let opportunity = view
+            .signal_calibration
+            .iter()
+            .find(|row| row.signal == ProspectConversionSignalKind::Opportunity)
+            .unwrap();
+        assert!(!opportunity.informative);
+        assert_eq!(opportunity.arrival_correlation, None);
+        assert_eq!(opportunity.top_quartile, None);
+    }
+
+    #[test]
     fn default_rank_floors_explain_small_and_low_confidence_cohorts() {
         let mut weak_baseline = baseline(1, "SEA", "RW", 60.0);
         weak_baseline.workload_confidence = 0.4;
@@ -878,6 +1199,7 @@ mod tests {
             baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
             baselines: vec![weak_baseline],
             outcomes: vec![outcome(1, 82, 900, Some(80.0))],
+            calibration_signals: vec![],
             config: ProspectConversionConfig::default(),
         };
         let view = build_prospect_conversion_board(&input).unwrap();
@@ -906,6 +1228,7 @@ mod tests {
             baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
             baselines: vec![baseline(1, "SEA", "RW", 60.0)],
             outcomes: vec![outcome(1, 82, 900, Some(80.0))],
+            calibration_signals: vec![],
             config: ProspectConversionConfig::default(),
         };
         input.outcomes[0].through_season = 20242025;

@@ -5593,6 +5593,48 @@ fn render_prospect_conversion(view: &ProspectConversionBoardView) -> String {
         "baseline {} · method {}",
         view.baseline_basis, view.methodology.method
     );
+    let _ = writeln!(out, "\nSIGNAL CALIBRATION");
+    for signal in &view.signal_calibration {
+        if !signal.informative {
+            let _ = writeln!(
+                out,
+                "{:?} · non-informative in this cohort (n={})",
+                signal.signal, signal.sample_size
+            );
+            continue;
+        }
+        let correlation = |value: Option<f64>| {
+            value
+                .map(|value| format!("{value:+.3}"))
+                .unwrap_or_else(|| "n/a".to_owned())
+        };
+        let quartiles = signal
+            .bottom_quartile
+            .as_ref()
+            .zip(signal.top_quartile.as_ref())
+            .map(|(bottom, top)| {
+                format!(
+                    "arrival {:.0}%→{:.0}% · established {:.0}%→{:.0}% · role {:.1}→{:.1}",
+                    bottom.arrival_rate * 100.0,
+                    top.arrival_rate * 100.0,
+                    bottom.established_rate * 100.0,
+                    top.established_rate * 100.0,
+                    bottom.mean_role_score,
+                    top.mean_role_score
+                )
+            })
+            .unwrap_or_else(|| "quartiles unavailable".to_owned());
+        let _ = writeln!(
+            out,
+            "{:?} · r(arrival) {} · r(established) {} · r(role) {} · {}",
+            signal.signal,
+            correlation(signal.arrival_correlation),
+            correlation(signal.established_correlation),
+            correlation(signal.role_correlation),
+            quartiles
+        );
+    }
+    let _ = writeln!(out, "\nORGANIZATIONS");
     for program in &view.programs {
         let rank = program
             .conversion_rank
