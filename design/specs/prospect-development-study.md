@@ -5,7 +5,8 @@
 `prospect_league_context.v1`, `prospect_league_discovery.v1`,
 `prospect_goalie_development_study.v1`, `prospect_career_discovery.v1`,
 `prospect_program_board.v2`, `prospect_program_sensitivity.v1`,
-`prospect_program_history.v1`
+`prospect_program_history.v1`, `prospect_conversion_input.v1`,
+`prospect_conversion_board.v1`
 
 ## Purpose
 
@@ -259,6 +260,34 @@ also reports each organization's first-to-latest movement. A team missing from
 the immediately preceding board receives null adjacent deltas; the history does
 not bridge that evidence gap. This is program-population movement, not a causal
 claim about development or future NHL success.
+
+## Prospect conversion efficiency
+
+`ProspectConversionBoardView` compares a frozen, attention-free prospect signal
+with NHL outcomes observed after a configurable minimum horizon. Arrival uses
+NHL games, role uses NHL time on ice per game with separate forward, defense,
+and goalie benchmarks, and performance accepts an optional canonical 0..100
+value measure with an explicit basis. Missing performance is never imputed: it
+reduces outcome coverage, and an organization below the configured coverage
+floor remains unranked.
+
+Each player retains baseline season and confidence, outcome season, arrival,
+role, performance, realized value, conversion delta, efficiency index,
+established-player state, disposition, and evidence URLs. Organization rows
+publish converted and established counts, retained and traded counts, aggregate
+baseline and realized scores, baseline confidence, coverage, efficiency, an
+optional rank, and typed rank blockers.
+Trade or retention status does not add value until a separate sourced return
+model exists.
+
+The default method requires a three-season horizon, treats 82 skater games or
+40 goalie games as established, and caps the efficiency index while applying a
+baseline denominator floor. A program also needs at least five players, 0.50
+mean baseline confidence, and 0.80 outcome coverage to receive a rank. Programs
+that miss any floor remain visible with the precise blockers. These are
+transparent IceLines cohort rules, not a claim that the organization caused an
+individual result. Official historical outcome and baseline-study adapters
+remain the next acquisition layer over this core primitive.
 
 On the July 2026 all-organization proof, Seattle ranked first at all three
 default boundaries; its score ranged only from 56.04 to 57.05. The Rangers

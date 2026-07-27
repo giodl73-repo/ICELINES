@@ -45,6 +45,7 @@ pub mod organization_lineup;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
+pub mod prospect_conversion;
 pub mod prospect_study;
 pub mod records;
 pub mod report;
@@ -298,6 +299,13 @@ pub use poach::{
     PoachScore, PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchAlertRow,
     WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleMutationIntent,
     WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
+};
+pub use prospect_conversion::{
+    build_prospect_conversion_board, ProspectConversionBaselineInput, ProspectConversionBoardView,
+    ProspectConversionConfig, ProspectConversionDisposition, ProspectConversionInput,
+    ProspectConversionMethodologyView, ProspectConversionOrganizationView,
+    ProspectConversionPlayerView, ProspectConversionRankBlocker, ProspectNhlOutcomeInput,
+    PROSPECT_CONVERSION_BOARD_SCHEMA, PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
 };
 pub use prospect_study::{
     build_prospect_development_study, build_prospect_discovery_board,

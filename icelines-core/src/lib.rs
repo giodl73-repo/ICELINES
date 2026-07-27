@@ -139,6 +139,13 @@ pub use view_model::organization_lineup::{
     OrganizationPositionGroup, OrganizationRecallCandidateView, OrganizationRecallPlanView,
     OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
 };
+pub use view_model::prospect_conversion::{
+    build_prospect_conversion_board, ProspectConversionBaselineInput, ProspectConversionBoardView,
+    ProspectConversionConfig, ProspectConversionDisposition, ProspectConversionInput,
+    ProspectConversionMethodologyView, ProspectConversionOrganizationView,
+    ProspectConversionPlayerView, ProspectConversionRankBlocker, ProspectNhlOutcomeInput,
+    PROSPECT_CONVERSION_BOARD_SCHEMA, PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
+};
 pub use view_model::prospect_study::{
     build_prospect_development_study, build_prospect_discovery_board,
     build_prospect_goalie_development_study, build_prospect_program_board,
