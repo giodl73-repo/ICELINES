@@ -273,6 +273,11 @@ in the shared verified cache manifest under the registered
 bytes, writes `ahl/ahl-roster-stats.json`, and seals a first-class `Ahl`
 snapshot tier. The previous active snapshot is retained as its parent, so an
 AHL side-fetch does not cut NHL roster/stat reads out of the active chain.
+Full-league acquisitions fetch independent team cachelines in bounded batches
+of six and commit their shared FLETCH manifest once. The returned verified byte
+map is parsed directly; it is not discarded and reacquired once per report.
+Team roster/skater/goalie assembly remains atomic, and the final snapshot is
+sorted by team name before validation so concurrency cannot alter the artifact.
 
 `affiliate_projection_input_from_snapshot` is the fail-closed bridge into the
 core projection contract. Its enrichment set must exactly cover the selected

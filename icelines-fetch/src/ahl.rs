@@ -44,6 +44,8 @@ pub enum AhlFeedError {
     SeasonNotFound(String),
     #[error("unknown AHL team filter(s): {0}")]
     UnknownTeams(String),
+    #[error("AHL team acquisition worker failed: {0}")]
+    Worker(String),
     #[error("invalid AHL snapshot: {0}")]
     Validation(String),
 }
@@ -2555,50 +2557,124 @@ impl AhlFeedClient {
         teams = filter_teams(teams, team_filters)?;
 
         let affiliate_by_name = current_affiliates_for(season);
+        let prefetched = if let Some((cache_root, force)) = &self.cache {
+            let mut requests = Vec::with_capacity(teams.len() * 3);
+            for team in &teams {
+                requests.push((
+                    format!("icelines.ahl.{season}.team.{}.roster", team.team_code),
+                    self.feed_url(&[
+                        ("view", "roster"),
+                        ("team_id", &team.id),
+                        ("season_id", &provider_season.id),
+                        ("rosterstatus", "all"),
+                        ("site_id", "0"),
+                        ("league_id", "4"),
+                        ("lang", "en"),
+                    ]),
+                ));
+                for (kind, position, sort) in [
+                    ("skaters", "skaters", "points"),
+                    ("goalies", "goalies", "wins"),
+                ] {
+                    requests.push((
+                        format!("icelines.ahl.{season}.team.{}.{kind}", team.team_code),
+                        self.feed_url(&[
+                            ("view", "players"),
+                            ("season", &provider_season.id),
+                            ("team", &team.id),
+                            ("position", position),
+                            ("rookies", "0"),
+                            ("statsType", "standard"),
+                            ("rosterstatus", "all"),
+                            ("first", "0"),
+                            ("limit", "500"),
+                            ("lang", "en"),
+                            ("sort", sort),
+                        ]),
+                    ));
+                }
+            }
+            let mut prefetched = BTreeMap::new();
+            for (dataset_id, result) in crate::fletch::fetch_generic_http_batch_async(
+                requests,
+                cache_root.clone(),
+                *force,
+                6,
+            )
+            .await
+            {
+                match result {
+                    Ok(bytes) => {
+                        prefetched.insert(dataset_id, bytes);
+                    }
+                    Err(error) => {
+                        return Err(AhlFeedError::Request {
+                            url: dataset_id,
+                            detail: format!("FLETCH batch cache acquisition failed: {error:#}"),
+                        });
+                    }
+                }
+            }
+            Some(prefetched)
+        } else {
+            None
+        };
         let mut output = Vec::with_capacity(teams.len());
-        for team in teams {
-            let (mut roster, mut source_warnings) = self
-                .fetch_roster(season, &provider_season.id, &team)
-                .await?;
-            let (mut skaters, skater_warnings) = self
-                .fetch_skaters(season, &provider_season.id, &team)
-                .await?;
-            source_warnings.extend(skater_warnings);
-            let (mut goalies, goalie_warnings) = self
-                .fetch_goalies(season, &provider_season.id, &team)
-                .await?;
-            source_warnings.extend(goalie_warnings);
-            roster.sort_by(|a, b| {
-                a.position_group
-                    .cmp(&b.position_group)
-                    .then(a.name.cmp(&b.name))
-                    .then(a.provider_player_id.cmp(&b.provider_player_id))
-            });
-            skaters.sort_by(|a, b| {
-                a.name
-                    .cmp(&b.name)
-                    .then(a.provider_player_id.cmp(&b.provider_player_id))
-            });
-            goalies.sort_by(|a, b| {
-                a.name
-                    .cmp(&b.name)
-                    .then(a.provider_player_id.cmp(&b.provider_player_id))
-            });
-            output.push(AhlTeamRosterStats {
-                provider: AHL_PROVIDER.to_owned(),
-                provider_team_id: team.id,
-                team_code: team.team_code,
-                nhl_affiliate: affiliate_by_name.get(&team.name).cloned(),
-                team_name: team.name,
-                nickname: team.nickname,
-                division_id: team.division_id,
-                logo_url: team.logo,
-                roster,
-                skaters,
-                goalies,
-                source_warnings,
-            });
+        // A team is the atomic acquisition unit: its roster, skater, and goalie
+        // reports remain sequential, while independent teams run in bounded
+        // batches. This avoids a 32-team replay becoming 96 serial round trips
+        // without turning an opt-in fetch into an uncontrolled provider spike.
+        if let Some(prefetched) = &prefetched {
+            for team in teams {
+                let roster = prefetched_feed_value(
+                    prefetched,
+                    &format!("icelines.ahl.{season}.team.{}.roster", team.team_code),
+                )?;
+                let skaters = prefetched_feed_value(
+                    prefetched,
+                    &format!("icelines.ahl.{season}.team.{}.skaters", team.team_code),
+                )?;
+                let goalies = prefetched_feed_value(
+                    prefetched,
+                    &format!("icelines.ahl.{season}.team.{}.goalies", team.team_code),
+                )?;
+                output.push(build_team_roster_stats(
+                    team.clone(),
+                    affiliate_by_name.get(&team.name).cloned(),
+                    roster,
+                    skaters,
+                    goalies,
+                )?);
+            }
+        } else {
+            for batch in teams.chunks(6) {
+                let mut tasks = tokio::task::JoinSet::new();
+                for team in batch {
+                    let client = self.clone();
+                    let team = team.clone();
+                    let provider_season_id = provider_season.id.clone();
+                    let nhl_affiliate = affiliate_by_name.get(&team.name).cloned();
+                    tasks.spawn(async move {
+                        client
+                            .fetch_team_roster_stats(
+                                season,
+                                &provider_season_id,
+                                team,
+                                nhl_affiliate,
+                            )
+                            .await
+                    });
+                }
+                while let Some(result) = tasks.join_next().await {
+                    match result {
+                        Ok(Ok(team)) => output.push(team),
+                        Ok(Err(error)) => return Err(error),
+                        Err(error) => return Err(AhlFeedError::Worker(error.to_string())),
+                    }
+                }
+            }
         }
+        output.sort_by(|left, right| left.team_name.cmp(&right.team_name));
 
         let snapshot = AhlRosterStatsSnapshot {
             schema: AHL_ROSTER_STATS_SCHEMA.to_owned(),
@@ -2614,6 +2690,48 @@ impl AhlFeedClient {
         };
         snapshot.validate()?;
         Ok(snapshot)
+    }
+
+    async fn fetch_team_roster_stats(
+        &self,
+        season: u32,
+        provider_season_id: &str,
+        team: ProviderTeam,
+        nhl_affiliate: Option<String>,
+    ) -> Result<AhlTeamRosterStats, AhlFeedError> {
+        let roster = self
+            .get_feed(
+                &format!("icelines.ahl.{season}.team.{}.roster", team.team_code),
+                &[
+                    ("view", "roster"),
+                    ("team_id", &team.id),
+                    ("season_id", provider_season_id),
+                    ("rosterstatus", "all"),
+                    ("site_id", "0"),
+                    ("league_id", "4"),
+                    ("lang", "en"),
+                ],
+            )
+            .await?;
+        let skaters = self
+            .fetch_player_report(
+                &format!("icelines.ahl.{season}.team.{}.skaters", team.team_code),
+                provider_season_id,
+                &team.id,
+                "skaters",
+                "points",
+            )
+            .await?;
+        let goalies = self
+            .fetch_player_report(
+                &format!("icelines.ahl.{season}.team.{}.goalies", team.team_code),
+                provider_season_id,
+                &team.id,
+                "goalies",
+                "wins",
+            )
+            .await?;
+        build_team_roster_stats(team, nhl_affiliate, roster, skaters, goalies)
     }
 
     async fn resolve_regular_season(&self, season: u32) -> Result<ProviderSeason, AhlFeedError> {
@@ -2654,80 +2772,6 @@ impl AhlFeedClient {
         Ok(envelope.teams_no_all)
     }
 
-    async fn fetch_skaters(
-        &self,
-        season: u32,
-        provider_season_id: &str,
-        team: &ProviderTeam,
-    ) -> Result<(Vec<AhlSkaterSeasonRow>, Vec<String>), AhlFeedError> {
-        let value = self
-            .fetch_player_report(
-                &format!("icelines.ahl.{season}.team.{}.skaters", team.team_code),
-                provider_season_id,
-                &team.id,
-                "skaters",
-                "points",
-            )
-            .await?;
-        let (rows, warnings) = team_report_rows(&value, &team.team_code, "skater", true)?;
-        let parsed = rows
-            .into_iter()
-            .map(|row| parse_skater(row, &team.team_code))
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok((parsed, warnings))
-    }
-
-    async fn fetch_roster(
-        &self,
-        season: u32,
-        provider_season_id: &str,
-        team: &ProviderTeam,
-    ) -> Result<(Vec<AhlRosterPlayer>, Vec<String>), AhlFeedError> {
-        let dataset_id = format!("icelines.ahl.{season}.team.{}.roster", team.team_code);
-        let value = self
-            .get_feed(
-                &dataset_id,
-                &[
-                    ("view", "roster"),
-                    ("team_id", &team.id),
-                    ("season_id", provider_season_id),
-                    ("rosterstatus", "all"),
-                    ("site_id", "0"),
-                    ("league_id", "4"),
-                    ("lang", "en"),
-                ],
-            )
-            .await?;
-        let players = roster_rows(&value)?
-            .into_iter()
-            .map(|(group, row)| parse_roster_player(group, row))
-            .collect::<Result<Vec<_>, _>>()?;
-        deduplicate_roster_players(players, &team.team_code)
-    }
-
-    async fn fetch_goalies(
-        &self,
-        season: u32,
-        provider_season_id: &str,
-        team: &ProviderTeam,
-    ) -> Result<(Vec<AhlGoalieSeasonRow>, Vec<String>), AhlFeedError> {
-        let value = self
-            .fetch_player_report(
-                &format!("icelines.ahl.{season}.team.{}.goalies", team.team_code),
-                provider_season_id,
-                &team.id,
-                "goalies",
-                "wins",
-            )
-            .await?;
-        let (rows, warnings) = team_report_rows(&value, &team.team_code, "goalie", false)?;
-        let parsed = rows
-            .into_iter()
-            .map(|row| parse_goalie(row, &team.team_code))
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok((parsed, warnings))
-    }
-
     async fn fetch_player_report(
         &self,
         dataset_id: &str,
@@ -2760,13 +2804,8 @@ impl AhlFeedClient {
         dataset_id: &str,
         params: &[(&str, &str)],
     ) -> Result<Value, AhlFeedError> {
-        let mut query = vec![
-            ("feed", "statviewfeed"),
-            ("key", self.key.as_str()),
-            ("client_code", self.client_code.as_str()),
-        ];
-        query.extend_from_slice(params);
-        let request = self.client.get(&self.base_url).query(&query);
+        let url = self.feed_url(params);
+        let request = self.client.get(&url);
         let url = request
             .try_clone()
             .and_then(|r| r.build().ok())
@@ -2806,6 +2845,94 @@ impl AhlFeedClient {
         })?;
         parse_jsonp(&body)
     }
+
+    fn feed_url(&self, params: &[(&str, &str)]) -> String {
+        let mut query = vec![
+            ("feed", "statviewfeed"),
+            ("key", self.key.as_str()),
+            ("client_code", self.client_code.as_str()),
+        ];
+        query.extend_from_slice(params);
+        self.client
+            .get(&self.base_url)
+            .query(&query)
+            .build()
+            .map(|request| request.url().to_string())
+            .unwrap_or_else(|_| self.base_url.clone())
+    }
+}
+
+fn prefetched_feed_value(
+    prefetched: &BTreeMap<String, Vec<u8>>,
+    dataset_id: &str,
+) -> Result<Value, AhlFeedError> {
+    let bytes = prefetched.get(dataset_id).ok_or_else(|| {
+        AhlFeedError::Schema(format!("missing prefetched AHL dataset {dataset_id}"))
+    })?;
+    let body = std::str::from_utf8(bytes).map_err(|error| {
+        AhlFeedError::Schema(format!(
+            "{dataset_id} returned non-UTF-8 prefetched bytes: {error}"
+        ))
+    })?;
+    parse_jsonp(body)
+}
+
+fn build_team_roster_stats(
+    team: ProviderTeam,
+    nhl_affiliate: Option<String>,
+    roster_value: Value,
+    skater_value: Value,
+    goalie_value: Value,
+) -> Result<AhlTeamRosterStats, AhlFeedError> {
+    let players = roster_rows(&roster_value)?
+        .into_iter()
+        .map(|(group, row)| parse_roster_player(group, row))
+        .collect::<Result<Vec<_>, _>>()?;
+    let (mut roster, mut source_warnings) = deduplicate_roster_players(players, &team.team_code)?;
+    let (skater_rows, skater_warnings) =
+        team_report_rows(&skater_value, &team.team_code, "skater", true)?;
+    let mut skaters = skater_rows
+        .into_iter()
+        .map(|row| parse_skater(row, &team.team_code))
+        .collect::<Result<Vec<_>, _>>()?;
+    source_warnings.extend(skater_warnings);
+    let (goalie_rows, goalie_warnings) =
+        team_report_rows(&goalie_value, &team.team_code, "goalie", false)?;
+    let mut goalies = goalie_rows
+        .into_iter()
+        .map(|row| parse_goalie(row, &team.team_code))
+        .collect::<Result<Vec<_>, _>>()?;
+    source_warnings.extend(goalie_warnings);
+    roster.sort_by(|a, b| {
+        a.position_group
+            .cmp(&b.position_group)
+            .then(a.name.cmp(&b.name))
+            .then(a.provider_player_id.cmp(&b.provider_player_id))
+    });
+    skaters.sort_by(|a, b| {
+        a.name
+            .cmp(&b.name)
+            .then(a.provider_player_id.cmp(&b.provider_player_id))
+    });
+    goalies.sort_by(|a, b| {
+        a.name
+            .cmp(&b.name)
+            .then(a.provider_player_id.cmp(&b.provider_player_id))
+    });
+    Ok(AhlTeamRosterStats {
+        provider: AHL_PROVIDER.to_owned(),
+        provider_team_id: team.id,
+        team_code: team.team_code,
+        nhl_affiliate,
+        team_name: team.name,
+        nickname: team.nickname,
+        division_id: team.division_id,
+        logo_url: team.logo,
+        roster,
+        skaters,
+        goalies,
+        source_warnings,
+    })
 }
 
 impl AhlRosterStatsSnapshot {
