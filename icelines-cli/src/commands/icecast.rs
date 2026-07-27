@@ -32,22 +32,23 @@ use icelines_core::{
     OrganizationUnitKind, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
     ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView,
     ProspectGoalieDevelopmentStudyConfig, ProspectGoalieDevelopmentStudyView,
-    ProspectProgramBoardConfig, ProspectProgramBoardView, ProspectProgramSensitivityView,
-    ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
-    TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
-    TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
-    TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
-    TeamGameForecastView, TeamGameOpeningPlayerRow, TeamGameOpeningRosterAuthorityRow,
-    TeamGameOpeningStrengthRow, TeamLineupProjectionView, TeamSeasonAutoPersonnelConfig,
-    TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
-    TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
-    TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig, TeamSeasonStretchKind,
-    TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus, TrainingCampCompetitionPoolStatus,
-    TrainingCampConfig, TrainingCampExposureBoardView, TrainingCampExposureLane,
-    TrainingCampForecastView, TrainingCampLeagueForecastView, TrainingCampLeagueSimulationInput,
-    TrainingCampLeagueTeamInput, TrainingCampPlayerInput, TrainingCampSalaryCapStatus,
-    TrainingCampSimulationInput, TrainingCampTransactionAuthorityStatus,
-    TrainingCampTransactionContextInput, ViewContext, ViewWindow, CURRENT_SEASON,
+    ProspectNhlGamesAuthority, ProspectProgramBoardConfig, ProspectProgramBoardView,
+    ProspectProgramSensitivityView, ScenarioScopeView, SeasonSimulationCardInput,
+    TeamBehaviorResearchInput, TeamDecisionProfile, TeamForecastGameInput, TeamForecastParameters,
+    TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig,
+    TeamForecastStrengthInput, TeamGameForecastCalibrationObservation, TeamGameForecastRow,
+    TeamGameForecastValidationInput, TeamGameForecastView, TeamGameOpeningPlayerRow,
+    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamLineupProjectionView,
+    TeamSeasonAutoPersonnelConfig, TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView,
+    TeamSeasonForecastView, TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig,
+    TeamSeasonScenario, TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig,
+    TeamSeasonStretchKind, TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus,
+    TrainingCampCompetitionPoolStatus, TrainingCampConfig, TrainingCampExposureBoardView,
+    TrainingCampExposureLane, TrainingCampForecastView, TrainingCampLeagueForecastView,
+    TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
+    TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
+    TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
+    ViewWindow, CURRENT_SEASON,
 };
 use icelines_fetch::{
     ahl::{
@@ -4587,7 +4588,8 @@ fn load_prospect_program_inputs(
         // both adapters cover the same player. Official career history still
         // enriches the retained study's NHL workload so graduation policy is
         // applied to facts rather than an AHL adapter's neutral zero.
-        for career_study in discovery.studies {
+        for mut career_study in discovery.studies {
+            career_study.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
             if supplied_player_ids.insert(career_study.player_id) {
                 studies.push(career_study);
             } else if let Some(study) = studies
@@ -4595,15 +4597,18 @@ fn load_prospect_program_inputs(
                 .find(|study| study.player_id == career_study.player_id)
             {
                 study.nhl_games_played = study.nhl_games_played.max(career_study.nhl_games_played);
+                study.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
             } else if let Some(goalie) = goalie_studies
                 .iter_mut()
                 .find(|study| study.player_id == career_study.player_id)
             {
                 goalie.nhl_games_played =
                     goalie.nhl_games_played.max(career_study.nhl_games_played);
+                goalie.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
             }
         }
-        for career_study in discovery.goalie_studies {
+        for mut career_study in discovery.goalie_studies {
+            career_study.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
             if supplied_player_ids.insert(career_study.player_id) {
                 goalie_studies.push(career_study);
             } else if let Some(goalie) = goalie_studies
@@ -4612,11 +4617,31 @@ fn load_prospect_program_inputs(
             {
                 goalie.nhl_games_played =
                     goalie.nhl_games_played.max(career_study.nhl_games_played);
+                goalie.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
             } else if let Some(study) = studies
                 .iter_mut()
                 .find(|study| study.player_id == career_study.player_id)
             {
                 study.nhl_games_played = study.nhl_games_played.max(career_study.nhl_games_played);
+                study.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
+            }
+        }
+        for exclusion in discovery.excluded {
+            let Some(nhl_games_played) = exclusion.nhl_games_played else {
+                continue;
+            };
+            if let Some(study) = studies
+                .iter_mut()
+                .find(|study| study.player_id == exclusion.player_id)
+            {
+                study.nhl_games_played = study.nhl_games_played.max(nhl_games_played);
+                study.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
+            } else if let Some(goalie) = goalie_studies
+                .iter_mut()
+                .find(|study| study.player_id == exclusion.player_id)
+            {
+                goalie.nhl_games_played = goalie.nhl_games_played.max(nhl_games_played);
+                goalie.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
             }
         }
     }
@@ -5175,7 +5200,7 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
     let _ = writeln!(out, "THE SYSTEM — PROSPECT PROGRAMS");
     let _ = writeln!(
         out,
-        "{} scope ({}) · season {} · {} organizations · {} ranked / {} supplied studies · {} graduates above {} NHL GP",
+        "{} scope ({}) · season {} · {} organizations · {} ranked / {} supplied studies · {} graduates above {} NHL GP · {} unknown NHL GP",
         view.scope,
         view.source_leagues.join(", "),
         view.as_of_season,
@@ -5183,7 +5208,8 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
         view.ranked_studies,
         view.studies,
         view.graduated_studies,
-        view.maximum_nhl_games_played
+        view.maximum_nhl_games_played,
+        view.unknown_nhl_games_studies
     );
     for (heading, rank_of, score_of, rank_delta_of, score_delta_of) in [
         (
@@ -5231,7 +5257,7 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
                 .join(", ");
             let _ = writeln!(
                 out,
-                "{}. {} · {:.2} · rank Δ {} · score Δ {} · {} ranked / {} supplied · {} graduates · confidence {:.1}\n   {}",
+                "{}. {} · {:.2} · rank Δ {} · score Δ {} · {} ranked / {} supplied · {} graduates · {} NHL-GP unknown · confidence {:.1}\n   {}",
                 rank_of(row),
                 row.organization,
                 score_of(row),
@@ -5240,6 +5266,7 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
                 row.prospect_count,
                 row.supplied_study_count,
                 row.graduated_count,
+                row.unknown_nhl_games_count,
                 row.components.confidence,
                 leaders
             );
@@ -5295,12 +5322,13 @@ fn render_prospect_program_sensitivity(view: &ProspectProgramSensitivityView) ->
             .iter()
             .map(|point| {
                 format!(
-                    "{} GP: #{} / {:.2} ({} ranked, {} graduated)",
+                    "{} GP: #{} / {:.2} ({} ranked, {} graduated, {} NHL-GP unknown)",
                     point.maximum_nhl_games_played,
                     point.pipeline_rank,
                     point.pipeline_score,
                     point.ranked_studies,
-                    point.graduated_studies
+                    point.graduated_studies,
+                    point.unknown_nhl_games_studies
                 )
             })
             .collect::<Vec<_>>()

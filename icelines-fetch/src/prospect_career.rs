@@ -14,8 +14,9 @@ use icelines_core::{
     ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
     ProspectDevelopmentStudyView, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentSeasonInput,
     ProspectGoalieDevelopmentStudyConfig, ProspectGoalieDevelopmentStudyInput,
-    ProspectGoalieDevelopmentStudyView, ProspectOpportunityStatus, ProspectStudyEvidenceInput,
-    TrainingCampLeagueForecastView, TrainingCampPlayerView, TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA,
+    ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectOpportunityStatus,
+    ProspectStudyEvidenceInput, TrainingCampLeagueForecastView, TrainingCampPlayerView,
+    TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 
@@ -215,6 +216,8 @@ pub enum ProspectCareerExclusionReason {
 pub struct ProspectCareerExclusionView {
     pub player_id: u32,
     pub player: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nhl_games_played: Option<u32>,
     pub reason: ProspectCareerExclusionReason,
     pub detail: String,
 }
@@ -281,11 +284,20 @@ pub fn build_prospect_career_discovery(
             excluded.push(exclusion(
                 player.player_id,
                 player.player,
+                None,
                 ProspectCareerExclusionReason::MissingCareerHistory,
                 "No cached official NHL landing career history was supplied",
             ));
             continue;
         };
+        let nhl_games_played = history
+            .stints
+            .iter()
+            .filter(|stint| {
+                stint.game_type == CareerGameType::Regular
+                    && stint.league.as_str().eq_ignore_ascii_case("NHL")
+            })
+            .fold(0_u32, |total, stint| total.saturating_add(stint.gp));
         let mut evidence = player.evidence;
         evidence.push(ProspectStudyEvidenceInput {
             label: "Official NHL player landing career totals".to_owned(),
@@ -302,44 +314,48 @@ pub fn build_prospect_career_discovery(
                 excluded.push(exclusion(
                     player.player_id,
                     player.player,
+                    Some(nhl_games_played),
                     ProspectCareerExclusionReason::MissingGoalieRateStats,
                     "Fewer than two eligible seasons supplied both save percentage and goals-against average",
                 ));
                 continue;
             }
-            goalie_studies.push(build_prospect_goalie_development_study(
+            let mut study = build_prospect_goalie_development_study(
                 ProspectGoalieDevelopmentStudyInput {
                     player_id: player.player_id,
                     player: player.player,
                     organization: player.organization,
                     age: player.age,
-                    nhl_games_played: player.nhl_games_played,
+                    nhl_games_played,
                     seasons,
                     opportunity: player.opportunity,
                     availability: player.availability,
                     evidence,
                 },
                 goalie_config,
-            )?);
+            )?;
+            study.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
+            goalie_studies.push(study);
         } else {
             let seasons = skater_seasons(history);
             if seasons.len() < 2 {
                 excluded.push(exclusion(
                     player.player_id,
                     player.player,
+                    Some(nhl_games_played),
                     ProspectCareerExclusionReason::FewerThanTwoEligibleSeasons,
                     "Fewer than two recognized CHL, NCAA, junior, or European-pro regular seasons had skater totals",
                 ));
                 continue;
             }
-            studies.push(build_prospect_development_study(
+            let mut study = build_prospect_development_study(
                 ProspectDevelopmentStudyInput {
                     player_id: player.player_id,
                     player: player.player,
                     organization: player.organization,
                     position: player.position,
                     age: player.age,
-                    nhl_games_played: player.nhl_games_played,
+                    nhl_games_played,
                     seasons,
                     opportunity: player.opportunity,
                     availability: player.availability,
@@ -348,7 +364,9 @@ pub fn build_prospect_career_discovery(
                     evidence,
                 },
                 skater_config,
-            )?);
+            )?;
+            study.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
+            studies.push(study);
         }
     }
     studies.sort_by_key(|row| row.player_id);
@@ -468,12 +486,14 @@ fn goalie_seasons(history: &CareerHistory) -> Vec<ProspectGoalieDevelopmentSeaso
 fn exclusion(
     player_id: u32,
     player: String,
+    nhl_games_played: Option<u32>,
     reason: ProspectCareerExclusionReason,
     detail: &str,
 ) -> ProspectCareerExclusionView {
     ProspectCareerExclusionView {
         player_id,
         player,
+        nhl_games_played,
         reason,
         detail: detail.to_owned(),
     }
@@ -649,6 +669,11 @@ mod tests {
         )
         .unwrap();
         assert_eq!(view.studies.len(), 1);
+        assert_eq!(view.studies[0].nhl_games_played, 5);
+        assert_eq!(
+            view.studies[0].nhl_games_authority,
+            ProspectNhlGamesAuthority::Observed
+        );
         assert_eq!(view.studies[0].trajectory, ProspectTrajectory::Rising);
         assert_eq!(view.studies[0].seasons.len(), 2);
         assert_eq!(
@@ -751,6 +776,7 @@ mod tests {
             view.excluded[0].reason,
             ProspectCareerExclusionReason::MissingCareerHistory
         );
+        assert_eq!(view.excluded[0].nhl_games_played, None);
     }
 
     #[test]
@@ -777,6 +803,7 @@ mod tests {
             view.excluded[0].reason,
             ProspectCareerExclusionReason::MissingGoalieRateStats
         );
+        assert!(view.excluded[0].nhl_games_played.is_some());
     }
 
     #[test]

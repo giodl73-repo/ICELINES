@@ -26,6 +26,14 @@ pub enum ProspectAvailabilityStatus {
     Unknown,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectNhlGamesAuthority {
+    Observed,
+    #[default]
+    Unknown,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProspectTrajectory {
@@ -181,6 +189,8 @@ pub struct ProspectDevelopmentStudyView {
     pub position: String,
     pub age: u8,
     pub nhl_games_played: u32,
+    #[serde(default)]
+    pub nhl_games_authority: ProspectNhlGamesAuthority,
     pub seasons: Vec<ProspectDevelopmentSeasonView>,
     pub trajectory: ProspectTrajectory,
     pub workload_confidence: f64,
@@ -255,6 +265,8 @@ pub struct ProspectGoalieDevelopmentStudyView {
     pub position: String,
     pub age: u8,
     pub nhl_games_played: u32,
+    #[serde(default)]
+    pub nhl_games_authority: ProspectNhlGamesAuthority,
     pub seasons: Vec<ProspectGoalieDevelopmentSeasonView>,
     pub trajectory: ProspectTrajectory,
     pub workload_confidence: f64,
@@ -409,6 +421,11 @@ pub fn build_prospect_goalie_development_study(
         position: "G".to_owned(),
         age: input.age,
         nhl_games_played: input.nhl_games_played,
+        nhl_games_authority: if input.nhl_games_played > 0 {
+            ProspectNhlGamesAuthority::Observed
+        } else {
+            ProspectNhlGamesAuthority::Unknown
+        },
         seasons,
         trajectory,
         workload_confidence,
@@ -550,6 +567,8 @@ pub struct ProspectProgramOrganizationView {
     /// All supplied studies before the graduation boundary is applied.
     pub supplied_study_count: usize,
     pub graduated_count: usize,
+    #[serde(default)]
+    pub unknown_nhl_games_count: usize,
     pub positions: ProspectProgramPositionCountsView,
     pub components: ProspectProgramComponentsView,
     pub pool_score: f64,
@@ -579,6 +598,8 @@ pub struct ProspectProgramBoardView {
     pub studies: usize,
     pub ranked_studies: usize,
     pub graduated_studies: usize,
+    #[serde(default)]
+    pub unknown_nhl_games_studies: usize,
     pub maximum_nhl_games_played: u32,
     /// Sorted by `pipeline_rank`; consumers may independently sort on either
     /// other frozen rank without recomputing scores.
@@ -595,6 +616,8 @@ pub struct ProspectProgramSensitivityPointView {
     pub development_rank: usize,
     pub ranked_studies: usize,
     pub graduated_studies: usize,
+    #[serde(default)]
+    pub unknown_nhl_games_studies: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -681,6 +704,7 @@ pub fn build_prospect_program_sensitivity_with_goalies(
                 development_rank: program.development_rank,
                 ranked_studies: program.prospect_count,
                 graduated_studies: program.graduated_count,
+                unknown_nhl_games_studies: program.unknown_nhl_games_count,
             });
         }
         let best_pipeline_rank = points
@@ -767,6 +791,7 @@ pub fn build_prospect_program_board_with_goalies(
             position: goalie.position,
             age: goalie.age,
             nhl_games_played: goalie.nhl_games_played,
+            nhl_games_authority: goalie.nhl_games_authority,
             seasons: goalie
                 .seasons
                 .into_iter()
@@ -831,10 +856,17 @@ pub fn build_prospect_program_board(
             || board.maximum_nhl_games_played != config.maximum_nhl_games_played
             || board.organizations != board.programs.len()
             || board.studies != board.ranked_studies + board.graduated_studies
+            || board.unknown_nhl_games_studies
+                != board
+                    .programs
+                    .iter()
+                    .map(|row| row.unknown_nhl_games_count)
+                    .sum::<usize>()
             || board.programs.iter().any(|row| {
                 row.organization.trim().is_empty()
                     || row.supplied_study_count != row.prospect_count + row.graduated_count
                     || row.graduated_count != row.graduates.len()
+                    || row.unknown_nhl_games_count > row.prospect_count
                     || !organizations.insert(row.organization.as_str())
                     || row.pool_rank == 0
                     || row.development_rank == 0
@@ -903,11 +935,17 @@ pub fn build_prospect_program_board(
     for (organization, organization_studies) in by_organization {
         let eligible_studies = organization_studies
             .iter()
-            .filter(|study| study.nhl_games_played <= config.maximum_nhl_games_played)
+            .filter(|study| {
+                study.nhl_games_authority != ProspectNhlGamesAuthority::Observed
+                    || study.nhl_games_played <= config.maximum_nhl_games_played
+            })
             .collect::<Vec<_>>();
         let mut graduates = organization_studies
             .iter()
-            .filter(|study| study.nhl_games_played > config.maximum_nhl_games_played)
+            .filter(|study| {
+                study.nhl_games_authority == ProspectNhlGamesAuthority::Observed
+                    && study.nhl_games_played > config.maximum_nhl_games_played
+            })
             .map(|study| ProspectProgramGraduateView {
                 player_id: study.player_id,
                 player: study.player.clone(),
@@ -922,6 +960,10 @@ pub fn build_prospect_program_board(
                 .then_with(|| left.player.cmp(&right.player))
                 .then_with(|| left.player_id.cmp(&right.player_id))
         });
+        let unknown_nhl_games_count = eligible_studies
+            .iter()
+            .filter(|study| study.nhl_games_authority == ProspectNhlGamesAuthority::Unknown)
+            .count();
         let mut observed = eligible_studies
             .iter()
             .map(|study| {
@@ -1028,6 +1070,7 @@ pub fn build_prospect_program_board(
             prospect_count: eligible_studies.len(),
             supplied_study_count: organization_studies.len(),
             graduated_count: graduates.len(),
+            unknown_nhl_games_count,
             positions,
             components: ProspectProgramComponentsView {
                 elite_signal: round_program_score(elite_signal),
@@ -1110,10 +1153,15 @@ pub fn build_prospect_program_board(
         studies: player_ids.len(),
         ranked_studies: programs.iter().map(|row| row.prospect_count).sum(),
         graduated_studies: programs.iter().map(|row| row.graduated_count).sum(),
+        unknown_nhl_games_studies: programs
+            .iter()
+            .map(|row| row.unknown_nhl_games_count)
+            .sum(),
         maximum_nhl_games_played: config.maximum_nhl_games_played,
         programs,
         disclosures: vec![
             format!("This foundation ranks supplied canonical studies with no more than {} regular-season NHL games. Higher-workload young players remain visible in the graduated lane but do not inflate reserve-system scores; this operational boundary is not NHL rookie eligibility.", config.maximum_nhl_games_played),
+            "Graduation is applied only when NHL games are observed. Unknown workload remains ranked and is counted explicitly; it is not treated as an observed zero.".to_owned(),
             "Pool score combines top-three observed signal, quality depth, and positional balance. Development score workload-weights same-league trajectory, then applies evidence coverage so uncertainty is not treated as failure.".to_owned(),
             "Pipeline score combines Pool, Development, documented readiness, and confidence. Missing depth lowers depth and confidence rather than being silently imputed.".to_owned(),
             "Hidden-value and public-attention scores are excluded because underrecognition is not prospect quality or ceiling.".to_owned(),
@@ -1559,6 +1607,11 @@ pub fn build_prospect_development_study(
         position: input.position,
         age: input.age,
         nhl_games_played: input.nhl_games_played,
+        nhl_games_authority: if input.nhl_games_played > 0 {
+            ProspectNhlGamesAuthority::Observed
+        } else {
+            ProspectNhlGamesAuthority::Unknown
+        },
         seasons,
         trajectory,
         workload_confidence,
@@ -1611,6 +1664,7 @@ mod tests {
         assert_eq!(current.organizations, 2);
         assert_eq!(current.ranked_studies, 2);
         assert_eq!(current.graduated_studies, 0);
+        assert_eq!(current.unknown_nhl_games_studies, 2);
         assert_eq!(current.maximum_nhl_games_played, 50);
         assert_eq!(current.programs[0].organization, "SEA");
         assert_eq!(current.programs[0].pipeline_rank, 1);
@@ -1650,6 +1704,7 @@ mod tests {
         let reserve = program_study(10, "SEA", "C", 18, 0.5);
         let mut graduate = program_study(20, "SEA", "RW", 40, 0.5);
         graduate.nhl_games_played = 51;
+        graduate.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
         let board = build_prospect_program_board(
             vec![reserve, graduate],
             None,
@@ -1663,9 +1718,29 @@ mod tests {
         assert_eq!(program.prospect_count, 1);
         assert_eq!(program.supplied_study_count, 2);
         assert_eq!(program.graduated_count, 1);
+        assert_eq!(program.unknown_nhl_games_count, 1);
         assert_eq!(program.top_prospects[0].player_id, 10);
         assert_eq!(program.graduates[0].player_id, 20);
         assert_eq!(program.graduates[0].nhl_games_played, 51);
+    }
+
+    #[test]
+    fn program_board_does_not_graduate_unknown_nhl_workload() {
+        let mut unknown = program_study(20, "SEA", "RW", 40, 0.5);
+        unknown.nhl_games_played = 200;
+        assert_eq!(
+            unknown.nhl_games_authority,
+            ProspectNhlGamesAuthority::Unknown
+        );
+        let board = build_prospect_program_board(
+            vec![unknown],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(board.ranked_studies, 1);
+        assert_eq!(board.graduated_studies, 0);
+        assert_eq!(board.unknown_nhl_games_studies, 1);
     }
 
     #[test]
@@ -1673,6 +1748,7 @@ mod tests {
         let weak_reserve = program_study(10, "AAA", "C", 8, 0.5);
         let mut strong_graduate = program_study(20, "AAA", "RW", 60, 0.5);
         strong_graduate.nhl_games_played = 51;
+        strong_graduate.nhl_games_authority = ProspectNhlGamesAuthority::Observed;
         let stable_program = program_study(30, "BBB", "D", 24, 0.5);
         let view = build_prospect_program_sensitivity_with_goalies(
             vec![weak_reserve, strong_graduate, stable_program],

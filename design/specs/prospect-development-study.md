@@ -221,23 +221,28 @@ or top-prospect rankings. The board publishes supplied, ranked, and graduated
 counts plus the exact threshold. This is an IceLines population rule, not a
 claim about NHL rookie eligibility. Prior-board deltas require the same
 threshold so population changes cannot masquerade as program improvement.
+Graduation applies only to NHL workload marked `observed`. Missing authority
+remains ranked conservatively and is counted explicitly at board, organization,
+and sensitivity-point levels; an adapter placeholder zero is never treated as
+an observed zero.
 
 `ProspectProgramSensitivityView` rebuilds the identical supplied studies across
 two or more unique graduation thresholds. For each organization it freezes the
 pipeline, pool, and development ranks, pipeline score, ranked count, and
-graduated count at every boundary, plus the best/worst pipeline rank and numeric
-rank/score spans. It deliberately does not label a threshold as correct or
-convert definition sensitivity into performance uncertainty. The default CLI
-comparison uses 25, 50, and 82 NHL games; callers may supply other boundaries.
+graduated count, and unknown-workload count at every boundary, plus the
+best/worst pipeline rank and numeric rank/score spans. It deliberately does not
+label a threshold as correct or convert definition sensitivity into performance
+uncertainty. The default CLI comparison uses 25, 50, and 82 NHL games; callers
+may supply other boundaries.
 
 On the July 2026 all-organization proof, Seattle ranked first at all three
-default boundaries; its score ranged only from 56.14 to 57.05. The Rangers
-retained the same 15 ranked studies and a 45.65 score at every boundary, while
-their relative rank moved from 11th to 12th to 16th as other organizations
-admitted more experienced players. San Jose was the most definition-sensitive
-organization in that run, spanning ranks 15–27 and 34.16–45.86. This distinction
-between stable team evidence and changing relative rank is why the artifact
-publishes both score and rank ranges.
+default boundaries; its score ranged only from 56.04 to 57.05. The Rangers
+ranked 23rd at 25 GP, 11th at 50 GP, and 16th at 82 GP. Their strict-boundary
+graduates were Brett Berard, Scott Morrow, Jaroslav Chmelar, and Brendan
+Brisson. San Jose was the most definition-sensitive organization in that run,
+spanning ranks 15–28 and scores 32.36–45.86. This distinction between stable
+team evidence and changing relative rank is why the artifact publishes both
+score and rank ranges.
 
 An AHL-only board is `ahl_observed`; recognized career studies change the scope
 to `multi_league_observed` and list the actual source leagues. The program
@@ -264,13 +269,16 @@ produced a 32-organization `multi_league_observed` program board. These counts
 prove adapter coverage for that dated input; they are not a claim that every
 organization's complete reserve list was supplied.
 
-Applying the version 2 default graduation boundary to the same proof retained
-all 467 combined studies for audit, ranked 400 reserve-system studies, and
-placed 67 players above 50 NHL games in the graduated lane. Seattle remained
-first without any graduated player affecting its score. The Rangers retained
-their 45.65 pipeline score and moved from 19th in the unbounded comparison to
-12th in the reserve-only ranking, illustrating why frozen population policy is
-part of the artifact rather than renderer logic.
+The follow-up authority pass fetched official career history for all 383 players
+in the reviewed AHL context with no acquisition skips. It reduced unknown NHL
+workload from 323 combined studies to zero. Career-rate adaptation still
+excluded Danila Klimovich, Bradly Nadeau, Stian Solberg, and Callum Tung for
+insufficient eligible history, but those typed exclusions retain official NHL
+GP so overlapping AHL studies do not lose valid workload authority. At the
+default 50-GP boundary, all 467 studies remained auditable, 391 ranked, and 76
+appeared as graduates. Seattle remained first; the Rangers ranked 11th at
+45.65. Every 25-, 50-, and 82-GP sensitivity point reported zero unknown NHL
+workloads.
 
 ## Guardrails
 
