@@ -56,6 +56,7 @@ icelines icecast prospect-career \
 icelines icecast prospect-program \
   --league-discovery league-discovery.json \
   --career-discovery career-discovery.json \
+  --prior-board prior-season-prospect-programs.json \
   --maximum-nhl-games 50 \
   --json --out prospect-programs.json
 icelines icecast prospect-program-sensitivity \
@@ -212,6 +213,10 @@ opportunity components. It deliberately excludes hidden-value and attention-gap
 scores because underrecognition is not prospect talent or ceiling. Missing
 depth lowers depth and confidence instead of being imputed. The optional prior
 board supplies rank and score deltas only; positive delta means improvement.
+The board publishes `prior_as_of_season`, and comparison fails closed unless
+the prior season is earlier and uses the same scope, source-league set, and NHL
+graduation boundary. This prevents same-season, future, or cross-scope artifacts
+from being presented as year-over-year movement.
 
 Version 2 applies a configurable reserve-system graduation boundary, defaulting
 to 50 regular-season NHL games. Studies above the boundary remain in supplied

@@ -5198,12 +5198,17 @@ fn render_prospect_career(view: &ProspectCareerDiscoveryView) -> String {
 fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "THE SYSTEM — PROSPECT PROGRAMS");
+    let comparison = view
+        .prior_as_of_season
+        .map(|season| format!(" · deltas vs season {season}"))
+        .unwrap_or_default();
     let _ = writeln!(
         out,
-        "{} scope ({}) · season {} · {} organizations · {} ranked / {} supplied studies · {} graduates above {} NHL GP · {} unknown NHL GP",
+        "{} scope ({}) · season {}{} · {} organizations · {} ranked / {} supplied studies · {} graduates above {} NHL GP · {} unknown NHL GP",
         view.scope,
         view.source_leagues.join(", "),
         view.as_of_season,
+        comparison,
         view.organizations,
         view.ranked_studies,
         view.studies,

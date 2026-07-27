@@ -594,6 +594,9 @@ pub struct ProspectProgramBoardView {
     pub scope: String,
     pub source_leagues: Vec<String>,
     pub as_of_season: u32,
+    /// Season of the optional comparison board used to compute deltas.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prior_as_of_season: Option<u32>,
     pub organizations: usize,
     pub studies: usize,
     pub ranked_studies: usize,
@@ -931,6 +934,26 @@ pub fn build_prospect_program_board(
             .push(study);
     }
 
+    let source_leagues = source_leagues.into_iter().collect::<Vec<_>>();
+    let scope = if source_leagues.len() == 1 && source_leagues[0].eq_ignore_ascii_case("AHL") {
+        "ahl_observed"
+    } else {
+        "multi_league_observed"
+    };
+    if let Some(board) = prior {
+        if board.as_of_season == 0 || board.as_of_season >= as_of_season {
+            return Err(
+                "prior prospect program board must precede the current as-of season".to_owned(),
+            );
+        }
+        if board.scope != scope || board.source_leagues != source_leagues {
+            return Err(
+                "prior prospect program board must use the same scope and source leagues"
+                    .to_owned(),
+            );
+        }
+    }
+
     let mut programs = Vec::with_capacity(by_organization.len());
     for (organization, organization_studies) in by_organization {
         let eligible_studies = organization_studies
@@ -1138,17 +1161,12 @@ pub fn build_prospect_program_board(
     }
     programs.sort_by_key(|row| row.pipeline_rank);
 
-    let source_leagues = source_leagues.into_iter().collect::<Vec<_>>();
-    let scope = if source_leagues.len() == 1 && source_leagues[0].eq_ignore_ascii_case("AHL") {
-        "ahl_observed"
-    } else {
-        "multi_league_observed"
-    };
     Ok(ProspectProgramBoardView {
         schema: PROSPECT_PROGRAM_BOARD_SCHEMA.to_owned(),
         scope: scope.to_owned(),
         source_leagues,
         as_of_season,
+        prior_as_of_season: prior.map(|board| board.as_of_season),
         organizations: programs.len(),
         studies: player_ids.len(),
         ranked_studies: programs.iter().map(|row| row.prospect_count).sum(),
@@ -1166,7 +1184,7 @@ pub fn build_prospect_program_board(
             "Pipeline score combines Pool, Development, documented readiness, and confidence. Missing depth lowers depth and confidence rather than being silently imputed.".to_owned(),
             "Hidden-value and public-attention scores are excluded because underrecognition is not prospect quality or ceiling.".to_owned(),
             "Supplied goalie studies use a separate save-percentage, goals-against-average, and workload adapter. Multi-league input does not by itself claim complete organizational coverage; every eligible player must still be supplied through a typed fact adapter.".to_owned(),
-            "Positive rank or score delta means improvement from the optional prior board; organizations absent from that board retain null deltas.".to_owned(),
+            "Positive rank or score delta means improvement from the explicitly dated prior board; comparison requires an earlier season with identical scope, source leagues, and graduation threshold. Organizations absent from that board retain null deltas.".to_owned(),
         ],
     })
 }
@@ -1640,11 +1658,15 @@ mod tests {
 
     #[test]
     fn program_board_ranks_three_views_and_computes_prior_deltas() {
+        let mut prior_sea = program_study(1, "SEA", "RW", 8, 0.2);
+        let mut prior_nyr = program_study(2, "NYR", "D", 24, 0.2);
+        for study in [&mut prior_sea, &mut prior_nyr] {
+            for season in &mut study.seasons {
+                season.season -= 10_001;
+            }
+        }
         let prior = build_prospect_program_board(
-            vec![
-                program_study(1, "SEA", "RW", 8, 0.2),
-                program_study(2, "NYR", "D", 24, 0.2),
-            ],
+            vec![prior_sea, prior_nyr],
             None,
             ProspectProgramBoardConfig::default(),
         )
@@ -1666,6 +1688,7 @@ mod tests {
         assert_eq!(current.graduated_studies, 0);
         assert_eq!(current.unknown_nhl_games_studies, 2);
         assert_eq!(current.maximum_nhl_games_played, 50);
+        assert_eq!(current.prior_as_of_season, Some(20242025));
         assert_eq!(current.programs[0].organization, "SEA");
         assert_eq!(current.programs[0].pipeline_rank, 1);
         assert_eq!(current.programs[0].pipeline_rank_delta, Some(1));
@@ -1675,6 +1698,46 @@ mod tests {
         assert!(current.programs[0].pool_score > current.programs[1].pool_score);
         assert_eq!(current.programs[0].positions.forwards, 1);
         assert_eq!(current.programs[1].positions.defensemen, 1);
+    }
+
+    #[test]
+    fn program_board_rejects_nonhistorical_or_incompatible_prior() {
+        let current_study = program_study(1, "SEA", "RW", 20, 0.2);
+        let same_season = build_prospect_program_board(
+            vec![program_study(1, "SEA", "RW", 8, 0.2)],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let error = build_prospect_program_board(
+            vec![current_study.clone()],
+            Some(&same_season),
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap_err();
+        assert!(error.contains("precede"));
+
+        let mut older_study = program_study(1, "SEA", "RW", 8, 0.2);
+        for season in &mut older_study.seasons {
+            season.season -= 10_001;
+        }
+        let older = build_prospect_program_board(
+            vec![older_study],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let mut incompatible = current_study;
+        for season in &mut incompatible.seasons {
+            season.league = "OHL".to_owned();
+        }
+        let error = build_prospect_program_board(
+            vec![incompatible],
+            Some(&older),
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap_err();
+        assert!(error.contains("same scope and source leagues"));
     }
 
     #[test]
