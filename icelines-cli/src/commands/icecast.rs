@@ -6,10 +6,11 @@ use std::path::{Path, PathBuf};
 use anyhow::{bail, Context};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
 use icelines_core::{
-    apply_team_behavior_research, build_adaptive_lineup_policy, build_ahl_affiliate_projection,
-    build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
-    build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
-    build_line_combination_forecast, build_organization_lineup_forecast,
+    adapt_prospect_conversion_input, apply_team_behavior_research, build_adaptive_lineup_policy,
+    build_ahl_affiliate_projection, build_development_calibration, build_forecast_history_card,
+    build_forecast_movement_card, build_isolated_scenario_impact,
+    build_isolated_scenario_impact_as_of, build_line_combination_forecast,
+    build_organization_lineup_forecast, build_prospect_conversion_board,
     build_prospect_development_study, build_prospect_discovery_board,
     build_prospect_program_board_with_goalies, build_prospect_program_history,
     build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
@@ -30,12 +31,13 @@ use icelines_core::{
     ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
     LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow, OrganizationLevel,
     OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
-    OrganizationUnitKind, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
-    ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView,
-    ProspectGoalieDevelopmentStudyConfig, ProspectGoalieDevelopmentStudyView,
-    ProspectNhlGamesAuthority, ProspectProgramBoardConfig, ProspectProgramBoardView,
-    ProspectProgramHistoryView, ProspectProgramSensitivityView, ScenarioScopeView,
-    SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
+    OrganizationUnitKind, ProspectConversionBoardView, ProspectConversionConfig,
+    ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
+    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow,
+    ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
+    ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
+    ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramSensitivityView,
+    ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
     TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
     TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
     TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
@@ -50,6 +52,7 @@ use icelines_core::{
     TrainingCampLeagueTeamInput, TrainingCampPlayerInput, TrainingCampSalaryCapStatus,
     TrainingCampSimulationInput, TrainingCampTransactionAuthorityStatus,
     TrainingCampTransactionContextInput, ViewContext, ViewWindow, CURRENT_SEASON,
+    PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };
 use icelines_fetch::{
     ahl::{
@@ -4564,6 +4567,69 @@ pub fn run_prospect_program_history(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn run_prospect_conversion(
+    league_discovery_paths: Vec<PathBuf>,
+    career_discovery_paths: Vec<PathBuf>,
+    study_paths: Vec<PathBuf>,
+    career_history_path: PathBuf,
+    baseline_season: u32,
+    through_season: u32,
+    performance_path: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let (studies, goalie_studies) =
+        load_prospect_program_inputs(league_discovery_paths, career_discovery_paths, study_paths)?;
+    let store = CareerHistoryStore::load(&career_history_path).with_context(|| {
+        format!(
+            "loading prospect conversion career cache {}",
+            career_history_path.display()
+        )
+    })?;
+    let histories = store.histories.into_values().collect::<Vec<_>>();
+    let performance = performance_path
+        .as_deref()
+        .map(|path| {
+            read_icecast_json::<ProspectConversionPerformanceDocument>(
+                path,
+                "prospect conversion performance",
+            )
+        })
+        .transpose()?;
+    if performance
+        .as_ref()
+        .is_some_and(|document| document.schema != PROSPECT_CONVERSION_PERFORMANCE_SCHEMA)
+    {
+        bail!("invalid prospect conversion performance schema");
+    }
+    let performance_scores = performance
+        .as_ref()
+        .map_or(&[][..], |document| document.scores.as_slice());
+    let input = adapt_prospect_conversion_input(
+        &studies,
+        &goalie_studies,
+        &histories,
+        baseline_season,
+        through_season,
+        performance_scores,
+        ProspectConversionConfig::default(),
+    )
+    .map_err(anyhow::Error::msg)?;
+    let view = build_prospect_conversion_board(&input).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_conversion(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect conversion board")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 fn load_prospect_program_inputs(
     league_discovery_paths: Vec<PathBuf>,
     career_discovery_paths: Vec<PathBuf>,
@@ -5464,6 +5530,71 @@ fn render_prospect_program_history(view: &ProspectProgramHistoryView) -> String 
             program.pipeline_score_change,
             points
         );
+    }
+    let _ = writeln!(out, "\nDISCLOSURES");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
+    }
+    out
+}
+
+fn render_prospect_conversion(view: &ProspectConversionBoardView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "THE FACTORY — PROSPECT CONVERSION");
+    let _ = writeln!(
+        out,
+        "{} players · {} organizations · {} ranked · baselines {} → outcomes {}",
+        view.players,
+        view.organizations,
+        view.ranked_organizations,
+        view.baseline_seasons
+            .iter()
+            .map(u32::to_string)
+            .collect::<Vec<_>>()
+            .join(", "),
+        view.through_season
+    );
+    let _ = writeln!(
+        out,
+        "baseline {} · method {}",
+        view.baseline_basis, view.methodology.method
+    );
+    for program in &view.programs {
+        let rank = program
+            .conversion_rank
+            .map(|rank| format!("#{rank}"))
+            .unwrap_or_else(|| "NR".to_owned());
+        let leaders = program
+            .player_results
+            .iter()
+            .take(3)
+            .map(|player| {
+                format!(
+                    "{} {:.1} realized / {:+.1} delta",
+                    player.player, player.realized_value_score, player.conversion_delta
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" · ");
+        let _ = writeln!(
+            out,
+            "{} {} · efficiency {:.1} · realized {:.1} vs baseline {:.1} ({:+.1}) · {} established / {} players · coverage {:.0}%",
+            rank,
+            program.organization,
+            program.efficiency_index,
+            program.realized_value_score,
+            program.baseline_signal_score,
+            program.conversion_delta,
+            program.established_players,
+            program.players,
+            program.outcome_coverage * 100.0
+        );
+        if !leaders.is_empty() {
+            let _ = writeln!(out, "   {leaders}");
+        }
+        for blocker in &program.rank_blockers {
+            let _ = writeln!(out, "   no-rank: {blocker:?}");
+        }
     }
     let _ = writeln!(out, "\nDISCLOSURES");
     for disclosure in &view.disclosures {

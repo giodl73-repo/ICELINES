@@ -18,6 +18,7 @@ use super::prospect_study::{
 
 pub const PROSPECT_CONVERSION_INPUT_SCHEMA: &str = "prospect_conversion_input.v1";
 pub const PROSPECT_CONVERSION_BOARD_SCHEMA: &str = "prospect_conversion_board.v1";
+pub const PROSPECT_CONVERSION_PERFORMANCE_SCHEMA: &str = "prospect_conversion_performance.v1";
 pub const PROSPECT_CONVERSION_METHOD: &str = "prospect_conversion_observed.v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -56,6 +57,12 @@ pub struct ProspectConversionPerformanceInput {
     pub player_id: u32,
     pub score: f64,
     pub basis: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectConversionPerformanceDocument {
+    pub schema: String,
+    pub scores: Vec<ProspectConversionPerformanceInput>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

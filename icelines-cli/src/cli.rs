@@ -1925,6 +1925,35 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Measure frozen prospect cohorts against later official NHL outcomes.
+    #[command(name = "prospect-conversion")]
+    ProspectConversion {
+        /// Repeat for each frozen `prospect_league_discovery.v1` artifact.
+        #[arg(long = "league-discovery", value_name = "PATH")]
+        league_discoveries: Vec<PathBuf>,
+        /// Repeat for each frozen `prospect_career_discovery.v1` artifact.
+        #[arg(long = "career-discovery", value_name = "PATH")]
+        career_discoveries: Vec<PathBuf>,
+        /// Add a frozen canonical `prospect_development_study.v1` artifact.
+        #[arg(long = "study", value_name = "PATH")]
+        studies: Vec<PathBuf>,
+        /// Cached official NHL player landing career histories.
+        #[arg(long = "career-history", value_name = "PATH")]
+        career_history: PathBuf,
+        /// Season represented by the frozen study cohort.
+        #[arg(long = "baseline-season")]
+        baseline_season: u32,
+        /// Last NHL season included in realized outcomes.
+        #[arg(long = "through-season")]
+        through_season: u32,
+        /// Optional `prospect_conversion_performance.v1` canonical NHL scores.
+        #[arg(long, value_name = "PATH")]
+        performance: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Rank validated prospect studies into Hidden Gems, Buyer Beware, and Watch.
     #[command(name = "prospect-board")]
     ProspectBoard {
@@ -3849,6 +3878,50 @@ mod tui_surface_tests {
                     out: Some(out),
                 }) if boards == vec![PathBuf::from("2024.json"), PathBuf::from("2025.json")]
                     && out == PathBuf::from("history.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_conversion_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-conversion",
+                "--league-discovery",
+                "frozen-league.json",
+                "--career-history",
+                "career_history.json",
+                "--baseline-season",
+                "20222023",
+                "--through-season",
+                "20252026",
+                "--performance",
+                "performance.json",
+                "--json",
+                "--out",
+                "conversion.json",
+            ])
+            .expect("IceCast prospect conversion command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectConversion {
+                    league_discoveries,
+                    career_discoveries,
+                    studies,
+                    career_history,
+                    baseline_season: 20222023,
+                    through_season: 20252026,
+                    performance: Some(performance),
+                    json: true,
+                    out: Some(out),
+                }) if league_discoveries == vec![PathBuf::from("frozen-league.json")]
+                    && career_discoveries.is_empty()
+                    && studies.is_empty()
+                    && career_history == PathBuf::from("career_history.json")
+                    && performance == PathBuf::from("performance.json")
+                    && out == PathBuf::from("conversion.json")
             ));
         });
     }

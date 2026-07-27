@@ -6,7 +6,7 @@
 `prospect_goalie_development_study.v1`, `prospect_career_discovery.v1`,
 `prospect_program_board.v2`, `prospect_program_sensitivity.v1`,
 `prospect_program_history.v1`, `prospect_conversion_input.v1`,
-`prospect_conversion_board.v1`
+`prospect_conversion_performance.v1`, `prospect_conversion_board.v1`
 
 ## Purpose
 
@@ -278,6 +278,14 @@ baseline evidence, and totals only official regular-season NHL stints after the
 baseline season through the declared outcome season. Missing career history or
 TOI fails adaptation instead of becoming a zero-value outcome. Optional player
 performance must arrive as an explicit 0..100 score with its named basis.
+
+The application surface is `icelines icecast prospect-conversion`. It accepts
+the same repeatable frozen league-discovery, career-discovery, and study inputs
+as the program board, plus `--career-history`, `--baseline-season`, and
+`--through-season`. An optional `--performance` document must use
+`prospect_conversion_performance.v1`. Without sufficient performance coverage,
+the command still emits the complete board and typed rank blockers but does not
+manufacture organization ranks.
 
 Each player retains baseline season and confidence, outcome season, arrival,
 role, performance, realized value, conversion delta, efficiency index,

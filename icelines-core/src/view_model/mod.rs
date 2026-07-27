@@ -304,9 +304,11 @@ pub use prospect_conversion::{
     adapt_prospect_conversion_input, build_prospect_conversion_board,
     ProspectConversionBaselineInput, ProspectConversionBoardView, ProspectConversionConfig,
     ProspectConversionDisposition, ProspectConversionInput, ProspectConversionMethodologyView,
-    ProspectConversionOrganizationView, ProspectConversionPerformanceInput,
-    ProspectConversionPlayerView, ProspectConversionRankBlocker, ProspectNhlOutcomeInput,
-    PROSPECT_CONVERSION_BOARD_SCHEMA, PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
+    ProspectConversionOrganizationView, ProspectConversionPerformanceDocument,
+    ProspectConversionPerformanceInput, ProspectConversionPlayerView,
+    ProspectConversionRankBlocker, ProspectNhlOutcomeInput, PROSPECT_CONVERSION_BOARD_SCHEMA,
+    PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
+    PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };
 pub use prospect_study::{
     build_prospect_development_study, build_prospect_discovery_board,
