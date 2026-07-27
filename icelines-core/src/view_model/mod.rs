@@ -311,10 +311,11 @@ pub use prospect_study::{
     ProspectGoalieDevelopmentStudyInput, ProspectGoalieDevelopmentStudyView,
     ProspectHiddenValueClass, ProspectMarketPosition, ProspectOpportunityStatus,
     ProspectProgramBoardConfig, ProspectProgramBoardView, ProspectProgramComponentsView,
-    ProspectProgramOrganizationView, ProspectProgramPositionCountsView,
-    ProspectProgramTopProspectView, ProspectSignalComponentView, ProspectStudyEvidenceInput,
-    ProspectTrajectory, PROSPECT_DEVELOPMENT_STUDY_SCHEMA, PROSPECT_DISCOVERY_BOARD_SCHEMA,
-    PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA, PROSPECT_PROGRAM_BOARD_SCHEMA,
+    ProspectProgramGraduateView, ProspectProgramOrganizationView,
+    ProspectProgramPositionCountsView, ProspectProgramTopProspectView, ProspectSignalComponentView,
+    ProspectStudyEvidenceInput, ProspectTrajectory, PROSPECT_DEVELOPMENT_STUDY_SCHEMA,
+    PROSPECT_DISCOVERY_BOARD_SCHEMA, PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA,
+    PROSPECT_PROGRAM_BOARD_SCHEMA,
 };
 pub use records::{
     FightRecordInput, PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView,

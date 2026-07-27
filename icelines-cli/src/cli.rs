@@ -1885,9 +1885,13 @@ pub enum IceCastSubcommand {
         /// Add a canonical `prospect_development_study.v1` from another adapter.
         #[arg(long = "study", value_name = "PATH")]
         studies: Vec<PathBuf>,
-        /// Optional prior `prospect_program_board.v1` used only for rank deltas.
+        /// Optional prior `prospect_program_board.v2` used only for rank deltas.
         #[arg(long, value_name = "PATH")]
         prior_board: Option<PathBuf>,
+        /// Maximum regular-season NHL GP retained in reserve-system scoring.
+        /// Higher-GP players remain visible as graduates.
+        #[arg(long, default_value_t = 50)]
+        maximum_nhl_games: u32,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -3745,6 +3749,7 @@ mod tui_surface_tests {
                     career_discoveries,
                     studies,
                     prior_board: Some(prior),
+                    maximum_nhl_games: 50,
                     json: true,
                     out: Some(out),
                 }) if league_discoveries == vec![PathBuf::from("league-discovery.json")]

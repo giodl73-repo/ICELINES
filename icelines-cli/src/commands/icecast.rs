@@ -4471,6 +4471,7 @@ pub fn run_prospect_program(
     career_discovery_paths: Vec<PathBuf>,
     study_paths: Vec<PathBuf>,
     prior_board_path: Option<PathBuf>,
+    maximum_nhl_games: u32,
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
@@ -4510,20 +4511,42 @@ pub fn run_prospect_program(
                 path.display()
             );
         }
-        // Reviewed AHL snapshots remain authoritative when both adapters cover
-        // the same player. Career discovery fills organizations' non-AHL gaps.
-        studies.extend(
-            discovery
-                .studies
-                .into_iter()
-                .filter(|study| supplied_player_ids.insert(study.player_id)),
-        );
-        goalie_studies.extend(
-            discovery
-                .goalie_studies
-                .into_iter()
-                .filter(|study| supplied_player_ids.insert(study.player_id)),
-        );
+        // Reviewed AHL snapshots remain authoritative for development when
+        // both adapters cover the same player. Official career history still
+        // enriches the retained study's NHL workload so graduation policy is
+        // applied to facts rather than an AHL adapter's neutral zero.
+        for career_study in discovery.studies {
+            if supplied_player_ids.insert(career_study.player_id) {
+                studies.push(career_study);
+            } else if let Some(study) = studies
+                .iter_mut()
+                .find(|study| study.player_id == career_study.player_id)
+            {
+                study.nhl_games_played = study.nhl_games_played.max(career_study.nhl_games_played);
+            } else if let Some(goalie) = goalie_studies
+                .iter_mut()
+                .find(|study| study.player_id == career_study.player_id)
+            {
+                goalie.nhl_games_played =
+                    goalie.nhl_games_played.max(career_study.nhl_games_played);
+            }
+        }
+        for career_study in discovery.goalie_studies {
+            if supplied_player_ids.insert(career_study.player_id) {
+                goalie_studies.push(career_study);
+            } else if let Some(goalie) = goalie_studies
+                .iter_mut()
+                .find(|study| study.player_id == career_study.player_id)
+            {
+                goalie.nhl_games_played =
+                    goalie.nhl_games_played.max(career_study.nhl_games_played);
+            } else if let Some(study) = studies
+                .iter_mut()
+                .find(|study| study.player_id == career_study.player_id)
+            {
+                study.nhl_games_played = study.nhl_games_played.max(career_study.nhl_games_played);
+            }
+        }
     }
     for path in study_paths {
         studies.push(read_icecast_json(&path, "prospect development study")?);
@@ -4536,7 +4559,10 @@ pub fn run_prospect_program(
         studies,
         goalie_studies,
         prior.as_ref(),
-        ProspectProgramBoardConfig::default(),
+        ProspectProgramBoardConfig {
+            maximum_nhl_games_played: maximum_nhl_games,
+            ..ProspectProgramBoardConfig::default()
+        },
     )
     .map_err(anyhow::Error::msg)?;
     let output = if json {
@@ -5101,12 +5127,15 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
     let _ = writeln!(out, "THE SYSTEM — PROSPECT PROGRAMS");
     let _ = writeln!(
         out,
-        "{} scope ({}) · season {} · {} organizations · {} studies",
+        "{} scope ({}) · season {} · {} organizations · {} ranked / {} supplied studies · {} graduates above {} NHL GP",
         view.scope,
         view.source_leagues.join(", "),
         view.as_of_season,
         view.organizations,
-        view.studies
+        view.ranked_studies,
+        view.studies,
+        view.graduated_studies,
+        view.maximum_nhl_games_played
     );
     for (heading, rank_of, score_of, rank_delta_of, score_delta_of) in [
         (
@@ -5154,15 +5183,40 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
                 .join(", ");
             let _ = writeln!(
                 out,
-                "{}. {} · {:.2} · rank Δ {} · score Δ {} · {} prospects · confidence {:.1}\n   {}",
+                "{}. {} · {:.2} · rank Δ {} · score Δ {} · {} ranked / {} supplied · {} graduates · confidence {:.1}\n   {}",
                 rank_of(row),
                 row.organization,
                 score_of(row),
                 rank_delta,
                 score_delta,
                 row.prospect_count,
+                row.supplied_study_count,
+                row.graduated_count,
                 row.components.confidence,
                 leaders
+            );
+        }
+    }
+    let graduated = view
+        .programs
+        .iter()
+        .flat_map(|program| {
+            program.graduates.iter().map(move |player| {
+                (
+                    program.organization.as_str(),
+                    player.player.as_str(),
+                    player.position.as_str(),
+                    player.nhl_games_played,
+                )
+            })
+        })
+        .collect::<Vec<_>>();
+    if !graduated.is_empty() {
+        let _ = writeln!(out, "\nGRADUATED YOUNG NHL PLAYERS");
+        for (organization, player, position, nhl_games) in graduated {
+            let _ = writeln!(
+                out,
+                "- {organization} · {player} ({position}) · {nhl_games} NHL GP"
             );
         }
     }

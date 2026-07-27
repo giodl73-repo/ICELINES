@@ -4,7 +4,7 @@
 **Schemas:** `prospect_development_study.v1`, `prospect_discovery_board.v1`,
 `prospect_league_context.v1`, `prospect_league_discovery.v1`,
 `prospect_goalie_development_study.v1`, `prospect_career_discovery.v1`,
-`prospect_program_board.v1`
+`prospect_program_board.v2`
 
 ## Purpose
 
@@ -56,6 +56,7 @@ icelines icecast prospect-career \
 icelines icecast prospect-program \
   --league-discovery league-discovery.json \
   --career-discovery career-discovery.json \
+  --maximum-nhl-games 50 \
   --json --out prospect-programs.json
 ```
 
@@ -207,6 +208,15 @@ scores because underrecognition is not prospect talent or ceiling. Missing
 depth lowers depth and confidence instead of being imputed. The optional prior
 board supplies rank and score deltas only; positive delta means improvement.
 
+Version 2 applies a configurable reserve-system graduation boundary, defaulting
+to 50 regular-season NHL games. Studies above the boundary remain in supplied
+coverage and appear in each organization's typed `graduates` lane, but they do
+not contribute to Pool, Development, Pipeline, positional balance, confidence,
+or top-prospect rankings. The board publishes supplied, ranked, and graduated
+counts plus the exact threshold. This is an IceLines population rule, not a
+claim about NHL rookie eligibility. Prior-board deltas require the same
+threshold so population changes cannot masquerade as program improvement.
+
 An AHL-only board is `ahl_observed`; recognized career studies change the scope
 to `multi_league_observed` and list the actual source leagues. The program
 command accepts `prospect_league_discovery.v1` and
@@ -231,6 +241,14 @@ across 15 observed source leagues. Composing those facts with the AHL board
 produced a 32-organization `multi_league_observed` program board. These counts
 prove adapter coverage for that dated input; they are not a claim that every
 organization's complete reserve list was supplied.
+
+Applying the version 2 default graduation boundary to the same proof retained
+all 467 combined studies for audit, ranked 400 reserve-system studies, and
+placed 67 players above 50 NHL games in the graduated lane. Seattle remained
+first without any graduated player affecting its score. The Rangers retained
+their 45.65 pipeline score and moved from 19th in the unbounded comparison to
+12th in the reserve-only ranking, illustrating why frozen population policy is
+part of the artifact rather than renderer logic.
 
 ## Guardrails
 

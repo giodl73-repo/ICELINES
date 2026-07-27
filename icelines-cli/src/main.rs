@@ -2412,6 +2412,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             career_discoveries,
             studies,
             prior_board,
+            maximum_nhl_games,
             json,
             out,
         }) => commands::icecast::run_prospect_program(
@@ -2419,6 +2420,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             career_discoveries,
             studies,
             prior_board,
+            maximum_nhl_games,
             json,
             out,
         )?,

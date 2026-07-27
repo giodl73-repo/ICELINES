@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 pub const PROSPECT_DEVELOPMENT_STUDY_SCHEMA: &str = "prospect_development_study.v1";
 pub const PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA: &str = "prospect_goalie_development_study.v1";
 pub const PROSPECT_DISCOVERY_BOARD_SCHEMA: &str = "prospect_discovery_board.v1";
-pub const PROSPECT_PROGRAM_BOARD_SCHEMA: &str = "prospect_program_board.v1";
+pub const PROSPECT_PROGRAM_BOARD_SCHEMA: &str = "prospect_program_board.v2";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -485,6 +485,9 @@ pub struct ProspectProgramBoardConfig {
     pub readiness_weight: f64,
     pub confidence_weight: f64,
     pub expected_depth: usize,
+    /// Operational graduation boundary for reserve-system ranking. This is a
+    /// transparent IceLines population rule, not NHL rookie eligibility.
+    pub maximum_nhl_games_played: u32,
 }
 
 impl Default for ProspectProgramBoardConfig {
@@ -495,6 +498,7 @@ impl Default for ProspectProgramBoardConfig {
             readiness_weight: 0.15,
             confidence_weight: 0.10,
             expected_depth: 10,
+            maximum_nhl_games_played: 50,
         }
     }
 }
@@ -508,6 +512,15 @@ pub struct ProspectProgramTopProspectView {
     pub trajectory: ProspectTrajectory,
     pub opportunity: ProspectOpportunityStatus,
     pub workload_confidence: f64,
+    pub nhl_games_played: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramGraduateView {
+    pub player_id: u32,
+    pub player: String,
+    pub position: String,
+    pub nhl_games_played: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -531,7 +544,11 @@ pub struct ProspectProgramComponentsView {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectProgramOrganizationView {
     pub organization: String,
+    /// Studies eligible for reserve-system scoring at the board's GP boundary.
     pub prospect_count: usize,
+    /// All supplied studies before the graduation boundary is applied.
+    pub supplied_study_count: usize,
+    pub graduated_count: usize,
     pub positions: ProspectProgramPositionCountsView,
     pub components: ProspectProgramComponentsView,
     pub pool_score: f64,
@@ -548,6 +565,7 @@ pub struct ProspectProgramOrganizationView {
     pub development_score_delta: Option<f64>,
     pub pipeline_score_delta: Option<f64>,
     pub top_prospects: Vec<ProspectProgramTopProspectView>,
+    pub graduates: Vec<ProspectProgramGraduateView>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -558,6 +576,9 @@ pub struct ProspectProgramBoardView {
     pub as_of_season: u32,
     pub organizations: usize,
     pub studies: usize,
+    pub ranked_studies: usize,
+    pub graduated_studies: usize,
+    pub maximum_nhl_games_played: u32,
     /// Sorted by `pipeline_rank`; consumers may independently sort on either
     /// other frozen rank without recomputing scores.
     pub programs: Vec<ProspectProgramOrganizationView>,
@@ -652,9 +673,13 @@ pub fn build_prospect_program_board(
     if let Some(board) = prior {
         let mut organizations = BTreeSet::new();
         if board.schema != PROSPECT_PROGRAM_BOARD_SCHEMA
+            || board.maximum_nhl_games_played != config.maximum_nhl_games_played
             || board.organizations != board.programs.len()
+            || board.studies != board.ranked_studies + board.graduated_studies
             || board.programs.iter().any(|row| {
                 row.organization.trim().is_empty()
+                    || row.supplied_study_count != row.prospect_count + row.graduated_count
+                    || row.graduated_count != row.graduates.len()
                     || !organizations.insert(row.organization.as_str())
                     || row.pool_rank == 0
                     || row.development_rank == 0
@@ -721,7 +746,28 @@ pub fn build_prospect_program_board(
 
     let mut programs = Vec::with_capacity(by_organization.len());
     for (organization, organization_studies) in by_organization {
-        let mut observed = organization_studies
+        let eligible_studies = organization_studies
+            .iter()
+            .filter(|study| study.nhl_games_played <= config.maximum_nhl_games_played)
+            .collect::<Vec<_>>();
+        let mut graduates = organization_studies
+            .iter()
+            .filter(|study| study.nhl_games_played > config.maximum_nhl_games_played)
+            .map(|study| ProspectProgramGraduateView {
+                player_id: study.player_id,
+                player: study.player.clone(),
+                position: study.position.clone(),
+                nhl_games_played: study.nhl_games_played,
+            })
+            .collect::<Vec<_>>();
+        graduates.sort_by(|left, right| {
+            right
+                .nhl_games_played
+                .cmp(&left.nhl_games_played)
+                .then_with(|| left.player.cmp(&right.player))
+                .then_with(|| left.player_id.cmp(&right.player_id))
+        });
+        let mut observed = eligible_studies
             .iter()
             .map(|study| {
                 let production = prospect_component_score(study, "production");
@@ -772,11 +818,15 @@ pub fn build_prospect_program_board(
             .map(|row| row.3 * 100.0)
             .sum::<f64>()
             / 5.0;
-        let confidence_mean = observed
-            .iter()
-            .map(|row| row.0.workload_confidence)
-            .sum::<f64>()
-            / observed.len() as f64;
+        let confidence_mean = if observed.is_empty() {
+            0.0
+        } else {
+            observed
+                .iter()
+                .map(|row| row.0.workload_confidence)
+                .sum::<f64>()
+                / observed.len() as f64
+        };
         let breadth = (observed.len() as f64 / config.expected_depth as f64).min(1.0);
         let confidence = confidence_mean * breadth * 100.0;
 
@@ -786,7 +836,7 @@ pub fn build_prospect_program_board(
             goalies: 0,
             other: 0,
         };
-        for study in &organization_studies {
+        for study in &eligible_studies {
             match prospect_position_group(&study.position) {
                 "F" => positions.forwards += 1,
                 "D" => positions.defensemen += 1,
@@ -815,11 +865,14 @@ pub fn build_prospect_program_board(
                 trajectory: row.0.trajectory,
                 opportunity: row.0.opportunity,
                 workload_confidence: row.0.workload_confidence,
+                nhl_games_played: row.0.nhl_games_played,
             })
             .collect();
         programs.push(ProspectProgramOrganizationView {
             organization,
-            prospect_count: organization_studies.len(),
+            prospect_count: eligible_studies.len(),
+            supplied_study_count: organization_studies.len(),
+            graduated_count: graduates.len(),
             positions,
             components: ProspectProgramComponentsView {
                 elite_signal: round_program_score(elite_signal),
@@ -842,6 +895,7 @@ pub fn build_prospect_program_board(
             development_score_delta: None,
             pipeline_score_delta: None,
             top_prospects,
+            graduates,
         });
     }
 
@@ -899,9 +953,12 @@ pub fn build_prospect_program_board(
         as_of_season,
         organizations: programs.len(),
         studies: player_ids.len(),
+        ranked_studies: programs.iter().map(|row| row.prospect_count).sum(),
+        graduated_studies: programs.iter().map(|row| row.graduated_count).sum(),
+        maximum_nhl_games_played: config.maximum_nhl_games_played,
         programs,
         disclosures: vec![
-            "This foundation ranks only supplied canonical prospect studies. The source_leagues and scope fields state the observed coverage; absent prospects are not silently imputed.".to_owned(),
+            format!("This foundation ranks supplied canonical studies with no more than {} regular-season NHL games. Higher-workload young players remain visible in the graduated lane but do not inflate reserve-system scores; this operational boundary is not NHL rookie eligibility.", config.maximum_nhl_games_played),
             "Pool score combines top-three observed signal, quality depth, and positional balance. Development score workload-weights same-league trajectory, then applies evidence coverage so uncertainty is not treated as failure.".to_owned(),
             "Pipeline score combines Pool, Development, documented readiness, and confidence. Missing depth lowers depth and confidence rather than being silently imputed.".to_owned(),
             "Hidden-value and public-attention scores are excluded because underrecognition is not prospect quality or ceiling.".to_owned(),
@@ -1397,6 +1454,9 @@ mod tests {
         assert_eq!(current.schema, PROSPECT_PROGRAM_BOARD_SCHEMA);
         assert_eq!(current.scope, "ahl_observed");
         assert_eq!(current.organizations, 2);
+        assert_eq!(current.ranked_studies, 2);
+        assert_eq!(current.graduated_studies, 0);
+        assert_eq!(current.maximum_nhl_games_played, 50);
         assert_eq!(current.programs[0].organization, "SEA");
         assert_eq!(current.programs[0].pipeline_rank, 1);
         assert_eq!(current.programs[0].pipeline_rank_delta, Some(1));
@@ -1428,6 +1488,29 @@ mod tests {
         );
         assert_eq!(board.programs[0].organization, "AAA");
         assert!(board.disclosures.iter().any(|row| row.contains("excluded")));
+    }
+
+    #[test]
+    fn program_board_keeps_graduates_visible_but_out_of_reserve_scores() {
+        let reserve = program_study(10, "SEA", "C", 18, 0.5);
+        let mut graduate = program_study(20, "SEA", "RW", 40, 0.5);
+        graduate.nhl_games_played = 51;
+        let board = build_prospect_program_board(
+            vec![reserve, graduate],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let program = &board.programs[0];
+        assert_eq!(board.studies, 2);
+        assert_eq!(board.ranked_studies, 1);
+        assert_eq!(board.graduated_studies, 1);
+        assert_eq!(program.prospect_count, 1);
+        assert_eq!(program.supplied_study_count, 2);
+        assert_eq!(program.graduated_count, 1);
+        assert_eq!(program.top_prospects[0].player_id, 10);
+        assert_eq!(program.graduates[0].player_id, 20);
+        assert_eq!(program.graduates[0].nhl_games_played, 51);
     }
 
     #[test]
