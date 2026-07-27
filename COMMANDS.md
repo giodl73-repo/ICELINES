@@ -1049,6 +1049,8 @@ icelines icecast prospect-league --snapshot ahl-2024-25.json --snapshot ahl-2025
 icelines icecast prospect-league --snapshot ahl-2023-24.json --snapshot ahl-2024-25.json --snapshot ahl-2025-26.json --crosswalk reviewed-league-2023-24.json --crosswalk reviewed-league-2024-25.json --crosswalk reviewed-league-2025-26.json --context prospect-context.json --json --out league-discovery.json
 icelines icecast prospect-program --league-discovery league-discovery.json --json --out prospect-programs.json
 icelines icecast prospect-program --league-discovery league-discovery.json --study college-prospect-study.json --prior-board prior-prospect-programs.json --out prospect-programs.txt
+icelines icecast prospect-program-sensitivity --league-discovery league-discovery.json --thresholds 25,50,82 --json --out prospect-program-sensitivity.json
+icelines icecast prospect-program-history --board prospect-programs-2024.json --board prospect-programs-2025.json --board prospect-programs-2026.json --json --out prospect-program-history.json
 icelines icecast prospect-board --study firkus-study.json
 icelines icecast prospect-board --study firkus-study.json --study another-study.json --json --out prospect-board.json
 icelines icecast organization --input organization.json --json --out the-system.json

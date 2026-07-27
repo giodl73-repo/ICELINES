@@ -1914,6 +1914,17 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Recompute adjacent and first-to-latest trends from comparable annual program boards.
+    #[command(name = "prospect-program-history")]
+    ProspectProgramHistory {
+        /// Repeat for each dated `prospect_program_board.v2` artifact.
+        #[arg(long = "board", required = true, value_name = "PATH")]
+        boards: Vec<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Rank validated prospect studies into Hidden Gems, Buyer Beware, and Watch.
     #[command(name = "prospect-board")]
     ProspectBoard {
@@ -3810,6 +3821,34 @@ mod tui_surface_tests {
                     && studies.is_empty()
                     && thresholds == vec![25, 50, 82]
                     && out == PathBuf::from("sensitivity.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_program_history_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-program-history",
+                "--board",
+                "2024.json",
+                "--board",
+                "2025.json",
+                "--json",
+                "--out",
+                "history.json",
+            ])
+            .expect("IceCast prospect program history command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectProgramHistory {
+                    boards,
+                    json: true,
+                    out: Some(out),
+                }) if boards == vec![PathBuf::from("2024.json"), PathBuf::from("2025.json")]
+                    && out == PathBuf::from("history.json")
             ));
         });
     }

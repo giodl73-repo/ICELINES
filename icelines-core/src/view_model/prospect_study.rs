@@ -7,6 +7,7 @@ pub const PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA: &str = "prospect_goalie_deve
 pub const PROSPECT_DISCOVERY_BOARD_SCHEMA: &str = "prospect_discovery_board.v1";
 pub const PROSPECT_PROGRAM_BOARD_SCHEMA: &str = "prospect_program_board.v2";
 pub const PROSPECT_PROGRAM_SENSITIVITY_SCHEMA: &str = "prospect_program_sensitivity.v1";
+pub const PROSPECT_PROGRAM_HISTORY_SCHEMA: &str = "prospect_program_history.v1";
 pub const PROSPECT_PROGRAM_SCORING_METHOD: &str = "prospect_program_signal.v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -673,6 +674,209 @@ pub struct ProspectProgramSensitivityView {
     pub supplied_studies: usize,
     pub programs: Vec<ProspectProgramSensitivityOrganizationView>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramHistoryPointView {
+    pub as_of_season: u32,
+    pub pipeline_rank: usize,
+    pub pipeline_score: f64,
+    pub pool_rank: usize,
+    pub pool_score: f64,
+    pub development_rank: usize,
+    pub development_score: f64,
+    pub ranked_studies: usize,
+    pub graduated_studies: usize,
+    pub unknown_nhl_games_studies: usize,
+    pub pipeline_rank_delta: Option<i32>,
+    pub pipeline_score_delta: Option<f64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramHistoryOrganizationView {
+    pub organization: String,
+    pub first_as_of_season: u32,
+    pub latest_as_of_season: u32,
+    pub seasons_observed: usize,
+    /// Positive means improvement from the first observed board to the latest.
+    pub pipeline_rank_change: i32,
+    pub pipeline_score_change: f64,
+    pub points: Vec<ProspectProgramHistoryPointView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramHistoryView {
+    pub schema: String,
+    pub source_schema: String,
+    pub scope: String,
+    pub source_leagues: Vec<String>,
+    pub methodology: ProspectProgramMethodologyView,
+    pub maximum_nhl_games_played: u32,
+    pub seasons: Vec<u32>,
+    pub boards: usize,
+    pub organizations: usize,
+    pub programs: Vec<ProspectProgramHistoryOrganizationView>,
+    pub disclosures: Vec<String>,
+}
+
+pub fn build_prospect_program_history(
+    mut boards: Vec<ProspectProgramBoardView>,
+) -> Result<ProspectProgramHistoryView, String> {
+    if boards.len() < 2 {
+        return Err("prospect program history requires at least two boards".to_owned());
+    }
+    boards.sort_by_key(|board| board.as_of_season);
+    let reference = &boards[0];
+    let Some(methodology) = reference.methodology.clone() else {
+        return Err("prospect program history requires proven scoring methodology".to_owned());
+    };
+    let mut seasons = BTreeSet::new();
+    for board in &boards {
+        let mut organizations = BTreeSet::new();
+        let mut pipeline_ranks = BTreeSet::new();
+        let mut pool_ranks = BTreeSet::new();
+        let mut development_ranks = BTreeSet::new();
+        if board.schema != PROSPECT_PROGRAM_BOARD_SCHEMA
+            || board.as_of_season == 0
+            || !seasons.insert(board.as_of_season)
+            || board.scope != reference.scope
+            || board.source_leagues != reference.source_leagues
+            || board.maximum_nhl_games_played != reference.maximum_nhl_games_played
+            || board.methodology.as_ref() != Some(&methodology)
+            || board.organizations != board.programs.len()
+            || board.studies != board.ranked_studies + board.graduated_studies
+            || board.ranked_studies
+                != board
+                    .programs
+                    .iter()
+                    .map(|row| row.prospect_count)
+                    .sum::<usize>()
+            || board.graduated_studies
+                != board
+                    .programs
+                    .iter()
+                    .map(|row| row.graduated_count)
+                    .sum::<usize>()
+            || board.unknown_nhl_games_studies
+                != board
+                    .programs
+                    .iter()
+                    .map(|row| row.unknown_nhl_games_count)
+                    .sum::<usize>()
+            || board.programs.iter().any(|row| {
+                row.organization.trim().is_empty()
+                    || !organizations.insert(row.organization.as_str())
+                    || row.supplied_study_count != row.prospect_count + row.graduated_count
+                    || row.graduated_count != row.graduates.len()
+                    || row.unknown_nhl_games_count > row.prospect_count
+                    || row.pipeline_rank == 0
+                    || row.pipeline_rank > board.organizations
+                    || !pipeline_ranks.insert(row.pipeline_rank)
+                    || row.pool_rank == 0
+                    || row.pool_rank > board.organizations
+                    || !pool_ranks.insert(row.pool_rank)
+                    || row.development_rank == 0
+                    || row.development_rank > board.organizations
+                    || !development_ranks.insert(row.development_rank)
+                    || !row.pipeline_score.is_finite()
+                    || !row.pool_score.is_finite()
+                    || !row.development_score.is_finite()
+            })
+        {
+            return Err(
+                "prospect program history boards must be unique, valid, and methodologically comparable"
+                    .to_owned(),
+            );
+        }
+    }
+
+    let organization_names = boards
+        .iter()
+        .flat_map(|board| board.programs.iter().map(|row| row.organization.clone()))
+        .collect::<BTreeSet<_>>();
+    let mut programs = Vec::with_capacity(organization_names.len());
+    for organization in organization_names {
+        let mut points = Vec::new();
+        for (index, board) in boards.iter().enumerate() {
+            let Some(row) = board
+                .programs
+                .iter()
+                .find(|row| row.organization == organization)
+            else {
+                continue;
+            };
+            let previous = index.checked_sub(1).and_then(|previous_index| {
+                boards[previous_index]
+                    .programs
+                    .iter()
+                    .find(|candidate| candidate.organization == organization)
+            });
+            points.push(ProspectProgramHistoryPointView {
+                as_of_season: board.as_of_season,
+                pipeline_rank: row.pipeline_rank,
+                pipeline_score: row.pipeline_score,
+                pool_rank: row.pool_rank,
+                pool_score: row.pool_score,
+                development_rank: row.development_rank,
+                development_score: row.development_score,
+                ranked_studies: row.prospect_count,
+                graduated_studies: row.graduated_count,
+                unknown_nhl_games_studies: row.unknown_nhl_games_count,
+                pipeline_rank_delta: previous
+                    .map(|prior| prior.pipeline_rank as i32 - row.pipeline_rank as i32),
+                pipeline_score_delta: previous
+                    .map(|prior| round_program_score(row.pipeline_score - prior.pipeline_score)),
+            });
+        }
+        let first = points.first().expect("organization came from a board");
+        let latest = points.last().expect("organization came from a board");
+        programs.push(ProspectProgramHistoryOrganizationView {
+            organization,
+            first_as_of_season: first.as_of_season,
+            latest_as_of_season: latest.as_of_season,
+            seasons_observed: points.len(),
+            pipeline_rank_change: first.pipeline_rank as i32 - latest.pipeline_rank as i32,
+            pipeline_score_change: round_program_score(
+                latest.pipeline_score - first.pipeline_score,
+            ),
+            points,
+        });
+    }
+    let latest_season = boards.last().expect("validated boards").as_of_season;
+    programs.sort_by(|left, right| {
+        let left_rank = left
+            .points
+            .iter()
+            .find(|point| point.as_of_season == latest_season)
+            .map_or(usize::MAX, |point| point.pipeline_rank);
+        let right_rank = right
+            .points
+            .iter()
+            .find(|point| point.as_of_season == latest_season)
+            .map_or(usize::MAX, |point| point.pipeline_rank);
+        left_rank
+            .cmp(&right_rank)
+            .then_with(|| left.organization.cmp(&right.organization))
+    });
+
+    Ok(ProspectProgramHistoryView {
+        schema: PROSPECT_PROGRAM_HISTORY_SCHEMA.to_owned(),
+        source_schema: PROSPECT_PROGRAM_BOARD_SCHEMA.to_owned(),
+        scope: reference.scope.clone(),
+        source_leagues: reference.source_leagues.clone(),
+        methodology,
+        maximum_nhl_games_played: reference.maximum_nhl_games_played,
+        seasons: seasons.into_iter().collect(),
+        boards: boards.len(),
+        organizations: programs.len(),
+        programs,
+        disclosures: vec![
+            "History accepts only uniquely dated boards with identical scope, source leagues, graduation boundary, and scoring methodology.".to_owned(),
+            "Adjacent deltas are recomputed from consecutive supplied boards; embedded board deltas are not trusted or copied.".to_owned(),
+            "A team absent from the immediately preceding board receives null adjacent deltas. First-to-latest change spans only that team's observed points.".to_owned(),
+            "Program movement describes the supplied prospect population and method, not future NHL outcomes or causal development quality.".to_owned(),
+        ],
+    })
 }
 
 /// Rebuild the same supplied population under multiple explicit NHL-GP
@@ -1804,6 +2008,77 @@ mod tests {
     }
 
     #[test]
+    fn program_history_recomputes_chronological_team_deltas() {
+        let oldest = build_prospect_program_board(
+            vec![
+                program_study_years_back(1, "SEA", "RW", 8, 2),
+                program_study_years_back(2, "NYR", "D", 30, 2),
+            ],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let middle = build_prospect_program_board(
+            vec![
+                program_study_years_back(1, "SEA", "RW", 30, 1),
+                program_study_years_back(2, "NYR", "D", 8, 1),
+            ],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let latest = build_prospect_program_board(
+            vec![
+                program_study(1, "SEA", "RW", 40, 0.2),
+                program_study(2, "NYR", "D", 7, 0.2),
+            ],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let history = build_prospect_program_history(vec![latest, oldest, middle]).unwrap();
+        assert_eq!(history.schema, PROSPECT_PROGRAM_HISTORY_SCHEMA);
+        assert_eq!(history.seasons, vec![20232024, 20242025, 20252026]);
+        assert_eq!(history.boards, 3);
+        assert_eq!(history.organizations, 2);
+        let sea = history
+            .programs
+            .iter()
+            .find(|program| program.organization == "SEA")
+            .unwrap();
+        assert_eq!(sea.seasons_observed, 3);
+        assert_eq!(sea.pipeline_rank_change, 1);
+        assert_eq!(sea.points[0].pipeline_rank_delta, None);
+        assert_eq!(sea.points[1].pipeline_rank_delta, Some(1));
+        assert_eq!(sea.points[2].pipeline_rank_delta, Some(0));
+        assert!(sea.pipeline_score_change > 0.0);
+    }
+
+    #[test]
+    fn program_history_rejects_duplicate_or_cross_method_boards() {
+        let older = build_prospect_program_board(
+            vec![program_study_years_back(1, "SEA", "RW", 8, 1)],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let latest = build_prospect_program_board(
+            vec![program_study(1, "SEA", "RW", 20, 0.2)],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let error =
+            build_prospect_program_history(vec![latest.clone(), latest.clone()]).unwrap_err();
+        assert!(error.contains("unique"));
+
+        let mut changed = latest;
+        changed.methodology.as_mut().unwrap().expected_depth = 12;
+        let error = build_prospect_program_history(vec![older, changed]).unwrap_err();
+        assert!(error.contains("methodologically comparable"));
+    }
+
+    #[test]
     fn program_board_does_not_treat_attention_as_talent() {
         let low_attention = program_study(10, "AAA", "C", 18, 0.1);
         let high_attention = program_study(20, "BBB", "C", 18, 0.9);
@@ -2015,6 +2290,20 @@ mod tests {
             ProspectDevelopmentStudyConfig::default(),
         )
         .unwrap()
+    }
+
+    fn program_study_years_back(
+        player_id: u32,
+        organization: &str,
+        position: &str,
+        latest_points: u32,
+        years: u32,
+    ) -> ProspectDevelopmentStudyView {
+        let mut study = program_study(player_id, organization, position, latest_points, 0.2);
+        for season in &mut study.seasons {
+            season.season -= 10_001 * years;
+        }
+        study
     }
 
     #[test]

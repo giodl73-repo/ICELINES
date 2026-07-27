@@ -11,8 +11,9 @@ use icelines_core::{
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
     build_line_combination_forecast, build_organization_lineup_forecast,
     build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_program_board_with_goalies, build_prospect_program_sensitivity_with_goalies,
-    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
+    build_prospect_program_board_with_goalies, build_prospect_program_history,
+    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
+    build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -33,22 +34,22 @@ use icelines_core::{
     ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView,
     ProspectGoalieDevelopmentStudyConfig, ProspectGoalieDevelopmentStudyView,
     ProspectNhlGamesAuthority, ProspectProgramBoardConfig, ProspectProgramBoardView,
-    ProspectProgramSensitivityView, ScenarioScopeView, SeasonSimulationCardInput,
-    TeamBehaviorResearchInput, TeamDecisionProfile, TeamForecastGameInput, TeamForecastParameters,
-    TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig,
-    TeamForecastStrengthInput, TeamGameForecastCalibrationObservation, TeamGameForecastRow,
-    TeamGameForecastValidationInput, TeamGameForecastView, TeamGameOpeningPlayerRow,
-    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamLineupProjectionView,
-    TeamSeasonAutoPersonnelConfig, TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView,
-    TeamSeasonForecastView, TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig,
-    TeamSeasonScenario, TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig,
-    TeamSeasonStretchKind, TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus,
-    TrainingCampCompetitionPoolStatus, TrainingCampConfig, TrainingCampExposureBoardView,
-    TrainingCampExposureLane, TrainingCampForecastView, TrainingCampLeagueForecastView,
-    TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
-    TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
-    TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
-    ViewWindow, CURRENT_SEASON,
+    ProspectProgramHistoryView, ProspectProgramSensitivityView, ScenarioScopeView,
+    SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
+    TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
+    TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
+    TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
+    TeamGameForecastView, TeamGameOpeningPlayerRow, TeamGameOpeningRosterAuthorityRow,
+    TeamGameOpeningStrengthRow, TeamLineupProjectionView, TeamSeasonAutoPersonnelConfig,
+    TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
+    TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
+    TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig, TeamSeasonStretchKind,
+    TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus, TrainingCampCompetitionPoolStatus,
+    TrainingCampConfig, TrainingCampExposureBoardView, TrainingCampExposureLane,
+    TrainingCampForecastView, TrainingCampLeagueForecastView, TrainingCampLeagueSimulationInput,
+    TrainingCampLeagueTeamInput, TrainingCampPlayerInput, TrainingCampSalaryCapStatus,
+    TrainingCampSimulationInput, TrainingCampTransactionAuthorityStatus,
+    TrainingCampTransactionContextInput, ViewContext, ViewWindow, CURRENT_SEASON,
 };
 use icelines_fetch::{
     ahl::{
@@ -4540,6 +4541,29 @@ pub fn run_prospect_program_sensitivity(
     Ok(())
 }
 
+pub fn run_prospect_program_history(
+    board_paths: Vec<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let boards = board_paths
+        .iter()
+        .map(|path| read_icecast_json(path, "prospect program history board"))
+        .collect::<anyhow::Result<Vec<ProspectProgramBoardView>>>()?;
+    let view = build_prospect_program_history(boards).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_program_history(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect program history")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 fn load_prospect_program_inputs(
     league_discovery_paths: Vec<PathBuf>,
     career_discovery_paths: Vec<PathBuf>,
@@ -5372,6 +5396,72 @@ fn render_prospect_program_sensitivity(view: &ProspectProgramSensitivityView) ->
             program.minimum_pipeline_score,
             program.maximum_pipeline_score,
             program.pipeline_score_span,
+            points
+        );
+    }
+    let _ = writeln!(out, "\nDISCLOSURES");
+    for disclosure in &view.disclosures {
+        let _ = writeln!(out, "- {disclosure}");
+    }
+    out
+}
+
+fn render_prospect_program_history(view: &ProspectProgramHistoryView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "THE SYSTEM — PROSPECT PROGRAM HISTORY");
+    let _ = writeln!(
+        out,
+        "{} boards · seasons {} · {} organizations · {} NHL-GP boundary",
+        view.boards,
+        view.seasons
+            .iter()
+            .map(u32::to_string)
+            .collect::<Vec<_>>()
+            .join(", "),
+        view.organizations,
+        view.maximum_nhl_games_played
+    );
+    let _ = writeln!(
+        out,
+        "method {} · expected depth {} · weights {:.2}/{:.2}/{:.2}/{:.2}",
+        view.methodology.scoring_method,
+        view.methodology.expected_depth,
+        view.methodology.pool_weight,
+        view.methodology.development_weight,
+        view.methodology.readiness_weight,
+        view.methodology.confidence_weight
+    );
+    for program in &view.programs {
+        let points = program
+            .points
+            .iter()
+            .map(|point| {
+                let rank_delta = point
+                    .pipeline_rank_delta
+                    .map(|delta| format!("{delta:+}"))
+                    .unwrap_or_else(|| "—".to_owned());
+                let score_delta = point
+                    .pipeline_score_delta
+                    .map(|delta| format!("{delta:+.2}"))
+                    .unwrap_or_else(|| "—".to_owned());
+                format!(
+                    "{}: #{} / {:.2} (Δ rank {}, score {})",
+                    point.as_of_season,
+                    point.pipeline_rank,
+                    point.pipeline_score,
+                    rank_delta,
+                    score_delta
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" · ");
+        let _ = writeln!(
+            out,
+            "{} · {} season(s) · first→latest Δ rank {:+}, score {:+.2}\n   {}",
+            program.organization,
+            program.seasons_observed,
+            program.pipeline_rank_change,
+            program.pipeline_score_change,
             points
         );
     }

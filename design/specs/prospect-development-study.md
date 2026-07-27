@@ -4,7 +4,8 @@
 **Schemas:** `prospect_development_study.v1`, `prospect_discovery_board.v1`,
 `prospect_league_context.v1`, `prospect_league_discovery.v1`,
 `prospect_goalie_development_study.v1`, `prospect_career_discovery.v1`,
-`prospect_program_board.v2`, `prospect_program_sensitivity.v1`
+`prospect_program_board.v2`, `prospect_program_sensitivity.v1`,
+`prospect_program_history.v1`
 
 ## Purpose
 
@@ -64,6 +65,11 @@ icelines icecast prospect-program-sensitivity \
   --career-discovery career-discovery.json \
   --thresholds 25,50,82 \
   --json --out prospect-program-sensitivity.json
+icelines icecast prospect-program-history \
+  --board prospect-programs-2024.json \
+  --board prospect-programs-2025.json \
+  --board prospect-programs-2026.json \
+  --json --out prospect-program-history.json
 ```
 
 ## Contract
@@ -244,6 +250,15 @@ uncertainty. The default CLI comparison uses 25, 50, and 82 NHL games; callers
 may supply other boundaries. The sensitivity document carries the same typed
 scoring methodology so its threshold-only comparison remains independently
 auditable.
+
+`ProspectProgramHistoryView` accepts two or more annual program boards and
+requires unique seasons plus identical scope, source leagues, graduation
+boundary, and typed scoring methodology. It recomputes adjacent-season deltas
+from the board rows instead of trusting deltas embedded in those inputs, and
+also reports each organization's first-to-latest movement. A team missing from
+the immediately preceding board receives null adjacent deltas; the history does
+not bridge that evidence gap. This is program-population movement, not a causal
+claim about development or future NHL success.
 
 On the July 2026 all-organization proof, Seattle ranked first at all three
 default boundaries; its score ranged only from 56.04 to 57.05. The Rangers
