@@ -5216,6 +5216,18 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
         view.maximum_nhl_games_played,
         view.unknown_nhl_games_studies
     );
+    if let Some(methodology) = &view.methodology {
+        let _ = writeln!(
+            out,
+            "method {} · expected depth {} · weights pool {:.2} / development {:.2} / readiness {:.2} / confidence {:.2}",
+            methodology.scoring_method,
+            methodology.expected_depth,
+            methodology.pool_weight,
+            methodology.development_weight,
+            methodology.readiness_weight,
+            methodology.confidence_weight
+        );
+    }
     for (heading, rank_of, score_of, rank_delta_of, score_delta_of) in [
         (
             "THE PIPELINE — COMBINED",
@@ -5321,6 +5333,18 @@ fn render_prospect_program_sensitivity(view: &ProspectProgramSensitivityView) ->
             .collect::<Vec<_>>()
             .join(", ")
     );
+    if let Some(methodology) = &view.methodology {
+        let _ = writeln!(
+            out,
+            "method {} · expected depth {} · weights {:.2}/{:.2}/{:.2}/{:.2}",
+            methodology.scoring_method,
+            methodology.expected_depth,
+            methodology.pool_weight,
+            methodology.development_weight,
+            methodology.readiness_weight,
+            methodology.confidence_weight
+        );
+    }
     for program in &view.programs {
         let points = program
             .points

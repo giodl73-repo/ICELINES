@@ -7,6 +7,7 @@ pub const PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA: &str = "prospect_goalie_deve
 pub const PROSPECT_DISCOVERY_BOARD_SCHEMA: &str = "prospect_discovery_board.v1";
 pub const PROSPECT_PROGRAM_BOARD_SCHEMA: &str = "prospect_program_board.v2";
 pub const PROSPECT_PROGRAM_SENSITIVITY_SCHEMA: &str = "prospect_program_sensitivity.v1";
+pub const PROSPECT_PROGRAM_SCORING_METHOD: &str = "prospect_program_signal.v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -522,6 +523,29 @@ impl Default for ProspectProgramBoardConfig {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectProgramMethodologyView {
+    pub scoring_method: String,
+    pub pool_weight: f64,
+    pub development_weight: f64,
+    pub readiness_weight: f64,
+    pub confidence_weight: f64,
+    pub expected_depth: usize,
+}
+
+impl ProspectProgramMethodologyView {
+    fn from_config(config: ProspectProgramBoardConfig) -> Self {
+        Self {
+            scoring_method: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
+            pool_weight: config.pool_weight,
+            development_weight: config.development_weight,
+            readiness_weight: config.readiness_weight,
+            confidence_weight: config.confidence_weight,
+            expected_depth: config.expected_depth,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectProgramTopProspectView {
     pub player_id: u32,
     pub player: String,
@@ -597,6 +621,9 @@ pub struct ProspectProgramBoardView {
     /// Season of the optional comparison board used to compute deltas.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prior_as_of_season: Option<u32>,
+    /// Frozen scoring assumptions required for comparable score/rank deltas.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub methodology: Option<ProspectProgramMethodologyView>,
     pub organizations: usize,
     pub studies: usize,
     pub ranked_studies: usize,
@@ -639,6 +666,8 @@ pub struct ProspectProgramSensitivityOrganizationView {
 pub struct ProspectProgramSensitivityView {
     pub schema: String,
     pub source_schema: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub methodology: Option<ProspectProgramMethodologyView>,
     pub thresholds: Vec<u32>,
     pub organizations: usize,
     pub supplied_studies: usize,
@@ -755,6 +784,7 @@ pub fn build_prospect_program_sensitivity_with_goalies(
     Ok(ProspectProgramSensitivityView {
         schema: PROSPECT_PROGRAM_SENSITIVITY_SCHEMA.to_owned(),
         source_schema: PROSPECT_PROGRAM_BOARD_SCHEMA.to_owned(),
+        methodology: Some(ProspectProgramMethodologyView::from_config(base_config)),
         thresholds,
         organizations,
         supplied_studies,
@@ -855,6 +885,7 @@ pub fn build_prospect_program_board(
     }
     if let Some(board) = prior {
         let mut organizations = BTreeSet::new();
+        let expected_methodology = ProspectProgramMethodologyView::from_config(config);
         if board.schema != PROSPECT_PROGRAM_BOARD_SCHEMA
             || board.maximum_nhl_games_played != config.maximum_nhl_games_played
             || board.organizations != board.programs.len()
@@ -877,6 +908,12 @@ pub fn build_prospect_program_board(
             })
         {
             return Err("invalid prior prospect program board".to_owned());
+        }
+        if board.methodology.as_ref() != Some(&expected_methodology) {
+            return Err(
+                "prior prospect program board uses a different or unproven scoring methodology"
+                    .to_owned(),
+            );
         }
     }
 
@@ -1167,6 +1204,7 @@ pub fn build_prospect_program_board(
         source_leagues,
         as_of_season,
         prior_as_of_season: prior.map(|board| board.as_of_season),
+        methodology: Some(ProspectProgramMethodologyView::from_config(config)),
         organizations: programs.len(),
         studies: player_ids.len(),
         ranked_studies: programs.iter().map(|row| row.prospect_count).sum(),
@@ -1184,7 +1222,7 @@ pub fn build_prospect_program_board(
             "Pipeline score combines Pool, Development, documented readiness, and confidence. Missing depth lowers depth and confidence rather than being silently imputed.".to_owned(),
             "Hidden-value and public-attention scores are excluded because underrecognition is not prospect quality or ceiling.".to_owned(),
             "Supplied goalie studies use a separate save-percentage, goals-against-average, and workload adapter. Multi-league input does not by itself claim complete organizational coverage; every eligible player must still be supplied through a typed fact adapter.".to_owned(),
-            "Positive rank or score delta means improvement from the explicitly dated prior board; comparison requires an earlier season with identical scope, source leagues, and graduation threshold. Organizations absent from that board retain null deltas.".to_owned(),
+            "Positive rank or score delta means improvement from the explicitly dated prior board; comparison requires an earlier season with identical scope, source leagues, graduation threshold, scoring method, weights, and expected depth. Organizations absent from that board retain null deltas.".to_owned(),
         ],
     })
 }
@@ -1689,6 +1727,9 @@ mod tests {
         assert_eq!(current.unknown_nhl_games_studies, 2);
         assert_eq!(current.maximum_nhl_games_played, 50);
         assert_eq!(current.prior_as_of_season, Some(20242025));
+        let methodology = current.methodology.as_ref().unwrap();
+        assert_eq!(methodology.scoring_method, PROSPECT_PROGRAM_SCORING_METHOD);
+        assert_eq!(methodology.expected_depth, 10);
         assert_eq!(current.programs[0].organization, "SEA");
         assert_eq!(current.programs[0].pipeline_rank, 1);
         assert_eq!(current.programs[0].pipeline_rank_delta, Some(1));
@@ -1727,6 +1768,28 @@ mod tests {
             ProspectProgramBoardConfig::default(),
         )
         .unwrap();
+        let changed_methodology = ProspectProgramBoardConfig {
+            expected_depth: 12,
+            ..ProspectProgramBoardConfig::default()
+        };
+        let error = build_prospect_program_board(
+            vec![current_study.clone()],
+            Some(&older),
+            changed_methodology,
+        )
+        .unwrap_err();
+        assert!(error.contains("scoring methodology"));
+
+        let mut unproven_methodology = older.clone();
+        unproven_methodology.methodology = None;
+        let error = build_prospect_program_board(
+            vec![current_study.clone()],
+            Some(&unproven_methodology),
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap_err();
+        assert!(error.contains("unproven scoring methodology"));
+
         let mut incompatible = current_study;
         for season in &mut incompatible.seasons {
             season.league = "OHL".to_owned();
@@ -1821,6 +1884,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(view.schema, PROSPECT_PROGRAM_SENSITIVITY_SCHEMA);
+        assert_eq!(
+            view.methodology.as_ref().unwrap().scoring_method,
+            PROSPECT_PROGRAM_SCORING_METHOD
+        );
         assert_eq!(view.thresholds, vec![25, 50, 82]);
         assert_eq!(view.organizations, 2);
         assert_eq!(view.supplied_studies, 3);

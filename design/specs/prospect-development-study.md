@@ -213,10 +213,13 @@ opportunity components. It deliberately excludes hidden-value and attention-gap
 scores because underrecognition is not prospect talent or ceiling. Missing
 depth lowers depth and confidence instead of being imputed. The optional prior
 board supplies rank and score deltas only; positive delta means improvement.
-The board publishes `prior_as_of_season`, and comparison fails closed unless
-the prior season is earlier and uses the same scope, source-league set, and NHL
-graduation boundary. This prevents same-season, future, or cross-scope artifacts
-from being presented as year-over-year movement.
+The board publishes `prior_as_of_season` plus a typed methodology record with
+the scoring-method version, expected depth, and Pool/Development/Readiness/
+Confidence weights. Comparison fails closed unless the prior season is earlier
+and uses the same methodology, scope, source-league set, and NHL graduation
+boundary. Older artifacts without provable methodology may still be rendered,
+but cannot produce deltas. This prevents same-season, future, cross-scope, or
+cross-method artifacts from being presented as year-over-year movement.
 
 Version 2 applies a configurable reserve-system graduation boundary, defaulting
 to 50 regular-season NHL games. Studies above the boundary remain in supplied
@@ -238,7 +241,9 @@ graduated count, and unknown-workload count at every boundary, plus the
 best/worst pipeline rank and numeric rank/score spans. It deliberately does not
 label a threshold as correct or convert definition sensitivity into performance
 uncertainty. The default CLI comparison uses 25, 50, and 82 NHL games; callers
-may supply other boundaries.
+may supply other boundaries. The sensitivity document carries the same typed
+scoring methodology so its threshold-only comparison remains independently
+auditable.
 
 On the July 2026 all-organization proof, Seattle ranked first at all three
 default boundaries; its score ranged only from 56.04 to 57.05. The Rangers
