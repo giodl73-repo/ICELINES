@@ -644,3 +644,40 @@ not reinterpret the classification or imply an assignment.
 zero prospect-status blockers. Recall readiness is the next distinct modeled
 authority; it must not reuse camp-make probability or prospect status as a
 synonym.
+
+### S2 recall-readiness review
+
+HART/KEEL accepted a separate readiness policy, estimate, ledger, and narrow
+workboard application. Readiness remains player-global evidence; organization
+assignment, waiver clearance, and recall order remain separate scenario facts.
+
+TAPE/WIRE required exact workboard, career-cache, and camp-forecast binding.
+The real saved artifact exposed an in-memory float fingerprint mismatch; the
+producer now canonicalizes through its supported JSON wire representation
+before sealing. Raw and nested workboards retain their complete seal gate.
+
+PACE/SCOUT approved the 0.50 value / 0.30 NHL-workload / 0.20 camp-proximity
+evaluation formula only with a 0.70 minimum coverage gate, explicit component
+values, and separate confidence. It is labeled an index rather than a recall
+or NHL-success probability. Value is normalized within forward, defense, and
+goalie cohorts.
+
+PACE/TAPE also rejected correlated double counting. A separately modeled
+prior-AHL value wins over a camp value. When camp supplies the fallback value,
+camp proximity is omitted from the same estimate. Cross-organization rollover
+rows reuse the canonical choice without deciding assignment.
+
+BENCH/EDGE/FORGE added known-value, missing-component, coverage refusal, tied
+percentile, JSON round-trip, stale-ledger, narrow application, and
+cross-organization precedence tests. Diff review found and fixed the older
+Window adapter's mixed-unit fallback from missing 0..1 readiness to 0..100
+projected score.
+
+GLASS/CREST/broadcast retain the index, confidence, coverage, method, evidence,
+and missing reason in the UI-neutral documents. Renderers may not relabel the
+index as a probability or recompute it.
+
+**Verdict:** pass for evaluation recall readiness. The real run estimates
+1,185/1,282 canonical candidates, applies to 1,273/1,371 appearances, and leaves
+97 canonical players covering 98 appearances explicitly blocked. Historical
+calibration remains a separate promotion gate.

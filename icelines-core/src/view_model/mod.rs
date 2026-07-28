@@ -6,6 +6,7 @@
 
 pub mod ahl_affiliate;
 pub mod ahl_player_value;
+pub mod ahl_recall_readiness;
 pub mod analytics_cache_consumer;
 pub mod awards;
 pub mod cap_projection;
@@ -87,6 +88,11 @@ pub use ahl_player_value::{
     estimate_ahl_goalie_value, estimate_ahl_skater_value, AhlPlayerValueEstimate,
     AhlPlayerValuePolicy, AhlPlayerValuePositionGroup, AHL_PLAYER_VALUE_METHOD,
     AHL_PLAYER_VALUE_POLICY_SCHEMA,
+};
+pub use ahl_recall_readiness::{
+    empirical_midrank_percentiles, estimate_ahl_recall_readiness, AhlRecallReadinessEstimate,
+    AhlRecallReadinessInput, AhlRecallReadinessPolicy, AHL_RECALL_READINESS_METHOD,
+    AHL_RECALL_READINESS_POLICY_SCHEMA,
 };
 pub use analytics_cache_consumer::{
     analytics_cache_consumer_title, AnalyticsCacheConsumerMetricRow, AnalyticsCacheConsumerView,

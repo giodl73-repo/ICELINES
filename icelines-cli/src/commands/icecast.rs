@@ -32,18 +32,18 @@ use icelines_core::{
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
     simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
     AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlLineUnitKind, AhlPlayerValuePolicy,
-    AhlRosterPoolAuthorityKind, DevelopmentCalibrationConfig, DevelopmentCalibrationView,
-    DevelopmentPositionGroup, DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel,
-    ForecastHistoryCardInput, ForecastMovementCardInput, LineCombinationForecastConfig,
-    LineCombinationForecastView, LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow,
-    OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
-    OrganizationPositionGroup, OrganizationUnitKind, OrganizationWindowBoardView,
-    OrganizationWindowBridgeView, OrganizationWindowCardInput, OrganizationWindowManifestView,
-    OrganizationWindowScenarioDistributionInput, OrganizationWindowSourcePackageView,
-    OrganizationalProspectPolicy, ProspectConversionBoardView, ProspectConversionConfig,
-    ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
-    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow,
-    ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
+    AhlRecallReadinessPolicy, AhlRosterPoolAuthorityKind, DevelopmentCalibrationConfig,
+    DevelopmentCalibrationView, DevelopmentPositionGroup, DevelopmentTransitionInput,
+    DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput, ForecastMovementCardInput,
+    LineCombinationForecastConfig, LineCombinationForecastView, LineCombinationPairEvidenceInput,
+    OpponentStyleEvidenceRow, OrganizationLevel, OrganizationLineupForecastInput,
+    OrganizationLineupForecastView, OrganizationPositionGroup, OrganizationUnitKind,
+    OrganizationWindowBoardView, OrganizationWindowBridgeView, OrganizationWindowCardInput,
+    OrganizationWindowManifestView, OrganizationWindowScenarioDistributionInput,
+    OrganizationWindowSourcePackageView, OrganizationalProspectPolicy, ProspectConversionBoardView,
+    ProspectConversionConfig, ProspectConversionPerformanceDocument,
+    ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
+    ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
     ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
     ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramSensitivityView,
     ScenarioScopeView, ScheduleRestProfileView, SeasonSimulationCardInput,
@@ -114,6 +114,10 @@ use icelines_fetch::{
     ahl_prospect_status::{
         apply_ahl_prospect_status_ledger, build_ahl_prospect_status_ledger,
         AhlProspectStatusApplicationView, AhlProspectStatusLedgerView,
+    },
+    ahl_recall_readiness::{
+        apply_ahl_recall_readiness_ledger, build_ahl_recall_readiness_ledger,
+        AhlRecallReadinessApplicationView, AhlRecallReadinessLedgerView,
     },
     ahl_rollover::{
         apply_ahl_preseason_league_organization_review, apply_ahl_preseason_organization_review,
@@ -1788,6 +1792,61 @@ pub fn run_affiliate_prospects_apply(
     Ok(())
 }
 
+pub fn run_affiliate_readiness(
+    workboard_path: PathBuf,
+    career_history_path: PathBuf,
+    camp_forecast_path: PathBuf,
+    policy_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&workboard_path)?;
+    let career_store = CareerHistoryStore::load(&career_history_path)
+        .with_context(|| format!("read career history {}", career_history_path.display()))?;
+    let camp_forecast: TrainingCampLeagueForecastView =
+        read_icecast_json(&camp_forecast_path, "training-camp league forecast")?;
+    let policy: AhlRecallReadinessPolicy =
+        read_icecast_json(&policy_path, "AHL recall-readiness policy")?;
+    let ledger =
+        build_ahl_recall_readiness_ledger(&workboard, &career_store, &camp_forecast, &policy)
+            .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&ledger)?)
+    } else {
+        render_affiliate_readiness(&ledger)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL recall-readiness ledger")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_readiness_apply(
+    workboard_path: PathBuf,
+    ledger_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&workboard_path)?;
+    let ledger: AhlRecallReadinessLedgerView =
+        read_icecast_json(&ledger_path, "AHL recall-readiness ledger")?;
+    let application =
+        apply_ahl_recall_readiness_ledger(&workboard, &ledger).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&application)?)
+    } else {
+        render_affiliate_readiness_application(&application)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL recall-readiness application")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_affiliate_facts_board(
     rollover_path: PathBuf,
     professional_games_path: PathBuf,
@@ -3260,6 +3319,32 @@ fn render_affiliate_prospects_application(view: &AhlProspectStatusApplicationVie
         view.candidates_without_prospect_status,
         view.source_workboard_fingerprint,
         view.prospect_ledger_fingerprint
+    )
+}
+
+fn render_affiliate_readiness(view: &AhlRecallReadinessLedgerView) -> String {
+    format!(
+        "AHL RECALL READINESS\nSeason: {} -> {}\nCandidate appearances: {}\nCanonical candidates: {}\nEstimated: {}\nUnavailable: {}\nMethod: {}\nFingerprint: {}\n",
+        view.prior_season,
+        view.target_season,
+        view.candidate_appearances,
+        view.candidates_requested,
+        view.candidates_estimated,
+        view.candidates_unavailable,
+        view.policy.method_version,
+        view.source_fingerprint
+    )
+}
+
+fn render_affiliate_readiness_application(view: &AhlRecallReadinessApplicationView) -> String {
+    format!(
+        "AHL RECALL READINESS APPLIED\nSeason: {} -> {}\nReadiness rows filled: {}\nCandidates still missing readiness: {}\nWorkboard fingerprint: {}\nLedger fingerprint: {}\n",
+        view.prior_season,
+        view.target_season,
+        view.rows_applied,
+        view.candidates_without_recall_readiness,
+        view.source_workboard_fingerprint,
+        view.readiness_ledger_fingerprint
     )
 }
 

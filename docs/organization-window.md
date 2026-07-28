@@ -124,6 +124,16 @@ canonical candidates and applied the result to 1,371 appearances, reducing the
 prospect-status queue to zero without changing recall, assignment, waiver,
 organization-status, score, or final-rule authority.
 
+Recall readiness now has its own evaluation-only authority. The method combines
+within-position value, observed NHL workload, and camp proximity while keeping
+score, coverage, and confidence separate. It prefers independent prior-AHL
+value to camp value and suppresses camp proximity when camp already supplies
+the value signal. The real run estimated 1,185/1,282 canonical candidates and
+filled 1,273/1,371 appearances; 97 canonical players representing 98
+appearances remain blocked for insufficient evidence. The Window recall-depth
+adapter no longer substitutes a 0..100 player score when its required 0..1
+readiness input is missing.
+
 Markdown reports retain season, cutoff, Frame, manifest/board fingerprints,
 league coverage, rank status, confidence, coverage, pane state, focused-team
 profile evidence, blockers, and disclosures. `--json` and `--markdown` are

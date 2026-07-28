@@ -102,6 +102,11 @@ pub use view_model::ahl_player_value::{
     AhlPlayerValuePolicy, AhlPlayerValuePositionGroup, AHL_PLAYER_VALUE_METHOD,
     AHL_PLAYER_VALUE_POLICY_SCHEMA,
 };
+pub use view_model::ahl_recall_readiness::{
+    empirical_midrank_percentiles, estimate_ahl_recall_readiness, AhlRecallReadinessEstimate,
+    AhlRecallReadinessInput, AhlRecallReadinessPolicy, AHL_RECALL_READINESS_METHOD,
+    AHL_RECALL_READINESS_POLICY_SCHEMA,
+};
 pub use view_model::isolated_impact::{
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
     build_isolated_scenario_impact_cached, ForcedCeilingPathRow, IsolatedEventImpactRow,

@@ -2306,6 +2306,27 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         }) => commands::icecast::run_affiliate_prospects_apply(workboard, ledger, json, out)?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReadiness {
+            workboard,
+            career_history,
+            camp_forecast,
+            policy,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_readiness(
+            workboard,
+            career_history,
+            camp_forecast,
+            policy,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReadinessApply {
+            workboard,
+            ledger,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_readiness_apply(workboard, ledger, json, out)?,
         Commands::Icecast(IceCastSubcommand::AffiliateFactsBoard {
             rollover,
             professional_games,

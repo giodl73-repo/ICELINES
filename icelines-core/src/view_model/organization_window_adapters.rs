@@ -1083,7 +1083,7 @@ fn adapt_organization_lineups(
             .recall_ladder
             .iter()
             .filter(|row| row.rank <= 2)
-            .map(|row| row.recall_readiness.unwrap_or(row.projected_score))
+            .filter_map(|row| row.recall_readiness)
             .collect::<Vec<_>>();
         let recall_value = mean(&recall_values);
         let recall_coverage = (forecast
@@ -1966,6 +1966,29 @@ mod tests {
                 && input.profile_key == "development.recall_depth"
                 && input.raw_value.is_some()
         }));
+
+        let mut missing_readiness = affiliate.clone();
+        for player in &mut missing_readiness.players {
+            player.recall_readiness = None;
+        }
+        let missing_forecasts = build_organization_lineup_forecasts_from_affiliates(
+            std::slice::from_ref(&lineup),
+            std::slice::from_ref(&missing_readiness),
+        )
+        .unwrap();
+        let missing_inputs = adapt_balanced_organization_window_sources(
+            &context,
+            OrganizationWindowSourceSet {
+                organization_lineups: &missing_forecasts,
+                ..OrganizationWindowSourceSet::default()
+            },
+        )
+        .unwrap();
+        let recall = missing_inputs
+            .iter()
+            .find(|input| input.profile_key == "development.recall_depth")
+            .unwrap();
+        assert_eq!(recall.raw_value, None);
 
         let duplicate = adapt_balanced_organization_window_sources(
             &context,

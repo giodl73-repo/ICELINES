@@ -345,6 +345,19 @@ agreement, retains source URLs and review timestamps, and proves each emitted
 pool can satisfy roster shape and the AHL development rule before downstream
 organization composition.
 
+Recall readiness is supplied by `ahl_recall_readiness_policy.v1`, not inferred
+from prospect or development-rule status. Method
+`weighted_value_experience_camp.v1` combines a within-position empirical
+midrank value signal, observed NHL regular-season workload, and camp roster
+proximity. The configured weights, minimum coverage, component signals,
+coverage, and confidence are retained in the sealed ledger. The 0..1 result is
+an evaluation index, not a calibrated recall or NHL-success probability.
+Prior-AHL value has precedence over a target-camp value. If camp supplies the
+value fallback, camp proximity is omitted to avoid counting the same camp model
+twice. Application can clear only `RecallReadiness`; assignment, organization
+status, waiver clearance, player score, prospect status, professional games,
+and final-rule qualification remain independently owned.
+
 The official NHL landing cache retains primary position beside birth date and
 career history. The professional-game ledger carries that position through the
 same fingerprinted authority, and the preseason workboard uses it only when a

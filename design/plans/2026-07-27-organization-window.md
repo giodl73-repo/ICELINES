@@ -306,6 +306,28 @@ still unresolved; their status is reused without choosing an organization.
 S2 remains open on organization status, assignment, recall readiness, waiver,
 98 score gaps, and final-rule authority.
 
+**Recall-readiness checkpoint — 2026-07-28:** core now owns
+`ahl_recall_readiness_policy.v1` and method
+`weighted_value_experience_camp.v1`. The evaluation index weights
+within-position value, observed NHL regular-season workload, and camp proximity
+at 0.50/0.30/0.20, requires 0.70 evidence coverage, and reports confidence
+separately. It is not a calibrated recall or NHL-success probability.
+
+The fetch ledger composes the chained workboard, official career cache, and
+sealed all-32 camp forecast. Prior-AHL value takes precedence over camp value;
+camp proximity is omitted whenever camp already supplied the value signal, so
+one modeled source is not double-counted. The real run estimated 1,185 of 1,282
+canonical candidates and applied readiness to 1,273 of 1,371 appearances. The
+remaining 97 canonical players cover 98 appearances and stay blocked for
+insufficient value coverage. No assignment, waiver, organization-status,
+prospect, score, game, or final-rule fact was changed.
+
+This slice also fixed a pre-existing unit bug in the Window adapter: missing
+0..1 readiness can no longer fall back to a 0..100 projected player score.
+Portable ledger sealing now canonicalizes through the supported JSON wire
+representation; the real saved-ledger replay exposed and closed the prior
+in-memory-only float fingerprint mismatch.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

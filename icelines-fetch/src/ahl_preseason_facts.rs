@@ -83,6 +83,14 @@ pub struct AhlPreseasonFactsPlayerRow {
     pub prospect_source_fingerprint: Option<String>,
     #[serde(default)]
     pub recall_readiness: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recall_readiness_method: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recall_readiness_confidence: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recall_readiness_coverage: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recall_readiness_source_fingerprint: Option<String>,
     #[serde(default)]
     pub assigned_to_affiliate: Option<bool>,
     #[serde(default)]
@@ -366,6 +374,10 @@ pub fn build_ahl_preseason_league_facts_workboard(
                 prospect_method: None,
                 prospect_source_fingerprint: None,
                 recall_readiness: None,
+                recall_readiness_method: None,
+                recall_readiness_confidence: None,
+                recall_readiness_coverage: None,
+                recall_readiness_source_fingerprint: None,
                 assigned_to_affiliate: None,
                 waiver_cleared: player.waiver_exempt.filter(|waiver_exempt| *waiver_exempt),
                 review_source_urls: Vec::new(),
@@ -723,9 +735,34 @@ pub fn validate_workboard(
         team.nhl_team.trim().is_empty()
             || !teams.insert(team.nhl_team.as_str())
             || team.players.iter().any(|player| {
+                let readiness_provenance_present = player.recall_readiness_method.is_some()
+                    || player.recall_readiness_confidence.is_some()
+                    || player.recall_readiness_coverage.is_some()
+                    || player.recall_readiness_source_fingerprint.is_some();
                 player
                     .nhl_player_id
                     .is_some_and(|id| !players.insert((team.nhl_team.as_str(), id)))
+                    || player
+                        .recall_readiness
+                        .is_some_and(|value| !value.is_finite() || !(0.0..=1.0).contains(&value))
+                    || player
+                        .recall_readiness_confidence
+                        .is_some_and(|value| !value.is_finite() || !(0.0..=1.0).contains(&value))
+                    || player
+                        .recall_readiness_coverage
+                        .is_some_and(|value| !value.is_finite() || !(0.0..=1.0).contains(&value))
+                    || readiness_provenance_present
+                        && (player.recall_readiness.is_none()
+                            || player
+                                .recall_readiness_method
+                                .as_deref()
+                                .is_none_or(str::is_empty)
+                            || player.recall_readiness_confidence.is_none()
+                            || player.recall_readiness_coverage.is_none()
+                            || player
+                                .recall_readiness_source_fingerprint
+                                .as_deref()
+                                .is_none_or(str::is_empty))
             })
     }) {
         return Err(AhlFeedError::Validation(

@@ -1634,6 +1634,38 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Estimate confidence-aware AHL-to-NHL recall readiness.
+    #[command(name = "affiliate-readiness")]
+    AffiliateReadiness {
+        /// A raw workboard or a prior machine-application artifact containing one.
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        /// Official NHL landing career-history cache.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Sealed all-32 training-camp league forecast.
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        /// Versioned recall-readiness evaluation policy.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Fill only missing recall-readiness facts from an exact readiness ledger.
+    #[command(name = "affiliate-readiness-apply")]
+    AffiliateReadinessApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Compose a league-wide preseason affiliate facts-readiness workboard.
     #[command(name = "affiliate-facts-board")]
     AffiliateFactsBoard {
@@ -4630,6 +4662,46 @@ mod tui_surface_tests {
             assert!(matches!(
                 prospects_apply.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateProspectsApply { json: true, .. })
+            ));
+
+            let readiness = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-readiness",
+                "--workboard",
+                "affiliate-prospects-application.json",
+                "--career-history",
+                "career-history.json",
+                "--camp-forecast",
+                "camp.json",
+                "--policy",
+                "readiness-policy.json",
+                "--json",
+                "--out",
+                "readiness.json",
+            ])
+            .expect("affiliate recall-readiness ledger should parse");
+            assert!(matches!(
+                readiness.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReadiness { json: true, .. })
+            ));
+
+            let readiness_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-readiness-apply",
+                "--workboard",
+                "affiliate-prospects-application.json",
+                "--ledger",
+                "readiness.json",
+                "--json",
+                "--out",
+                "affiliate-readiness-application.json",
+            ])
+            .expect("affiliate recall-readiness application should parse");
+            assert!(matches!(
+                readiness_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReadinessApply { json: true, .. })
             ));
 
             let facts_board = Cli::try_parse_from([

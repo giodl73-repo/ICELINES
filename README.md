@@ -347,6 +347,8 @@ icelines icecast affiliate-values-apply --workboard affiliate-facts-board.json -
 icelines fetch career --affiliate-workboard affiliate-values-application.json
 icelines icecast affiliate-prospects --workboard affiliate-values-application.json --career-history ~/.icelines/career_history.json --policy examples/organizational-prospect-policy-2026-27.json --json --out ahl-prospect-status.json
 icelines icecast affiliate-prospects-apply --workboard affiliate-values-application.json --ledger ahl-prospect-status.json --json --out affiliate-prospects-application.json
+icelines icecast affiliate-readiness --workboard affiliate-prospects-application.json --career-history ~/.icelines/career_history.json --camp-forecast examples/icecast-league-training-camp-2026-27.json --policy examples/ahl-recall-readiness-policy-2026-27.json --json --out ahl-recall-readiness.json
+icelines icecast affiliate-readiness-apply --workboard affiliate-prospects-application.json --ledger ahl-recall-readiness.json --json --out affiliate-readiness-application.json
 icelines icecast affiliate-facts-board --rollover league-rollover.json --professional-games professional-games.json --json --out affiliate-facts-board.json
 icelines icecast affiliate-facts-draft --workboard affiliate-facts-board.json --out affiliate-facts-overlay-draft.json
 icelines icecast affiliate-facts-apply --workboard affiliate-facts-board.json --overlay affiliate-facts-overlay-final.json --json --out affiliate-facts-application.json

@@ -3197,6 +3197,19 @@ icelines icecast affiliate-prospects-apply \
   --ledger ahl-prospect-status.json \
   --json --out affiliate-prospects-application.json
 
+# Build a confidence-aware evaluation index from within-position value,
+# observed NHL workload, and non-duplicated camp proximity evidence.
+icelines icecast affiliate-readiness \
+  --workboard affiliate-prospects-application.json \
+  --career-history ~/.icelines/career_history.json \
+  --camp-forecast examples/icecast-league-training-camp-2026-27.json \
+  --policy examples/ahl-recall-readiness-policy-2026-27.json \
+  --json --out ahl-recall-readiness.json
+icelines icecast affiliate-readiness-apply \
+  --workboard affiliate-prospects-application.json \
+  --ledger ahl-recall-readiness.json \
+  --json --out affiliate-readiness-application.json
+
 # Lower only complete teams through the canonical AHL lineup optimizer.
 icelines icecast affiliate-inputs-league \
   --application affiliate-facts-application.json \
@@ -3234,6 +3247,14 @@ and workload evidence. The classification is keyed by canonical NHL player ID,
 so one player appearing in multiple rollover organizations is classified once
 and applied to every appearance without resolving assignment, waiver, recall,
 or organization status.
+
+`ahl_recall_readiness_policy.v1` produces a 0..1 evaluation index, not a
+calibrated probability of recall or NHL success. Its default method weights
+within-position player value at 0.50, observed NHL regular-season workload at
+0.30, and camp proximity at 0.20. It publishes an index only at 0.70 evidence
+coverage and carries confidence separately. Prior-AHL value takes precedence
+over camp value; when camp supplies the value fallback, camp proximity is
+omitted so one camp model is not counted twice.
 
 ---
 
