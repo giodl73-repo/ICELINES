@@ -575,6 +575,18 @@ explicit organization lineup for a derived team is rejected as competing
 authority. Provider-local AHL IDs never become canonical player IDs without a
 reviewed crosswalk.
 
+Prior-season AHL player value is a separate, versioned evaluation authority.
+`ahl_player_value_policy.v1` produces confidence-weighted within-position
+ordering from official AHL skater points/game or goalie save percentage. The
+skater prior is position-specific and workload confidence is game-based; the
+goalie prior is shot-based. The method is not an NHL equivalency and remains
+uncalibrated until rolling historical replay validates its priors. Its sealed
+league ledger joins only through reviewed canonical NHL identities, aggregates
+multi-team stints, and can fill only a missing `projected_score` blocker. A
+missing statistical row or position-group conflict remains explicit; score
+application cannot clear assignment, status, waiver, prospect, recall, game,
+or development-rule authority.
+
 `organization_window_source_coverage.v1` audits acquisition independently from
 scoring. For all 17 configured profile methods it records source-observation
 count, score-eligible value count, exact missing organizations, and required

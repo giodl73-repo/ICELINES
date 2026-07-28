@@ -1575,6 +1575,35 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Build confidence-weighted prior-season AHL player values.
+    #[command(name = "affiliate-values")]
+    AffiliateValues {
+        /// Official prior-season all-league AHL roster/stats snapshot.
+        #[arg(long, value_name = "PATH")]
+        snapshot: PathBuf,
+        /// Fully reviewed all-league AHL identity envelope.
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Versioned AHL player-value policy.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Fill only missing workboard scores from an exact AHL value ledger.
+    #[command(name = "affiliate-values-apply")]
+    AffiliateValuesApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Compose a league-wide preseason affiliate facts-readiness workboard.
     #[command(name = "affiliate-facts-board")]
     AffiliateFactsBoard {
@@ -4495,6 +4524,44 @@ mod tui_surface_tests {
             assert!(matches!(
                 professional_games.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGames { json: true, .. })
+            ));
+
+            let values = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-values",
+                "--snapshot",
+                "ahl.json",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--policy",
+                "ahl-value-policy.json",
+                "--json",
+                "--out",
+                "ahl-values.json",
+            ])
+            .expect("affiliate player-value ledger should parse");
+            assert!(matches!(
+                values.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateValues { json: true, .. })
+            ));
+
+            let values_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-values-apply",
+                "--workboard",
+                "affiliate-facts-board.json",
+                "--ledger",
+                "ahl-values.json",
+                "--json",
+                "--out",
+                "affiliate-values-application.json",
+            ])
+            .expect("affiliate player-value application should parse");
+            assert!(matches!(
+                values_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateValuesApply { json: true, .. })
             ));
 
             let facts_board = Cli::try_parse_from([

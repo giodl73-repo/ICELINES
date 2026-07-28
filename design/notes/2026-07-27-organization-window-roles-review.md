@@ -575,3 +575,35 @@ untouched rather than borrowing a position-based proxy.
 **Verdict:** pass. Exact-position acquisition is closed for the current
 all-32 workboard; S2 remains open on score, status, assignment, prospect,
 recall, waiver, and final-rule authority.
+
+### S2 AHL player-value review
+
+HART/KEEL accepted the split authority: core owns one reusable typed estimate,
+while fetch composes official AHL rows, reviewed canonical identity, and the
+existing preseason workboard. The application is not a second optimizer and
+can clear only `projected_score`.
+
+TAPE/WIRE required the exact prior-season snapshot, reviewed all-league
+crosswalk, explicit policy/method versions, source URLs, and deterministic
+fingerprints. Multi-team stints aggregate by canonical NHL ID. Rejected or
+unmapped identities do not receive a score.
+
+PACE/SCOUT accepted separate position-specific skater priors and shot-based
+goalie confidence, provided the output remains labeled evaluation-only and not
+an NHL equivalency or calibrated projection. Missing observations and the one
+real position conflict remain blocked rather than receiving defaults.
+
+BENCH/EDGE/FORGE verified short-sample shrinkage, goalie workload behavior,
+invalid policy/totals, rejected identity, JSON round-trip stability, saved-v1
+workboard compatibility, CLI parsing, and the real application. That real run
+scored 1,221 players and filled 1,076 of 1,174 missing values. During the run,
+two serialization defects were found and fixed: additive null fields no longer
+invalidate old workboard fingerprints, and value-ledger fingerprints now use
+an explicit length-delimited canonical contract rather than whole-JSON bytes.
+
+GLASS/CREST/broadcast accepted a concise evaluation label and blocker delta;
+surfaces consume the sealed application and may not recompute the formula.
+
+**Verdict:** pass for the player-value slice. Historical calibration is a
+separate promotion gate, and S2 remains open for the other sourced facts and
+the 98 honest score gaps.

@@ -31,7 +31,7 @@ use icelines_core::{
     normalize_name, season_stats::SeasonType, simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
     simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
-    AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlLineUnitKind,
+    AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlLineUnitKind, AhlPlayerValuePolicy,
     AhlRosterPoolAuthorityKind, DevelopmentCalibrationConfig, DevelopmentCalibrationView,
     DevelopmentPositionGroup, DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel,
     ForecastHistoryCardInput, ForecastMovementCardInput, LineCombinationForecastConfig,
@@ -94,6 +94,10 @@ use icelines_fetch::{
         AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView, AhlIdentityReviewStatus,
         AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
         AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
+    },
+    ahl_player_value::{
+        apply_ahl_player_value_ledger, build_ahl_player_value_ledger,
+        AhlPlayerValueApplicationView, AhlPlayerValueLedgerView,
     },
     ahl_preseason_facts::{
         apply_ahl_preseason_league_facts_overlay, build_ahl_preseason_league_facts_overlay_draft,
@@ -1675,6 +1679,60 @@ pub fn run_affiliate_professional_games(
     Ok(())
 }
 
+pub fn run_affiliate_values(
+    snapshot_path: PathBuf,
+    league_crosswalk_path: PathBuf,
+    policy_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let snapshot: AhlRosterStatsSnapshot =
+        read_icecast_json(&snapshot_path, "official AHL roster/stats snapshot")?;
+    let league_crosswalk: AhlIdentityLeagueCrosswalkView = read_icecast_json(
+        &league_crosswalk_path,
+        "reviewed AHL league identity crosswalk",
+    )?;
+    let policy: AhlPlayerValuePolicy = read_icecast_json(&policy_path, "AHL player-value policy")?;
+    let ledger = build_ahl_player_value_ledger(&snapshot, &league_crosswalk, &policy)
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&ledger)?)
+    } else {
+        render_affiliate_values(&ledger)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL player-value ledger")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_values_apply(
+    workboard_path: PathBuf,
+    ledger_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard: AhlPreseasonLeagueFactsWorkboardView =
+        read_icecast_json(&workboard_path, "AHL preseason facts workboard")?;
+    let ledger: AhlPlayerValueLedgerView =
+        read_icecast_json(&ledger_path, "AHL player-value ledger")?;
+    let application =
+        apply_ahl_player_value_ledger(&workboard, &ledger).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&application)?)
+    } else {
+        render_affiliate_values_application(&application)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL player-value application")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_affiliate_facts_board(
     rollover_path: PathBuf,
     professional_games_path: PathBuf,
@@ -3102,6 +3160,28 @@ fn render_affiliate_professional_games(view: &AhlProfessionalGameLedgerView) -> 
         );
     }
     out
+}
+
+fn render_affiliate_values(view: &AhlPlayerValueLedgerView) -> String {
+    format!(
+        "AHL PLAYER VALUES\nSeason: {}\nPlayers scored: {}\nMethod: {}\nFingerprint: {}\nStatus: EVALUATION — confidence-weighted affiliate ordering, not an NHL equivalency or calibrated forecast\n",
+        view.prior_season,
+        view.players_scored,
+        view.policy.method_version,
+        view.source_fingerprint
+    )
+}
+
+fn render_affiliate_values_application(view: &AhlPlayerValueApplicationView) -> String {
+    format!(
+        "AHL PLAYER VALUES APPLIED\nSeason: {} -> {}\nScores filled: {}\nCandidates still missing score: {}\nWorkboard fingerprint: {}\nLedger fingerprint: {}\n",
+        view.prior_season,
+        view.target_season,
+        view.rows_applied,
+        view.candidates_without_value,
+        view.source_workboard_fingerprint,
+        view.value_ledger_fingerprint
+    )
 }
 
 fn render_affiliate_facts_board(view: &AhlPreseasonLeagueFactsWorkboardView) -> String {

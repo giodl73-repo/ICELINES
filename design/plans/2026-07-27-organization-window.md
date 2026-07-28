@@ -271,6 +271,24 @@ exact-position queue from 255 to zero across all 32 teams. The remaining 1,174
 projected-score gaps require a separately versioned value model or authored
 projection authority; position metadata is not used as a scoring proxy.
 
+**AHL player-value checkpoint — 2026-07-28:** the separately versioned model
+is now implemented as `ahl_player_value_policy.v1` with method
+`ahl_prior_performance_bayesian_rate.v1`. Core owns deterministic skater and
+goalie estimation; fetch owns official-snapshot aggregation, reviewed identity
+joining, stable source fingerprints, and narrow workboard application. The
+method uses position-specific points/game priors for skaters and a shot-based
+save-percentage prior for goalies. It is explicitly evaluation-only, not an
+NHL equivalency or calibrated forecast.
+
+The real 2025-26 all-league run scored 1,221 canonical players: 689 forwards,
+398 defensemen, and 134 goalies. Applying the ledger filled 1,076 of 1,174
+missing preseason scores, reducing that blocker queue by 91.7% to 98. Of the
+remaining rows, 97 have no prior AHL statistical observation and one has a
+position-group conflict; all remain blocked. The application cleared no other
+fact class and retained a new sealed result-workboard fingerprint. S2 remains
+open on those 98 scores plus sourced status, assignment, prospect, recall,
+waiver, and final-rule authority.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

@@ -67,6 +67,14 @@ pub struct AhlPreseasonFactsPlayerRow {
     pub primary_position: Option<Position>,
     pub eligible_positions: Vec<Position>,
     pub projected_score: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub projected_score_method: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub projected_score_confidence: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub projected_score_sample_games: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub projected_score_source_fingerprint: Option<String>,
     #[serde(default)]
     pub prospect: Option<bool>,
     #[serde(default)]
@@ -346,6 +354,10 @@ pub fn build_ahl_preseason_league_facts_workboard(
                 primary_position,
                 eligible_positions,
                 projected_score: player.projected_score,
+                projected_score_method: None,
+                projected_score_confidence: None,
+                projected_score_sample_games: None,
+                projected_score_source_fingerprint: None,
                 prospect: None,
                 recall_readiness: None,
                 assigned_to_affiliate: None,
@@ -686,7 +698,7 @@ fn fingerprint_application(
     Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
 }
 
-fn validate_workboard(
+pub(crate) fn validate_workboard(
     workboard: &AhlPreseasonLeagueFactsWorkboardView,
 ) -> Result<(), AhlFeedError> {
     if workboard.schema != AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA
@@ -909,7 +921,7 @@ fn clear_if(
     }
 }
 
-fn recompute_workboard(
+pub(crate) fn recompute_workboard(
     workboard: &mut AhlPreseasonLeagueFactsWorkboardView,
 ) -> Result<(), AhlFeedError> {
     let mut blocker_counts = BTreeMap::new();
@@ -936,7 +948,7 @@ fn recompute_workboard(
     Ok(())
 }
 
-fn fingerprint_workboard(
+pub(crate) fn fingerprint_workboard(
     workboard: &AhlPreseasonLeagueFactsWorkboardView,
 ) -> Result<String, AhlFeedError> {
     let mut canonical = workboard.clone();
