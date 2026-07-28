@@ -1754,6 +1754,20 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Attribute checkpoint movement to dated personnel evidence through a sealed scenario.
+    #[command(name = "window-personnel-attribution")]
+    WindowPersonnelAttribution {
+        #[arg(long, value_name = "PATH")]
+        earlier: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        later: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        movement: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Rebuild a sealed Window board under a reviewed target manifest.
     #[command(name = "window-rebase")]
     WindowRebase {
@@ -2339,6 +2353,25 @@ mod tui_surface_tests {
                     bridge: Some(_),
                     ..
                 })
+            ));
+
+            let attribution = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-personnel-attribution",
+                "--earlier",
+                "october.json",
+                "--later",
+                "january.json",
+                "--movement",
+                "movement.json",
+                "--input",
+                "personnel.json",
+            ])
+            .expect("Window personnel attribution should parse");
+            assert!(matches!(
+                attribution.command,
+                Commands::Icecast(IceCastSubcommand::WindowPersonnelAttribution { .. })
             ));
 
             let rebase = Cli::try_parse_from([

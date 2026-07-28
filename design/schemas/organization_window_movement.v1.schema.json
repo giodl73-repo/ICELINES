@@ -16,6 +16,20 @@
     "rebased_earlier_board_fingerprint": { "$ref": "#/$defs/fingerprint" },
     "later_board_fingerprint": { "$ref": "#/$defs/fingerprint" },
     "organizations": { "type": "array", "minItems": 1, "items": { "type": "object" } },
+    "personnel_attribution": {
+      "type": "object",
+      "required": ["attribution_id", "scenario_id", "estimate_as_of", "scenario_impact_fingerprint", "events", "direct_organizations", "rationale"],
+      "properties": {
+        "attribution_id": { "type": "string", "minLength": 1 },
+        "scenario_id": { "type": "string", "minLength": 1 },
+        "estimate_as_of": { "type": "string", "format": "date" },
+        "scenario_impact_fingerprint": { "$ref": "#/$defs/fingerprint" },
+        "events": { "type": "array", "minItems": 1, "items": { "type": "object" } },
+        "direct_organizations": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "rationale": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
     "disclosures": { "type": "array", "items": { "type": "string" } }
   },
   "additionalProperties": false,

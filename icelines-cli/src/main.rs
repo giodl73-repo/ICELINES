@@ -2376,6 +2376,15 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             bridge,
             out,
         }) => commands::icecast::run_window_movement(earlier, later, bridge, out)?,
+        Commands::Icecast(IceCastSubcommand::WindowPersonnelAttribution {
+            earlier,
+            later,
+            movement,
+            input,
+            out,
+        }) => commands::icecast::run_window_personnel_attribution(
+            earlier, later, movement, input, out,
+        )?,
         Commands::Icecast(IceCastSubcommand::WindowRebase {
             input,
             target_manifest,

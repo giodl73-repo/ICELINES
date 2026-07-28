@@ -369,6 +369,7 @@ icelines icecast window --input window.json --markdown --out window-report.md
 icelines icecast window --input window.json --team NYR --markdown --out nyr-window-report.md
 icelines icecast window-card --input window.json --team NYR --out nyr-window-card.json
 icelines icecast window-movement --earlier october.json --later january.json --out window-movement.json
+icelines icecast window-personnel-attribution --earlier october.json --later january.json --movement window-movement.json --input personnel-attribution.json --out attributed-movement.json
 icelines icecast window-rebase --input october.json --target-manifest balanced-v2.json --bridge balanced-v1-to-v2-bridge.json --out october-rebased.json
 icelines icecast window-movement --earlier october.json --later january-v2.json --bridge balanced-v1-to-v2-bridge.json --out bridged-movement.json
 icelines icecast window-history --input october.json --input january.json --input march.json --out window-history.json

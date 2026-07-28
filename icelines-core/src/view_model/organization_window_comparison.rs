@@ -16,6 +16,7 @@ use super::organization_window::{
     OrganizationWindowProfileInventory, WindowClassification, WindowEvidenceView, WindowFreshness,
     WindowOrganizationView,
 };
+use super::team_game_forecast::{TeamGameForecastView, TEAM_GAME_FORECAST_SCHEMA};
 use super::team_season_forecast::{
     TeamSeasonForecastView, TeamSeasonScenarioEventKind, TEAM_SEASON_FORECAST_SCHEMA,
 };
@@ -26,6 +27,11 @@ pub const ORGANIZATION_WINDOW_HISTORY_SCHEMA: &str = "organization_window_histor
 pub const ORGANIZATION_WINDOW_SCENARIO_IMPACT_SCHEMA: &str =
     "organization_window_scenario_impact.v1";
 pub const ORGANIZATION_WINDOW_BRIDGE_SCHEMA: &str = "organization_window_bridge.v1";
+pub const ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_SCHEMA: &str =
+    "organization_window_personnel_attribution_input.v1";
+pub const ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_JSON_SCHEMA: &str = include_str!(
+    "../../../design/schemas/organization_window_personnel_attribution_input.v1.schema.json"
+);
 pub const ORGANIZATION_WINDOW_BRIDGE_JSON_SCHEMA: &str =
     include_str!("../../../design/schemas/organization_window_bridge.v1.schema.json");
 
@@ -117,7 +123,56 @@ pub struct OrganizationWindowMovementView {
     pub rebased_earlier_board_fingerprint: Option<String>,
     pub later_board_fingerprint: String,
     pub organizations: Vec<WindowOrganizationDeltaView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub personnel_attribution: Option<WindowPersonnelAttributionView>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WindowPersonnelEventKind {
+    Trade,
+    Waiver,
+    Recall,
+    Assignment,
+    Injury,
+    Activation,
+    Signing,
+    Release,
+    Other,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WindowPersonnelEventView {
+    pub event_id: String,
+    pub effective_date: NaiveDate,
+    pub kind: WindowPersonnelEventKind,
+    pub organizations: Vec<String>,
+    pub label: String,
+    pub source_schema: String,
+    pub source_fingerprint: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationWindowPersonnelAttributionInputView {
+    pub schema: String,
+    pub attribution_id: String,
+    pub scenario_id: String,
+    pub rationale: String,
+    pub events: Vec<WindowPersonnelEventView>,
+    pub scenario_board: OrganizationWindowBoardView,
+    pub scenario_authorities: Vec<WindowScenarioAuthorityView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WindowPersonnelAttributionView {
+    pub attribution_id: String,
+    pub scenario_id: String,
+    pub estimate_as_of: NaiveDate,
+    pub scenario_impact_fingerprint: String,
+    pub events: Vec<WindowPersonnelEventView>,
+    pub direct_organizations: Vec<String>,
+    pub rationale: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -240,6 +295,8 @@ pub enum OrganizationWindowComparisonError {
     InvalidScenarioAuthority(String),
     #[error("Window scenario contains an unattributed change: {0}")]
     UnattributedScenarioChange(String),
+    #[error("invalid Window personnel attribution: {0}")]
+    InvalidPersonnelAttribution(String),
 }
 
 impl OrganizationWindowBridgeView {
@@ -405,11 +462,206 @@ pub fn compare_organization_window_snapshots(
         rebased_earlier_board_fingerprint: None,
         later_board_fingerprint: later.fingerprint.clone(),
         organizations: compare_organizations(earlier, later)?,
+        personnel_attribution: None,
         disclosures: vec![
             "Movement is computed only between boards with identical manifests, cohorts, and method versions.".to_owned(),
             "Personnel attribution remains unset unless supplied by a typed scenario artifact.".to_owned(),
         ],
     })
+}
+
+/// Attach a dated, counterfactual personnel estimate to observed checkpoint
+/// movement. The numeric personnel component is always recomputed from the
+/// supplied scenario board and typed authorities; event metadata alone cannot
+/// create a score delta.
+pub fn attribute_organization_window_personnel_movement(
+    earlier: &OrganizationWindowBoardView,
+    later: &OrganizationWindowBoardView,
+    mut movement: OrganizationWindowMovementView,
+    mut input: OrganizationWindowPersonnelAttributionInputView,
+) -> Result<OrganizationWindowMovementView, OrganizationWindowComparisonError> {
+    if input.schema != ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_SCHEMA
+        || input.attribution_id.trim().is_empty()
+        || input.scenario_id.trim().is_empty()
+        || input.rationale.trim().is_empty()
+        || input.events.is_empty()
+    {
+        return Err(
+            OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+                "schema, attribution identity, rationale, and events are required".to_owned(),
+            ),
+        );
+    }
+    let canonical_movement = compare_organization_window_snapshots(earlier, later)?;
+    if movement.personnel_attribution.is_some() || movement != canonical_movement {
+        return Err(
+            OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+                "movement does not replay exactly from the supplied boards or is already attributed"
+                    .to_owned(),
+            ),
+        );
+    }
+
+    let expected = earlier
+        .expected_organizations
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let mut event_ids = BTreeSet::new();
+    for event in &mut input.events {
+        event.organizations.sort();
+        event.organizations.dedup();
+        if event.event_id.trim().is_empty()
+            || event.label.trim().is_empty()
+            || event.source_schema.trim().is_empty()
+            || !event_ids.insert(event.event_id.clone())
+            || event.organizations.is_empty()
+            || event.effective_date <= movement.earlier_as_of
+            || event.effective_date > movement.later_as_of
+            || !is_source_fingerprint(&event.source_fingerprint)
+            || event
+                .organizations
+                .iter()
+                .any(|organization| !expected.contains(organization))
+        {
+            return Err(
+                OrganizationWindowComparisonError::InvalidPersonnelAttribution(format!(
+                    "event {} has invalid identity, date, source, or organization scope",
+                    event.event_id
+                )),
+            );
+        }
+    }
+    input.events.sort_by(|left, right| {
+        left.effective_date
+            .cmp(&right.effective_date)
+            .then_with(|| left.event_id.cmp(&right.event_id))
+    });
+
+    let events_by_id = input
+        .events
+        .iter()
+        .map(|event| (event.event_id.as_str(), event))
+        .collect::<BTreeMap<_, _>>();
+    if input.scenario_authorities.is_empty() {
+        return Err(
+            OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+                "at least one typed scenario authority is required".to_owned(),
+            ),
+        );
+    }
+    for authority in &input.scenario_authorities {
+        let event = events_by_id
+            .get(authority.authority_id.as_str())
+            .ok_or_else(|| {
+                OrganizationWindowComparisonError::InvalidPersonnelAttribution(format!(
+                    "scenario authority {} has no matching dated event",
+                    authority.authority_id
+                ))
+            })?;
+        if authority.source_schema != event.source_schema
+            || authority.source_fingerprint != event.source_fingerprint
+            || !personnel_authority_matches_event(authority.kind, event.kind)
+            || !authority
+                .organizations
+                .iter()
+                .any(|organization| event.organizations.contains(organization))
+        {
+            return Err(
+                OrganizationWindowComparisonError::InvalidPersonnelAttribution(format!(
+                    "scenario authority {} does not match its event source and scope",
+                    authority.authority_id
+                )),
+            );
+        }
+    }
+
+    let impact = compare_organization_window_typed_scenario(
+        &input.scenario_id,
+        earlier,
+        &input.scenario_board,
+        input.scenario_authorities,
+    )?;
+    let impact_fingerprint = source_document_fingerprint(&impact)?
+        .strip_prefix("sha256:")
+        .expect("source fingerprints are sha256-prefixed")
+        .to_owned();
+    let impact_by_organization = impact
+        .organizations
+        .iter()
+        .map(|organization| (organization.organization.as_str(), organization))
+        .collect::<BTreeMap<_, _>>();
+    for organization in &mut movement.organizations {
+        let estimated = impact_by_organization
+            .get(organization.organization.as_str())
+            .and_then(|impact| impact.score_delta);
+        if estimated.is_some() && organization.score_delta.is_none() {
+            return Err(
+                OrganizationWindowComparisonError::InvalidPersonnelAttribution(format!(
+                    "{} has a personnel estimate but no observed score movement",
+                    organization.organization
+                )),
+            );
+        }
+        organization.personnel_delta = estimated;
+        organization.residual_revaluation = organization
+            .score_delta
+            .zip(organization.method_manifest_delta)
+            .map(|(observed, method)| {
+                let residual = observed - method - estimated.unwrap_or(0.0);
+                if residual.abs() < 1e-10 {
+                    0.0
+                } else {
+                    residual
+                }
+            });
+    }
+    let mut direct_organizations = input
+        .events
+        .iter()
+        .flat_map(|event| event.organizations.iter().cloned())
+        .collect::<Vec<_>>();
+    direct_organizations.sort();
+    direct_organizations.dedup();
+    movement.personnel_attribution = Some(WindowPersonnelAttributionView {
+        attribution_id: input.attribution_id,
+        scenario_id: input.scenario_id,
+        estimate_as_of: earlier.as_of,
+        scenario_impact_fingerprint: impact_fingerprint,
+        events: input.events,
+        direct_organizations,
+        rationale: input.rationale,
+    });
+    movement.disclosures.push(
+        "Personnel delta is a dated counterfactual estimate from a sealed typed scenario, not a causal claim; residual movement includes performance, uncertainty, interactions, and unmodeled changes."
+            .to_owned(),
+    );
+    Ok(movement)
+}
+
+fn personnel_authority_matches_event(
+    authority: WindowScenarioAuthorityKind,
+    event: WindowPersonnelEventKind,
+) -> bool {
+    match event {
+        WindowPersonnelEventKind::Trade => authority == WindowScenarioAuthorityKind::Trade,
+        WindowPersonnelEventKind::Injury | WindowPersonnelEventKind::Activation => matches!(
+            authority,
+            WindowScenarioAuthorityKind::Injury | WindowScenarioAuthorityKind::Goalie
+        ),
+        WindowPersonnelEventKind::Recall
+        | WindowPersonnelEventKind::Assignment
+        | WindowPersonnelEventKind::Waiver
+        | WindowPersonnelEventKind::Signing
+        | WindowPersonnelEventKind::Release
+        | WindowPersonnelEventKind::Other => matches!(
+            authority,
+            WindowScenarioAuthorityKind::Custom
+                | WindowScenarioAuthorityKind::TrainingCamp
+                | WindowScenarioAuthorityKind::PlayerDevelopment
+                | WindowScenarioAuthorityKind::LineCombination
+        ),
+    }
 }
 
 /// Rebuild a historical board under a reviewed target manifest.
@@ -867,6 +1119,83 @@ pub fn adapt_team_season_window_scenario_authorities(
             })
         })
         .collect()
+}
+
+/// Select dated IceReplay personnel observations for one Window interval.
+/// The returned events carry the replay document fingerprint; numeric impact
+/// still requires a separately recomputed typed Window scenario.
+pub fn adapt_team_game_window_personnel_events(
+    forecast: &TeamGameForecastView,
+    earlier_as_of: NaiveDate,
+    later_as_of: NaiveDate,
+) -> Result<Vec<WindowPersonnelEventView>, OrganizationWindowComparisonError> {
+    if forecast.schema != TEAM_GAME_FORECAST_SCHEMA || later_as_of <= earlier_as_of {
+        return Err(
+            OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+                "unsupported team-game forecast or invalid attribution interval".to_owned(),
+            ),
+        );
+    }
+    let source_fingerprint = source_document_fingerprint(forecast)?;
+    let mut events = forecast
+        .personnel_evidence
+        .iter()
+        .filter(|event| event.date > earlier_as_of && event.date <= later_as_of)
+        .map(|event| WindowPersonnelEventView {
+            event_id: event.event_id.clone(),
+            effective_date: event.date,
+            kind: personnel_event_kind(event),
+            organizations: vec![event.team.clone()],
+            label: event.label.clone(),
+            source_schema: TEAM_GAME_FORECAST_SCHEMA.to_owned(),
+            source_fingerprint: source_fingerprint.clone(),
+        })
+        .collect::<Vec<_>>();
+    events.sort_by(|left, right| {
+        left.effective_date
+            .cmp(&right.effective_date)
+            .then_with(|| left.event_id.cmp(&right.event_id))
+    });
+    if events
+        .iter()
+        .map(|event| event.event_id.as_str())
+        .collect::<BTreeSet<_>>()
+        .len()
+        != events.len()
+    {
+        return Err(
+            OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+                "team-game forecast contains duplicate personnel event IDs in the interval"
+                    .to_owned(),
+            ),
+        );
+    }
+    Ok(events)
+}
+
+fn personnel_event_kind(
+    event: &super::team_game_forecast::TeamGamePersonnelEvidenceRow,
+) -> WindowPersonnelEventKind {
+    let text = format!("{} {}", event.kind, event.label).to_ascii_lowercase();
+    if text.contains("trade") || text.contains("acquired") {
+        WindowPersonnelEventKind::Trade
+    } else if text.contains("waiv") {
+        WindowPersonnelEventKind::Waiver
+    } else if text.contains("recall") {
+        WindowPersonnelEventKind::Recall
+    } else if text.contains("assign") || text.contains("loan") {
+        WindowPersonnelEventKind::Assignment
+    } else if text.contains("injur") || text.contains("ir placement") {
+        WindowPersonnelEventKind::Injury
+    } else if text.contains("activat") || text.contains("return") {
+        WindowPersonnelEventKind::Activation
+    } else if text.contains("sign") {
+        WindowPersonnelEventKind::Signing
+    } else if text.contains("release") || text.contains("terminat") {
+        WindowPersonnelEventKind::Release
+    } else {
+        WindowPersonnelEventKind::Other
+    }
 }
 
 pub fn adapt_training_camp_window_scenario_authorities(
@@ -1427,6 +1756,195 @@ mod tests {
         assert!(decoded.source_manifest_fingerprint.is_none());
         assert!(decoded.bridge_fingerprint.is_none());
         assert!(decoded.rebased_earlier_board_fingerprint.is_none());
+        assert!(decoded.personnel_attribution.is_none());
+    }
+
+    #[test]
+    fn personnel_attribution_requires_dated_evidence_and_recomputed_typed_impact() {
+        let base = evaluation_board();
+        let october = at_checkpoint(
+            base.clone(),
+            NaiveDate::from_ymd_opt(2026, 10, 1).unwrap(),
+            "2026-10-01T00:00:00Z",
+            0.0,
+        );
+        let january = at_checkpoint(
+            base,
+            NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
+            "2027-01-01T00:00:00Z",
+            2.0,
+        );
+        let movement = compare_organization_window_snapshots(&october, &january).unwrap();
+        let scenario = at_checkpoint(october.clone(), october.as_of, "2026-10-01T00:01:00Z", 4.0);
+        let provisional =
+            compare_organization_window_scenario("nyr-personnel", &october, &scenario).unwrap();
+        let changed = provisional
+            .organizations
+            .iter()
+            .find(|team| team.organization == "NYR")
+            .unwrap()
+            .dimensions
+            .iter()
+            .flat_map(|dimension| &dimension.profiles)
+            .find(|profile| profile.raw_delta.is_some_and(|delta| delta.abs() > 0.0))
+            .unwrap();
+        let scenario_profile = scenario
+            .organization("NYR")
+            .unwrap()
+            .dimensions
+            .iter()
+            .flat_map(|dimension| &dimension.profiles)
+            .find(|profile| {
+                profile.profile_key == changed.profile_key
+                    && profile.method_version == changed.method_version
+            })
+            .unwrap();
+        let source_fingerprint = scenario_profile.source_fingerprints[0].clone();
+        let source_schema = scenario_profile.evidence[0].source_schema.clone();
+        let authority = WindowScenarioAuthorityView {
+            authority_id: "nyr-transaction-1".to_owned(),
+            kind: WindowScenarioAuthorityKind::Trade,
+            source_schema: source_schema.clone(),
+            source_fingerprint: source_fingerprint.clone(),
+            organizations: vec!["NYR".to_owned()],
+            profile_methods: vec![WindowScenarioProfileMethodView {
+                profile_key: changed.profile_key.clone(),
+                method_version: changed.method_version.clone(),
+            }],
+            rationale: "Paired roster scenario for the dated transaction.".to_owned(),
+        };
+        let input = OrganizationWindowPersonnelAttributionInputView {
+            schema: ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_SCHEMA.to_owned(),
+            attribution_id: "october-to-january-personnel".to_owned(),
+            scenario_id: "nyr-personnel".to_owned(),
+            rationale: "Estimate the transaction contribution against the October checkpoint."
+                .to_owned(),
+            events: vec![WindowPersonnelEventView {
+                event_id: "nyr-transaction-1".to_owned(),
+                effective_date: NaiveDate::from_ymd_opt(2026, 11, 15).unwrap(),
+                kind: WindowPersonnelEventKind::Trade,
+                organizations: vec!["NYR".to_owned()],
+                label: "NYR roster transaction".to_owned(),
+                source_schema,
+                source_fingerprint,
+            }],
+            scenario_board: scenario,
+            scenario_authorities: vec![authority],
+        };
+
+        let attributed = attribute_organization_window_personnel_movement(
+            &october,
+            &january,
+            movement.clone(),
+            input.clone(),
+        )
+        .unwrap();
+        let nyr = attributed
+            .organizations
+            .iter()
+            .find(|team| team.organization == "NYR")
+            .unwrap();
+        assert!(nyr.personnel_delta.is_some_and(|delta| delta.abs() > 0.0));
+        assert_eq!(
+            nyr.residual_revaluation.unwrap(),
+            nyr.score_delta.unwrap()
+                - nyr.method_manifest_delta.unwrap()
+                - nyr.personnel_delta.unwrap()
+        );
+        let attribution = attributed.personnel_attribution.unwrap();
+        assert_eq!(attribution.direct_organizations, ["NYR"]);
+        assert_eq!(attribution.scenario_impact_fingerprint.len(), 64);
+
+        let mut tampered = movement.clone();
+        tampered
+            .organizations
+            .iter_mut()
+            .find(|team| team.organization == "NYR")
+            .unwrap()
+            .score_delta = Some(999.0);
+        assert!(matches!(
+            attribute_organization_window_personnel_movement(
+                &october,
+                &january,
+                tampered,
+                input.clone()
+            ),
+            Err(OrganizationWindowComparisonError::InvalidPersonnelAttribution(_))
+        ));
+
+        let mut invalid = input;
+        invalid.events[0].effective_date = october.as_of;
+        assert!(matches!(
+            attribute_organization_window_personnel_movement(&october, &january, movement, invalid),
+            Err(OrganizationWindowComparisonError::InvalidPersonnelAttribution(_))
+        ));
+    }
+
+    #[test]
+    fn personnel_event_classifier_covers_transaction_and_availability_lanes() {
+        let event = |kind: &str, label: &str| {
+            personnel_event_kind(
+                &super::super::team_game_forecast::TeamGamePersonnelEvidenceRow {
+                    event_id: "event".to_owned(),
+                    date: NaiveDate::from_ymd_opt(2025, 2, 1).unwrap(),
+                    team: "NYR".to_owned(),
+                    kind: kind.to_owned(),
+                    label: label.to_owned(),
+                    source: "https://example.test/event".to_owned(),
+                    availability_delta: 0,
+                    resolved_players: Vec::new(),
+                    ambiguous_player_names: Vec::new(),
+                },
+            )
+        };
+        assert_eq!(
+            event("trade", "acquired player"),
+            WindowPersonnelEventKind::Trade
+        );
+        assert_eq!(
+            event("waivers", "placed on waivers"),
+            WindowPersonnelEventKind::Waiver
+        );
+        assert_eq!(
+            event("roster", "recalled from Hartford"),
+            WindowPersonnelEventKind::Recall
+        );
+        assert_eq!(
+            event("roster", "assigned on loan"),
+            WindowPersonnelEventKind::Assignment
+        );
+        assert_eq!(
+            event("injury", "IR placement"),
+            WindowPersonnelEventKind::Injury
+        );
+        assert_eq!(
+            event("roster", "activated from IR"),
+            WindowPersonnelEventKind::Activation
+        );
+        assert_eq!(
+            event("contract", "signed player"),
+            WindowPersonnelEventKind::Signing
+        );
+        assert_eq!(
+            event("contract", "released player"),
+            WindowPersonnelEventKind::Release
+        );
+        assert_eq!(
+            event("administrative", "number changed"),
+            WindowPersonnelEventKind::Other
+        );
+    }
+
+    #[test]
+    fn personnel_attribution_input_schema_is_embedded_json() {
+        let schema: serde_json::Value =
+            serde_json::from_str(ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_JSON_SCHEMA)
+                .unwrap();
+        assert_eq!(
+            schema["properties"]["schema"]["const"],
+            ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_SCHEMA
+        );
+        assert_eq!(schema["properties"]["events"]["minItems"], 1);
     }
 
     fn reweighted_manifest(

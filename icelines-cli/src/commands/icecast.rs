@@ -64,9 +64,11 @@ use icelines_core::{
     PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };
 use icelines_core::{
+    attribute_organization_window_personnel_movement,
     calibrate_organization_window_rolling_origins, evaluate_organization_window_origins,
     load_organization_window_profile_inventory, rebase_organization_window_board,
-    validate_organization_window_board, WindowCalibrationEvaluationOriginInput,
+    validate_organization_window_board, OrganizationWindowMovementView,
+    OrganizationWindowPersonnelAttributionInputView, WindowCalibrationEvaluationOriginInput,
     WindowCalibrationOriginInput, WindowCalibrationOriginRole,
 };
 use icelines_fetch::{
@@ -3616,6 +3618,30 @@ pub fn run_window_movement(
         compare_organization_window_snapshots(&earlier, &later)?
     };
     write_window_json(&movement, out.as_deref(), "organization Window movement")
+}
+
+pub fn run_window_personnel_attribution(
+    earlier: PathBuf,
+    later: PathBuf,
+    movement: PathBuf,
+    input: PathBuf,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let earlier: OrganizationWindowBoardView =
+        read_icecast_json(&earlier, "earlier organization Window")?;
+    let later: OrganizationWindowBoardView =
+        read_icecast_json(&later, "later organization Window")?;
+    let movement: OrganizationWindowMovementView =
+        read_icecast_json(&movement, "organization Window movement")?;
+    let input: OrganizationWindowPersonnelAttributionInputView =
+        read_icecast_json(&input, "organization Window personnel attribution input")?;
+    let attributed =
+        attribute_organization_window_personnel_movement(&earlier, &later, movement, input)?;
+    write_window_json(
+        &attributed,
+        out.as_deref(),
+        "organization Window personnel attribution",
+    )
 }
 
 pub fn run_window_rebase(

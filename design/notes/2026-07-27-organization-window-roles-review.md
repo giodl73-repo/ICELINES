@@ -192,3 +192,13 @@ it into three comparable all-32-team Window boards under a dedicated
 within-season checkpoint gap without inventing observations for the other
 panes. Personnel attribution remains `null` and W5 remains partial until a
 dated typed personnel authority supports that causal decomposition.
+
+HART/EDGE then reviewed the attribution trust boundary. The resulting v1 input
+requires dated events, a scenario board, and typed authorities whose identity,
+source fingerprint, and organization scope agree. Core replays the supplied
+movement from both boards and recomputes the typed scenario before setting any
+`personnel_delta`; tampered movement, out-of-window events, unmatched
+authorities, duplicate events, and unsupported sources fail closed. PACE keeps
+the value labeled a counterfactual estimate and assigns all unexplained change
+to the residual. A real paired historical scenario remains the W5 evidence
+gate.

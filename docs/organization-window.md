@@ -68,7 +68,23 @@ icelines icecast window-movement \
   --later january-v2.json \
   --bridge balanced-v1-to-v2-bridge.json \
   --out bridged-movement.json
+
+icelines icecast window-personnel-attribution \
+  --earlier october.json \
+  --later january.json \
+  --movement movement.json \
+  --input personnel-attribution.json \
+  --out attributed-movement.json
 ```
+
+`organization_window_personnel_attribution_input.v1` contains dated personnel
+events plus a combined scenario board and typed authorities. The command
+replays the supplied movement from both boards, recomputes the scenario impact
+through the canonical scorer, and then separates observed movement into method,
+estimated personnel, and residual components. Event metadata alone cannot
+produce a numeric delta. The estimate is explicitly counterfactual rather than
+a causal claim, and bridged cross-method movement is not accepted by this v1
+path.
 
 Library consumers can project a sealed `team_season_forecast_history.v1`
 authority into comparable Window checkpoints with
