@@ -147,4 +147,5 @@ reported no page overflow at 390px. The remaining visual gate is automated full
 cross-surface golden parity, not first browser or interaction evidence. PR #23
 then observed the canonical fixed hashes and replay test passing on all three
 operating systems; that closes the platform-fingerprint observation, while the
-real-history, package-matrix, and full-parity blockers remain explicit.
+full PR workflow passed 22 of 22 checks. The real-history, package-matrix, and
+full-parity blockers remain explicit.
