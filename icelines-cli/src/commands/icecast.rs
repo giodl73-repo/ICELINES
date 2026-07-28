@@ -8,16 +8,17 @@ use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
 use icelines_core::{
     adapt_prospect_conversion_input, adapt_team_season_window_scenario_authorities,
     adapt_training_camp_window_scenario_authorities, apply_team_behavior_research,
-    build_adaptive_lineup_policy, build_ahl_affiliate_projection,
-    build_balanced_organization_window_board, build_development_calibration,
-    build_forecast_history_card, build_forecast_movement_card, build_isolated_scenario_impact,
-    build_isolated_scenario_impact_as_of, build_line_combination_forecast,
-    build_organization_lineup_forecast, build_organization_window_card,
-    build_organization_window_history, build_prospect_conversion_board,
-    build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
-    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
-    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
+    audit_organization_window_source_package, build_adaptive_lineup_policy,
+    build_ahl_affiliate_projection, build_balanced_organization_window_board_from_package,
+    build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
+    build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
+    build_line_combination_forecast, build_organization_lineup_forecast,
+    build_organization_window_card, build_organization_window_history,
+    build_prospect_conversion_board, build_prospect_development_study,
+    build_prospect_discovery_board, build_prospect_nhl_performance_document,
+    build_prospect_program_board_with_goalies, build_prospect_program_history,
+    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
+    build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -36,13 +37,12 @@ use icelines_core::{
     ForecastHistoryCardInput, ForecastMovementCardInput, LineCombinationForecastConfig,
     LineCombinationForecastView, LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow,
     OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
-    OrganizationPositionGroup, OrganizationUnitKind, OrganizationWindowAdapterContext,
-    OrganizationWindowBoardView, OrganizationWindowBridgeView, OrganizationWindowCardInput,
-    OrganizationWindowManifestView, OrganizationWindowScenarioDistributionInput,
-    OrganizationWindowSourceSet, ProspectConversionBoardView, ProspectConversionConfig,
-    ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
-    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow,
-    ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
+    OrganizationPositionGroup, OrganizationUnitKind, OrganizationWindowBoardView,
+    OrganizationWindowBridgeView, OrganizationWindowCardInput, OrganizationWindowManifestView,
+    OrganizationWindowScenarioDistributionInput, OrganizationWindowSourcePackageView,
+    ProspectConversionBoardView, ProspectConversionConfig, ProspectConversionPerformanceDocument,
+    ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
+    ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
     ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
     ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramSensitivityView,
     ScenarioScopeView, ScheduleRestProfileView, SeasonSimulationCardInput,
@@ -60,14 +60,15 @@ use icelines_core::{
     TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
     TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
     TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
-    ViewWindow, WindowHorizon, WindowScenarioAuthorityView, CURRENT_SEASON,
-    PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
+    ViewWindow, WindowScenarioAuthorityView, CURRENT_SEASON,
+    ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA, PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };
 use icelines_core::{
     attribute_organization_window_personnel_movement,
     build_later_counterfactual_personnel_attribution_input,
     calibrate_organization_window_rolling_origins, evaluate_organization_window_origins,
     load_organization_window_profile_inventory, rebase_organization_window_board,
+    require_ranked_balanced_organization_window_board, seal_organization_window_source_package,
     summarize_organization_window_personnel_evidence, validate_organization_window_board,
     OrganizationWindowMovementView, OrganizationWindowPersonnelAttributionInputView,
     WindowCalibrationEvaluationOriginInput, WindowCalibrationOriginInput,
@@ -3344,7 +3345,26 @@ pub struct WindowBuildArgs {
     pub season: u32,
     pub as_of: NaiveDate,
     pub generated_at: String,
+    pub source_package: Option<PathBuf>,
     pub team_season_forecast: Option<PathBuf>,
+    pub team_game_forecast: Option<PathBuf>,
+    pub team_lineups: Vec<PathBuf>,
+    pub organization_lineups: Vec<PathBuf>,
+    pub prospect_program: Option<PathBuf>,
+    pub prospect_conversion: Option<PathBuf>,
+    pub training_camp: Option<PathBuf>,
+    pub schedule_rest: Vec<PathBuf>,
+    pub require_ranked: bool,
+    pub out: PathBuf,
+}
+
+pub struct WindowSourcePackageArgs {
+    pub season: u32,
+    pub as_of: NaiveDate,
+    pub team_season_forecast: Option<PathBuf>,
+    pub team_game_forecast: Option<PathBuf>,
+    pub cache_team_lineups: bool,
+    pub stats_season: String,
     pub team_lineups: Vec<PathBuf>,
     pub organization_lineups: Vec<PathBuf>,
     pub prospect_program: Option<PathBuf>,
@@ -3354,63 +3374,164 @@ pub struct WindowBuildArgs {
     pub out: PathBuf,
 }
 
-pub fn run_window_build(args: WindowBuildArgs) -> anyhow::Result<()> {
-    DateTime::parse_from_rfc3339(&args.generated_at)
-        .context("--generated-at must be RFC 3339, for example 2026-10-01T12:00:00Z")?;
-    let team_season_forecast = args
+struct WindowSourcePaths<'a> {
+    season: u32,
+    as_of: NaiveDate,
+    team_season_forecast: Option<&'a Path>,
+    team_game_forecast: Option<&'a Path>,
+    team_lineups: &'a [PathBuf],
+    organization_lineups: &'a [PathBuf],
+    prospect_program: Option<&'a Path>,
+    prospect_conversion: Option<&'a Path>,
+    training_camp: Option<&'a Path>,
+    schedule_rest: &'a [PathBuf],
+}
+
+fn load_window_source_package(
+    paths: WindowSourcePaths<'_>,
+) -> anyhow::Result<OrganizationWindowSourcePackageView> {
+    let team_season_forecast = paths
         .team_season_forecast
-        .as_deref()
         .map(|path| read_icecast_json(path, "team season forecast"))
         .transpose()?;
-    let team_lineups = args
+    let team_game_forecast = paths
+        .team_game_forecast
+        .map(|path| read_icecast_json(path, "team game forecast"))
+        .transpose()?;
+    let team_lineups = paths
         .team_lineups
         .iter()
         .map(|path| read_icecast_json(path, "team lineup"))
         .collect::<anyhow::Result<Vec<TeamLineupProjectionView>>>()?;
-    let organization_lineups = args
+    let organization_lineups = paths
         .organization_lineups
         .iter()
         .map(|path| read_icecast_json(path, "organization lineup"))
         .collect::<anyhow::Result<Vec<OrganizationLineupForecastView>>>()?;
-    let prospect_program = args
+    let prospect_program = paths
         .prospect_program
-        .as_deref()
         .map(|path| read_icecast_json(path, "prospect program"))
         .transpose()?;
-    let prospect_conversion = args
+    let prospect_conversion = paths
         .prospect_conversion
-        .as_deref()
         .map(|path| read_icecast_json(path, "prospect conversion"))
         .transpose()?;
-    let training_camp = args
+    let training_camp = paths
         .training_camp
-        .as_deref()
         .map(|path| read_icecast_json(path, "training camp league forecast"))
         .transpose()?;
-    let schedule_rest = args
+    let schedule_rest = paths
         .schedule_rest
         .iter()
         .map(|path| read_icecast_json(path, "schedule rest profile"))
         .collect::<anyhow::Result<Vec<ScheduleRestProfileView>>>()?;
-    let board = build_balanced_organization_window_board(
-        OrganizationWindowAdapterContext {
-            season: args.season,
+    Ok(seal_organization_window_source_package(
+        OrganizationWindowSourcePackageView {
+            schema: ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA.to_owned(),
+            season: paths.season,
             season_type: "regular".to_owned(),
-            as_of: args.as_of,
-            horizon: WindowHorizon::Current,
+            as_of: paths.as_of,
             organization_identity_version: "nhl_32.v1".to_owned(),
+            team_season_forecast,
+            team_game_forecast,
+            team_lineups,
+            organization_lineups,
+            prospect_program,
+            prospect_conversion,
+            training_camp,
+            schedule_rest,
+            fingerprint: String::new(),
         },
-        args.generated_at,
-        OrganizationWindowSourceSet {
-            team_season_forecast: team_season_forecast.as_ref(),
-            team_lineups: &team_lineups,
-            organization_lineups: &organization_lineups,
-            prospect_program: prospect_program.as_ref(),
-            prospect_conversion: prospect_conversion.as_ref(),
-            training_camp: training_camp.as_ref(),
-            schedule_rest: &schedule_rest,
-        },
-    )?;
+    )?)
+}
+
+pub fn run_window_source_package(args: WindowSourcePackageArgs) -> anyhow::Result<()> {
+    let mut package = load_window_source_package(WindowSourcePaths {
+        season: args.season,
+        as_of: args.as_of,
+        team_season_forecast: args.team_season_forecast.as_deref(),
+        team_game_forecast: args.team_game_forecast.as_deref(),
+        team_lineups: &args.team_lineups,
+        organization_lineups: &args.organization_lineups,
+        prospect_program: args.prospect_program.as_deref(),
+        prospect_conversion: args.prospect_conversion.as_deref(),
+        training_camp: args.training_camp.as_deref(),
+        schedule_rest: &args.schedule_rest,
+    })?;
+    if args.cache_team_lineups {
+        let roster_season: Season =
+            args.season.to_string().parse().map_err(|error| {
+                anyhow::anyhow!("invalid roster season '{}': {error}", args.season)
+            })?;
+        let stats_season: Season = args.stats_season.parse().map_err(|error| {
+            anyhow::anyhow!("invalid stats season '{}': {error}", args.stats_season)
+        })?;
+        package.team_lineups =
+            super::report::load_league_team_lineup_views(roster_season, stats_season)?;
+        package.fingerprint.clear();
+        package = seal_organization_window_source_package(package)?;
+    }
+    let output = format!("{}\n", serde_json::to_string_pretty(&package)?);
+    write_icecast_file(
+        &args.out,
+        output.as_bytes(),
+        "organization Window source package",
+    )
+}
+
+pub fn run_window_source_audit(
+    input: PathBuf,
+    generated_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&generated_at)
+        .context("--generated-at must be RFC 3339, for example 2026-10-01T12:00:00Z")?;
+    let package: OrganizationWindowSourcePackageView =
+        read_icecast_json(&input, "organization Window source package")?;
+    let coverage = audit_organization_window_source_package(&package, generated_at)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&coverage)?);
+    if let Some(path) = out {
+        write_icecast_file(&path, output.as_bytes(), "organization Window source audit")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_window_build(args: WindowBuildArgs) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&args.generated_at)
+        .context("--generated-at must be RFC 3339, for example 2026-10-01T12:00:00Z")?;
+    let package = if let Some(path) = args.source_package.as_deref() {
+        let package: OrganizationWindowSourcePackageView =
+            read_icecast_json(path, "organization Window source package")?;
+        seal_organization_window_source_package(package)?
+    } else {
+        load_window_source_package(WindowSourcePaths {
+            season: args.season,
+            as_of: args.as_of,
+            team_season_forecast: args.team_season_forecast.as_deref(),
+            team_game_forecast: args.team_game_forecast.as_deref(),
+            team_lineups: &args.team_lineups,
+            organization_lineups: &args.organization_lineups,
+            prospect_program: args.prospect_program.as_deref(),
+            prospect_conversion: args.prospect_conversion.as_deref(),
+            training_camp: args.training_camp.as_deref(),
+            schedule_rest: &args.schedule_rest,
+        })?
+    };
+    if package.season != args.season || package.as_of != args.as_of {
+        bail!(
+            "source package identifies season {} at {}; window-build requested {} at {}",
+            package.season,
+            package.as_of,
+            args.season,
+            args.as_of
+        );
+    }
+    let board = build_balanced_organization_window_board_from_package(&package, args.generated_at)?;
+    if args.require_ranked {
+        require_ranked_balanced_organization_window_board(&board)?;
+    }
     let output = format!("{}\n", serde_json::to_string_pretty(&board)?);
     write_icecast_file(
         &args.out,

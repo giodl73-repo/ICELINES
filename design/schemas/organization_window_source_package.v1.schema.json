@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_window_source_package.v1.schema.json",
+  "title": "IceLines Organization Window Source Package v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "season",
+    "season_type",
+    "as_of",
+    "organization_identity_version",
+    "team_lineups",
+    "organization_lineups",
+    "schedule_rest",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "organization_window_source_package.v1" },
+    "season": { "type": "integer", "minimum": 19001901 },
+    "season_type": { "const": "regular" },
+    "as_of": { "type": "string", "format": "date" },
+    "organization_identity_version": { "const": "nhl_32.v1" },
+    "team_season_forecast": { "$ref": "#/$defs/document" },
+    "team_game_forecast": { "$ref": "#/$defs/document" },
+    "team_lineups": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/document" }
+    },
+    "organization_lineups": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/document" }
+    },
+    "prospect_program": { "$ref": "#/$defs/document" },
+    "prospect_conversion": { "$ref": "#/$defs/document" },
+    "training_camp": { "$ref": "#/$defs/document" },
+    "schedule_rest": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/document" }
+    },
+    "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "$defs": {
+    "document": {
+      "type": "object",
+      "required": ["schema"],
+      "properties": {
+        "schema": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "additionalProperties": false
+}

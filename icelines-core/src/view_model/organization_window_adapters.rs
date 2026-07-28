@@ -7,7 +7,10 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use super::line_combination::{LineCombinationForecastView, LINE_COMBINATION_FORECAST_SCHEMA};
-use super::management_behavior::{ScheduleRestProfileView, SCHEDULE_REST_PROFILE_SCHEMA};
+use super::management_behavior::{
+    build_schedule_rest_profile, BenchScheduleLoad, ScheduleRestGameInput, ScheduleRestProfileView,
+    SCHEDULE_REST_PROFILE_SCHEMA,
+};
 use super::organization_lineup::{
     OrganizationLineupForecastView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
 };
@@ -17,11 +20,12 @@ use super::organization_window::{
     OrganizationWindowError, OrganizationWindowManifestView, WindowCohortKind,
     WindowCohortManifest, WindowDimensionManifest, WindowEvidenceView, WindowFreshness,
     WindowHorizon, WindowMissingPolicy, WindowNormalizationMethod, WindowProfileStatus,
-    WindowProfileWeight, WindowSignalFamilyCap, ORGANIZATION_WINDOW_CLASSIFICATION_METHOD,
-    ORGANIZATION_WINDOW_MANIFEST_SCHEMA,
+    WindowProfileWeight, WindowRankState, WindowSignalFamilyCap,
+    ORGANIZATION_WINDOW_CLASSIFICATION_METHOD, ORGANIZATION_WINDOW_MANIFEST_SCHEMA,
 };
 use super::prospect_conversion::{ProspectConversionBoardView, PROSPECT_CONVERSION_BOARD_SCHEMA};
 use super::prospect_study::{ProspectProgramBoardView, PROSPECT_PROGRAM_BOARD_SCHEMA};
+use super::team_game_forecast::{TeamGameForecastView, TEAM_GAME_FORECAST_SCHEMA};
 use super::team_lineup::{
     TeamLineupPlayerView, TeamLineupProjectionView, TeamLineupSpecialTeamsUnitView,
     TEAM_LINEUP_PROJECTION_SCHEMA,
@@ -35,6 +39,13 @@ use crate::teams::CANONICAL_TEAMS;
 
 pub const ORGANIZATION_WINDOW_BALANCED_MANIFEST_ID: &str = "balanced.v1";
 pub const ORGANIZATION_WINDOW_FORECAST_HISTORY_MANIFEST_ID: &str = "icecast_forecast_history.v1";
+pub const ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA: &str = "organization_window_source_package.v1";
+pub const ORGANIZATION_WINDOW_SOURCE_PACKAGE_JSON_SCHEMA: &str =
+    include_str!("../../../design/schemas/organization_window_source_package.v1.schema.json");
+pub const ORGANIZATION_WINDOW_SOURCE_COVERAGE_SCHEMA: &str =
+    "organization_window_source_coverage.v1";
+pub const ORGANIZATION_WINDOW_SOURCE_COVERAGE_JSON_SCHEMA: &str =
+    include_str!("../../../design/schemas/organization_window_source_coverage.v1.schema.json");
 const TEAM_CATALOG_VERSION: &str = "nhl_32.v1";
 const BALANCED_MANIFEST_CREATED_AT: &str = "2026-07-27";
 
@@ -52,12 +63,291 @@ pub struct OrganizationWindowAdapterContext {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct OrganizationWindowSourceSet<'a> {
     pub team_season_forecast: Option<&'a TeamSeasonForecastView>,
+    pub team_game_forecast: Option<&'a TeamGameForecastView>,
     pub team_lineups: &'a [TeamLineupProjectionView],
     pub organization_lineups: &'a [OrganizationLineupForecastView],
     pub prospect_program: Option<&'a ProspectProgramBoardView>,
     pub prospect_conversion: Option<&'a ProspectConversionBoardView>,
     pub training_camp: Option<&'a TrainingCampLeagueForecastView>,
     pub schedule_rest: &'a [ScheduleRestProfileView],
+}
+
+/// One portable, sealed authority package for a balanced Window board. The
+/// package owns upstream documents while `OrganizationWindowSourceSet` remains
+/// the zero-copy adapter view used by the scorer.
+#[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
+pub struct OrganizationWindowSourcePackageView {
+    pub schema: String,
+    pub season: u32,
+    pub season_type: String,
+    pub as_of: NaiveDate,
+    pub organization_identity_version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_season_forecast: Option<TeamSeasonForecastView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_game_forecast: Option<TeamGameForecastView>,
+    #[serde(default)]
+    pub team_lineups: Vec<TeamLineupProjectionView>,
+    #[serde(default)]
+    pub organization_lineups: Vec<OrganizationLineupForecastView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prospect_program: Option<ProspectProgramBoardView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prospect_conversion: Option<ProspectConversionBoardView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub training_camp: Option<TrainingCampLeagueForecastView>,
+    #[serde(default)]
+    pub schedule_rest: Vec<ScheduleRestProfileView>,
+    pub fingerprint: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
+pub struct WindowSourceProfileCoverageView {
+    pub profile_key: String,
+    pub method_version: String,
+    pub required: bool,
+    pub organizations_with_observation: usize,
+    pub organizations_with_value: usize,
+    pub missing_organizations: Vec<String>,
+    pub complete: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
+pub struct OrganizationWindowSourceCoverageView {
+    pub schema: String,
+    pub season: u32,
+    pub as_of: NaiveDate,
+    pub package_fingerprint: String,
+    pub board_fingerprint: String,
+    pub expected_organizations: usize,
+    pub profiles: Vec<WindowSourceProfileCoverageView>,
+    pub complete_required_profiles: usize,
+    pub required_profiles: usize,
+    pub rank_eligible_organizations: usize,
+    pub production_ranked: bool,
+    pub disclosures: Vec<String>,
+}
+
+impl OrganizationWindowSourcePackageView {
+    pub fn as_source_set(&self) -> OrganizationWindowSourceSet<'_> {
+        OrganizationWindowSourceSet {
+            team_season_forecast: self.team_season_forecast.as_ref(),
+            team_game_forecast: self.team_game_forecast.as_ref(),
+            team_lineups: &self.team_lineups,
+            organization_lineups: &self.organization_lineups,
+            prospect_program: self.prospect_program.as_ref(),
+            prospect_conversion: self.prospect_conversion.as_ref(),
+            training_camp: self.training_camp.as_ref(),
+            schedule_rest: &self.schedule_rest,
+        }
+    }
+
+    pub fn calculate_fingerprint(&self) -> Result<String, OrganizationWindowError> {
+        let mut canonical = self.clone();
+        canonical.fingerprint.clear();
+        canonical
+            .team_lineups
+            .sort_by(|left, right| left.team.cmp(&right.team));
+        canonical
+            .organization_lineups
+            .sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
+        canonical
+            .schedule_rest
+            .sort_by(|left, right| left.team.cmp(&right.team));
+        let wire = serde_json::to_vec(&canonical)
+            .map_err(|error| OrganizationWindowError::InvalidJson(error.to_string()))?;
+        let normalized: Self = serde_json::from_slice(&wire)
+            .map_err(|error| OrganizationWindowError::InvalidJson(error.to_string()))?;
+        let bytes = serde_json::to_vec(&normalized)
+            .map_err(|error| OrganizationWindowError::InvalidJson(error.to_string()))?;
+        Ok(format!("{:x}", Sha256::digest(bytes)))
+    }
+}
+
+pub fn seal_organization_window_source_package(
+    mut package: OrganizationWindowSourcePackageView,
+) -> Result<OrganizationWindowSourcePackageView, OrganizationWindowError> {
+    if package.schema != ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA {
+        return Err(OrganizationWindowError::UnsupportedSchema {
+            contract: "source package",
+            found: package.schema,
+        });
+    }
+    if package.season_type != "regular"
+        || package.organization_identity_version != TEAM_CATALOG_VERSION
+    {
+        return Err(OrganizationWindowError::ContextMismatch(
+            "source package requires regular season and nhl_32.v1 identity".to_owned(),
+        ));
+    }
+    let context = OrganizationWindowAdapterContext {
+        season: package.season,
+        season_type: package.season_type.clone(),
+        as_of: package.as_of,
+        horizon: WindowHorizon::Current,
+        organization_identity_version: package.organization_identity_version.clone(),
+    };
+    validate_context(&context)?;
+    package
+        .team_lineups
+        .sort_by(|left, right| left.team.cmp(&right.team));
+    package
+        .organization_lineups
+        .sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
+    package
+        .schedule_rest
+        .sort_by(|left, right| left.team.cmp(&right.team));
+    // Running the adapters validates every nested schema, axis, team identity,
+    // and duplicate before the package receives a trusted fingerprint.
+    adapt_balanced_organization_window_sources(&context, package.as_source_set())?;
+    let supplied = std::mem::take(&mut package.fingerprint);
+    let calculated = package.calculate_fingerprint()?;
+    if !supplied.is_empty() && supplied != calculated {
+        return Err(OrganizationWindowError::InvalidProfileInput(
+            "organization Window source package fingerprint mismatch".to_owned(),
+        ));
+    }
+    package.fingerprint = calculated;
+    Ok(package)
+}
+
+pub fn build_balanced_organization_window_board_from_package(
+    package: &OrganizationWindowSourcePackageView,
+    generated_at: impl Into<String>,
+) -> Result<OrganizationWindowBoardView, OrganizationWindowError> {
+    let package = seal_organization_window_source_package(package.clone())?;
+    build_balanced_organization_window_board(
+        OrganizationWindowAdapterContext {
+            season: package.season,
+            season_type: package.season_type.clone(),
+            as_of: package.as_of,
+            horizon: WindowHorizon::Current,
+            organization_identity_version: package.organization_identity_version.clone(),
+        },
+        generated_at,
+        package.as_source_set(),
+    )
+}
+
+pub fn audit_organization_window_source_package(
+    package: &OrganizationWindowSourcePackageView,
+    generated_at: impl Into<String>,
+) -> Result<OrganizationWindowSourceCoverageView, OrganizationWindowError> {
+    let package = seal_organization_window_source_package(package.clone())?;
+    let context = OrganizationWindowAdapterContext {
+        season: package.season,
+        season_type: package.season_type.clone(),
+        as_of: package.as_of,
+        horizon: WindowHorizon::Current,
+        organization_identity_version: package.organization_identity_version.clone(),
+    };
+    let inputs = adapt_balanced_organization_window_sources(&context, package.as_source_set())?;
+    let expected = canonical_teams();
+    let manifest = balanced_organization_window_manifest(BALANCED_MANIFEST_CREATED_AT);
+    let mut profiles = manifest
+        .dimensions
+        .iter()
+        .flat_map(|dimension| &dimension.profiles)
+        .map(|configured| {
+            let matching = inputs
+                .iter()
+                .filter(|input| {
+                    input.profile_key == configured.profile_key
+                        && input.method_version == configured.method_version
+                })
+                .collect::<Vec<_>>();
+            let observed = matching
+                .iter()
+                .map(|input| input.organization.clone())
+                .collect::<BTreeSet<_>>();
+            let valued = matching
+                .iter()
+                .filter(|input| {
+                    input.raw_value.is_some()
+                        && matches!(
+                            input.status,
+                            WindowProfileStatus::Observed
+                                | WindowProfileStatus::Modeled
+                                | WindowProfileStatus::Provisional
+                        )
+                })
+                .map(|input| input.organization.clone())
+                .collect::<BTreeSet<_>>();
+            let missing_organizations = expected.difference(&valued).cloned().collect::<Vec<_>>();
+            WindowSourceProfileCoverageView {
+                profile_key: configured.profile_key.clone(),
+                method_version: configured.method_version.clone(),
+                required: configured.required,
+                organizations_with_observation: observed.len(),
+                organizations_with_value: valued.len(),
+                complete: missing_organizations.is_empty(),
+                missing_organizations,
+            }
+        })
+        .collect::<Vec<_>>();
+    profiles.sort_by(|left, right| {
+        left.profile_key
+            .cmp(&right.profile_key)
+            .then_with(|| left.method_version.cmp(&right.method_version))
+    });
+    let required_profiles = profiles.iter().filter(|profile| profile.required).count();
+    let complete_required_profiles = profiles
+        .iter()
+        .filter(|profile| profile.required && profile.complete)
+        .count();
+    let board = build_balanced_organization_window_board_from_package(&package, generated_at)?;
+    let rank_eligible_organizations = board
+        .organizations
+        .iter()
+        .filter(|organization| organization.overall.rank_status.state == WindowRankState::Ranked)
+        .count();
+    Ok(OrganizationWindowSourceCoverageView {
+        schema: ORGANIZATION_WINDOW_SOURCE_COVERAGE_SCHEMA.to_owned(),
+        season: package.season,
+        as_of: package.as_of,
+        package_fingerprint: package.fingerprint,
+        board_fingerprint: board.fingerprint,
+        expected_organizations: expected.len(),
+        profiles,
+        complete_required_profiles,
+        required_profiles,
+        rank_eligible_organizations,
+        production_ranked: rank_eligible_organizations == expected.len(),
+        disclosures: vec![
+            "Cohort presence is not profile completeness; each adapter-ready profile is audited independently across the canonical league.".to_owned(),
+            "Production-ranked means every organization passed the balanced.v1 rank gate; it is not a calibration or predictive claim.".to_owned(),
+        ],
+    })
+}
+
+/// Fail closed when a caller asks to publish a production-ranked balanced
+/// board but any organization still has a withheld rank.
+pub fn require_ranked_balanced_organization_window_board(
+    board: &OrganizationWindowBoardView,
+) -> Result<(), OrganizationWindowError> {
+    if board.manifest.manifest_id != ORGANIZATION_WINDOW_BALANCED_MANIFEST_ID {
+        return Err(OrganizationWindowError::InvalidBoard(
+            "production rank gate requires the balanced.v1 Frame".to_owned(),
+        ));
+    }
+    let withheld = board
+        .organizations
+        .iter()
+        .filter(|organization| organization.overall.rank_status.state != WindowRankState::Ranked)
+        .map(|organization| {
+            let reasons = organization.overall.rank_status.reasons.join("; ");
+            format!("{} ({reasons})", organization.organization)
+        })
+        .collect::<Vec<_>>();
+    if withheld.is_empty() {
+        Ok(())
+    } else {
+        Err(OrganizationWindowError::InvalidBoard(format!(
+            "balanced Window is not production-ranked; {} organization(s) withheld: {}",
+            withheld.len(),
+            withheld.into_iter().take(5).collect::<Vec<_>>().join(", ")
+        )))
+    }
 }
 
 /// Adapt a sealed line-combination forecast for a custom/evaluation Frame.
@@ -287,7 +577,13 @@ pub fn adapt_balanced_organization_window_sources(
     adapt_prospect_program(context, &expected, sources.prospect_program, &mut output)?;
     adapt_prospect_conversion(context, &expected, sources.prospect_conversion, &mut output)?;
     adapt_training_camp(context, &expected, sources.training_camp, &mut output)?;
-    adapt_schedule(context, &expected, sources.schedule_rest, &mut output)?;
+    adapt_schedule(
+        context,
+        &expected,
+        sources.team_game_forecast,
+        sources.schedule_rest,
+        &mut output,
+    )?;
     Ok(output)
 }
 
@@ -847,14 +1143,98 @@ fn adapt_training_camp(
     Ok(())
 }
 
+/// Derive one rest/fatigue authority per represented club from the sealed game
+/// forecast. This keeps schedule interpretation in core and makes the result
+/// reusable by CLI, web, TUI, and downstream renderers.
+pub fn build_schedule_rest_profiles_from_game_forecast(
+    forecast: &TeamGameForecastView,
+) -> Result<Vec<ScheduleRestProfileView>, OrganizationWindowError> {
+    require_schema(
+        "team game forecast",
+        &forecast.schema,
+        TEAM_GAME_FORECAST_SCHEMA,
+    )?;
+    let expected = canonical_teams();
+    let mut game_ids = BTreeSet::new();
+    let mut by_team = BTreeMap::<String, Vec<ScheduleRestGameInput>>::new();
+    for game in &forecast.games {
+        if !game_ids.insert(game.game_id) {
+            return Err(OrganizationWindowError::InvalidProfileInput(format!(
+                "team game forecast repeats game {}",
+                game.game_id
+            )));
+        }
+        if game.home_team == game.away_team
+            || !expected.contains(&game.home_team)
+            || !expected.contains(&game.away_team)
+        {
+            return Err(OrganizationWindowError::InvalidProfileInput(format!(
+                "team game forecast game {} requires distinct canonical NHL teams",
+                game.game_id
+            )));
+        }
+        let home_load = BenchScheduleLoad {
+            is_home: true,
+            back_to_back: game.home_context.back_to_back,
+            third_game_in_four_nights: game.home_context.three_in_four,
+            travel_km: game.home_context.travel_km,
+        };
+        let away_load = BenchScheduleLoad {
+            is_home: false,
+            back_to_back: game.away_context.back_to_back,
+            third_game_in_four_nights: game.away_context.three_in_four,
+            travel_km: game.away_context.travel_km,
+        };
+        by_team
+            .entry(game.home_team.clone())
+            .or_default()
+            .push(ScheduleRestGameInput {
+                opponent: game.away_team.clone(),
+                team_load: home_load,
+                opponent_load: away_load,
+            });
+        by_team
+            .entry(game.away_team.clone())
+            .or_default()
+            .push(ScheduleRestGameInput {
+                opponent: game.home_team.clone(),
+                team_load: away_load,
+                opponent_load: home_load,
+            });
+    }
+    CANONICAL_TEAMS
+        .iter()
+        .filter_map(|(team, _)| by_team.remove(*team).map(|games| (*team, games)))
+        .map(|(team, games)| {
+            build_schedule_rest_profile(team, &games).map_err(|message| {
+                OrganizationWindowError::InvalidProfileInput(format!(
+                    "team game forecast schedule derivation failed for {team}: {message}"
+                ))
+            })
+        })
+        .collect()
+}
+
 fn adapt_schedule(
     context: &OrganizationWindowAdapterContext,
     expected: &BTreeSet<String>,
+    forecast: Option<&TeamGameForecastView>,
     profiles: &[ScheduleRestProfileView],
     output: &mut Vec<OrganizationProfileInput>,
 ) -> Result<(), OrganizationWindowError> {
+    let derived = if let Some(forecast) = forecast {
+        if forecast.season != context.season {
+            return Err(OrganizationWindowError::ContextMismatch(format!(
+                "team game forecast season {} does not match Window season {}",
+                forecast.season, context.season
+            )));
+        }
+        build_schedule_rest_profiles_from_game_forecast(forecast)?
+    } else {
+        Vec::new()
+    };
     let mut seen = BTreeSet::new();
-    for row in profiles {
+    for row in profiles.iter().chain(derived.iter()) {
         require_schema("schedule rest", &row.schema, SCHEDULE_REST_PROFILE_SCHEMA)?;
         require_team(&row.team, expected, &mut seen, "schedule rest")?;
         let evidence = evidence(SCHEDULE_REST_PROFILE_SCHEMA, row, None, context)?;
@@ -1172,6 +1552,10 @@ mod tests {
         seal_organization_window_manifest, WindowProfileReadiness,
     };
     use crate::view_model::organization_window_comparison::build_organization_window_history;
+    use crate::view_model::team_game_forecast::{
+        build_team_game_forecast, TeamForecastGameInput, TeamForecastParameters,
+        TeamForecastStrengthInput,
+    };
 
     #[test]
     fn balanced_manifest_seals_and_uses_only_adapter_ready_profiles() {
@@ -1234,6 +1618,204 @@ mod tests {
             .organizations
             .iter()
             .all(|row| !row.blockers.is_empty()));
+    }
+
+    #[test]
+    fn game_forecast_derives_schedule_rest_for_each_represented_team() {
+        let games = vec![
+            TeamForecastGameInput {
+                game_id: 1,
+                date: NaiveDate::from_ymd_opt(2026, 10, 1).unwrap(),
+                away_team: "NYR".to_owned(),
+                home_team: "SEA".to_owned(),
+                away_score: None,
+                home_score: None,
+                final_result: false,
+                last_period: None,
+            },
+            TeamForecastGameInput {
+                game_id: 2,
+                date: NaiveDate::from_ymd_opt(2026, 10, 2).unwrap(),
+                away_team: "SEA".to_owned(),
+                home_team: "NYR".to_owned(),
+                away_score: None,
+                home_score: None,
+                final_result: false,
+                last_period: None,
+            },
+        ];
+        let forecast = build_team_game_forecast(
+            20262027,
+            games,
+            vec![
+                TeamForecastStrengthInput {
+                    team: "NYR".to_owned(),
+                    strength: 50.0,
+                },
+                TeamForecastStrengthInput {
+                    team: "SEA".to_owned(),
+                    strength: 50.0,
+                },
+            ],
+            TeamForecastParameters::default(),
+            None,
+            None,
+        )
+        .unwrap();
+
+        let profiles = build_schedule_rest_profiles_from_game_forecast(&forecast).unwrap();
+        assert_eq!(profiles.len(), 2);
+        assert!(profiles.iter().all(|profile| profile.games == 2));
+        assert!(profiles
+            .iter()
+            .all(|profile| profile.own_back_to_backs == 1));
+
+        let context = OrganizationWindowAdapterContext {
+            season: 20262027,
+            season_type: "regular".to_owned(),
+            as_of: NaiveDate::from_ymd_opt(2026, 10, 1).unwrap(),
+            horizon: WindowHorizon::Current,
+            organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+        };
+        let inputs = adapt_balanced_organization_window_sources(
+            &context,
+            OrganizationWindowSourceSet {
+                team_game_forecast: Some(&forecast),
+                ..OrganizationWindowSourceSet::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            inputs
+                .iter()
+                .filter(|input| input.profile_key == "resilience.schedule_fatigue")
+                .count(),
+            2
+        );
+
+        let duplicate = adapt_balanced_organization_window_sources(
+            &context,
+            OrganizationWindowSourceSet {
+                team_game_forecast: Some(&forecast),
+                schedule_rest: &profiles[..1],
+                ..OrganizationWindowSourceSet::default()
+            },
+        );
+        assert!(matches!(
+            duplicate,
+            Err(OrganizationWindowError::DuplicateProfileInput(message))
+                if message == "schedule rest:NYR"
+        ));
+    }
+
+    #[test]
+    fn source_package_is_canonical_replayable_and_production_gated() {
+        let package =
+            seal_organization_window_source_package(OrganizationWindowSourcePackageView {
+                schema: ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA.to_owned(),
+                season: 20262027,
+                season_type: "regular".to_owned(),
+                as_of: NaiveDate::from_ymd_opt(2026, 10, 1).unwrap(),
+                organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+                team_season_forecast: None,
+                team_game_forecast: None,
+                team_lineups: Vec::new(),
+                organization_lineups: Vec::new(),
+                prospect_program: None,
+                prospect_conversion: None,
+                training_camp: None,
+                schedule_rest: Vec::new(),
+                fingerprint: String::new(),
+            })
+            .unwrap();
+        assert_eq!(package.fingerprint.len(), 64);
+        let replayed: OrganizationWindowSourcePackageView =
+            serde_json::from_str(&serde_json::to_string(&package).unwrap()).unwrap();
+        assert_eq!(
+            seal_organization_window_source_package(replayed.clone()).unwrap(),
+            package
+        );
+
+        let board = build_balanced_organization_window_board_from_package(
+            &replayed,
+            "2026-10-01T00:00:00Z",
+        )
+        .unwrap();
+        let coverage =
+            audit_organization_window_source_package(&replayed, "2026-10-01T00:00:00Z").unwrap();
+        assert_eq!(coverage.profiles.len(), 17);
+        assert_eq!(coverage.required_profiles, 16);
+        assert_eq!(coverage.complete_required_profiles, 0);
+        assert_eq!(coverage.rank_eligible_organizations, 0);
+        assert!(!coverage.production_ranked);
+        assert!(matches!(
+            require_ranked_balanced_organization_window_board(&board),
+            Err(OrganizationWindowError::InvalidBoard(message))
+                if message.contains("32 organization(s) withheld")
+        ));
+
+        let mut tampered = package;
+        tampered.as_of = NaiveDate::from_ymd_opt(2026, 10, 2).unwrap();
+        assert!(matches!(
+            seal_organization_window_source_package(tampered),
+            Err(OrganizationWindowError::InvalidProfileInput(message))
+                if message.contains("fingerprint mismatch")
+        ));
+    }
+
+    #[test]
+    fn source_package_schema_is_embedded_json() {
+        let schema: serde_json::Value =
+            serde_json::from_str(ORGANIZATION_WINDOW_SOURCE_PACKAGE_JSON_SCHEMA).unwrap();
+        assert_eq!(
+            schema["properties"]["schema"]["const"],
+            ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA
+        );
+        assert_eq!(schema["properties"]["team_lineups"]["maxItems"], 32);
+
+        let coverage: serde_json::Value =
+            serde_json::from_str(ORGANIZATION_WINDOW_SOURCE_COVERAGE_JSON_SCHEMA).unwrap();
+        assert_eq!(
+            coverage["properties"]["schema"]["const"],
+            ORGANIZATION_WINDOW_SOURCE_COVERAGE_SCHEMA
+        );
+        assert_eq!(coverage["properties"]["profiles"]["minItems"], 17);
+    }
+
+    #[test]
+    fn real_source_package_fingerprint_survives_wire_round_trip() {
+        let lineup: TeamLineupProjectionView = serde_json::from_str(include_str!(
+            "../../../examples/team-lineup-nyr-2026-27.json"
+        ))
+        .unwrap();
+        let camp: TrainingCampLeagueForecastView = serde_json::from_str(include_str!(
+            "../../../examples/icecast-league-training-camp-2026-27.json"
+        ))
+        .unwrap();
+        let package =
+            seal_organization_window_source_package(OrganizationWindowSourcePackageView {
+                schema: ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA.to_owned(),
+                season: 20262027,
+                season_type: "regular".to_owned(),
+                as_of: NaiveDate::from_ymd_opt(2026, 7, 27).unwrap(),
+                organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+                team_season_forecast: None,
+                team_game_forecast: None,
+                team_lineups: vec![lineup],
+                organization_lineups: Vec::new(),
+                prospect_program: None,
+                prospect_conversion: None,
+                training_camp: Some(camp),
+                schedule_rest: Vec::new(),
+                fingerprint: String::new(),
+            })
+            .unwrap();
+        let replayed: OrganizationWindowSourcePackageView =
+            serde_json::from_str(&serde_json::to_string_pretty(&package).unwrap()).unwrap();
+        assert_eq!(
+            seal_organization_window_source_package(replayed).unwrap(),
+            package
+        );
     }
 
     #[test]

@@ -9,7 +9,7 @@ use icelines_core::{
     CapProjectionPlayerInput, CapProjectionView, Completeness, LineupAssignmentEvidence,
     SalaryBasis, SourceKind, SourceState, TeamCeilingLens, TeamCeilingPlayerInput, TeamCeilingView,
     TeamLineupPlayerInput, TeamLineupPlayerView, TeamLineupProjectionView, TeamPrognosisCardInput,
-    ViewContext, ViewWindow,
+    ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
 use icelines_fetch::schema::{RosterPlayer, RosterResponse};
 use icelines_fetch::snapshot::SnapshotStore;
@@ -322,6 +322,43 @@ pub(crate) fn load_team_lineup_view(
             stats_season.0
         )
     })?;
+    load_team_lineup_view_from_store(roster_season, stats_season, team, &store, &outcome.repo)
+}
+
+pub(crate) fn load_league_team_lineup_views(
+    roster_season: Season,
+    stats_season: Season,
+) -> anyhow::Result<Vec<TeamLineupProjectionView>> {
+    let cfg = Config::load()?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let outcome = load_into_repo(stats_season, SeasonType::Regular, &store).map_err(|error| {
+        anyhow::anyhow!(
+            "{error}\n  Try: icelines fetch all --season {}",
+            stats_season.0
+        )
+    })?;
+    CANONICAL_TEAMS
+        .iter()
+        .map(|(team, _)| {
+            let team = TeamAbbr::parse(team).map_err(|error| anyhow::anyhow!(error))?;
+            load_team_lineup_view_from_store(
+                roster_season,
+                stats_season,
+                &team,
+                &store,
+                &outcome.repo,
+            )
+        })
+        .collect()
+}
+
+fn load_team_lineup_view_from_store(
+    roster_season: Season,
+    stats_season: Season,
+    team: &TeamAbbr,
+    store: &SnapshotStore,
+    repo: &icelines_core::stats_repository::StatsRepository,
+) -> anyhow::Result<TeamLineupProjectionView> {
     let roster = store
         .read_tier_file_any_for_season::<RosterResponse>(
             &SnapshotTier::Rosters,
@@ -341,15 +378,7 @@ pub(crate) fn load_team_lineup_view(
         .iter()
         .chain(&roster.defensemen)
         .chain(&roster.goalies)
-        .filter_map(|player| {
-            lineup_input(
-                player,
-                team.as_str(),
-                roster_season,
-                stats_season,
-                &outcome.repo,
-            )
-        })
+        .filter_map(|player| lineup_input(player, team.as_str(), roster_season, stats_season, repo))
         .collect();
     build_team_lineup_projection(team.as_str(), roster_season.0, players)
         .map_err(anyhow::Error::new)

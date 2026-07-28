@@ -36,12 +36,51 @@ icelines icecast window-build \
   --prospect-program prospects.json \
   --out window.json
 
+icelines icecast window-source-package \
+  --season 20262027 \
+  --as-of 2026-10-01 \
+  --team-season-forecast season.json \
+  --team-game-forecast games.json \
+  --cache-team-lineups \
+  --stats-season 20252026 \
+  --prospect-program prospects.json \
+  --out window-sources.json
+
+icelines icecast window-source-audit \
+  --input window-sources.json \
+  --generated-at 2026-10-01T12:00:00Z \
+  --out window-source-coverage.json
+
+icelines icecast window-build \
+  --season 20262027 \
+  --as-of 2026-10-01 \
+  --generated-at 2026-10-01T12:00:00Z \
+  --source-package window-sources.json \
+  --require-ranked \
+  --out production-window.json
+
 icelines icecast window --input window.json
 icelines icecast window --input window.json --team NYR
 icelines icecast window --input window.json --markdown --out window-report.md
 icelines icecast window --input window.json --team NYR --markdown --out nyr-window-report.md
 icelines icecast window-card --input window.json --team NYR --out nyr-window-card.json
 ```
+
+`organization_window_source_package.v1` owns the exact upstream authority
+documents used by the balanced Frame. Core validates nested schemas, season and
+team axes, duplicate identities, canonical ordering, and the package
+fingerprint before adapting it. This makes the package portable between cache,
+CLI, Web, and future automation without putting filesystem paths into core.
+`--cache-team-lineups` assembles all 32 lineup projections from one configured
+snapshot/statistics cache pass. `--team-game-forecast` retains the sealed game
+authority and lets core derive each represented club's back-to-back,
+three-in-four, travel, and venue exposure; a partial schedule remains partial.
+`organization_window_source_coverage.v1` audits each of the 17 configured
+profile methods independently: observations, score-eligible values, exact
+missing organizations, required-profile completion, and rank-eligible teams.
+This is distinct from board `league_coverage`, which measures cohort presence.
+`--require-ranked` fails before writing when any organization's rank remains
+withheld; omit it only for intentionally partial evaluation boards.
 
 Markdown reports retain season, cutoff, Frame, manifest/board fingerprints,
 league coverage, rank status, confidence, coverage, pane state, focused-team

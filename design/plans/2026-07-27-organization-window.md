@@ -40,7 +40,7 @@ preserved while the remaining work is completed:
 |---|---|---|---|
 | W0 | complete | 37-profile machine-readable inventory: 17 ready, 13 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
 | W1-W2 | complete | Versioned observations/manifests/boards, deterministic fingerprints, validation, normalization, aggregation, confidence/coverage, rank gates | Cross-platform fingerprint matrix in W9. |
-| W3-W4 | evaluation-complete | `balanced.v1`, typed source adapters, all-32 partial evaluation board, classifications, focused cards | Fill production source coverage before claiming a complete ranked board. |
+| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue profiles from sealed game forecasts, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate | Assemble the remaining all-league prospect/affiliate/special-teams authorities and pass `--require-ranked` before claiming a complete ranked board. |
 | W5 | complete | Comparable movement/history contracts, refusal tests, immutable bridge/rebase, a real three-checkpoint 2024-25 IceCast history, both earlier-scenario and later-counterfactual attribution bases, and a real Jan. 31 -> Feb. 28 paired rolling-replay personnel artifact with 219 dated events | Preserve raw profile effects when percentile normalization yields zero aggregate movement; keep the paired estimate explicitly non-causal and uncalibrated. |
 | W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
 | W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed claim status, frozen training/validation/retrospective-holdout roles, and four real point-in-time observed-history origins | Trial-noise propagation and future untouched-holdout evidence; the current retrospective holdout is explicitly inconclusive. |
@@ -196,6 +196,16 @@ Build an official `balanced.v1` Frame only after coverage and dependency review.
 **Exit:** a real, frozen all-32-team evaluation board is reproducible from
 saved inputs; every row exposes raw value, evidence, status, confidence,
 coverage, and limitations.
+
+The source handoff is now `organization_window_source_package.v1`: one sealed,
+canonically ordered document containing the exact typed authorities consumed by
+the 17 adapters. Loose CLI paths are normalized into this package before core
+builds a board. `organization_window_source_coverage.v1` reports exact profile
+and organization gaps rather than treating cohort presence as evidence
+coverage. A production build uses `--require-ranked`, which refuses to write
+while any organization remains withheld. The remaining W3 work is source
+acquisition/assembly for complete all-32 lineup, organization, prospect,
+conversion, camp, and schedule coverage; it is not another scoring contract.
 
 ### W4 — Window board, team detail, and classifications
 

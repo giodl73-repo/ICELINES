@@ -229,3 +229,38 @@ trips without weakening deliberate tamper detection.
 This closes W5. It does not promote the narrow NHL-strength history to a
 complete multi-pane production board, and it does not satisfy W7's future
 untouched holdout. Those remain the two product gates for the broader Window.
+
+### W3-W4 source-package checkpoint
+
+FORGE/KEEL rejected filesystem paths as a core contract. The implementation
+instead seals the owned upstream documents into
+`organization_window_source_package.v1`; CLI path resolution is a thin edge,
+while canonical sorting, nested authority validation, fingerprint replay, and
+package-to-board adaptation remain in core.
+
+TAPE/WIRE require the package axes to be `regular`, `nhl_32.v1`, and one season
+and cutoff. Duplicate teams, mismatched nested schemas or axes, and fingerprint
+tampering fail closed. BENCH added package replay, schema, tamper, CLI parse,
+and incomplete-board refusal tests.
+
+TAPE also rejected board `league_coverage` as an acquisition-completeness
+proxy: an all-32 cohort can still have only a subset of profile authorities.
+The separate source-coverage document counts observations and score-eligible
+values for every configured profile, lists exact missing organizations, and
+reports both required-profile completion and rank-eligible organization count.
+
+PACE keeps partial packages valid for evaluation because honest missingness is
+a supported product state. Production publication is different:
+`--require-ranked` refuses to write unless every organization has an eligible
+rank under `balanced.v1`. W3-W4 remain open until a real all-league package
+passes that gate; the package contract prevents acquisition work from changing
+the scorer or surface contracts.
+
+FORGE/TAPE then reviewed all-league assembly. Reopening 32 roster/statistics
+caches per team was rejected; the edge now loads configuration, snapshot store,
+and statistics authority once and core receives the resulting typed lineup
+documents. Schedule fatigue likewise derives in core from the sealed
+`team_game_forecast.v1` game rows rather than from CLI calculations. Partial
+forecasts create only represented-team profiles, duplicate games or teams fail
+closed, and the source audit remains the authority on whether league coverage
+is genuinely complete.

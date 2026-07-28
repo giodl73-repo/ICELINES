@@ -550,6 +550,28 @@ state must match the replay within the declared floating-point tolerance.
 CLI/card/Web/TUI projections, comparisons, rebases, and calibration all use
 this same core gate.
 
+`organization_window_source_package.v1` is the portable upstream handoff for
+`balanced.v1`. It embeds typed source documents rather than filesystem paths,
+freezes season/cutoff/team-catalog axes, sorts repeated team authorities
+canonically, and fingerprints the resulting package. Core revalidates all
+nested authorities before every package-to-board build. Partial packages are
+valid evaluation evidence; a production-ranked build additionally requires
+every organization to pass the board's rank gate.
+
+All-league assembly may resolve configured caches at the CLI boundary, but it
+loads shared configuration and stores once per package build and passes owned
+typed documents into core. A sealed `team_game_forecast.v1` may be embedded as
+schedule authority; core derives represented-team rest/fatigue profiles from
+its per-game home/away contexts. It rejects schema/season mismatch, duplicate
+game identity, non-canonical opponents, and duplicate explicit/derived team
+profiles. It never invents observations for teams absent from the schedule.
+
+`organization_window_source_coverage.v1` audits acquisition independently from
+scoring. For all 17 configured profile methods it records source-observation
+count, score-eligible value count, exact missing organizations, and required
+status, then reports required-profile and rank-eligible-team totals. Board
+league coverage must not substitute for this report.
+
 ## Calibration and validation
 
 Production promotion requires rolling-origin historical evaluation. The

@@ -1713,9 +1713,67 @@ pub enum IceCastSubcommand {
         as_of: chrono::NaiveDate,
         #[arg(long)]
         generated_at: String,
+        /// Read one sealed, portable Window source package instead of loose documents.
+        #[arg(long, value_name = "PATH", conflicts_with_all = ["team_season_forecast", "team_game_forecast", "team_lineups", "organization_lineups", "prospect_program", "prospect_conversion", "training_camp", "schedule_rest"])]
+        source_package: Option<PathBuf>,
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        team_season_forecast: Option<PathBuf>,
+        /// Derive league schedule-fatigue profiles from a sealed game forecast.
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        team_game_forecast: Option<PathBuf>,
+        #[arg(
+            long = "team-lineup",
+            value_name = "PATH",
+            conflicts_with = "source_package"
+        )]
+        team_lineups: Vec<PathBuf>,
+        #[arg(
+            long = "organization-lineup",
+            value_name = "PATH",
+            conflicts_with = "source_package"
+        )]
+        organization_lineups: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        prospect_program: Option<PathBuf>,
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        prospect_conversion: Option<PathBuf>,
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        training_camp: Option<PathBuf>,
+        #[arg(
+            long = "schedule-rest",
+            value_name = "PATH",
+            conflicts_with = "source_package"
+        )]
+        schedule_rest: Vec<PathBuf>,
+        /// Refuse to write unless every organization has an eligible rank.
+        #[arg(long)]
+        require_ranked: bool,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Seal loose Window authorities into one replayable, cache-friendly package.
+    #[command(name = "window-source-package")]
+    WindowSourcePackage {
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long)]
+        as_of: chrono::NaiveDate,
         #[arg(long, value_name = "PATH")]
         team_season_forecast: Option<PathBuf>,
-        #[arg(long = "team-lineup", value_name = "PATH")]
+        /// Derive league schedule-fatigue profiles from a sealed game forecast.
+        #[arg(long, value_name = "PATH")]
+        team_game_forecast: Option<PathBuf>,
+        /// Build all 32 team lineups from the configured snapshot cache.
+        #[arg(long, conflicts_with = "team_lineups")]
+        cache_team_lineups: bool,
+        /// Completed production season used by cache-built player scores.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(
+            long = "team-lineup",
+            value_name = "PATH",
+            conflicts_with = "cache_team_lineups"
+        )]
         team_lineups: Vec<PathBuf>,
         #[arg(long = "organization-lineup", value_name = "PATH")]
         organization_lineups: Vec<PathBuf>,
@@ -1729,6 +1787,16 @@ pub enum IceCastSubcommand {
         schedule_rest: Vec<PathBuf>,
         #[arg(long, value_name = "PATH")]
         out: PathBuf,
+    },
+    /// Audit all 17 balanced profiles across the canonical league source package.
+    #[command(name = "window-source-audit")]
+    WindowSourceAudit {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        generated_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
     },
     /// Project one team from a sealed Window board into `card_document.v1`.
     #[command(name = "window-card")]
@@ -2366,6 +2434,69 @@ mod tui_surface_tests {
     #[test]
     fn l0_window_bridge_commands_parse() {
         with_large_stack(|| {
+            let source_package = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--season",
+                "20262027",
+                "--as-of",
+                "2026-10-01",
+                "--team-game-forecast",
+                "games.json",
+                "--cache-team-lineups",
+                "--stats-season",
+                "20252026",
+                "--out",
+                "window-sources.json",
+            ])
+            .expect("Window source package should parse");
+            assert!(matches!(
+                source_package.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourcePackage { .. })
+            ));
+
+            let source_audit = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-audit",
+                "--input",
+                "window-sources.json",
+                "--generated-at",
+                "2026-10-01T12:00:00Z",
+            ])
+            .expect("Window source audit should parse");
+            assert!(matches!(
+                source_audit.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourceAudit { .. })
+            ));
+
+            let package_build = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-build",
+                "--season",
+                "20262027",
+                "--as-of",
+                "2026-10-01",
+                "--generated-at",
+                "2026-10-01T12:00:00Z",
+                "--source-package",
+                "window-sources.json",
+                "--require-ranked",
+                "--out",
+                "window.json",
+            ])
+            .expect("packaged ranked Window build should parse");
+            assert!(matches!(
+                package_build.command,
+                Commands::Icecast(IceCastSubcommand::WindowBuild {
+                    source_package: Some(_),
+                    require_ranked: true,
+                    ..
+                })
+            ));
+
             let movement = Cli::try_parse_from([
                 "icelines",
                 "icecast",

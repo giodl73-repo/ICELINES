@@ -159,10 +159,18 @@ pub use view_model::organization_window::{
 };
 pub use view_model::organization_window_adapters::{
     adapt_balanced_organization_window_sources, adapt_line_combination_window_profile,
-    balanced_organization_window_manifest, build_balanced_organization_window_board,
-    build_forecast_history_organization_window_boards, OrganizationWindowAdapterContext,
-    OrganizationWindowSourceSet, ORGANIZATION_WINDOW_BALANCED_MANIFEST_ID,
+    audit_organization_window_source_package, balanced_organization_window_manifest,
+    build_balanced_organization_window_board,
+    build_balanced_organization_window_board_from_package,
+    build_forecast_history_organization_window_boards,
+    build_schedule_rest_profiles_from_game_forecast,
+    require_ranked_balanced_organization_window_board, seal_organization_window_source_package,
+    OrganizationWindowAdapterContext, OrganizationWindowSourceCoverageView,
+    OrganizationWindowSourcePackageView, OrganizationWindowSourceSet,
+    WindowSourceProfileCoverageView, ORGANIZATION_WINDOW_BALANCED_MANIFEST_ID,
     ORGANIZATION_WINDOW_FORECAST_HISTORY_MANIFEST_ID,
+    ORGANIZATION_WINDOW_SOURCE_COVERAGE_JSON_SCHEMA, ORGANIZATION_WINDOW_SOURCE_COVERAGE_SCHEMA,
+    ORGANIZATION_WINDOW_SOURCE_PACKAGE_JSON_SCHEMA, ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA,
 };
 pub use view_model::organization_window_calibration::{
     calibrate_organization_window, calibrate_organization_window_rolling_origins,
