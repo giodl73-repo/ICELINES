@@ -438,3 +438,12 @@ blocked otherwise valid status decisions for the entire affiliate. The gates
 are now independent. A mapping rejection still prevents projection readiness
 and canonical player joins, while complete evidence-backed decisions for other
 players can be preserved in the config.
+
+HART/KEEL reviewed the professional-game boundary next. The league crosswalk is
+now a first-class career-cache target, and a versioned policy—not Rust code—owns
+exact league inclusion. The first all-league run acquired 1,323/1,323 canonical
+histories, then completed 585 totals while withholding 738 whose observed pro
+league abbreviations still need treatment. SCOUT/EDGE required the output to
+say `within_game_threshold`, not `development_player`: age qualification and
+the European CHL-eligibility exemption can change final rule status and must
+not be hidden inside a raw total.

@@ -340,6 +340,8 @@ icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk 
 icelines icecast affiliate-rollover-config-league --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --prior-affiliations examples/ahl-affiliations-2025-26.json --affiliations examples/ahl-affiliations-2026-27.json --as-of 2026-07-28 --source-url https://theahl.com/mediaguide --source-url https://theahl.com/nhl-affiliations --out league-rollover-config.json
 icelines icecast affiliate-status-draft-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-status-review.json
 icelines icecast affiliate-status-apply-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --review league-status-review-final.json --config league-rollover-config.json --out league-rollover-reviewed.json
+icelines fetch career --league-crosswalk ahl-league-fully-reviewed.json
+icelines icecast affiliate-professional-games --league-crosswalk ahl-league-fully-reviewed.json --career-history ~/.icelines/career_history.json --policy examples/ahl-professional-game-policy-2026-27.json --json --out professional-games.json
 icelines icecast affiliate-rollover-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast organization --input organization.json --json --out the-system.json

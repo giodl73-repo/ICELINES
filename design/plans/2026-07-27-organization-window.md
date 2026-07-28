@@ -188,6 +188,15 @@ artifact-identical to the explicit camp-input path. Finalized application is
 atomic across the league; mapping rejection stays a readiness blocker without
 discarding valid status decisions for other players.
 
+**Professional-game checkpoint — 2026-07-28:** a new typed policy/ledger pair
+and `fetch career --league-crosswalk` adapter turn the reviewed identity cohort
+into reproducible career evidence. The real run fetched 1,323/1,323 unique
+canonical histories with zero skips. An intentionally partial policy completes
+585 totals and preserves 738 players as league-treatment work, led by 539 ECHL
+and 87 SHL appearances. The adapter reports only the 260-game threshold test;
+age qualification, European youth-season exemptions, and assignment authority
+remain independent gates.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

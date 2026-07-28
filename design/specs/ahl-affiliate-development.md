@@ -273,6 +273,29 @@ decisions for different players from being applied.
 
 Official affiliation authority: <https://theahl.com/nhl-affiliations>.
 
+### Professional-game ledger
+
+`ahl_professional_game_ledger.v1` is the cache-native evidence bridge from a
+reviewed all-league identity envelope and official NHL landing career histories
+to start-of-season game totals. Its league semantics are data in
+`ahl_professional_game_policy.v1`: every observed known-professional league must
+be explicitly included or excluded with sources. Unknown treatments and
+missing histories fail closed per player; playoffs and target-season stints are
+always excluded.
+
+The first real 2026-27 pass selected 1,323 unique canonical players. The new
+crosswalk-targeted career acquisition filled all 1,323 histories with zero
+skips. The intentionally partial NHL/AHL-only policy completes 585 players and
+leaves 738 in an exact league-policy queue: ECHL 539, SHL 87, Liiga 68, KHL 53,
+Mestis 35, Czechia 28, Slovakia 22, DEL 17, NL 11, and Allsvenskan 1 (players
+may appear in more than one queue). This is evidence progress, not a license to
+guess which European abbreviations or youth-season exemptions count.
+
+The ledger's threshold flag is deliberately not a final development-player
+classification. The age-based qualification and European elite games played
+while CHL-eligible remain separate rule facts that must be modeled before the
+ledger can author projection-ready classification.
+
 Historical replay uses season-dated catalogs rather than applying the current
 affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves
 the official 2021-22 shared Charlotte affiliation as two relationship rows

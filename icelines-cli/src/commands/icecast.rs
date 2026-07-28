@@ -95,6 +95,10 @@ use icelines_fetch::{
         AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
         AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
     },
+    ahl_professional_games::{
+        build_ahl_professional_game_ledger, AhlProfessionalGameLedgerView,
+        AhlProfessionalGamePolicy,
+    },
     ahl_rollover::{
         apply_ahl_preseason_league_organization_review, apply_ahl_preseason_organization_review,
         build_ahl_preseason_league_organization_review_draft, build_ahl_preseason_league_rollover,
@@ -1634,6 +1638,36 @@ pub fn run_affiliate_status_apply_league(
     Ok(())
 }
 
+pub fn run_affiliate_professional_games(
+    league_crosswalk_path: PathBuf,
+    career_history_path: PathBuf,
+    policy_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let league_crosswalk: AhlIdentityLeagueCrosswalkView = read_icecast_json(
+        &league_crosswalk_path,
+        "reviewed AHL league identity crosswalk",
+    )?;
+    let career_store = CareerHistoryStore::load(&career_history_path)
+        .with_context(|| format!("read career history {}", career_history_path.display()))?;
+    let policy: AhlProfessionalGamePolicy =
+        read_icecast_json(&policy_path, "AHL professional-game policy")?;
+    let ledger = build_ahl_professional_game_ledger(&league_crosswalk, &career_store, &policy)
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&ledger)?)
+    } else {
+        render_affiliate_professional_games(&ledger)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL professional-game ledger")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 fn read_affiliate_identity_catalog(path: &Path) -> anyhow::Result<AhlCanonicalIdentityCatalog> {
     let candidate_bytes = std::fs::read(path)
         .with_context(|| format!("read canonical NHL identity candidates {}", path.display()))?;
@@ -2881,6 +2915,44 @@ fn render_affiliate_status_review_league(view: &AhlPreseasonLeagueOrganizationRe
             out,
             "{:<3} FAILED {} — {}",
             failure.nhl_team, failure.prior_ahl_team, failure.reason
+        );
+    }
+    out
+}
+
+fn render_affiliate_professional_games(view: &AhlProfessionalGameLedgerView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "AHL PROFESSIONAL-GAME LEDGER — {} — policy {}",
+        view.target_season, view.policy_id
+    );
+    let _ = writeln!(
+        out,
+        "COMPLETE: {}/{} | MISSING HISTORIES: {} | UNRESOLVED: {} | THRESHOLD: {}",
+        view.complete_players,
+        view.canonical_players,
+        view.missing_histories,
+        view.unresolved_players,
+        view.threshold
+    );
+    for player in view
+        .players
+        .iter()
+        .filter(|player| !player.blockers.is_empty())
+    {
+        let leagues = if player.unresolved_professional_leagues.is_empty() {
+            "—".to_owned()
+        } else {
+            player.unresolved_professional_leagues.join(",")
+        };
+        let _ = writeln!(
+            out,
+            "{:>7}  {:<28} {:<34} {}",
+            player.nhl_player_id,
+            player.display_name,
+            player.blockers.join(","),
+            leagues
         );
     }
     out

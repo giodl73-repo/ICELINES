@@ -2,6 +2,7 @@
 
 pub mod aggregate;
 pub mod ahl;
+pub mod ahl_professional_games;
 pub mod ahl_rollover;
 pub mod analytics_cache_store;
 pub mod atomic_write;

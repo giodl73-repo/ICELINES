@@ -1045,6 +1045,8 @@ icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk 
 icelines icecast affiliate-rollover-config-league --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --prior-affiliations examples/ahl-affiliations-2025-26.json --affiliations examples/ahl-affiliations-2026-27.json --as-of 2026-07-28 --source-url https://theahl.com/mediaguide --source-url https://theahl.com/nhl-affiliations --out league-rollover-config.json
 icelines icecast affiliate-status-draft-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-status-review.json
 icelines icecast affiliate-status-apply-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --review league-status-review-final.json --config league-rollover-config.json --out league-rollover-reviewed.json
+icelines fetch career --league-crosswalk ahl-league-fully-reviewed.json
+icelines icecast affiliate-professional-games --league-crosswalk ahl-league-fully-reviewed.json --career-history ~/.icelines/career_history.json --policy examples/ahl-professional-game-policy-2026-27.json --json --out professional-games.json
 icelines icecast affiliate-rollover-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json
@@ -1397,6 +1399,14 @@ reviewer, timestamp, and note evidence, set the league and child `draft` fields
 to false and use `affiliate-status-apply-league`. Application is atomic across
 the cohort. Mapping-rejected identities remain projection blockers but do not
 invalidate unrelated, otherwise-complete status decisions.
+
+`fetch career --league-crosswalk` acquires official NHL landing career rows for
+the unique canonical IDs in a reviewed AHL league envelope. The resulting
+cache feeds `affiliate-professional-games`, which counts only prior regular
+seasons under a versioned league-treatment policy. Missing histories and known
+professional leagues without an explicit include/exclude decision withhold
+that player's total. The ledger reports the 260-game threshold test but does
+not infer age exemptions, contracts, assignments, waivers, recalls, or lineups.
 
 `icecast affiliate-map` emits the dated `ahl_affiliation_catalog.v1` authority
 used to connect all 32 NHL organizations to their current AHL affiliates. For

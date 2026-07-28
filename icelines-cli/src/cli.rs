@@ -1558,6 +1558,23 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Build a fail-closed start-of-season professional-game ledger.
+    #[command(name = "affiliate-professional-games")]
+    AffiliateProfessionalGames {
+        /// Fully reviewed all-league AHL identity envelope.
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Official NHL landing career-history cache.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Reviewed league-inclusion policy for the target AHL season.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Join reviewed AHL identities to separate projection facts.
     #[command(name = "affiliate-input")]
     AffiliateInput {
@@ -4396,6 +4413,26 @@ mod tui_surface_tests {
                 Commands::Icecast(IceCastSubcommand::AffiliateStatusApplyLeague { .. })
             ));
 
+            let professional_games = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-professional-games",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--career-history",
+                "career-history.json",
+                "--policy",
+                "professional-game-policy.json",
+                "--json",
+                "--out",
+                "professional-game-ledger.json",
+            ])
+            .expect("affiliate professional-game ledger should parse");
+            assert!(matches!(
+                professional_games.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGames { json: true, .. })
+            ));
+
             let input = Cli::try_parse_from([
                 "icelines",
                 "icecast",
@@ -4942,7 +4979,28 @@ mod tui_surface_tests {
                     bundled_seasons: 0,
                     prospect_context: None,
                     camp_forecast: Some(path),
+                    league_crosswalk: None,
                 }) if path == PathBuf::from("camp.json")
+            ));
+
+            let league = Cli::try_parse_from([
+                "icelines",
+                "fetch",
+                "career",
+                "--league-crosswalk",
+                "ahl-identities.json",
+                "--dry-run",
+            ])
+            .expect("fetch career league crosswalk target should parse");
+            assert!(matches!(
+                league.command,
+                Commands::Fetch(FetchSubcommand::Career {
+                    dry_run: true,
+                    bundled_seasons: 0,
+                    prospect_context: None,
+                    camp_forecast: None,
+                    league_crosswalk: Some(path),
+                }) if path == PathBuf::from("ahl-identities.json")
             ));
         });
     }
@@ -6418,6 +6476,9 @@ pub enum FetchSubcommand {
         /// Restrict acquisition to prospects in a `training_camp_league_forecast.v1` file.
         #[arg(long = "camp-forecast", value_name = "PATH")]
         camp_forecast: Option<PathBuf>,
+        /// Restrict acquisition to canonical players in a reviewed all-league AHL crosswalk.
+        #[arg(long = "league-crosswalk", value_name = "PATH")]
+        league_crosswalk: Option<PathBuf>,
     },
     /// Fetch boxscores for one date and write score events to the
     /// EventStream (Phase Foster.3). With --for-favorites, only
