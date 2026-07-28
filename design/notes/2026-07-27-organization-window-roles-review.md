@@ -144,4 +144,7 @@ The subsequent keyboard run verified first-Tab skip links and Enter transfer to
 the main focus target on both board and card routes. Reduced-motion emulation
 reported no spinner animation and 0.01ms fallback durations; computed layout
 reported no page overflow at 390px. The remaining visual gate is automated full
-cross-surface golden parity, not first browser or interaction evidence.
+cross-surface golden parity, not first browser or interaction evidence. PR #23
+then observed the canonical fixed hashes and replay test passing on all three
+operating systems; that closes the platform-fingerprint observation, while the
+real-history, package-matrix, and full-parity blockers remain explicit.

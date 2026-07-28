@@ -121,8 +121,9 @@ Selected browser evidence now exists for the all-32 board, focused NYR board,
 and both NYR card pages at desktop/tablet/mobile widths. The reusable gate also
 checks skip navigation, main focus target, semantic captions/headers, rank-gate
 copy, focused-team isolation, and nonblank exact-dimension captures. Full
-golden parity, remote three-OS fingerprint results, and real historical evidence
-keep VAL-013 partial. A local explicit keyboard walkthrough verified first-Tab
+golden parity and real historical evidence keep VAL-013 partial. PR #23 passed
+the fixed-hash canonical replay gate on Windows, Linux, and macOS. A local
+explicit keyboard walkthrough verified first-Tab
 skip links and Enter focus transfer to `main` on both routes; reduced-motion
 emulation and 390px computed containment also passed.
 

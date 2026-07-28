@@ -10,12 +10,13 @@
 - [ ] Calibration claims include leakage audit, baseline, ablation, and multi-season evidence.
 - [ ] Profile-author, custom-Frame, compatibility, cache, and changelog docs match the release.
 
-Local W9 evidence recorded 2026-07-27: fixed-hash replay passes on Windows;
+W9 evidence recorded 2026-07-27: fixed-hash replay passes on Windows, Linux,
+and macOS in PR CI;
 focused CLI/TUI/Web tests and nine schema checks pass; `cargo audit` has no
 blocking vulnerability; offline release smoke includes The Window; the Windows
 ZIP/checksum/package manifest verify; and the live desktop/tablet/mobile Window
-browser-review script passes. Leave the checklist open until remote three-OS
-CI, full package matrix, real multi-season calibration evidence, and automated
+browser-review script passes. Leave the checklist open until the full package
+matrix, real multi-season calibration evidence, and automated
 cross-surface golden parity complete. The local keyboard/reduced-motion and
 390px containment review passes.
 

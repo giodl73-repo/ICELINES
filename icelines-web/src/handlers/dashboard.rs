@@ -760,10 +760,30 @@ async fn full_game_workspace_html(
 }
 
 fn extract_main_content(rendered: &str) -> Option<String> {
-    let start_marker = "<main id=\"main\">";
-    let start = rendered.find(start_marker)? + start_marker.len();
-    let end = rendered[start..].find("</main>")? + start;
-    Some(rendered[start..end].trim().to_owned())
+    let mut search_from = 0;
+    while let Some(relative_start) = rendered[search_from..].find("<main") {
+        let tag_start = search_from + relative_start;
+        let after_name = rendered.as_bytes().get(tag_start + "<main".len())?;
+        if !after_name.is_ascii_whitespace() && *after_name != b'>' {
+            search_from = tag_start + "<main".len();
+            continue;
+        }
+
+        let opening_end = rendered[tag_start..].find('>')? + tag_start;
+        let opening_tag = &rendered[tag_start..=opening_end];
+        let is_main_region = opening_tag.split_ascii_whitespace().any(|attribute| {
+            matches!(attribute.trim_end_matches('>'), "id=\"main\"" | "id='main'")
+        });
+        if !is_main_region {
+            search_from = opening_end + 1;
+            continue;
+        }
+
+        let content_start = opening_end + 1;
+        let content_end = rendered[content_start..].find("</main>")? + content_start;
+        return Some(rendered[content_start..content_end].trim().to_owned());
+    }
+    None
 }
 
 fn normalize_workspace(raw: Option<&str>) -> String {
@@ -3232,6 +3252,37 @@ fn url_component(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn l0_dashboard_extracts_main_content_with_accessibility_attributes() {
+        assert_eq!(
+            extract_main_content(
+                "<body><main id=\"main\" tabindex=\"-1\" aria-label=\"Content\">\n  <p>IceLines</p>\n</main></body>"
+            ),
+            Some("<p>IceLines</p>".to_owned())
+        );
+        assert_eq!(
+            extract_main_content("<main tabindex='-1' id='main'>Board</main>"),
+            Some("Board".to_owned())
+        );
+    }
+
+    #[test]
+    fn l0_dashboard_main_extraction_rejects_other_or_malformed_regions() {
+        assert_eq!(
+            extract_main_content("<main id=\"other\">Board</main>"),
+            None
+        );
+        assert_eq!(
+            extract_main_content("<mainland id=\"main\">Board</mainland>"),
+            None
+        );
+        assert_eq!(
+            extract_main_content("<main data-id=\"main\">Board</main>"),
+            None
+        );
+        assert_eq!(extract_main_content("<main id=\"main\">Board"), None);
+    }
 
     #[test]
     fn l0_dashboard_workspace_rejects_external_or_internal_api_paths() {
