@@ -3180,6 +3180,23 @@ icelines icecast affiliate-facts-apply \
   --overlay affiliate-facts-overlay-final.json \
   --json --out affiliate-facts-application.json
 
+# Fetch exact official birth-date and NHL-workload evidence for every canonical
+# candidate in a raw workboard or any chained application artifact.
+icelines fetch career \
+  --affiliate-workboard affiliate-values-application.json
+
+# Classify the organization-independent reserve-system population, then apply
+# that status to every unresolved organization appearance for the player.
+icelines icecast affiliate-prospects \
+  --workboard affiliate-values-application.json \
+  --career-history ~/.icelines/career_history.json \
+  --policy examples/organizational-prospect-policy-2026-27.json \
+  --json --out ahl-prospect-status.json
+icelines icecast affiliate-prospects-apply \
+  --workboard affiliate-values-application.json \
+  --ledger ahl-prospect-status.json \
+  --json --out affiliate-prospects-application.json
+
 # Lower only complete teams through the canonical AHL lineup optimizer.
 icelines icecast affiliate-inputs-league \
   --application affiliate-facts-application.json \
@@ -3208,6 +3225,15 @@ the league document.
 `fetch career --league-crosswalk ...` stores official NHL landing birth dates
 and primary positions beside career stints. The position is a fallback for a
 generic AHL `F` row only; it is not fantasy eligibility or assignment evidence.
+
+`organizational_prospect_policy.v1` is an operational IceLines population rule,
+not NHL rookie eligibility or a scouting grade. The 2026-27 policy retains a
+player through age 24 and 50 observed NHL regular-season games. Either observed
+graduation axis is enough to classify `false`; `true` requires both exact age
+and workload evidence. The classification is keyed by canonical NHL player ID,
+so one player appearing in multiple rollover organizations is classified once
+and applied to every appearance without resolving assignment, waiver, recall,
+or organization status.
 
 ---
 

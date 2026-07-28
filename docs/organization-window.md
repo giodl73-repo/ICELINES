@@ -114,6 +114,16 @@ missing). Rankings remain correctly withheld for every organization. IceLines
 does not fill those gaps with stale affiliations, former-team goalies, zero, or
 league-average proxies.
 
+The affiliate acquisition chain now also has a player-global operational
+prospect-status authority. It derives exact cutoff age and observed NHL
+regular-season workload from the official career cache under a versioned
+policy, then applies only the prospect-status blocker in the preseason
+workboard. Multiple organization appearances for one canonical player retain
+their unresolved assignment state. The real 2026-27 run classified all 1,282
+canonical candidates and applied the result to 1,371 appearances, reducing the
+prospect-status queue to zero without changing recall, assignment, waiver,
+organization-status, score, or final-rule authority.
+
 Markdown reports retain season, cutoff, Frame, manifest/board fingerprints,
 league coverage, rank status, confidence, coverage, pane state, focused-team
 profile evidence, blockers, and disclosures. `--json` and `--markdown` are

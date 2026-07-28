@@ -607,3 +607,40 @@ surfaces consume the sealed application and may not recompute the formula.
 **Verdict:** pass for the player-value slice. Historical calibration is a
 separate promotion gate, and S2 remains open for the other sourced facts and
 the 98 honest score gaps.
+
+### S2 operational prospect-status review
+
+HART/KEEL separated player population from organization placement. Prospect
+status is keyed by canonical NHL player ID and cutoff; organization status and
+affiliate assignment remain dated team facts. This allows one classification
+to serve Window, camp, NHL/AHL lineups, simulation, and fantasy consumers
+without creating a second roster model.
+
+TAPE/WIRE accepted exact birth date and NHL regular-season workload from the
+configured official career cache, bound to the input workboard and a versioned
+policy. Missing or invalid evidence remains unavailable; no repository-relative
+bio overlay or name matching is used. Diff review also caught and closed an
+acquisition-boundary bug: raw or nested workboards now pass their complete seal
+validator before they can select player IDs for official career fetches.
+
+PACE/SCOUT required the label `organizational prospect`: the 24-year/50-game
+boundary defines an IceLines reserve-system population, not NHL rookie
+eligibility, waiver exemption, contract status, assignment, or player quality.
+One observed graduation axis is decisive, while a positive classification
+requires both axes.
+
+BENCH/EDGE/FORGE verified exact age boundaries, partial-evidence semantics,
+future-date refusal, stale-ledger refusal, narrow blocker clearing, resealing,
+and the duplicate-organization case. The real cohort exposed 81 canonical
+players across multiple organization appearances; the regression fixture now
+proves they are classified once, applied everywhere, and remain unassigned.
+
+GLASS/CREST/broadcast keep the operational label, method, evidence, and blocker
+delta in the UI-neutral artifact. Renderers may focus or summarize it but may
+not reinterpret the classification or imply an assignment.
+
+**Verdict:** pass for operational prospect status. The real run classifies
+1,282/1,282 canonical candidates and applies to 1,371/1,371 appearances, leaving
+zero prospect-status blockers. Recall readiness is the next distinct modeled
+authority; it must not reuse camp-make probability or prospect status as a
+synonym.

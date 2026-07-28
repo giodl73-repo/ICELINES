@@ -229,6 +229,11 @@ pub use view_model::organization_window_scenario_distribution::{
     ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_JSON_SCHEMA,
     ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_SCHEMA,
 };
+pub use view_model::organizational_prospect::{
+    classify_organizational_prospect, evaluate_organizational_prospect,
+    OrganizationalProspectBasis, OrganizationalProspectPolicy, OrganizationalProspectStatusView,
+    ORGANIZATIONAL_PROSPECT_METHOD, ORGANIZATIONAL_PROSPECT_POLICY_SCHEMA,
+};
 pub use view_model::prospect_conversion::{
     adapt_prospect_conversion_input, build_prospect_conversion_board,
     build_prospect_nhl_performance_document, ProspectConversionBaselineInput,

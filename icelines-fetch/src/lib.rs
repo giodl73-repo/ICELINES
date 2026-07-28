@@ -5,6 +5,7 @@ pub mod ahl;
 pub mod ahl_player_value;
 pub mod ahl_preseason_facts;
 pub mod ahl_professional_games;
+pub mod ahl_prospect_status;
 pub mod ahl_rollover;
 pub mod analytics_cache_store;
 pub mod atomic_write;

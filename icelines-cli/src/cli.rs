@@ -1604,6 +1604,36 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Classify operational organizational-prospect status from official age and NHL workload.
+    #[command(name = "affiliate-prospects")]
+    AffiliateProspects {
+        /// A raw workboard or a prior machine-application artifact containing one.
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        /// Official NHL landing career-history cache.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Versioned organizational-prospect population policy.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Fill only missing prospect-status facts from an exact prospect ledger.
+    #[command(name = "affiliate-prospects-apply")]
+    AffiliateProspectsApply {
+        /// The exact workboard used to construct the prospect ledger.
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Compose a league-wide preseason affiliate facts-readiness workboard.
     #[command(name = "affiliate-facts-board")]
     AffiliateFactsBoard {
@@ -4564,6 +4594,44 @@ mod tui_surface_tests {
                 Commands::Icecast(IceCastSubcommand::AffiliateValuesApply { json: true, .. })
             ));
 
+            let prospects = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-prospects",
+                "--workboard",
+                "affiliate-values-application.json",
+                "--career-history",
+                "career-history.json",
+                "--policy",
+                "organizational-prospect-policy.json",
+                "--json",
+                "--out",
+                "ahl-prospects.json",
+            ])
+            .expect("affiliate prospect-status ledger should parse");
+            assert!(matches!(
+                prospects.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateProspects { json: true, .. })
+            ));
+
+            let prospects_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-prospects-apply",
+                "--workboard",
+                "affiliate-values-application.json",
+                "--ledger",
+                "ahl-prospects.json",
+                "--json",
+                "--out",
+                "affiliate-prospects-application.json",
+            ])
+            .expect("affiliate prospect-status application should parse");
+            assert!(matches!(
+                prospects_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateProspectsApply { json: true, .. })
+            ));
+
             let facts_board = Cli::try_parse_from([
                 "icelines",
                 "icecast",
@@ -5203,6 +5271,7 @@ mod tui_surface_tests {
                     prospect_context: None,
                     camp_forecast: Some(path),
                     league_crosswalk: None,
+                    affiliate_workboard: None,
                 }) if path == PathBuf::from("camp.json")
             ));
 
@@ -5223,7 +5292,29 @@ mod tui_surface_tests {
                     prospect_context: None,
                     camp_forecast: None,
                     league_crosswalk: Some(path),
+                    affiliate_workboard: None,
                 }) if path == PathBuf::from("ahl-identities.json")
+            ));
+
+            let workboard = Cli::try_parse_from([
+                "icelines",
+                "fetch",
+                "career",
+                "--affiliate-workboard",
+                "affiliate-prospects-application.json",
+                "--dry-run",
+            ])
+            .expect("fetch career affiliate workboard target should parse");
+            assert!(matches!(
+                workboard.command,
+                Commands::Fetch(FetchSubcommand::Career {
+                    dry_run: true,
+                    bundled_seasons: 0,
+                    prospect_context: None,
+                    camp_forecast: None,
+                    league_crosswalk: None,
+                    affiliate_workboard: Some(path),
+                }) if path == PathBuf::from("affiliate-prospects-application.json")
             ));
         });
     }
@@ -6702,6 +6793,9 @@ pub enum FetchSubcommand {
         /// Restrict acquisition to canonical players in a reviewed all-league AHL crosswalk.
         #[arg(long = "league-crosswalk", value_name = "PATH")]
         league_crosswalk: Option<PathBuf>,
+        /// Restrict acquisition to canonical candidates in an AHL preseason workboard or application.
+        #[arg(long = "affiliate-workboard", value_name = "PATH")]
+        affiliate_workboard: Option<PathBuf>,
     },
     /// Fetch boxscores for one date and write score events to the
     /// EventStream (Phase Foster.3). With --for-favorites, only

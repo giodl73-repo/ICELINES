@@ -529,6 +529,8 @@ mod tests {
                     projected_score_sample_games: None,
                     projected_score_source_fingerprint: None,
                     prospect: None,
+                    prospect_method: None,
+                    prospect_source_fingerprint: None,
                     recall_readiness: None,
                     assigned_to_affiliate: None,
                     waiver_cleared: None,

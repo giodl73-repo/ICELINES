@@ -48,6 +48,7 @@ pub mod organization_window_adapters;
 pub mod organization_window_calibration;
 pub mod organization_window_comparison;
 pub mod organization_window_scenario_distribution;
+pub mod organizational_prospect;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
@@ -379,6 +380,11 @@ pub use organization_window_scenario_distribution::{
     ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_INPUT_SCHEMA,
     ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_JSON_SCHEMA,
     ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_SCHEMA,
+};
+pub use organizational_prospect::{
+    classify_organizational_prospect, evaluate_organizational_prospect,
+    OrganizationalProspectBasis, OrganizationalProspectPolicy, OrganizationalProspectStatusView,
+    ORGANIZATIONAL_PROSPECT_METHOD, ORGANIZATIONAL_PROSPECT_POLICY_SCHEMA,
 };
 pub use player_card::{
     PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow, PlayerSeasonSummary,

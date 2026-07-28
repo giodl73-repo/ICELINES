@@ -1,0 +1,7 @@
+{
+  "schema": "organizational_prospect_policy.v1",
+  "method_version": "age_and_nhl_workload.v1",
+  "as_of_date": "2026-09-15",
+  "maximum_age": 24,
+  "maximum_nhl_regular_season_games": 50
+}

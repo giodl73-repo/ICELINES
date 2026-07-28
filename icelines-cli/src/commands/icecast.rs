@@ -40,9 +40,10 @@ use icelines_core::{
     OrganizationPositionGroup, OrganizationUnitKind, OrganizationWindowBoardView,
     OrganizationWindowBridgeView, OrganizationWindowCardInput, OrganizationWindowManifestView,
     OrganizationWindowScenarioDistributionInput, OrganizationWindowSourcePackageView,
-    ProspectConversionBoardView, ProspectConversionConfig, ProspectConversionPerformanceDocument,
-    ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
-    ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
+    OrganizationalProspectPolicy, ProspectConversionBoardView, ProspectConversionConfig,
+    ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
+    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow,
+    ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
     ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
     ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramSensitivityView,
     ScenarioScopeView, ScheduleRestProfileView, SeasonSimulationCardInput,
@@ -109,6 +110,10 @@ use icelines_fetch::{
         apply_ahl_professional_game_ledger_to_facts, build_ahl_professional_game_ledger,
         AhlProfessionalGameFactsApplicationView, AhlProfessionalGameLedgerView,
         AhlProfessionalGamePolicy, AHL_PROFESSIONAL_GAME_FACTS_SCHEMA,
+    },
+    ahl_prospect_status::{
+        apply_ahl_prospect_status_ledger, build_ahl_prospect_status_ledger,
+        AhlProspectStatusApplicationView, AhlProspectStatusLedgerView,
     },
     ahl_rollover::{
         apply_ahl_preseason_league_organization_review, apply_ahl_preseason_organization_review,
@@ -1714,8 +1719,7 @@ pub fn run_affiliate_values_apply(
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    let workboard: AhlPreseasonLeagueFactsWorkboardView =
-        read_icecast_json(&workboard_path, "AHL preseason facts workboard")?;
+    let workboard = read_affiliate_workboard(&workboard_path)?;
     let ledger: AhlPlayerValueLedgerView =
         read_icecast_json(&ledger_path, "AHL player-value ledger")?;
     let application =
@@ -1727,6 +1731,57 @@ pub fn run_affiliate_values_apply(
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL player-value application")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_prospects(
+    workboard_path: PathBuf,
+    career_history_path: PathBuf,
+    policy_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&workboard_path)?;
+    let career_store = CareerHistoryStore::load(&career_history_path)
+        .with_context(|| format!("read career history {}", career_history_path.display()))?;
+    let policy: OrganizationalProspectPolicy =
+        read_icecast_json(&policy_path, "organizational prospect policy")?;
+    let ledger = build_ahl_prospect_status_ledger(&workboard, &career_store, &policy)
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&ledger)?)
+    } else {
+        render_affiliate_prospects(&ledger)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL prospect-status ledger")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_prospects_apply(
+    workboard_path: PathBuf,
+    ledger_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&workboard_path)?;
+    let ledger: AhlProspectStatusLedgerView =
+        read_icecast_json(&ledger_path, "AHL prospect-status ledger")?;
+    let application =
+        apply_ahl_prospect_status_ledger(&workboard, &ledger).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&application)?)
+    } else {
+        render_affiliate_prospects_application(&application)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL prospect-status application")?;
     } else {
         print!("{output}");
     }
@@ -1764,8 +1819,7 @@ pub fn run_affiliate_facts_apply(
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    let workboard: AhlPreseasonLeagueFactsWorkboardView =
-        read_icecast_json(&workboard_path, "AHL preseason facts workboard")?;
+    let workboard = read_affiliate_workboard(&workboard_path)?;
     let overlay: AhlPreseasonLeagueFactsOverlay =
         read_icecast_json(&overlay_path, "AHL preseason facts overlay")?;
     let application = apply_ahl_preseason_league_facts_overlay(&workboard, &overlay)
@@ -1787,8 +1841,7 @@ pub fn run_affiliate_facts_draft(
     workboard_path: PathBuf,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    let workboard: AhlPreseasonLeagueFactsWorkboardView =
-        read_icecast_json(&workboard_path, "AHL preseason facts workboard")?;
+    let workboard = read_affiliate_workboard(&workboard_path)?;
     let draft =
         build_ahl_preseason_league_facts_overlay_draft(&workboard).map_err(anyhow::Error::msg)?;
     let output = format!("{}\n", serde_json::to_string_pretty(&draft)?);
@@ -3184,6 +3237,32 @@ fn render_affiliate_values_application(view: &AhlPlayerValueApplicationView) -> 
     )
 }
 
+fn render_affiliate_prospects(view: &AhlProspectStatusLedgerView) -> String {
+    format!(
+        "AHL PROSPECT STATUS\nSeason: {} -> {}\nCandidate appearances: {}\nCanonical candidates: {}\nClassified: {}\nUnavailable: {}\nMethod: {}\nFingerprint: {}\n",
+        view.prior_season,
+        view.target_season,
+        view.candidate_appearances,
+        view.candidates_requested,
+        view.candidates_classified,
+        view.candidates_unavailable,
+        view.policy.method_version,
+        view.source_fingerprint
+    )
+}
+
+fn render_affiliate_prospects_application(view: &AhlProspectStatusApplicationView) -> String {
+    format!(
+        "AHL PROSPECT STATUS APPLIED\nSeason: {} -> {}\nStatuses filled: {}\nCandidates still missing status: {}\nWorkboard fingerprint: {}\nLedger fingerprint: {}\n",
+        view.prior_season,
+        view.target_season,
+        view.rows_applied,
+        view.candidates_without_prospect_status,
+        view.source_workboard_fingerprint,
+        view.prospect_ledger_fingerprint
+    )
+}
+
 fn render_affiliate_facts_board(view: &AhlPreseasonLeagueFactsWorkboardView) -> String {
     let mut out = String::new();
     let _ = writeln!(
@@ -3550,6 +3629,29 @@ fn read_icecast_json<T: for<'de> Deserialize<'de>>(
 ) -> anyhow::Result<T> {
     let bytes = std::fs::read(path).with_context(|| format!("read {label} {}", path.display()))?;
     serde_json::from_slice(&bytes).with_context(|| format!("parse {label} {}", path.display()))
+}
+
+fn read_affiliate_workboard(
+    path: &std::path::Path,
+) -> anyhow::Result<AhlPreseasonLeagueFactsWorkboardView> {
+    let value: serde_json::Value = read_icecast_json(path, "AHL preseason workboard authority")?;
+    let workboard = if value.get("schema").and_then(serde_json::Value::as_str)
+        == Some(icelines_fetch::ahl_preseason_facts::AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA)
+    {
+        value
+    } else {
+        value.get("workboard").cloned().with_context(|| {
+            format!(
+                "{} is neither a preseason workboard nor an application containing one",
+                path.display()
+            )
+        })?
+    };
+    let workboard = serde_json::from_value(workboard)
+        .with_context(|| format!("parse nested AHL preseason workboard {}", path.display()))?;
+    icelines_fetch::ahl_preseason_facts::validate_workboard(&workboard)
+        .map_err(anyhow::Error::msg)?;
+    Ok(workboard)
 }
 
 fn render_bench(

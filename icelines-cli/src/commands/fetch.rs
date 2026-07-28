@@ -134,6 +134,7 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             prospect_context,
             camp_forecast,
             league_crosswalk,
+            affiliate_workboard,
         } => {
             do_career(
                 dry_run,
@@ -141,6 +142,7 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
                 prospect_context.as_deref(),
                 camp_forecast.as_deref(),
                 league_crosswalk.as_deref(),
+                affiliate_workboard.as_deref(),
             )
             .await
         }
@@ -1499,6 +1501,7 @@ async fn do_career(
     prospect_context_path: Option<&std::path::Path>,
     camp_forecast_path: Option<&std::path::Path>,
     league_crosswalk_path: Option<&std::path::Path>,
+    affiliate_workboard_path: Option<&std::path::Path>,
 ) -> anyhow::Result<()> {
     use icelines_fetch::career_landing::CareerHistoryStore;
 
@@ -1516,93 +1519,144 @@ async fn do_career(
     let target_modes = usize::from(prospect_context_path.is_some())
         + usize::from(camp_forecast_path.is_some())
         + usize::from(league_crosswalk_path.is_some())
+        + usize::from(affiliate_workboard_path.is_some())
         + usize::from(bundled_seasons > 0);
     if target_modes > 1 {
         anyhow::bail!(
-            "choose only one of --prospect-context, --camp-forecast, --league-crosswalk, or --bundled-seasons"
+            "choose only one of --prospect-context, --camp-forecast, --league-crosswalk, --affiliate-workboard, or --bundled-seasons"
         );
     }
-    let player_ids_result: anyhow::Result<Vec<u32>> =
-        if let Some(context_path) = prospect_context_path {
-            let context: icelines_fetch::ProspectLeagueContext =
-                serde_json::from_slice(&std::fs::read(context_path).with_context(|| {
-                    format!("read prospect context {}", context_path.display())
-                })?)
-                .with_context(|| format!("parse prospect context {}", context_path.display()))?;
-            if context.schema != icelines_fetch::PROSPECT_LEAGUE_CONTEXT_SCHEMA {
-                anyhow::bail!(
-                    "invalid prospect context schema in {}",
-                    context_path.display()
-                );
-            }
-            Ok(context
-                .players
-                .into_iter()
-                .map(|player| player.player_id)
-                .collect())
-        } else if let Some(forecast_path) = camp_forecast_path {
-            let forecast: icelines_core::TrainingCampLeagueForecastView = serde_json::from_slice(
-                &std::fs::read(forecast_path)
-                    .with_context(|| format!("read camp forecast {}", forecast_path.display()))?,
-            )
-            .with_context(|| format!("parse camp forecast {}", forecast_path.display()))?;
-            if forecast.schema != icelines_core::TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA {
-                anyhow::bail!(
-                    "invalid camp forecast schema in {}",
-                    forecast_path.display()
-                );
-            }
-            let mut ids = std::collections::BTreeSet::new();
-            for team in forecast.teams {
-                if let Some(team_forecast) = team.forecast {
-                    ids.extend(
-                        team_forecast
-                            .players
-                            .into_iter()
-                            .filter(|player| player.prospect)
-                            .map(|player| player.player_id),
-                    );
-                }
-            }
-            Ok(ids.into_iter().collect())
-        } else if let Some(crosswalk_path) = league_crosswalk_path {
-            let crosswalk: icelines_fetch::ahl::AhlIdentityLeagueCrosswalkView =
-                serde_json::from_slice(&std::fs::read(crosswalk_path).with_context(|| {
-                    format!("read league crosswalk {}", crosswalk_path.display())
-                })?)
-                .with_context(|| format!("parse league crosswalk {}", crosswalk_path.display()))?;
-            if crosswalk.schema != icelines_fetch::ahl::AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA {
-                anyhow::bail!(
-                    "invalid AHL identity league crosswalk schema in {}",
-                    crosswalk_path.display()
-                );
-            }
-            let mut ids = std::collections::BTreeSet::new();
-            for team in crosswalk.crosswalks {
+    let player_ids_result: anyhow::Result<Vec<u32>> = if let Some(context_path) =
+        prospect_context_path
+    {
+        let context: icelines_fetch::ProspectLeagueContext = serde_json::from_slice(
+            &std::fs::read(context_path)
+                .with_context(|| format!("read prospect context {}", context_path.display()))?,
+        )
+        .with_context(|| format!("parse prospect context {}", context_path.display()))?;
+        if context.schema != icelines_fetch::PROSPECT_LEAGUE_CONTEXT_SCHEMA {
+            anyhow::bail!(
+                "invalid prospect context schema in {}",
+                context_path.display()
+            );
+        }
+        Ok(context
+            .players
+            .into_iter()
+            .map(|player| player.player_id)
+            .collect())
+    } else if let Some(forecast_path) = camp_forecast_path {
+        let forecast: icelines_core::TrainingCampLeagueForecastView = serde_json::from_slice(
+            &std::fs::read(forecast_path)
+                .with_context(|| format!("read camp forecast {}", forecast_path.display()))?,
+        )
+        .with_context(|| format!("parse camp forecast {}", forecast_path.display()))?;
+        if forecast.schema != icelines_core::TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA {
+            anyhow::bail!(
+                "invalid camp forecast schema in {}",
+                forecast_path.display()
+            );
+        }
+        let mut ids = std::collections::BTreeSet::new();
+        for team in forecast.teams {
+            if let Some(team_forecast) = team.forecast {
                 ids.extend(
-                    team.rows
+                    team_forecast
+                        .players
                         .into_iter()
-                        .filter(|row| {
-                            row.review_status
-                                == icelines_fetch::ahl::AhlIdentityReviewStatus::Reviewed
-                        })
-                        .filter_map(|row| row.nhl_player_id),
+                        .filter(|player| player.prospect)
+                        .map(|player| player.player_id),
                 );
             }
-            Ok(ids.into_iter().collect())
-        } else if bundled_seasons > 0 {
-            Ok(union_pids_from_bundled(bundled_seasons))
+        }
+        Ok(ids.into_iter().collect())
+    } else if let Some(crosswalk_path) = league_crosswalk_path {
+        let crosswalk: icelines_fetch::ahl::AhlIdentityLeagueCrosswalkView =
+            serde_json::from_slice(
+                &std::fs::read(crosswalk_path).with_context(|| {
+                    format!("read league crosswalk {}", crosswalk_path.display())
+                })?,
+            )
+            .with_context(|| format!("parse league crosswalk {}", crosswalk_path.display()))?;
+        if crosswalk.schema != icelines_fetch::ahl::AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA {
+            anyhow::bail!(
+                "invalid AHL identity league crosswalk schema in {}",
+                crosswalk_path.display()
+            );
+        }
+        let mut ids = std::collections::BTreeSet::new();
+        for team in crosswalk.crosswalks {
+            ids.extend(
+                team.rows
+                    .into_iter()
+                    .filter(|row| {
+                        row.review_status == icelines_fetch::ahl::AhlIdentityReviewStatus::Reviewed
+                    })
+                    .filter_map(|row| row.nhl_player_id),
+            );
+        }
+        Ok(ids.into_iter().collect())
+    } else if let Some(workboard_path) = affiliate_workboard_path {
+        let value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(workboard_path).with_context(|| {
+                format!("read affiliate workboard {}", workboard_path.display())
+            })?)
+            .with_context(|| format!("parse affiliate workboard {}", workboard_path.display()))?;
+        let value = if value.get("schema").and_then(serde_json::Value::as_str)
+            == Some(
+                icelines_fetch::ahl_preseason_facts::AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA,
+            ) {
+            value
         } else {
-            store
-                .read_tier::<Vec<SkaterBio>>(&SnapshotTier::Stats, "bios.json")
-                .context("reading bios.json from active Stats snapshot")
-                .map(|bios| bios.iter().map(|b| b.player_id).collect())
+            value.get("workboard").cloned().with_context(|| {
+                format!(
+                    "{} is neither an affiliate workboard nor an application containing one",
+                    workboard_path.display()
+                )
+            })?
         };
+        let workboard: icelines_fetch::ahl_preseason_facts::AhlPreseasonLeagueFactsWorkboardView =
+            serde_json::from_value(value).with_context(|| {
+                format!(
+                    "parse nested affiliate workboard {}",
+                    workboard_path.display()
+                )
+            })?;
+        if workboard.schema
+            != icelines_fetch::ahl_preseason_facts::AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA
+        {
+            anyhow::bail!(
+                "invalid affiliate workboard schema in {}",
+                workboard_path.display()
+            );
+        }
+        icelines_fetch::ahl_preseason_facts::validate_workboard(&workboard)
+            .map_err(anyhow::Error::msg)?;
+        let ids = workboard
+                .team_workboards
+                .into_iter()
+                .flat_map(|team| team.players)
+                .filter(|player| {
+                    player.status
+                        == icelines_fetch::ahl_preseason_facts::AhlPreseasonFactsCandidateStatus::Candidate
+                })
+                .filter_map(|player| player.nhl_player_id)
+                .collect::<std::collections::BTreeSet<_>>();
+        Ok(ids.into_iter().collect())
+    } else if bundled_seasons > 0 {
+        Ok(union_pids_from_bundled(bundled_seasons))
+    } else {
+        store
+            .read_tier::<Vec<SkaterBio>>(&SnapshotTier::Stats, "bios.json")
+            .context("reading bios.json from active Stats snapshot")
+            .map(|bios| bios.iter().map(|b| b.player_id).collect())
+    };
 
     if dry_run {
         if (prospect_context_path.is_some()
             || camp_forecast_path.is_some()
-            || league_crosswalk_path.is_some())
+            || league_crosswalk_path.is_some()
+            || affiliate_workboard_path.is_some())
             && player_ids_result.is_err()
         {
             return player_ids_result
@@ -1622,6 +1676,11 @@ async fn do_career(
             println!(
                 "Source: canonical reviewed AHL identities in {}",
                 crosswalk_path.display()
+            );
+        } else if let Some(workboard_path) = affiliate_workboard_path {
+            println!(
+                "Source: canonical AHL preseason candidates in {}",
+                workboard_path.display()
             );
         }
         println!("Endpoint: /v1/player/{{id}}/landing.seasonTotals (50ms delay between calls)");

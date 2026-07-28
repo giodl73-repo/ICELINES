@@ -77,6 +77,10 @@ pub struct AhlPreseasonFactsPlayerRow {
     pub projected_score_source_fingerprint: Option<String>,
     #[serde(default)]
     pub prospect: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prospect_method: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prospect_source_fingerprint: Option<String>,
     #[serde(default)]
     pub recall_readiness: Option<f64>,
     #[serde(default)]
@@ -359,6 +363,8 @@ pub fn build_ahl_preseason_league_facts_workboard(
                 projected_score_sample_games: None,
                 projected_score_source_fingerprint: None,
                 prospect: None,
+                prospect_method: None,
+                prospect_source_fingerprint: None,
                 recall_readiness: None,
                 assigned_to_affiliate: None,
                 waiver_cleared: player.waiver_exempt.filter(|waiver_exempt| *waiver_exempt),
@@ -698,7 +704,7 @@ fn fingerprint_application(
     Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
 }
 
-pub(crate) fn validate_workboard(
+pub fn validate_workboard(
     workboard: &AhlPreseasonLeagueFactsWorkboardView,
 ) -> Result<(), AhlFeedError> {
     if workboard.schema != AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA

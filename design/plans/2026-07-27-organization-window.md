@@ -289,6 +289,23 @@ fact class and retained a new sealed result-workboard fingerprint. S2 remains
 open on those 98 scores plus sourced status, assignment, prospect, recall,
 waiver, and final-rule authority.
 
+**Operational prospect-status checkpoint — 2026-07-28:** a separate core
+policy now defines the reserve-system population by exact cutoff age and
+observed NHL regular-season workload. It is explicitly not NHL rookie,
+contract, waiver, assignment, or scouting status. Either graduation axis can
+establish `false`; `true` requires both facts. Fetch composes this player-global
+classification from the official career cache and applies only the
+`prospect_status` blocker to the chained league workboard.
+
+The real run classified all 1,282 canonical candidates: 594 eligible prospects
+and 688 graduates (466 age-only, 13 workload-only, and 209 on both axes). It
+applied those classifications to all 1,371 organization appearances and
+reduced the prospect-status queue from 1,371 to zero. Eighty-one canonical
+players appear in more than one organization because rollover assignment is
+still unresolved; their status is reused without choosing an organization.
+S2 remains open on organization status, assignment, recall readiness, waiver,
+98 score gaps, and final-rule authority.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored
