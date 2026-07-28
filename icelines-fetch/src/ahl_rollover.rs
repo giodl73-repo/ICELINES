@@ -41,7 +41,12 @@ pub struct AhlPreseasonOrganizationDecision {
 pub struct AhlPreseasonRolloverConfig {
     pub target_season: u32,
     pub nhl_team: String,
+    /// Target-season affiliate. This may differ from the prior snapshot club.
     pub ahl_team: String,
+    /// Prior-snapshot affiliate when the organization changed or relocated.
+    /// Absent preserves the original same-affiliate behavior.
+    #[serde(default)]
+    pub prior_ahl_team: Option<String>,
     pub as_of: String,
     pub source_urls: Vec<String>,
     #[serde(default)]
@@ -170,7 +175,7 @@ pub fn apply_ahl_preseason_organization_review(
         crosswalk,
         camp_input,
         &base_config.nhl_team,
-        &base_config.ahl_team,
+        prior_ahl_team(base_config),
     )?;
     if review.schema != AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA
         || review.prior_season != expected.prior_season
@@ -436,7 +441,7 @@ pub fn build_ahl_preseason_rollover(
     let prior_team = prior_snapshot
         .teams
         .iter()
-        .find(|team| team.team_name == config.ahl_team)
+        .find(|team| team.team_name == prior_ahl_team(config))
         .expect("validation found prior affiliate");
     let crosswalk_by_provider = crosswalk
         .rows
@@ -525,6 +530,11 @@ pub fn build_ahl_preseason_rollover(
         players,
         disclosures: vec![
             "This is a preseason rollover planning document, not an official AHL roster or an affiliate lineup projection.".to_owned(),
+            format!(
+                "Prior roster evidence comes from {}; the target-season affiliate is {}.",
+                prior_ahl_team(config),
+                config.ahl_team
+            ),
             "Prior-affiliate identities must be reviewed and prior-only players need sourced organization-status decisions before they count toward projection coverage.".to_owned(),
             "Camp players outside the modal NHL roster count only when waiver-exempt; non-exempt players remain waiver-gated rather than assumed assigned.".to_owned(),
             "Projection readiness measures candidate-pool shape only. Professional-game totals, development-rule compliance, contracts, injuries, and final assignment rights remain required downstream.".to_owned(),
@@ -689,8 +699,11 @@ fn validate_inputs(
     config: &AhlPreseasonRolloverConfig,
 ) -> Result<(), AhlFeedError> {
     prior_snapshot.validate()?;
+    let prior_ahl_team = prior_ahl_team(config);
     if config.target_season != camp_input.season
         || config.nhl_team != camp_input.team
+        || config.ahl_team.trim().is_empty()
+        || prior_ahl_team.trim().is_empty()
         || camp_forecast.schema != TRAINING_CAMP_FORECAST_SCHEMA
         || camp_forecast.team != camp_input.team
         || camp_forecast.season != camp_input.season
@@ -705,11 +718,11 @@ fn validate_inputs(
     let prior_team = prior_snapshot
         .teams
         .iter()
-        .find(|team| team.team_name == config.ahl_team)
+        .find(|team| team.team_name == prior_ahl_team)
         .ok_or_else(|| {
             AhlFeedError::Validation(format!(
                 "prior AHL snapshot has no team named `{}`",
-                config.ahl_team
+                prior_ahl_team
             ))
         })?;
     if prior_team
@@ -719,7 +732,7 @@ fn validate_inputs(
         || crosswalk.schema != AHL_IDENTITY_CROSSWALK_SCHEMA
         || crosswalk.season != prior_snapshot.season
         || crosswalk.provider != prior_snapshot.provider
-        || crosswalk.ahl_team != config.ahl_team
+        || crosswalk.ahl_team != prior_ahl_team
         || crosswalk.roster_fetched_at != prior_snapshot.fetched_at
     {
         return Err(AhlFeedError::Validation(
@@ -806,6 +819,13 @@ fn validate_inputs(
         }
     }
     Ok(())
+}
+
+fn prior_ahl_team(config: &AhlPreseasonRolloverConfig) -> &str {
+    config
+        .prior_ahl_team
+        .as_deref()
+        .unwrap_or(config.ahl_team.as_str())
 }
 
 fn position_group(position: Position) -> AhlPreseasonPositionGroup {
@@ -932,6 +952,7 @@ mod tests {
             target_season: 20262027,
             nhl_team: "NYR".to_owned(),
             ahl_team: "Hartford Wolf Pack".to_owned(),
+            prior_ahl_team: None,
             as_of: "2026-07-24".to_owned(),
             source_urls: vec!["https://example.test/nyr-camp".to_owned()],
             prior_player_decisions: Vec::new(),
@@ -982,6 +1003,31 @@ mod tests {
 
         assert_eq!(view.nhl_team, "NYR");
         assert_eq!(view.counts.reconciled_players, 1);
+    }
+
+    #[test]
+    fn changed_affiliate_keeps_prior_snapshot_and_target_club_distinct() {
+        let (snapshot, crosswalk, camp, forecast, mut config) = inputs();
+        config.nhl_team = "NYI".to_owned();
+        config.ahl_team = "Hamilton Hammers".to_owned();
+        config.prior_ahl_team = Some("Hartford Wolf Pack".to_owned());
+        let mut camp = camp;
+        camp.team = "NYI".to_owned();
+        let mut forecast = forecast;
+        forecast.team = "NYI".to_owned();
+        let mut snapshot = snapshot;
+        snapshot.teams[0].nhl_affiliate = Some("NYI".to_owned());
+        let mut crosswalk = crosswalk;
+        crosswalk.nhl_affiliate = Some("NYI".to_owned());
+
+        let view =
+            build_ahl_preseason_rollover(&snapshot, &crosswalk, &camp, &forecast, &config).unwrap();
+
+        assert_eq!(view.ahl_team, "Hamilton Hammers");
+        assert!(view.disclosures.iter().any(|line| {
+            line.contains("Prior roster evidence comes from Hartford Wolf Pack")
+                && line.contains("target-season affiliate is Hamilton Hammers")
+        }));
     }
 
     #[test]

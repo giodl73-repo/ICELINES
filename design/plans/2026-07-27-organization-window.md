@@ -167,6 +167,11 @@ complete for this snapshot. Current-season affiliation, assignment, projected
 role/score, readiness, waiver, and professional-game facts remain a separate
 authority gate; a camp cut is not treated as an AHL assignment.
 
+The rollover contract now also separates optional `prior_ahl_team` from the
+target `ahl_team`. This removes the same-club assumption for affiliation
+changes such as NYI/Hamilton while retaining backward compatibility and an
+explicit disclosure of both authorities.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

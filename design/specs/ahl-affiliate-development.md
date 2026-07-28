@@ -231,6 +231,13 @@ season, and team leverage; a conflict with a canonical ID, date pair, and two
 retained sources receives an evidence-readiness bonus. The board never creates
 review authority.
 
+Preseason rollover binds two club identities when an affiliation changes:
+`prior_ahl_team` selects the official historical roster and its reviewed
+crosswalk, while `ahl_team` names the target-season affiliate. The prior field
+is optional and defaults to the target for backward compatibility. Outputs
+disclose both names. Historical players are never relabeled as members of a
+new or relocated club merely to make the join succeed.
+
 ## Data work remaining
 
 - continue resolving the three-season historical evidence queue; retain Conor McCollum as

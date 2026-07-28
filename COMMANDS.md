@@ -1313,6 +1313,14 @@ authority. Conflict pairs expose their absolute day delta; a delta of at least
 1,460 days recommends identity-collision investigation rather than a date
 override.
 
+Preseason rollover keeps prior evidence separate from target affiliation. In
+`ahl_preseason_rollover.v1` config, `ahl_team` is the target-season affiliate;
+optional `prior_ahl_team` names the club in the prior official snapshot. When
+`prior_ahl_team` is absent it defaults to `ahl_team`, preserving existing
+same-affiliate inputs. `affiliate-status-draft --ahl-team` continues to select
+the prior-snapshot club. This distinction supports relocation and affiliation
+changes without relabeling historical roster evidence.
+
 `icecast affiliate-review-show` is the read-only text/JSON inspection surface
 for an existing crosswalk. IceLines projects the authoritative crosswalk into
 the UI-neutral `ahl_identity_review_inspection.v1` contract, which carries

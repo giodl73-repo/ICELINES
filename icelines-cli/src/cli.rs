@@ -1494,7 +1494,8 @@ pub enum IceCastSubcommand {
         camp: PathBuf,
         #[arg(long, value_name = "NHL_TEAM")]
         nhl_team: String,
-        #[arg(long, value_name = "AHL_TEAM")]
+        /// Prior-snapshot AHL team; target affiliate is supplied by rollover config.
+        #[arg(long, value_name = "PRIOR_AHL_TEAM")]
         ahl_team: String,
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
