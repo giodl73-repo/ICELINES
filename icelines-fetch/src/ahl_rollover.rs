@@ -824,6 +824,10 @@ pub struct AhlPreseasonRolloverPlayerView {
     pub prior_provider_player_id: Option<String>,
     pub display_name: String,
     pub position_group: AhlPreseasonPositionGroup,
+    #[serde(default)]
+    pub primary_position: Option<Position>,
+    #[serde(default)]
+    pub eligible_positions: Vec<Position>,
     pub origins: Vec<AhlPreseasonRolloverOrigin>,
     pub identity_reviewed: bool,
     pub organization_decision: Option<AhlPreseasonDecisionKind>,
@@ -893,6 +897,7 @@ struct CampRolloverCandidate {
     player_id: u32,
     display_name: String,
     primary_position: Position,
+    eligible_positions: Vec<Position>,
     waiver_exempt: bool,
     projected_score: f64,
     make_probability: f64,
@@ -923,6 +928,7 @@ pub fn build_ahl_preseason_rollover(
                 player_id: player.player_id,
                 display_name: player.display_name.clone(),
                 primary_position: player.primary_position,
+                eligible_positions: player.eligible_positions.clone(),
                 waiver_exempt: player.waiver_exempt,
                 projected_score: player.projected_score,
                 make_probability: forecast.make_probability,
@@ -956,6 +962,7 @@ pub fn build_ahl_preseason_rollover_from_forecast(
             player_id: player.player_id,
             display_name: player.display_name.clone(),
             primary_position: player.primary_position,
+            eligible_positions: player.eligible_positions.clone(),
             waiver_exempt: player.waiver_exempt,
             projected_score: player.projected_score,
             make_probability: player.make_probability,
@@ -1251,6 +1258,12 @@ fn rollover_prior_row(
         position_group: camp_player
             .map(|row| position_group(row.primary_position))
             .unwrap_or_else(|| prior_position_group(prior)),
+        primary_position: camp_player
+            .map(|row| row.primary_position)
+            .or_else(|| prior_position(prior)),
+        eligible_positions: camp_player
+            .map(|row| row.eligible_positions.clone())
+            .unwrap_or_else(|| prior_position(prior).into_iter().collect()),
         origins: if camp_player.is_some() {
             vec![
                 AhlPreseasonRolloverOrigin::PriorAffiliate,
@@ -1287,6 +1300,8 @@ fn rollover_camp_row(
         prior_provider_player_id: None,
         display_name: camp_player.display_name.clone(),
         position_group: position_group(camp_player.primary_position),
+        primary_position: Some(camp_player.primary_position),
+        eligible_positions: camp_player.eligible_positions.clone(),
         origins: vec![AhlPreseasonRolloverOrigin::CurrentCamp],
         identity_reviewed: true,
         organization_decision: None,
@@ -1476,17 +1491,19 @@ fn validate_forecast_inputs(
     }
     let mut forecast_ids = BTreeSet::new();
     if camp_forecast.players.is_empty()
-        || camp_forecast
-            .players
-            .iter()
-            .any(|row| row.player_id == 0 || !forecast_ids.insert(row.player_id))
+        || camp_forecast.players.iter().any(|row| {
+            row.player_id == 0
+                || !forecast_ids.insert(row.player_id)
+                || !row.eligible_positions.contains(&row.primary_position)
+        })
         || camp_forecast
             .modal_opening_roster_ids
             .iter()
             .any(|id| !forecast_ids.contains(id))
     {
         return Err(AhlFeedError::Validation(
-            "camp forecast has empty, duplicate, or unbound rollover players".to_owned(),
+            "camp forecast has empty, duplicate, position-incomplete, or unbound rollover players"
+                .to_owned(),
         ));
     }
     let reviewed_prior_ids = crosswalk
@@ -1541,6 +1558,17 @@ fn prior_position_group(player: &AhlRosterPlayer) -> AhlPreseasonPositionGroup {
         AhlPreseasonPositionGroup::Forward
     } else {
         AhlPreseasonPositionGroup::Unknown
+    }
+}
+
+fn prior_position(player: &AhlRosterPlayer) -> Option<Position> {
+    match normalize_name(&player.position).as_str() {
+        "c" => Some(Position::Center),
+        "lw" | "l" => Some(Position::LeftWing),
+        "rw" | "r" => Some(Position::RightWing),
+        "d" => Some(Position::Defense),
+        "g" => Some(Position::Goalie),
+        _ => None,
     }
 }
 
@@ -1735,6 +1763,17 @@ mod tests {
                 .unwrap_err();
 
         assert!(error.to_string().contains("unbound rollover players"));
+    }
+
+    #[test]
+    fn forecast_native_rollover_rejects_position_incomplete_player() {
+        let (snapshot, crosswalk, _camp, mut forecast, config) = inputs();
+        forecast.players[0].eligible_positions.clear();
+
+        let error =
+            build_ahl_preseason_rollover_from_forecast(&snapshot, &crosswalk, &forecast, &config)
+                .unwrap_err();
+        assert!(error.to_string().contains("position-incomplete"));
     }
 
     #[test]

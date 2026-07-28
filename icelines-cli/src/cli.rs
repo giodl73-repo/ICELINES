@@ -1575,6 +1575,20 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Compose a league-wide preseason affiliate facts-readiness workboard.
+    #[command(name = "affiliate-facts-board")]
+    AffiliateFactsBoard {
+        /// Complete `ahl_preseason_league_rollover.v1` artifact.
+        #[arg(long, value_name = "PATH")]
+        rollover: PathBuf,
+        /// Matching `ahl_professional_game_ledger.v1` artifact.
+        #[arg(long, value_name = "PATH")]
+        professional_games: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Apply a final professional-game ledger to separate team projection facts.
     #[command(name = "affiliate-professional-games-apply")]
     AffiliateProfessionalGamesApply {
@@ -4448,6 +4462,24 @@ mod tui_surface_tests {
             assert!(matches!(
                 professional_games.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGames { json: true, .. })
+            ));
+
+            let facts_board = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-facts-board",
+                "--rollover",
+                "league-rollover.json",
+                "--professional-games",
+                "professional-game-ledger.json",
+                "--json",
+                "--out",
+                "affiliate-facts-board.json",
+            ])
+            .expect("affiliate preseason facts workboard should parse");
+            assert!(matches!(
+                facts_board.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateFactsBoard { json: true, .. })
             ));
 
             let professional_games_apply = Cli::try_parse_from([

@@ -3156,6 +3156,25 @@ seasons aren't aligned with NHL week boundaries) — use `--season`.
 
 ---
 
+## AHL preseason evidence workboard
+
+```bash
+# Compose the complete league rollover and professional-game evidence without
+# inventing assignments, prospect labels, recall readiness, or waiver clearance.
+icelines icecast affiliate-facts-board \
+  --rollover league-rollover.json \
+  --professional-games professional-games.json \
+  --json --out affiliate-facts-board.json
+```
+
+The JSON artifact is keyed by canonical NHL player ID where identity is
+available, preserves exact eligible positions, and lists every remaining
+authority blocker by player and team. Text output is a compact 32-team review
+queue. A provisional professional-game policy can populate raw totals but
+cannot certify final AHL development-rule qualification.
+
+---
+
 ## Global flags
 
 These work on every subcommand:

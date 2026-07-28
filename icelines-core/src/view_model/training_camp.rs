@@ -396,6 +396,10 @@ pub struct TrainingCampPlayerView {
     pub player_id: u32,
     pub display_name: String,
     pub primary_position: Position,
+    /// Retained in the sealed forecast so downstream roster/affiliate
+    /// composition never has to reconstruct multi-position eligibility.
+    #[serde(default)]
+    pub eligible_positions: Vec<Position>,
     pub source_league: String,
     pub incumbent: bool,
     #[serde(default)]
@@ -1401,6 +1405,7 @@ pub fn simulate_training_camp(
                 player_id: player.player_id,
                 display_name: player.display_name.clone(),
                 primary_position: player.primary_position,
+                eligible_positions: player.eligible_positions.clone(),
                 source_league: player.source_league.clone(),
                 incumbent: player.incumbent,
                 rookie_eligible: player.rookie_eligible,

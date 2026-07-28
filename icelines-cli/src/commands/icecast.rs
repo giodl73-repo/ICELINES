@@ -95,6 +95,9 @@ use icelines_fetch::{
         AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
         AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
     },
+    ahl_preseason_facts::{
+        build_ahl_preseason_league_facts_workboard, AhlPreseasonLeagueFactsWorkboardView,
+    },
     ahl_professional_games::{
         apply_ahl_professional_game_ledger_to_facts, build_ahl_professional_game_ledger,
         AhlProfessionalGameFactsApplicationView, AhlProfessionalGameLedgerView,
@@ -1669,6 +1672,31 @@ pub fn run_affiliate_professional_games(
     Ok(())
 }
 
+pub fn run_affiliate_facts_board(
+    rollover_path: PathBuf,
+    professional_games_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let rollover: AhlPreseasonLeagueRolloverView =
+        read_icecast_json(&rollover_path, "AHL preseason league rollover")?;
+    let professional_games: AhlProfessionalGameLedgerView =
+        read_icecast_json(&professional_games_path, "AHL professional-game ledger")?;
+    let workboard = build_ahl_preseason_league_facts_workboard(&rollover, &professional_games)
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&workboard)?)
+    } else {
+        render_affiliate_facts_board(&workboard)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL preseason facts workboard")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_affiliate_professional_games_apply(
     crosswalk_path: PathBuf,
     ledger_path: PathBuf,
@@ -3001,6 +3029,37 @@ fn render_affiliate_professional_games(view: &AhlProfessionalGameLedgerView) -> 
             player.display_name,
             player.blockers.join(","),
             leagues
+        );
+    }
+    out
+}
+
+fn render_affiliate_facts_board(view: &AhlPreseasonLeagueFactsWorkboardView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "AHL PRESEASON FACTS WORKBOARD — {} — {} teams",
+        view.target_season, view.teams
+    );
+    let _ = writeln!(
+        out,
+        "CANDIDATES: {} | FACTS READY: {} | PRO-GAME POLICY: {} ({})",
+        view.candidates,
+        view.facts_ready_candidates,
+        view.professional_game_policy_id,
+        view.professional_game_policy_authority
+    );
+    for team in &view.team_workboards {
+        let _ = writeln!(
+            out,
+            "{:<3} {:>3} candidates | {:>3} ready | {:>3} assignment | {:>3} status | {:>3} waivers | {}",
+            team.nhl_team,
+            team.counts.candidates,
+            team.counts.facts_ready_candidates,
+            team.counts.missing_assignment_authority,
+            team.counts.missing_organization_status,
+            team.counts.missing_waiver_clearance,
+            team.ahl_team
         );
     }
     out

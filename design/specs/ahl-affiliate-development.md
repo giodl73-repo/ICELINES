@@ -321,6 +321,16 @@ provisional ledgers, missing canonical players, and conflicting authored facts
 fail before output. The normal `affiliate-input` command accepts this envelope
 as well as its legacy bare facts array.
 
+For preseason composition,
+`ahl_preseason_league_facts_workboard.v1` joins the complete league rollover
+and matching ledger by canonical NHL player ID without requiring provider-local
+AHL IDs for camp-only candidates. It deliberately does not author projection
+facts. Instead, it preserves exact position eligibility and emits an explicit
+per-player blocker set for assignment, organization status, waiver clearance,
+score, prospect status, recall readiness, professional games, and final rule
+qualification. This makes the remaining all-32 data work measurable while
+keeping final assignments and player-quality judgments outside the join.
+
 Historical replay uses season-dated catalogs rather than applying the current
 affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves
 the official 2021-22 shared Charlotte affiliation as two relationship rows

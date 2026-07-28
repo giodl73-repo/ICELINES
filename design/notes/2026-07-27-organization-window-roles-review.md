@@ -463,5 +463,39 @@ documents retain the count fallback so saved artifacts do not break.
 KEEL/WIRE accepted the official-snapshot application bridge because it is
 narrow: only final-policy game and qualification facts are filled, conflicting
 authored values fail, and all scoring/assignment/waiver fields remain owned by
-their original sources. HART keeps the preseason league composer open because
-camp-only candidates do not yet have provider-scoped AHL IDs.
+their original sources. HART identified that preseason camp-only candidates
+need an NHL-ID-keyed league composer because they do not yet have provider-
+scoped AHL IDs.
+
+### S2 league facts-workboard review
+
+HART/KEEL accepted the NHL-ID-keyed preseason composer as the correct boundary
+for camp-only candidates: provider-local AHL identity remains unchanged, while
+the league artifact composes evidence against canonical NHL identity and feeds
+the existing affiliate primitive only after its blockers are resolved.
+
+TAPE/WIRE verified that the board distinguishes available raw professional-
+game totals from provisional rule authority. It cannot turn the 2025-26 rule
+interpretation into a final 2026-27 development classification, and it does not
+reinterpret waiver exposure as clearance or a camp cut as assignment.
+
+SCOUT/PACE required exact player eligibility to survive the camp seal. The
+rebuild preserves position lists for all 933 camp players, including 26 with
+multiple positions. Old forecasts without primary eligibility now fail closed;
+the 255 missing exact-position blockers are prior-only evidence gaps, not
+forward-group guesses.
+
+FORGE/BENCH/EDGE reviewed the composition tests and real 32-team run. Matching
+season/schema/cohort checks, duplicate-team/player refusal, provisional/final
+rule behavior, goalie treatment, and CLI parsing pass. The resulting 1,371
+candidate work queue has zero false facts-ready rows and exposes every remaining
+assignment/prospect/recall/status/waiver/score/game/rule authority separately.
+
+GLASS/CREST/broadcast accepted the concise text view because it reports
+readiness and blockers rather than simulating certainty. JSON remains the
+UI-neutral source for future TUI/Web queues; neither surface may recompute or
+silently clear a blocker.
+
+**Verdict:** pass for the workboard slice. S2 remains open for a sourced,
+fingerprint-bound facts overlay/application and the resulting all-32 affiliate
+and organization-lineup projections.

@@ -206,14 +206,31 @@ fields remain withheld pending the published 2026-27 rule book.
 Core no longer forces all consumers to repeat the old count-only
 classification bug. Affiliate inputs and views preserve a separate final
 `development_rule_qualified` fact, which overrides threshold fallback when a
-reviewed policy supplies it. The forthcoming league facts composer must require
-that final field before promoting a preseason affiliate projection.
+reviewed policy supplies it. The league facts workboard requires that final
+field before a skater can become facts-ready for preseason projection.
 
 The official-snapshot facts bridge is implemented: a final ledger can now be
 applied to one team's provider-keyed projection facts without altering score,
 position, prospect, recall, assignment, or waiver authority, and the existing
 affiliate-input builder consumes the fingerprint-bound envelope. Preseason
-camp-only players still require the planned NHL-ID-keyed league facts composer.
+camp-only players use the NHL-ID-keyed league workboard described below.
+
+**League facts-workboard checkpoint — 2026-07-28:** that composer is now
+implemented as `ahl_preseason_league_facts_workboard.v1`. The camp forecast
+seal preserves primary plus multi-position eligibility end to end and rejects
+older position-incomplete forecasts. The real rebuild retains exact positions
+for 933/933 camp players, including 26 multi-position players, and composes
+32/32 affiliate workboards from the reviewed rollover and provisional ledger.
+
+The board identifies 1,371 viable candidates and zero facts-ready candidates.
+All 1,371 still require explicit assignment, prospect-status, and recall-
+readiness authority; 1,174 need organization-status and projected-score facts;
+144 need waiver clearance; 255 prior-only rows need exact positions; 52 lack
+professional-game totals; and 1,202 skaters await final rule qualification.
+Those are independent, queryable queues, not inferred cuts or assignments. The
+next S2 slice is a sourced overlay/application contract that reduces these
+blockers and then feeds the existing affiliate and organization-lineup
+primitives.
 
 ### S3 — Goalie dependency authority decision
 
