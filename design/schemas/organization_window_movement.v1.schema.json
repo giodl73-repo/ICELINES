@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_window_movement.v1.schema.json",
+  "title": "IceLines Organization Window Movement v1",
+  "type": "object",
+  "required": ["schema", "season", "earlier_as_of", "later_as_of", "manifest_fingerprint", "earlier_board_fingerprint", "later_board_fingerprint", "organizations", "disclosures"],
+  "properties": {
+    "schema": { "const": "organization_window_movement.v1" },
+    "season": { "type": "integer", "minimum": 19001901 },
+    "earlier_as_of": { "type": "string", "format": "date" },
+    "later_as_of": { "type": "string", "format": "date" },
+    "manifest_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "source_manifest_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "bridge_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "earlier_board_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "rebased_earlier_board_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "later_board_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "organizations": { "type": "array", "minItems": 1, "items": { "type": "object" } },
+    "disclosures": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false,
+  "$defs": { "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" } }
+}

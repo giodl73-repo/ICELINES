@@ -5,7 +5,11 @@
 
 use std::sync::OnceLock;
 
-use icelines_core::{parse_card_document, CardDocumentView, CardSectionView};
+use icelines_core::{
+    load_organization_window_profile_inventory, parse_card_document,
+    validate_organization_window_board, CardDocumentView, CardSectionView,
+    OrganizationWindowBoardView,
+};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     text::Line,
@@ -35,6 +39,12 @@ const NYR_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-sea-2024-25.json");
+const NYR_ORGANIZATION_WINDOW_CARD_JSON: &str =
+    include_str!("../../../../examples/organization-window-card-nyr-2026-27.json");
+const SEA_ORGANIZATION_WINDOW_CARD_JSON: &str =
+    include_str!("../../../../examples/organization-window-card-sea-2026-27.json");
+const ORGANIZATION_WINDOW_BOARD_JSON: &str =
+    include_str!("../../../../examples/organization-window-board-evaluation-2026-27.json");
 const FANTASY_CARD_JSON: &str =
     include_str!("../../../../examples/fantasy-roster-card-dexters-dawgs-2026-10-05.json");
 const FANTASY_DRAFT_CARD_JSON: &str =
@@ -59,6 +69,8 @@ fn card(team: &str) -> &'static CardDocumentView {
     static SEA_2024_MOVEMENT: OnceLock<CardDocumentView> = OnceLock::new();
     static NYR_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
     static SEA_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
+    static NYR_ORGANIZATION_WINDOW: OnceLock<CardDocumentView> = OnceLock::new();
+    static SEA_ORGANIZATION_WINDOW: OnceLock<CardDocumentView> = OnceLock::new();
     match team.to_ascii_uppercase().as_str() {
         "SIM-NYR" => NYR_SEASON_SIMULATION.get_or_init(|| {
             parse_card_document(NYR_SEASON_SIMULATION_CARD_JSON)
@@ -90,6 +102,14 @@ fn card(team: &str) -> &'static CardDocumentView {
             parse_card_document(SEA_2024_HISTORY_CARD_JSON)
                 .expect("sealed SEA 2024-25 forecast history card")
         }),
+        "WINDOW-NYR" => NYR_ORGANIZATION_WINDOW.get_or_init(|| {
+            parse_card_document(NYR_ORGANIZATION_WINDOW_CARD_JSON)
+                .expect("sealed NYR organization Window card")
+        }),
+        "WINDOW-SEA" => SEA_ORGANIZATION_WINDOW.get_or_init(|| {
+            parse_card_document(SEA_ORGANIZATION_WINDOW_CARD_JSON)
+                .expect("sealed SEA organization Window card")
+        }),
         "SEA" => SEA.get_or_init(|| parse_card_document(SEA_CARD_JSON).expect("sealed SEA card")),
         "DEX" | "DEXTERS-DAWGS" | "FANTASY" => FANTASY.get_or_init(|| {
             parse_card_document(FANTASY_CARD_JSON).expect("sealed Dexter's Dawgs fantasy card")
@@ -112,6 +132,15 @@ fn card(team: &str) -> &'static CardDocumentView {
 
 pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
+    if team.eq_ignore_ascii_case("WINDOW-BOARD") {
+        return ScreenChrome {
+            title: format!("The Window - 32-team board - page {}", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
     let fantasy = matches!(
         team.to_ascii_uppercase().as_str(),
         "DEX" | "DRAFT" | "MORNING" | "TRADE"
@@ -135,6 +164,8 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
             "NYR vs SEA Forecast History"
         } else if team.to_ascii_uppercase().starts_with("SIM-") {
             "NYR vs SEA Season Simulation"
+        } else if team.to_ascii_uppercase().starts_with("WINDOW-") {
+            "NYR vs SEA Organization Window"
         } else {
             "NYR vs SEA"
         }
@@ -155,6 +186,10 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
 
 pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
     let page = app.selected.min(1);
+    if team.eq_ignore_ascii_case("WINDOW-BOARD") {
+        render_organization_window_board(f, area, page);
+        return;
+    }
     if compare
         && !matches!(
             team.to_ascii_uppercase().as_str(),
@@ -198,6 +233,99 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
     } else {
         render_document(f, area, card(team), page);
     }
+}
+
+fn organization_window_board() -> &'static OrganizationWindowBoardView {
+    static BOARD: OnceLock<OrganizationWindowBoardView> = OnceLock::new();
+    BOARD.get_or_init(|| {
+        let board = serde_json::from_str(ORGANIZATION_WINDOW_BOARD_JSON)
+            .expect("sealed 32-team organization Window board");
+        let inventory = load_organization_window_profile_inventory()
+            .expect("embedded organization Window profile inventory");
+        validate_organization_window_board(&board, &inventory)
+            .expect("embedded Window board must remain canonical and sealed");
+        board
+    })
+}
+
+fn render_organization_window_board(f: &mut Frame, area: Rect, page: usize) {
+    let board = organization_window_board();
+    let title = format!(
+        " THE WINDOW | {} | {} | {} ",
+        board.as_of,
+        board.manifest.manifest_id,
+        &board.fingerprint[..8]
+    );
+    let lines = organization_window_board_lines(board, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+/// Pure compact projection of one half of the sealed 32-team board.
+pub(crate) fn organization_window_board_lines(
+    board: &OrganizationWindowBoardView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let mut rows = board.organizations.iter().collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        left.overall
+            .rank
+            .unwrap_or(usize::MAX)
+            .cmp(&right.overall.rank.unwrap_or(usize::MAX))
+            .then_with(|| {
+                right
+                    .overall
+                    .score
+                    .unwrap_or(f64::NEG_INFINITY)
+                    .total_cmp(&left.overall.score.unwrap_or(f64::NEG_INFINITY))
+            })
+            .then_with(|| left.organization.cmp(&right.organization))
+    });
+    let start = page.min(1) * 16;
+    let mut lines = vec![format!(
+        "32 teams · coverage {:.0}% · ranks may be withheld when evidence gates fail",
+        board.league_coverage * 100.0
+    )];
+    if width >= 72 {
+        lines.push("RK  TEAM  SCORE  CONF  COV   STATE        CLASS".to_owned());
+    } else {
+        lines.push("RK  TEAM  SCORE  CONF  COV   STATE".to_owned());
+    }
+    for row in rows.into_iter().skip(start).take(16) {
+        let rank = row
+            .overall
+            .rank
+            .map(|rank| format!("{rank:>2}"))
+            .unwrap_or_else(|| "NR".to_owned());
+        let score = row
+            .overall
+            .score
+            .map(|score| format!("{score:>5.1}"))
+            .unwrap_or_else(|| "   NR".to_owned());
+        let state = format!("{:?}", row.overall.rank_status.state);
+        if width >= 72 {
+            lines.push(format!(
+                "{rank:<2}  {:<4}  {score}  {:>3.0}%  {:>3.0}%  {:<11}  {:?}",
+                row.organization,
+                row.overall.confidence * 100.0,
+                row.overall.coverage * 100.0,
+                state,
+                row.overall.classification
+            ));
+        } else {
+            lines.push(format!(
+                "{rank:<2}  {:<4}  {score}  {:>3.0}%  {:>3.0}%  {}",
+                row.organization,
+                row.overall.confidence * 100.0,
+                row.overall.coverage * 100.0,
+                state
+            ));
+        }
+    }
+    lines
 }
 
 fn render_document(f: &mut Frame, area: Rect, document: &CardDocumentView, page: usize) {
@@ -725,5 +853,67 @@ mod tests {
             app.screen,
             Screen::TeamCard { ref team, .. } if team == "HISTORY-NYR"
         ));
+    }
+
+    #[test]
+    fn l1_organization_window_projects_shared_values_and_toggles() {
+        let nyr = card("WINDOW-NYR");
+        let sea = card("WINDOW-SEA");
+        assert_eq!(nyr.card_kind, icelines_core::CardKind::OrganizationWindow);
+        assert_eq!(sea.card_kind, icelines_core::CardKind::OrganizationWindow);
+        assert_eq!(nyr.provenance[0].fingerprint, sea.provenance[0].fingerprint);
+        let window = document_lines(nyr, 0, 80).join("\n");
+        assert!(window.contains("Organization Window"));
+        assert!(window.contains("League rank"));
+        assert!(window.contains("Confidence"));
+        assert!(window.contains("Coverage"));
+        let insider = document_lines(nyr, 1, 80).join("\n");
+        assert!(insider.contains("Profiles and evidence"));
+
+        assert_eq!(
+            parse_command("window-card SEA").unwrap(),
+            Command::TeamCard {
+                team: "WINDOW-SEA".to_owned()
+            }
+        );
+        let mut app = App::new(true);
+        execute_command(parse_command("window-card SEA").unwrap(), &mut app);
+        app.handle(Action::Char('t'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard { ref team, .. } if team == "WINDOW-NYR"
+        ));
+    }
+
+    #[test]
+    fn l1_organization_window_board_pages_cover_all_32_teams_at_80_columns() {
+        let board = organization_window_board();
+        let first = organization_window_board_lines(board, 0, 80);
+        let second = organization_window_board_lines(board, 1, 80);
+        assert_eq!(first.len(), 18);
+        assert_eq!(second.len(), 18);
+        assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
+        let teams = first
+            .iter()
+            .skip(2)
+            .chain(second.iter().skip(2))
+            .filter_map(|line| line.split_whitespace().nth(1))
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(teams.len(), 32);
+        assert_eq!(
+            parse_command("window-board").unwrap(),
+            Command::TeamCard {
+                team: "WINDOW-BOARD".to_owned()
+            }
+        );
+        let mut app = App::new(true);
+        execute_command(parse_command("window-board").unwrap(), &mut app);
+        app.handle(Action::Char('t'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard { ref team, .. } if team == "WINDOW-BOARD"
+        ));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
     }
 }

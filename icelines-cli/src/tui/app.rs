@@ -1302,7 +1302,9 @@ impl App {
                 } else if matches!(self.screen, Screen::TeamCard { .. }) && c == 'p' {
                     self.selected = (self.selected + 1) % 2;
                     self.status = format!("IceCast card page {} of 2", self.selected + 1);
-                } else if matches!(self.screen, Screen::TeamCard { .. }) && c == 't' {
+                } else if matches!(self.screen, Screen::TeamCard { ref team, .. } if team != "WINDOW-BOARD")
+                    && c == 't'
+                {
                     if let Screen::TeamCard { team, .. } = &mut self.screen {
                         if matches!(
                             team.to_ascii_uppercase().as_str(),
@@ -1319,6 +1321,8 @@ impl App {
                                 "MOVE-"
                             } else if upper.starts_with("HISTORY-") {
                                 "HISTORY-"
+                            } else if upper.starts_with("WINDOW-") {
+                                "WINDOW-"
                             } else {
                                 ""
                             };
@@ -1331,7 +1335,9 @@ impl App {
                             self.status = format!("IceCast card team: {team}");
                         }
                     }
-                } else if matches!(self.screen, Screen::TeamCard { .. }) && c == 'c' {
+                } else if matches!(self.screen, Screen::TeamCard { ref team, .. } if team != "WINDOW-BOARD")
+                    && c == 'c'
+                {
                     if let Screen::TeamCard { team, compare } = &mut self.screen {
                         if matches!(
                             team.to_ascii_uppercase().as_str(),

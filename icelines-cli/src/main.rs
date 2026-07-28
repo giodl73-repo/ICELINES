@@ -2331,6 +2331,79 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             generated_at,
             out,
         }) => commands::icecast::run_history_card(input, team, team_name, generated_at, out)?,
+        Commands::Icecast(IceCastSubcommand::Window {
+            input,
+            team,
+            json,
+            markdown,
+            out,
+        }) => commands::icecast::run_window(input, team, json, markdown, out)?,
+        Commands::Icecast(IceCastSubcommand::WindowBuild {
+            season,
+            as_of,
+            generated_at,
+            team_season_forecast,
+            team_lineups,
+            organization_lineups,
+            prospect_program,
+            prospect_conversion,
+            training_camp,
+            schedule_rest,
+            out,
+        }) => commands::icecast::run_window_build(commands::icecast::WindowBuildArgs {
+            season,
+            as_of,
+            generated_at,
+            team_season_forecast,
+            team_lineups,
+            organization_lineups,
+            prospect_program,
+            prospect_conversion,
+            training_camp,
+            schedule_rest,
+            out,
+        })?,
+        Commands::Icecast(IceCastSubcommand::WindowCard {
+            input,
+            team,
+            team_name,
+            generated_at,
+            out,
+        }) => commands::icecast::run_window_card(input, team, team_name, generated_at, out)?,
+        Commands::Icecast(IceCastSubcommand::WindowMovement {
+            earlier,
+            later,
+            bridge,
+            out,
+        }) => commands::icecast::run_window_movement(earlier, later, bridge, out)?,
+        Commands::Icecast(IceCastSubcommand::WindowRebase {
+            input,
+            target_manifest,
+            bridge,
+            out,
+        }) => commands::icecast::run_window_rebase(input, target_manifest, bridge, out)?,
+        Commands::Icecast(IceCastSubcommand::WindowHistory { inputs, out }) => {
+            commands::icecast::run_window_history(inputs, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::WindowScenario {
+            baseline,
+            scenario,
+            scenario_id,
+            authorities,
+            out,
+        }) => commands::icecast::run_window_scenario(
+            baseline,
+            scenario,
+            scenario_id,
+            authorities,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::WindowCalibrate {
+            target,
+            origins,
+            minimum_origins,
+            out,
+        }) => commands::icecast::run_window_calibrate(target, origins, minimum_origins, out)?,
         Commands::Icecast(IceCastSubcommand::Backtest { inputs, json, out }) => {
             commands::icecast::run_backtest(inputs, json, out)?
         }

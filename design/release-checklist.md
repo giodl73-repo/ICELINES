@@ -1,5 +1,15 @@
 # IceLines release checklist
 
+## Organization Window
+
+- [ ] Inventory readiness totals and blocked authorities match the shipped registry.
+- [ ] Official Frame fingerprint and all-32 cohort are stable across input order/platforms.
+- [ ] Missing or uneven evidence withholds rank and is not zero-filled.
+- [ ] Saved board, CLI/TUI/Web projections, API JSON, and cards agree.
+- [ ] Historical/scenario comparisons reject incompatible manifests or incomplete sources.
+- [ ] Calibration claims include leakage audit, baseline, ablation, and multi-season evidence.
+- [ ] Profile-author, custom-Frame, compatibility, cache, and changelog docs match the release.
+
 **Owner phase**: Jim Gregory - release and operations hardening
 **Applies to**: tagged GitHub releases and local release candidate builds
 

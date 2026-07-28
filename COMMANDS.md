@@ -1088,6 +1088,19 @@ icelines icecast movement-card --input movement.json --team NYR --team-name "New
 icelines icecast history --input january.json --input february.json --input march.json --team NYR --team SEA
 icelines icecast history --input january.json --input february.json --json --out history.json
 icelines icecast history-card --input history.json --team NYR --team-name "New York Rangers" --out nyr-history-card.json
+icelines icecast window-build --season 20262027 --as-of 2026-07-27 --generated-at 2026-07-27T20:00:00-07:00 --prospect-program prospect-program.json --out window.json
+icelines icecast window --input window.json
+icelines icecast window --input window.json --team NYR
+icelines icecast window --input window.json --markdown --out window-report.md
+icelines icecast window --input window.json --team NYR --markdown --out nyr-window-report.md
+icelines icecast window-card --input window.json --team NYR --team-name "New York Rangers" --out nyr-window-card.json
+icelines icecast window-movement --earlier october.json --later january.json --out window-movement.json
+icelines icecast window-rebase --input october.json --target-manifest balanced-v2.json --bridge balanced-v1-to-v2-bridge.json --out october-rebased.json
+icelines icecast window-movement --earlier october.json --later january-v2.json --bridge balanced-v1-to-v2-bridge.json --out bridged-movement.json
+icelines icecast window-history --input october.json --input january.json --input march.json --out window-history.json
+icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --out window-impact.json
+icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --authority trade-authority.json --out attributed-window-impact.json
+icelines icecast window-calibrate --target next-season-organization-value --origin 2023-origin.json --origin 2024-origin.json --origin 2025-origin.json --minimum-origins 3 --out rolling-calibration.json
 icelines icecast backtest --input 2021-22.json --input 2022-23.json --input 2023-24.json
 icelines icecast backtest --input 2021.json --input 2022.json --input 2023.json --json --out validation.json
 icelines icecast calibrate-development --start-season 20052006 --end-season 20252026

@@ -32,6 +32,8 @@ mod forecast_movement;
 pub use forecast_movement::*;
 mod forecast_history;
 pub use forecast_history::*;
+mod organization_window;
+pub use organization_window::*;
 
 pub const CARD_DOCUMENT_SCHEMA: &str = "card_document.v1";
 pub const CARD_DOCUMENT_JSON_SCHEMA: &str =
@@ -55,6 +57,7 @@ pub enum CardKind {
     FantasyDraft,
     FantasyMorning,
     FantasyTrade,
+    OrganizationWindow,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]

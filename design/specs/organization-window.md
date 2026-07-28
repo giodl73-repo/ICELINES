@@ -241,6 +241,12 @@ historical invariant.
 - If a profile method is upgraded, a separately versioned rebase/bridge
   artifact may recompute prior checkpoints. Raw scores from unlike methods are
   never subtracted directly.
+- `organization_window_bridge.v1` seals the source and target manifest
+  fingerprints and a complete one-to-one profile mapping. Each mapping carries
+  a finite affine raw-value transform, rationale, and evidence fingerprints.
+  Rebase reruns canonical normalization and aggregation; it never applies an
+  aggregate-score correction. Bridged movement reports observed-input,
+  method/manifest, and residual components separately.
 
 ## Initial pane model
 
@@ -437,6 +443,15 @@ Scenario ranges are distributions when the upstream artifact is stochastic;
 they are not displayed as symmetric error bars unless the distribution supports
 that interpretation.
 
+Typed scenario authorities identify their source schema/fingerprint,
+organization scope, affected profile methods, kind, and rationale. First-party
+adapters cover team-season trade, injury/return, goalie and form/development
+events, training-camp league forecasts, and line-combination candidates.
+Direct raw/evidence changes require an authority matching the organization and
+profile. Normalized-only movement may be attributed to a declared league-cohort
+effect for the same profile. An overall change with no profile change or any
+unattributed changed profile is rejected.
+
 ## Classifications
 
 Classifications are derived from multiple axes and remain secondary to scores:
@@ -463,7 +478,9 @@ Planned command family:
 ```text
 icelines icecast window [--season] [--as-of] [--view balanced] [--manifest file]
 icelines icecast window-team NYR [same context flags]
-icelines icecast window-history --board <file> --board <file> ...
+icelines icecast window-movement --earlier <file> --later <file> [--bridge <file>]
+icelines icecast window-rebase --input <file> --target-manifest <file> --bridge <file>
+icelines icecast window-history --input <file> --input <file> ...
 icelines icecast window-scenario --baseline <file> --scenario <file> ...
 icelines icecast window-explain [--profile <key>] [--organization NYR]
 ```
@@ -524,6 +541,15 @@ locale formatting, filesystem path, or renderer output.
 mutated to store organization composites. Long-lived TUI caches must invalidate
 when any key axis changes. CLI and Web handlers remain one-shot.
 
+A loaded board is not trusted solely because its content hash matches. The
+wire-boundary validator seals the embedded manifest, verifies exact cohort and
+profile structure, validates numeric and source-evidence invariants, and
+replays raw observations through the canonical scorer. Stored normalized
+scores, pane/overall aggregates, classifications, drivers, blockers, and rank
+state must match the replay within the declared floating-point tolerance.
+CLI/card/Web/TUI projections, comparisons, rebases, and calibration all use
+this same core gate.
+
 ## Calibration and validation
 
 Production promotion requires rolling-origin historical evaluation. The
@@ -546,6 +572,14 @@ probabilistic targets and rank correlation/error for continuous targets.
 
 The default Frame is not promoted merely because it tells a plausible hockey
 story. It must beat named simple baselines or remain labeled heuristic.
+
+A rolling-origin artifact exposes every origin and board fingerprint, a
+baseline frozen independently for each origin, pooled and per-origin metrics,
+leave-one-pane-out ablations, organization stability, and between-origin
+uncertainty. Trial noise and season variation remain separate; absent
+trial-level inputs are labeled unavailable. Mixed Frame fingerprints,
+incomplete pane scores, invalid outcome cohorts, and incomplete leakage audits
+fail closed rather than being pooled.
 
 ## Failure policy
 

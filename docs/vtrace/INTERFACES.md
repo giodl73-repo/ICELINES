@@ -586,6 +586,60 @@ replacement, refusal, or rollback notes.
 
 Evidence: CON-009; REQ-DEP-001; REQ-LEAN-001.
 
+## IF-WINDOW-001 — profile observation and registry
+
+Inputs: typed upstream IceLines authorities plus a registered profile descriptor.
+
+Outputs: `organization_profile_observation.v1` with raw value/unit, method,
+organization/time axes, normalized score/rank, confidence, coverage, evidence,
+limitations, and fingerprints.
+
+Errors: unknown method, duplicate observation, non-finite value, identity or
+season mismatch, unsupported source schema, and insufficient cohort.
+
+Versioning: profile key plus method version is immutable.
+
+## IF-WINDOW-002 — Frame manifest
+
+Inputs: `organization_window_manifest.v1` JSON/TOML using registered profiles.
+
+Outputs: a validated canonical manifest and SHA-256 fingerprint.
+
+Errors: cycles, duplicates, unknown profiles, mismatched methods, negative or
+non-finite weights, weights outside tolerance, all-zero budgets, and family-cap
+violations.
+
+## IF-WINDOW-003 — board, history, and scenario documents
+
+Outputs: `organization_window_board.v1`,
+`organization_window_history.v1`, `organization_window_movement.v1`,
+`organization_window_scenario_impact.v1`, and
+`organization_window_bridge.v1`. Focused output retains the complete-board
+fingerprint. History rejects incomparable contexts; scenarios retain baseline
+and upstream scenario identity. A bridge seals exact source/target manifests,
+complete one-to-one profile mappings, affine raw transforms, rationale, and
+evidence. Rebase reruns the canonical scorer and never rewrites the source.
+
+Errors: bridge schema or fingerprint mismatch, incomplete/duplicate mappings,
+non-finite or zero-scale transforms, unknown source/target methods, cohort or
+horizon mismatch, and tampered source/target boards fail closed.
+
+Typed scenario authorities carry kind, source schema/fingerprint,
+organization scope, profile methods, and rationale. First-party adapters cover
+team-season trade/injury/return/goalie/form events, training camp, and line
+combinations. Direct raw/evidence changes require organization-scoped
+attribution; normalized cohort effects require same-profile authority; an
+overall-only or otherwise unattributed change fails closed.
+
+Versioning: bridge mappings and fingerprints are immutable. Movement fields
+for source manifest, bridge, and rebased checkpoint are additive within v1.
+
+## IF-WINDOW-004 — user surfaces
+
+CLI/TUI/Web/API/report/card adapters accept sealed core documents. Web state is
+bookmarkable by season, as-of, horizon, view, and registered Frame ID. No
+surface calculates hockey values.
+
 ## Open Questions
 
 - Storage location and migration policy for named workbench layouts.

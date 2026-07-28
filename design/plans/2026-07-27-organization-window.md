@@ -1,7 +1,8 @@
 # The Window — Organization Health Implementation Plan
 
 **Date:** 2026-07-27
-**Status:** Planned — 12-role review applied
+**Status:** Active — foundation and evaluation surfaces implemented; historical,
+scenario-attribution, calibration, and release evidence remain open
 **Specification:** [`../specs/organization-window.md`](../specs/organization-window.md)
 **Review:** [`../notes/2026-07-27-organization-window-roles-review.md`](../notes/2026-07-27-organization-window-roles-review.md)
 **Parent workstreams:** Team Season Forecast, Line Combination Simulation,
@@ -28,6 +29,59 @@ JSON, and cards.
 7. Configuration can alter weights and gates; formulas require reviewed method
    versions.
 8. Blocked source claims remain visible instead of receiving proxy values.
+
+## Implementation baseline (2026-07-27)
+
+This plan is incremental. The following baseline is already present and must be
+preserved while the remaining work is completed:
+
+| Workstream | State | Proven capability | Remaining gate |
+|---|---|---|---|
+| W0 | complete | 32-profile machine-readable inventory: 17 ready, 8 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
+| W1-W2 | complete | Versioned observations/manifests/boards, deterministic fingerprints, validation, normalization, aggregation, confidence/coverage, rank gates | Cross-platform fingerprint matrix in W9. |
+| W3-W4 | evaluation-complete | `balanced.v1`, typed source adapters, all-32 partial evaluation board, classifications, focused cards | Fill production source coverage before claiming a complete ranked board. |
+| W5 | partial | Comparable movement/history contracts, refusal tests, and immutable bridge/rebase through the canonical scorer | Real point-in-time checkpoints and personnel attribution evidence. |
+| W6 | evaluation-complete | Sealed baseline/scenario comparison, typed trade/injury/development/camp/line authorities, direct/cohort/unchanged attribution, and fail-closed fixture | Real multi-source isolated/combined scenario boards and seeded distribution evidence. |
+| W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed claim status | Real multi-season point-in-time inputs, trial-noise propagation, and untouched holdout evidence. |
+| W8 | implementation-complete | CLI, two-page TUI all-32 board/focused cards, Web/API, JSON, UI-neutral card, and durable Markdown board/team report projections | Live browser/accessibility/screenshot review and final cross-surface golden parity evidence. |
+| W9 | in progress | Authoring/compatibility/cache documentation, additive compatibility and registered-profile extension fixtures, canonical loaded-board replay validation, strict affected-production lint, schema/golden checks, and release checklist started | Cross-platform fingerprint matrix, package/audit/no-network verification, live browser review, and release closeout. |
+
+“Partial” is a product state, not a failure state: saved artifacts must expose
+missing evidence and withhold ranks or claims when gates are not met.
+
+## Extension and alteration protocol
+
+The Window supports change through six explicit lanes. A change must use the
+narrowest lane that represents its semantics; changing a fingerprint without
+changing the relevant version is a compatibility defect.
+
+| Requested change | Required artifact | Version/fingerprint effect | Minimum review and evidence |
+|---|---|---|---|
+| Reweight or enable existing Lines | New Frame manifest | New manifest and board fingerprints; profile methods unchanged | PACE, SCOUT; manifest validation, cap/missingness sensitivity |
+| Add a new Line/profile | Descriptor, typed provider, observation schema fixture, Frame opt-in | New registry revision; opt-in manifest fingerprint changes | HART, TAPE, PACE, BENCH; authority, identity, known-value, missing-data tests |
+| Change a formula or direction | New profile `method_version` | Existing observations/boards remain immutable; comparison refused absent bridge | PACE, BENCH, EDGE; known-value, boundary, replay, bridge decision |
+| Add or split a pane/view | New manifest structure using registered profiles | New manifest fingerprint; no source recomputation unless profile set changes | HART, KEEL, GLASS; aggregation, parity, narrow-surface review |
+| Add or replace a source | Provider dependency/version declaration and source fingerprint | Observation identity changes; method version changes if semantics change | TAPE, WIRE, EDGE; offline fixture, schema drift, freshness/fallback tests |
+| Evolve a document schema | New major schema or documented additive-compatible minor change | Old artifact stays readable or fails explicitly; never rewritten in place | KEEL, WIRE, FORGE, BENCH; compatibility and migration fixtures |
+
+Profile promotion is one-way only when evidence supports it:
+
+```text
+blocked -> context-only -> evaluation -> ready
+```
+
+Each promotion records source authority, cohort coverage, point-in-time safety,
+method version, calibration claim, limitations, and verification evidence.
+Demotion is always allowed when authority or freshness regresses and must not
+silently retain the previous rank eligibility.
+
+Every pull request that alters Window semantics includes a change note naming:
+
+1. the lane above;
+2. affected profile, manifest, schema, and source fingerprints;
+3. compatibility behavior for saved artifacts;
+4. newly valid and invalid comparisons; and
+5. VTRACE evidence added or intentionally still open.
 
 ## Workstream map
 

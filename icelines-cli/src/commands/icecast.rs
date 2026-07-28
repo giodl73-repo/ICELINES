@@ -7,20 +7,24 @@ use anyhow::{bail, Context};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
 use icelines_core::{
     adapt_prospect_conversion_input, apply_team_behavior_research, build_adaptive_lineup_policy,
-    build_ahl_affiliate_projection, build_development_calibration, build_forecast_history_card,
-    build_forecast_movement_card, build_isolated_scenario_impact,
-    build_isolated_scenario_impact_as_of, build_line_combination_forecast,
-    build_organization_lineup_forecast, build_prospect_conversion_board,
-    build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
-    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
-    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
+    build_ahl_affiliate_projection, build_balanced_organization_window_board,
+    build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
+    build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
+    build_line_combination_forecast, build_organization_lineup_forecast,
+    build_organization_window_card, build_organization_window_history,
+    build_prospect_conversion_board, build_prospect_development_study,
+    build_prospect_discovery_board, build_prospect_nhl_performance_document,
+    build_prospect_program_board_with_goalies, build_prospect_program_history,
+    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
+    build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
     build_team_season_plausible_trade_scenario, build_training_camp_blender_set,
     build_training_camp_exposure_board_with_context, build_training_camp_lineup_set,
-    build_training_camp_opening_roster_policy, compare_team_season_forecast_scenarios,
+    build_training_camp_opening_roster_policy, compare_organization_window_scenario,
+    compare_organization_window_snapshots, compare_organization_window_snapshots_with_bridge,
+    compare_organization_window_typed_scenario, compare_team_season_forecast_scenarios,
     current_ahl_affiliation_catalog, model::Position, model::Season, model::TeamAbbr,
     normalize_name, season_stats::SeasonType, simulate_team_season_forecast_as_of_with_scenario,
     simulate_team_season_forecast_with_scenario, simulate_training_camp,
@@ -31,28 +35,36 @@ use icelines_core::{
     ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
     LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow, OrganizationLevel,
     OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
-    OrganizationUnitKind, ProspectConversionBoardView, ProspectConversionConfig,
+    OrganizationUnitKind, OrganizationWindowAdapterContext, OrganizationWindowBoardView,
+    OrganizationWindowBridgeView, OrganizationWindowCardInput, OrganizationWindowManifestView,
+    OrganizationWindowSourceSet, ProspectConversionBoardView, ProspectConversionConfig,
     ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
     ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow,
     ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
     ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
     ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramSensitivityView,
-    ScenarioScopeView, SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamDecisionProfile,
-    TeamForecastGameInput, TeamForecastParameters, TeamForecastPersonnelEvidenceInput,
-    TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig, TeamForecastStrengthInput,
-    TeamGameForecastCalibrationObservation, TeamGameForecastRow, TeamGameForecastValidationInput,
-    TeamGameForecastView, TeamGameOpeningPlayerRow, TeamGameOpeningRosterAuthorityRow,
-    TeamGameOpeningStrengthRow, TeamLineupProjectionView, TeamSeasonAutoPersonnelConfig,
-    TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
-    TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
-    TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig, TeamSeasonStretchKind,
-    TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus, TrainingCampCompetitionPoolStatus,
-    TrainingCampConfig, TrainingCampExposureBoardView, TrainingCampExposureLane,
-    TrainingCampForecastView, TrainingCampLeagueForecastView, TrainingCampLeagueSimulationInput,
-    TrainingCampLeagueTeamInput, TrainingCampPlayerInput, TrainingCampSalaryCapStatus,
-    TrainingCampSimulationInput, TrainingCampTransactionAuthorityStatus,
-    TrainingCampTransactionContextInput, ViewContext, ViewWindow, CURRENT_SEASON,
+    ScenarioScopeView, ScheduleRestProfileView, SeasonSimulationCardInput,
+    TeamBehaviorResearchInput, TeamDecisionProfile, TeamForecastGameInput, TeamForecastParameters,
+    TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig,
+    TeamForecastStrengthInput, TeamGameForecastCalibrationObservation, TeamGameForecastRow,
+    TeamGameForecastValidationInput, TeamGameForecastView, TeamGameOpeningPlayerRow,
+    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamLineupProjectionView,
+    TeamSeasonAutoPersonnelConfig, TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView,
+    TeamSeasonForecastView, TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig,
+    TeamSeasonScenario, TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig,
+    TeamSeasonStretchKind, TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus,
+    TrainingCampCompetitionPoolStatus, TrainingCampConfig, TrainingCampExposureBoardView,
+    TrainingCampExposureLane, TrainingCampForecastView, TrainingCampLeagueForecastView,
+    TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
+    TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
+    TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
+    ViewWindow, WindowHorizon, WindowScenarioAuthorityView, CURRENT_SEASON,
     PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
+};
+use icelines_core::{
+    calibrate_organization_window_rolling_origins, load_organization_window_profile_inventory,
+    rebase_organization_window_board, validate_organization_window_board,
+    WindowCalibrationOriginInput,
 };
 use icelines_fetch::{
     ahl::{
@@ -3315,6 +3327,429 @@ pub fn run_history_card(
         print!("{output}");
     }
     Ok(())
+}
+
+pub struct WindowBuildArgs {
+    pub season: u32,
+    pub as_of: NaiveDate,
+    pub generated_at: String,
+    pub team_season_forecast: Option<PathBuf>,
+    pub team_lineups: Vec<PathBuf>,
+    pub organization_lineups: Vec<PathBuf>,
+    pub prospect_program: Option<PathBuf>,
+    pub prospect_conversion: Option<PathBuf>,
+    pub training_camp: Option<PathBuf>,
+    pub schedule_rest: Vec<PathBuf>,
+    pub out: PathBuf,
+}
+
+pub fn run_window_build(args: WindowBuildArgs) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&args.generated_at)
+        .context("--generated-at must be RFC 3339, for example 2026-10-01T12:00:00Z")?;
+    let team_season_forecast = args
+        .team_season_forecast
+        .as_deref()
+        .map(|path| read_icecast_json(path, "team season forecast"))
+        .transpose()?;
+    let team_lineups = args
+        .team_lineups
+        .iter()
+        .map(|path| read_icecast_json(path, "team lineup"))
+        .collect::<anyhow::Result<Vec<TeamLineupProjectionView>>>()?;
+    let organization_lineups = args
+        .organization_lineups
+        .iter()
+        .map(|path| read_icecast_json(path, "organization lineup"))
+        .collect::<anyhow::Result<Vec<OrganizationLineupForecastView>>>()?;
+    let prospect_program = args
+        .prospect_program
+        .as_deref()
+        .map(|path| read_icecast_json(path, "prospect program"))
+        .transpose()?;
+    let prospect_conversion = args
+        .prospect_conversion
+        .as_deref()
+        .map(|path| read_icecast_json(path, "prospect conversion"))
+        .transpose()?;
+    let training_camp = args
+        .training_camp
+        .as_deref()
+        .map(|path| read_icecast_json(path, "training camp league forecast"))
+        .transpose()?;
+    let schedule_rest = args
+        .schedule_rest
+        .iter()
+        .map(|path| read_icecast_json(path, "schedule rest profile"))
+        .collect::<anyhow::Result<Vec<ScheduleRestProfileView>>>()?;
+    let board = build_balanced_organization_window_board(
+        OrganizationWindowAdapterContext {
+            season: args.season,
+            season_type: "regular".to_owned(),
+            as_of: args.as_of,
+            horizon: WindowHorizon::Current,
+            organization_identity_version: "nhl_32.v1".to_owned(),
+        },
+        args.generated_at,
+        OrganizationWindowSourceSet {
+            team_season_forecast: team_season_forecast.as_ref(),
+            team_lineups: &team_lineups,
+            organization_lineups: &organization_lineups,
+            prospect_program: prospect_program.as_ref(),
+            prospect_conversion: prospect_conversion.as_ref(),
+            training_camp: training_camp.as_ref(),
+            schedule_rest: &schedule_rest,
+        },
+    )?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&board)?);
+    write_icecast_file(
+        &args.out,
+        output.as_bytes(),
+        "official balanced organization Window",
+    )
+}
+
+pub fn run_window(
+    input: PathBuf,
+    team: Option<String>,
+    json: bool,
+    markdown: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let board: OrganizationWindowBoardView = read_icecast_json(&input, "organization Window")?;
+    let inventory = load_organization_window_profile_inventory()?;
+    validate_organization_window_board(&board, &inventory)?;
+    let focus = team.map(|team| team.trim().to_ascii_uppercase());
+    if let Some(team) = &focus {
+        if board.organization(team).is_none() {
+            bail!("team {team} is absent from the organization Window board");
+        }
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&board)?)
+    } else if markdown {
+        render_window_markdown(&board, focus.as_deref())
+    } else {
+        render_window(&board, focus.as_deref())
+    };
+    if let Some(path) = out {
+        write_icecast_file(&path, output.as_bytes(), "organization Window")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_window_markdown(board: &OrganizationWindowBoardView, focus: Option<&str>) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "---");
+    let _ = writeln!(out, "schema: organization_window_report.v1");
+    let _ = writeln!(out, "season: {}", board.season);
+    let _ = writeln!(out, "season_type: {}", board.season_type);
+    let _ = writeln!(out, "as_of: {}", board.as_of);
+    let _ = writeln!(out, "frame: {}", board.manifest.manifest_id);
+    let _ = writeln!(out, "manifest_fingerprint: {}", board.manifest.fingerprint);
+    let _ = writeln!(out, "board_fingerprint: {}", board.fingerprint);
+    let _ = writeln!(out, "league_coverage: {:.6}", board.league_coverage);
+    if let Some(team) = focus {
+        let _ = writeln!(out, "focus: {team}");
+    }
+    let _ = writeln!(out, "---\n");
+    let _ = writeln!(out, "# The Window\n");
+    let _ = writeln!(
+        out,
+        "Frozen {}-organization cohort as of **{}** using Frame **{}**. Score, confidence, and coverage are distinct; `NR` means rank was withheld.\n",
+        board.expected_organizations.len(),
+        board.as_of,
+        markdown_cell(&board.manifest.manifest_id)
+    );
+    let _ = writeln!(
+        out,
+        "| Rank | Team | Score | Confidence | Coverage | Classification | Rank status |"
+    );
+    let _ = writeln!(out, "|---:|:---|---:|---:|---:|:---|:---|");
+    for row in board
+        .organizations
+        .iter()
+        .filter(|row| focus.is_none_or(|team| row.organization == team))
+    {
+        let rank = row
+            .overall
+            .rank
+            .map(|rank| rank.to_string())
+            .unwrap_or_else(|| "NR".to_owned());
+        let score = row
+            .overall
+            .score
+            .map(|score| format!("{score:.1}"))
+            .unwrap_or_else(|| "NR".to_owned());
+        let _ = writeln!(
+            out,
+            "| {rank} | {} | {score} | {:.0}% | {:.0}% | {:?} | {:?} |",
+            row.organization,
+            row.overall.confidence * 100.0,
+            row.overall.coverage * 100.0,
+            row.overall.classification,
+            row.overall.rank_status.state
+        );
+    }
+    for row in board
+        .organizations
+        .iter()
+        .filter(|row| focus.is_some_and(|team| row.organization == team))
+    {
+        let _ = writeln!(out, "\n## {} detail\n", row.organization);
+        let _ = writeln!(out, "| Pane | Score | Confidence | Coverage | State |");
+        let _ = writeln!(out, "|:---|---:|---:|---:|:---|");
+        for dimension in &row.dimensions {
+            let score = dimension
+                .score
+                .map(|score| format!("{score:.1}"))
+                .unwrap_or_else(|| "NR".to_owned());
+            let _ = writeln!(
+                out,
+                "| {} | {score} | {:.0}% | {:.0}% | {:?} |",
+                markdown_cell(&dimension.label),
+                dimension.confidence * 100.0,
+                dimension.coverage * 100.0,
+                dimension.status
+            );
+        }
+        let _ = writeln!(out, "\n### Lines and evidence\n");
+        let _ = writeln!(
+            out,
+            "| Pane | Profile | Method | Raw | Score | Confidence | Coverage | Status |"
+        );
+        let _ = writeln!(out, "|:---|:---|:---|---:|---:|---:|---:|:---|");
+        for dimension in &row.dimensions {
+            for profile in &dimension.profiles {
+                let raw = profile
+                    .raw_value
+                    .map(|value| format!("{value:.3}"))
+                    .unwrap_or_else(|| "—".to_owned());
+                let score = profile
+                    .normalized_score
+                    .map(|value| format!("{value:.1}"))
+                    .unwrap_or_else(|| "—".to_owned());
+                let _ = writeln!(
+                    out,
+                    "| {} | {} | {} | {raw} | {score} | {:.0}% | {:.0}% | {:?} |",
+                    markdown_cell(&dimension.key),
+                    markdown_cell(&profile.profile_key),
+                    markdown_cell(&profile.method_version),
+                    profile.confidence * 100.0,
+                    profile.coverage * 100.0,
+                    profile.status
+                );
+            }
+        }
+        if !row.blockers.is_empty() {
+            let _ = writeln!(out, "\n### Blockers\n");
+            for blocker in &row.blockers {
+                let _ = writeln!(out, "- {}", markdown_cell(blocker));
+            }
+        }
+    }
+    let _ = writeln!(out, "\n## Disclosures\n");
+    for disclosure in &board.disclosures {
+        let _ = writeln!(out, "- {}", markdown_cell(disclosure));
+    }
+    out
+}
+
+fn markdown_cell(value: &str) -> String {
+    value.replace('|', "\\|").replace(['\r', '\n'], " ")
+}
+
+pub fn run_window_card(
+    input: PathBuf,
+    team: String,
+    team_name: Option<String>,
+    generated_at: Option<String>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let board: OrganizationWindowBoardView = read_icecast_json(&input, "organization Window")?;
+    let evidence_at = generated_at
+        .as_deref()
+        .map(DateTime::parse_from_rfc3339)
+        .transpose()
+        .context("--generated-at must be RFC 3339, for example 2026-10-01T12:00:00Z")?
+        .map(|value| value.with_timezone(&Utc));
+    let mut view = ViewContext::new(ViewWindow::new(Season(board.season), SeasonType::Regular));
+    view.generated_at = evidence_at;
+    let team = team.trim().to_ascii_uppercase();
+    let card = build_organization_window_card(OrganizationWindowCardInput {
+        board,
+        focus_team: team.clone(),
+        team_name: team_name.unwrap_or_else(|| team.clone()),
+        view,
+        evidence_at,
+    })?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&card)?);
+    if let Some(path) = out {
+        write_icecast_file(&path, output.as_bytes(), "organization Window card")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_window_movement(
+    earlier: PathBuf,
+    later: PathBuf,
+    bridge: Option<PathBuf>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let earlier = read_icecast_json(&earlier, "earlier organization Window")?;
+    let later = read_icecast_json(&later, "later organization Window")?;
+    let movement = if let Some(path) = bridge {
+        let bridge: OrganizationWindowBridgeView =
+            read_icecast_json(&path, "organization Window bridge")?;
+        let inventory = load_organization_window_profile_inventory()?;
+        compare_organization_window_snapshots_with_bridge(&earlier, &later, &bridge, &inventory)?
+    } else {
+        compare_organization_window_snapshots(&earlier, &later)?
+    };
+    write_window_json(&movement, out.as_deref(), "organization Window movement")
+}
+
+pub fn run_window_rebase(
+    input: PathBuf,
+    target_manifest: PathBuf,
+    bridge: PathBuf,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let source: OrganizationWindowBoardView =
+        read_icecast_json(&input, "source organization Window")?;
+    let target: OrganizationWindowManifestView =
+        read_icecast_json(&target_manifest, "target organization Window manifest")?;
+    let bridge: OrganizationWindowBridgeView =
+        read_icecast_json(&bridge, "organization Window bridge")?;
+    let inventory = load_organization_window_profile_inventory()?;
+    let rebased = rebase_organization_window_board(&source, &target, &bridge, &inventory)?;
+    write_window_json(&rebased, out.as_deref(), "rebased organization Window")
+}
+
+pub fn run_window_history(inputs: Vec<PathBuf>, out: Option<PathBuf>) -> anyhow::Result<()> {
+    let boards = inputs
+        .iter()
+        .map(|path| read_icecast_json(path, "organization Window checkpoint"))
+        .collect::<anyhow::Result<Vec<OrganizationWindowBoardView>>>()?;
+    let history = build_organization_window_history(&boards)?;
+    write_window_json(&history, out.as_deref(), "organization Window history")
+}
+
+pub fn run_window_scenario(
+    baseline: PathBuf,
+    scenario: PathBuf,
+    scenario_id: String,
+    authorities: Vec<PathBuf>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let baseline = read_icecast_json(&baseline, "baseline organization Window")?;
+    let scenario = read_icecast_json(&scenario, "scenario organization Window")?;
+    let impact = if authorities.is_empty() {
+        compare_organization_window_scenario(&scenario_id, &baseline, &scenario)?
+    } else {
+        let authorities = authorities
+            .iter()
+            .map(|path| read_icecast_json(path, "organization Window scenario authority"))
+            .collect::<anyhow::Result<Vec<WindowScenarioAuthorityView>>>()?;
+        compare_organization_window_typed_scenario(&scenario_id, &baseline, &scenario, authorities)?
+    };
+    write_window_json(&impact, out.as_deref(), "organization Window scenario")
+}
+
+pub fn run_window_calibrate(
+    target: String,
+    origins: Vec<PathBuf>,
+    minimum_origins: usize,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let origins = origins
+        .iter()
+        .map(|path| read_icecast_json(path, "organization Window calibration origin"))
+        .collect::<anyhow::Result<Vec<WindowCalibrationOriginInput>>>()?;
+    let calibration =
+        calibrate_organization_window_rolling_origins(&target, &origins, minimum_origins)?;
+    write_window_json(
+        &calibration,
+        out.as_deref(),
+        "organization Window rolling calibration",
+    )
+}
+
+fn write_window_json(
+    value: &impl serde::Serialize,
+    out: Option<&Path>,
+    label: &str,
+) -> anyhow::Result<()> {
+    let output = format!("{}\n", serde_json::to_string_pretty(value)?);
+    if let Some(path) = out {
+        write_icecast_file(path, output.as_bytes(), label)?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_window(board: &OrganizationWindowBoardView, focus: Option<&str>) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "THE WINDOW — ORGANIZATION HEALTH");
+    let _ = writeln!(
+        out,
+        "season {} · as of {} · frame {} · {} organizations",
+        board.season,
+        board.as_of,
+        board.manifest.manifest_id,
+        board.organizations.len()
+    );
+    let rows = board
+        .organizations
+        .iter()
+        .filter(|row| focus.is_none_or(|team| row.organization == team));
+    for row in rows {
+        let score = row
+            .overall
+            .score
+            .map(|value| format!("{value:5.1}"))
+            .unwrap_or_else(|| "   NR".to_owned());
+        let rank = row
+            .overall
+            .rank
+            .map(|value| format!("#{value}"))
+            .unwrap_or_else(|| "NR".to_owned());
+        let _ = writeln!(
+            out,
+            "{}  score {}  rank {:>3}  confidence {:>3.0}%  coverage {:>3.0}%  {:?}",
+            row.organization,
+            score,
+            rank,
+            row.overall.confidence * 100.0,
+            row.overall.coverage * 100.0,
+            row.overall.classification
+        );
+        if focus.is_some() {
+            for dimension in &row.dimensions {
+                let dimension_score = dimension
+                    .score
+                    .map(|value| format!("{value:.1}"))
+                    .unwrap_or_else(|| "NR".to_owned());
+                let _ = writeln!(
+                    out,
+                    "  {:<24} {:>5}  conf {:>3.0}%  cov {:>3.0}%  {:?}",
+                    dimension.label,
+                    dimension_score,
+                    dimension.confidence * 100.0,
+                    dimension.coverage * 100.0,
+                    dimension.status
+                );
+            }
+            for reason in &row.overall.rank_status.reasons {
+                let _ = writeln!(out, "  RANK GATE: {reason}");
+            }
+        }
+    }
+    out
 }
 
 fn render_history(view: &TeamSeasonForecastHistoryView, focus: &[String]) -> String {
@@ -8103,14 +8538,14 @@ mod tests {
 
     use chrono::NaiveDate;
     use icelines_core::{
-        simulate_training_camp, TeamForecastPersonnelPlayerInput, TeamSeasonAdaptiveLineupChoice,
-        TeamSeasonAdaptiveLineupPolicy, TeamSeasonForecastHistoryCheckpointRow,
-        TeamSeasonForecastHistoryMateriality, TeamSeasonForecastHistoryMoverRow,
-        TeamSeasonForecastHistoryPointRow, TeamSeasonForecastHistoryTeamRow,
-        TeamSeasonForecastHistoryTrend, TeamSeasonForecastHistoryView,
-        TeamSeasonForecastMovementRow, TeamSeasonForecastMovementView, TeamSeasonForecastView,
-        TeamSeasonReplayCheckpointTeamRow, TeamSeasonReplayCheckpointView,
-        TrainingCampSimulationInput,
+        simulate_training_camp, OrganizationWindowBoardView, TeamForecastPersonnelPlayerInput,
+        TeamSeasonAdaptiveLineupChoice, TeamSeasonAdaptiveLineupPolicy,
+        TeamSeasonForecastHistoryCheckpointRow, TeamSeasonForecastHistoryMateriality,
+        TeamSeasonForecastHistoryMoverRow, TeamSeasonForecastHistoryPointRow,
+        TeamSeasonForecastHistoryTeamRow, TeamSeasonForecastHistoryTrend,
+        TeamSeasonForecastHistoryView, TeamSeasonForecastMovementRow,
+        TeamSeasonForecastMovementView, TeamSeasonForecastView, TeamSeasonReplayCheckpointTeamRow,
+        TeamSeasonReplayCheckpointView, TrainingCampSimulationInput,
     };
     use icelines_fetch::ahl::{
         build_ahl_identity_review_inspection, AhlIdentityCrosswalkCounts, AhlIdentityCrosswalkRow,
@@ -8121,6 +8556,23 @@ mod tests {
         AhlPreseasonOrganizationReview, AhlPreseasonOrganizationReviewRow,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     };
+
+    #[test]
+    fn window_markdown_report_preserves_sealed_context_and_partial_state() {
+        let board: OrganizationWindowBoardView = serde_json::from_str(include_str!(
+            "../../../examples/organization-window-board-evaluation-2026-27.json"
+        ))
+        .unwrap();
+        let report = super::render_window_markdown(&board, Some("NYR"));
+        assert!(report.contains("schema: organization_window_report.v1"));
+        assert!(report.contains(&format!("board_fingerprint: {}", board.fingerprint)));
+        assert!(report.contains("Frozen 32-organization cohort"));
+        assert!(report.contains("| NR | NYR |"));
+        assert!(report.contains("## NYR detail"));
+        assert!(report.contains("### Lines and evidence"));
+        assert!(report.contains("### Blockers"));
+        assert!(!report.contains("| SEA |"));
+    }
 
     #[test]
     fn affiliate_identity_renderer_recomputes_counts_and_shows_evidence() {

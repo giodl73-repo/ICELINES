@@ -42,6 +42,10 @@ pub mod management_behavior;
 pub mod matchup_evidence;
 pub mod mutation;
 pub mod organization_lineup;
+pub mod organization_window;
+pub mod organization_window_adapters;
+pub mod organization_window_calibration;
+pub mod organization_window_comparison;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
@@ -90,27 +94,29 @@ pub use cap_projection::{
 pub use card::{
     build_card_comparison_set, build_fantasy_draft_card, build_fantasy_morning_card,
     build_fantasy_roster_card, build_fantasy_trade_card, build_forecast_history_card,
-    build_forecast_movement_card, build_season_simulation_card, build_team_prognosis_card,
-    parse_card_document, CardAlignedMetricRow, CardAssetFallback, CardAssetKind,
-    CardAssetReference, CardAssetState, CardAssetView, CardComparisonError, CardComparisonSetView,
-    CardComparisonWarning, CardComparisonWarningKind, CardContextView, CardDecisionAlternativeView,
-    CardDocumentError, CardDocumentView, CardIdentityJoinsView, CardIdentityKind, CardIdentityView,
-    CardKind, CardLineupGroupKind, CardLineupGroupView, CardLineupSlotView,
-    CardMethodologyItemView, CardMetricComparisonView, CardMetricView, CardPageView,
-    CardPlayerRowView, CardProbabilityRangeView, CardProvenanceView, CardRendererCapability,
-    CardSectionView, CardSimulationContextView, CardThemeView, CardTimelineItemView,
-    DecisionSectionView, FantasyDraftCardError, FantasyDraftCardInput, FantasyMorningCardError,
-    FantasyMorningCardInput, FantasyRosterCardError, FantasyRosterCardInput, FantasyTradeCardError,
-    FantasyTradeCardInput, ForecastHistoryCardError, ForecastHistoryCardInput,
-    ForecastMovementCardError, ForecastMovementCardInput, IdentityHeaderSectionView,
-    LineupSectionView, MethodologySectionView, MetricStripSectionView, PlayerListSectionView,
+    build_forecast_movement_card, build_organization_window_card, build_season_simulation_card,
+    build_team_prognosis_card, parse_card_document, CardAlignedMetricRow, CardAssetFallback,
+    CardAssetKind, CardAssetReference, CardAssetState, CardAssetView, CardComparisonError,
+    CardComparisonSetView, CardComparisonWarning, CardComparisonWarningKind, CardContextView,
+    CardDecisionAlternativeView, CardDocumentError, CardDocumentView, CardIdentityJoinsView,
+    CardIdentityKind, CardIdentityView, CardKind, CardLineupGroupKind, CardLineupGroupView,
+    CardLineupSlotView, CardMethodologyItemView, CardMetricComparisonView, CardMetricView,
+    CardPageView, CardPlayerRowView, CardProbabilityRangeView, CardProvenanceView,
+    CardRendererCapability, CardSectionView, CardSimulationContextView, CardThemeView,
+    CardTimelineItemView, DecisionSectionView, FantasyDraftCardError, FantasyDraftCardInput,
+    FantasyMorningCardError, FantasyMorningCardInput, FantasyRosterCardError,
+    FantasyRosterCardInput, FantasyTradeCardError, FantasyTradeCardInput, ForecastHistoryCardError,
+    ForecastHistoryCardInput, ForecastMovementCardError, ForecastMovementCardInput,
+    IdentityHeaderSectionView, LineupSectionView, MethodologySectionView, MetricStripSectionView,
+    OrganizationWindowCardError, OrganizationWindowCardInput, PlayerListSectionView,
     ProbabilityRangeSectionView, ProvenanceSectionView, ScenarioBridgeSectionView,
     SeasonSimulationCardError, SeasonSimulationCardInput, StateNoticeSectionView,
     TeamPrognosisCardError, TeamPrognosisCardInput, TeamPrognosisEventProjection,
     TimelineSectionView, CARD_COMPARISON_SET_SCHEMA, CARD_DOCUMENT_JSON_SCHEMA,
     CARD_DOCUMENT_SCHEMA, FANTASY_DRAFT_CARD_BUILDER_VERSION, FANTASY_MORNING_CARD_BUILDER_VERSION,
     FANTASY_ROSTER_CARD_BUILDER_VERSION, FANTASY_TRADE_CARD_BUILDER_VERSION,
-    FORECAST_HISTORY_CARD_VERSION, FORECAST_MOVEMENT_CARD_VERSION, SEASON_SIMULATION_CARD_VERSION,
+    FORECAST_HISTORY_CARD_VERSION, FORECAST_MOVEMENT_CARD_VERSION,
+    ORGANIZATION_WINDOW_CARD_VERSION, SEASON_SIMULATION_CARD_VERSION,
     TEAM_PROGNOSIS_BUILDER_VERSION,
 };
 pub use career::{
@@ -281,6 +287,56 @@ pub use organization_lineup::{
     OrganizationLineupCountsView, OrganizationLineupForecastInput, OrganizationLineupForecastView,
     OrganizationPositionGroup, OrganizationRecallCandidateView, OrganizationRecallPlanView,
     OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
+};
+pub use organization_window::{
+    build_organization_window_board, load_organization_window_profile_inventory,
+    parse_organization_window_manifest, seal_organization_window_manifest,
+    validate_organization_window_board, validate_profile_inventory, OrganizationProfileInput,
+    OrganizationProfileObservationView, OrganizationWindowBoardInput, OrganizationWindowBoardView,
+    OrganizationWindowError, OrganizationWindowManifestView, OrganizationWindowProfileInventory,
+    WindowAggregateStatus, WindowClassification, WindowCohortKind, WindowCohortManifest,
+    WindowDimensionManifest, WindowDimensionView, WindowDriverView, WindowEvidenceView,
+    WindowFreshness, WindowHorizon, WindowMissingPolicy, WindowNormalizationMethod,
+    WindowOrganizationView, WindowOverallView, WindowProfileDescriptor, WindowProfileDirection,
+    WindowProfileInventoryCounts, WindowProfileReadiness, WindowProfileStatus, WindowProfileWeight,
+    WindowRankState, WindowRankStatusView, WindowSignalFamilyCap,
+    ORGANIZATION_PROFILE_OBSERVATION_JSON_SCHEMA, ORGANIZATION_PROFILE_OBSERVATION_SCHEMA,
+    ORGANIZATION_WINDOW_BOARD_JSON_SCHEMA, ORGANIZATION_WINDOW_BOARD_SCHEMA,
+    ORGANIZATION_WINDOW_CLASSIFICATION_METHOD, ORGANIZATION_WINDOW_MANIFEST_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_MANIFEST_SCHEMA, ORGANIZATION_WINDOW_PROFILE_INVENTORY_JSON,
+    ORGANIZATION_WINDOW_PROFILE_INVENTORY_SCHEMA, ORGANIZATION_WINDOW_REGISTRY_VERSION,
+};
+pub use organization_window_adapters::{
+    adapt_balanced_organization_window_sources, adapt_line_combination_window_profile,
+    balanced_organization_window_manifest, build_balanced_organization_window_board,
+    OrganizationWindowAdapterContext, OrganizationWindowSourceSet,
+    ORGANIZATION_WINDOW_BALANCED_MANIFEST_ID,
+};
+pub use organization_window_calibration::{
+    calibrate_organization_window, calibrate_organization_window_rolling_origins,
+    OrganizationWindowCalibrationError, OrganizationWindowCalibrationView,
+    OrganizationWindowRollingCalibrationView, WindowCalibrationAblationView,
+    WindowCalibrationClaimStatus, WindowCalibrationMetricView, WindowCalibrationOriginInput,
+    WindowCalibrationOriginView, WindowCalibrationUncertaintyView, WindowLeakageAuditRow,
+    WindowOrganizationStabilityView, WindowOutcomeRow, WindowTrialNoiseStatus,
+    ORGANIZATION_WINDOW_CALIBRATION_SCHEMA, ORGANIZATION_WINDOW_ROLLING_CALIBRATION_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_ROLLING_CALIBRATION_SCHEMA,
+};
+pub use organization_window_comparison::{
+    adapt_line_combination_window_scenario_authority,
+    adapt_team_season_window_scenario_authorities, adapt_training_camp_window_scenario_authorities,
+    build_organization_window_history, compare_organization_window_scenario,
+    compare_organization_window_snapshots, compare_organization_window_snapshots_with_bridge,
+    compare_organization_window_typed_scenario, rebase_organization_window_board,
+    seal_organization_window_bridge, OrganizationWindowBridgeView,
+    OrganizationWindowComparisonError, OrganizationWindowHistoryView,
+    OrganizationWindowMovementView, OrganizationWindowScenarioImpactView, WindowDimensionDeltaView,
+    WindowOrganizationDeltaView, WindowProfileBridgeView, WindowProfileDeltaView,
+    WindowScenarioAuthorityKind, WindowScenarioAuthorityView, WindowScenarioProfileImpactKind,
+    WindowScenarioProfileImpactView, WindowScenarioProfileMethodView,
+    ORGANIZATION_WINDOW_BRIDGE_JSON_SCHEMA, ORGANIZATION_WINDOW_BRIDGE_SCHEMA,
+    ORGANIZATION_WINDOW_HISTORY_SCHEMA, ORGANIZATION_WINDOW_MOVEMENT_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_IMPACT_SCHEMA,
 };
 pub use player_card::{
     PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow, PlayerSeasonSummary,

@@ -4093,6 +4093,20 @@ passed for leaders CLI/Web JSON result-state parity. Broad `WP-001`, `VAL-004`,
 `EVID-VAL-004`, `EVID-CR-003`, `EVID-CR-018`, `EVID-CODE-001`, and WP-008
 integration rehearsal remain open.
 
+## The Window implementation entry review — 2026-07-27
+
+Decision: **go** for WP-011.
+
+The merged 12-role review resolved its initial blockers. Implementation remains
+conditional on the machine-readable readiness inventory, immutable profile
+methods, complete cohort gates, no zero-filled missing evidence, and thin
+surface adapters. Cap projection may enter only as modeled/evaluation evidence;
+confirmed cap space, shift chemistry, and injury concentration remain blocked
+until their source authorities exist.
+
+Required close review: all roles after real all-team calibration and surface
+parity evidence. Planning or synthetic scorer tests alone cannot close WP-011.
+
 ## 2026-06-19 Phase Hurricane 5a/5b Close Review
 
 ### Scope reviewed

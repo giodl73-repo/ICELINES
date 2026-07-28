@@ -175,6 +175,19 @@ pub fn router(state: WebState) -> Router {
             get(handlers::team_card::get_forecast_history_card_json),
         )
         .route(
+            "/icecast/:season/:team/window",
+            get(handlers::team_card::get_organization_window_card),
+        )
+        .route(
+            "/api/v1/cards/organization-window/:season/:team",
+            get(handlers::team_card::get_organization_window_card_json),
+        )
+        .route("/window/:frame/:season", get(handlers::window::get_window))
+        .route(
+            "/api/v1/window/:frame/:season",
+            get(handlers::window::get_window_json),
+        )
+        .route(
             "/fantasy/cards/roster/:team",
             get(handlers::team_card::get_fantasy_roster_card),
         )
@@ -643,6 +656,7 @@ mod handlers {
     /// `/team/:abbrev` — King.4.1 roster page.
     pub mod team;
     pub mod team_card;
+    pub mod window;
 
     /// `/goalies` — King.5.1 + King.5.2 goalie leaderboard.
     pub mod goalies;

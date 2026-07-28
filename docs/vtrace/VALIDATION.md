@@ -86,6 +86,37 @@ remain the package-level evidence history; any `partial` wording there is the
 original slice limit, not an open blocker beyond the residual risks listed
 below.
 
+## VAL-013 — The Window organization-health workflow
+
+1. Build the complete current 32-team board from one frozen Frame and source set.
+2. Inspect a focused Rangers and Kraken view and reconcile both to the league
+   board fingerprint and rank.
+3. Change only Frame weights, prove a new manifest fingerprint, and preserve all
+   raw profile observations.
+4. Remove or stale a required input and prove rank is withheld without
+   zero-filling the score.
+5. Compare three matched historical checkpoints and reject one mismatched
+   method/manifest/season-phase checkpoint. Rebase one intentional Frame change
+   through a sealed bridge and attribute observed versus method/manifest change.
+6. Apply breakout, injury, trade, and lineup scenarios and identify every
+   changed and unchanged profile.
+7. Replay rolling historical origins, audit leakage, compare simple baselines,
+   and publish calibrated/heuristic/inconclusive/blocked status per pane.
+8. Reconcile CLI, TUI, Web/API, JSON, report, and card values from the same
+   sealed documents.
+
+Status: partial 2026-07-27. Scenarios 1-5, including canonical loaded-board
+replay and core bridge/rebase
+tamper/completeness/change-attribution evidence, and selected scenario-6/parity-8
+fixtures pass with an explicitly partial saved evaluation board. Scenario 6
+now has typed authority adapters and direct/cohort/unchanged attribution with
+unattributed-change refusal; real isolated/combined multi-source boards,
+and rolling-origin calibration now has frozen baselines, ablations, stability,
+between-origin uncertainty, and deterministic sealing. Real point-in-time
+seasons, trial-noise propagation, untouched holdouts, and live
+browser/accessibility review remain open; owned by WP-011 and
+REQ-WINDOW-001..008.
+
 ## Deferred Validation
 
 | Scenario | Reason Deferred | Risk | Revisit Trigger |

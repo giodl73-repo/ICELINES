@@ -2,7 +2,10 @@
 
 use std::sync::OnceLock;
 
-use icelines_core::{parse_card_document, CardDocumentView};
+use icelines_core::{
+    load_organization_window_profile_inventory, parse_card_document,
+    validate_organization_window_board, CardDocumentView, OrganizationWindowBoardView,
+};
 use thiserror::Error;
 
 const NYR: &str = include_str!("../../examples/team-prognosis-card-nyr-2026-27.json");
@@ -23,6 +26,12 @@ const NYR_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-sea-2024-25.json");
+const NYR_ORGANIZATION_WINDOW: &str =
+    include_str!("../../examples/organization-window-card-nyr-2026-27.json");
+const SEA_ORGANIZATION_WINDOW: &str =
+    include_str!("../../examples/organization-window-card-sea-2026-27.json");
+const BALANCED_ORGANIZATION_WINDOW: &str =
+    include_str!("../../examples/organization-window-board-evaluation-2026-27.json");
 const DEXTERS_DAWGS: &str =
     include_str!("../../examples/fantasy-roster-card-dexters-dawgs-2026-10-05.json");
 const DEXTERS_DAWGS_DRAFT: &str =
@@ -44,6 +53,10 @@ pub enum CardStoreError {
     UnsupportedForecastMovementTeam(String),
     #[error("forecast history card is not available for team {0}")]
     UnsupportedForecastHistoryTeam(String),
+    #[error("organization Window card is not available for team {0}")]
+    UnsupportedOrganizationWindowTeam(String),
+    #[error("organization Window frame is not available: {0}")]
+    UnsupportedOrganizationWindowFrame(String),
     #[error("fantasy roster card is not available for team {0}")]
     UnsupportedFantasyTeam(String),
     #[error("fantasy draft card is not available for team {0}")]
@@ -90,6 +103,46 @@ pub fn forecast_history_card(season: u32, team: &str) -> Result<CardDocumentView
         (20242025, _) => Err(CardStoreError::UnsupportedForecastHistoryTeam(team)),
         _ => Err(CardStoreError::UnsupportedSeason(season)),
     }
+}
+
+pub fn organization_window_card(
+    season: u32,
+    team: &str,
+) -> Result<CardDocumentView, CardStoreError> {
+    let team = team.trim().to_ascii_uppercase();
+    match (season, team.as_str()) {
+        (20262027, "NYR") => Ok(nyr_organization_window_card().clone()),
+        (20262027, "SEA") => Ok(sea_organization_window_card().clone()),
+        (20262027, _) => Err(CardStoreError::UnsupportedOrganizationWindowTeam(team)),
+        _ => Err(CardStoreError::UnsupportedSeason(season)),
+    }
+}
+
+pub fn organization_window_board(
+    frame: &str,
+    season: u32,
+) -> Result<OrganizationWindowBoardView, CardStoreError> {
+    if frame != "balanced.v1" {
+        return Err(CardStoreError::UnsupportedOrganizationWindowFrame(
+            frame.to_owned(),
+        ));
+    }
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static BOARD: OnceLock<OrganizationWindowBoardView> = OnceLock::new();
+    Ok(BOARD
+        .get_or_init(|| {
+            let board: OrganizationWindowBoardView =
+                serde_json::from_str(BALANCED_ORGANIZATION_WINDOW)
+                    .expect("sealed balanced organization Window board");
+            let inventory = load_organization_window_profile_inventory()
+                .expect("embedded organization Window profile inventory");
+            validate_organization_window_board(&board, &inventory)
+                .expect("embedded Window board must remain canonical and sealed");
+            board
+        })
+        .clone())
 }
 
 pub fn fantasy_draft_card(team: &str) -> Result<CardDocumentView, CardStoreError> {
@@ -222,6 +275,20 @@ fn sea_2024_history_card() -> &'static CardDocumentView {
     static CARD: OnceLock<CardDocumentView> = OnceLock::new();
     CARD.get_or_init(|| {
         parse_card_document(SEA_2024_HISTORY).expect("sealed SEA 2024-25 forecast history card")
+    })
+}
+
+fn nyr_organization_window_card() -> &'static CardDocumentView {
+    static CARD: OnceLock<CardDocumentView> = OnceLock::new();
+    CARD.get_or_init(|| {
+        parse_card_document(NYR_ORGANIZATION_WINDOW).expect("sealed NYR organization Window card")
+    })
+}
+
+fn sea_organization_window_card() -> &'static CardDocumentView {
+    static CARD: OnceLock<CardDocumentView> = OnceLock::new();
+    CARD.get_or_init(|| {
+        parse_card_document(SEA_ORGANIZATION_WINDOW).expect("sealed SEA organization Window card")
     })
 }
 

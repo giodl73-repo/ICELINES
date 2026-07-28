@@ -1686,6 +1686,121 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Inspect a sealed all-team organization Window board or one team detail.
+    Window {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Focus one team while retaining the sealed league artifact as authority.
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        json: bool,
+        /// Export a durable Markdown report from the sealed board.
+        #[arg(long, conflicts_with = "json")]
+        markdown: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build the official balanced Window from sealed IceLines source documents.
+    #[command(name = "window-build")]
+    WindowBuild {
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long)]
+        as_of: chrono::NaiveDate,
+        #[arg(long)]
+        generated_at: String,
+        #[arg(long, value_name = "PATH")]
+        team_season_forecast: Option<PathBuf>,
+        #[arg(long = "team-lineup", value_name = "PATH")]
+        team_lineups: Vec<PathBuf>,
+        #[arg(long = "organization-lineup", value_name = "PATH")]
+        organization_lineups: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        prospect_program: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        prospect_conversion: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        training_camp: Option<PathBuf>,
+        #[arg(long = "schedule-rest", value_name = "PATH")]
+        schedule_rest: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Project one team from a sealed Window board into `card_document.v1`.
+    #[command(name = "window-card")]
+    WindowCard {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        team_name: Option<String>,
+        #[arg(long)]
+        generated_at: Option<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compare two sealed, method-compatible Window checkpoints.
+    #[command(name = "window-movement")]
+    WindowMovement {
+        #[arg(long, value_name = "PATH")]
+        earlier: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        later: PathBuf,
+        /// Reviewed bridge for an intentional manifest or method upgrade.
+        #[arg(long, value_name = "PATH")]
+        bridge: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rebuild a sealed Window board under a reviewed target manifest.
+    #[command(name = "window-rebase")]
+    WindowRebase {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        target_manifest: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        bridge: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build Window history from two or more comparable checkpoints.
+    #[command(name = "window-history")]
+    WindowHistory {
+        #[arg(long = "input", required = true, value_name = "PATH")]
+        inputs: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compare a same-context baseline and scenario Window board.
+    #[command(name = "window-scenario")]
+    WindowScenario {
+        #[arg(long, value_name = "PATH")]
+        baseline: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        scenario: PathBuf,
+        #[arg(long)]
+        scenario_id: String,
+        /// Typed upstream authority document; repeat for combined scenarios.
+        #[arg(long = "authority", value_name = "PATH")]
+        authorities: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Calibrate one Frame across frozen rolling-origin inputs.
+    #[command(name = "window-calibrate")]
+    WindowCalibrate {
+        #[arg(long)]
+        target: String,
+        #[arg(long = "origin", required = true, value_name = "PATH")]
+        origins: Vec<PathBuf>,
+        #[arg(long, default_value_t = 3)]
+        minimum_origins: usize,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Project one team from a sealed league forecast into `card_document.v1`.
     #[command(name = "season-card")]
     SeasonCard {
@@ -2141,6 +2256,119 @@ mod tui_surface_tests {
             .expect("spawn clap surface test")
             .join()
             .expect("clap surface test");
+    }
+
+    #[test]
+    fn l0_window_bridge_commands_parse() {
+        with_large_stack(|| {
+            let movement = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-movement",
+                "--earlier",
+                "october.json",
+                "--later",
+                "january.json",
+                "--bridge",
+                "v1-to-v2.json",
+            ])
+            .expect("bridged Window movement should parse");
+            assert!(matches!(
+                movement.command,
+                Commands::Icecast(IceCastSubcommand::WindowMovement {
+                    bridge: Some(_),
+                    ..
+                })
+            ));
+
+            let rebase = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-rebase",
+                "--input",
+                "october.json",
+                "--target-manifest",
+                "balanced-v2.json",
+                "--bridge",
+                "v1-to-v2.json",
+            ])
+            .expect("Window rebase should parse");
+            assert!(matches!(
+                rebase.command,
+                Commands::Icecast(IceCastSubcommand::WindowRebase { .. })
+            ));
+
+            let scenario = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-scenario",
+                "--baseline",
+                "baseline.json",
+                "--scenario",
+                "trade.json",
+                "--scenario-id",
+                "deadline-addition",
+                "--authority",
+                "trade-authority.json",
+            ])
+            .expect("typed Window scenario should parse");
+            assert!(matches!(
+                scenario.command,
+                Commands::Icecast(IceCastSubcommand::WindowScenario {
+                    authorities,
+                    ..
+                }) if authorities.len() == 1
+            ));
+
+            let calibration = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-calibrate",
+                "--target",
+                "next-season-value",
+                "--origin",
+                "2023.json",
+                "--origin",
+                "2024.json",
+                "--origin",
+                "2025.json",
+            ])
+            .expect("rolling Window calibration should parse");
+            assert!(matches!(
+                calibration.command,
+                Commands::Icecast(IceCastSubcommand::WindowCalibrate {
+                    origins,
+                    minimum_origins: 3,
+                    ..
+                }) if origins.len() == 3
+            ));
+
+            let report = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window",
+                "--input",
+                "window.json",
+                "--team",
+                "NYR",
+                "--markdown",
+            ])
+            .expect("Window Markdown report should parse");
+            assert!(matches!(
+                report.command,
+                Commands::Icecast(IceCastSubcommand::Window { markdown: true, .. })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window",
+                "--input",
+                "window.json",
+                "--json",
+                "--markdown",
+            ])
+            .is_err());
+        });
     }
 
     /// LB.2 / l0_sugar_each_nav_tab_parses

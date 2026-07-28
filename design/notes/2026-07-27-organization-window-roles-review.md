@@ -78,3 +78,57 @@ The roles must review again at four boundaries:
 
 Review complete. 0 unresolved blockers, 0 unresolved warnings, 0 unresolved
 notes.
+
+## Implementation checkpoint review
+
+The roles reviewed the implemented baseline against the plan after the first
+contracts, scorer, adapters, history/scenario/calibration primitives, and
+CLI/TUI/Web/card projections landed.
+
+**Verdict: GO FOR CONTINUED IMPLEMENTATION; NOT YET A FULL RELEASE.**
+
+| Role | Checkpoint finding | Plan disposition |
+|---|---|---|
+| HART | The board identity and axes are sealed, but bridge/rebase remains a first-class missing contract rather than a renderer concern. | Keep W5 open and require an immutable bridge artifact. |
+| KEEL | Shared board/card values now reach CLI, TUI, Web, and JSON; report output and full-board interaction are not yet converged. | Keep W8 partial and add parity evidence before release. |
+| TAPE | The saved all-32 artifact is honest but source-incomplete; absence must never be inferred as zero or average. | Keep it labeled evaluation-only and rank-withheld. |
+| FORGE | Core owns formulas and renderers project typed documents, preserving crate boundaries. | Retain pure-core/no-I/O and thin-surface gates. |
+| PACE | Deterministic scoring is testable; predictive language is still unsupported without rolling-origin evidence. | Keep W7 open and label the Frame descriptive/heuristic until calibrated. |
+| BENCH | Focused core, TUI, and Web tests cover the present slice; report, compatibility matrix, full parity, and package gates remain. | Add them to W8-W9 closeout rather than treating compile success as release evidence. |
+| EDGE | Required missingness and incompatible comparisons fail closed; alterations now need explicit lanes so saved artifacts cannot drift silently. | Added the extension and alteration protocol to the plan. |
+| WIRE | Schemas and HTTP routes exist, but compatibility and migration require multi-version fixtures. | Keep W9 open with refusal and additive-compatibility cases. |
+| SCOUT | The first Frame keeps prospect strength, conversion, opportunity, and NHL quality distinct; future Lines still require hockey reasonableness checks. | Require SCOUT on profile additions, formula changes, and Frame reweights. |
+| GLASS | Focused cards have a usable hierarchy, but the 32-team board and partial/blocked recovery states need surface review. | Keep board/drilldown, 80-column, and accessibility gates in W8. |
+| CREST | The product avoids a giant master gauge; screenshot-level polish across board, detail, and report is still unproven. | Require final screenshot review without moving logic into surfaces. |
+| broadcast | Stable Frame URLs and ETags are present; bookmarkable as-of/view state, narrow layout, keyboard flow, and no-JS recovery need live review. | Keep browser acceptance work in W8-W9. |
+
+### Reconciled decision
+
+The implementation may continue from the existing baseline without redesigning
+the core contracts. The next critical path is W5 bridge/history, W6 typed
+scenario attribution, and W7 rolling-origin calibration. W8 can mature in
+parallel against sealed fixtures, but no surface may promote an evaluation
+artifact into a complete or predictive claim. W9 closes compatibility,
+extension, parity, and release evidence.
+
+Checkpoint review complete: 0 unresolved architecture blockers; 4 intentional
+release blockers remain tracked in W5, W6, W7, and W8-W9.
+
+### W9 trust-boundary checkpoint
+
+The hardening pass now replays every loaded board through the canonical scorer
+before CLI, card, Web, TUI, comparison, or calibration code may trust it. A
+valid checksum is insufficient: manifest identity, cohort shape, numeric
+bounds, raw observations, normalized values, aggregates, classifications,
+drivers, blockers, and rank state must reconcile. BENCH/WIRE compatibility
+fixtures also prove older movement and scenario documents deserialize when the
+new bridge and attribution fields are absent.
+
+Affected production targets pass strict Clippy, all nine Window schemas pass
+Draft 2020-12 meta-validation, the saved board and both cards validate, and the
+25-test core Window slice plus focused CLI/TUI/Web tests pass. The extension
+fixture registers a new method, adds it to a custom Frame, and scores all 32
+organizations without scorer or renderer changes. This closes the
+implementation trust-boundary blocker, but does not close the four product
+evidence blockers above: real checkpoint history, real scenario distributions,
+real rolling origins/holdout evidence, and live cross-surface review remain.
