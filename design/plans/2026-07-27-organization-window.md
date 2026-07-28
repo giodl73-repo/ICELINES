@@ -157,6 +157,16 @@ organization-lineup primitive.
 ambiguous identities remain typed review failures; affiliation and assignment
 fixtures cover relocation, shared affiliates, trades, loans, and missing clubs.
 
+**Identity checkpoint — 2026-07-28:** official 2025-26 AHL roster evidence
+contains 1,425 team appearances across 32 clubs. The exact, sourced-alias, and
+ordinary conflict lanes reviewed 1,410 appearances; the league rejection lane
+closed the remaining 15 mapping appearances without deleting their AHL player
+facts. The resulting envelope has 0 pending rows, 100.00% resolved coverage,
+and 98.95% canonical NHL-identity coverage. Identity review is therefore
+complete for this snapshot. Current-season affiliation, assignment, projected
+role/score, readiness, waiver, and professional-game facts remain a separate
+authority gate; a camp cut is not treated as an AHL assignment.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

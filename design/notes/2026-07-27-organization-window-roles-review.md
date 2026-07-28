@@ -391,3 +391,24 @@ empty-cache diagnostic, option conflicts, order invariance, focused tests,
 447-test fetch suite, and strict production lint. The different source
 fingerprint is intentional when the explicit path retains extra overlay
 citations; it does not change the Window values.
+
+### S2 all-league identity checkpoint
+
+HART/WIRE verified that the reviewed 2025-26 AHL envelope retains its official
+snapshot identity and team-season occurrences while canonical NHL identities
+remain a separate reviewed join. Across 1,425 appearances, 1,410 are mapped and
+reviewed, 15 are explicitly rejected as mappings, and none remain pending.
+Resolved coverage is 100.00%; canonical identity coverage is 98.95%.
+
+TAPE/SCOUT accepted the new league rejection lane because it closes only an
+unsupported NHL mapping. It never deletes the AHL person or turns an unmatched,
+ambiguous, or collision-scale proposal into a player-quality judgment. Repeated
+provider IDs are handled across every pending club occurrence, which preserves
+trade history rather than selecting a convenient team row.
+
+KEEL/PACE keep S2 open at the assignment boundary. The fully reviewed prior
+snapshot establishes identity evidence, not a 2026-27 affiliate assignment,
+projected role, readiness score, waiver fact, or professional-game total. The
+existing core contract explicitly forbids equating a camp cut with successful
+AHL assignment, so organization and recall depth remain missing until that
+season-aware authority is assembled.

@@ -1028,6 +1028,7 @@ icelines icecast affiliate-review-conflicts-league --league-crosswalk ahl-league
 icelines icecast affiliate-review-birth-date-league --league-crosswalk ahl-league-conflict-reviewed.json --nhl-player-id 8484115 --canonical-birth-date 1999-04-17 --evidence-url https://www.iowawild.com/players/detail/zmolek-1 --evidence-url https://bsubeavers.com/sports/mens-ice-hockey/roster/will-zmolek/15025 --reviewer "league-date-pilot" --reviewed-at 2026-07-26T22:50:00Z --note "official AHL club and college records agree with the provider date" --decisions-out ahl-league-date-decisions.json --json --out ahl-league-date-reviewed.json
 icelines icecast affiliate-review-collision-league --league-crosswalk ahl-league-conflict-reviewed.json --proposed-nhl-player-id 8475366 --canonical-nhl-player-id 8484302 --canonical-name "Matt Brown" --canonical-birth-date 1999-08-09 --evidence-url https://api-web.nhle.com/v1/player/8484302/landing --evidence-url https://www.phantomshockey.com/wp-content/uploads/2023/10/2023-Phantoms-Training-Camp-Roster.pdf --reviewer "league-collision-pilot" --reviewed-at 2026-07-26T21:10:00Z --note "official records identify the younger same-name player" --decisions-out ahl-league-collision-decisions.json --json --out ahl-league-collision-reviewed.json
 icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
+icelines icecast affiliate-review-reject-league --league-crosswalk ahl-league-conflict-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "league-exception-pilot" --reviewed-at 2026-07-28T23:00:00Z --note "AHL player retained; no unique canonical NHL mapping" --decisions-out ahl-league-reject-decisions.json --json --out ahl-league-fully-reviewed.json
 icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
 icelines icecast affiliate-review-league --league-crosswalk ahl-2023-reviewed.json --league-crosswalk ahl-2024-reviewed.json --league-crosswalk ahl-2025-reviewed.json --json --out ahl-three-season-identity-review.json
 icelines icecast affiliate-review-board --review ahl-three-season-identity-review.json --json --out ahl-identity-exception-board.json
@@ -1277,6 +1278,14 @@ the underlying AHL person is invalid: AHL-only players and feed-classified
 non-player personnel remain distinguishable in the retained note. Repeatable
 `--evidence-url` values are validated as absolute URLs and retained as
 structured row evidence instead of being buried only in prose.
+
+`icecast affiliate-review-reject-league` applies the same mapping-only
+rejection semantics atomically to a league envelope. A provider ID that appears
+for multiple clubs after a trade is closed on every pending occurrence. Every
+requested ID must have at least one pending occurrence or the operation returns
+no updated envelope. The separate league decisions artifact records all
+team-bound batches, skips, evidence, reviewer authority, and the explicit fact
+that AHL player and season records remain retained for a future sourced remap.
 
 `icecast affiliate-review-exact-league`,
 `icecast affiliate-review-aliases-league`, and the targeted conflict command

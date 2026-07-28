@@ -501,6 +501,7 @@ pub enum AhlIdentityLeagueRoutineReviewKind {
     Conflicts,
     BirthDateCorrections,
     CollisionRemaps,
+    Rejections,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1449,7 +1450,8 @@ pub fn apply_ahl_identity_league_routine_review(
                     }
                     AhlIdentityLeagueRoutineReviewKind::Conflicts
                     | AhlIdentityLeagueRoutineReviewKind::BirthDateCorrections
-                    | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps => false,
+                    | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps
+                    | AhlIdentityLeagueRoutineReviewKind::Rejections => false,
                 }
         });
         if !eligible {
@@ -1465,7 +1467,8 @@ pub fn apply_ahl_identity_league_routine_review(
             }
             AhlIdentityLeagueRoutineReviewKind::Conflicts
             | AhlIdentityLeagueRoutineReviewKind::BirthDateCorrections
-            | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps => {
+            | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps
+            | AhlIdentityLeagueRoutineReviewKind::Rejections => {
                 unreachable!("conflict reviews are rejected before routine league review")
             }
         };
@@ -2005,6 +2008,108 @@ pub fn build_ahl_identity_rejection_review(
         reviewed_at: Some(reviewed_at),
         decisions,
     })
+}
+
+/// Atomically reject selected pending NHL identity mappings across a league
+/// envelope. Provider IDs may occur on multiple team rows after a trade; every
+/// occurrence is closed while the AHL player and season facts remain intact.
+pub fn apply_ahl_identity_league_rejection_review(
+    league: &AhlIdentityLeagueCrosswalkView,
+    provider_player_ids: &[String],
+    evidence_urls: &[String],
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+    note: impl Into<String>,
+) -> Result<
+    (
+        AhlIdentityLeagueCrosswalkView,
+        AhlIdentityLeagueReviewDecisionsView,
+    ),
+    AhlFeedError,
+> {
+    validate_ahl_identity_league_crosswalk(league)?;
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    let note = note.into();
+    let requested_ids = provider_player_ids.iter().cloned().collect::<BTreeSet<_>>();
+    if provider_player_ids.is_empty()
+        || requested_ids.len() != provider_player_ids.len()
+        || requested_ids.iter().any(|id| id.trim().is_empty())
+    {
+        return Err(AhlFeedError::Validation(
+            "league identity rejection requires unique non-empty provider player IDs".to_owned(),
+        ));
+    }
+    let mut output = league.clone();
+    let mut matched_ids = BTreeSet::new();
+    let mut batches = Vec::new();
+    let mut skipped_teams = Vec::new();
+    let mut applied_decisions = 0usize;
+    for crosswalk in &mut output.crosswalks {
+        let team_ids = crosswalk
+            .rows
+            .iter()
+            .filter(|row| row.review_status == AhlIdentityReviewStatus::Pending)
+            .map(|row| row.provider_player_id.clone())
+            .filter(|id| requested_ids.contains(id))
+            .collect::<BTreeSet<_>>();
+        if team_ids.is_empty() {
+            skipped_teams.push(crosswalk.ahl_team.clone());
+            continue;
+        }
+        let team_ids = team_ids.into_iter().collect::<Vec<_>>();
+        let decisions = build_ahl_identity_rejection_review(
+            crosswalk,
+            &team_ids,
+            evidence_urls,
+            reviewer.clone(),
+            reviewed_at.clone(),
+            note.clone(),
+        )?;
+        matched_ids.extend(team_ids);
+        applied_decisions += decisions.decisions.len();
+        *crosswalk = apply_ahl_identity_review_decisions(crosswalk, &decisions)?;
+        batches.push(decisions);
+    }
+    if matched_ids != requested_ids {
+        let missing = requested_ids
+            .difference(&matched_ids)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(AhlFeedError::Validation(format!(
+            "league identity rejection found no pending row for provider player(s) {missing}"
+        )));
+    }
+    let eligible_teams = batches.len();
+    output.disclosures.push(format!(
+        "Applied targeted league rejection review: {} decision(s) across {} eligible team(s) by {} at {}; {} team(s) had no selected pending row.",
+        applied_decisions,
+        eligible_teams,
+        reviewer,
+        reviewed_at,
+        skipped_teams.len()
+    ));
+    Ok((
+        output,
+        AhlIdentityLeagueReviewDecisionsView {
+            schema: AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA.to_owned(),
+            season: league.season,
+            provider: league.provider.clone(),
+            roster_fetched_at: league.roster_fetched_at.clone(),
+            kind: AhlIdentityLeagueRoutineReviewKind::Rejections,
+            reviewer,
+            reviewed_at,
+            eligible_teams,
+            skipped_teams,
+            applied_decisions,
+            batches,
+            disclosures: vec![
+                "A rejection closes only the NHL identity mapping; it never removes the AHL player or season facts.".to_owned(),
+                "League rejection review is atomic: every requested provider ID must have a pending occurrence, or no updated envelope is returned.".to_owned(),
+            ],
+        },
+    ))
 }
 
 /// Generate a deliberately non-applicable decision draft. Optional lanes are
@@ -4952,6 +5057,51 @@ mod tests {
             league.crosswalks[0].rows[0].review_status,
             AhlIdentityReviewStatus::Pending
         );
+    }
+
+    #[test]
+    fn league_rejection_review_closes_mapping_without_removing_ahl_player() {
+        let mut snapshot = identity_snapshot();
+        let mut traded_appearance = snapshot.teams[0].clone();
+        traded_appearance.provider_team_id = "308".to_owned();
+        traded_appearance.team_code = "BRI".to_owned();
+        traded_appearance.team_name = "Bridgeport Islanders".to_owned();
+        traded_appearance.nickname = "Islanders".to_owned();
+        traded_appearance.nhl_affiliate = Some("NYI".to_owned());
+        snapshot.teams.push(traded_appearance);
+        let mut catalog = identity_catalog();
+        catalog.candidates.clear();
+        let league = build_ahl_identity_league_crosswalk(&snapshot, &catalog).unwrap();
+        let evidence = vec!["https://example.test/ahl/player-10618".to_owned()];
+        let (reviewed, audit) = apply_ahl_identity_league_rejection_review(
+            &league,
+            &["10618".to_owned()],
+            &evidence,
+            "League Exception Reviewer",
+            "2026-07-28T23:00:00Z",
+            "Official AHL evidence retains the player but no unique canonical NHL identity is available.",
+        )
+        .unwrap();
+        assert_eq!(audit.kind, AhlIdentityLeagueRoutineReviewKind::Rejections);
+        assert_eq!(audit.eligible_teams, 2);
+        assert_eq!(audit.applied_decisions, 2);
+        assert!(reviewed.crosswalks.iter().all(|crosswalk| {
+            crosswalk.rows.len() == 1
+                && crosswalk.rows[0].review_status == AhlIdentityReviewStatus::Rejected
+                && crosswalk.rows[0].nhl_player_id.is_none()
+        }));
+        assert!(apply_ahl_identity_league_rejection_review(
+            &league,
+            &["missing".to_owned()],
+            &evidence,
+            "League Exception Reviewer",
+            "2026-07-28T23:00:00Z",
+            "Unknown rows must fail atomically.",
+        )
+        .is_err());
+        assert!(league.crosswalks.iter().all(|crosswalk| {
+            crosswalk.rows[0].review_status == AhlIdentityReviewStatus::Pending
+        }));
     }
 
     #[test]

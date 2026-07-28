@@ -1408,6 +1408,30 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Reject selected pending mappings across a league identity envelope.
+    #[command(name = "affiliate-review-reject-league")]
+    AffiliateReviewRejectLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// AHL provider player ID to reject; repeat for multiple identities.
+        #[arg(long, value_name = "ID", required = true)]
+        provider_player_id: Vec<String>,
+        #[arg(long = "evidence-url", value_name = "URL")]
+        evidence_urls: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        #[arg(long)]
+        reviewed_at: String,
+        /// Evidence-backed explanation; AHL player facts remain retained.
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Aggregate team-season crosswalks into league coverage and exception groups.
     #[command(name = "affiliate-review-league")]
     AffiliateReviewLeague {
@@ -4031,6 +4055,42 @@ mod tui_surface_tests {
                 }) if provider_player_id == ["11069"]
                     && evidence_urls == ["https://example.test/stalletti"]
                     && reviewer == "exception-pilot"
+            ));
+
+            let reject_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-reject-league",
+                "--league-crosswalk",
+                "ahl-league.json",
+                "--provider-player-id",
+                "11069",
+                "--provider-player-id",
+                "10646",
+                "--evidence-url",
+                "https://example.test/ahl-exceptions",
+                "--reviewer",
+                "league-exception-pilot",
+                "--reviewed-at",
+                "2026-07-28T23:00:00Z",
+                "--note",
+                "AHL facts retained; no unique canonical NHL mapping",
+                "--decisions-out",
+                "league-reject-decisions.json",
+                "--json",
+                "--out",
+                "league-rejection-reviewed.json",
+            ])
+            .expect("league affiliate identity rejection review should parse");
+            assert!(matches!(
+                reject_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewRejectLeague {
+                    provider_player_id,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if provider_player_id == ["11069", "10646"]
+                    && reviewer == "league-exception-pilot"
             ));
 
             let league = Cli::try_parse_from([

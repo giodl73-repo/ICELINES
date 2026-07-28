@@ -167,6 +167,14 @@ evidence-backed AHL-only, non-player, or other exclusion rationale into the
 crosswalk, while repeatable absolute evidence URLs remain structured on the
 rejected row for every renderer and downstream audit.
 
+`affiliate-review-reject-league` is the atomic league counterpart. It selects
+unique provider IDs, closes every pending team occurrence of each selected ID,
+and emits the same team-bound decision batches inside a league audit. A missing
+or non-pending selected ID fails the entire transformation. Rejection remains
+mapping-only: the official AHL player, club appearance, and season facts are
+preserved, so later canonical evidence can support a new reviewed remap rather
+than reconstructing deleted source data.
+
 Birth-date conflicts use a separate targeted league authority rather than the
 routine exact or alias lanes. A reviewer selects proposed NHL IDs and supplies
 new absolute evidence plus a timestamped rationale. IceLines rechecks that
