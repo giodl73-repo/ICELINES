@@ -11,6 +11,10 @@ family (`IceScout`, `IceBench`, `IceTrade`, `IceCast`, and `IceReplay`), while
 [The Rink brand architecture](design/specs/brand-the-rink.md). Existing commands
 and JSON contracts remain compatible as this language reaches the surfaces.
 
+**Hockey data should be explorable without an account, database setup, or black-box ranking.**
+
+**Series:** [Applied Systems](https://github.com/giodl73-repo/giodl73-repo/blob/main/series/applied-systems.md)
+
 **[→ View the site](https://giodl73-repo.github.io/ICELINES/)**
 
 **Review roles:** This repo uses
