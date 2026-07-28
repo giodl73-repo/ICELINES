@@ -1,0 +1,106 @@
+{
+  "schema": "organization_window_personnel_evidence_summary.v1",
+  "season": 20242025,
+  "earlier_as_of": "2025-01-31",
+  "later_as_of": "2025-02-28",
+  "attribution_id": "2024-25-january-february-personnel",
+  "estimate_basis": "later_counterfactual",
+  "event_count": 219,
+  "direct_organization_count": 32,
+  "changed_profile_impacts": [
+    {
+      "organization": "NYR",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": -0.015000000000000568,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "CBJ",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": 0.006000000000000227,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "NSH",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": 0.003999999999990678,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "STL",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": -0.003999999999990678,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "EDM",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": 0.0020000000000095497,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "MIN",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": 0.0020000000000095497,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "NJD",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": 0.001999999999995339,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "OTT",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": 0.001999999999995339,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "CGY",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": 0.0010000000000047748,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "SEA",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": 0.0010000000000047748,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    },
+    {
+      "organization": "WPG",
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "raw_delta": -0.000999999999990564,
+      "score_delta": 0.0,
+      "kind": "raw_input"
+    }
+  ],
+  "nonzero_personnel_score_organizations": 0,
+  "attributed_movement_fingerprint": "1ab0310b59d16a337f3f54140666412b0471ac55b03a0a9c2f8d9e5c2f804fd3",
+  "disclosures": [
+    "Profile raw deltas retain paired personnel effects even when empirical-percentile normalization produces zero aggregate score movement.",
+    "This evidence is a seeded paired replay estimate, not a causal estimate or a calibrated personnel-effect claim."
+  ]
+}

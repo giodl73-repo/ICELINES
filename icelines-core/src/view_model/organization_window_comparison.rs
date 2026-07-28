@@ -32,6 +32,11 @@ pub const ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_SCHEMA: &str =
 pub const ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_JSON_SCHEMA: &str = include_str!(
     "../../../design/schemas/organization_window_personnel_attribution_input.v1.schema.json"
 );
+pub const ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_SCHEMA: &str =
+    "organization_window_personnel_evidence_summary.v1";
+pub const ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_JSON_SCHEMA: &str = include_str!(
+    "../../../design/schemas/organization_window_personnel_evidence_summary.v1.schema.json"
+);
 pub const ORGANIZATION_WINDOW_BRIDGE_JSON_SCHEMA: &str =
     include_str!("../../../design/schemas/organization_window_bridge.v1.schema.json");
 
@@ -160,8 +165,21 @@ pub struct OrganizationWindowPersonnelAttributionInputView {
     pub scenario_id: String,
     pub rationale: String,
     pub events: Vec<WindowPersonnelEventView>,
-    pub scenario_board: OrganizationWindowBoardView,
+    #[serde(default)]
+    pub estimate_basis: WindowPersonnelEstimateBasis,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scenario_board: Option<OrganizationWindowBoardView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub counterfactual_board: Option<OrganizationWindowBoardView>,
     pub scenario_authorities: Vec<WindowScenarioAuthorityView>,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WindowPersonnelEstimateBasis {
+    #[default]
+    EarlierScenario,
+    LaterCounterfactual,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -169,10 +187,40 @@ pub struct WindowPersonnelAttributionView {
     pub attribution_id: String,
     pub scenario_id: String,
     pub estimate_as_of: NaiveDate,
+    #[serde(default)]
+    pub estimate_basis: WindowPersonnelEstimateBasis,
     pub scenario_impact_fingerprint: String,
     pub events: Vec<WindowPersonnelEventView>,
     pub direct_organizations: Vec<String>,
+    #[serde(default)]
+    pub profile_impacts: Vec<WindowScenarioProfileImpactView>,
     pub rationale: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WindowPersonnelEvidenceImpactSummaryView {
+    pub organization: String,
+    pub profile_key: String,
+    pub method_version: String,
+    pub raw_delta: Option<f64>,
+    pub score_delta: Option<f64>,
+    pub kind: WindowScenarioProfileImpactKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationWindowPersonnelEvidenceSummaryView {
+    pub schema: String,
+    pub season: u32,
+    pub earlier_as_of: NaiveDate,
+    pub later_as_of: NaiveDate,
+    pub attribution_id: String,
+    pub estimate_basis: WindowPersonnelEstimateBasis,
+    pub event_count: usize,
+    pub direct_organization_count: usize,
+    pub changed_profile_impacts: Vec<WindowPersonnelEvidenceImpactSummaryView>,
+    pub nonzero_personnel_score_organizations: usize,
+    pub attributed_movement_fingerprint: String,
+    pub disclosures: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -493,11 +541,17 @@ pub fn attribute_organization_window_personnel_movement(
         );
     }
     let canonical_movement = compare_organization_window_snapshots(earlier, later)?;
-    if movement.personnel_attribution.is_some() || movement != canonical_movement {
+    let supplied_movement_fingerprint = source_document_fingerprint(&movement)?;
+    let canonical_movement_fingerprint = source_document_fingerprint(&canonical_movement)?;
+    if movement.personnel_attribution.is_some()
+        || !movement_semantically_equal(&movement, &canonical_movement)?
+    {
+        let mismatch = movement_replay_mismatch(&movement, &canonical_movement);
         return Err(
             OrganizationWindowComparisonError::InvalidPersonnelAttribution(
-                "movement does not replay exactly from the supplied boards or is already attributed"
-                    .to_owned(),
+                format!(
+                    "movement does not replay exactly from the supplied boards or is already attributed: {mismatch} (supplied {supplied_movement_fingerprint}, canonical {canonical_movement_fingerprint})"
+                ),
             ),
         );
     }
@@ -576,12 +630,37 @@ pub fn attribute_organization_window_personnel_movement(
         }
     }
 
-    let impact = compare_organization_window_typed_scenario(
-        &input.scenario_id,
-        earlier,
-        &input.scenario_board,
-        input.scenario_authorities,
-    )?;
+    let (impact, estimate_as_of) =
+        match (
+            input.estimate_basis,
+            input.scenario_board.as_ref(),
+            input.counterfactual_board.as_ref(),
+        ) {
+            (WindowPersonnelEstimateBasis::EarlierScenario, Some(scenario), None) => (
+                compare_organization_window_typed_scenario(
+                    &input.scenario_id,
+                    earlier,
+                    scenario,
+                    input.scenario_authorities,
+                )?,
+                earlier.as_of,
+            ),
+            (WindowPersonnelEstimateBasis::LaterCounterfactual, None, Some(counterfactual)) => (
+                compare_organization_window_typed_scenario(
+                    &input.scenario_id,
+                    counterfactual,
+                    later,
+                    input.scenario_authorities,
+                )?,
+                later.as_of,
+            ),
+            _ => return Err(
+                OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+                    "estimate basis requires exactly its matching scenario or counterfactual board"
+                        .to_owned(),
+                ),
+            ),
+        };
     let impact_fingerprint = source_document_fingerprint(&impact)?
         .strip_prefix("sha256:")
         .expect("source fingerprints are sha256-prefixed")
@@ -591,6 +670,7 @@ pub fn attribute_organization_window_personnel_movement(
         .iter()
         .map(|organization| (organization.organization.as_str(), organization))
         .collect::<BTreeMap<_, _>>();
+    let personnel_profile_impacts = impact.profile_impacts.clone();
     for organization in &mut movement.organizations {
         let estimated = impact_by_organization
             .get(organization.organization.as_str())
@@ -626,10 +706,12 @@ pub fn attribute_organization_window_personnel_movement(
     movement.personnel_attribution = Some(WindowPersonnelAttributionView {
         attribution_id: input.attribution_id,
         scenario_id: input.scenario_id,
-        estimate_as_of: earlier.as_of,
+        estimate_as_of,
+        estimate_basis: input.estimate_basis,
         scenario_impact_fingerprint: impact_fingerprint,
         events: input.events,
         direct_organizations,
+        profile_impacts: personnel_profile_impacts,
         rationale: input.rationale,
     });
     movement.disclosures.push(
@@ -637,6 +719,148 @@ pub fn attribute_organization_window_personnel_movement(
             .to_owned(),
     );
     Ok(movement)
+}
+
+pub fn summarize_organization_window_personnel_evidence(
+    movement: &OrganizationWindowMovementView,
+) -> Result<OrganizationWindowPersonnelEvidenceSummaryView, OrganizationWindowComparisonError> {
+    let attribution = movement.personnel_attribution.as_ref().ok_or_else(|| {
+        OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+            "movement has no typed personnel attribution".to_owned(),
+        )
+    })?;
+    let mut changed_profile_impacts = attribution
+        .profile_impacts
+        .iter()
+        .filter(|profile| {
+            profile.raw_delta.is_some_and(|delta| delta.abs() > 1e-10)
+                || profile.score_delta.is_some_and(|delta| delta.abs() > 1e-10)
+        })
+        .map(|profile| WindowPersonnelEvidenceImpactSummaryView {
+            organization: profile.organization.clone(),
+            profile_key: profile.profile_key.clone(),
+            method_version: profile.method_version.clone(),
+            raw_delta: profile.raw_delta,
+            score_delta: profile.score_delta,
+            kind: profile.kind,
+        })
+        .collect::<Vec<_>>();
+    changed_profile_impacts.sort_by(|left, right| {
+        right
+            .raw_delta
+            .unwrap_or(0.0)
+            .abs()
+            .total_cmp(&left.raw_delta.unwrap_or(0.0).abs())
+            .then_with(|| left.organization.cmp(&right.organization))
+            .then_with(|| left.profile_key.cmp(&right.profile_key))
+    });
+    let fingerprint = source_document_fingerprint(movement)?
+        .strip_prefix("sha256:")
+        .expect("source fingerprints are sha256-prefixed")
+        .to_owned();
+    Ok(OrganizationWindowPersonnelEvidenceSummaryView {
+        schema: ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_SCHEMA.to_owned(),
+        season: movement.season,
+        earlier_as_of: movement.earlier_as_of,
+        later_as_of: movement.later_as_of,
+        attribution_id: attribution.attribution_id.clone(),
+        estimate_basis: attribution.estimate_basis,
+        event_count: attribution.events.len(),
+        direct_organization_count: attribution.direct_organizations.len(),
+        changed_profile_impacts,
+        nonzero_personnel_score_organizations: movement
+            .organizations
+            .iter()
+            .filter(|organization| {
+                organization
+                    .personnel_delta
+                    .is_some_and(|delta| delta.abs() > 1e-10)
+            })
+            .count(),
+        attributed_movement_fingerprint: fingerprint,
+        disclosures: vec![
+            "Profile raw deltas retain paired personnel effects even when empirical-percentile normalization produces zero aggregate score movement."
+                .to_owned(),
+            "This evidence is a seeded paired replay estimate, not a causal estimate or a calibrated personnel-effect claim."
+                .to_owned(),
+        ],
+    })
+}
+
+fn movement_semantically_equal(
+    supplied: &OrganizationWindowMovementView,
+    canonical: &OrganizationWindowMovementView,
+) -> Result<bool, OrganizationWindowComparisonError> {
+    let supplied = serde_json::to_value(supplied).map_err(|error| {
+        OrganizationWindowComparisonError::InvalidPersonnelAttribution(error.to_string())
+    })?;
+    let canonical = serde_json::to_value(canonical).map_err(|error| {
+        OrganizationWindowComparisonError::InvalidPersonnelAttribution(error.to_string())
+    })?;
+    Ok(semantic_json_equal(&supplied, &canonical, 1e-10))
+}
+
+fn semantic_json_equal(
+    left: &serde_json::Value,
+    right: &serde_json::Value,
+    tolerance: f64,
+) -> bool {
+    match (left, right) {
+        (serde_json::Value::Number(left), serde_json::Value::Number(right)) => left
+            .as_f64()
+            .zip(right.as_f64())
+            .is_some_and(|(left, right)| (left - right).abs() <= tolerance),
+        (serde_json::Value::Array(left), serde_json::Value::Array(right)) => {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .zip(right)
+                    .all(|(left, right)| semantic_json_equal(left, right, tolerance))
+        }
+        (serde_json::Value::Object(left), serde_json::Value::Object(right)) => {
+            left.len() == right.len()
+                && left.iter().all(|(key, left)| {
+                    right
+                        .get(key)
+                        .is_some_and(|right| semantic_json_equal(left, right, tolerance))
+                })
+        }
+        _ => left == right,
+    }
+}
+
+fn movement_replay_mismatch(
+    supplied: &OrganizationWindowMovementView,
+    canonical: &OrganizationWindowMovementView,
+) -> String {
+    if supplied.schema != canonical.schema
+        || supplied.season != canonical.season
+        || supplied.earlier_as_of != canonical.earlier_as_of
+        || supplied.later_as_of != canonical.later_as_of
+        || supplied.manifest_fingerprint != canonical.manifest_fingerprint
+        || supplied.source_manifest_fingerprint != canonical.source_manifest_fingerprint
+        || supplied.bridge_fingerprint != canonical.bridge_fingerprint
+        || supplied.earlier_board_fingerprint != canonical.earlier_board_fingerprint
+        || supplied.rebased_earlier_board_fingerprint != canonical.rebased_earlier_board_fingerprint
+        || supplied.later_board_fingerprint != canonical.later_board_fingerprint
+    {
+        return "movement metadata differs".to_owned();
+    }
+    if supplied.organizations.len() != canonical.organizations.len() {
+        return "organization count differs".to_owned();
+    }
+    for (left, right) in supplied.organizations.iter().zip(&canonical.organizations) {
+        if source_document_fingerprint(left).ok() != source_document_fingerprint(right).ok() {
+            return format!("organization {} differs", left.organization);
+        }
+    }
+    if supplied.disclosures != canonical.disclosures {
+        return "movement disclosures differ".to_owned();
+    }
+    if supplied.personnel_attribution != canonical.personnel_attribution {
+        return "movement personnel attribution state differs".to_owned();
+    }
+    "serialized floating-point representation differs".to_owned()
 }
 
 fn personnel_authority_matches_event(
@@ -1136,9 +1360,108 @@ pub fn adapt_team_game_window_personnel_events(
             ),
         );
     }
-    let source_fingerprint = source_document_fingerprint(forecast)?;
-    let mut events = forecast
-        .personnel_evidence
+    personnel_events_from_rows(
+        TEAM_GAME_FORECAST_SCHEMA,
+        source_document_fingerprint(forecast)?,
+        &forecast.personnel_evidence,
+        earlier_as_of,
+        later_as_of,
+    )
+}
+
+/// Select dated personnel observations from a sealed team-season forecast.
+/// This fingerprint matches the authority consumed by the Window expected-
+/// points adapter, enabling a later-checkpoint paired counterfactual.
+pub fn adapt_team_season_window_personnel_events(
+    forecast: &TeamSeasonForecastView,
+    earlier_as_of: NaiveDate,
+    later_as_of: NaiveDate,
+) -> Result<Vec<WindowPersonnelEventView>, OrganizationWindowComparisonError> {
+    if forecast.schema != TEAM_SEASON_FORECAST_SCHEMA || later_as_of <= earlier_as_of {
+        return Err(
+            OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+                "unsupported team-season forecast or invalid attribution interval".to_owned(),
+            ),
+        );
+    }
+    personnel_events_from_rows(
+        TEAM_SEASON_FORECAST_SCHEMA,
+        source_document_fingerprint(forecast)?,
+        &forecast.personnel_evidence,
+        earlier_as_of,
+        later_as_of,
+    )
+}
+
+pub fn build_later_counterfactual_personnel_attribution_input(
+    attribution_id: impl Into<String>,
+    scenario_id: impl Into<String>,
+    rationale: impl Into<String>,
+    forecast: &TeamSeasonForecastView,
+    counterfactual_board: OrganizationWindowBoardView,
+    earlier_as_of: NaiveDate,
+    later_as_of: NaiveDate,
+) -> Result<OrganizationWindowPersonnelAttributionInputView, OrganizationWindowComparisonError> {
+    if forecast.season != counterfactual_board.season
+        || forecast.as_of_date != Some(later_as_of)
+        || counterfactual_board.as_of != later_as_of
+    {
+        return Err(
+            OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+                "forecast and counterfactual board must identify the later checkpoint".to_owned(),
+            ),
+        );
+    }
+    let events = adapt_team_season_window_personnel_events(forecast, earlier_as_of, later_as_of)?;
+    if events.is_empty() {
+        return Err(
+            OrganizationWindowComparisonError::InvalidPersonnelAttribution(
+                "later counterfactual interval has no dated personnel events".to_owned(),
+            ),
+        );
+    }
+    let scenario_authorities = events
+        .iter()
+        .map(|event| WindowScenarioAuthorityView {
+            authority_id: event.event_id.clone(),
+            kind: match event.kind {
+                WindowPersonnelEventKind::Trade => WindowScenarioAuthorityKind::Trade,
+                WindowPersonnelEventKind::Injury | WindowPersonnelEventKind::Activation => {
+                    WindowScenarioAuthorityKind::Injury
+                }
+                _ => WindowScenarioAuthorityKind::Custom,
+            },
+            source_schema: event.source_schema.clone(),
+            source_fingerprint: event.source_fingerprint.clone(),
+            organizations: event.organizations.clone(),
+            profile_methods: vec![scenario_profile(
+                "nhl.expected_points",
+                "icecast_expected_points.v1",
+            )],
+            rationale: format!("Paired IceReplay personnel event: {}", event.label),
+        })
+        .collect();
+    Ok(OrganizationWindowPersonnelAttributionInputView {
+        schema: ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_SCHEMA.to_owned(),
+        attribution_id: attribution_id.into(),
+        scenario_id: scenario_id.into(),
+        rationale: rationale.into(),
+        events,
+        estimate_basis: WindowPersonnelEstimateBasis::LaterCounterfactual,
+        scenario_board: None,
+        counterfactual_board: Some(counterfactual_board),
+        scenario_authorities,
+    })
+}
+
+fn personnel_events_from_rows(
+    source_schema: &str,
+    source_fingerprint: String,
+    rows: &[super::team_game_forecast::TeamGamePersonnelEvidenceRow],
+    earlier_as_of: NaiveDate,
+    later_as_of: NaiveDate,
+) -> Result<Vec<WindowPersonnelEventView>, OrganizationWindowComparisonError> {
+    let mut events = rows
         .iter()
         .filter(|event| event.date > earlier_as_of && event.date <= later_as_of)
         .map(|event| WindowPersonnelEventView {
@@ -1147,7 +1470,7 @@ pub fn adapt_team_game_window_personnel_events(
             kind: personnel_event_kind(event),
             organizations: vec![event.team.clone()],
             label: event.label.clone(),
-            source_schema: TEAM_GAME_FORECAST_SCHEMA.to_owned(),
+            source_schema: source_schema.to_owned(),
             source_fingerprint: source_fingerprint.clone(),
         })
         .collect::<Vec<_>>();
@@ -1164,10 +1487,9 @@ pub fn adapt_team_game_window_personnel_events(
         != events.len()
     {
         return Err(
-            OrganizationWindowComparisonError::InvalidPersonnelAttribution(
-                "team-game forecast contains duplicate personnel event IDs in the interval"
-                    .to_owned(),
-            ),
+            OrganizationWindowComparisonError::InvalidPersonnelAttribution(format!(
+                "{source_schema} contains duplicate personnel event IDs in the interval"
+            )),
         );
     }
     Ok(events)
@@ -1828,7 +2150,9 @@ mod tests {
                 source_schema,
                 source_fingerprint,
             }],
-            scenario_board: scenario,
+            estimate_basis: WindowPersonnelEstimateBasis::EarlierScenario,
+            scenario_board: Some(scenario),
+            counterfactual_board: None,
             scenario_authorities: vec![authority],
         };
 
@@ -1851,8 +2175,54 @@ mod tests {
                 - nyr.method_manifest_delta.unwrap()
                 - nyr.personnel_delta.unwrap()
         );
+
+        let mut legacy_input = serde_json::to_value(&input).unwrap();
+        legacy_input
+            .as_object_mut()
+            .unwrap()
+            .remove("estimate_basis");
+        let legacy_input: OrganizationWindowPersonnelAttributionInputView =
+            serde_json::from_value(legacy_input).unwrap();
+        assert_eq!(
+            legacy_input.estimate_basis,
+            WindowPersonnelEstimateBasis::EarlierScenario
+        );
+        assert!(legacy_input.scenario_board.is_some());
+
+        let mut legacy_movement = serde_json::to_value(&attributed).unwrap();
+        let legacy_attribution = legacy_movement["personnel_attribution"]
+            .as_object_mut()
+            .unwrap();
+        legacy_attribution.remove("estimate_basis");
+        legacy_attribution.remove("profile_impacts");
+        let legacy_movement: OrganizationWindowMovementView =
+            serde_json::from_value(legacy_movement).unwrap();
+        let legacy_attribution = legacy_movement.personnel_attribution.unwrap();
+        assert_eq!(
+            legacy_attribution.estimate_basis,
+            WindowPersonnelEstimateBasis::EarlierScenario
+        );
+        assert!(legacy_attribution.profile_impacts.is_empty());
+
+        let summary = summarize_organization_window_personnel_evidence(&attributed).unwrap();
+        assert_eq!(
+            summary.schema,
+            ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_SCHEMA
+        );
+        assert_eq!(summary.event_count, 1);
+        assert_eq!(summary.direct_organization_count, 1);
+        assert_eq!(summary.changed_profile_impacts[0].organization, "NYR");
+
         let attribution = attributed.personnel_attribution.unwrap();
         assert_eq!(attribution.direct_organizations, ["NYR"]);
+        assert_eq!(
+            attribution.estimate_basis,
+            WindowPersonnelEstimateBasis::EarlierScenario
+        );
+        assert!(attribution.profile_impacts.iter().any(|profile| {
+            profile.organization == "NYR"
+                && profile.raw_delta.is_some_and(|delta| delta.abs() > 0.0)
+        }));
         assert_eq!(attribution.scenario_impact_fingerprint.len(), 64);
 
         let mut tampered = movement.clone();
@@ -1878,6 +2248,105 @@ mod tests {
             attribute_organization_window_personnel_movement(&october, &january, movement, invalid),
             Err(OrganizationWindowComparisonError::InvalidPersonnelAttribution(_))
         ));
+    }
+
+    #[test]
+    fn personnel_attribution_accepts_a_later_checkpoint_counterfactual() {
+        let base = evaluation_board();
+        let earlier = at_checkpoint(
+            base.clone(),
+            NaiveDate::from_ymd_opt(2026, 10, 1).unwrap(),
+            "2026-10-01T00:00:00Z",
+            0.0,
+        );
+        let later = at_checkpoint(
+            base.clone(),
+            NaiveDate::from_ymd_opt(2027, 1, 1).unwrap(),
+            "2027-01-01T00:00:00Z",
+            4.0,
+        );
+        let counterfactual =
+            at_checkpoint(later.clone(), later.as_of, "2027-01-01T00:01:00Z", -4.0);
+        let impact =
+            compare_organization_window_scenario("later-personnel", &counterfactual, &later)
+                .unwrap();
+        let changed_organization = impact
+            .organizations
+            .iter()
+            .find(|organization| {
+                organization.dimensions.iter().any(|dimension| {
+                    dimension
+                        .profiles
+                        .iter()
+                        .any(|profile| profile.raw_delta.is_some_and(|delta| delta.abs() > 0.0))
+                })
+            })
+            .unwrap();
+        let changed = changed_organization
+            .dimensions
+            .iter()
+            .flat_map(|dimension| &dimension.profiles)
+            .find(|profile| profile.raw_delta.is_some_and(|delta| delta.abs() > 0.0))
+            .unwrap();
+        let changed_organization = changed_organization.organization.clone();
+        let later_profile = later
+            .organization(&changed_organization)
+            .unwrap()
+            .dimensions
+            .iter()
+            .flat_map(|dimension| &dimension.profiles)
+            .find(|profile| {
+                profile.profile_key == changed.profile_key
+                    && profile.method_version == changed.method_version
+            })
+            .unwrap();
+        let source_fingerprint = later_profile.source_fingerprints[0].clone();
+        let source_schema = later_profile.evidence[0].source_schema.clone();
+        let movement = compare_organization_window_snapshots(&earlier, &later).unwrap();
+        let input = OrganizationWindowPersonnelAttributionInputView {
+            schema: ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_SCHEMA.to_owned(),
+            attribution_id: "october-to-january-later-counterfactual".to_owned(),
+            scenario_id: "later-personnel".to_owned(),
+            rationale: "Estimate the later checkpoint against a paired counterfactual.".to_owned(),
+            events: vec![WindowPersonnelEventView {
+                event_id: "nyr-transaction-2".to_owned(),
+                effective_date: NaiveDate::from_ymd_opt(2026, 11, 15).unwrap(),
+                kind: WindowPersonnelEventKind::Trade,
+                organizations: vec![changed_organization.clone()],
+                label: "Later-checkpoint transaction".to_owned(),
+                source_schema: source_schema.clone(),
+                source_fingerprint: source_fingerprint.clone(),
+            }],
+            estimate_basis: WindowPersonnelEstimateBasis::LaterCounterfactual,
+            scenario_board: None,
+            counterfactual_board: Some(counterfactual),
+            scenario_authorities: vec![WindowScenarioAuthorityView {
+                authority_id: "nyr-transaction-2".to_owned(),
+                kind: WindowScenarioAuthorityKind::Trade,
+                source_schema,
+                source_fingerprint,
+                organizations: vec![changed_organization.clone()],
+                profile_methods: vec![WindowScenarioProfileMethodView {
+                    profile_key: changed.profile_key.clone(),
+                    method_version: changed.method_version.clone(),
+                }],
+                rationale: "Typed authority for the later-checkpoint transaction.".to_owned(),
+            }],
+        };
+
+        let attributed =
+            attribute_organization_window_personnel_movement(&earlier, &later, movement, input)
+                .unwrap();
+        let attribution = attributed.personnel_attribution.unwrap();
+        assert_eq!(
+            attribution.estimate_basis,
+            WindowPersonnelEstimateBasis::LaterCounterfactual
+        );
+        assert_eq!(attribution.estimate_as_of, later.as_of);
+        assert!(attribution.profile_impacts.iter().any(|profile| {
+            profile.organization == changed_organization
+                && profile.raw_delta.is_some_and(|delta| delta.abs() > 0.0)
+        }));
     }
 
     #[test]
@@ -1945,6 +2414,21 @@ mod tests {
             ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_SCHEMA
         );
         assert_eq!(schema["properties"]["events"]["minItems"], 1);
+    }
+
+    #[test]
+    fn personnel_evidence_summary_schema_is_embedded_json() {
+        let schema: serde_json::Value =
+            serde_json::from_str(ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_JSON_SCHEMA)
+                .unwrap();
+        assert_eq!(
+            schema["properties"]["schema"]["const"],
+            ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_SCHEMA
+        );
+        assert_eq!(
+            schema["properties"]["attributed_movement_fingerprint"]["pattern"],
+            "^[0-9a-f]{64}$"
+        );
     }
 
     fn reweighted_manifest(

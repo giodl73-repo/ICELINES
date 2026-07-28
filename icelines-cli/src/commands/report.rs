@@ -242,6 +242,7 @@ pub async fn run_team_card(args: TeamCardArgs) -> anyhow::Result<()> {
         auto_personnel: false,
         trade_mode: "off".to_string(),
         replay_mode: "frozen".to_string(),
+        ignore_replay_personnel_after: None,
         through: None,
         retrospective_opening_lineups: false,
         all_games: false,

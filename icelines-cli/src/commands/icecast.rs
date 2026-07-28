@@ -65,11 +65,13 @@ use icelines_core::{
 };
 use icelines_core::{
     attribute_organization_window_personnel_movement,
+    build_later_counterfactual_personnel_attribution_input,
     calibrate_organization_window_rolling_origins, evaluate_organization_window_origins,
     load_organization_window_profile_inventory, rebase_organization_window_board,
-    validate_organization_window_board, OrganizationWindowMovementView,
-    OrganizationWindowPersonnelAttributionInputView, WindowCalibrationEvaluationOriginInput,
-    WindowCalibrationOriginInput, WindowCalibrationOriginRole,
+    summarize_organization_window_personnel_evidence, validate_organization_window_board,
+    OrganizationWindowMovementView, OrganizationWindowPersonnelAttributionInputView,
+    WindowCalibrationEvaluationOriginInput, WindowCalibrationOriginInput,
+    WindowCalibrationOriginRole,
 };
 use icelines_fetch::{
     ahl::{
@@ -145,6 +147,7 @@ pub struct IceCastSeasonArgs {
     pub auto_personnel: bool,
     pub trade_mode: String,
     pub replay_mode: String,
+    pub ignore_replay_personnel_after: Option<NaiveDate>,
     pub through: Option<NaiveDate>,
     pub retrospective_opening_lineups: bool,
     pub all_games: bool,
@@ -3644,6 +3647,48 @@ pub fn run_window_personnel_attribution(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn run_window_personnel_input_build(
+    actual_forecast: PathBuf,
+    counterfactual_board: PathBuf,
+    earlier_as_of: NaiveDate,
+    later_as_of: NaiveDate,
+    attribution_id: String,
+    scenario_id: String,
+    rationale: String,
+    out: PathBuf,
+) -> anyhow::Result<()> {
+    let forecast: TeamSeasonForecastView =
+        read_icecast_json(&actual_forecast, "actual team-season forecast")?;
+    let counterfactual: OrganizationWindowBoardView =
+        read_icecast_json(&counterfactual_board, "counterfactual organization Window")?;
+    let input = build_later_counterfactual_personnel_attribution_input(
+        attribution_id,
+        scenario_id,
+        rationale,
+        &forecast,
+        counterfactual,
+        earlier_as_of,
+        later_as_of,
+    )?;
+    write_window_json(
+        &input,
+        Some(&out),
+        "organization Window personnel attribution input",
+    )
+}
+
+pub fn run_window_personnel_summary(input: PathBuf, out: Option<PathBuf>) -> anyhow::Result<()> {
+    let movement: OrganizationWindowMovementView =
+        read_icecast_json(&input, "attributed organization Window movement")?;
+    let summary = summarize_organization_window_personnel_evidence(&movement)?;
+    write_window_json(
+        &summary,
+        out.as_deref(),
+        "organization Window personnel evidence summary",
+    )
+}
+
 pub fn run_window_rebase(
     input: PathBuf,
     target_manifest: PathBuf,
@@ -4125,6 +4170,9 @@ pub(crate) async fn build_season_view(
     args: &IceCastSeasonArgs,
 ) -> anyhow::Result<(TeamSeasonForecastView, Vec<String>, String)> {
     let rolling_replay = args.replay_mode == "rolling";
+    if args.ignore_replay_personnel_after.is_some() && !rolling_replay {
+        bail!("--ignore-replay-personnel-after requires --replay-mode rolling");
+    }
     if args.retrospective_opening_lineups && !rolling_replay {
         bail!("--retrospective-opening-lineups requires --replay-mode rolling");
     }
@@ -4248,7 +4296,17 @@ pub(crate) async fn build_season_view(
                 if let Some(cutoff) = args.through {
                     events.retain(|event| event.date <= cutoff);
                 }
-                (events, None)
+                if let Some(counterfactual_cutoff) = args.ignore_replay_personnel_after {
+                    events.retain(|event| event.date <= counterfactual_cutoff);
+                    (
+                        events,
+                        Some(format!(
+                            "dated personnel evidence after {counterfactual_cutoff} was intentionally omitted for a paired evaluation counterfactual"
+                        )),
+                    )
+                } else {
+                    (events, None)
+                }
             }
             Err(error) => (
                 Vec::new(),

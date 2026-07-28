@@ -33,3 +33,24 @@ the 2026-07-28 method freeze:
 The headline is therefore `inconclusive`. The holdout is a completed historical
 season evaluated after freezing its role; it is not described as an untouched
 future-season result.
+
+## Paired personnel evidence
+
+`personnel-evidence-2024-25.json` seals a separate Jan. 31 -> Feb. 28, 2025
+paired rolling-replay estimate. The actual later checkpoint includes all dated
+personnel evidence known by Feb. 28; the paired counterfactual retains evidence
+through Jan. 31 and omits only later events. Both use 1,000 trials and seed
+`20242025`.
+
+The interval contains 219 dated events across all 32 organizations. Eleven
+organizations have a nonzero raw `nhl.expected_points` effect. No organization
+crosses an empirical-percentile boundary, so aggregate personnel score deltas
+are zero. The checked summary deliberately retains the raw effects and says
+that the result is a paired seeded estimate, not a causal or calibrated claim.
+
+The source forecasts, boards, input, and full attributed movement are generated
+artifacts rather than checked fixtures. Reproduce the counterfactual forecast
+with `icecast season --replay-mode rolling --through 2025-02-28
+--ignore-replay-personnel-after 2025-01-31 --trials 1000 --seed 20242025`, then
+use `window-build`, `window-movement`, `window-personnel-input-build`,
+`window-personnel-attribution`, and `window-personnel-summary` in that order.

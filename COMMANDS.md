@@ -1096,6 +1096,8 @@ icelines icecast window --input window.json --team NYR --markdown --out nyr-wind
 icelines icecast window-card --input window.json --team NYR --team-name "New York Rangers" --out nyr-window-card.json
 icelines icecast window-movement --earlier october.json --later january.json --out window-movement.json
 icelines icecast window-personnel-attribution --earlier october.json --later january.json --movement window-movement.json --input personnel-attribution.json --out attributed-movement.json
+icelines icecast window-personnel-input-build --actual-forecast actual-february.json --counterfactual-board counterfactual-february-window.json --earlier-as-of 2025-01-31 --later-as-of 2025-02-28 --attribution-id january-february --scenario-id paired-replay --rationale "Paired rolling replay" --out personnel-attribution.json
+icelines icecast window-personnel-summary --input attributed-movement.json --out personnel-evidence-summary.json
 icelines icecast window-rebase --input october.json --target-manifest balanced-v2.json --bridge balanced-v1-to-v2-bridge.json --out october-rebased.json
 icelines icecast window-movement --earlier october.json --later january-v2.json --bridge balanced-v1-to-v2-bridge.json --out bridged-movement.json
 icelines icecast window-history --input october.json --input january.json --input march.json --out window-history.json
@@ -1726,6 +1728,12 @@ remainder to the projected final averages.
 can be combined with `--isolated-impacts`; its baseline, natural scenario,
 single-event, and forced-ceiling runs all share the identical fixed-result
 boundary, trials, and seed.
+
+`--ignore-replay-personnel-after YYYY-MM-DD` is a paired-counterfactual tool
+and requires rolling replay. It keeps all personnel evidence through the date
+and omits only later events while leaving the game-results checkpoint intact.
+Use it with the same `--through`, trials, seed, and other inputs as the actual
+later checkpoint; it is not a general-purpose alternate-history switch.
 
 `icecast movement --earlier ... --later ...` builds
 `team_season_forecast_movement.v1` from two complete league artifacts. **The

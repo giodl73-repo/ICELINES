@@ -75,24 +75,48 @@ icelines icecast window-personnel-attribution \
   --movement movement.json \
   --input personnel-attribution.json \
   --out attributed-movement.json
+
+icelines icecast window-personnel-input-build \
+  --actual-forecast actual-february.json \
+  --counterfactual-board counterfactual-february-window.json \
+  --earlier-as-of 2025-01-31 \
+  --later-as-of 2025-02-28 \
+  --attribution-id 2024-25-january-february-personnel \
+  --scenario-id paired-personnel-after-2025-01-31 \
+  --rationale "Paired rolling replay personnel estimate" \
+  --out personnel-attribution.json
+
+icelines icecast window-personnel-summary \
+  --input attributed-movement.json \
+  --out personnel-evidence-summary.json
 ```
 
 `organization_window_personnel_attribution_input.v1` contains dated personnel
-events plus a combined scenario board and typed authorities. The command
-replays the supplied movement from both boards, recomputes the scenario impact
-through the canonical scorer, and then separates observed movement into method,
-estimated personnel, and residual components. Event metadata alone cannot
-produce a numeric delta. The estimate is explicitly counterfactual rather than
-a causal claim, and bridged cross-method movement is not accepted by this v1
-path.
+events, one explicitly selected estimate basis, its matching scenario or
+counterfactual board, and typed authorities. The command replays the supplied
+movement from both boards, recomputes the scenario impact through the canonical
+scorer, and then separates observed movement into method, estimated personnel,
+and residual components. Event metadata alone cannot produce a numeric delta.
+The estimate is explicitly counterfactual rather than a causal claim, and
+bridged cross-method movement is not accepted by this v1 path.
+
+For a paired later-checkpoint replay, `icecast season --replay-mode rolling
+--ignore-replay-personnel-after DATE` retains dated personnel evidence through
+`DATE` while omitting only later events. `window-personnel-input-build` joins
+that counterfactual Window board to the actual later forecast. The compact
+`organization_window_personnel_evidence_summary.v1` preserves nonzero raw
+profile effects even when cohort percentile normalization produces zero
+aggregate score movement. The checked 2024-25 evidence and reproduction order
+live in `examples/window-history/`.
 
 Library consumers can project a sealed `team_season_forecast_history.v1`
 authority into comparable Window checkpoints with
 `build_forecast_history_organization_window_boards`. That adapter deliberately
 creates an NHL-strength-only Frame containing `nhl.expected_points`; it does
 not fill unobserved organization-health panes. The checked 2024-25 history
-therefore supplies real Jan. 31, Feb. 28, and Mar. 31 movement evidence while
-leaving personnel attribution unset.
+supplies real Jan. 31, Feb. 28, and Mar. 31 movement evidence. Its separate
+Jan. 31 -> Feb. 28 paired replay supplies typed personnel attribution for the
+NHL-strength profile without implying that the other panes were observed.
 
 `organization_window_bridge.v1` maps every target profile to exactly one
 source profile and records a finite affine raw-value transform, rationale, and

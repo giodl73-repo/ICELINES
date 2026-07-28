@@ -9,7 +9,6 @@
     "scenario_id",
     "rationale",
     "events",
-    "scenario_board",
     "scenario_authorities"
   ],
   "properties": {
@@ -22,7 +21,16 @@
       "minItems": 1,
       "items": { "$ref": "#/$defs/event" }
     },
+    "estimate_basis": { "enum": ["earlier_scenario", "later_counterfactual"] },
     "scenario_board": {
+      "type": "object",
+      "required": ["schema", "fingerprint"],
+      "properties": {
+        "schema": { "const": "organization_window_board.v1" },
+        "fingerprint": { "$ref": "#/$defs/fingerprint" }
+      }
+    },
+    "counterfactual_board": {
       "type": "object",
       "required": ["schema", "fingerprint"],
       "properties": {
@@ -48,6 +56,18 @@
     }
   },
   "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": { "estimate_basis": { "const": "earlier_scenario" } },
+      "required": ["scenario_board"],
+      "not": { "required": ["counterfactual_board"] }
+    },
+    {
+      "properties": { "estimate_basis": { "const": "later_counterfactual" } },
+      "required": ["estimate_basis", "counterfactual_board"],
+      "not": { "required": ["scenario_board"] }
+    }
+  ],
   "$defs": {
     "fingerprint": { "type": "string", "pattern": "^(sha256:)?[0-9a-f]{64}$" },
     "event": {

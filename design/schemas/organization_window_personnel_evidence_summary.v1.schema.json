@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_window_personnel_evidence_summary.v1.schema.json",
+  "title": "IceLines Organization Window Personnel Evidence Summary v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "season",
+    "earlier_as_of",
+    "later_as_of",
+    "attribution_id",
+    "estimate_basis",
+    "event_count",
+    "direct_organization_count",
+    "changed_profile_impacts",
+    "nonzero_personnel_score_organizations",
+    "attributed_movement_fingerprint",
+    "disclosures"
+  ],
+  "properties": {
+    "schema": { "const": "organization_window_personnel_evidence_summary.v1" },
+    "season": { "type": "integer", "minimum": 19001901 },
+    "earlier_as_of": { "type": "string", "format": "date" },
+    "later_as_of": { "type": "string", "format": "date" },
+    "attribution_id": { "type": "string", "minLength": 1 },
+    "estimate_basis": { "enum": ["earlier_scenario", "later_counterfactual"] },
+    "event_count": { "type": "integer", "minimum": 1 },
+    "direct_organization_count": { "type": "integer", "minimum": 1, "maximum": 32 },
+    "changed_profile_impacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["organization", "profile_key", "method_version", "raw_delta", "score_delta", "kind"],
+        "properties": {
+          "organization": { "type": "string", "minLength": 2 },
+          "profile_key": { "type": "string", "minLength": 1 },
+          "method_version": { "type": "string", "minLength": 1 },
+          "raw_delta": { "type": ["number", "null"] },
+          "score_delta": { "type": ["number", "null"] },
+          "kind": { "enum": ["raw_input", "evidence", "cohort_revaluation", "unchanged"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "nonzero_personnel_score_organizations": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "attributed_movement_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "disclosures": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

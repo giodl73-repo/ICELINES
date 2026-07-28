@@ -1828,6 +1828,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             auto_personnel,
             trade_mode,
             replay_mode,
+            ignore_replay_personnel_after,
             through,
             retrospective_opening_lineups,
             all_games,
@@ -1848,6 +1849,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 auto_personnel,
                 trade_mode,
                 replay_mode,
+                ignore_replay_personnel_after,
                 through,
                 retrospective_opening_lineups,
                 all_games,
@@ -2385,6 +2387,28 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         }) => commands::icecast::run_window_personnel_attribution(
             earlier, later, movement, input, out,
         )?,
+        Commands::Icecast(IceCastSubcommand::WindowPersonnelInputBuild {
+            actual_forecast,
+            counterfactual_board,
+            earlier_as_of,
+            later_as_of,
+            attribution_id,
+            scenario_id,
+            rationale,
+            out,
+        }) => commands::icecast::run_window_personnel_input_build(
+            actual_forecast,
+            counterfactual_board,
+            earlier_as_of,
+            later_as_of,
+            attribution_id,
+            scenario_id,
+            rationale,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::WindowPersonnelSummary { input, out }) => {
+            commands::icecast::run_window_personnel_summary(input, out)?
+        }
         Commands::Icecast(IceCastSubcommand::WindowRebase {
             input,
             target_manifest,

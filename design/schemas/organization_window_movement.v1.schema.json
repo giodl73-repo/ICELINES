@@ -23,9 +23,11 @@
         "attribution_id": { "type": "string", "minLength": 1 },
         "scenario_id": { "type": "string", "minLength": 1 },
         "estimate_as_of": { "type": "string", "format": "date" },
+        "estimate_basis": { "enum": ["earlier_scenario", "later_counterfactual"] },
         "scenario_impact_fingerprint": { "$ref": "#/$defs/fingerprint" },
         "events": { "type": "array", "minItems": 1, "items": { "type": "object" } },
         "direct_organizations": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "profile_impacts": { "type": "array", "minItems": 1, "items": { "type": "object" } },
         "rationale": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false

@@ -202,3 +202,30 @@ authorities, duplicate events, and unsupported sources fail closed. PACE keeps
 the value labeled a counterfactual estimate and assigns all unexplained change
 to the residual. A real paired historical scenario remains the W5 evidence
 gate.
+
+### W5 paired-personnel closeout
+
+HART/TAPE required the estimate basis to be explicit rather than inferred from
+optional boards. The final contract supports an earlier scenario or a later
+counterfactual and requires exactly the board matching the selected basis. It
+also replays the supplied movement, binds every dated event to a typed
+authority, and retains profile-level effects in the attributed movement.
+
+PACE/EDGE reviewed the real Jan. 31 -> Feb. 28, 2025 paired rolling replay.
+The counterfactual retains personnel evidence through Jan. 31 and omits only
+later evidence while preserving the later game checkpoint, 1,000 trials, and
+seed `20242025`. The interval contains 219 dated events. Eleven organizations
+show a nonzero raw expected-points effect, but none crosses a cohort-percentile
+boundary, so all aggregate personnel score deltas are zero. A compact typed
+summary preserves the raw effects and explicitly refuses causal or calibrated
+language.
+
+BENCH/WIRE required tests for both estimate bases, movement tampering,
+out-of-window evidence, source/scope matching, schemas, and CLI parsing. They
+also required numeric-tolerant semantic replay after JSON serialization while
+keeping metadata exact; this fixes false refusal from floating-point round
+trips without weakening deliberate tamper detection.
+
+This closes W5. It does not promote the narrow NHL-strength history to a
+complete multi-pane production board, and it does not satisfy W7's future
+untouched holdout. Those remain the two product gates for the broader Window.

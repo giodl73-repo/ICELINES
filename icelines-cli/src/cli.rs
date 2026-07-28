@@ -1653,6 +1653,9 @@ pub enum IceCastSubcommand {
         /// Forecast evidence mode: off freezes roster strength; rolling uses only earlier results.
         #[arg(long, default_value = "off", value_parser = ["off", "rolling"])]
         replay_mode: String,
+        /// Evaluation counterfactual: omit personnel evidence strictly after this date.
+        #[arg(long)]
+        ignore_replay_personnel_after: Option<chrono::NaiveDate>,
         /// Condition a rolling replay on final results through this date, then simulate the remainder.
         #[arg(long)]
         through: Option<chrono::NaiveDate>,
@@ -1763,6 +1766,34 @@ pub enum IceCastSubcommand {
         later: PathBuf,
         #[arg(long, value_name = "PATH")]
         movement: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build a later-checkpoint personnel counterfactual input from paired IceReplay evidence.
+    #[command(name = "window-personnel-input-build")]
+    WindowPersonnelInputBuild {
+        #[arg(long, value_name = "PATH")]
+        actual_forecast: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        counterfactual_board: PathBuf,
+        #[arg(long)]
+        earlier_as_of: chrono::NaiveDate,
+        #[arg(long)]
+        later_as_of: chrono::NaiveDate,
+        #[arg(long)]
+        attribution_id: String,
+        #[arg(long)]
+        scenario_id: String,
+        #[arg(long)]
+        rationale: String,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Summarize a typed personnel movement artifact for durable evidence review.
+    #[command(name = "window-personnel-summary")]
+    WindowPersonnelSummary {
         #[arg(long, value_name = "PATH")]
         input: PathBuf,
         #[arg(long, value_name = "PATH")]
@@ -2374,6 +2405,46 @@ mod tui_surface_tests {
                 Commands::Icecast(IceCastSubcommand::WindowPersonnelAttribution { .. })
             ));
 
+            let personnel_input = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-personnel-input-build",
+                "--actual-forecast",
+                "actual.json",
+                "--counterfactual-board",
+                "counterfactual.json",
+                "--earlier-as-of",
+                "2025-01-31",
+                "--later-as-of",
+                "2025-02-28",
+                "--attribution-id",
+                "january-february",
+                "--scenario-id",
+                "paired-replay",
+                "--rationale",
+                "Paired replay evidence",
+                "--out",
+                "personnel-input.json",
+            ])
+            .expect("Window personnel input builder should parse");
+            assert!(matches!(
+                personnel_input.command,
+                Commands::Icecast(IceCastSubcommand::WindowPersonnelInputBuild { .. })
+            ));
+
+            let personnel_summary = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-personnel-summary",
+                "--input",
+                "attributed-movement.json",
+            ])
+            .expect("Window personnel summary should parse");
+            assert!(matches!(
+                personnel_summary.command,
+                Commands::Icecast(IceCastSubcommand::WindowPersonnelSummary { .. })
+            ));
+
             let rebase = Cli::try_parse_from([
                 "icelines",
                 "icecast",
@@ -2793,6 +2864,8 @@ mod tui_surface_tests {
                 "plausible",
                 "--replay-mode",
                 "rolling",
+                "--ignore-replay-personnel-after",
+                "2026-12-31",
                 "--through",
                 "2027-01-15",
                 "--retrospective-opening-lineups",
@@ -2816,6 +2889,7 @@ mod tui_surface_tests {
                     auto_personnel,
                     trade_mode,
                     replay_mode,
+                    ignore_replay_personnel_after,
                     through,
                     retrospective_opening_lineups,
                     all_games,
@@ -2834,6 +2908,10 @@ mod tui_surface_tests {
                     assert!(auto_personnel);
                     assert_eq!(trade_mode, "plausible");
                     assert_eq!(replay_mode, "rolling");
+                    assert_eq!(
+                        ignore_replay_personnel_after.unwrap().to_string(),
+                        "2026-12-31"
+                    );
                     assert_eq!(through.unwrap().to_string(), "2027-01-15");
                     assert!(retrospective_opening_lineups);
                     assert!(all_games);
