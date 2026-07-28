@@ -1407,6 +1407,11 @@ seasons under a versioned league-treatment policy. Missing histories and known
 professional leagues without an explicit include/exclude decision withhold
 that player's total. The ledger reports the 260-game threshold test but does
 not infer age exemptions, contracts, assignments, waivers, recalls, or lineups.
+Policies declare `draft`, `provisional`, or `final` authority. Draft and
+provisional runs may calculate threshold, age, and youth-exemption facts for
+review, but only a final policy can certify `development_rule_qualified`.
+Affiliate projection input preserves that certified value separately from its
+raw total; when present, it controls development/veteran classification.
 
 `icecast affiliate-map` emits the dated `ahl_affiliation_catalog.v1` authority
 used to connect all 32 NHL organizations to their current AHL affiliates. For

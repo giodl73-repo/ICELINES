@@ -116,6 +116,8 @@ pub struct AhlProjectionPlayerEnrichment {
     pub recall_readiness: Option<f64>,
     #[serde(default)]
     pub professional_games_at_season_start: Option<u32>,
+    #[serde(default)]
+    pub development_rule_qualified: Option<bool>,
     #[serde(default = "default_true")]
     pub assigned_to_affiliate: bool,
     #[serde(default)]
@@ -2514,6 +2516,8 @@ pub struct AhlProjectionPlayerFacts {
     pub recall_readiness: Option<f64>,
     #[serde(default)]
     pub professional_games_at_season_start: Option<u32>,
+    #[serde(default)]
+    pub development_rule_qualified: Option<bool>,
     #[serde(default = "default_true")]
     pub assigned_to_affiliate: bool,
     #[serde(default)]
@@ -3196,6 +3200,7 @@ pub fn affiliate_projection_input_from_snapshot(
                 prospect: enrichment.prospect,
                 recall_readiness: enrichment.recall_readiness,
                 professional_games_at_season_start: enrichment.professional_games_at_season_start,
+                development_rule_qualified: enrichment.development_rule_qualified,
                 assigned_to_affiliate: enrichment.assigned_to_affiliate,
                 waiver_required: enrichment.waiver_required,
                 source_league: "AHL".to_owned(),
@@ -3338,6 +3343,7 @@ pub fn affiliate_projection_input_from_reviewed_crosswalk(
                 prospect: fact.prospect,
                 recall_readiness: fact.recall_readiness,
                 professional_games_at_season_start: fact.professional_games_at_season_start,
+                development_rule_qualified: fact.development_rule_qualified,
                 assigned_to_affiliate: fact.assigned_to_affiliate,
                 waiver_required: fact.waiver_required,
             })
@@ -4250,6 +4256,7 @@ mod tests {
             prospect: true,
             recall_readiness: Some(0.65),
             professional_games_at_season_start: Some(80),
+            development_rule_qualified: Some(true),
             assigned_to_affiliate: true,
             waiver_required: false,
         };
@@ -4876,6 +4883,7 @@ mod tests {
             prospect: true,
             recall_readiness: Some(0.65),
             professional_games_at_season_start: Some(80),
+            development_rule_qualified: Some(true),
             assigned_to_affiliate: true,
             waiver_required: false,
         };

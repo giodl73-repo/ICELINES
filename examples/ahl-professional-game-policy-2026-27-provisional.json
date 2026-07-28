@@ -1,0 +1,100 @@
+{
+  "schema": "ahl_professional_game_policy.v1",
+  "policy_id": "ahl-development-2026-27.provisional.v1",
+  "authority_status": "provisional",
+  "target_season": 20262027,
+  "as_of": "2026-07-28",
+  "threshold": 260,
+  "source_urls": [
+    "https://theahl.com/faq",
+    "https://theahl.com/news/notes-from-scott-howsons-annual-media-conference",
+    "https://www.amerks.com/assets/doc/2025-26_AHLRuleBook-7cdc4508dc.pdf",
+    "https://echl.com/about/faq"
+  ],
+  "league_treatments": [
+    {
+      "league": "NHL",
+      "kind": "included",
+      "evidence_urls": ["https://theahl.com/faq"],
+      "note": "Explicitly included by the AHL development rule."
+    },
+    {
+      "league": "AHL",
+      "kind": "included",
+      "evidence_urls": ["https://theahl.com/faq"],
+      "note": "Explicitly included by the AHL development rule."
+    },
+    {
+      "league": "ECHL",
+      "kind": "excluded",
+      "evidence_urls": ["https://www.amerks.com/assets/doc/2025-26_AHLRuleBook-7cdc4508dc.pdf"],
+      "note": "The AHL rule enumerates NHL, AHL, and European Elite League games; ECHL is not in that set."
+    },
+    {
+      "league": "KHL",
+      "kind": "european_elite",
+      "evidence_urls": ["https://echl.com/about/faq"],
+      "note": "Top Russian/multinational league; provisionally mapped to the AHL European Elite category pending the 2026-27 rule book."
+    },
+    {
+      "league": "SHL",
+      "kind": "european_elite",
+      "evidence_urls": ["https://echl.com/about/faq"],
+      "note": "Top Swedish league; provisionally mapped to the AHL European Elite category pending the 2026-27 rule book."
+    },
+    {
+      "league": "LIIGA",
+      "kind": "european_elite",
+      "evidence_urls": ["https://echl.com/about/faq"],
+      "note": "Top Finnish league; provisionally mapped to the AHL European Elite category pending the 2026-27 rule book."
+    },
+    {
+      "league": "DEL",
+      "kind": "european_elite",
+      "evidence_urls": ["https://echl.com/about/faq"],
+      "note": "Top German league; provisionally mapped to the AHL European Elite category pending the 2026-27 rule book."
+    },
+    {
+      "league": "NL",
+      "kind": "european_elite",
+      "evidence_urls": ["https://echl.com/about/faq"],
+      "note": "Top Swiss league; provisionally mapped to the AHL European Elite category pending the 2026-27 rule book."
+    },
+    {
+      "league": "CZECHIA",
+      "kind": "european_elite",
+      "evidence_urls": ["https://echl.com/about/faq"],
+      "note": "Provider abbreviation for the top Czech league; provisionally mapped pending the 2026-27 rule book."
+    },
+    {
+      "league": "SLOVAKIA",
+      "kind": "european_elite",
+      "evidence_urls": ["https://echl.com/about/faq"],
+      "note": "Provider abbreviation for the top Slovak league; provisionally mapped pending the 2026-27 rule book."
+    },
+    {
+      "league": "MESTIS",
+      "kind": "excluded",
+      "evidence_urls": ["https://echl.com/about/faq"],
+      "note": "The official comparison authority names Finland's top league; Mestis is retained separately and provisionally excluded."
+    },
+    {
+      "league": "ALLSVENSKAN",
+      "kind": "excluded",
+      "evidence_urls": ["https://echl.com/about/faq"],
+      "note": "The official comparison authority names Sweden's top league; Allsvenskan is retained separately and provisionally excluded."
+    }
+  ],
+  "age_qualification": {
+    "cutoff_date": "2026-07-01",
+    "automatically_qualifies_under_age": 25,
+    "evidence_urls": ["https://www.amerks.com/assets/doc/2025-26_AHLRuleBook-7cdc4508dc.pdf"],
+    "note": "The preceding rule book automatically qualifies players who have not turned 25 before July 1; retained provisionally pending the 2026-27 rule book."
+  },
+  "european_elite_youth_exemption": {
+    "maximum_non_overage_age": 19,
+    "evidence_urls": ["https://www.amerks.com/assets/doc/2025-26_AHLRuleBook-7cdc4508dc.pdf"],
+    "note": "European Elite games played while CHL-eligible, excluding the over-age year, are exempt; age 19 is the provisional birth-year implementation boundary."
+  },
+  "methodology": "Count preceding regular seasons only. Apply exact provider league treatments, split European Elite youth-exempt games, and calculate age on July 1. The 2026-27 policy remains provisional until the new-season rule book confirms inherited age and youth-exemption language."
+}

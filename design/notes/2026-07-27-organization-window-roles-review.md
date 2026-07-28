@@ -447,3 +447,15 @@ league abbreviations still need treatment. SCOUT/EDGE required the output to
 say `within_game_threshold`, not `development_player`: age qualification and
 the European CHL-eligibility exemption can change final rule status and must
 not be hidden inside a raw total.
+
+WIRE/EDGE required a policy-authority state as well. The provisional exact-
+league mapping resolves 1,323/1,323 game totals and separately exposes 8,780
+youth-exempt European games across 181 players, but deliberately certifies zero
+final classifications. Only a `final` policy can populate that field; publishing
+the new-season rule book is an authority change, not a code edit.
+
+FORGE/SCOUT then caught the downstream compatibility issue: the existing core
+optimizer classified from 260 games alone and could mislabel an automatically
+age-qualified player. The player contract now carries the final reviewed rule
+qualification beside its raw total. New composition must provide it; legacy
+documents retain the count fallback so saved artifacts do not break.

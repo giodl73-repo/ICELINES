@@ -197,6 +197,18 @@ and 87 SHL appearances. The adapter reports only the 260-game threshold test;
 age qualification, European youth-season exemptions, and assignment authority
 remain independent gates.
 
+The provisional policy exercises those independent gates without promoting
+them: all 1,323 totals resolve, 1,010 fall within the raw threshold, 313 exceed
+it, and 8,780 games across 181 players are retained as European youth-exempt.
+Because the policy authority is not `final`, all 1,323 final qualification
+fields remain withheld pending the published 2026-27 rule book.
+
+Core no longer forces all consumers to repeat the old count-only
+classification bug. Affiliate inputs and views preserve a separate final
+`development_rule_qualified` fact, which overrides threshold fallback when a
+reviewed policy supplies it. The forthcoming league facts composer must require
+that final field before promoting a preseason affiliate projection.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

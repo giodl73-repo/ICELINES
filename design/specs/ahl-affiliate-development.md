@@ -296,6 +296,23 @@ classification. The age-based qualification and European elite games played
 while CHL-eligible remain separate rule facts that must be modeled before the
 ledger can author projection-ready classification.
 
+The policy authority axis is `draft`, `provisional`, or `final`. A provisional
+2026-27 policy now resolves all observed exact league abbreviations using the
+2025-26 rule book, the official 2026 CBA-change description, and a separately
+sourced top-European-league mapping. It produces 1,323/1,323 totals with zero
+unresolved players: 1,010 are at or below 260 games and 313 are above; 181
+players have 8,780 European youth-season games separated from the count. It
+emits zero final qualification values because the 2026-27 rule book has not yet
+confirmed the inherited age and youth-exemption clauses.
+
+Affiliate player input now carries `development_rule_qualified` independently
+from `professional_games_at_season_start`. A final reviewed policy may classify
+an under-age player as development-qualified even above 260 raw counted games;
+the projection optimizer honors that reviewed result. Older inputs without the
+new field retain threshold-only behavior for compatibility, but the production
+Window composition path must require final policy authority rather than rely on
+the fallback.
+
 Historical replay uses season-dated catalogs rather than applying the current
 affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves
 the official 2021-22 shared Charlotte affiliation as two relationship rows

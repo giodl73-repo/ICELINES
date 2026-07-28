@@ -2924,8 +2924,8 @@ fn render_affiliate_professional_games(view: &AhlProfessionalGameLedgerView) -> 
     let mut out = String::new();
     let _ = writeln!(
         out,
-        "AHL PROFESSIONAL-GAME LEDGER — {} — policy {}",
-        view.target_season, view.policy_id
+        "AHL PROFESSIONAL-GAME LEDGER — {} — policy {} ({:?})",
+        view.target_season, view.policy_id, view.policy_authority_status
     );
     let _ = writeln!(
         out,

@@ -1,6 +1,7 @@
 {
   "schema": "ahl_professional_game_policy.v1",
   "policy_id": "ahl-development-2026-27.partial.v1",
+  "authority_status": "draft",
   "target_season": 20262027,
   "as_of": "2026-07-28",
   "threshold": 260,
