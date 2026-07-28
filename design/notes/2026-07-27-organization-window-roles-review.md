@@ -13,6 +13,10 @@ BENCH, EDGE, WIRE, SCOUT, GLASS, CREST, and broadcast.
 
 **GO WITH CHANGES — all review findings are incorporated in the draft.**
 
+The 2026-07-28 consolidation review below supersedes this planning verdict for
+the current implementation state while retaining the original findings as the
+design record.
+
 The architecture is sound after revision: typed profile observations feed a
 sealed declarative Frame, hierarchical core scoring produces one complete
 league board, and all surfaces consume the same UI-neutral documents. Weight
@@ -299,3 +303,91 @@ and 32 values. The audit still reports 0/32 rank-eligible organizations, so
 PACE keeps the board evaluation-only while six required profiles remain
 incomplete. No AHL identity, prospect, or future-holdout evidence was inferred
 to improve that result.
+
+## 2026-07-28 consolidated plan and extensibility review
+
+**Reviewed:** the current implementation, the 13/16 real source audit, the
+prospect-cohort correction, and the consolidated delivery tracks in the plan.
+
+**Verdict: GO FOR THE CONSOLIDATED PLAN. KEEP PRODUCTION RANKING AND PREDICTIVE
+CLAIMS GATED.**
+
+The role panel agrees that the architecture is already extensible in the right
+places. The remaining work is primarily authority assembly and evidence, not a
+new scoring engine or renderer rewrite. The plan now separates source
+completeness, predictive evidence, and extension maturity so success in one
+cannot silently promote another.
+
+| Role | Finding | Plan response |
+|---|---|---|
+| HART | Prospect, affiliate, goalie, season, and cutoff identities must remain typed axes; an automatic convenience path must produce the same canonical artifacts as the explicit path. | S1 reuses typed builders and S2 requires season-aware affiliation/assignment facts. New methods or schema semantics version rather than mutate existing boards. |
+| KEEL | A new convenience command is acceptable only if core/fetch/CLI and all renderers still converge on one package and board. Fantasy and simulation must consume Window outputs rather than create sibling formulas. | Fetch owns source composition, core owns hockey logic, CLI only orchestrates, and the extension backlog explicitly routes new consumers through sealed artifacts. |
+| TAPE | The 13/16 audit is honest. BOS/UTA goalie gaps and all-league AHL identity gaps cannot be repaired with stale rosters, guessed affiliations, or averages. | S2 requires reviewed crosswalks; S3 either introduces a typed, newly versioned translation authority or preserves missingness. Proxy filling is forbidden. |
+| FORGE | The next code slice should be a small library composition API with thin CLI wiring, explicit conflicts, typed errors, and no repository-relative runtime dependency. | S1 defaults through configured cache paths, permits an explicit override, and composes existing builders instead of duplicating them in `main.rs`. |
+| PACE | Production-ranked, calibrated, and custom are different statistical claims. A 16/16 board is not thereby predictive, and a new goalie scale cannot inherit v1 semantics. | The three delivery tracks and product labels are explicit. S3 requires a method-version decision; the future holdout is an independent calendar gate. |
+| BENCH | Parity between the explicit and automatic prospect paths is more valuable than another happy-path snapshot. Crosswalk and goalie decisions need adversarial fixtures. | S1 acceptance requires artifact-semantic parity, order invariance, offline execution, exclusions, and FLA coverage. S2 covers shared affiliates, trades, loans, relocation, ambiguity, and missing teams. |
+| EDGE | Likely failures are duplicate authorities, camp/artifact conflicts, missing birth dates, one-goalie rosters, provider-ID collisions, shared affiliates, and a future result accidentally used during tuning. | The plan calls for explicit option conflicts, typed exclusions, ambiguity failures, conservative goalie missingness, and a pre-frozen untouched holdout protocol. |
+| WIRE | Cache defaults and overrides must be part of a stable CLI contract; nested artifacts need schema/fingerprint validation before assembly. Source replacement may require a new method version even when JSON still parses. | S1 seals source fingerprints and keeps explicit overrides. The extension protocol requires source dependency/version declarations and compatibility fixtures. |
+| SCOUT | Rookie eligibility is a legitimate candidate-pool signal, but it is not proof of readiness. AHL recalls and goalie projections must preserve hockey roles and uncertainty. | Candidate selection remains separate from exact age/workload filters and prospect scoring. S2/S3 keep assignment, readiness, and translated projection evidence distinct. |
+| GLASS | Users need one legible readiness state, not internal workstream jargon or a falsely precise rank. Missing evidence should tell them what can be done next. | Surfaces continue to show rank status, coverage, blockers, and evidence. The four product labels provide compact, consistent language across CLI/TUI/Web/cards. |
+| CREST | Extensibility should not turn The Window into a wall of profiles or generic dashboard controls. Official Frames need editorial restraint. | New Lines enter the registry first, not `balanced.v1`; admission requires a named decision benefit and ablation/sensitivity evidence. Pane hierarchy stays primary. |
+| broadcast | Saved Web views require stable Frame/artifact identity and bookmarkable context. A local cache path or uploaded manifest cannot become hidden browser state. | Cache composition remains an acquisition/CLI concern. Web consumes registered, fingerprinted boards and keeps season/as-of/Frame state in the URL. |
+
+### Reconciled decisions
+
+1. **Automate composition, not judgment.** S1 may automate deterministic joins
+   over reviewed inputs. S2 identity resolution and S3 method selection retain
+   explicit human review where the source cannot establish the fact.
+2. **Do not make 16/16 the only useful state.** Evaluation artifacts remain
+   first-class and inspectable, while `--require-ranked` protects official
+   ranking publication.
+3. **Do not make 16/16 a predictive claim.** Calibration is target-specific and
+   remains open until a genuinely later untouched holdout is scored.
+4. **Prefer additive extension.** New Lines and Frames reuse the registry and
+   scorer; formula/source-semantic changes get new method versions; saved boards
+   remain immutable; unlike boards need a reviewed bridge.
+5. **Keep official Frames curated.** Computability is necessary but not
+   sufficient. Each addition needs source authority, leakage safety, a signal
+   family budget, and evidence that it improves a named decision.
+
+### Review gates for the next implementation slice
+
+- HART/KEEL: automatic prospect composition produces the canonical existing
+  program/package shapes and introduces no second business-logic path.
+- TAPE/WIRE: configured career cache, explicit override, captured cutoff,
+  nested schemas, and fingerprints are inspectable and validated.
+- PACE/SCOUT: `prospect || rookie_eligible` only broadens the candidate pool;
+  exact age, workload, readiness, confidence, and exclusions still govern the
+  resulting evidence.
+- BENCH/EDGE: FLA's 24-year-old rookie-only case, missing identity, duplicate
+  authority, option conflict, order invariance, offline run, and explicit-vs-
+  automatic parity are regression-tested.
+- GLASS/CREST/broadcast: no surface redesign is needed for S1; the existing
+  rank-withheld/coverage language must remain accurate when the package is
+  rebuilt.
+
+### S1 cache-native prospect closeout
+
+HART/KEEL verified that the new fetch-owned composition result retains the
+typed context, discovery, and program stages while the CLI only selects a cache
+path and inserts the resulting canonical program board. No renderer or source
+package adapter gained prospect scoring logic.
+
+TAPE/SCOUT accepted the candidate-pool correction from `prospect` alone to
+`prospect || rookie_eligible` because exact dated age, official career history,
+NHL workload, study eligibility, and the separate 50-game program graduation
+boundary still govern inclusion and scoring. Missing birth dates remain typed
+context exclusions.
+
+PACE/BENCH/EDGE compared the real cache-native and explicit July 28 paths. Both
+produce 32 programs from 162 studies: 94 ranked and 68 graduated. All 96 values
+across 32 organizations and the three prospect Lines match on raw value,
+normalized score, league rank, and sample size. The full package remains 13/16
+required profiles and 0/32 rank eligible. This proves composition parity
+without weakening the source gate.
+
+WIRE/FORGE verified the configured cache default, explicit path override,
+empty-cache diagnostic, option conflicts, order invariance, focused tests,
+447-test fetch suite, and strict production lint. The different source
+fingerprint is intentional when the explicit path retains extra overlay
+citations; it does not change the Window values.

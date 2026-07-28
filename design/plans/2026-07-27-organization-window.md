@@ -1,6 +1,6 @@
 # The Window — Organization Health Implementation Plan
 
-**Date:** 2026-07-27
+**Date:** 2026-07-27 (consolidated 2026-07-28)
 **Status:** Active — foundation, evaluation surfaces, historical origins,
 within-season movement/personnel attribution, and scenario sensitivity
 implemented; production coverage and a future untouched holdout remain open
@@ -40,7 +40,7 @@ preserved while the remaining work is completed:
 |---|---|---|---|
 | W0 | complete | 37-profile machine-readable inventory: 17 ready, 13 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
 | W1-W2 | complete | Versioned observations/manifests/boards, deterministic fingerprints, validation, normalization, aggregation, confidence/coverage, rank gates | Cross-platform fingerprint matrix in W9. |
-| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate | Complete reviewed all-league AHL identity/assignment facts plus the remaining prospect and organization-development authorities, then pass `--require-ranked`. |
+| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate. The July 28 real package completes 13/16 required profiles. | Automate the proven prospect assembly path; complete reviewed all-league AHL identity/assignment facts for organization and recall depth; define an honest non-NHL goalie evidence method or retain the BOS/UTA gap; then pass `--require-ranked`. |
 | W5 | complete | Comparable movement/history contracts, refusal tests, immutable bridge/rebase, a real three-checkpoint 2024-25 IceCast history, both earlier-scenario and later-counterfactual attribution bases, and a real Jan. 31 -> Feb. 28 paired rolling-replay personnel artifact with 219 dated events | Preserve raw profile effects when percentile normalization yields zero aggregate movement; keep the paired estimate explicitly non-causal and uncalibrated. |
 | W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
 | W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed claim status, frozen training/validation/retrospective-holdout roles, and four real point-in-time observed-history origins | Trial-noise propagation and future untouched-holdout evidence; the current retrospective holdout is explicitly inconclusive. |
@@ -83,6 +83,137 @@ Every pull request that alters Window semantics includes a change note naming:
 3. compatibility behavior for saved artifacts;
 4. newly valid and invalid comparisons; and
 5. VTRACE evidence added or intentionally still open.
+
+## Consolidated delivery tracks
+
+The remaining work advances through three independent promotion tracks. A
+track may improve without implying that either of the others is complete.
+
+| Track | Current state | Promotion target | Hard gate |
+|---|---|---|---|
+| **Source completeness** | 13/16 required `balanced.v1` profiles complete; 0/32 teams rank eligible | Reproducible all-league package with every required profile value | `window-source-audit` reports 16/16 complete and `window-build --require-ranked` succeeds without proxies |
+| **Predictive evidence** | Four frozen historical origins; retrospective holdout inconclusive | Claims calibrated by target and horizon | A genuinely later untouched holdout, leakage pass, baseline comparison, and claim-specific acceptance rule |
+| **Extension maturity** | Typed registry, manifests, bridges, scenarios, shared renderers, and authoring contract implemented | Safe addition or alteration of profiles, panes, Frames, sources, and schemas | Compatibility fixtures, method/version decision, role review, VTRACE mapping, and surface parity for each promoted extension |
+
+These tracks define the product labels:
+
+- **evaluation**: a valid board may be partial and rank-withheld;
+- **production-ranked**: source completeness passed for the selected Frame;
+- **calibrated**: a named prediction claim passed its separate untouched-holdout
+  gate; and
+- **custom**: a valid user Frame, always labeled by manifest fingerprint and
+  never conflated with an official Frame.
+
+## Current execution tranche — source completion
+
+Execute this tranche in dependency order. Each stage seals a useful artifact
+and remains independently reversible.
+
+### S1 — Cache-native prospect composition — implemented 2026-07-28
+
+Turn the already proven camp -> career context -> career discovery -> prospect
+program chain into one fetch-owned source assembly option for
+`window-source-package`.
+
+- Select camp candidates marked `prospect` **or** `rookie_eligible`, then apply
+  exact dated age and NHL-workload gates.
+- Read the configured career-history cache, with an explicit path override for
+  reproducible/offline runs; do not depend on repository-relative data files.
+- Reuse the existing typed builders for context, discovery, goalie studies, and
+  the 32-team prospect board. The CLI orchestrates but does not score.
+- Conflict with an explicitly supplied prospect-program artifact rather than
+  silently choosing one authority.
+- Seal intermediate/source fingerprints and disclose excluded identities.
+
+**Acceptance:** the automatic path produces 32 programs and the same three
+complete prospect profiles as the explicit artifact path, including FLA's
+rookie-only candidate; focused, full fetch, parser, order-invariance, offline,
+and package-audit tests pass.
+
+Implementation evidence: the real July 28 automatic and explicit paths each
+produce 32 programs from 162 studies (94 ranked, 68 graduated). All 96
+organization/profile comparisons across prospect pool, development, and
+readiness have identical raw values, normalized scores, ranks, and sample
+sizes. The cache-native full package retains the honest 13/16 required-profile
+audit and 0/32 rank eligibility. Artifact fingerprints differ intentionally
+when the explicit path carries additional repository-overlay citations.
+
+### S2 — Reviewed NHL/AHL organization composition
+
+Create and review season-aware NHL/AHL affiliation, player-identity, and
+assignment facts, then build all 32 affiliate projections through the existing
+organization-lineup primitive.
+
+- Keep provider-local IDs outside canonical core identity until reviewed.
+- Represent shared, changed, missing, and historical affiliations explicitly.
+- Enforce AHL veteran-development rules in AHL roster/line construction without
+  treating those rules as NHL prospect quality.
+- Preserve source capture time and the Window cutoff on every join.
+- Do not reuse current affiliations for historical replay without dated
+  authority.
+
+**Acceptance:** `development.organization_depth` and
+`development.recall_depth` have eligible values for all season-canonical teams;
+ambiguous identities remain typed review failures; affiliation and assignment
+fixtures cover relocation, shared affiliates, trades, loans, and missing clubs.
+
+### S3 — Goalie dependency authority decision
+
+The current official snapshot yields one scored goalie for BOS and no scored
+2025-26 NHL sample for UTA's second goalie. Choose method semantics before
+filling those values.
+
+- Preferred extension: introduce a newly versioned dependency method that can
+  translate a typed non-NHL or projection authority onto the goalie-quality
+  scale with explicit uncertainty.
+- Conservative option: keep `lineup_goalie_dependency.v1` missing for BOS/UTA
+  until qualifying NHL evidence exists.
+- Forbidden option: inject stale former-team goalies, zero, league average, or
+  an unlabeled camp score to make the audit green.
+
+**Acceptance:** PACE/TAPE review approves the method and evidence, or the Frame
+is deliberately versioned to make goalie dependency non-required. Existing
+saved boards retain their original semantics either way.
+
+### S4 — Production-rank gate and evidence package
+
+Rebuild from a clean configured cache with no network, audit the package, run
+`--require-ranked`, and publish the exact source/board fingerprints with the
+release evidence.
+
+**Acceptance:** 16/16 required profiles complete, 32/32 teams rank eligible,
+all shared parity/canonical replay/package checks remain green, and no blocked
+source claim was promoted by proxy.
+
+## Next predictive tranche — future holdout
+
+This tranche is calendar-gated, not coding-gated. Before outcomes become known,
+freeze the next origin, manifest, sources, targets, baselines, exclusions, and
+acceptance thresholds. After the target period closes, score it once and retain
+the result whether favorable or not. Trial-level uncertainty propagation may
+land earlier, but it cannot substitute for the untouched holdout.
+
+## Extension backlog lanes
+
+New capability should enter the smallest applicable lane instead of expanding
+`balanced.v1` by default:
+
+1. **New Lines:** cap, injury concentration, shift chemistry, management
+   behavior, player-development variants, and prospect conversion.
+2. **New Frames:** `win_now`, `sustainable`, and `rebuild`, each with one primary
+   horizon and independently reviewed family caps.
+3. **New authorities:** verified cap, supported shifts, injury/availability,
+   and dated qualitative research promotion methods.
+4. **New consumers:** fantasy draft/morning/trade views and simulation cards
+   consume sealed Window profiles or boards; they do not fork scoring logic.
+5. **New seasons:** the season catalog, affiliations, cutoffs, schedule, and
+   holdout roles are data/configuration inputs rather than hardcoded 2026-27
+   branches.
+
+An extension is not added to an official Frame merely because it can be
+computed. It must improve a named decision, clear source and leakage review,
+fit within a signal-family budget, and survive an ablation or sensitivity
+test.
 
 ## Workstream map
 
@@ -384,10 +515,13 @@ prototype against fixtures but cannot own business logic or claim parity before
 W4-W7 gates are met.
 
 Current W3-W4 acquisition checkpoint (2026-07-28): the real all-league package
-completes 10/16 required profiles after cache-aligned schedule, frozen team
-strength, and official NHL special-teams TOI integration. Rankings remain
-withheld at 0/32. Next acquisition priority is reviewed all-league prospect and
-organization/AHL authority; W7 remains a genuinely future untouched holdout.
+completes 13/16 required profiles after cache-aligned schedule, frozen team
+strength, official NHL special-teams TOI, and the explicit 32-team prospect
+program path. Rankings remain withheld at 0/32. The missing required methods
+are organization depth (0/32), recall depth (0/32), and goalie dependency
+(30/32; BOS and UTA missing). S1 automates prospect composition without changing
+its hockey semantics; S2-S3 own the remaining source decisions. W7 remains a
+genuinely future untouched holdout.
 
 ## Crate ownership
 

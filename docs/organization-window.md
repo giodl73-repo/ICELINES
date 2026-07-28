@@ -44,7 +44,8 @@ icelines icecast window-source-package \
   --cache-team-lineups \
   --stats-season 20252026 \
   --ahl-affiliate hartford.json \
-  --prospect-program prospects.json \
+  --training-camp camp.json \
+  --cache-prospect-program \
   --out window-sources.json
 
 icelines icecast window-source-audit \
@@ -82,6 +83,14 @@ depth without duplicating lineup logic in the CLI. Unmatched teams remain
 missing, and an explicit organization lineup for the same derived team is an
 authority conflict. Official AHL provider IDs still require reviewed canonical
 identity and assignment facts before they can enter an affiliate projection.
+`--cache-prospect-program` composes the sealed training-camp pool with the
+configured official NHL landing career-history cache through the same typed
+context, career-discovery, goalie-study, and prospect-program builders used by
+the individual commands. `--career-history PATH` is an optional reproducibility
+override. The cache path conflicts with an explicit `--prospect-program`, uses
+the package cutoff for exact age, includes prospect- or rookie-eligible camp
+candidates, and preserves missing identity/history as exclusions rather than
+using repository-relative roster or bio files.
 `organization_window_source_coverage.v1` audits each of the 17 configured
 profile methods independently: observations, score-eligible values, exact
 missing organizations, required-profile completion, and rank-eligible teams.
@@ -97,11 +106,13 @@ An absent report stays `None`; it is never converted to a zero-deployment
 claim.
 
 The July 28 real-source replay contains all 32 NHL lineups, the 32-team season
-and game forecasts, and the sealed training-camp authority. Its source audit
-completes 10 of 16 required `balanced.v1` profiles. Both deployment profiles
-now contain values for all 32 organizations; rankings remain correctly
-withheld for every organization while the six remaining required profiles are
-incomplete.
+and game forecasts, the sealed training-camp authority, and an explicit
+32-team prospect-program artifact. Its source audit completes 13 of 16 required
+`balanced.v1` profiles. The remaining required gaps are organization depth
+(0/32), recall depth (0/32), and goalie dependency (30/32; BOS and UTA
+missing). Rankings remain correctly withheld for every organization. IceLines
+does not fill those gaps with stale affiliations, former-team goalies, zero, or
+league-average proxies.
 
 Markdown reports retain season, cutoff, Frame, manifest/board fingerprints,
 league coverage, rank status, confidence, coverage, pane state, focused-team

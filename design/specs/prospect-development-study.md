@@ -228,6 +228,15 @@ age, or multiple camp organizations remain typed exclusions. Like the AHL
 draft, its opportunity, availability, and attention fields must stay neutral
 unless the artifact is deliberately promoted to authored context.
 
+Window source assembly may run this chain directly with
+`window-source-package --training-camp PATH --cache-prospect-program`. The
+fetch-owned composer uses the configured official landing career cache (or an
+explicit `--career-history` override), exact package cutoff, and the canonical
+context/discovery/program builders. It does not consult repository-relative
+rosters, bios, or overlays. A camp candidate enters the draft when marked as a
+prospect or rookie-eligible, but exact age, career evidence, NHL workload, and
+the normal program graduation boundary still govern the resulting study.
+
 `prospect-program --career-discovery` composes these studies with reviewed AHL
 discovery. When both adapters contain the same player, reviewed AHL facts take
 precedence and career discovery fills gaps, preventing duplicate program credit.

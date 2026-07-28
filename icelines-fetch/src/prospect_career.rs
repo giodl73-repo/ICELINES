@@ -10,13 +10,14 @@ use chrono::{Datelike, NaiveDate};
 use icelines_core::career_history::{CareerGameType, CareerHistory, LeagueTier};
 use icelines_core::{
     build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_goalie_development_study, ProspectAvailabilityStatus,
-    ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput,
-    ProspectDevelopmentStudyView, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentSeasonInput,
-    ProspectGoalieDevelopmentStudyConfig, ProspectGoalieDevelopmentStudyInput,
-    ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectOpportunityStatus,
-    ProspectStudyEvidenceInput, TrainingCampLeagueForecastView, TrainingCampPlayerView,
-    TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA,
+    build_prospect_goalie_development_study, build_prospect_program_board_with_goalies,
+    ProspectAvailabilityStatus, ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig,
+    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardView,
+    ProspectGoalieDevelopmentSeasonInput, ProspectGoalieDevelopmentStudyConfig,
+    ProspectGoalieDevelopmentStudyInput, ProspectGoalieDevelopmentStudyView,
+    ProspectNhlGamesAuthority, ProspectOpportunityStatus, ProspectProgramBoardConfig,
+    ProspectProgramBoardView, ProspectStudyEvidenceInput, TrainingCampLeagueForecastView,
+    TrainingCampPlayerView, TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 
@@ -54,10 +55,13 @@ impl Default for ProspectCareerContextDraftConfig {
     }
 }
 
-/// Create neutral prospect context from the league training-camp pool. The
-/// camp's prospect flag selects the pool, while identity facts only establish
-/// age and optional NHL workload. Forecast probability never becomes authored
-/// opportunity, availability, or public-attention evidence.
+/// Create neutral prospect context from the league training-camp pool. Camp
+/// prospect or rookie eligibility selects the candidate pool, while the exact
+/// dated age ceiling and NHL-workload facts decide who remains. This retains
+/// 24-year-old rookie candidates that the automatic camp's conservative
+/// `prospect` flag (age 23 and under) intentionally excludes. Forecast
+/// probability never becomes authored opportunity, availability, or
+/// public-attention evidence.
 pub fn build_prospect_career_context_draft(
     forecast: TrainingCampLeagueForecastView,
     identities: Vec<ProspectCareerContextIdentityInput>,
@@ -100,7 +104,7 @@ pub fn build_prospect_career_context_draft(
         for player in team_forecast
             .players
             .into_iter()
-            .filter(|player| player.prospect)
+            .filter(|player| player.prospect || player.rookie_eligible)
         {
             candidates
                 .entry(player.player_id)
@@ -188,7 +192,7 @@ pub fn build_prospect_career_context_draft(
         players,
         exclusions,
         disclosures: vec![
-            "The pool contains players marked as prospects by the supplied league training-camp artifact. Automatic camp pools use age-based prospect estimates; this is a coverage draft, not an authored scouting list.".to_owned(),
+            "The pool contains players marked as prospects or rookie-eligible by the supplied league training-camp artifact, then applies the exact dated age ceiling and NHL workload. Automatic camp flags are estimates; this is a coverage draft, not an authored scouting list.".to_owned(),
             "Birth date and optional NHL workload come from supplied identity facts. Camp make probability and projected score do not become opportunity, attention, or development evidence.".to_owned(),
             "Opportunity is none, availability is unknown, and attention is neutral 0.5 until separately sourced research promotes this draft to authored context.".to_owned(),
             "Players missing usable identity facts, above the age ceiling, or assigned to multiple organizations remain visible as typed exclusions.".to_owned(),
@@ -231,6 +235,72 @@ pub struct ProspectCareerDiscoveryView {
     pub excluded: Vec<ProspectCareerExclusionView>,
     pub board: ProspectDiscoveryBoardView,
     pub disclosures: Vec<String>,
+}
+
+/// Pure composition result used by Window source assembly. Keeping each typed
+/// stage makes exclusions and neutral-context guarantees inspectable without
+/// introducing another durable schema or moving prospect logic into the CLI.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProspectCareerProgramComposition {
+    pub context: ProspectLeagueContext,
+    pub discovery: ProspectCareerDiscoveryView,
+    pub program: ProspectProgramBoardView,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProspectCareerProgramConfig {
+    pub context: ProspectCareerContextDraftConfig,
+    pub skater_study: ProspectDevelopmentStudyConfig,
+    pub goalie_study: ProspectGoalieDevelopmentStudyConfig,
+    pub program: ProspectProgramBoardConfig,
+}
+
+/// Compose the official landing career cache and a sealed league camp forecast
+/// through the same context, discovery, and program builders exposed by the
+/// individual commands. The career store is identity and career authority;
+/// camp probabilities never become readiness or development evidence.
+pub fn build_prospect_program_from_camp_and_career_store(
+    forecast: TrainingCampLeagueForecastView,
+    store: &CareerHistoryStore,
+    config: ProspectCareerProgramConfig,
+) -> Result<ProspectCareerProgramComposition, String> {
+    let identities = store
+        .birth_dates
+        .iter()
+        .filter_map(|(key, birth_date)| {
+            let player_id = key.parse::<u32>().ok()?;
+            Some(ProspectCareerContextIdentityInput {
+                player_id,
+                birth_date: birth_date.clone(),
+                nhl_games_played: store
+                    .get(player_id)
+                    .map(regular_season_nhl_games)
+                    .unwrap_or_default(),
+                evidence: vec![ProspectStudyEvidenceInput {
+                    label: "Official NHL player landing identity".to_owned(),
+                    source_url: format!("https://api-web.nhle.com/v1/player/{player_id}/landing"),
+                }],
+            })
+        })
+        .collect();
+    let context = build_prospect_career_context_draft(forecast, identities, config.context)?;
+    let discovery = build_prospect_career_discovery(
+        context.clone(),
+        store,
+        config.skater_study,
+        config.goalie_study,
+    )?;
+    let program = build_prospect_program_board_with_goalies(
+        discovery.studies.clone(),
+        discovery.goalie_studies.clone(),
+        None,
+        config.program,
+    )?;
+    Ok(ProspectCareerProgramComposition {
+        context,
+        discovery,
+        program,
+    })
 }
 
 /// Adapt recognized non-NHL/non-AHL regular-season career rows. Comparisons
@@ -290,14 +360,7 @@ pub fn build_prospect_career_discovery(
             ));
             continue;
         };
-        let nhl_games_played = history
-            .stints
-            .iter()
-            .filter(|stint| {
-                stint.game_type == CareerGameType::Regular
-                    && stint.league.as_str().eq_ignore_ascii_case("NHL")
-            })
-            .fold(0_u32, |total, stint| total.saturating_add(stint.gp));
+        let nhl_games_played = regular_season_nhl_games(history);
         let mut evidence = player.evidence;
         evidence.push(ProspectStudyEvidenceInput {
             label: "Official NHL player landing career totals".to_owned(),
@@ -388,6 +451,17 @@ pub fn build_prospect_career_discovery(
             "Goalie rates are games-played weighted because the landing feed does not provide enough shared fields to reconstruct every historical rate exactly.".to_owned(),
         ],
     })
+}
+
+fn regular_season_nhl_games(history: &CareerHistory) -> u32 {
+    history
+        .stints
+        .iter()
+        .filter(|stint| {
+            stint.game_type == CareerGameType::Regular
+                && stint.league.as_str().eq_ignore_ascii_case("NHL")
+        })
+        .fold(0_u32, |total, stint| total.saturating_add(stint.gp))
 }
 
 fn eligible_league(history: &CareerHistory, index: usize) -> bool {
@@ -684,14 +758,35 @@ mod tests {
 
     #[test]
     fn drafts_neutral_context_from_camp_prospect_identity() {
+        let mut forecast = camp_forecast();
+        let mut rookie_only = forecast.teams[0].forecast.as_ref().unwrap().players[0].clone();
+        rookie_only.player_id = 12;
+        rookie_only.display_name = "24-year-old Rookie".to_owned();
+        rookie_only.prospect = false;
+        rookie_only.rookie_eligible = true;
+        forecast.teams[0]
+            .forecast
+            .as_mut()
+            .unwrap()
+            .players
+            .push(rookie_only);
+
         let view = build_prospect_career_context_draft(
-            camp_forecast(),
-            vec![ProspectCareerContextIdentityInput {
-                player_id: 11,
-                birth_date: "2005-01-02".to_owned(),
-                nhl_games_played: 7,
-                evidence: vec![],
-            }],
+            forecast,
+            vec![
+                ProspectCareerContextIdentityInput {
+                    player_id: 11,
+                    birth_date: "2005-01-02".to_owned(),
+                    nhl_games_played: 7,
+                    evidence: vec![],
+                },
+                ProspectCareerContextIdentityInput {
+                    player_id: 12,
+                    birth_date: "2001-10-01".to_owned(),
+                    nhl_games_played: 4,
+                    evidence: vec![],
+                },
+            ],
             ProspectCareerContextDraftConfig::default(),
         )
         .unwrap();
@@ -699,7 +794,7 @@ mod tests {
             view.authority,
             ProspectLeagueContextAuthority::ObservedDraft
         );
-        assert_eq!(view.players.len(), 1);
+        assert_eq!(view.players.len(), 2);
         assert_eq!(view.players[0].organization, "SEA");
         assert_eq!(view.players[0].nhl_games_played, 7);
         assert_eq!(view.players[0].opportunity, ProspectOpportunityStatus::None);
@@ -708,6 +803,133 @@ mod tests {
             ProspectAvailabilityStatus::Unknown
         );
         assert_eq!(view.players[0].attention_score, 0.5);
+        assert_eq!(view.players[1].player_id, 12);
+        assert_eq!(view.players[1].age, 24);
+    }
+
+    fn camp_with_rookie_only_candidate() -> TrainingCampLeagueForecastView {
+        let mut forecast = camp_forecast();
+        let mut rookie = forecast.teams[0].forecast.as_ref().unwrap().players[0].clone();
+        rookie.player_id = 12;
+        rookie.display_name = "24-year-old Rookie".to_owned();
+        rookie.prospect = false;
+        rookie.rookie_eligible = true;
+        forecast.teams[0]
+            .forecast
+            .as_mut()
+            .unwrap()
+            .players
+            .push(rookie);
+        forecast
+    }
+
+    fn career_store_for_camp() -> CareerHistoryStore {
+        let mut store = CareerHistoryStore::new();
+        for (player_id, birth_date) in [(11, "2005-01-02"), (12, "2001-10-01")] {
+            store.upsert_birth_date(player_id, birth_date);
+            store.upsert(CareerHistory {
+                player_id,
+                stints: vec![
+                    stint(20232024, "WHL", 50, 10, 20),
+                    stint(20242025, "WHL", 50, 20, 30),
+                ],
+            });
+        }
+        store
+    }
+
+    #[test]
+    fn composes_cache_native_program_through_canonical_builders() {
+        let forecast = camp_with_rookie_only_candidate();
+        let store = career_store_for_camp();
+        let config = ProspectCareerProgramConfig::default();
+        let composed =
+            build_prospect_program_from_camp_and_career_store(forecast.clone(), &store, config)
+                .unwrap();
+
+        let identities = [11, 12]
+            .into_iter()
+            .map(|player_id| ProspectCareerContextIdentityInput {
+                player_id,
+                birth_date: store.birth_date(player_id).unwrap().to_owned(),
+                nhl_games_played: 0,
+                evidence: vec![ProspectStudyEvidenceInput {
+                    label: "Official NHL player landing identity".to_owned(),
+                    source_url: format!("https://api-web.nhle.com/v1/player/{player_id}/landing"),
+                }],
+            })
+            .collect();
+        let context =
+            build_prospect_career_context_draft(forecast, identities, config.context).unwrap();
+        let discovery = build_prospect_career_discovery(
+            context,
+            &store,
+            config.skater_study,
+            config.goalie_study,
+        )
+        .unwrap();
+        let explicit = build_prospect_program_board_with_goalies(
+            discovery.studies,
+            discovery.goalie_studies,
+            None,
+            config.program,
+        )
+        .unwrap();
+
+        assert_eq!(composed.program, explicit);
+        assert_eq!(composed.context.players.len(), 2);
+        assert_eq!(composed.context.players[1].player_id, 12);
+        assert_eq!(composed.context.players[1].age, 24);
+        assert_eq!(composed.program.organizations, 1);
+    }
+
+    #[test]
+    fn cache_native_composition_is_order_invariant_and_exposes_missing_identity() {
+        let forward = camp_with_rookie_only_candidate();
+        let mut reverse = forward.clone();
+        reverse.teams[0]
+            .forecast
+            .as_mut()
+            .unwrap()
+            .players
+            .reverse();
+        let complete_store = career_store_for_camp();
+        let mut reversed_store = CareerHistoryStore::new();
+        for player_id in [12, 11] {
+            reversed_store
+                .upsert_birth_date(player_id, complete_store.birth_date(player_id).unwrap());
+            reversed_store.upsert(complete_store.get(player_id).unwrap().clone());
+        }
+        let left = build_prospect_program_from_camp_and_career_store(
+            forward.clone(),
+            &complete_store,
+            ProspectCareerProgramConfig::default(),
+        )
+        .unwrap();
+        let right = build_prospect_program_from_camp_and_career_store(
+            reverse,
+            &reversed_store,
+            ProspectCareerProgramConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(left.program, right.program);
+
+        let mut partial_store = CareerHistoryStore::new();
+        partial_store.upsert_birth_date(11, "2005-01-02");
+        partial_store.upsert(complete_store.get(11).unwrap().clone());
+        partial_store.upsert(complete_store.get(12).unwrap().clone());
+        let partial = build_prospect_program_from_camp_and_career_store(
+            forward,
+            &partial_store,
+            ProspectCareerProgramConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(partial.context.players.len(), 1);
+        assert_eq!(partial.context.exclusions.len(), 1);
+        assert_eq!(
+            partial.context.exclusions[0].reason,
+            ProspectLeagueContextExclusionReason::MissingBirthDate
+        );
     }
 
     #[test]

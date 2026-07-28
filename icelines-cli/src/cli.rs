@@ -1789,6 +1789,12 @@ pub enum IceCastSubcommand {
         organization_lineups: Vec<PathBuf>,
         #[arg(long, value_name = "PATH")]
         prospect_program: Option<PathBuf>,
+        /// Build the prospect program from training camp and the configured career cache.
+        #[arg(long, conflicts_with = "prospect_program", requires = "training_camp")]
+        cache_prospect_program: bool,
+        /// Override the configured official NHL landing career-history cache.
+        #[arg(long, value_name = "PATH", requires = "cache_prospect_program")]
+        career_history: Option<PathBuf>,
         #[arg(long, value_name = "PATH")]
         prospect_conversion: Option<PathBuf>,
         #[arg(long, value_name = "PATH")]
@@ -2467,6 +2473,58 @@ mod tui_surface_tests {
                 source_package.command,
                 Commands::Icecast(IceCastSubcommand::WindowSourcePackage { .. })
             ));
+
+            let cache_prospects = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--season",
+                "20262027",
+                "--as-of",
+                "2026-07-28",
+                "--training-camp",
+                "camp.json",
+                "--cache-prospect-program",
+                "--career-history",
+                "career.json",
+                "--out",
+                "window-sources.json",
+            ])
+            .expect("cache-native prospect package should parse");
+            assert!(matches!(
+                cache_prospects.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourcePackage {
+                    cache_prospect_program: true,
+                    career_history: Some(_),
+                    ..
+                })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--as-of",
+                "2026-07-28",
+                "--cache-prospect-program",
+                "--out",
+                "window-sources.json",
+            ])
+            .is_err());
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--as-of",
+                "2026-07-28",
+                "--training-camp",
+                "camp.json",
+                "--cache-prospect-program",
+                "--prospect-program",
+                "program.json",
+                "--out",
+                "window-sources.json",
+            ])
+            .is_err());
 
             let source_audit = Cli::try_parse_from([
                 "icelines",

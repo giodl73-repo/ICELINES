@@ -86,8 +86,9 @@ pub use organization_window_history::{
 pub use playoffs_bundle::PlayoffsBundle;
 pub use prospect_career::{
     build_prospect_career_context_draft, build_prospect_career_discovery,
-    ProspectCareerContextDraftConfig, ProspectCareerContextIdentityInput,
-    ProspectCareerDiscoveryView, ProspectCareerExclusionReason, ProspectCareerExclusionView,
+    build_prospect_program_from_camp_and_career_store, ProspectCareerContextDraftConfig,
+    ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectCareerExclusionReason,
+    ProspectCareerExclusionView, ProspectCareerProgramComposition, ProspectCareerProgramConfig,
     PROSPECT_CAREER_DISCOVERY_SCHEMA,
 };
 pub use prospect_discovery::{

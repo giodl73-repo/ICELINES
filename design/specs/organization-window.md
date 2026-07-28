@@ -1,9 +1,9 @@
 # The Window — Organization Health and Competitive Window
 
-**Status:** Draft — 12-role review applied
-**Date:** 2026-07-27
+**Status:** Implemented for evaluation — production source and future-holdout gates open
+**Date:** 2026-07-27 (consolidated 2026-07-28)
 **Owner:** IceCast organization intelligence
-**Surface coverage:** CLI planned · TUI planned · Web/API planned · JSON planned · Card planned
+**Surface coverage:** CLI implemented · TUI implemented · Web/API implemented · JSON implemented · Card implemented
 **Plan:** [`../plans/2026-07-27-organization-window.md`](../plans/2026-07-27-organization-window.md)
 **Review:** [`../notes/2026-07-27-organization-window-roles-review.md`](../notes/2026-07-27-organization-window-roles-review.md)
 

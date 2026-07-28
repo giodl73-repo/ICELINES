@@ -104,7 +104,7 @@ use icelines_fetch::{
     build_historical_organization_window_origin, build_organization_window_standings_snapshot,
     build_prospect_career_context_draft, build_prospect_career_discovery,
     build_prospect_league_context_draft, build_prospect_league_discovery,
-    build_shift_overlap_report,
+    build_prospect_program_from_camp_and_career_store, build_shift_overlap_report,
     bundled::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
         get_stats_installed, load_transactions_with_fallback,
@@ -125,9 +125,9 @@ use icelines_fetch::{
     stats_loader::load_into_repo,
     NhlApiClient, OfficialShiftChartRow, OrganizationWindowHistoricalOriginArtifact,
     OrganizationWindowStandingsSnapshot, ProspectCareerContextDraftConfig,
-    ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectLeagueContext,
-    ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView, ScenarioRegistryStore,
-    ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
+    ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectCareerProgramConfig,
+    ProspectLeagueContext, ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView,
+    ScenarioRegistryStore, ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
     PROSPECT_CAREER_DISCOVERY_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
@@ -3370,6 +3370,8 @@ pub struct WindowSourcePackageArgs {
     pub ahl_affiliates: Vec<PathBuf>,
     pub organization_lineups: Vec<PathBuf>,
     pub prospect_program: Option<PathBuf>,
+    pub cache_prospect_program: bool,
+    pub career_history: Option<PathBuf>,
     pub prospect_conversion: Option<PathBuf>,
     pub training_camp: Option<PathBuf>,
     pub schedule_rest: Vec<PathBuf>,
@@ -3478,6 +3480,42 @@ pub fn run_window_source_package(args: WindowSourcePackageArgs) -> anyhow::Resul
         })?;
         package.team_lineups =
             super::report::load_league_team_lineup_views(roster_season, stats_season)?;
+    }
+    if args.cache_prospect_program {
+        let career_history_path = args
+            .career_history
+            .unwrap_or(Config::load()?.career_history_path());
+        let store = CareerHistoryStore::load(&career_history_path).with_context(|| {
+            format!(
+                "read Window prospect career cache {}",
+                career_history_path.display()
+            )
+        })?;
+        if store.histories.is_empty() || store.birth_dates.is_empty() {
+            bail!(
+                "Window prospect composition requires populated career histories and birth dates in {}; run `icelines fetch career --camp-forecast <camp.json>` first",
+                career_history_path.display()
+            );
+        }
+        let forecast = package
+            .training_camp
+            .clone()
+            .context("--cache-prospect-program requires a training-camp authority")?;
+        let composition = build_prospect_program_from_camp_and_career_store(
+            forecast,
+            &store,
+            ProspectCareerProgramConfig {
+                context: ProspectCareerContextDraftConfig {
+                    as_of_date: args.as_of,
+                    ..ProspectCareerContextDraftConfig::default()
+                },
+                ..ProspectCareerProgramConfig::default()
+            },
+        )
+        .map_err(anyhow::Error::msg)?;
+        package.prospect_program = Some(composition.program);
+    }
+    if args.cache_team_lineups || args.cache_prospect_program {
         package.fingerprint.clear();
         package = seal_organization_window_source_package(package)?;
     }
