@@ -566,11 +566,27 @@ its per-game home/away contexts. It rejects schema/season mismatch, duplicate
 game identity, non-canonical opponents, and duplicate explicit/derived team
 profiles. It never invents observations for teams absent from the schedule.
 
+Sealed AHL affiliate projections may also be embedded independently of final
+organization-lineup documents. Core joins them to matching NHL lineup
+authorities through the existing `organization_lineup_forecast.v1` builder,
+preserving its affiliation, season, development-rule, complete-lineup, and
+cross-level identity gates. Missing counterparts remain missing; supplying an
+explicit organization lineup for a derived team is rejected as competing
+authority. Provider-local AHL IDs never become canonical player IDs without a
+reviewed crosswalk.
+
 `organization_window_source_coverage.v1` audits acquisition independently from
 scoring. For all 17 configured profile methods it records source-observation
 count, score-eligible value count, exact missing organizations, and required
 status, then reports required-profile and rank-eligible-team totals. Board
 league coverage must not substitute for this report.
+
+Cache-built NHL lineups use typed `SeasonStats.time_on_ice` evidence for
+special-teams roles. The fetch boundary joins official
+`skater/timeonice` rows by NHL player ID and preserves DI-09 semantics: a
+missing report or player row is missing evidence, while a present row with
+zero seconds is a real zero. The adapter rounds fractional per-game seconds to
+the nearest whole second and retains exact aggregate seconds and shift rates.
 
 ## Calibration and validation
 

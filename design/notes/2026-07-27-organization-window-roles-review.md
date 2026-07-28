@@ -264,3 +264,38 @@ documents. Schedule fatigue likewise derives in core from the sealed
 forecasts create only represented-team profiles, duplicate games or teams fail
 closed, and the source audit remains the authority on whether league coverage
 is genuinely complete.
+
+FORGE/KEEL applied the same rule to affiliate composition. The CLI may resolve
+files and caches, but it does not rebuild NHL/AHL lines or recall ladders.
+Sealed `ahl_affiliate_projection.v1` documents are paired with matching NHL
+lineups in core and passed through The System's existing validation. TAPE keeps
+unmatched teams missing and rejects explicit and derived organization lineups
+for the same club as competing authority. The available full 2025-26 AHL
+snapshot is acquisition evidence, not permission to copy provider-local IDs or
+invent 2026-27 assignments; reviewed league crosswalk and projection facts
+remain the production gate.
+
+### Frozen strength and special-teams acquisition checkpoint
+
+TAPE found that a sealed preseason `team_season_forecast.v1` carries stable
+home/away strength on every game even though `opening_strengths` is reserved
+for dated replay. Core now derives `nhl.team_strength` only when those game
+features are undated and stable for the team; any dated or rolling evidence
+suppresses the fallback. EDGE also found that partial-league season simulation
+could reach playoff indexing and panic. The simulator now fails explicitly
+unless all 32 canonical NHL teams and eight teams per division are present.
+
+FORGE then traced empty special-teams units past the lineup builder to an
+unfinished Lindsay boundary: IceLines fetched official
+`skater/timeonice`, but `load_into_repo` never merged it into
+`SeasonStats.time_on_ice`. The production loader now uses the existing Tier-1
+file and season fence, joins rows by canonical NHL player ID, and preserves
+missing-versus-zero semantics. BENCH added a repository-path regression proving
+both the populated and absent cases.
+
+The same real 32-team replay moved from 8/16 to 10/16 complete required
+profiles. Power-play depth and penalty-kill depth each have 32 observations
+and 32 values. The audit still reports 0/32 rank-eligible organizations, so
+PACE keeps the board evaluation-only while six required profiles remain
+incomplete. No AHL identity, prospect, or future-holdout evidence was inferred
+to improve that result.

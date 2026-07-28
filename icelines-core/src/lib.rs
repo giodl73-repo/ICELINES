@@ -163,6 +163,7 @@ pub use view_model::organization_window_adapters::{
     build_balanced_organization_window_board,
     build_balanced_organization_window_board_from_package,
     build_forecast_history_organization_window_boards,
+    build_organization_lineup_forecasts_from_affiliates,
     build_schedule_rest_profiles_from_game_forecast,
     require_ranked_balanced_organization_window_board, seal_organization_window_source_package,
     OrganizationWindowAdapterContext, OrganizationWindowSourceCoverageView,

@@ -6,12 +6,14 @@ use chrono::NaiveDate;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
+use super::ahl_affiliate::{AhlAffiliateProjectionView, AHL_AFFILIATE_PROJECTION_SCHEMA};
 use super::line_combination::{LineCombinationForecastView, LINE_COMBINATION_FORECAST_SCHEMA};
 use super::management_behavior::{
     build_schedule_rest_profile, BenchScheduleLoad, ScheduleRestGameInput, ScheduleRestProfileView,
     SCHEDULE_REST_PROFILE_SCHEMA,
 };
 use super::organization_lineup::{
+    build_organization_lineup_forecast, OrganizationLineupForecastInput,
     OrganizationLineupForecastView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
 };
 use super::organization_window::{
@@ -65,6 +67,7 @@ pub struct OrganizationWindowSourceSet<'a> {
     pub team_season_forecast: Option<&'a TeamSeasonForecastView>,
     pub team_game_forecast: Option<&'a TeamGameForecastView>,
     pub team_lineups: &'a [TeamLineupProjectionView],
+    pub ahl_affiliates: &'a [AhlAffiliateProjectionView],
     pub organization_lineups: &'a [OrganizationLineupForecastView],
     pub prospect_program: Option<&'a ProspectProgramBoardView>,
     pub prospect_conversion: Option<&'a ProspectConversionBoardView>,
@@ -88,6 +91,8 @@ pub struct OrganizationWindowSourcePackageView {
     pub team_game_forecast: Option<TeamGameForecastView>,
     #[serde(default)]
     pub team_lineups: Vec<TeamLineupProjectionView>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ahl_affiliates: Vec<AhlAffiliateProjectionView>,
     #[serde(default)]
     pub organization_lineups: Vec<OrganizationLineupForecastView>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -134,6 +139,7 @@ impl OrganizationWindowSourcePackageView {
             team_season_forecast: self.team_season_forecast.as_ref(),
             team_game_forecast: self.team_game_forecast.as_ref(),
             team_lineups: &self.team_lineups,
+            ahl_affiliates: &self.ahl_affiliates,
             organization_lineups: &self.organization_lineups,
             prospect_program: self.prospect_program.as_ref(),
             prospect_conversion: self.prospect_conversion.as_ref(),
@@ -150,6 +156,9 @@ impl OrganizationWindowSourcePackageView {
             .sort_by(|left, right| left.team.cmp(&right.team));
         canonical
             .organization_lineups
+            .sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
+        canonical
+            .ahl_affiliates
             .sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
         canonical
             .schedule_rest
@@ -193,6 +202,9 @@ pub fn seal_organization_window_source_package(
         .sort_by(|left, right| left.team.cmp(&right.team));
     package
         .organization_lineups
+        .sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
+    package
+        .ahl_affiliates
         .sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
     package
         .schedule_rest
@@ -547,6 +559,59 @@ pub fn adapt_balanced_organization_window_sources(
                 Vec::new(),
             ));
         }
+        if forecast.opening_strengths.is_empty()
+            && forecast.replay_checkpoint.is_none()
+            && forecast
+                .games
+                .iter()
+                .all(|game| game.evidence_cutoff_date.is_none())
+        {
+            let mut frozen_strengths = BTreeMap::<String, Vec<f64>>::new();
+            for game in &forecast.games {
+                for (team, strength) in [
+                    (&game.away_team, game.away_strength),
+                    (&game.home_team, game.home_strength),
+                ] {
+                    if !expected.contains(team) || !strength.is_finite() {
+                        return Err(OrganizationWindowError::InvalidProfileInput(
+                            "frozen team-season game strengths require canonical teams and finite values"
+                                .to_owned(),
+                        ));
+                    }
+                    frozen_strengths
+                        .entry(team.clone())
+                        .or_default()
+                        .push(strength);
+                }
+            }
+            for (team, values) in frozen_strengths {
+                let first = values[0];
+                if values.iter().any(|value| (value - first).abs() > 1e-9) {
+                    return Err(OrganizationWindowError::InvalidProfileInput(format!(
+                        "frozen team-season forecast has dynamic strength for {team}"
+                    )));
+                }
+                require_team(&team, &expected, &mut seen_strength, "frozen strength")?;
+                let coverage = (values.len() as f64 / 84.0).min(1.0);
+                output.push(input(
+                    context,
+                    "nhl.team_strength",
+                    "icecast_team_strength.v1",
+                    &team,
+                    "strength_points",
+                    Some(first),
+                    values.len() as u64,
+                    coverage,
+                    coverage,
+                    WindowProfileStatus::Modeled,
+                    evidence.clone(),
+                    vec![
+                        "Strength is the frozen preseason IceCast game feature; rolling replay and dated evidence-cutoff rows are excluded to prevent future-result leakage."
+                            .to_owned(),
+                    ],
+                ));
+            }
+        }
         let mut seen_points = BTreeSet::new();
         for row in &forecast.teams {
             require_team(&row.team, &expected, &mut seen_points, "season forecast")?;
@@ -571,6 +636,8 @@ pub fn adapt_balanced_organization_window_sources(
     adapt_organization_lineups(
         context,
         &expected,
+        sources.team_lineups,
+        sources.ahl_affiliates,
         sources.organization_lineups,
         &mut output,
     )?;
@@ -890,14 +957,87 @@ fn adapt_lineups(
     Ok(())
 }
 
+/// Join every represented NHL lineup to its sealed AHL affiliate projection.
+/// Missing counterparts remain missing rather than producing synthetic depth.
+pub fn build_organization_lineup_forecasts_from_affiliates(
+    team_lineups: &[TeamLineupProjectionView],
+    affiliates: &[AhlAffiliateProjectionView],
+) -> Result<Vec<OrganizationLineupForecastView>, OrganizationWindowError> {
+    let expected = canonical_teams();
+    let mut lineups = BTreeMap::new();
+    for lineup in team_lineups {
+        require_schema("team lineup", &lineup.schema, TEAM_LINEUP_PROJECTION_SCHEMA)?;
+        if !expected.contains(&lineup.team) {
+            return Err(OrganizationWindowError::InvalidProfileInput(format!(
+                "team lineup contains unknown team {}",
+                lineup.team
+            )));
+        }
+        if lineups.insert(lineup.team.as_str(), lineup).is_some() {
+            return Err(OrganizationWindowError::DuplicateProfileInput(format!(
+                "team lineup:{}",
+                lineup.team
+            )));
+        }
+    }
+    let mut by_team = BTreeMap::new();
+    for affiliate in affiliates {
+        require_schema(
+            "AHL affiliate",
+            &affiliate.schema,
+            AHL_AFFILIATE_PROJECTION_SCHEMA,
+        )?;
+        if !expected.contains(&affiliate.nhl_team) {
+            return Err(OrganizationWindowError::InvalidProfileInput(format!(
+                "AHL affiliate contains unknown NHL team {}",
+                affiliate.nhl_team
+            )));
+        }
+        if by_team
+            .insert(affiliate.nhl_team.as_str(), affiliate)
+            .is_some()
+        {
+            return Err(OrganizationWindowError::DuplicateProfileInput(format!(
+                "AHL affiliate:{}",
+                affiliate.nhl_team
+            )));
+        }
+    }
+    by_team
+        .into_iter()
+        .filter_map(|(team, affiliate)| lineups.get(team).map(|lineup| (*lineup, affiliate)))
+        .map(|(lineup, affiliate)| {
+            build_organization_lineup_forecast(&OrganizationLineupForecastInput {
+                nhl_lineup: lineup.clone(),
+                ahl_affiliate: affiliate.clone(),
+            })
+            .map_err(|message| {
+                OrganizationWindowError::InvalidProfileInput(format!(
+                    "organization lineup composition failed for {}: {message}",
+                    affiliate.nhl_team
+                ))
+            })
+        })
+        .collect()
+}
+
 fn adapt_organization_lineups(
     context: &OrganizationWindowAdapterContext,
     expected: &BTreeSet<String>,
+    team_lineups: &[TeamLineupProjectionView],
+    affiliates: &[AhlAffiliateProjectionView],
     forecasts: &[OrganizationLineupForecastView],
     output: &mut Vec<OrganizationProfileInput>,
 ) -> Result<(), OrganizationWindowError> {
+    if affiliates
+        .iter()
+        .any(|affiliate| affiliate.season != context.season)
+    {
+        return Err(context_error("AHL affiliate season"));
+    }
+    let derived = build_organization_lineup_forecasts_from_affiliates(team_lineups, affiliates)?;
     let mut seen = BTreeSet::new();
-    for forecast in forecasts {
+    for forecast in forecasts.iter().chain(derived.iter()) {
         require_schema(
             "organization lineup",
             &forecast.schema,
@@ -1548,6 +1688,11 @@ fn dimension(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::Position;
+    use crate::view_model::ahl_affiliate::{
+        build_ahl_affiliate_projection, AhlAffiliatePlayerInput, AhlAffiliateProjectionInput,
+        AhlDevelopmentRuleInput,
+    };
     use crate::view_model::organization_window::{
         seal_organization_window_manifest, WindowProfileReadiness,
     };
@@ -1556,6 +1701,74 @@ mod tests {
         build_team_game_forecast, TeamForecastGameInput, TeamForecastParameters,
         TeamForecastStrengthInput,
     };
+    use crate::view_model::team_season_forecast::{
+        simulate_team_season_forecast, TeamSeasonSimulationConfig,
+    };
+
+    fn test_nyr_affiliate() -> AhlAffiliateProjectionView {
+        let mut players = Vec::new();
+        for index in 0..12 {
+            let position = if index < 4 {
+                Position::Center
+            } else if index % 2 == 0 {
+                Position::LeftWing
+            } else {
+                Position::RightWing
+            };
+            players.push(AhlAffiliatePlayerInput {
+                player_id: 9_100_000 + index,
+                display_name: format!("Hartford Forward {}", index + 1),
+                primary_position: position,
+                eligible_positions: vec![position],
+                projected_score: 70.0 - index as f64,
+                prospect: true,
+                recall_readiness: Some(0.9 - index as f64 * 0.02),
+                professional_games_at_season_start: Some(100),
+                assigned_to_affiliate: true,
+                waiver_required: false,
+                source_league: "AHL".to_owned(),
+            });
+        }
+        for index in 0..6 {
+            players.push(AhlAffiliatePlayerInput {
+                player_id: 9_200_000 + index,
+                display_name: format!("Hartford Defense {}", index + 1),
+                primary_position: Position::Defense,
+                eligible_positions: vec![Position::Defense],
+                projected_score: 65.0 - index as f64,
+                prospect: true,
+                recall_readiness: Some(0.8 - index as f64 * 0.02),
+                professional_games_at_season_start: Some(100),
+                assigned_to_affiliate: true,
+                waiver_required: false,
+                source_league: "AHL".to_owned(),
+            });
+        }
+        for index in 0..2 {
+            players.push(AhlAffiliatePlayerInput {
+                player_id: 9_300_000 + index,
+                display_name: format!("Hartford Goalie {}", index + 1),
+                primary_position: Position::Goalie,
+                eligible_positions: vec![Position::Goalie],
+                projected_score: 60.0 - index as f64,
+                prospect: true,
+                recall_readiness: Some(0.7 - index as f64 * 0.05),
+                professional_games_at_season_start: None,
+                assigned_to_affiliate: true,
+                waiver_required: false,
+                source_league: "AHL".to_owned(),
+            });
+        }
+        build_ahl_affiliate_projection(&AhlAffiliateProjectionInput {
+            nhl_team: "NYR".to_owned(),
+            ahl_team: "Hartford Wolf Pack".to_owned(),
+            season: 20262027,
+            rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: Default::default(),
+            players,
+        })
+        .unwrap()
+    }
 
     #[test]
     fn balanced_manifest_seals_and_uses_only_adapter_ready_profiles() {
@@ -1709,6 +1922,220 @@ mod tests {
     }
 
     #[test]
+    fn affiliate_projection_composes_organization_depth_without_parallel_cli_logic() {
+        let lineup: TeamLineupProjectionView = serde_json::from_str(include_str!(
+            "../../../examples/team-lineup-nyr-2026-27.json"
+        ))
+        .unwrap();
+        let affiliate = test_nyr_affiliate();
+        let forecasts = build_organization_lineup_forecasts_from_affiliates(
+            std::slice::from_ref(&lineup),
+            std::slice::from_ref(&affiliate),
+        )
+        .unwrap();
+        assert_eq!(forecasts.len(), 1);
+        assert_eq!(forecasts[0].nhl_team, "NYR");
+        assert_eq!(forecasts[0].counts.forward_lines, 8);
+
+        let context = OrganizationWindowAdapterContext {
+            season: 20262027,
+            season_type: "regular".to_owned(),
+            as_of: NaiveDate::from_ymd_opt(2026, 10, 1).unwrap(),
+            horizon: WindowHorizon::Current,
+            organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+        };
+        let inputs = adapt_balanced_organization_window_sources(
+            &context,
+            OrganizationWindowSourceSet {
+                team_lineups: std::slice::from_ref(&lineup),
+                ahl_affiliates: std::slice::from_ref(&affiliate),
+                ..OrganizationWindowSourceSet::default()
+            },
+        )
+        .unwrap();
+        assert!(inputs.iter().any(|input| {
+            input.organization == "NYR"
+                && input.profile_key == "development.organization_depth"
+                && input.raw_value.is_some()
+        }));
+        assert!(inputs.iter().any(|input| {
+            input.organization == "NYR"
+                && input.profile_key == "development.recall_depth"
+                && input.raw_value.is_some()
+        }));
+
+        let duplicate = adapt_balanced_organization_window_sources(
+            &context,
+            OrganizationWindowSourceSet {
+                team_lineups: std::slice::from_ref(&lineup),
+                ahl_affiliates: std::slice::from_ref(&affiliate),
+                organization_lineups: &forecasts,
+                ..OrganizationWindowSourceSet::default()
+            },
+        );
+        assert!(matches!(
+            duplicate,
+            Err(OrganizationWindowError::DuplicateProfileInput(message))
+                if message == "organization lineup:NYR"
+        ));
+
+        let mut wrong_season = affiliate;
+        wrong_season.season = 20252026;
+        assert!(matches!(
+            adapt_balanced_organization_window_sources(
+                &context,
+                OrganizationWindowSourceSet {
+                    ahl_affiliates: std::slice::from_ref(&wrong_season),
+                    ..OrganizationWindowSourceSet::default()
+                },
+            ),
+            Err(OrganizationWindowError::ContextMismatch(message))
+                if message == "AHL affiliate season"
+        ));
+    }
+
+    #[test]
+    fn frozen_game_features_supply_strength_but_dated_replay_features_do_not() {
+        let games = vec![
+            TeamForecastGameInput {
+                game_id: 1,
+                date: NaiveDate::from_ymd_opt(2026, 10, 1).unwrap(),
+                away_team: "NYR".to_owned(),
+                home_team: "SEA".to_owned(),
+                away_score: None,
+                home_score: None,
+                final_result: false,
+                last_period: None,
+            },
+            TeamForecastGameInput {
+                game_id: 2,
+                date: NaiveDate::from_ymd_opt(2026, 10, 2).unwrap(),
+                away_team: "SEA".to_owned(),
+                home_team: "NYR".to_owned(),
+                away_score: None,
+                home_score: None,
+                final_result: false,
+                last_period: None,
+            },
+        ];
+        let game_forecast = build_team_game_forecast(
+            20262027,
+            games,
+            vec![
+                TeamForecastStrengthInput {
+                    team: "NYR".to_owned(),
+                    strength: 62.0,
+                },
+                TeamForecastStrengthInput {
+                    team: "SEA".to_owned(),
+                    strength: 54.0,
+                },
+            ],
+            TeamForecastParameters::default(),
+            None,
+            None,
+        )
+        .unwrap();
+        let partial_error = simulate_team_season_forecast(
+            &game_forecast,
+            TeamSeasonSimulationConfig {
+                trials: 10,
+                seed: 7,
+            },
+        )
+        .unwrap_err();
+        assert!(partial_error.contains("requires all 32 NHL teams"));
+
+        let teams = CANONICAL_TEAMS
+            .iter()
+            .map(|(team, _)| *team)
+            .collect::<Vec<_>>();
+        let league_games = (0..84)
+            .flat_map(|round| {
+                teams.chunks_exact(2).enumerate().map(move |(pair, chunk)| {
+                    let reverse = round % 2 == 1;
+                    TeamForecastGameInput {
+                        game_id: (round * 16 + pair) as u64,
+                        date: NaiveDate::from_ymd_opt(2026, 9, 29).unwrap()
+                            + chrono::Duration::days(round as i64),
+                        away_team: chunk[usize::from(reverse)].to_owned(),
+                        home_team: chunk[usize::from(!reverse)].to_owned(),
+                        away_score: None,
+                        home_score: None,
+                        final_result: false,
+                        last_period: None,
+                    }
+                })
+            })
+            .collect();
+        let league_strengths = teams
+            .iter()
+            .map(|team| TeamForecastStrengthInput {
+                team: (*team).to_owned(),
+                strength: match *team {
+                    "NYR" => 62.0,
+                    "SEA" => 54.0,
+                    _ => 50.0,
+                },
+            })
+            .collect();
+        let league_forecast = build_team_game_forecast(
+            20262027,
+            league_games,
+            league_strengths,
+            TeamForecastParameters::default(),
+            Some(1_344),
+            Some(84),
+        )
+        .unwrap();
+        let mut season = simulate_team_season_forecast(
+            &league_forecast,
+            TeamSeasonSimulationConfig { trials: 2, seed: 7 },
+        )
+        .unwrap();
+        let context = OrganizationWindowAdapterContext {
+            season: 20262027,
+            season_type: "regular".to_owned(),
+            as_of: NaiveDate::from_ymd_opt(2026, 10, 1).unwrap(),
+            horizon: WindowHorizon::Current,
+            organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+        };
+        let inputs = adapt_balanced_organization_window_sources(
+            &context,
+            OrganizationWindowSourceSet {
+                team_season_forecast: Some(&season),
+                ..OrganizationWindowSourceSet::default()
+            },
+        )
+        .unwrap();
+        let strengths = inputs
+            .iter()
+            .filter(|input| input.profile_key == "nhl.team_strength")
+            .collect::<Vec<_>>();
+        assert_eq!(strengths.len(), 32);
+        assert_eq!(
+            strengths
+                .iter()
+                .find(|input| input.organization == "NYR")
+                .and_then(|input| input.raw_value),
+            Some(62.0)
+        );
+
+        season.games[0].evidence_cutoff_date = Some(NaiveDate::from_ymd_opt(2026, 10, 1).unwrap());
+        let guarded = adapt_balanced_organization_window_sources(
+            &context,
+            OrganizationWindowSourceSet {
+                team_season_forecast: Some(&season),
+                ..OrganizationWindowSourceSet::default()
+            },
+        )
+        .unwrap();
+        assert!(!guarded
+            .iter()
+            .any(|input| input.profile_key == "nhl.team_strength"));
+    }
+
+    #[test]
     fn source_package_is_canonical_replayable_and_production_gated() {
         let package =
             seal_organization_window_source_package(OrganizationWindowSourcePackageView {
@@ -1720,6 +2147,7 @@ mod tests {
                 team_season_forecast: None,
                 team_game_forecast: None,
                 team_lineups: Vec::new(),
+                ahl_affiliates: Vec::new(),
                 organization_lineups: Vec::new(),
                 prospect_program: None,
                 prospect_conversion: None,
@@ -1772,6 +2200,7 @@ mod tests {
             ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA
         );
         assert_eq!(schema["properties"]["team_lineups"]["maxItems"], 32);
+        assert_eq!(schema["properties"]["ahl_affiliates"]["maxItems"], 32);
 
         let coverage: serde_json::Value =
             serde_json::from_str(ORGANIZATION_WINDOW_SOURCE_COVERAGE_JSON_SCHEMA).unwrap();
@@ -1802,6 +2231,7 @@ mod tests {
                 team_season_forecast: None,
                 team_game_forecast: None,
                 team_lineups: vec![lineup],
+                ahl_affiliates: vec![test_nyr_affiliate()],
                 organization_lineups: Vec::new(),
                 prospect_program: None,
                 prospect_conversion: None,

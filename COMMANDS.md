@@ -1090,7 +1090,7 @@ icelines icecast history --input january.json --input february.json --json --out
 icelines icecast history-card --input history.json --team NYR --team-name "New York Rangers" --out nyr-history-card.json
 icelines icecast window-build --season 20262027 --as-of 2026-07-27 --generated-at 2026-07-27T20:00:00-07:00 --prospect-program prospect-program.json --out window.json
 icelines icecast season --season 20262027 --game-forecast-out games.json --json --out season.json
-icelines icecast window-source-package --season 20262027 --as-of 2026-10-01 --team-season-forecast season.json --team-game-forecast games.json --cache-team-lineups --stats-season 20252026 --prospect-program prospect-program.json --out window-sources.json
+icelines icecast window-source-package --season 20262027 --as-of 2026-10-01 --team-season-forecast season.json --team-game-forecast games.json --cache-team-lineups --stats-season 20252026 --ahl-affiliate hartford.json --prospect-program prospect-program.json --out window-sources.json
 icelines icecast window-source-audit --input window-sources.json --generated-at 2026-10-01T12:00:00Z --out window-source-coverage.json
 icelines icecast window-build --season 20262027 --as-of 2026-10-01 --generated-at 2026-10-01T12:00:00Z --source-package window-sources.json --require-ranked --out production-window.json
 icelines icecast window --input window.json

@@ -1714,7 +1714,7 @@ pub enum IceCastSubcommand {
         #[arg(long)]
         generated_at: String,
         /// Read one sealed, portable Window source package instead of loose documents.
-        #[arg(long, value_name = "PATH", conflicts_with_all = ["team_season_forecast", "team_game_forecast", "team_lineups", "organization_lineups", "prospect_program", "prospect_conversion", "training_camp", "schedule_rest"])]
+        #[arg(long, value_name = "PATH", conflicts_with_all = ["team_season_forecast", "team_game_forecast", "team_lineups", "ahl_affiliates", "organization_lineups", "prospect_program", "prospect_conversion", "training_camp", "schedule_rest"])]
         source_package: Option<PathBuf>,
         #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
         team_season_forecast: Option<PathBuf>,
@@ -1727,6 +1727,13 @@ pub enum IceCastSubcommand {
             conflicts_with = "source_package"
         )]
         team_lineups: Vec<PathBuf>,
+        /// Compose organization lineups in core from sealed AHL projections.
+        #[arg(
+            long = "ahl-affiliate",
+            value_name = "PATH",
+            conflicts_with = "source_package"
+        )]
+        ahl_affiliates: Vec<PathBuf>,
         #[arg(
             long = "organization-lineup",
             value_name = "PATH",
@@ -1775,6 +1782,9 @@ pub enum IceCastSubcommand {
             conflicts_with = "cache_team_lineups"
         )]
         team_lineups: Vec<PathBuf>,
+        /// Compose organization lineups in core from sealed AHL projections.
+        #[arg(long = "ahl-affiliate", value_name = "PATH")]
+        ahl_affiliates: Vec<PathBuf>,
         #[arg(long = "organization-lineup", value_name = "PATH")]
         organization_lineups: Vec<PathBuf>,
         #[arg(long, value_name = "PATH")]
@@ -2447,6 +2457,8 @@ mod tui_surface_tests {
                 "--cache-team-lineups",
                 "--stats-season",
                 "20252026",
+                "--ahl-affiliate",
+                "hartford.json",
                 "--out",
                 "window-sources.json",
             ])

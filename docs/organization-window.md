@@ -43,6 +43,7 @@ icelines icecast window-source-package \
   --team-game-forecast games.json \
   --cache-team-lineups \
   --stats-season 20252026 \
+  --ahl-affiliate hartford.json \
   --prospect-program prospects.json \
   --out window-sources.json
 
@@ -75,12 +76,32 @@ CLI, Web, and future automation without putting filesystem paths into core.
 snapshot/statistics cache pass. `--team-game-forecast` retains the sealed game
 authority and lets core derive each represented club's back-to-back,
 three-in-four, travel, and venue exposure; a partial schedule remains partial.
+Repeated `--ahl-affiliate` documents are joined to matching NHL lineups by
+core's existing System builder. This derives organization depth and recall
+depth without duplicating lineup logic in the CLI. Unmatched teams remain
+missing, and an explicit organization lineup for the same derived team is an
+authority conflict. Official AHL provider IDs still require reviewed canonical
+identity and assignment facts before they can enter an affiliate projection.
 `organization_window_source_coverage.v1` audits each of the 17 configured
 profile methods independently: observations, score-eligible values, exact
 missing organizations, required-profile completion, and rank-eligible teams.
 This is distinct from board `league_coverage`, which measures cohort presence.
 `--require-ranked` fails before writing when any organization's rank remains
 withheld; omit it only for intentionally partial evaluation boards.
+
+The cache lineup path also consumes the official NHL
+`skater/timeonice` Tier-1 report when it is present. Power-play and
+short-handed seconds populate the typed player season record before lineup
+projection, so special-teams depth remains core-derived and renderer-neutral.
+An absent report stays `None`; it is never converted to a zero-deployment
+claim.
+
+The July 28 real-source replay contains all 32 NHL lineups, the 32-team season
+and game forecasts, and the sealed training-camp authority. Its source audit
+completes 10 of 16 required `balanced.v1` profiles. Both deployment profiles
+now contain values for all 32 organizations; rankings remain correctly
+withheld for every organization while the six remaining required profiles are
+incomplete.
 
 Markdown reports retain season, cutoff, Frame, manifest/board fingerprints,
 league coverage, rank status, confidence, coverage, pane state, focused-team

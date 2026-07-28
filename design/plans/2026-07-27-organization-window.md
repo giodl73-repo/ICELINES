@@ -40,7 +40,7 @@ preserved while the remaining work is completed:
 |---|---|---|---|
 | W0 | complete | 37-profile machine-readable inventory: 17 ready, 13 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
 | W1-W2 | complete | Versioned observations/manifests/boards, deterministic fingerprints, validation, normalization, aggregation, confidence/coverage, rank gates | Cross-platform fingerprint matrix in W9. |
-| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue profiles from sealed game forecasts, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate | Assemble the remaining all-league prospect/affiliate/special-teams authorities and pass `--require-ranked` before claiming a complete ranked board. |
+| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate | Complete reviewed all-league AHL identity/assignment facts plus the remaining prospect and organization-development authorities, then pass `--require-ranked`. |
 | W5 | complete | Comparable movement/history contracts, refusal tests, immutable bridge/rebase, a real three-checkpoint 2024-25 IceCast history, both earlier-scenario and later-counterfactual attribution bases, and a real Jan. 31 -> Feb. 28 paired rolling-replay personnel artifact with 219 dated events | Preserve raw profile effects when percentile normalization yields zero aggregate movement; keep the paired estimate explicitly non-causal and uncalibrated. |
 | W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
 | W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed claim status, frozen training/validation/retrospective-holdout roles, and four real point-in-time observed-history origins | Trial-noise propagation and future untouched-holdout evidence; the current retrospective holdout is explicitly inconclusive. |
@@ -382,6 +382,12 @@ W0 inventory
 W5 and W6 may proceed in parallel only after W4 seals board identity. W8 may
 prototype against fixtures but cannot own business logic or claim parity before
 W4-W7 gates are met.
+
+Current W3-W4 acquisition checkpoint (2026-07-28): the real all-league package
+completes 10/16 required profiles after cache-aligned schedule, frozen team
+strength, and official NHL special-teams TOI integration. Rankings remain
+withheld at 0/32. Next acquisition priority is reviewed all-league prospect and
+organization/AHL authority; W7 remains a genuinely future untouched holdout.
 
 ## Crate ownership
 

@@ -1315,6 +1315,23 @@ fn simulate_team_season_forecast_impl(
         alignment(team)
             .ok_or_else(|| format!("IceCast playoff alignment is missing team {team}"))?;
     }
+    if teams.len() != 32 {
+        return Err(format!(
+            "IceCast season playoff simulation requires all 32 NHL teams; forecast contains {}",
+            teams.len()
+        ));
+    }
+    for division in ["Atlantic", "Metropolitan", "Central", "Pacific"] {
+        let members = teams
+            .iter()
+            .filter(|team| alignment(team).is_some_and(|value| value.1 == division))
+            .count();
+        if members != 8 {
+            return Err(format!(
+                "IceCast season playoff simulation requires 8 teams in the {division} division; forecast contains {members}"
+            ));
+        }
+    }
     validate_scenario(scenario.as_ref(), &teams, forecast)?;
     let strength_by_team = forecast
         .games

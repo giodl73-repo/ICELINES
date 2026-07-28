@@ -18,9 +18,9 @@ use icelines_core::name::normalize_name;
 use icelines_core::scoring::compute_pace_score;
 use icelines_core::season_stats::{
     AdvancedStats, GoalieSeasonStats, RealtimeStats, SeasonStatsBuildError, SeasonStatsBuilder,
-    SeasonType, StatTotals, TeamStint, SYNTHETIC_DATE_PREFIX,
+    SeasonType, StatTotals, TeamStint, TimeOnIceStats, SYNTHETIC_DATE_PREFIX,
 };
-use icelines_core::stats_catalog::{Tier1ReportFile, Tier1Row};
+use icelines_core::stats_catalog::{ReportKind, Tier1ReportFile, Tier1Row, TIER1_REPORTS};
 use icelines_core::stats_repository::{RepoError, StatsRepository};
 use serde::de::DeserializeOwned;
 use thiserror::Error;
@@ -30,7 +30,7 @@ use crate::moneypuck::MoneyPuckStats;
 use crate::nhl_teams_for_season;
 use crate::schema::{
     GoalieStats, PlayerContract as LegacyContract, RosterResponse, SkaterBio, SkaterRealtime,
-    SkaterStats,
+    SkaterStats, SkaterTimeOnIce,
 };
 use crate::snapshot::{SnapshotMetaFlags, SnapshotStore, SnapshotTier};
 
@@ -381,6 +381,22 @@ pub fn load_into_repo(
     let mut missing: Vec<MissingSource> = Vec::new();
     let mut missing_files: Vec<String> = Vec::new();
 
+    // Lindsay Tier-1 reports use the stable snapshot-root layout rather
+    // than the floating active-snapshot pointer. Absence deliberately
+    // remains `None` on SeasonStats (DI-09); a present row containing
+    // zeros is still authoritative data.
+    let time_on_ice_file = TIER1_REPORTS
+        .iter()
+        .find(|file| file.kind == ReportKind::SkaterTimeOnIce)
+        .expect("Tier-1 catalog must contain skater time-on-ice");
+    let time_on_ice = load_report_with_fallback::<SkaterTimeOnIce>(
+        store.root(),
+        season,
+        season_type,
+        time_on_ice_file,
+    )?
+    .unwrap_or_default();
+
     // For each tier: distinguish "absent file", "corrupt file", and
     // "empty array" (treated as missing for UI parity — the user sees
     // the same "no realtime data" banner either way). The reason
@@ -490,6 +506,8 @@ pub fn load_into_repo(
     let stats_idx: HashMap<u32, &SkaterStats> = stats.iter().map(|s| (s.player_id, s)).collect();
     let realtime_idx: HashMap<u32, &SkaterRealtime> =
         realtime.iter().map(|r| (r.player_id, r)).collect();
+    let time_on_ice_idx: HashMap<u32, &SkaterTimeOnIce> =
+        time_on_ice.iter().map(|row| (row.player_id, row)).collect();
     let moneypuck_idx: HashMap<u32, &MoneyPuckStats> =
         moneypuck.iter().map(|m| (m.player_id, m)).collect();
     let contracts_idx: HashMap<u32, &LegacyContract> =
@@ -532,6 +550,7 @@ pub fn load_into_repo(
 
         let stats_row = stats_idx.get(&bio.player_id).copied();
         let realtime_row = realtime_idx.get(&bio.player_id).copied();
+        let time_on_ice_row = time_on_ice_idx.get(&bio.player_id).copied();
         let mp_row = moneypuck_idx.get(&bio.player_id).copied();
         let stats = build_skater_stats(
             pid,
@@ -541,6 +560,7 @@ pub fn load_into_repo(
             bio,
             stats_row,
             realtime_row,
+            time_on_ice_row,
             mp_row,
         )?;
         repo.upsert_stats(stats)?;
@@ -596,6 +616,12 @@ pub fn load_into_repo(
         missing_files,
         fetched_at: now_iso8601(),
     })
+}
+
+impl Tier1Row for SkaterTimeOnIce {
+    fn season_id(&self) -> Option<u32> {
+        self.season_id
+    }
 }
 
 // ── Phase Lindsay L.1.4 — Tier-1 per-report loader ──────────────────────────
@@ -992,6 +1018,7 @@ pub fn load_player_career_into_repo(
                     stats_row,
                     realtime_row,
                     None,
+                    None,
                 )?;
                 repo.upsert_stats(stats)?;
                 inserted += 1;
@@ -1041,6 +1068,7 @@ pub fn load_player_career_into_repo(
                     position,
                     bio,
                     stats_row_owned.as_ref(),
+                    None,
                     None,
                     None,
                 )?;
@@ -1191,7 +1219,7 @@ pub fn merge_goalie_bios_into_identity(
     }
 }
 
-#[allow(clippy::too_many_arguments)] // 8 inputs by design — bio + 4 sources + 3 keys
+#[allow(clippy::too_many_arguments)] // typed identity keys plus independently optional sources
 fn build_skater_stats(
     pid: PlayerId,
     season: Season,
@@ -1200,6 +1228,7 @@ fn build_skater_stats(
     bio: &SkaterBio,
     stats: Option<&SkaterStats>,
     realtime: Option<&SkaterRealtime>,
+    time_on_ice: Option<&SkaterTimeOnIce>,
     mp: Option<&MoneyPuckStats>,
 ) -> Result<icelines_core::season_stats::SeasonStats, LoadError> {
     // Field-for-field parity with the OLD `make_player` path so the
@@ -1289,6 +1318,22 @@ fn build_skater_stats(
             takeaways: rt.takeaways,
             giveaways: rt.giveaways,
             missed_shots: rt.missed_shots,
+        });
+    }
+    if let Some(toi) = time_on_ice {
+        builder = builder.with_time_on_ice(TimeOnIceStats {
+            time_on_ice_sec: toi.time_on_ice,
+            time_on_ice_per_game_sec: toi.time_on_ice_per_game.round() as u32,
+            ev_time_on_ice_sec: toi.ev_time_on_ice,
+            ev_time_on_ice_per_game_sec: toi.ev_time_on_ice_per_game.round() as u32,
+            pp_time_on_ice_sec: toi.pp_time_on_ice,
+            pp_time_on_ice_per_game_sec: toi.pp_time_on_ice_per_game.round() as u32,
+            sh_time_on_ice_sec: toi.sh_time_on_ice,
+            sh_time_on_ice_per_game_sec: toi.sh_time_on_ice_per_game.round() as u32,
+            ot_time_on_ice_sec: toi.ot_time_on_ice,
+            shifts: toi.shifts,
+            shifts_per_game: toi.shifts_per_game,
+            time_on_ice_per_shift_sec: toi.time_on_ice_per_shift,
         });
     }
     if let Some(m) = mp {
@@ -1449,6 +1494,83 @@ mod tests {
     use super::*;
 
     #[test]
+    fn l1_time_on_ice_report_populates_repository_and_absence_stays_none() {
+        let season = Season(20252026);
+        let bios = bundled::get_bios("20252026").expect("2025-26 bios are bundled");
+        let bio = bios
+            .iter()
+            .find(|bio| {
+                Position::from_api_code(&bio.position_code)
+                    .is_some_and(|position| !matches!(position, Position::Goalie))
+            })
+            .expect("bundled season has a skater");
+        let player_id = bio.player_id;
+
+        let populated_dir = tempfile::TempDir::new().unwrap();
+        let report_dir = populated_dir.path().join("20252026").join("regular");
+        std::fs::create_dir_all(&report_dir).unwrap();
+        let report = serde_json::json!({
+            "data": [{
+                "playerId": player_id,
+                "seasonId": 20252026,
+                "timeOnIce": 55_518,
+                "timeOnIcePerGame": 685.6,
+                "evTimeOnIce": 55_230,
+                "evTimeOnIcePerGame": 681.4,
+                "ppTimeOnIce": 264,
+                "ppTimeOnIcePerGame": 3.6,
+                "shTimeOnIce": 24,
+                "shTimeOnIcePerGame": 0.4,
+                "otTimeOnIce": 0,
+                "shifts": 1_418,
+                "shiftsPerGame": 17.50617,
+                "timeOnIcePerShift": 39.15232
+            }],
+            "total": 1
+        });
+        std::fs::write(
+            report_dir.join("timeonice.json"),
+            serde_json::to_vec(&report).unwrap(),
+        )
+        .unwrap();
+
+        let populated = load_into_repo(
+            season,
+            SeasonType::Regular,
+            &SnapshotStore::new(populated_dir.path()),
+        )
+        .expect("load populated report");
+        let toi = populated
+            .repo
+            .season(PlayerId(player_id), season, SeasonType::Regular)
+            .and_then(|stats| stats.time_on_ice.as_ref())
+            .expect("typed time-on-ice merged by player id");
+        assert_eq!(toi.time_on_ice_sec, 55_518);
+        assert_eq!(toi.time_on_ice_per_game_sec, 686);
+        assert_eq!(toi.ev_time_on_ice_per_game_sec, 681);
+        assert_eq!(toi.pp_time_on_ice_sec, 264);
+        assert_eq!(toi.pp_time_on_ice_per_game_sec, 4);
+        assert_eq!(toi.sh_time_on_ice_sec, 24);
+        assert_eq!(toi.sh_time_on_ice_per_game_sec, 0);
+        assert_eq!(toi.ot_time_on_ice_sec, Some(0));
+        assert_eq!(toi.shifts, 1_418);
+
+        let absent_dir = tempfile::TempDir::new().unwrap();
+        let absent = load_into_repo(
+            season,
+            SeasonType::Regular,
+            &SnapshotStore::new(absent_dir.path()),
+        )
+        .expect("absence is not a load error");
+        assert!(absent
+            .repo
+            .season(PlayerId(player_id), season, SeasonType::Regular)
+            .expect("bundled skater remains available")
+            .time_on_ice
+            .is_none());
+    }
+
+    #[test]
     fn l0_hart3_load_error_repo_wraps_repo_error() {
         let inner = RepoError::StatsWithoutIdentity {
             id: PlayerId(1),
@@ -1584,6 +1706,7 @@ mod tests {
             Some(&stats),
             None,
             None,
+            None,
         )
         .expect("build skater stats");
         let team = result
@@ -1615,6 +1738,7 @@ mod tests {
             Some(&stats),
             None,
             None,
+            None,
         )
         .expect("build skater stats");
         let team = result
@@ -1644,6 +1768,7 @@ mod tests {
             Some(&stats),
             None,
             None,
+            None,
         )
         .expect("build skater stats");
         let team = result
@@ -1668,6 +1793,7 @@ mod tests {
             Position::LeftWing,
             &bio,
             Some(&stats),
+            None,
             None,
             None,
         )
@@ -1695,6 +1821,7 @@ mod tests {
             Position::Center,
             &bio,
             Some(&stats),
+            None,
             None,
             None,
         )

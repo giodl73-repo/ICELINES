@@ -3349,6 +3349,7 @@ pub struct WindowBuildArgs {
     pub team_season_forecast: Option<PathBuf>,
     pub team_game_forecast: Option<PathBuf>,
     pub team_lineups: Vec<PathBuf>,
+    pub ahl_affiliates: Vec<PathBuf>,
     pub organization_lineups: Vec<PathBuf>,
     pub prospect_program: Option<PathBuf>,
     pub prospect_conversion: Option<PathBuf>,
@@ -3366,6 +3367,7 @@ pub struct WindowSourcePackageArgs {
     pub cache_team_lineups: bool,
     pub stats_season: String,
     pub team_lineups: Vec<PathBuf>,
+    pub ahl_affiliates: Vec<PathBuf>,
     pub organization_lineups: Vec<PathBuf>,
     pub prospect_program: Option<PathBuf>,
     pub prospect_conversion: Option<PathBuf>,
@@ -3380,6 +3382,7 @@ struct WindowSourcePaths<'a> {
     team_season_forecast: Option<&'a Path>,
     team_game_forecast: Option<&'a Path>,
     team_lineups: &'a [PathBuf],
+    ahl_affiliates: &'a [PathBuf],
     organization_lineups: &'a [PathBuf],
     prospect_program: Option<&'a Path>,
     prospect_conversion: Option<&'a Path>,
@@ -3403,6 +3406,11 @@ fn load_window_source_package(
         .iter()
         .map(|path| read_icecast_json(path, "team lineup"))
         .collect::<anyhow::Result<Vec<TeamLineupProjectionView>>>()?;
+    let ahl_affiliates = paths
+        .ahl_affiliates
+        .iter()
+        .map(|path| read_icecast_json(path, "AHL affiliate projection"))
+        .collect::<anyhow::Result<Vec<AhlAffiliateProjectionView>>>()?;
     let organization_lineups = paths
         .organization_lineups
         .iter()
@@ -3435,6 +3443,7 @@ fn load_window_source_package(
             team_season_forecast,
             team_game_forecast,
             team_lineups,
+            ahl_affiliates,
             organization_lineups,
             prospect_program,
             prospect_conversion,
@@ -3452,6 +3461,7 @@ pub fn run_window_source_package(args: WindowSourcePackageArgs) -> anyhow::Resul
         team_season_forecast: args.team_season_forecast.as_deref(),
         team_game_forecast: args.team_game_forecast.as_deref(),
         team_lineups: &args.team_lineups,
+        ahl_affiliates: &args.ahl_affiliates,
         organization_lineups: &args.organization_lineups,
         prospect_program: args.prospect_program.as_deref(),
         prospect_conversion: args.prospect_conversion.as_deref(),
@@ -3512,6 +3522,7 @@ pub fn run_window_build(args: WindowBuildArgs) -> anyhow::Result<()> {
             team_season_forecast: args.team_season_forecast.as_deref(),
             team_game_forecast: args.team_game_forecast.as_deref(),
             team_lineups: &args.team_lineups,
+            ahl_affiliates: &args.ahl_affiliates,
             organization_lineups: &args.organization_lineups,
             prospect_program: args.prospect_program.as_deref(),
             prospect_conversion: args.prospect_conversion.as_deref(),

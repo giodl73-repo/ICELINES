@@ -135,6 +135,31 @@ pub struct SkaterRealtime {
     pub pim: Option<u32>,
 }
 
+/// One row from `/stats/rest/en/skater/timeonice`.
+///
+/// Durations are seconds. Per-game values retain the API's fractional
+/// precision until the repository adapter rounds them to whole seconds.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkaterTimeOnIce {
+    pub player_id: u32,
+    #[serde(default)]
+    pub season_id: Option<u32>,
+    pub time_on_ice: u32,
+    pub time_on_ice_per_game: f32,
+    pub ev_time_on_ice: u32,
+    pub ev_time_on_ice_per_game: f32,
+    pub pp_time_on_ice: u32,
+    pub pp_time_on_ice_per_game: f32,
+    pub sh_time_on_ice: u32,
+    pub sh_time_on_ice_per_game: f32,
+    #[serde(default)]
+    pub ot_time_on_ice: Option<u32>,
+    pub shifts: u32,
+    pub shifts_per_game: f32,
+    pub time_on_ice_per_shift: f32,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RosterResponse {
     pub forwards: Vec<RosterPlayer>,

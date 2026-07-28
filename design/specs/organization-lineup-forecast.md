@@ -56,6 +56,12 @@ Text output is a compact inspection surface. JSON is authoritative and is the
 integration point for web, TUI, cards, fantasy roster decisions, and season
 simulation.
 
+The Window source package can also accept sealed affiliate projections
+directly. Core pairs each projection with its matching NHL lineup and invokes
+this same builder; it does not maintain a second organization-depth formula.
+Partial pairs remain valid evaluation evidence, while duplicate explicit and
+derived organization forecasts fail closed.
+
 ## Evidence boundary
 
 The initial contract preserves NHL PP1/PP2 and PK1/PK2 from the NHL lineup.
