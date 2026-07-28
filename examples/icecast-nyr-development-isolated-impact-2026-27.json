@@ -1,0 +1,1270 @@
+{
+  "schema": "isolated_scenario_impact.v1",
+  "method": "paired_same_seed_one_event.v1",
+  "season": 20262027,
+  "as_of_date": null,
+  "trials": 1000,
+  "seed": 20262027,
+  "input_fingerprint": "b5a0128708edfe453d99814b2711960e66721cb1473aaed6ef73400796af779f",
+  "scenario_fingerprint": "be1c2d4c3d4471af16cf4370cda5775a4a4d64eff3fe16abc86a2508a1a57a37",
+  "baseline": [
+    {
+      "team": "WSH",
+      "average_points": 104.657,
+      "playoff_probability": 0.848,
+      "second_round_probability": 0.54,
+      "conference_final_probability": 0.34,
+      "stanley_cup_final_probability": 0.201,
+      "stanley_cup_probability": 0.119
+    },
+    {
+      "team": "TBL",
+      "average_points": 102.752,
+      "playoff_probability": 0.806,
+      "second_round_probability": 0.453,
+      "conference_final_probability": 0.248,
+      "stanley_cup_final_probability": 0.128,
+      "stanley_cup_probability": 0.076
+    },
+    {
+      "team": "MTL",
+      "average_points": 101.091,
+      "playoff_probability": 0.749,
+      "second_round_probability": 0.399,
+      "conference_final_probability": 0.222,
+      "stanley_cup_final_probability": 0.12,
+      "stanley_cup_probability": 0.06
+    },
+    {
+      "team": "COL",
+      "average_points": 100.249,
+      "playoff_probability": 0.84,
+      "second_round_probability": 0.497,
+      "conference_final_probability": 0.295,
+      "stanley_cup_final_probability": 0.172,
+      "stanley_cup_probability": 0.085
+    },
+    {
+      "team": "DAL",
+      "average_points": 99.824,
+      "playoff_probability": 0.816,
+      "second_round_probability": 0.464,
+      "conference_final_probability": 0.263,
+      "stanley_cup_final_probability": 0.156,
+      "stanley_cup_probability": 0.072
+    },
+    {
+      "team": "NYR",
+      "average_points": 99.746,
+      "playoff_probability": 0.702,
+      "second_round_probability": 0.34,
+      "conference_final_probability": 0.165,
+      "stanley_cup_final_probability": 0.087,
+      "stanley_cup_probability": 0.055
+    },
+    {
+      "team": "BUF",
+      "average_points": 98.741,
+      "playoff_probability": 0.651,
+      "second_round_probability": 0.334,
+      "conference_final_probability": 0.181,
+      "stanley_cup_final_probability": 0.085,
+      "stanley_cup_probability": 0.045
+    },
+    {
+      "team": "MIN",
+      "average_points": 98.478,
+      "playoff_probability": 0.766,
+      "second_round_probability": 0.429,
+      "conference_final_probability": 0.235,
+      "stanley_cup_final_probability": 0.135,
+      "stanley_cup_probability": 0.071
+    },
+    {
+      "team": "EDM",
+      "average_points": 98.214,
+      "playoff_probability": 0.815,
+      "second_round_probability": 0.48,
+      "conference_final_probability": 0.258,
+      "stanley_cup_final_probability": 0.123,
+      "stanley_cup_probability": 0.054
+    },
+    {
+      "team": "PHI",
+      "average_points": 97.549,
+      "playoff_probability": 0.595,
+      "second_round_probability": 0.313,
+      "conference_final_probability": 0.152,
+      "stanley_cup_final_probability": 0.076,
+      "stanley_cup_probability": 0.048
+    },
+    {
+      "team": "CAR",
+      "average_points": 97.403,
+      "playoff_probability": 0.606,
+      "second_round_probability": 0.284,
+      "conference_final_probability": 0.127,
+      "stanley_cup_final_probability": 0.064,
+      "stanley_cup_probability": 0.032
+    },
+    {
+      "team": "FLA",
+      "average_points": 96.544,
+      "playoff_probability": 0.568,
+      "second_round_probability": 0.262,
+      "conference_final_probability": 0.12,
+      "stanley_cup_final_probability": 0.053,
+      "stanley_cup_probability": 0.03
+    },
+    {
+      "team": "VGK",
+      "average_points": 94.988,
+      "playoff_probability": 0.671,
+      "second_round_probability": 0.357,
+      "conference_final_probability": 0.188,
+      "stanley_cup_final_probability": 0.094,
+      "stanley_cup_probability": 0.039
+    },
+    {
+      "team": "PIT",
+      "average_points": 94.429,
+      "playoff_probability": 0.435,
+      "second_round_probability": 0.212,
+      "conference_final_probability": 0.098,
+      "stanley_cup_final_probability": 0.042,
+      "stanley_cup_probability": 0.024
+    },
+    {
+      "team": "TOR",
+      "average_points": 94.139,
+      "playoff_probability": 0.417,
+      "second_round_probability": 0.184,
+      "conference_final_probability": 0.078,
+      "stanley_cup_final_probability": 0.032,
+      "stanley_cup_probability": 0.023
+    },
+    {
+      "team": "UTA",
+      "average_points": 93.934,
+      "playoff_probability": 0.574,
+      "second_round_probability": 0.268,
+      "conference_final_probability": 0.125,
+      "stanley_cup_final_probability": 0.056,
+      "stanley_cup_probability": 0.024
+    },
+    {
+      "team": "LAK",
+      "average_points": 93.572,
+      "playoff_probability": 0.607,
+      "second_round_probability": 0.317,
+      "conference_final_probability": 0.153,
+      "stanley_cup_final_probability": 0.062,
+      "stanley_cup_probability": 0.023
+    },
+    {
+      "team": "OTT",
+      "average_points": 93.404,
+      "playoff_probability": 0.375,
+      "second_round_probability": 0.166,
+      "conference_final_probability": 0.072,
+      "stanley_cup_final_probability": 0.029,
+      "stanley_cup_probability": 0.012
+    },
+    {
+      "team": "NJD",
+      "average_points": 92.577,
+      "playoff_probability": 0.354,
+      "second_round_probability": 0.142,
+      "conference_final_probability": 0.056,
+      "stanley_cup_final_probability": 0.02,
+      "stanley_cup_probability": 0.011
+    },
+    {
+      "team": "BOS",
+      "average_points": 92.276,
+      "playoff_probability": 0.346,
+      "second_round_probability": 0.146,
+      "conference_final_probability": 0.064,
+      "stanley_cup_final_probability": 0.032,
+      "stanley_cup_probability": 0.011
+    },
+    {
+      "team": "SJS",
+      "average_points": 90.553,
+      "playoff_probability": 0.46,
+      "second_round_probability": 0.221,
+      "conference_final_probability": 0.103,
+      "stanley_cup_final_probability": 0.045,
+      "stanley_cup_probability": 0.019
+    },
+    {
+      "team": "CBJ",
+      "average_points": 90.144,
+      "playoff_probability": 0.258,
+      "second_round_probability": 0.111,
+      "conference_final_probability": 0.045,
+      "stanley_cup_final_probability": 0.021,
+      "stanley_cup_probability": 0.012
+    },
+    {
+      "team": "STL",
+      "average_points": 89.744,
+      "playoff_probability": 0.39,
+      "second_round_probability": 0.146,
+      "conference_final_probability": 0.052,
+      "stanley_cup_final_probability": 0.019,
+      "stanley_cup_probability": 0.002
+    },
+    {
+      "team": "NSH",
+      "average_points": 89.667,
+      "playoff_probability": 0.37,
+      "second_round_probability": 0.168,
+      "conference_final_probability": 0.077,
+      "stanley_cup_final_probability": 0.025,
+      "stanley_cup_probability": 0.009
+    },
+    {
+      "team": "SEA",
+      "average_points": 89.65,
+      "playoff_probability": 0.419,
+      "second_round_probability": 0.195,
+      "conference_final_probability": 0.085,
+      "stanley_cup_final_probability": 0.041,
+      "stanley_cup_probability": 0.022
+    },
+    {
+      "team": "WPG",
+      "average_points": 88.329,
+      "playoff_probability": 0.331,
+      "second_round_probability": 0.121,
+      "conference_final_probability": 0.038,
+      "stanley_cup_final_probability": 0.019,
+      "stanley_cup_probability": 0.007
+    },
+    {
+      "team": "ANA",
+      "average_points": 88.0,
+      "playoff_probability": 0.342,
+      "second_round_probability": 0.128,
+      "conference_final_probability": 0.05,
+      "stanley_cup_final_probability": 0.023,
+      "stanley_cup_probability": 0.008
+    },
+    {
+      "team": "CHI",
+      "average_points": 87.269,
+      "playoff_probability": 0.275,
+      "second_round_probability": 0.11,
+      "conference_final_probability": 0.039,
+      "stanley_cup_final_probability": 0.012,
+      "stanley_cup_probability": 0.003
+    },
+    {
+      "team": "DET",
+      "average_points": 86.939,
+      "playoff_probability": 0.149,
+      "second_round_probability": 0.064,
+      "conference_final_probability": 0.017,
+      "stanley_cup_final_probability": 0.005,
+      "stanley_cup_probability": 0.002
+    },
+    {
+      "team": "NYI",
+      "average_points": 86.766,
+      "playoff_probability": 0.141,
+      "second_round_probability": 0.05,
+      "conference_final_probability": 0.015,
+      "stanley_cup_final_probability": 0.005,
+      "stanley_cup_probability": 0.0
+    },
+    {
+      "team": "CGY",
+      "average_points": 84.131,
+      "playoff_probability": 0.196,
+      "second_round_probability": 0.059,
+      "conference_final_probability": 0.023,
+      "stanley_cup_final_probability": 0.01,
+      "stanley_cup_probability": 0.001
+    },
+    {
+      "team": "VAN",
+      "average_points": 81.536,
+      "playoff_probability": 0.128,
+      "second_round_probability": 0.04,
+      "conference_final_probability": 0.016,
+      "stanley_cup_final_probability": 0.008,
+      "stanley_cup_probability": 0.001
+    }
+  ],
+  "isolated_events": [
+    {
+      "event_id": "nyr-kartye-breakout-range",
+      "team": "NYR",
+      "player": "Tye Kartye",
+      "label": "Kartye converts his forechecking and physicality into positive middle-six value",
+      "occurrence_probability": 0.2389,
+      "correlation_key": null,
+      "raw_team_strength_delta": 3.0187,
+      "conditional_impact": {
+        "team": "NYR",
+        "average_points_delta": 0.7950000000000017,
+        "playoff_probability_delta": 0.02400000000000002,
+        "second_round_probability_delta": 0.03199999999999997,
+        "conference_final_probability_delta": 0.021999999999999992,
+        "stanley_cup_final_probability_delta": 0.0030000000000000027,
+        "stanley_cup_probability_delta": 0.0020000000000000018,
+        "presidents_trophy_probability_delta": 0.010000000000000009,
+        "average_longest_win_streak_delta": 0.08499999999999996
+      },
+      "conditional_outcome": {
+        "team": "NYR",
+        "average_points": 100.541,
+        "playoff_probability": 0.726,
+        "second_round_probability": 0.372,
+        "conference_final_probability": 0.187,
+        "stanley_cup_final_probability": 0.09,
+        "stanley_cup_probability": 0.057
+      },
+      "isolated_scenario_fingerprint": "cec002c5c96e5ff46b2e792e92745e8365d345d6194e5450824f38d621cfa8bd"
+    },
+    {
+      "event_id": "nyr-laba-breakout-range",
+      "team": "NYR",
+      "player": "Noah Laba",
+      "label": "Laba becomes a positive middle-six two-way center",
+      "occurrence_probability": 0.2389,
+      "correlation_key": null,
+      "raw_team_strength_delta": 3.0187,
+      "conditional_impact": {
+        "team": "NYR",
+        "average_points_delta": 0.7950000000000017,
+        "playoff_probability_delta": 0.02400000000000002,
+        "second_round_probability_delta": 0.03199999999999997,
+        "conference_final_probability_delta": 0.021999999999999992,
+        "stanley_cup_final_probability_delta": 0.0030000000000000027,
+        "stanley_cup_probability_delta": 0.0020000000000000018,
+        "presidents_trophy_probability_delta": 0.010000000000000009,
+        "average_longest_win_streak_delta": 0.08499999999999996
+      },
+      "conditional_outcome": {
+        "team": "NYR",
+        "average_points": 100.541,
+        "playoff_probability": 0.726,
+        "second_round_probability": 0.372,
+        "conference_final_probability": 0.187,
+        "stanley_cup_final_probability": 0.09,
+        "stanley_cup_probability": 0.057
+      },
+      "isolated_scenario_fingerprint": "3bf5f0ccb18aff9aa4687ebf0ba8b5421b0efdd618f28f82e0a3ba22f19bca25"
+    },
+    {
+      "event_id": "nyr-lafreniere-breakout-range",
+      "team": "NYR",
+      "player": "Alexis Lafrenière",
+      "label": "Lafrenière takes another star-level scoring step",
+      "occurrence_probability": 0.1666,
+      "correlation_key": null,
+      "raw_team_strength_delta": 2.981,
+      "conditional_impact": {
+        "team": "NYR",
+        "average_points_delta": 0.7860000000000014,
+        "playoff_probability_delta": 0.02400000000000002,
+        "second_round_probability_delta": 0.03199999999999997,
+        "conference_final_probability_delta": 0.02099999999999999,
+        "stanley_cup_final_probability_delta": 0.0030000000000000027,
+        "stanley_cup_probability_delta": 0.0010000000000000009,
+        "presidents_trophy_probability_delta": 0.010000000000000009,
+        "average_longest_win_streak_delta": 0.08499999999999996
+      },
+      "conditional_outcome": {
+        "team": "NYR",
+        "average_points": 100.532,
+        "playoff_probability": 0.726,
+        "second_round_probability": 0.372,
+        "conference_final_probability": 0.186,
+        "stanley_cup_final_probability": 0.09,
+        "stanley_cup_probability": 0.056
+      },
+      "isolated_scenario_fingerprint": "f2cce8528c2620af4d62dae02350ae3fd4756572f29570a3a7f9818a8db341f1"
+    },
+    {
+      "event_id": "nyr-miller-downturn-range",
+      "team": "NYR",
+      "player": "J.T. Miller",
+      "label": "Miller experiences an age-related top-line downturn",
+      "occurrence_probability": 0.4184,
+      "correlation_key": null,
+      "raw_team_strength_delta": -3.3248,
+      "conditional_impact": {
+        "team": "NYR",
+        "average_points_delta": -0.938999999999993,
+        "playoff_probability_delta": -0.050999999999999934,
+        "second_round_probability_delta": -0.03600000000000003,
+        "conference_final_probability_delta": -0.016000000000000014,
+        "stanley_cup_final_probability_delta": -0.012999999999999998,
+        "stanley_cup_probability_delta": -0.012999999999999998,
+        "presidents_trophy_probability_delta": -0.012999999999999998,
+        "average_longest_win_streak_delta": -0.09499999999999975
+      },
+      "conditional_outcome": {
+        "team": "NYR",
+        "average_points": 98.807,
+        "playoff_probability": 0.651,
+        "second_round_probability": 0.304,
+        "conference_final_probability": 0.149,
+        "stanley_cup_final_probability": 0.074,
+        "stanley_cup_probability": 0.042
+      },
+      "isolated_scenario_fingerprint": "1e1d7456e5ffc52c850c124414cc8b3c276368648a2ec2bdb111d4e8e3accdb0"
+    },
+    {
+      "event_id": "nyr-perreault-breakout-range",
+      "team": "NYR",
+      "player": "Gabe Perreault",
+      "label": "Perreault becomes a strong top-six producer",
+      "occurrence_probability": 0.3263,
+      "correlation_key": null,
+      "raw_team_strength_delta": 3.4671,
+      "conditional_impact": {
+        "team": "NYR",
+        "average_points_delta": 0.8990000000000009,
+        "playoff_probability_delta": 0.027000000000000024,
+        "second_round_probability_delta": 0.034999999999999976,
+        "conference_final_probability_delta": 0.026999999999999996,
+        "stanley_cup_final_probability_delta": 0.0040000000000000036,
+        "stanley_cup_probability_delta": 0.003999999999999997,
+        "presidents_trophy_probability_delta": 0.010000000000000009,
+        "average_longest_win_streak_delta": 0.0940000000000003
+      },
+      "conditional_outcome": {
+        "team": "NYR",
+        "average_points": 100.645,
+        "playoff_probability": 0.729,
+        "second_round_probability": 0.375,
+        "conference_final_probability": 0.192,
+        "stanley_cup_final_probability": 0.091,
+        "stanley_cup_probability": 0.059
+      },
+      "isolated_scenario_fingerprint": "7f7c8a2ac66bbdaa0c9c42fc64dc3f091a1b6872fa6008248f1d39ba09a8e15d"
+    },
+    {
+      "event_id": "nyr-shesterkin-downturn-range",
+      "team": "NYR",
+      "player": "Igor Shesterkin",
+      "label": "Shesterkin has a material full-season performance downturn",
+      "occurrence_probability": 0.5592,
+      "correlation_key": null,
+      "raw_team_strength_delta": -4.3692,
+      "conditional_impact": {
+        "team": "NYR",
+        "average_points_delta": -1.2049999999999983,
+        "playoff_probability_delta": -0.05799999999999994,
+        "second_round_probability_delta": -0.027000000000000024,
+        "conference_final_probability_delta": -0.014000000000000012,
+        "stanley_cup_final_probability_delta": -0.013999999999999999,
+        "stanley_cup_probability_delta": -0.012000000000000004,
+        "presidents_trophy_probability_delta": -0.015,
+        "average_longest_win_streak_delta": -0.11699999999999999
+      },
+      "conditional_outcome": {
+        "team": "NYR",
+        "average_points": 98.541,
+        "playoff_probability": 0.644,
+        "second_round_probability": 0.313,
+        "conference_final_probability": 0.151,
+        "stanley_cup_final_probability": 0.073,
+        "stanley_cup_probability": 0.043
+      },
+      "isolated_scenario_fingerprint": "7e81913bc1219d058733fa8dc4e62d0b665478bd412c2079da077a6f8b32085c"
+    },
+    {
+      "event_id": "nyr-smits-breakout-range",
+      "team": "NYR",
+      "player": "Alberts Smits",
+      "label": "Smits immediately performs at positive top-four quality; scouting prior retained because NHL-only history cannot observe non-arrivals",
+      "occurrence_probability": 0.3,
+      "correlation_key": null,
+      "raw_team_strength_delta": 3.0,
+      "conditional_impact": {
+        "team": "NYR",
+        "average_points_delta": 0.7900000000000063,
+        "playoff_probability_delta": 0.02400000000000002,
+        "second_round_probability_delta": 0.03199999999999997,
+        "conference_final_probability_delta": 0.02099999999999999,
+        "stanley_cup_final_probability_delta": 0.0030000000000000027,
+        "stanley_cup_probability_delta": 0.0010000000000000009,
+        "presidents_trophy_probability_delta": 0.010000000000000009,
+        "average_longest_win_streak_delta": 0.08499999999999996
+      },
+      "conditional_outcome": {
+        "team": "NYR",
+        "average_points": 100.536,
+        "playoff_probability": 0.726,
+        "second_round_probability": 0.372,
+        "conference_final_probability": 0.186,
+        "stanley_cup_final_probability": 0.09,
+        "stanley_cup_probability": 0.056
+      },
+      "isolated_scenario_fingerprint": "82258befa4cc620ef4b68814a5c253eb40b4425a60d5535bd847d1071553cffa"
+    },
+    {
+      "event_id": "nyr-zibanejad-downturn-range",
+      "team": "NYR",
+      "player": "Mika Zibanejad",
+      "label": "Zibanejad loses another step of even-strength impact",
+      "occurrence_probability": 0.4184,
+      "correlation_key": null,
+      "raw_team_strength_delta": -3.3248,
+      "conditional_impact": {
+        "team": "NYR",
+        "average_points_delta": -0.938999999999993,
+        "playoff_probability_delta": -0.050999999999999934,
+        "second_round_probability_delta": -0.03600000000000003,
+        "conference_final_probability_delta": -0.016000000000000014,
+        "stanley_cup_final_probability_delta": -0.012999999999999998,
+        "stanley_cup_probability_delta": -0.012999999999999998,
+        "presidents_trophy_probability_delta": -0.012999999999999998,
+        "average_longest_win_streak_delta": -0.09499999999999975
+      },
+      "conditional_outcome": {
+        "team": "NYR",
+        "average_points": 98.807,
+        "playoff_probability": 0.651,
+        "second_round_probability": 0.304,
+        "conference_final_probability": 0.149,
+        "stanley_cup_final_probability": 0.074,
+        "stanley_cup_probability": 0.042
+      },
+      "isolated_scenario_fingerprint": "fd5d8ce5b563f45ddafc32950d5f033daad188eb199f1aca793e6a8955d73e90"
+    }
+  ],
+  "naturally_sampled_impacts": [
+    {
+      "team": "NYR",
+      "average_points_delta": -0.35499999999998977,
+      "playoff_probability_delta": -0.017999999999999905,
+      "second_round_probability_delta": -0.013000000000000012,
+      "conference_final_probability_delta": -0.008000000000000007,
+      "stanley_cup_final_probability_delta": -0.0059999999999999915,
+      "stanley_cup_probability_delta": -0.0049999999999999975,
+      "presidents_trophy_probability_delta": -0.0049999999999999975,
+      "average_longest_win_streak_delta": -0.027000000000000135
+    },
+    {
+      "team": "UTA",
+      "average_points_delta": 0.013999999999995794,
+      "playoff_probability_delta": 0.006000000000000005,
+      "second_round_probability_delta": -0.0020000000000000018,
+      "conference_final_probability_delta": -0.0020000000000000018,
+      "stanley_cup_final_probability_delta": 0.0,
+      "stanley_cup_probability_delta": -0.0010000000000000009,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.0009999999999994458
+    },
+    {
+      "team": "PHI",
+      "average_points_delta": 0.04099999999999682,
+      "playoff_probability_delta": 0.0040000000000000036,
+      "second_round_probability_delta": 0.009000000000000008,
+      "conference_final_probability_delta": 0.0,
+      "stanley_cup_final_probability_delta": -0.0030000000000000027,
+      "stanley_cup_probability_delta": -0.0050000000000000044,
+      "presidents_trophy_probability_delta": 0.000999999999999994,
+      "average_longest_win_streak_delta": 0.0019999999999997797
+    },
+    {
+      "team": "STL",
+      "average_points_delta": 0.006000000000000227,
+      "playoff_probability_delta": -0.0040000000000000036,
+      "second_round_probability_delta": 0.0030000000000000027,
+      "conference_final_probability_delta": 0.0,
+      "stanley_cup_final_probability_delta": -0.0010000000000000009,
+      "stanley_cup_probability_delta": -0.001,
+      "presidents_trophy_probability_delta": 0.001,
+      "average_longest_win_streak_delta": 0.0019999999999997797
+    },
+    {
+      "team": "WPG",
+      "average_points_delta": 0.0010000000000047748,
+      "playoff_probability_delta": -0.0040000000000000036,
+      "second_round_probability_delta": 0.009000000000000008,
+      "conference_final_probability_delta": 0.008,
+      "stanley_cup_final_probability_delta": 0.008,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.0
+    },
+    {
+      "team": "WSH",
+      "average_points_delta": 0.018000000000000682,
+      "playoff_probability_delta": 0.0040000000000000036,
+      "second_round_probability_delta": -0.0040000000000000036,
+      "conference_final_probability_delta": -0.006000000000000005,
+      "stanley_cup_final_probability_delta": 0.0,
+      "stanley_cup_probability_delta": -0.002999999999999989,
+      "presidents_trophy_probability_delta": -0.0020000000000000018,
+      "average_longest_win_streak_delta": -0.002000000000000668
+    },
+    {
+      "team": "CGY",
+      "average_points_delta": 0.007999999999995566,
+      "playoff_probability_delta": 0.0030000000000000027,
+      "second_round_probability_delta": 0.0,
+      "conference_final_probability_delta": -0.0010000000000000009,
+      "stanley_cup_final_probability_delta": -0.002,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.0030000000000001137
+    },
+    {
+      "team": "NYI",
+      "average_points_delta": 0.013999999999995794,
+      "playoff_probability_delta": 0.0030000000000000027,
+      "second_round_probability_delta": -0.0010000000000000009,
+      "conference_final_probability_delta": 0.0,
+      "stanley_cup_final_probability_delta": -0.001,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.001,
+      "average_longest_win_streak_delta": -0.0009999999999994458
+    },
+    {
+      "team": "OTT",
+      "average_points_delta": 0.025000000000005684,
+      "playoff_probability_delta": 0.0030000000000000027,
+      "second_round_probability_delta": 0.0,
+      "conference_final_probability_delta": 0.0010000000000000009,
+      "stanley_cup_final_probability_delta": -0.0010000000000000009,
+      "stanley_cup_probability_delta": 0.0009999999999999992,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.0009999999999994458
+    },
+    {
+      "team": "PIT",
+      "average_points_delta": 0.021000000000000796,
+      "playoff_probability_delta": 0.0030000000000000027,
+      "second_round_probability_delta": 0.0030000000000000027,
+      "conference_final_probability_delta": 0.0030000000000000027,
+      "stanley_cup_final_probability_delta": -0.0030000000000000027,
+      "stanley_cup_probability_delta": 0.0010000000000000009,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.001000000000000334
+    },
+    {
+      "team": "CAR",
+      "average_points_delta": 0.012000000000000455,
+      "playoff_probability_delta": -0.0020000000000000018,
+      "second_round_probability_delta": -0.0010000000000000009,
+      "conference_final_probability_delta": 0.0040000000000000036,
+      "stanley_cup_final_probability_delta": 0.0,
+      "stanley_cup_probability_delta": -0.002999999999999999,
+      "presidents_trophy_probability_delta": 0.0010000000000000009,
+      "average_longest_win_streak_delta": 0.0009999999999994458
+    },
+    {
+      "team": "FLA",
+      "average_points_delta": 0.02200000000000557,
+      "playoff_probability_delta": 0.0020000000000000018,
+      "second_round_probability_delta": 0.0030000000000000027,
+      "conference_final_probability_delta": 0.0020000000000000018,
+      "stanley_cup_final_probability_delta": -0.0010000000000000009,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": -0.0010000000000000009,
+      "average_longest_win_streak_delta": 0.0
+    },
+    {
+      "team": "MTL",
+      "average_points_delta": 0.019000000000005457,
+      "playoff_probability_delta": 0.0020000000000000018,
+      "second_round_probability_delta": 0.007999999999999952,
+      "conference_final_probability_delta": 0.0,
+      "stanley_cup_final_probability_delta": 0.0030000000000000027,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": -0.001999999999999988,
+      "average_longest_win_streak_delta": 0.0030000000000001137
+    },
+    {
+      "team": "TBL",
+      "average_points_delta": 0.018000000000000682,
+      "playoff_probability_delta": -0.0020000000000000018,
+      "second_round_probability_delta": 0.0040000000000000036,
+      "conference_final_probability_delta": 0.006000000000000005,
+      "stanley_cup_final_probability_delta": 0.01100000000000001,
+      "stanley_cup_probability_delta": 0.010999999999999996,
+      "presidents_trophy_probability_delta": 0.0010000000000000009,
+      "average_longest_win_streak_delta": 0.001000000000000334
+    },
+    {
+      "team": "ANA",
+      "average_points_delta": 0.0040000000000048885,
+      "playoff_probability_delta": -0.0010000000000000009,
+      "second_round_probability_delta": 0.0020000000000000018,
+      "conference_final_probability_delta": -0.0020000000000000018,
+      "stanley_cup_final_probability_delta": -0.0019999999999999983,
+      "stanley_cup_probability_delta": -0.002,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.0019999999999997797
+    },
+    {
+      "team": "BUF",
+      "average_points_delta": -0.006000000000000227,
+      "playoff_probability_delta": -0.0010000000000000009,
+      "second_round_probability_delta": 0.0020000000000000018,
+      "conference_final_probability_delta": -0.0040000000000000036,
+      "stanley_cup_final_probability_delta": 0.000999999999999987,
+      "stanley_cup_probability_delta": -0.0010000000000000009,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.0019999999999997797
+    },
+    {
+      "team": "CBJ",
+      "average_points_delta": 0.01999999999999602,
+      "playoff_probability_delta": 0.0010000000000000009,
+      "second_round_probability_delta": -0.009999999999999995,
+      "conference_final_probability_delta": -0.0020000000000000018,
+      "stanley_cup_final_probability_delta": -0.0020000000000000018,
+      "stanley_cup_probability_delta": -0.003000000000000001,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.009999999999999787
+    },
+    {
+      "team": "COL",
+      "average_points_delta": 0.01100000000000989,
+      "playoff_probability_delta": 0.0010000000000000009,
+      "second_round_probability_delta": 0.0,
+      "conference_final_probability_delta": 0.0010000000000000009,
+      "stanley_cup_final_probability_delta": -0.001999999999999974,
+      "stanley_cup_probability_delta": 0.001999999999999988,
+      "presidents_trophy_probability_delta": 0.0020000000000000018,
+      "average_longest_win_streak_delta": -0.002000000000000668
+    },
+    {
+      "team": "DAL",
+      "average_points_delta": 0.007999999999995566,
+      "playoff_probability_delta": -0.0010000000000000009,
+      "second_round_probability_delta": 0.0010000000000000009,
+      "conference_final_probability_delta": 0.0010000000000000009,
+      "stanley_cup_final_probability_delta": 0.008000000000000007,
+      "stanley_cup_probability_delta": 0.01100000000000001,
+      "presidents_trophy_probability_delta": 0.0010000000000000009,
+      "average_longest_win_streak_delta": 0.0
+    },
+    {
+      "team": "EDM",
+      "average_points_delta": 0.019000000000005457,
+      "playoff_probability_delta": 0.0010000000000000009,
+      "second_round_probability_delta": 0.0020000000000000018,
+      "conference_final_probability_delta": -0.0050000000000000044,
+      "stanley_cup_final_probability_delta": -0.006999999999999992,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": -0.0010000000000000009,
+      "average_longest_win_streak_delta": 0.0030000000000001137
+    },
+    {
+      "team": "LAK",
+      "average_points_delta": 0.013999999999995794,
+      "playoff_probability_delta": -0.0010000000000000009,
+      "second_round_probability_delta": -0.0030000000000000027,
+      "conference_final_probability_delta": 0.0010000000000000009,
+      "stanley_cup_final_probability_delta": 0.0010000000000000009,
+      "stanley_cup_probability_delta": -0.0010000000000000009,
+      "presidents_trophy_probability_delta": 0.0009999999999999992,
+      "average_longest_win_streak_delta": 0.0
+    },
+    {
+      "team": "NJD",
+      "average_points_delta": 0.01999999999999602,
+      "playoff_probability_delta": 0.0010000000000000009,
+      "second_round_probability_delta": 0.0040000000000000036,
+      "conference_final_probability_delta": 0.005999999999999998,
+      "stanley_cup_final_probability_delta": 0.002999999999999999,
+      "stanley_cup_probability_delta": -0.0009999999999999992,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.006999999999999673
+    },
+    {
+      "team": "NSH",
+      "average_points_delta": 0.006000000000000227,
+      "playoff_probability_delta": 0.0010000000000000009,
+      "second_round_probability_delta": 0.0020000000000000018,
+      "conference_final_probability_delta": -0.0040000000000000036,
+      "stanley_cup_final_probability_delta": 0.0009999999999999974,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.0
+    },
+    {
+      "team": "VGK",
+      "average_points_delta": 0.007999999999995566,
+      "playoff_probability_delta": -0.0010000000000000009,
+      "second_round_probability_delta": -0.013000000000000012,
+      "conference_final_probability_delta": -0.0020000000000000018,
+      "stanley_cup_final_probability_delta": 0.0,
+      "stanley_cup_probability_delta": 0.0020000000000000018,
+      "presidents_trophy_probability_delta": 0.0010000000000000009,
+      "average_longest_win_streak_delta": 0.0
+    },
+    {
+      "team": "BOS",
+      "average_points_delta": -0.000999999999990564,
+      "playoff_probability_delta": 0.0,
+      "second_round_probability_delta": -0.0040000000000000036,
+      "conference_final_probability_delta": -0.0010000000000000009,
+      "stanley_cup_final_probability_delta": -0.002999999999999999,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.001000000000000334
+    },
+    {
+      "team": "CHI",
+      "average_points_delta": 0.0049999999999954525,
+      "playoff_probability_delta": 0.0,
+      "second_round_probability_delta": 0.0010000000000000009,
+      "conference_final_probability_delta": 0.0010000000000000009,
+      "stanley_cup_final_probability_delta": -0.0010000000000000009,
+      "stanley_cup_probability_delta": -0.001,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.0
+    },
+    {
+      "team": "DET",
+      "average_points_delta": 0.014000000000010004,
+      "playoff_probability_delta": 0.0,
+      "second_round_probability_delta": 0.0,
+      "conference_final_probability_delta": 0.0009999999999999974,
+      "stanley_cup_final_probability_delta": -0.001,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.001,
+      "average_longest_win_streak_delta": 0.0030000000000001137
+    },
+    {
+      "team": "MIN",
+      "average_points_delta": 0.0040000000000048885,
+      "playoff_probability_delta": 0.0,
+      "second_round_probability_delta": 0.0010000000000000009,
+      "conference_final_probability_delta": 0.0010000000000000009,
+      "stanley_cup_final_probability_delta": 0.0,
+      "stanley_cup_probability_delta": 0.0020000000000000018,
+      "presidents_trophy_probability_delta": -0.0010000000000000009,
+      "average_longest_win_streak_delta": 0.0030000000000001137
+    },
+    {
+      "team": "SEA",
+      "average_points_delta": 0.006000000000000227,
+      "playoff_probability_delta": 0.0,
+      "second_round_probability_delta": 0.0020000000000000018,
+      "conference_final_probability_delta": 0.002999999999999989,
+      "stanley_cup_final_probability_delta": 0.0,
+      "stanley_cup_probability_delta": -0.0009999999999999974,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.0
+    },
+    {
+      "team": "SJS",
+      "average_points_delta": -0.012999999999991019,
+      "playoff_probability_delta": 0.0,
+      "second_round_probability_delta": -0.0040000000000000036,
+      "conference_final_probability_delta": 0.0020000000000000018,
+      "stanley_cup_final_probability_delta": -0.0020000000000000018,
+      "stanley_cup_probability_delta": -0.0010000000000000009,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.001000000000000334
+    },
+    {
+      "team": "TOR",
+      "average_points_delta": 0.010000000000005116,
+      "playoff_probability_delta": 0.0,
+      "second_round_probability_delta": 0.0,
+      "conference_final_probability_delta": -0.0020000000000000018,
+      "stanley_cup_final_probability_delta": 0.0030000000000000027,
+      "stanley_cup_probability_delta": -0.0010000000000000009,
+      "presidents_trophy_probability_delta": 0.0010000000000000009,
+      "average_longest_win_streak_delta": 0.0
+    },
+    {
+      "team": "VAN",
+      "average_points_delta": 0.007000000000005002,
+      "playoff_probability_delta": 0.0,
+      "second_round_probability_delta": -0.0010000000000000009,
+      "conference_final_probability_delta": -0.002,
+      "stanley_cup_final_probability_delta": -0.001,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": 0.001000000000000334
+    }
+  ],
+  "forced_ceiling_paths": [
+    {
+      "team": "NYR",
+      "raw_team_strength_delta_sum": 15.4855,
+      "display_label": "+15 Path",
+      "event_ids": [
+        "nyr-kartye-breakout-range",
+        "nyr-laba-breakout-range",
+        "nyr-lafreniere-breakout-range",
+        "nyr-perreault-breakout-range",
+        "nyr-smits-breakout-range"
+      ]
+    }
+  ],
+  "forced_ceiling_impacts": [
+    {
+      "team": "NYR",
+      "average_points_delta": 4.263000000000005,
+      "playoff_probability_delta": 0.14500000000000002,
+      "second_round_probability_delta": 0.16099999999999998,
+      "conference_final_probability_delta": 0.11899999999999997,
+      "stanley_cup_final_probability_delta": 0.067,
+      "stanley_cup_probability_delta": 0.034999999999999996,
+      "presidents_trophy_probability_delta": 0.08000000000000002,
+      "average_longest_win_streak_delta": 0.4850000000000003
+    },
+    {
+      "team": "CAR",
+      "average_points_delta": -0.18900000000000716,
+      "playoff_probability_delta": -0.020000000000000018,
+      "second_round_probability_delta": -0.014999999999999958,
+      "conference_final_probability_delta": -0.017,
+      "stanley_cup_final_probability_delta": -0.009000000000000001,
+      "stanley_cup_probability_delta": -0.002999999999999999,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.013000000000000789
+    },
+    {
+      "team": "PHI",
+      "average_points_delta": -0.19600000000001216,
+      "playoff_probability_delta": -0.018000000000000016,
+      "second_round_probability_delta": -0.043999999999999984,
+      "conference_final_probability_delta": -0.03699999999999999,
+      "stanley_cup_final_probability_delta": -0.020999999999999998,
+      "stanley_cup_probability_delta": -0.02,
+      "presidents_trophy_probability_delta": -0.006000000000000005,
+      "average_longest_win_streak_delta": -0.020999999999999908
+    },
+    {
+      "team": "CBJ",
+      "average_points_delta": -0.23199999999999932,
+      "playoff_probability_delta": -0.016000000000000014,
+      "second_round_probability_delta": -0.021000000000000005,
+      "conference_final_probability_delta": -0.010999999999999996,
+      "stanley_cup_final_probability_delta": -0.004,
+      "stanley_cup_probability_delta": -0.003000000000000001,
+      "presidents_trophy_probability_delta": -0.003,
+      "average_longest_win_streak_delta": -0.017000000000000348
+    },
+    {
+      "team": "PIT",
+      "average_points_delta": -0.21800000000000352,
+      "playoff_probability_delta": -0.014000000000000012,
+      "second_round_probability_delta": -0.015999999999999986,
+      "conference_final_probability_delta": -0.008000000000000007,
+      "stanley_cup_final_probability_delta": -0.0010000000000000009,
+      "stanley_cup_probability_delta": -0.0020000000000000018,
+      "presidents_trophy_probability_delta": -0.005000000000000001,
+      "average_longest_win_streak_delta": -0.0259999999999998
+    },
+    {
+      "team": "NJD",
+      "average_points_delta": -0.22499999999999432,
+      "playoff_probability_delta": -0.012999999999999956,
+      "second_round_probability_delta": -0.009999999999999981,
+      "conference_final_probability_delta": -0.012000000000000004,
+      "stanley_cup_final_probability_delta": -0.006,
+      "stanley_cup_probability_delta": -0.003999999999999999,
+      "presidents_trophy_probability_delta": -0.0010000000000000009,
+      "average_longest_win_streak_delta": -0.018000000000000682
+    },
+    {
+      "team": "TBL",
+      "average_points_delta": -0.1629999999999967,
+      "playoff_probability_delta": -0.01200000000000001,
+      "second_round_probability_delta": -0.0010000000000000009,
+      "conference_final_probability_delta": 0.0,
+      "stanley_cup_final_probability_delta": 0.0,
+      "stanley_cup_probability_delta": 0.006000000000000005,
+      "presidents_trophy_probability_delta": -0.009999999999999995,
+      "average_longest_win_streak_delta": -0.01499999999999968
+    },
+    {
+      "team": "BUF",
+      "average_points_delta": -0.1419999999999959,
+      "playoff_probability_delta": -0.009000000000000008,
+      "second_round_probability_delta": 0.0,
+      "conference_final_probability_delta": 0.009000000000000008,
+      "stanley_cup_final_probability_delta": 0.0049999999999999906,
+      "stanley_cup_probability_delta": 0.006999999999999999,
+      "presidents_trophy_probability_delta": -0.0049999999999999975,
+      "average_longest_win_streak_delta": -0.010999999999999233
+    },
+    {
+      "team": "MTL",
+      "average_points_delta": -0.1389999999999958,
+      "playoff_probability_delta": -0.008000000000000007,
+      "second_round_probability_delta": -0.0030000000000000027,
+      "conference_final_probability_delta": -0.009000000000000008,
+      "stanley_cup_final_probability_delta": -0.0059999999999999915,
+      "stanley_cup_probability_delta": -0.0010000000000000009,
+      "presidents_trophy_probability_delta": -0.008999999999999994,
+      "average_longest_win_streak_delta": -0.0129999999999999
+    },
+    {
+      "team": "OTT",
+      "average_points_delta": -0.1559999999999917,
+      "playoff_probability_delta": -0.008000000000000007,
+      "second_round_probability_delta": -0.0040000000000000036,
+      "conference_final_probability_delta": 0.0050000000000000044,
+      "stanley_cup_final_probability_delta": -0.0030000000000000027,
+      "stanley_cup_probability_delta": -0.002,
+      "presidents_trophy_probability_delta": -0.003999999999999998,
+      "average_longest_win_streak_delta": -0.02600000000000069
+    },
+    {
+      "team": "NYI",
+      "average_points_delta": -0.22299999999999898,
+      "playoff_probability_delta": -0.00799999999999998,
+      "second_round_probability_delta": -0.0040000000000000036,
+      "conference_final_probability_delta": 0.0,
+      "stanley_cup_final_probability_delta": -0.001,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.022999999999999687
+    },
+    {
+      "team": "DET",
+      "average_points_delta": -0.16499999999999204,
+      "playoff_probability_delta": -0.007000000000000006,
+      "second_round_probability_delta": -0.0010000000000000009,
+      "conference_final_probability_delta": -0.0020000000000000018,
+      "stanley_cup_final_probability_delta": -0.001,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": -0.001,
+      "average_longest_win_streak_delta": -0.005999999999999339
+    },
+    {
+      "team": "FLA",
+      "average_points_delta": -0.1490000000000009,
+      "playoff_probability_delta": -0.006999999999999895,
+      "second_round_probability_delta": -0.007000000000000006,
+      "conference_final_probability_delta": -0.0059999999999999915,
+      "stanley_cup_final_probability_delta": 0.0030000000000000027,
+      "stanley_cup_probability_delta": 0.0050000000000000044,
+      "presidents_trophy_probability_delta": -0.0020000000000000018,
+      "average_longest_win_streak_delta": -0.01699999999999946
+    },
+    {
+      "team": "WSH",
+      "average_points_delta": -0.18099999999999739,
+      "playoff_probability_delta": -0.0050000000000000044,
+      "second_round_probability_delta": -0.029000000000000026,
+      "conference_final_probability_delta": -0.02200000000000002,
+      "stanley_cup_final_probability_delta": -0.010000000000000009,
+      "stanley_cup_probability_delta": -0.0010000000000000009,
+      "presidents_trophy_probability_delta": -0.007000000000000006,
+      "average_longest_win_streak_delta": -0.02400000000000002
+    },
+    {
+      "team": "ANA",
+      "average_points_delta": -0.09000000000000341,
+      "playoff_probability_delta": -0.0030000000000000027,
+      "second_round_probability_delta": -0.015,
+      "conference_final_probability_delta": 0.0,
+      "stanley_cup_final_probability_delta": -0.002999999999999999,
+      "stanley_cup_probability_delta": 0.0009999999999999992,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.009999999999999787
+    },
+    {
+      "team": "COL",
+      "average_points_delta": -0.10099999999999909,
+      "playoff_probability_delta": 0.0030000000000000027,
+      "second_round_probability_delta": -0.0050000000000000044,
+      "conference_final_probability_delta": -0.01599999999999996,
+      "stanley_cup_final_probability_delta": -0.00799999999999998,
+      "stanley_cup_probability_delta": 0.002999999999999989,
+      "presidents_trophy_probability_delta": -0.000999999999999987,
+      "average_longest_win_streak_delta": -0.014000000000000234
+    },
+    {
+      "team": "SJS",
+      "average_points_delta": -0.10699999999999932,
+      "playoff_probability_delta": -0.0030000000000000027,
+      "second_round_probability_delta": -0.009000000000000008,
+      "conference_final_probability_delta": -0.001999999999999988,
+      "stanley_cup_final_probability_delta": 0.0,
+      "stanley_cup_probability_delta": -0.004,
+      "presidents_trophy_probability_delta": -0.001,
+      "average_longest_win_streak_delta": -0.006000000000000227
+    },
+    {
+      "team": "UTA",
+      "average_points_delta": -0.06399999999999295,
+      "playoff_probability_delta": 0.0030000000000000027,
+      "second_round_probability_delta": 0.01100000000000001,
+      "conference_final_probability_delta": 0.008000000000000007,
+      "stanley_cup_final_probability_delta": 0.005999999999999998,
+      "stanley_cup_probability_delta": -0.002999999999999999,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.009000000000000341
+    },
+    {
+      "team": "BOS",
+      "average_points_delta": -0.1629999999999967,
+      "playoff_probability_delta": -0.0020000000000000018,
+      "second_round_probability_delta": -0.00799999999999998,
+      "conference_final_probability_delta": -0.006999999999999999,
+      "stanley_cup_final_probability_delta": -0.008,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.008000000000000007
+    },
+    {
+      "team": "EDM",
+      "average_points_delta": -0.10800000000000409,
+      "playoff_probability_delta": 0.0020000000000000018,
+      "second_round_probability_delta": 0.01200000000000001,
+      "conference_final_probability_delta": 0.014000000000000012,
+      "stanley_cup_final_probability_delta": 0.014000000000000012,
+      "stanley_cup_probability_delta": 0.006999999999999999,
+      "presidents_trophy_probability_delta": -0.0030000000000000027,
+      "average_longest_win_streak_delta": -0.017999999999999794
+    },
+    {
+      "team": "MIN",
+      "average_points_delta": -0.08699999999998909,
+      "playoff_probability_delta": -0.0020000000000000018,
+      "second_round_probability_delta": 0.0050000000000000044,
+      "conference_final_probability_delta": 0.0050000000000000044,
+      "stanley_cup_final_probability_delta": 0.0030000000000000027,
+      "stanley_cup_probability_delta": -0.0049999999999999906,
+      "presidents_trophy_probability_delta": -0.0040000000000000036,
+      "average_longest_win_streak_delta": -0.008000000000000007
+    },
+    {
+      "team": "NSH",
+      "average_points_delta": -0.08899999999999864,
+      "playoff_probability_delta": 0.0020000000000000018,
+      "second_round_probability_delta": -0.0030000000000000027,
+      "conference_final_probability_delta": -0.007999999999999993,
+      "stanley_cup_final_probability_delta": -0.0030000000000000027,
+      "stanley_cup_probability_delta": -0.0009999999999999992,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.01100000000000012
+    },
+    {
+      "team": "TOR",
+      "average_points_delta": -0.1419999999999959,
+      "playoff_probability_delta": 0.0020000000000000018,
+      "second_round_probability_delta": 0.0020000000000000018,
+      "conference_final_probability_delta": -0.0020000000000000018,
+      "stanley_cup_final_probability_delta": -0.005000000000000001,
+      "stanley_cup_probability_delta": -0.008,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.012000000000000455
+    },
+    {
+      "team": "VGK",
+      "average_points_delta": -0.09999999999999432,
+      "playoff_probability_delta": -0.0020000000000000018,
+      "second_round_probability_delta": -0.01100000000000001,
+      "conference_final_probability_delta": -0.009000000000000008,
+      "stanley_cup_final_probability_delta": -0.0040000000000000036,
+      "stanley_cup_probability_delta": -0.0010000000000000009,
+      "presidents_trophy_probability_delta": -0.0019999999999999983,
+      "average_longest_win_streak_delta": -0.009999999999999787
+    },
+    {
+      "team": "CGY",
+      "average_points_delta": -0.117999999999995,
+      "playoff_probability_delta": 0.0010000000000000009,
+      "second_round_probability_delta": 0.007000000000000006,
+      "conference_final_probability_delta": 0.002999999999999999,
+      "stanley_cup_final_probability_delta": -0.002,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": -0.001,
+      "average_longest_win_streak_delta": -0.0129999999999999
+    },
+    {
+      "team": "CHI",
+      "average_points_delta": -0.11200000000000898,
+      "playoff_probability_delta": -0.0010000000000000009,
+      "second_round_probability_delta": -0.008999999999999994,
+      "conference_final_probability_delta": -0.003999999999999997,
+      "stanley_cup_final_probability_delta": -0.002,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": -0.003,
+      "average_longest_win_streak_delta": -0.016000000000000014
+    },
+    {
+      "team": "DAL",
+      "average_points_delta": -0.08199999999999363,
+      "playoff_probability_delta": -0.0010000000000000009,
+      "second_round_probability_delta": 0.01599999999999996,
+      "conference_final_probability_delta": 0.010000000000000009,
+      "stanley_cup_final_probability_delta": 0.0050000000000000044,
+      "stanley_cup_probability_delta": -0.002999999999999989,
+      "presidents_trophy_probability_delta": -0.008999999999999994,
+      "average_longest_win_streak_delta": -0.004000000000000448
+    },
+    {
+      "team": "LAK",
+      "average_points_delta": -0.10500000000000398,
+      "playoff_probability_delta": 0.0010000000000000009,
+      "second_round_probability_delta": 0.007000000000000006,
+      "conference_final_probability_delta": 0.0010000000000000009,
+      "stanley_cup_final_probability_delta": 0.0030000000000000027,
+      "stanley_cup_probability_delta": 0.002999999999999999,
+      "presidents_trophy_probability_delta": -0.001,
+      "average_longest_win_streak_delta": -0.009999999999999787
+    },
+    {
+      "team": "SEA",
+      "average_points_delta": -0.0940000000000083,
+      "playoff_probability_delta": 0.0010000000000000009,
+      "second_round_probability_delta": -0.010000000000000009,
+      "conference_final_probability_delta": -0.007000000000000006,
+      "stanley_cup_final_probability_delta": -0.009000000000000001,
+      "stanley_cup_probability_delta": -0.0049999999999999975,
+      "presidents_trophy_probability_delta": -0.001,
+      "average_longest_win_streak_delta": -0.01499999999999968
+    },
+    {
+      "team": "STL",
+      "average_points_delta": -0.11199999999999477,
+      "playoff_probability_delta": -0.0010000000000000009,
+      "second_round_probability_delta": 0.0,
+      "conference_final_probability_delta": 0.0010000000000000009,
+      "stanley_cup_final_probability_delta": -0.0010000000000000009,
+      "stanley_cup_probability_delta": -0.002,
+      "presidents_trophy_probability_delta": -0.001,
+      "average_longest_win_streak_delta": -0.012000000000000455
+    },
+    {
+      "team": "VAN",
+      "average_points_delta": -0.10999999999999943,
+      "playoff_probability_delta": 0.0010000000000000009,
+      "second_round_probability_delta": -0.0030000000000000027,
+      "conference_final_probability_delta": -0.005000000000000001,
+      "stanley_cup_final_probability_delta": -0.003,
+      "stanley_cup_probability_delta": 0.0,
+      "presidents_trophy_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.0039999999999995595
+    },
+    {
+      "team": "WPG",
+      "average_points_delta": -0.10099999999999909,
+      "playoff_probability_delta": -0.0010000000000000009,
+      "second_round_probability_delta": 0.007000000000000006,
+      "conference_final_probability_delta": 0.009000000000000001,
+      "stanley_cup_final_probability_delta": 0.004,
+      "stanley_cup_probability_delta": 0.001,
+      "presidents_trophy_probability_delta": -0.002,
+      "average_longest_win_streak_delta": -0.004999999999999893
+    }
+  ],
+  "disclosures": [
+    "Each isolated impact forces exactly one event to occur, disables every unrelated event, and compares paired runs with identical schedule, seed, trials, and model parameters.",
+    "Raw team-strength delta is a model input, not standings points; outcome deltas come only from the paired simulation.",
+    "The forced ceiling includes positive-strength events only. The naturally sampled run retains original marginal probabilities and explicit correlation keys.",
+    "Display path labels round only the summed strength input; raw sums remain authoritative."
+  ]
+}

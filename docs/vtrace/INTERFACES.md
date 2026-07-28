@@ -635,9 +635,12 @@ overall-only or otherwise unattributed change fails closed.
 `organization_window_scenario_distribution_input.v1` adds seeded, bounded raw
 profile shocks to those typed authorities. Every trial rebuilds the complete
 cohort; output includes central typed attribution and organization/pane/shock
-distributions. Unsupported schemas, unsealed baselines, invalid or duplicate
-shocks, authority-scope mismatches, non-finite values, and insufficient trials
-fail closed.
+distributions. Active and inactive raw deltas support mean-centered discrete
+outcomes; every numeric estimate has its own source fingerprint. Unscored panes
+remain omitted rather than coerced to zero. Unsupported schemas, unsealed
+baselines, invalid or duplicate shocks, disabled profile scenario support,
+authority-scope mismatches, non-finite values, and insufficient trials fail
+closed.
 
 Versioning: bridge mappings and fingerprints are immutable. Movement fields
 for source manifest, bridge, and rebased checkpoint are additive within v1.

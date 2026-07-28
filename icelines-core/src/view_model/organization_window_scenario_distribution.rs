@@ -10,7 +10,7 @@ use thiserror::Error;
 use super::organization_window::{
     build_organization_window_board, load_organization_window_profile_inventory,
     validate_organization_window_board, OrganizationProfileInput, OrganizationWindowBoardInput,
-    OrganizationWindowBoardView,
+    OrganizationWindowBoardView, OrganizationWindowProfileInventory,
 };
 use super::organization_window_comparison::{
     compare_organization_window_typed_scenario, OrganizationWindowScenarioImpactView,
@@ -34,8 +34,13 @@ pub struct WindowScenarioProfileShockInput {
     pub profile_key: String,
     pub method_version: String,
     pub authority_id: String,
+    /// Fingerprint of the artifact that supplied this shock's numeric estimate.
+    pub estimate_source_fingerprint: String,
     /// Conditional mean raw-value delta when the event occurs.
     pub mean_raw_delta: f64,
+    /// Raw-value delta when the event does not occur. Defaults to zero.
+    #[serde(default)]
+    pub inactive_raw_delta: f64,
     /// Bounded triangular uncertainty: `mean + half_range * (u1 - u2)`.
     pub half_range: f64,
     pub occurrence_probability: f64,
@@ -83,6 +88,7 @@ pub struct WindowScenarioShockDistributionView {
     pub profile_key: String,
     pub method_version: String,
     pub authority_id: String,
+    pub estimate_source_fingerprint: String,
     pub sampled_raw_delta: WindowScenarioDistributionSummaryView,
     pub activation_probability: f64,
 }
@@ -161,12 +167,13 @@ pub fn simulate_organization_window_scenario_distribution(
     }
 
     canonicalize_input(&mut input);
-    validate_shocks(baseline, &input)?;
+    validate_shocks(baseline, &input, &inventory)?;
     let input_fingerprint = input_fingerprint(&input)?;
     let mut central_deltas = BTreeMap::new();
     for shock in &input.shocks {
-        *central_deltas.entry(shock_key(shock)).or_default() +=
-            shock.mean_raw_delta * shock.occurrence_probability;
+        *central_deltas.entry(shock_key(shock)).or_default() += shock.mean_raw_delta
+            * shock.occurrence_probability
+            + shock.inactive_raw_delta * (1.0 - shock.occurrence_probability);
     }
     let central_board =
         build_scenario_board(baseline, &central_deltas, &input, &input_fingerprint)?;
@@ -247,7 +254,7 @@ pub fn simulate_organization_window_scenario_distribution(
                 );
                 shock.mean_raw_delta + shock.half_range * (first - second)
             } else {
-                0.0
+                shock.inactive_raw_delta
             };
             *deltas.entry(shock_key(shock)).or_default() += sampled;
             shock_samples
@@ -278,10 +285,14 @@ pub fn simulate_organization_window_scenario_distribution(
                     .iter()
                     .find(|candidate| candidate.key == dimension.key)
                     .expect("validated common dimension");
-                dimension_samples
-                    .get_mut(&(organization.organization.clone(), dimension.key.clone()))
-                    .expect("canonical dimension sample")
-                    .push(dimension.score.unwrap() - baseline_dimension.score.unwrap());
+                if let (Some(score), Some(baseline_score)) =
+                    (dimension.score, baseline_dimension.score)
+                {
+                    dimension_samples
+                        .get_mut(&(organization.organization.clone(), dimension.key.clone()))
+                        .expect("canonical dimension sample")
+                        .push(score - baseline_score);
+                }
             }
         }
     }
@@ -293,6 +304,9 @@ pub fn simulate_organization_window_scenario_distribution(
             overall_score_delta: summarize(&overall_samples[organization]),
             dimensions: dimension_keys
                 .iter()
+                .filter(|dimension| {
+                    !dimension_samples[&(organization.clone(), (*dimension).clone())].is_empty()
+                })
                 .map(|dimension| WindowScenarioDimensionDistributionView {
                     dimension_key: dimension.clone(),
                     score_delta: summarize(
@@ -312,6 +326,7 @@ pub fn simulate_organization_window_scenario_distribution(
                 profile_key: shock.profile_key.clone(),
                 method_version: shock.method_version.clone(),
                 authority_id: shock.authority_id.clone(),
+                estimate_source_fingerprint: shock.estimate_source_fingerprint.clone(),
                 sampled_raw_delta: summarize(&shock_samples[&key]),
                 activation_probability: f64::from(shock_activations[&key])
                     / f64::from(input.trials),
@@ -331,9 +346,10 @@ pub fn simulate_organization_window_scenario_distribution(
         shocks,
         disclosures: vec![
             "Every trial perturbs registered raw profile inputs and rebuilds the complete cohort through the canonical Window scorer.".to_owned(),
-            "Shock uncertainty is a bounded symmetric triangular distribution around the conditional mean; occurrence probability is sampled separately.".to_owned(),
+            "Active-shock uncertainty is a bounded symmetric triangular distribution around the conditional mean; occurrence probability is sampled separately and the inactive outcome may carry its own raw delta.".to_owned(),
             "Shared correlation keys coordinate occurrence only; amplitudes remain shock-specific.".to_owned(),
             "The central impact uses probability-weighted expected raw deltas and is not substituted for the seeded distribution.".to_owned(),
+            "Pane distributions are omitted when the sealed baseline withholds that pane score; missing panes are never coerced to zero.".to_owned(),
         ],
         fingerprint: String::new(),
     };
@@ -344,6 +360,7 @@ pub fn simulate_organization_window_scenario_distribution(
 fn validate_shocks(
     baseline: &OrganizationWindowBoardView,
     input: &OrganizationWindowScenarioDistributionInput,
+    inventory: &OrganizationWindowProfileInventory,
 ) -> Result<(), OrganizationWindowScenarioDistributionError> {
     let authority_by_id = input
         .authorities
@@ -355,6 +372,8 @@ fn validate_shocks(
         let identity = shock_key_with_authority(shock);
         if !identities.insert(identity.clone())
             || !shock.mean_raw_delta.is_finite()
+            || !is_sha256_fingerprint(&shock.estimate_source_fingerprint)
+            || !shock.inactive_raw_delta.is_finite()
             || !shock.half_range.is_finite()
             || shock.half_range < 0.0
             || !shock.occurrence_probability.is_finite()
@@ -412,6 +431,22 @@ fn validate_shocks(
                 format!("baseline raw value is missing for {}", shock.profile_key),
             ));
         }
+        let descriptor = inventory
+            .find(&shock.profile_key, &shock.method_version)
+            .ok_or_else(|| {
+                OrganizationWindowScenarioDistributionError::InvalidShock(format!(
+                    "unregistered profile {}@{}",
+                    shock.profile_key, shock.method_version
+                ))
+            })?;
+        if !descriptor.scenario_support {
+            return Err(OrganizationWindowScenarioDistributionError::InvalidShock(
+                format!(
+                    "profile {}@{} does not support scenarios",
+                    shock.profile_key, shock.method_version
+                ),
+            ));
+        }
     }
     Ok(())
 }
@@ -462,6 +497,13 @@ fn build_scenario_board(
                                 authority_fingerprints.get(shock.authority_id.as_str())
                             })
                             .map(|fingerprint| (*fingerprint).to_owned()),
+                    );
+                    source_fingerprints.extend(
+                        input
+                            .shocks
+                            .iter()
+                            .filter(|shock| shock_key(shock) == key)
+                            .map(|shock| shock.estimate_source_fingerprint.clone()),
                     );
                 }
                 profile_inputs.push(OrganizationProfileInput {
@@ -548,6 +590,12 @@ fn shock_identity(shock: &WindowScenarioProfileShockInput) -> String {
         "{}:{}@{}:{}",
         shock.organization, shock.profile_key, shock.method_version, shock.authority_id
     )
+}
+
+fn is_sha256_fingerprint(value: &str) -> bool {
+    value
+        .strip_prefix("sha256:")
+        .is_some_and(|digest| digest.len() == 64 && digest.chars().all(|c| c.is_ascii_hexdigit()))
 }
 
 fn deterministic_unit(seed: u64, trial: u32, stream: &str) -> f64 {
@@ -748,7 +796,9 @@ mod tests {
                     profile_key: "nhl.expected_points".to_owned(),
                     method_version: "icecast_expected_points.v1".to_owned(),
                     authority_id: "nyr-trade".to_owned(),
+                    estimate_source_fingerprint: format!("sha256:{}", "f".repeat(64)),
                     mean_raw_delta: 6.0,
+                    inactive_raw_delta: 0.0,
                     half_range: 3.0,
                     occurrence_probability: 0.80,
                     correlation_key: Some("trade-completes".to_owned()),
@@ -758,7 +808,9 @@ mod tests {
                     profile_key: "pipeline.prospect_readiness".to_owned(),
                     method_version: "prospect_readiness_score.v1".to_owned(),
                     authority_id: "sea-development".to_owned(),
+                    estimate_source_fingerprint: format!("sha256:{}", "9".repeat(64)),
                     mean_raw_delta: 10.0,
+                    inactive_raw_delta: -2.0,
                     half_range: 5.0,
                     occurrence_probability: 0.65,
                     correlation_key: Some("prospect-hits".to_owned()),
@@ -794,6 +846,13 @@ mod tests {
             .shocks
             .iter()
             .all(|shock| shock.activation_probability > 0.5));
+        let sea_shock = result
+            .shocks
+            .iter()
+            .find(|shock| shock.organization == "SEA")
+            .unwrap();
+        assert!(sea_shock.sampled_raw_delta.positive_probability > 0.0);
+        assert!(sea_shock.sampled_raw_delta.negative_probability > 0.0);
 
         let mut reordered = combined.clone();
         reordered.authorities.reverse();
@@ -840,6 +899,19 @@ mod tests {
             simulate_organization_window_scenario_distribution(&baseline, invalid),
             Err(OrganizationWindowScenarioDistributionError::InvalidShock(_))
         ));
+
+        let mut unsupported = combined_input();
+        unsupported.authorities[1].profile_methods[0].profile_key =
+            "pipeline.prospect_pool".to_owned();
+        unsupported.authorities[1].profile_methods[0].method_version =
+            "prospect_pool_score.v1".to_owned();
+        unsupported.shocks[1].profile_key = "pipeline.prospect_pool".to_owned();
+        unsupported.shocks[1].method_version = "prospect_pool_score.v1".to_owned();
+        assert!(matches!(
+            simulate_organization_window_scenario_distribution(&baseline, unsupported),
+            Err(OrganizationWindowScenarioDistributionError::InvalidShock(message))
+                if message.contains("does not support scenarios")
+        ));
     }
 
     #[test]
@@ -857,5 +929,47 @@ mod tests {
             schema["properties"]["schema"]["const"],
             ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_SCHEMA
         );
+    }
+
+    #[test]
+    fn partial_board_omits_unscored_panes_without_panicking() {
+        let baseline: OrganizationWindowBoardView = serde_json::from_str(include_str!(
+            "../../../examples/organization-window-board-evaluation-2026-27.json"
+        ))
+        .unwrap();
+        let input = OrganizationWindowScenarioDistributionInput {
+            schema: ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_INPUT_SCHEMA.to_owned(),
+            scenario_id: "partial-board".to_owned(),
+            trials: 100,
+            seed: 29,
+            authorities: vec![authority(
+                "nyr-readiness",
+                WindowScenarioAuthorityKind::PlayerDevelopment,
+                "NYR",
+                "pipeline.prospect_readiness",
+                "prospect_readiness_score.v1",
+                'e',
+            )],
+            shocks: vec![WindowScenarioProfileShockInput {
+                organization: "NYR".to_owned(),
+                profile_key: "pipeline.prospect_readiness".to_owned(),
+                method_version: "prospect_readiness_score.v1".to_owned(),
+                authority_id: "nyr-readiness".to_owned(),
+                estimate_source_fingerprint: format!("sha256:{}", "8".repeat(64)),
+                mean_raw_delta: 1.0,
+                inactive_raw_delta: 0.0,
+                half_range: 0.0,
+                occurrence_probability: 1.0,
+                correlation_key: None,
+            }],
+        };
+        let result = simulate_organization_window_scenario_distribution(&baseline, input).unwrap();
+        let nyr = result
+            .organizations
+            .iter()
+            .find(|organization| organization.organization == "NYR")
+            .unwrap();
+        assert!(!nyr.dimensions.is_empty());
+        assert!(nyr.dimensions.len() < baseline.manifest.dimensions.len());
     }
 }

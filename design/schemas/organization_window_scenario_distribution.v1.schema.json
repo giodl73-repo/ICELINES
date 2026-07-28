@@ -49,18 +49,19 @@
       "properties": {
         "organization": { "type": "string", "minLength": 1 },
         "overall_score_delta": { "$ref": "#/$defs/summary" },
-        "dimensions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/dimension" } }
+        "dimensions": { "type": "array", "items": { "$ref": "#/$defs/dimension" } }
       },
       "additionalProperties": false
     },
     "shock": {
       "type": "object",
-      "required": ["organization", "profile_key", "method_version", "authority_id", "sampled_raw_delta", "activation_probability"],
+      "required": ["organization", "profile_key", "method_version", "authority_id", "estimate_source_fingerprint", "sampled_raw_delta", "activation_probability"],
       "properties": {
         "organization": { "type": "string", "minLength": 1 },
         "profile_key": { "type": "string", "minLength": 1 },
         "method_version": { "type": "string", "minLength": 1 },
         "authority_id": { "type": "string", "minLength": 1 },
+        "estimate_source_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
         "sampled_raw_delta": { "$ref": "#/$defs/summary" },
         "activation_probability": { "type": "number", "minimum": 0, "maximum": 1 }
       },

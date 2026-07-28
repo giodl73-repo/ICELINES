@@ -149,3 +149,18 @@ then observed the canonical fixed hashes and replay test passing on all three
 operating systems; that closes the platform-fingerprint observation, while the
 full PR workflow passed 22 of 22 checks. The real-history, package-matrix, and
 full-parity blockers remain explicit.
+
+### W6 real-scenario checkpoint
+
+The later W6 closeout added a real 32-team 2026-27 baseline from sealed
+team-season, lineup, and training-camp documents, plus a sourced NYR
+development/downturn scenario and paired same-seed isolated event evidence.
+The combined 1,000-trial Window distribution also propagates a mean-centered
+SEA camp outcome through the full scorer. TAPE/EDGE review found and fixed a
+partial-pane panic, added explicit inactive outcomes, enforced registry
+`scenario_support`, and separated authority fingerprints from numeric-estimate
+fingerprints. PACE keeps the result descriptive: missing panes and ranks remain
+withheld, percentile boundaries can produce zero aggregate movement from a
+real raw change, and the shock assumptions are not labeled calibrated. This
+closes the real-scenario evidence blocker without changing the W3-W4 production
+coverage, W7 future-holdout, package-matrix, or cross-surface parity gates.

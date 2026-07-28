@@ -1,8 +1,9 @@
 # The Window — Organization Health Implementation Plan
 
 **Date:** 2026-07-27
-**Status:** Active — foundation and evaluation surfaces implemented; historical,
-scenario-attribution, calibration, and release evidence remain open
+**Status:** Active — foundation, evaluation surfaces, historical origins, and
+scenario sensitivity implemented; production coverage, future-holdout, and
+release evidence remain open
 **Specification:** [`../specs/organization-window.md`](../specs/organization-window.md)
 **Review:** [`../notes/2026-07-27-organization-window-roles-review.md`](../notes/2026-07-27-organization-window-roles-review.md)
 **Parent workstreams:** Team Season Forecast, Line Combination Simulation,
@@ -37,11 +38,11 @@ preserved while the remaining work is completed:
 
 | Workstream | State | Proven capability | Remaining gate |
 |---|---|---|---|
-| W0 | complete | 32-profile machine-readable inventory: 17 ready, 8 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
+| W0 | complete | 37-profile machine-readable inventory: 17 ready, 13 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
 | W1-W2 | complete | Versioned observations/manifests/boards, deterministic fingerprints, validation, normalization, aggregation, confidence/coverage, rank gates | Cross-platform fingerprint matrix in W9. |
 | W3-W4 | evaluation-complete | `balanced.v1`, typed source adapters, all-32 partial evaluation board, classifications, focused cards | Fill production source coverage before claiming a complete ranked board. |
 | W5 | partial | Comparable movement/history contracts, refusal tests, and immutable bridge/rebase through the canonical scorer | Real point-in-time checkpoints and personnel attribution evidence. |
-| W6 | evaluation-complete | Sealed baseline/scenario comparison, typed trade/injury/development/camp/line authorities, direct/cohort/unchanged attribution, and fail-closed fixture | Real multi-source isolated/combined scenario boards and seeded distribution evidence. |
+| W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
 | W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed claim status, frozen training/validation/retrospective-holdout roles, and four real point-in-time observed-history origins | Trial-noise propagation and future untouched-holdout evidence; the current retrospective holdout is explicitly inconclusive. |
 | W8 | implementation-complete | CLI, two-page TUI all-32 board/focused cards, Web/API, JSON, UI-neutral card, durable Markdown report, desktop/tablet/mobile live review, semantic checks, keyboard skip-focus walkthrough, reduced-motion check, and 390px overflow inspection | Final automated cross-surface golden parity. |
 | W9 | in progress | Authoring/compatibility/cache documentation, additive compatibility and registered-profile extension fixtures, canonical loaded-board replay validation, observed three-OS fingerprint CI gate, strict affected-production lint, schema/golden checks, full PR CI, offline release smoke, Windows package verification, dependency audit, measured performance baseline, and live browser/accessibility review | Add the full package matrix, real multi-season production evidence, and automated cross-surface golden parity, then complete release closeout. |
@@ -240,12 +241,19 @@ Start with deterministic fixture scenarios, then seeded distributions. Add
 monotonicity tests where the underlying scenario has an ordered expectation;
 do not require monotonicity for genuinely interacting lineup changes.
 
-Current implementation evidence includes the versioned seeded input/output
-contracts, deterministic full-cohort replay, isolated and combined fixtures,
-input-order invariance, seed sensitivity, and fail-closed authority scope.
-The W6 exit remains open until real multi-source current-season boards produce
-sealed isolated and combined scenario artifacts; synthetic fixture coverage is
-not a substitute for that evidence.
+Current evidence includes the versioned seeded input/output contracts,
+deterministic full-cohort replay, input-order invariance, seed sensitivity,
+fail-closed authority/profile scope, and a partial-pane panic regression. The
+checked 2026-27 evidence set adds real 32-team season, lineup, and training-camp
+sources; paired same-seed isolated NYR event effects; a typed deterministic
+impact; and a combined 1,000-trial NYR-development/SEA-camp distribution. Every
+numeric shock records a separate estimate-source fingerprint. The board remains
+rank-withheld where required production profiles are missing, and the evidence
+does not promote modeled assumptions into calibrated claims.
+
+**W6 exit satisfied:** users can inspect what must go right or wrong, including
+zero aggregate movement when a raw change does not cross a percentile boundary,
+without rewriting observed history or filling missing panes with zero.
 
 **Exit:** users can see what must go right or wrong for a team's Window to
 move, without scenarios rewriting observed history.

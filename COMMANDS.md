@@ -1100,6 +1100,7 @@ icelines icecast window-movement --earlier october.json --later january-v2.json 
 icelines icecast window-history --input october.json --input january.json --input march.json --out window-history.json
 icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --out window-impact.json
 icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --authority trade-authority.json --out attributed-window-impact.json
+icelines icecast window-scenario --baseline baseline.json --scenario modeled.json --scenario-id sourced-scenario --team-season-authority season-scenario.json --training-camp-authority camp-scenario.json --out sourced-window-impact.json
 icelines icecast window-scenario-distribute --baseline baseline.json --input scenario-distribution-input.json --out scenario-distribution.json
 icelines icecast window-calibrate --target next-season-organization-value --origin 2023-origin.json --origin 2024-origin.json --origin 2025-origin.json --minimum-origins 3 --out rolling-calibration.json
 icelines icecast window-evaluate --target next-season-organization-value --origin 2022-train.json --origin 2023-train.json --origin 2024-validation.json --origin 2025-retrospective-holdout.json --minimum-training-origins 2 --out split-evaluation.json

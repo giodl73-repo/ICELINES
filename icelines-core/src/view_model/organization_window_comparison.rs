@@ -825,6 +825,18 @@ pub fn adapt_team_season_window_scenario_authorities(
         )
     })?;
     let fingerprint = source_document_fingerprint(forecast)?;
+    let mut organizations = forecast
+        .teams
+        .iter()
+        .map(|team| team.team.clone())
+        .collect::<Vec<_>>();
+    organizations.sort();
+    organizations.dedup();
+    if organizations.is_empty() {
+        return Err(OrganizationWindowComparisonError::InvalidScenarioAuthority(
+            "team-season forecast has no organization outcomes".to_owned(),
+        ));
+    }
     scenario
         .events
         .iter()
@@ -843,12 +855,15 @@ pub fn adapt_team_season_window_scenario_authorities(
                 kind,
                 source_schema: TEAM_SEASON_FORECAST_SCHEMA.to_owned(),
                 source_fingerprint: fingerprint.clone(),
-                organizations: vec![event.team.clone()],
+                organizations: organizations.clone(),
                 profile_methods: vec![scenario_profile(
                     "nhl.expected_points",
                     "icecast_expected_points.v1",
                 )],
-                rationale: event.label.clone(),
+                rationale: format!(
+                    "{}; originating team {} with league-simulation consequences",
+                    event.label, event.team
+                ),
             })
         })
         .collect()
@@ -1669,5 +1684,21 @@ mod tests {
             ),
             Err(OrganizationWindowComparisonError::UnattributedScenarioChange(_))
         ));
+    }
+
+    #[test]
+    fn team_season_authorities_cover_league_simulation_consequences() {
+        let forecast: TeamSeasonForecastView = serde_json::from_str(include_str!(
+            "../../../examples/icecast-nyr-development-variance-10000-result.json"
+        ))
+        .unwrap();
+        let authorities = adapt_team_season_window_scenario_authorities(&forecast).unwrap();
+        assert_eq!(authorities.len(), forecast.scenario.unwrap().events.len());
+        assert!(authorities
+            .iter()
+            .all(|authority| authority.organizations.len() == 32));
+        assert!(authorities
+            .iter()
+            .all(|authority| authority.rationale.contains("originating team NYR")));
     }
 }

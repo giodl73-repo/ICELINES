@@ -2390,12 +2390,16 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             scenario,
             scenario_id,
             authorities,
+            team_season_authorities,
+            training_camp_authorities,
             out,
         }) => commands::icecast::run_window_scenario(
             baseline,
             scenario,
             scenario_id,
             authorities,
+            team_season_authorities,
+            training_camp_authorities,
             out,
         )?,
         Commands::Icecast(IceCastSubcommand::WindowScenarioDistribute {

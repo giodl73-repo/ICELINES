@@ -39,13 +39,15 @@
     },
     "shock": {
       "type": "object",
-      "required": ["organization", "profile_key", "method_version", "authority_id", "mean_raw_delta", "half_range", "occurrence_probability"],
+      "required": ["organization", "profile_key", "method_version", "authority_id", "estimate_source_fingerprint", "mean_raw_delta", "half_range", "occurrence_probability"],
       "properties": {
         "organization": { "type": "string", "minLength": 1 },
         "profile_key": { "type": "string", "minLength": 1 },
         "method_version": { "type": "string", "minLength": 1 },
         "authority_id": { "type": "string", "minLength": 1 },
+        "estimate_source_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
         "mean_raw_delta": { "type": "number" },
+        "inactive_raw_delta": { "type": "number", "default": 0 },
         "half_range": { "type": "number", "minimum": 0 },
         "occurrence_probability": { "type": "number", "minimum": 0, "maximum": 1 },
         "correlation_key": { "type": "string", "minLength": 1 }

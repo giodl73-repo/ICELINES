@@ -6,17 +6,18 @@ use std::path::{Path, PathBuf};
 use anyhow::{bail, Context};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
 use icelines_core::{
-    adapt_prospect_conversion_input, apply_team_behavior_research, build_adaptive_lineup_policy,
-    build_ahl_affiliate_projection, build_balanced_organization_window_board,
-    build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
-    build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
-    build_line_combination_forecast, build_organization_lineup_forecast,
-    build_organization_window_card, build_organization_window_history,
-    build_prospect_conversion_board, build_prospect_development_study,
-    build_prospect_discovery_board, build_prospect_nhl_performance_document,
-    build_prospect_program_board_with_goalies, build_prospect_program_history,
-    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
-    build_team_game_forecast, build_team_game_forecast_validation,
+    adapt_prospect_conversion_input, adapt_team_season_window_scenario_authorities,
+    adapt_training_camp_window_scenario_authorities, apply_team_behavior_research,
+    build_adaptive_lineup_policy, build_ahl_affiliate_projection,
+    build_balanced_organization_window_board, build_development_calibration,
+    build_forecast_history_card, build_forecast_movement_card, build_isolated_scenario_impact,
+    build_isolated_scenario_impact_as_of, build_line_combination_forecast,
+    build_organization_lineup_forecast, build_organization_window_card,
+    build_organization_window_history, build_prospect_conversion_board,
+    build_prospect_development_study, build_prospect_discovery_board,
+    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
+    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
+    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -3648,17 +3649,32 @@ pub fn run_window_scenario(
     scenario: PathBuf,
     scenario_id: String,
     authorities: Vec<PathBuf>,
+    team_season_authorities: Vec<PathBuf>,
+    training_camp_authorities: Vec<PathBuf>,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let baseline = read_icecast_json(&baseline, "baseline organization Window")?;
     let scenario = read_icecast_json(&scenario, "scenario organization Window")?;
-    let impact = if authorities.is_empty() {
+    let has_typed_authorities = !authorities.is_empty()
+        || !team_season_authorities.is_empty()
+        || !training_camp_authorities.is_empty();
+    let impact = if !has_typed_authorities {
         compare_organization_window_scenario(&scenario_id, &baseline, &scenario)?
     } else {
-        let authorities = authorities
+        let mut authorities = authorities
             .iter()
             .map(|path| read_icecast_json(path, "organization Window scenario authority"))
             .collect::<anyhow::Result<Vec<WindowScenarioAuthorityView>>>()?;
+        for path in &team_season_authorities {
+            let forecast: TeamSeasonForecastView =
+                read_icecast_json(path, "team-season scenario authority")?;
+            authorities.extend(adapt_team_season_window_scenario_authorities(&forecast)?);
+        }
+        for path in &training_camp_authorities {
+            let forecast: TrainingCampLeagueForecastView =
+                read_icecast_json(path, "training-camp scenario authority")?;
+            authorities.extend(adapt_training_camp_window_scenario_authorities(&forecast)?);
+        }
         compare_organization_window_typed_scenario(&scenario_id, &baseline, &scenario, authorities)?
     };
     write_window_json(&impact, out.as_deref(), "organization Window scenario")

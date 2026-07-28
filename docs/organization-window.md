@@ -84,13 +84,17 @@ icelines icecast window-scenario \
   --baseline baseline.json \
   --scenario deadline-addition.json \
   --scenario-id deadline-addition \
-  --authority trade-authority.json \
+  --team-season-authority team-season-scenario.json \
   --out window-impact.json
 ```
 
 IceLines can derive authorities from `team_season_forecast.v1` events (trade,
 injury/return, goalie, and player-form/development),
 `training_camp_league_forecast.v1`, and `line_combination_forecast.v1`.
+The CLI derives typed authorities directly from team-season and training-camp
+forecast files through repeatable `--team-season-authority` and
+`--training-camp-authority` options; `--authority` remains available for an
+already sealed authority document.
 Scenario attribution records direct raw-input changes, evidence changes,
 league-cohort normalization effects, and unchanged profiles. Any changed
 profile without a matching sealed authority fails closed. Combined scenarios
@@ -109,9 +113,12 @@ icelines icecast window-scenario-distribute \
 
 The input is `organization_window_scenario_distribution_input.v1`. Each shock
 names one organization, registered profile method, sealed authority, bounded
-triangular raw-value range, and occurrence probability. An optional
+triangular raw-value range, occurrence probability, and the fingerprint of the
+artifact that supplied the numeric estimate. An optional
 `correlation_key` shares the occurrence draw across shocks while keeping their
-amplitudes independent. The output
+amplitudes independent. `inactive_raw_delta` defaults to zero and supports
+mean-centered or downside outcomes when the event does not occur. Only profiles
+whose registry descriptor enables scenario support may be perturbed. The output
 `organization_window_scenario_distribution.v1` retains the central typed
 impact plus P10/P50/P90, mean, and positive/negative probabilities for every
 organization and pane. Baselines without a sealed score for every organization,

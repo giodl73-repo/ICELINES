@@ -1786,6 +1786,12 @@ pub enum IceCastSubcommand {
         /// Typed upstream authority document; repeat for combined scenarios.
         #[arg(long = "authority", value_name = "PATH")]
         authorities: Vec<PathBuf>,
+        /// Derive typed authorities from a team-season forecast; repeat as needed.
+        #[arg(long = "team-season-authority", value_name = "PATH")]
+        team_season_authorities: Vec<PathBuf>,
+        /// Derive typed authorities from a training-camp league forecast.
+        #[arg(long = "training-camp-authority", value_name = "PATH")]
+        training_camp_authorities: Vec<PathBuf>,
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
@@ -2364,14 +2370,22 @@ mod tui_surface_tests {
                 "deadline-addition",
                 "--authority",
                 "trade-authority.json",
+                "--team-season-authority",
+                "season-scenario.json",
+                "--training-camp-authority",
+                "camp-scenario.json",
             ])
             .expect("typed Window scenario should parse");
             assert!(matches!(
                 scenario.command,
                 Commands::Icecast(IceCastSubcommand::WindowScenario {
                     authorities,
+                    team_season_authorities,
+                    training_camp_authorities,
                     ..
                 }) if authorities.len() == 1
+                    && team_season_authorities.len() == 1
+                    && training_camp_authorities.len() == 1
             ));
 
             let distribution = Cli::try_parse_from([
