@@ -1789,6 +1789,16 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Run a seeded raw-profile scenario distribution through the full Window scorer.
+    #[command(name = "window-scenario-distribute")]
+    WindowScenarioDistribute {
+        #[arg(long, value_name = "PATH")]
+        baseline: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Calibrate one Frame across frozen rolling-origin inputs.
     #[command(name = "window-calibrate")]
     WindowCalibrate {
@@ -2362,6 +2372,23 @@ mod tui_surface_tests {
                     authorities,
                     ..
                 }) if authorities.len() == 1
+            ));
+
+            let distribution = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-scenario-distribute",
+                "--baseline",
+                "baseline.json",
+                "--input",
+                "distribution.json",
+                "--out",
+                "result.json",
+            ])
+            .expect("Window scenario distribution should parse");
+            assert!(matches!(
+                distribution.command,
+                Commands::Icecast(IceCastSubcommand::WindowScenarioDistribute { .. })
             ));
 
             let calibration = Cli::try_parse_from([

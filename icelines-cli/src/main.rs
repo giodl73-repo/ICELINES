@@ -2398,6 +2398,11 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             authorities,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::WindowScenarioDistribute {
+            baseline,
+            input,
+            out,
+        }) => commands::icecast::run_window_scenario_distribution(baseline, input, out)?,
         Commands::Icecast(IceCastSubcommand::WindowCalibrate {
             target,
             origins,

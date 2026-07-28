@@ -26,17 +26,18 @@ use icelines_core::{
     compare_organization_window_snapshots, compare_organization_window_snapshots_with_bridge,
     compare_organization_window_typed_scenario, compare_team_season_forecast_scenarios,
     current_ahl_affiliation_catalog, model::Position, model::Season, model::TeamAbbr,
-    normalize_name, season_stats::SeasonType, simulate_team_season_forecast_as_of_with_scenario,
-    simulate_team_season_forecast_with_scenario, simulate_training_camp,
-    simulate_training_camp_league, AhlAffiliateProjectionInput, AhlAffiliateProjectionView,
-    AhlAffiliationCatalogView, AhlLineUnitKind, AhlRosterPoolAuthorityKind,
-    DevelopmentCalibrationConfig, DevelopmentCalibrationView, DevelopmentPositionGroup,
-    DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput,
-    ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
-    LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow, OrganizationLevel,
-    OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
-    OrganizationUnitKind, OrganizationWindowAdapterContext, OrganizationWindowBoardView,
-    OrganizationWindowBridgeView, OrganizationWindowCardInput, OrganizationWindowManifestView,
+    normalize_name, season_stats::SeasonType, simulate_organization_window_scenario_distribution,
+    simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
+    simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
+    AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlLineUnitKind,
+    AhlRosterPoolAuthorityKind, DevelopmentCalibrationConfig, DevelopmentCalibrationView,
+    DevelopmentPositionGroup, DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel,
+    ForecastHistoryCardInput, ForecastMovementCardInput, LineCombinationForecastConfig,
+    LineCombinationForecastView, LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow,
+    OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
+    OrganizationPositionGroup, OrganizationUnitKind, OrganizationWindowAdapterContext,
+    OrganizationWindowBoardView, OrganizationWindowBridgeView, OrganizationWindowCardInput,
+    OrganizationWindowManifestView, OrganizationWindowScenarioDistributionInput,
     OrganizationWindowSourceSet, ProspectConversionBoardView, ProspectConversionConfig,
     ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
     ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow,
@@ -3661,6 +3662,23 @@ pub fn run_window_scenario(
         compare_organization_window_typed_scenario(&scenario_id, &baseline, &scenario, authorities)?
     };
     write_window_json(&impact, out.as_deref(), "organization Window scenario")
+}
+
+pub fn run_window_scenario_distribution(
+    baseline: PathBuf,
+    input: PathBuf,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let baseline: OrganizationWindowBoardView =
+        read_icecast_json(&baseline, "baseline organization Window")?;
+    let input: OrganizationWindowScenarioDistributionInput =
+        read_icecast_json(&input, "organization Window scenario distribution input")?;
+    let distribution = simulate_organization_window_scenario_distribution(&baseline, input)?;
+    write_window_json(
+        &distribution,
+        out.as_deref(),
+        "organization Window scenario distribution",
+    )
 }
 
 pub fn run_window_calibrate(

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_window_scenario_distribution_input.v1.schema.json",
+  "title": "IceLines Organization Window Scenario Distribution Input v1",
+  "type": "object",
+  "required": ["schema", "scenario_id", "trials", "seed", "authorities", "shocks"],
+  "properties": {
+    "schema": { "const": "organization_window_scenario_distribution_input.v1" },
+    "scenario_id": { "type": "string", "minLength": 1 },
+    "trials": { "type": "integer", "minimum": 100 },
+    "seed": { "type": "integer", "minimum": 0 },
+    "authorities": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/authority" } },
+    "shocks": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/shock" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "method": {
+      "type": "object",
+      "required": ["profile_key", "method_version"],
+      "properties": {
+        "profile_key": { "type": "string", "minLength": 1 },
+        "method_version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "authority": {
+      "type": "object",
+      "required": ["authority_id", "kind", "source_schema", "source_fingerprint", "organizations", "profile_methods", "rationale"],
+      "properties": {
+        "authority_id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["trade", "injury", "goalie", "player_development", "training_camp", "line_combination", "custom"] },
+        "source_schema": { "type": "string", "minLength": 1 },
+        "source_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "organizations": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "profile_methods": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/method" } },
+        "rationale": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "shock": {
+      "type": "object",
+      "required": ["organization", "profile_key", "method_version", "authority_id", "mean_raw_delta", "half_range", "occurrence_probability"],
+      "properties": {
+        "organization": { "type": "string", "minLength": 1 },
+        "profile_key": { "type": "string", "minLength": 1 },
+        "method_version": { "type": "string", "minLength": 1 },
+        "authority_id": { "type": "string", "minLength": 1 },
+        "mean_raw_delta": { "type": "number" },
+        "half_range": { "type": "number", "minimum": 0 },
+        "occurrence_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+        "correlation_key": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

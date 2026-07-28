@@ -46,6 +46,7 @@ pub mod organization_window;
 pub mod organization_window_adapters;
 pub mod organization_window_calibration;
 pub mod organization_window_comparison;
+pub mod organization_window_scenario_distribution;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
@@ -341,6 +342,17 @@ pub use organization_window_comparison::{
     ORGANIZATION_WINDOW_BRIDGE_JSON_SCHEMA, ORGANIZATION_WINDOW_BRIDGE_SCHEMA,
     ORGANIZATION_WINDOW_HISTORY_SCHEMA, ORGANIZATION_WINDOW_MOVEMENT_SCHEMA,
     ORGANIZATION_WINDOW_SCENARIO_IMPACT_SCHEMA,
+};
+pub use organization_window_scenario_distribution::{
+    simulate_organization_window_scenario_distribution,
+    OrganizationWindowScenarioDistributionError, OrganizationWindowScenarioDistributionInput,
+    OrganizationWindowScenarioDistributionView, WindowScenarioDimensionDistributionView,
+    WindowScenarioDistributionSummaryView, WindowScenarioOrganizationDistributionView,
+    WindowScenarioProfileShockInput, WindowScenarioShockDistributionView,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_INPUT_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_INPUT_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_SCHEMA,
 };
 pub use player_card::{
     PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow, PlayerSeasonSummary,

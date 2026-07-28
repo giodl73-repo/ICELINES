@@ -240,6 +240,13 @@ Start with deterministic fixture scenarios, then seeded distributions. Add
 monotonicity tests where the underlying scenario has an ordered expectation;
 do not require monotonicity for genuinely interacting lineup changes.
 
+Current implementation evidence includes the versioned seeded input/output
+contracts, deterministic full-cohort replay, isolated and combined fixtures,
+input-order invariance, seed sensitivity, and fail-closed authority scope.
+The W6 exit remains open until real multi-source current-season boards produce
+sealed isolated and combined scenario artifacts; synthetic fixture coverage is
+not a substitute for that evidence.
+
 **Exit:** users can see what must go right or wrong for a team's Window to
 move, without scenarios rewriting observed history.
 

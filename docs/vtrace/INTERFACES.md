@@ -613,7 +613,8 @@ violations.
 
 Outputs: `organization_window_board.v1`,
 `organization_window_history.v1`, `organization_window_movement.v1`,
-`organization_window_scenario_impact.v1`, and
+`organization_window_scenario_impact.v1`,
+`organization_window_scenario_distribution.v1`, and
 `organization_window_bridge.v1`. Focused output retains the complete-board
 fingerprint. History rejects incomparable contexts; scenarios retain baseline
 and upstream scenario identity. A bridge seals exact source/target manifests,
@@ -630,6 +631,13 @@ team-season trade/injury/return/goalie/form events, training camp, and line
 combinations. Direct raw/evidence changes require organization-scoped
 attribution; normalized cohort effects require same-profile authority; an
 overall-only or otherwise unattributed change fails closed.
+
+`organization_window_scenario_distribution_input.v1` adds seeded, bounded raw
+profile shocks to those typed authorities. Every trial rebuilds the complete
+cohort; output includes central typed attribution and organization/pane/shock
+distributions. Unsupported schemas, unsealed baselines, invalid or duplicate
+shocks, authority-scope mismatches, non-finite values, and insufficient trials
+fail closed.
 
 Versioning: bridge mappings and fingerprints are immutable. Movement fields
 for source manifest, bridge, and rebased checkpoint are additive within v1.

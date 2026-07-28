@@ -97,6 +97,28 @@ profile without a matching sealed authority fails closed. Combined scenarios
 repeat `--authority`; interaction effects remain in the combined board rather
 than being forced to equal isolated effects.
 
+Seeded scenario distributions perturb registered raw profile values and rerun
+the complete cohort through the canonical scorer on every trial:
+
+```text
+icelines icecast window-scenario-distribute \
+  --baseline baseline.json \
+  --input scenario-distribution-input.json \
+  --out scenario-distribution.json
+```
+
+The input is `organization_window_scenario_distribution_input.v1`. Each shock
+names one organization, registered profile method, sealed authority, bounded
+triangular raw-value range, and occurrence probability. An optional
+`correlation_key` shares the occurrence draw across shocks while keeping their
+amplitudes independent. The output
+`organization_window_scenario_distribution.v1` retains the central typed
+impact plus P10/P50/P90, mean, and positive/negative probabilities for every
+organization and pane. Baselines without a sealed score for every organization,
+unknown authority scopes, duplicate shocks, non-finite values, and fewer than
+100 trials fail closed. A seeded distribution is uncertainty propagation, not
+evidence that its shock assumptions are calibrated.
+
 Rolling-origin calibration consumes one JSON origin document per frozen
 checkpoint. Each origin embeds its sealed board, exact outcome cohort, complete
 profile leakage audit, and a simple baseline value frozen before outcomes:

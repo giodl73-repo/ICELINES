@@ -193,6 +193,17 @@ pub use view_model::organization_window_comparison::{
     ORGANIZATION_WINDOW_HISTORY_SCHEMA, ORGANIZATION_WINDOW_MOVEMENT_SCHEMA,
     ORGANIZATION_WINDOW_SCENARIO_IMPACT_SCHEMA,
 };
+pub use view_model::organization_window_scenario_distribution::{
+    simulate_organization_window_scenario_distribution,
+    OrganizationWindowScenarioDistributionError, OrganizationWindowScenarioDistributionInput,
+    OrganizationWindowScenarioDistributionView, WindowScenarioDimensionDistributionView,
+    WindowScenarioDistributionSummaryView, WindowScenarioOrganizationDistributionView,
+    WindowScenarioProfileShockInput, WindowScenarioShockDistributionView,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_INPUT_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_INPUT_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_SCHEMA,
+};
 pub use view_model::prospect_conversion::{
     adapt_prospect_conversion_input, build_prospect_conversion_board,
     build_prospect_nhl_performance_document, ProspectConversionBaselineInput,
