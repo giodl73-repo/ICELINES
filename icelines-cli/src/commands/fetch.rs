@@ -1704,22 +1704,48 @@ async fn do_career(
         "Fetching career history for {n} players (~{}s)...",
         (n as f64 * 0.06).ceil() as u64
     );
+    let cache_root = fletch_cache_root(&cfg);
     let landing_by_player = icelines_fetch::fletch::fetch_player_landing_batch_bytes_async(
         player_ids.clone(),
         icelines_fetch::fletch::FletchPlayerLandingArtifact::Landing,
-        fletch_cache_root(&cfg),
+        cache_root.clone(),
         false,
         50,
     )
     .await
     .context("fetching player landing career batch through FLETCH")?;
+    let landing_manifest = icelines_fetch::fletch::read_fletch_cache_manifest(
+        &icelines_fetch::fletch::fletch_cache_manifest_path(&cache_root),
+    )
+    .context("reading verified FLETCH player landing manifest")?;
+    let landing_fetched_at = landing_manifest
+        .entries
+        .into_iter()
+        .filter(|entry| entry.verified)
+        .map(|entry| (entry.dataset_id, entry.fetched_at_ms))
+        .collect::<std::collections::BTreeMap<_, _>>();
     let mut histories = Vec::with_capacity(landing_by_player.len());
     let mut birth_dates = Vec::new();
     let mut positions = Vec::new();
+    let mut organization_facts = Vec::new();
     let mut skipped = Vec::new();
+    let refresh_completed_at = chrono::Utc::now().to_rfc3339();
     for player_id in &player_ids {
         let Some(raw_bytes) = landing_by_player.get(player_id) else {
             skipped.push((*player_id, "missing FLETCH cache result".to_string()));
+            continue;
+        };
+        let dataset_id = format!("icelines.player.landing.{player_id}");
+        let Some(observed_at) = landing_fetched_at
+            .get(&dataset_id)
+            .and_then(|milliseconds| i64::try_from(*milliseconds).ok())
+            .and_then(chrono::DateTime::from_timestamp_millis)
+            .map(|timestamp| timestamp.to_rfc3339())
+        else {
+            skipped.push((
+                *player_id,
+                "verified FLETCH landing acquisition timestamp is missing or invalid".to_owned(),
+            ));
             continue;
         };
         let raw = match serde_json::from_slice::<serde_json::Value>(raw_bytes) {
@@ -1734,6 +1760,17 @@ async fn do_career(
         }
         if let Some(position) = raw.get("position").and_then(serde_json::Value::as_str) {
             positions.push((*player_id, position.to_owned()));
+        }
+        match icelines_fetch::career_landing::parse_official_nhl_organization_fact(
+            *player_id,
+            observed_at,
+            &raw,
+        ) {
+            Ok(fact) => organization_facts.push(fact),
+            Err(error) => {
+                skipped.push((*player_id, error.to_string()));
+                continue;
+            }
         }
         match icelines_fetch::career_landing::parse_career_history(*player_id, &raw) {
             Ok(history) => histories.push(history),
@@ -1754,7 +1791,10 @@ async fn do_career(
     for (player_id, position) in positions {
         blob.upsert_position(player_id, position);
     }
-    blob.stamp_now();
+    for fact in organization_facts {
+        blob.upsert_organization_fact(fact);
+    }
+    blob.fetched_at = Some(refresh_completed_at);
     blob.save(&path).context("saving career_history.json")?;
 
     println!(

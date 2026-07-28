@@ -681,3 +681,30 @@ index as a probability or recompute it.
 1,185/1,282 canonical candidates, applies to 1,273/1,371 appearances, and leaves
 97 canonical players covering 98 appearances explicitly blocked. Historical
 calibration remains a separate promotion gate.
+
+### S2 organization-status evidence review
+
+HART/KEEL required organization status to remain keyed by player,
+organization, target season, and evidence time. Unlike prospect and readiness
+facts, it is not player-global: the same current-team observation can establish
+departure from one prior organization and retention by another.
+
+TAPE/WIRE accepted official NHL landing `currentTeamAbbrev` only as positive,
+dated evidence. Missing current team, inactive status, or camp absence cannot
+prove a departure or another league. The cache retains per-player observation
+time and direct landing URL instead of relying only on the global refresh time.
+
+EDGE/SCOUT separated organization retention from target NHL/AHL assignment,
+contract rights, waivers, lineup selection, and recall order. The evidence
+application prefills the exact league review but deliberately leaves it draft
+and cannot emit `other_league`.
+
+BENCH/FORGE added same-team, different-team, missing-team, identity mismatch,
+freshness, stale-review, exact-key, CLI parser, and all-32 execution checks.
+The first stale-executable run produced zero resolutions and therefore proved
+the no-read path fails closed; the rebuilt reader then completed 1,282/1,282
+verified July 25-26 landing acquisitions with zero skips.
+
+**Verdict:** pass for narrow official-current-team authority. It resolves 549
+of 1,174 prior-only appearances (425 retained, 124 departed) and leaves all 625
+players without a current NHL team unresolved for contract/league research.

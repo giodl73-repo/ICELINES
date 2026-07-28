@@ -2229,6 +2229,27 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::AffiliateStatusShow { review, json, out }) => {
             commands::icecast::run_affiliate_status_show(review, json, out)?
         }
+        Commands::Icecast(IceCastSubcommand::AffiliateStatusEvidence {
+            review,
+            career_history,
+            as_of,
+            maximum_fact_age_days,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_status_evidence(
+            review,
+            career_history,
+            as_of,
+            maximum_fact_age_days,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateStatusEvidenceApply {
+            review,
+            ledger,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_status_evidence_apply(review, ledger, json, out)?,
         Commands::Icecast(IceCastSubcommand::AffiliateStatusApply {
             prior_snapshot,
             crosswalk,

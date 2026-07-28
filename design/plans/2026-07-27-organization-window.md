@@ -303,8 +303,9 @@ applied those classifications to all 1,371 organization appearances and
 reduced the prospect-status queue from 1,371 to zero. Eighty-one canonical
 players appear in more than one organization because rollover assignment is
 still unresolved; their status is reused without choosing an organization.
-S2 remains open on organization status, assignment, recall readiness, waiver,
-98 score gaps, and final-rule authority.
+S2 remains open on organization status, assignment, 98 insufficient-evidence
+recall-readiness rows, waiver clearance, 98 score gaps, and final-rule
+authority.
 
 **Recall-readiness checkpoint — 2026-07-28:** core now owns
 `ahl_recall_readiness_policy.v1` and method
@@ -327,6 +328,21 @@ This slice also fixed a pre-existing unit bug in the Window adapter: missing
 Portable ledger sealing now canonicalizes through the supported JSON wire
 representation; the real saved-ledger replay exposed and closed the prior
 in-memory-only float fingerprint mismatch.
+
+**Organization-status authority checkpoint — 2026-07-28:** the official NHL
+landing cache now preserves dated current-team observations per player.
+`ahl_organization_status_ledger.v1` compares only positive current-team facts
+with the sealed 32-team review cohort: equality resolves retained, another
+canonical team resolves departed, and missing/stale/non-cohort facts refuse.
+Its fingerprint-bound application prefills the review but never finalizes it.
+
+The all-32 run read 1,282/1,282 verified candidate landings acquired July
+25-26 with zero skips and resolved 549 of 1,174 organization decisions (425
+retained, 124 departed).
+All 625 unresolved rows have an official landing document but no current NHL
+team. They remain manual contract/league-status research; no camp-absence or
+unsigned-player inference was made. S2 remains open on those 625 decisions,
+assignment, waiver clearance, 98 score gaps, and final-rule authority.
 
 ### S3 — Goalie dependency authority decision
 

@@ -96,6 +96,10 @@ use icelines_fetch::{
         AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
         AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
     },
+    ahl_organization_status::{
+        apply_ahl_organization_status_ledger, build_ahl_organization_status_ledger,
+        AhlOrganizationStatusLedgerView,
+    },
     ahl_player_value::{
         apply_ahl_player_value_ledger, build_ahl_player_value_ledger,
         AhlPlayerValueApplicationView, AhlPlayerValueLedgerView,
@@ -1581,6 +1585,75 @@ pub fn run_affiliate_status_show(
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL organization-status review")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_status_evidence(
+    review_path: PathBuf,
+    career_history_path: PathBuf,
+    as_of: String,
+    maximum_fact_age_days: u32,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let review: AhlPreseasonLeagueOrganizationReview =
+        read_icecast_json(&review_path, "AHL league organization-status review")?;
+    let career_store = CareerHistoryStore::load(&career_history_path)
+        .with_context(|| format!("read career history {}", career_history_path.display()))?;
+    let ledger =
+        build_ahl_organization_status_ledger(&review, &career_store, as_of, maximum_fact_age_days)
+            .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&ledger)?)
+    } else {
+        format!(
+            "AHL organization status evidence\nRequired: {}\nResolved: {} ({} retained, {} departed)\nUnresolved: {}\n",
+            ledger.counts.decisions_required,
+            ledger.counts.resolved,
+            ledger.counts.retained,
+            ledger.counts.departed,
+            ledger.counts.unresolved
+        )
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL organization-status evidence")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_status_evidence_apply(
+    review_path: PathBuf,
+    ledger_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let review: AhlPreseasonLeagueOrganizationReview =
+        read_icecast_json(&review_path, "AHL league organization-status review")?;
+    let ledger: AhlOrganizationStatusLedgerView =
+        read_icecast_json(&ledger_path, "AHL organization-status evidence ledger")?;
+    let application =
+        apply_ahl_organization_status_ledger(&review, &ledger).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&application)?)
+    } else {
+        format!(
+            "AHL organization status evidence applied\nApplied: {}\nRemaining: {}\nReview remains draft: {}\n",
+            application.decisions_applied,
+            application.decisions_remaining,
+            application.review.draft
+        )
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "AHL organization-status evidence application",
+        )?;
     } else {
         print!("{output}");
     }

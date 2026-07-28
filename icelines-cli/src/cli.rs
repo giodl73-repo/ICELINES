@@ -1516,6 +1516,38 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Resolve organization status from dated official NHL current-team facts.
+    #[command(name = "affiliate-status-evidence")]
+    AffiliateStatusEvidence {
+        /// Exact all-team organization-status review draft.
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        /// Official NHL landing career-history cache with organization facts.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Evaluation cutoff in RFC 3339 form.
+        #[arg(long, value_name = "RFC3339")]
+        as_of: String,
+        /// Maximum accepted age of each official landing fact.
+        #[arg(long, default_value_t = 14)]
+        maximum_fact_age_days: u32,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Prefill a draft review with exact resolved organization-status evidence.
+    #[command(name = "affiliate-status-evidence-apply")]
+    AffiliateStatusEvidenceApply {
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Inspect an existing affiliate organization-status review artifact.
     #[command(name = "affiliate-status-show")]
     AffiliateStatusShow {
@@ -4504,6 +4536,49 @@ mod tui_surface_tests {
             assert!(matches!(
                 status_draft_league.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateStatusDraftLeague { json: true, .. })
+            ));
+
+            let status_evidence = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-evidence",
+                "--review",
+                "league-status-draft.json",
+                "--career-history",
+                "career.json",
+                "--as-of",
+                "2026-07-28T12:00:00Z",
+                "--maximum-fact-age-days",
+                "21",
+                "--json",
+            ])
+            .expect("official organization-status evidence should parse");
+            assert!(matches!(
+                status_evidence.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusEvidence {
+                    maximum_fact_age_days: 21,
+                    json: true,
+                    ..
+                })
+            ));
+
+            let status_evidence_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-evidence-apply",
+                "--review",
+                "league-status-draft.json",
+                "--ledger",
+                "status-evidence.json",
+                "--json",
+            ])
+            .expect("organization-status evidence application should parse");
+            assert!(matches!(
+                status_evidence_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusEvidenceApply {
+                    json: true,
+                    ..
+                })
             ));
 
             let status_show = Cli::try_parse_from([

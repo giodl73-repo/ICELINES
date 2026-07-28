@@ -147,6 +147,15 @@ authoritative. `affiliate-status-show` is a read-only inspection renderer and
 recomputes blocker counts from the rows, warning when declared counts are
 stale. TUI and web review queues remain planned.
 
+`ahl_organization_status_ledger.v1` may prefill that review from dated official
+NHL landing current-team facts. Equality with the reviewed organization proves
+`retained`; a different team in the sealed target NHL cohort proves
+`departed`. Missing teams, stale facts, and teams outside the cohort remain
+unresolved. The ledger cannot emit `other_league`, infer status from camp
+absence, establish target NHL/AHL assignment, or finalize the review. Its
+application is fingerprint-bound to the exact league draft and preserves the
+human reviewer/timestamp gate.
+
 The real July 28 league run rebuilt the camp seal with 933/933 exact position
 lists, including 26 multi-position players, then composed all 32 affiliates.
 It exposes 1,371 viable candidates and zero facts-ready candidates. The
@@ -157,3 +166,10 @@ position composition; 52 missing professional-game histories; and 1,202
 skaters awaiting final development-rule
 qualification. These counts describe missing authority and are not roster
 predictions.
+
+The July 28 run used verified official landing acquisitions from July 25-26
+and covered all 1,282 canonical candidates.
+The organization-status ledger resolved 549 of 1,174 prior-only appearances:
+425 retained and 124 departed. The other 625 landing documents had no current
+NHL team and remain explicit review work; none were inferred as departed or as
+playing in another league.

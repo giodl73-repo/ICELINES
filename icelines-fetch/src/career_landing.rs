@@ -31,6 +31,70 @@ use std::path::Path;
 pub enum CareerParseError {
     #[error("missing or invalid `seasonTotals` array")]
     MissingSeasonTotals,
+    #[error("official NHL landing organization fact is invalid: {0}")]
+    InvalidOrganizationFact(String),
+}
+
+/// Dated, player-scoped organization metadata from the official NHL landing
+/// document. A missing current team is preserved as unknown/unsigned context;
+/// consumers must never infer another league or a departure from that absence.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OfficialNhlOrganizationFact {
+    pub player_id: u32,
+    #[serde(default)]
+    pub current_team_abbrev: Option<String>,
+    #[serde(default)]
+    pub current_team_id: Option<u32>,
+    #[serde(default)]
+    pub is_active: Option<bool>,
+    pub observed_at: String,
+    pub source_url: String,
+}
+
+pub fn parse_official_nhl_organization_fact(
+    player_id: u32,
+    observed_at: impl Into<String>,
+    raw: &Value,
+) -> Result<OfficialNhlOrganizationFact, CareerParseError> {
+    let observed_at = observed_at.into();
+    if chrono::DateTime::parse_from_rfc3339(&observed_at).is_err() {
+        return Err(CareerParseError::InvalidOrganizationFact(
+            "observed_at must be RFC 3339".to_owned(),
+        ));
+    }
+    if raw
+        .get("playerId")
+        .and_then(Value::as_u64)
+        .is_some_and(|found| found != u64::from(player_id))
+    {
+        return Err(CareerParseError::InvalidOrganizationFact(format!(
+            "landing playerId does not match requested player {player_id}"
+        )));
+    }
+    let current_team_abbrev = raw
+        .get("currentTeamAbbrev")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_ascii_uppercase);
+    if current_team_abbrev.as_deref().is_some_and(|team| {
+        !(2..=4).contains(&team.len()) || !team.bytes().all(|byte| byte.is_ascii_uppercase())
+    }) {
+        return Err(CareerParseError::InvalidOrganizationFact(
+            "currentTeamAbbrev must be a 2-4 character uppercase abbreviation".to_owned(),
+        ));
+    }
+    Ok(OfficialNhlOrganizationFact {
+        player_id,
+        current_team_abbrev,
+        current_team_id: raw
+            .get("currentTeamId")
+            .and_then(Value::as_u64)
+            .and_then(|value| u32::try_from(value).ok()),
+        is_active: raw.get("isActive").and_then(Value::as_bool),
+        observed_at,
+        source_url: format!("https://api-web.nhle.com/v1/player/{player_id}/landing"),
+    })
 }
 
 pub fn parse_career_history(
@@ -247,6 +311,10 @@ pub struct CareerHistoryStore {
     /// identity metadata, not roster assignment or fantasy eligibility.
     #[serde(default)]
     pub positions: HashMap<String, String>,
+    /// Dated official NHL current-team observations. These are organization
+    /// context only: a missing team never proves departure or another league.
+    #[serde(default)]
+    pub organization_facts: HashMap<String, OfficialNhlOrganizationFact>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -314,6 +382,7 @@ impl CareerHistoryStore {
             histories: HashMap::new(),
             birth_dates: HashMap::new(),
             positions: HashMap::new(),
+            organization_facts: HashMap::new(),
         }
     }
 
@@ -384,6 +453,15 @@ impl CareerHistoryStore {
     pub fn upsert_position(&mut self, player_id: u32, position: impl Into<String>) {
         self.positions
             .insert(player_id.to_string(), position.into());
+    }
+
+    pub fn organization_fact(&self, player_id: u32) -> Option<&OfficialNhlOrganizationFact> {
+        self.organization_facts.get(&player_id.to_string())
+    }
+
+    pub fn upsert_organization_fact(&mut self, fact: OfficialNhlOrganizationFact) {
+        self.organization_facts
+            .insert(fact.player_id.to_string(), fact);
     }
 
     pub fn len(&self) -> usize {
@@ -677,6 +755,47 @@ mod tests {
         let raw = serde_json::json!({"playerId": 1});
         let err = parse_career_history(1, &raw).unwrap_err();
         assert!(matches!(err, CareerParseError::MissingSeasonTotals));
+    }
+
+    #[test]
+    fn official_organization_fact_preserves_positive_and_missing_team_evidence() {
+        let fact = parse_official_nhl_organization_fact(
+            8478402,
+            "2026-07-28T12:00:00Z",
+            &load_fixture("mcdavid_8478402.json"),
+        )
+        .unwrap();
+        assert_eq!(fact.current_team_abbrev.as_deref(), Some("EDM"));
+        assert_eq!(fact.current_team_id, Some(22));
+        assert_eq!(fact.is_active, Some(true));
+
+        let missing = parse_official_nhl_organization_fact(
+            1,
+            "2026-07-28T12:00:00Z",
+            &serde_json::json!({
+                "playerId": 1,
+                "currentTeamAbbrev": null,
+                "currentTeamId": null,
+                "isActive": false
+            }),
+        )
+        .unwrap();
+        assert_eq!(missing.current_team_abbrev, None);
+        assert_eq!(missing.is_active, Some(false));
+    }
+
+    #[test]
+    fn official_organization_fact_rejects_mismatched_identity() {
+        let error = parse_official_nhl_organization_fact(
+            1,
+            "2026-07-28T12:00:00Z",
+            &serde_json::json!({"playerId": 2, "currentTeamAbbrev": "NYR"}),
+        )
+        .unwrap_err();
+        assert!(matches!(
+            error,
+            CareerParseError::InvalidOrganizationFact(_)
+        ));
     }
 
     /// Calder.2 / l0_parse_skips_unknown_game_type

@@ -337,6 +337,14 @@ games and rule qualification remain ledger-owned and organization status
 remains rollover-review-owned. This prevents one convenient player-facts file
 from becoming a second authority for every preseason decision.
 
+Rollover review may consume `ahl_organization_status_ledger.v1` as a narrow
+official-current-team authority. The result is organization-specific rather
+than player-global: one player can be departed relative to a prior club and
+retained relative to the current club. Its application only prefills sourced
+`retained`/`departed` rows and deliberately leaves the review in draft form.
+It does not write assignment, projected score, waivers, prospect status, or
+recall readiness into the facts workboard.
+
 Facts-ready lowering reuses `build_ahl_affiliate_projection`; it does not add a
 parallel roster selector. The league result carries successful canonical
 inputs and deterministic team failures. It refuses provisional professional-
