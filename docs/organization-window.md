@@ -70,6 +70,14 @@ icelines icecast window-movement \
   --out bridged-movement.json
 ```
 
+Library consumers can project a sealed `team_season_forecast_history.v1`
+authority into comparable Window checkpoints with
+`build_forecast_history_organization_window_boards`. That adapter deliberately
+creates an NHL-strength-only Frame containing `nhl.expected_points`; it does
+not fill unobserved organization-health panes. The checked 2024-25 history
+therefore supplies real Jan. 31, Feb. 28, and Mar. 31 movement evidence while
+leaving personnel attribution unset.
+
 `organization_window_bridge.v1` maps every target profile to exactly one
 source profile and records a finite affine raw-value transform, rationale, and
 evidence fingerprints. Rebase transforms raw observations and reruns the

@@ -1,9 +1,9 @@
 # The Window — Organization Health Implementation Plan
 
 **Date:** 2026-07-27
-**Status:** Active — foundation, evaluation surfaces, historical origins, and
-scenario sensitivity implemented; production coverage, real within-season
-movement checkpoints, and a future untouched holdout remain open
+**Status:** Active — foundation, evaluation surfaces, historical origins,
+within-season movement, and scenario sensitivity implemented; production
+coverage, personnel attribution, and a future untouched holdout remain open
 **Specification:** [`../specs/organization-window.md`](../specs/organization-window.md)
 **Review:** [`../notes/2026-07-27-organization-window-roles-review.md`](../notes/2026-07-27-organization-window-roles-review.md)
 **Parent workstreams:** Team Season Forecast, Line Combination Simulation,
@@ -41,7 +41,7 @@ preserved while the remaining work is completed:
 | W0 | complete | 37-profile machine-readable inventory: 17 ready, 13 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
 | W1-W2 | complete | Versioned observations/manifests/boards, deterministic fingerprints, validation, normalization, aggregation, confidence/coverage, rank gates | Cross-platform fingerprint matrix in W9. |
 | W3-W4 | evaluation-complete | `balanced.v1`, typed source adapters, all-32 partial evaluation board, classifications, focused cards | Fill production source coverage before claiming a complete ranked board. |
-| W5 | partial | Comparable movement/history contracts, refusal tests, and immutable bridge/rebase through the canonical scorer | Real point-in-time checkpoints and personnel attribution evidence. |
+| W5 | partial | Comparable movement/history contracts, refusal tests, immutable bridge/rebase, and a real three-checkpoint 2024-25 IceCast history projected through a narrow NHL-strength-only Window Frame | Typed point-in-time personnel attribution evidence. |
 | W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
 | W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed claim status, frozen training/validation/retrospective-holdout roles, and four real point-in-time observed-history origins | Trial-noise propagation and future untouched-holdout evidence; the current retrospective holdout is explicitly inconclusive. |
 | W8 | complete | CLI, two-page TUI all-32 board/focused cards, Web/API, JSON, UI-neutral card, durable Markdown report, desktop/tablet/mobile live review, semantic checks, keyboard/reduced-motion/narrow review, and exact board/card plus semantic renderer golden parity across CLI/TUI/Web | Keep the shared golden test mandatory as surfaces evolve. |
@@ -229,6 +229,13 @@ method/manifest, and residual revaluation.
 
 **Exit:** at least three historical checkpoints produce explainable movement;
 incomparable checkpoints fail with actionable reasons.
+
+The checked Jan. 31, Feb. 28, and Mar. 31, 2025 IceCast history now satisfies
+the real-checkpoint portion through
+`build_forecast_history_organization_window_boards`. Its manifest contains only
+`nhl.expected_points`, so it does not imply that pipeline, development,
+deployment, or resilience were observed at those cutoffs. W5 remains partial
+until dated typed personnel evidence can decompose the resulting movement.
 
 ### W6 — Scenario sensitivity
 

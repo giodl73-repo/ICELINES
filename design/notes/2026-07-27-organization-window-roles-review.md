@@ -181,3 +181,14 @@ checksummed, inspected, and uploaded successfully. The existing release smoke,
 coverage, quality, test, and three-OS fingerprint jobs were green in the same
 run. This closes W9's package observation and release-evidence gate; it does
 not alter the explicit incomplete-source or future-holdout product status.
+
+### W5 real-checkpoint checkpoint
+
+TAPE/PACE/HART reviewed the existing sealed Jan. 31, Feb. 28, and Mar. 31,
+2025 IceCast history as a point-in-time authority. The new core adapter projects
+it into three comparable all-32-team Window boards under a dedicated
+`icecast_forecast_history.v1` manifest containing only
+`nhl.expected_points@icecast_expected_points.v1`. This closes the real
+within-season checkpoint gap without inventing observations for the other
+panes. Personnel attribution remains `null` and W5 remains partial until a
+dated typed personnel authority supports that causal decomposition.

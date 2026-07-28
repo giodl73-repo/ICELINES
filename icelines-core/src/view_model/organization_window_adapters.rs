@@ -26,11 +26,15 @@ use super::team_lineup::{
     TeamLineupPlayerView, TeamLineupProjectionView, TeamLineupSpecialTeamsUnitView,
     TEAM_LINEUP_PROJECTION_SCHEMA,
 };
-use super::team_season_forecast::{TeamSeasonForecastView, TEAM_SEASON_FORECAST_SCHEMA};
+use super::team_season_forecast::{
+    TeamSeasonForecastHistoryView, TeamSeasonForecastView, TEAM_SEASON_FORECAST_HISTORY_SCHEMA,
+    TEAM_SEASON_FORECAST_SCHEMA,
+};
 use super::training_camp::{TrainingCampLeagueForecastView, TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA};
 use crate::teams::CANONICAL_TEAMS;
 
 pub const ORGANIZATION_WINDOW_BALANCED_MANIFEST_ID: &str = "balanced.v1";
+pub const ORGANIZATION_WINDOW_FORECAST_HISTORY_MANIFEST_ID: &str = "icecast_forecast_history.v1";
 const TEAM_CATALOG_VERSION: &str = "nhl_32.v1";
 const BALANCED_MANIFEST_CREATED_AT: &str = "2026-07-27";
 
@@ -311,6 +315,143 @@ pub fn build_balanced_organization_window_board(
         },
         &inventory,
     )
+}
+
+/// Project a sealed IceCast history into comparable, NHL-strength-only Window
+/// checkpoints. This intentionally does not imply that the other Window panes
+/// were observed at each cutoff.
+pub fn build_forecast_history_organization_window_boards(
+    history: &TeamSeasonForecastHistoryView,
+    generated_at: impl Into<String>,
+) -> Result<Vec<OrganizationWindowBoardView>, OrganizationWindowError> {
+    if history.schema != TEAM_SEASON_FORECAST_HISTORY_SCHEMA || history.checkpoints.len() < 2 {
+        return Err(OrganizationWindowError::InvalidProfileInput(
+            "forecast history must contain at least two sealed checkpoints".to_owned(),
+        ));
+    }
+    let expected = canonical_teams();
+    if history.teams.len() != expected.len()
+        || history
+            .teams
+            .iter()
+            .map(|team| team.team.as_str())
+            .collect::<BTreeSet<_>>()
+            .len()
+            != expected.len()
+        || history
+            .teams
+            .iter()
+            .any(|team| !expected.contains(&team.team))
+    {
+        return Err(OrganizationWindowError::InvalidProfileInput(
+            "forecast history must contain the canonical 32-team cohort exactly once".to_owned(),
+        ));
+    }
+
+    let generated_at = generated_at.into();
+    let source = evidence(
+        TEAM_SEASON_FORECAST_HISTORY_SCHEMA,
+        history,
+        None,
+        &OrganizationWindowAdapterContext {
+            season: history.season,
+            season_type: "regular".to_owned(),
+            as_of: history.checkpoints[0].as_of_date,
+            horizon: WindowHorizon::Current,
+            organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+        },
+    )?;
+    let source_fingerprint = source[0].source_id.clone();
+    let manifest = OrganizationWindowManifestView {
+        schema: ORGANIZATION_WINDOW_MANIFEST_SCHEMA.to_owned(),
+        manifest_id: ORGANIZATION_WINDOW_FORECAST_HISTORY_MANIFEST_ID.to_owned(),
+        label: "IceCast forecast history Window".to_owned(),
+        description: "A narrow within-season Frame containing only expected standings points from sealed IceCast checkpoints.".to_owned(),
+        manifest_version: "1.0.0".to_owned(),
+        comparison_cohort: WindowCohortManifest {
+            kind: WindowCohortKind::SeasonCanonical,
+            team_catalog_version: TEAM_CATALOG_VERSION.to_owned(),
+            expected_organizations: CANONICAL_TEAMS
+                .iter()
+                .map(|(team, _)| (*team).to_owned())
+                .collect(),
+        },
+        normalization_method: WindowNormalizationMethod::EmpiricalPercentile,
+        primary_horizon: WindowHorizon::Current,
+        dimensions: vec![dimension(
+            "nhl_strength",
+            "NHL strength",
+            1.0,
+            1.0,
+            vec![profile(
+                "nhl.expected_points",
+                "icecast_expected_points.v1",
+                1.0,
+                true,
+            )],
+            Vec::new(),
+        )],
+        missing_policy: WindowMissingPolicy::WithholdRank,
+        classification_method: ORGANIZATION_WINDOW_CLASSIFICATION_METHOD.to_owned(),
+        created_at: generated_at.clone(),
+        fingerprint: String::new(),
+    };
+    let inventory = load_organization_window_profile_inventory()?;
+    let mut boards = Vec::with_capacity(history.checkpoints.len());
+    for checkpoint in &history.checkpoints {
+        let context = OrganizationWindowAdapterContext {
+            season: history.season,
+            season_type: "regular".to_owned(),
+            as_of: checkpoint.as_of_date,
+            horizon: WindowHorizon::Current,
+            organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+        };
+        let mut profile_inputs = Vec::with_capacity(expected.len());
+        for team in &history.teams {
+            let point = team
+                .checkpoints
+                .iter()
+                .find(|point| point.as_of_date == checkpoint.as_of_date)
+                .ok_or_else(|| {
+                    OrganizationWindowError::InvalidProfileInput(format!(
+                        "forecast history is missing {} at {}",
+                        team.team, checkpoint.as_of_date
+                    ))
+                })?;
+            let mut checkpoint_evidence = source.clone();
+            checkpoint_evidence[0].as_of = Some(checkpoint.as_of_date);
+            profile_inputs.push(input(
+                &context,
+                "nhl.expected_points",
+                "icecast_expected_points.v1",
+                &team.team,
+                "standings_points",
+                Some(point.average_points),
+                history.trials as u64,
+                trial_confidence(history.trials),
+                1.0,
+                WindowProfileStatus::Modeled,
+                checkpoint_evidence,
+                vec![
+                    "This checkpoint covers expected standings points only; no other organization-health pane is inferred."
+                        .to_owned(),
+                ],
+            ));
+        }
+        boards.push(build_organization_window_board(
+            OrganizationWindowBoardInput {
+                season: history.season,
+                season_type: "regular".to_owned(),
+                as_of: checkpoint.as_of_date,
+                generated_at: generated_at.clone(),
+                manifest: manifest.clone(),
+                profile_inputs,
+                source_fingerprints: vec![source_fingerprint.clone()],
+            },
+            &inventory,
+        )?);
+    }
+    Ok(boards)
 }
 
 fn adapt_lineups(
@@ -1030,6 +1171,7 @@ mod tests {
     use crate::view_model::organization_window::{
         seal_organization_window_manifest, WindowProfileReadiness,
     };
+    use crate::view_model::organization_window_comparison::build_organization_window_history;
 
     #[test]
     fn balanced_manifest_seals_and_uses_only_adapter_ready_profiles() {
@@ -1092,6 +1234,42 @@ mod tests {
             .organizations
             .iter()
             .all(|row| !row.blockers.is_empty()));
+    }
+
+    #[test]
+    fn real_forecast_history_becomes_three_comparable_narrow_window_checkpoints() {
+        let history: TeamSeasonForecastHistoryView = serde_json::from_str(include_str!(
+            "../../../examples/icecast-history-2025-01-31-to-2025-03-31.json"
+        ))
+        .unwrap();
+        let boards =
+            build_forecast_history_organization_window_boards(&history, "2026-07-28T12:00:00Z")
+                .unwrap();
+
+        assert_eq!(boards.len(), 3);
+        assert_eq!(boards[0].as_of.to_string(), "2025-01-31");
+        assert_eq!(boards[2].as_of.to_string(), "2025-03-31");
+        assert!(boards
+            .windows(2)
+            .all(|pair| pair[0].manifest.fingerprint == pair[1].manifest.fingerprint));
+        assert!(boards.iter().all(|board| {
+            board.organizations.iter().all(|team| {
+                team.dimensions.len() == 1
+                    && team.dimensions[0].profiles.len() == 1
+                    && team.overall.rank.is_some()
+            })
+        }));
+
+        let movement = build_organization_window_history(&boards).unwrap();
+        assert_eq!(movement.checkpoint_fingerprints.len(), 3);
+        assert_eq!(movement.movements.len(), 2);
+        let stl = movement.movements[1]
+            .organizations
+            .iter()
+            .find(|team| team.organization == "STL")
+            .unwrap();
+        assert!(stl.score_delta.is_some_and(|delta| delta > 0.0));
+        assert_eq!(stl.personnel_delta, None);
     }
 
     #[test]

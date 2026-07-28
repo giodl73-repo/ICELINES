@@ -310,8 +310,9 @@ pub use organization_window::{
 pub use organization_window_adapters::{
     adapt_balanced_organization_window_sources, adapt_line_combination_window_profile,
     balanced_organization_window_manifest, build_balanced_organization_window_board,
-    OrganizationWindowAdapterContext, OrganizationWindowSourceSet,
-    ORGANIZATION_WINDOW_BALANCED_MANIFEST_ID,
+    build_forecast_history_organization_window_boards, OrganizationWindowAdapterContext,
+    OrganizationWindowSourceSet, ORGANIZATION_WINDOW_BALANCED_MANIFEST_ID,
+    ORGANIZATION_WINDOW_FORECAST_HISTORY_MANIFEST_ID,
 };
 pub use organization_window_calibration::{
     calibrate_organization_window, calibrate_organization_window_rolling_origins,
