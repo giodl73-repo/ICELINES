@@ -156,6 +156,15 @@ absence, establish target NHL/AHL assignment, or finalize the review. Its
 application is fingerprint-bound to the exact league draft and preserves the
 human reviewer/timestamp gate.
 
+The official assignment evidence path begins with
+`ahl_transaction_snapshot.v1`. It captures the complete target-season AHL
+`ADD`/`DEL` stream, provider team catalog, page totals, URLs, and verified cache
+acquisition times. Provider identities remain outside canonical NHL identity
+until joined through the reviewed crosswalk. The source snapshot itself does
+not interpret a deletion as a destination, an addition as opening-night
+assignment, or absence as any status; those semantics belong to a separately
+versioned, cutoff-aware state ledger.
+
 The real July 28 league run rebuilt the camp seal with 933/933 exact position
 lists, including 26 multi-position players, then composed all 32 affiliates.
 It exposes 1,371 viable candidates and zero facts-ready candidates. The

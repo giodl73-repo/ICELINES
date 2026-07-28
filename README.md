@@ -1257,6 +1257,8 @@ icelines fetch ahl --season 20262027 \
   --out data/ahl/roster-stats.json  # official AHL catalog + rosters + stats
 icelines fetch ahl --season 20252026 --team HFD --team CV \
   --out data/ahl/nyr-sea-2025-26.json # filtered historical replay input
+icelines fetch ahl-transactions --season 20262027 \
+  --out data/ahl/transactions-2026-27.json # official paginated ADD/DEL stream
 # Omit --out to keep only the canonical sealed AHL snapshot; add --refresh
 # to force source revalidation instead of reusing verified FLETCH cachelines.
 # Licensed salary values (API key stays in the environment; values carry provenance)

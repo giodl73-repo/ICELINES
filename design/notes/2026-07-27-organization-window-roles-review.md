@@ -708,3 +708,31 @@ verified July 25-26 landing acquisitions with zero skips.
 **Verdict:** pass for narrow official-current-team authority. It resolves 549
 of 1,174 prior-only appearances (425 retained, 124 departed) and leaves all 625
 players without a current NHL team unresolved for contract/league research.
+
+### S2 official AHL transaction-source review
+
+HART/TAPE retained AHL provider player and team IDs in the source document and
+required the full provider team catalog beside them. Canonical NHL joins remain
+owned by the reviewed identity envelope; transaction ingestion cannot bypass
+that boundary.
+
+WIRE/FORGE required exact pagination reconciliation and real cache acquisition
+times. The first live implementation repeatedly read and rewrote the shared
+manifest once per page; the corrected path batches page cachelines with bounded
+concurrency and reads the verified manifest once. Every declared result must
+appear in exactly one retained source page before sealing.
+
+EDGE/SCOUT prohibited interpreting a raw `ADD`, `DEL`, or missing row inside the
+source parser. Descriptions, same-day moves, cutoffs, and destination state
+belong to a separate versioned ledger. In particular, a completed prior season
+cannot establish the target-season opening assignment.
+
+BENCH validated provider IDs, positions, event types, malformed identity,
+team-catalog coverage, page/result reconciliation, CLI parsing, and live
+completed/target-season runs. The completed replay contains 4,011 events over
+21 pages (2,259 additions, 1,752 deletions). The official 2026-27 catalog has
+32 teams and zero events, which correctly resolves no assignment decisions.
+
+**Verdict:** pass for official transaction acquisition; assignment authority
+remains open pending the cutoff-aware event-state ledger and new target-season
+source events.

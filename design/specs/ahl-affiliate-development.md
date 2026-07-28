@@ -423,6 +423,16 @@ map is parsed directly; it is not discarded and reacquired once per report.
 Team roster/skater/goalie assembly remains atomic, and the final snapshot is
 sorted by team name before validation so concurrency cannot alter the artifact.
 
+`icelines fetch ahl-transactions` resolves the same official season catalog and
+captures every paginated league transaction as
+`ahl_transaction_snapshot.v1`. Each row retains the provider player ID, team
+ID, date, raw `ADD`/`DEL` type, description, and source page; the snapshot also
+retains the season's provider team catalog and each page's verified acquisition
+time. Exact page totals must reconcile before the snapshot is sealed. This is
+source evidence rather than an assignment model: missing transactions and old
+season events never imply current assignment, contract rights, waivers, or
+organization status.
+
 `affiliate_projection_input_from_snapshot` is the fail-closed bridge into the
 core projection contract. Its enrichment set must exactly cover the selected
 official roster and explicitly map every `provider_player_id` to a canonical

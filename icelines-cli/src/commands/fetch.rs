@@ -159,6 +159,12 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             refresh,
             dry_run,
         } => do_ahl(&season, &teams, out.as_deref(), refresh, dry_run).await,
+        FetchSubcommand::AhlTransactions {
+            season,
+            out,
+            refresh,
+            dry_run,
+        } => do_ahl_transactions(&season, out.as_deref(), refresh, dry_run).await,
         FetchSubcommand::Transactions { season, dry_run } => {
             do_transactions(&season, dry_run).await
         }
@@ -181,6 +187,88 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             dry_run,
         } => do_report(kind, &season, season_type, no_lock, dry_run).await,
     }
+}
+
+async fn do_ahl_transactions(
+    season: &str,
+    out: Option<&std::path::Path>,
+    refresh: bool,
+    dry_run: bool,
+) -> anyhow::Result<()> {
+    let season_id: u32 = season
+        .parse()
+        .with_context(|| format!("AHL season must be an 8-digit value, got `{season}`"))?;
+    if season.len() != 8 {
+        return Err(anyhow!(
+            "AHL season must be an 8-digit value, got `{season}`"
+        ));
+    }
+    if dry_run {
+        println!("Would resolve AHL regular season {season} from the official season catalog.");
+        println!("Would acquire every league transaction page through verified FLETCH cachelines.");
+        println!("Would seal {season}-<date>-ahl-transactions/ahl/ahl-transactions.json.");
+        if let Some(out) = out {
+            println!("Would also export {}", out.display());
+        }
+        return Ok(());
+    }
+
+    let cfg = Config::load().context("loading IceLines config for AHL transactions")?;
+    let icelines_home = cfg
+        .snapshot_dir()
+        .parent()
+        .map(|path| path.to_path_buf())
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let _lock = fetch_lock::acquire(&icelines_home, std::time::Duration::from_secs(120))
+        .with_context(|| {
+            format!(
+                "acquiring AHL transaction fetch lock at {}/.fetch.lock",
+                icelines_home.display()
+            )
+        })?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let parent = store
+        .load_manifest()
+        .context("loading snapshot manifest before AHL transaction side-fetch")?
+        .active;
+    let client =
+        icelines_fetch::ahl::AhlFeedClient::production_cached(fletch_cache_root(&cfg), refresh);
+    let snapshot = icelines_fetch::ahl_transactions::fetch_ahl_transactions(&client, season_id)
+        .await
+        .context("fetching official AHL transaction snapshot")?;
+    let bytes = serde_json::to_vec_pretty(&snapshot)
+        .context("serializing official AHL transaction snapshot")?;
+    let today = today_date();
+    let snapshot_name = format!("{season}-{today}-ahl-transactions");
+    store
+        .create(&snapshot_name, season, SnapshotTier::Ahl, parent, &today)
+        .context("creating AHL transaction snapshot")?;
+    store
+        .write_file(
+            &snapshot_name,
+            &SnapshotTier::Ahl,
+            "ahl-transactions.json",
+            &bytes,
+        )
+        .context("writing typed AHL transaction snapshot")?;
+    store
+        .seal(&snapshot_name)
+        .context("sealing AHL transaction snapshot")?;
+    if let Some(out) = out {
+        icelines_fetch::atomic_write::write_bytes_atomic(out, &bytes)
+            .with_context(|| format!("exporting AHL transaction snapshot to {}", out.display()))?;
+    }
+    println!(
+        "AHL {}: {} transaction(s) across {} source page(s)",
+        snapshot.provider_season_name,
+        snapshot.total_results,
+        snapshot.pages.len()
+    );
+    println!("Sealed snapshot '{snapshot_name}' (tier: ahl).");
+    if let Some(out) = out {
+        println!("Exported {}", out.display());
+    }
+    Ok(())
 }
 
 async fn do_ahl(

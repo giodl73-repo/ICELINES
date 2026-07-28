@@ -2859,6 +2859,142 @@ impl AhlFeedClient {
             .ok_or(AhlFeedError::SeasonNotFound(target))
     }
 
+    pub(crate) async fn regular_season_identity(
+        &self,
+        season: u32,
+    ) -> Result<(String, String), AhlFeedError> {
+        let resolved = self.resolve_regular_season(season).await?;
+        Ok((resolved.id, resolved.name))
+    }
+
+    pub(crate) async fn official_team_identities(
+        &self,
+        season: u32,
+        provider_season_id: &str,
+    ) -> Result<Vec<(String, String, String)>, AhlFeedError> {
+        Ok(self
+            .fetch_teams(season, provider_season_id)
+            .await?
+            .into_iter()
+            .map(|team| (team.id, team.team_code, team.name))
+            .collect())
+    }
+
+    pub(crate) async fn official_feed_value(
+        &self,
+        dataset_id: &str,
+        params: &[(&str, &str)],
+    ) -> Result<Value, AhlFeedError> {
+        self.get_feed(dataset_id, params).await
+    }
+
+    pub(crate) fn official_feed_url(&self, params: &[(&str, &str)]) -> String {
+        self.feed_url(params)
+    }
+
+    pub(crate) async fn official_feed_batch_values(
+        &self,
+        requests: Vec<(String, String)>,
+        max_concurrency: usize,
+    ) -> Result<Vec<(String, Value, String)>, AhlFeedError> {
+        if let Some((cache_root, force)) = &self.cache {
+            let source_by_dataset = requests
+                .iter()
+                .map(|(dataset_id, url)| (dataset_id.as_str(), url.as_str()))
+                .collect::<BTreeMap<_, _>>();
+            let outcomes = crate::fletch::fetch_generic_http_batch_async(
+                requests.clone(),
+                cache_root.clone(),
+                *force,
+                max_concurrency,
+            )
+            .await;
+            let manifest = crate::fletch::read_fletch_cache_manifest(
+                &crate::fletch::fletch_cache_manifest_path(cache_root),
+            )
+            .map_err(|error| AhlFeedError::Schema(format!("FLETCH AHL manifest: {error:#}")))?;
+            let verified_entries = manifest
+                .entries
+                .iter()
+                .filter(|entry| {
+                    entry.verified && source_by_dataset.contains_key(entry.dataset_id.as_str())
+                })
+                .collect::<Vec<_>>();
+            let fetched_at = verified_entries
+                .iter()
+                .map(|entry| (entry.dataset_id.as_str(), entry.fetched_at_ms))
+                .collect::<BTreeMap<_, _>>();
+            if fetched_at.len() != verified_entries.len() {
+                return Err(AhlFeedError::Schema(
+                    "duplicate verified FLETCH acquisition metadata in AHL transaction batch"
+                        .into(),
+                ));
+            }
+            let mut values = Vec::with_capacity(outcomes.len());
+            for (dataset_id, outcome) in outcomes {
+                let bytes = outcome.map_err(|error| AhlFeedError::Request {
+                    url: source_by_dataset
+                        .get(dataset_id.as_str())
+                        .copied()
+                        .unwrap_or(dataset_id.as_str())
+                        .to_owned(),
+                    detail: format!("FLETCH batch acquisition failed: {error:#}"),
+                })?;
+                let body = std::str::from_utf8(&bytes).map_err(|error| {
+                    AhlFeedError::Schema(format!("{dataset_id} returned non-UTF-8 bytes: {error}"))
+                })?;
+                let milliseconds = fetched_at.get(dataset_id.as_str()).ok_or_else(|| {
+                    AhlFeedError::Schema(format!(
+                        "verified FLETCH acquisition metadata missing for {dataset_id}"
+                    ))
+                })?;
+                let milliseconds = i64::try_from(*milliseconds).map_err(|_| {
+                    AhlFeedError::Schema(format!(
+                        "invalid FLETCH acquisition time for {dataset_id}"
+                    ))
+                })?;
+                let timestamp =
+                    chrono::DateTime::from_timestamp_millis(milliseconds).ok_or_else(|| {
+                        AhlFeedError::Schema(format!(
+                            "invalid FLETCH acquisition time for {dataset_id}"
+                        ))
+                    })?;
+                values.push((dataset_id, parse_jsonp(body)?, timestamp.to_rfc3339()));
+            }
+            values.sort_by(|left, right| left.0.cmp(&right.0));
+            return Ok(values);
+        }
+
+        let mut values = Vec::with_capacity(requests.len());
+        for (dataset_id, url) in requests {
+            let response =
+                self.client
+                    .get(&url)
+                    .send()
+                    .await
+                    .map_err(|error| AhlFeedError::Request {
+                        url: url.clone(),
+                        detail: error.to_string(),
+                    })?;
+            let status = response.status();
+            if !status.is_success() {
+                return Err(AhlFeedError::Http {
+                    status: status.as_u16(),
+                    url,
+                });
+            }
+            let body = response
+                .text()
+                .await
+                .map_err(|error| AhlFeedError::Request {
+                    url: url.clone(),
+                    detail: error.to_string(),
+                })?;
+            values.push((dataset_id, parse_jsonp(&body)?, Utc::now().to_rfc3339()));
+        }
+        Ok(values)
+    }
+
     async fn fetch_teams(
         &self,
         season: u32,

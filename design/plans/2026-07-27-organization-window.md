@@ -344,6 +344,20 @@ team. They remain manual contract/league-status research; no camp-absence or
 unsigned-player inference was made. S2 remains open on those 625 decisions,
 assignment, waiver clearance, 98 score gaps, and final-rule authority.
 
+**Official AHL transaction checkpoint — 2026-07-28:** source acquisition now
+captures the complete paginated league `ADD`/`DEL` stream, provider team
+catalog, exact page totals, feed URLs, and verified per-page acquisition times
+as `ahl_transaction_snapshot.v1`. The first sequential implementation exposed
+an expensive repeated-manifest path; acquisition now batches all pages with one
+bounded cache reconciliation, matching the established roster-fetch pattern.
+
+The completed 2025-26 replay seals 4,011 events across 21 pages and 32 teams:
+2,259 additions and 1,752 deletions. The official 2026-27 season catalog is
+already present with 32 teams but currently returns zero transaction rows.
+Therefore no target-season assignment blocker is cleared yet. A separate
+cutoff-aware state ledger must interpret explicit event sequences; old-season
+events and target-season absence cannot be promoted into current assignments.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

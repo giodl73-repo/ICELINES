@@ -5467,6 +5467,32 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_fetch_ahl_transactions_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fetch",
+                "ahl-transactions",
+                "--season",
+                "20252026",
+                "--refresh",
+                "--out",
+                "ahl-transactions.json",
+            ])
+            .expect("AHL transaction acquisition should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fetch(FetchSubcommand::AhlTransactions {
+                    season,
+                    out: Some(path),
+                    refresh: true,
+                    dry_run: false,
+                }) if season == "20252026" && path == PathBuf::from("ahl-transactions.json")
+            ));
+        });
+    }
+
+    #[test]
     fn l0_icecast_opening_roster_archive_import_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -7017,6 +7043,21 @@ pub enum FetchSubcommand {
         #[arg(long)]
         refresh: bool,
         /// Print the planned fetch without making network requests or writing.
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Fetch the complete official AHL ADD/DEL transaction stream for a season.
+    #[command(name = "ahl-transactions")]
+    AhlTransactions {
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
+        /// Also export the UI-neutral transaction snapshot to this path.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Revalidate source pages instead of accepting verified FLETCH cachelines.
+        #[arg(long)]
+        refresh: bool,
+        /// Print the planned fetch without network requests or writes.
         #[arg(long)]
         dry_run: bool,
     },
