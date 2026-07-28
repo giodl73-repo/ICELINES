@@ -1589,6 +1589,26 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Generate a non-applicable player-facts review draft from a sealed workboard.
+    #[command(name = "affiliate-facts-draft")]
+    AffiliateFactsDraft {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply finalized, source-backed player facts to an exact preseason workboard.
+    #[command(name = "affiliate-facts-apply")]
+    AffiliateFactsApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        overlay: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Apply a final professional-game ledger to separate team projection facts.
     #[command(name = "affiliate-professional-games-apply")]
     AffiliateProfessionalGamesApply {
@@ -4480,6 +4500,39 @@ mod tui_surface_tests {
             assert!(matches!(
                 facts_board.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateFactsBoard { json: true, .. })
+            ));
+
+            let facts_draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-facts-draft",
+                "--workboard",
+                "affiliate-facts-board.json",
+                "--out",
+                "affiliate-facts-overlay-draft.json",
+            ])
+            .expect("affiliate preseason facts draft should parse");
+            assert!(matches!(
+                facts_draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateFactsDraft { .. })
+            ));
+
+            let facts_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-facts-apply",
+                "--workboard",
+                "affiliate-facts-board.json",
+                "--overlay",
+                "affiliate-facts-overlay.json",
+                "--json",
+                "--out",
+                "affiliate-facts-application.json",
+            ])
+            .expect("affiliate preseason facts application should parse");
+            assert!(matches!(
+                facts_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateFactsApply { json: true, .. })
             ));
 
             let professional_games_apply = Cli::try_parse_from([

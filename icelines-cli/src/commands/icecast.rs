@@ -96,7 +96,9 @@ use icelines_fetch::{
         AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
     },
     ahl_preseason_facts::{
-        build_ahl_preseason_league_facts_workboard, AhlPreseasonLeagueFactsWorkboardView,
+        apply_ahl_preseason_league_facts_overlay, build_ahl_preseason_league_facts_overlay_draft,
+        build_ahl_preseason_league_facts_workboard, AhlPreseasonLeagueFactsApplicationView,
+        AhlPreseasonLeagueFactsOverlay, AhlPreseasonLeagueFactsWorkboardView,
     },
     ahl_professional_games::{
         apply_ahl_professional_game_ledger_to_facts, build_ahl_professional_game_ledger,
@@ -1697,6 +1699,48 @@ pub fn run_affiliate_facts_board(
     Ok(())
 }
 
+pub fn run_affiliate_facts_apply(
+    workboard_path: PathBuf,
+    overlay_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard: AhlPreseasonLeagueFactsWorkboardView =
+        read_icecast_json(&workboard_path, "AHL preseason facts workboard")?;
+    let overlay: AhlPreseasonLeagueFactsOverlay =
+        read_icecast_json(&overlay_path, "AHL preseason facts overlay")?;
+    let application = apply_ahl_preseason_league_facts_overlay(&workboard, &overlay)
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&application)?)
+    } else {
+        render_affiliate_facts_application(&application)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL preseason facts application")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_facts_draft(
+    workboard_path: PathBuf,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard: AhlPreseasonLeagueFactsWorkboardView =
+        read_icecast_json(&workboard_path, "AHL preseason facts workboard")?;
+    let draft =
+        build_ahl_preseason_league_facts_overlay_draft(&workboard).map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&draft)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL preseason facts overlay draft")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_affiliate_professional_games_apply(
     crosswalk_path: PathBuf,
     ledger_path: PathBuf,
@@ -3061,6 +3105,30 @@ fn render_affiliate_facts_board(view: &AhlPreseasonLeagueFactsWorkboardView) -> 
             team.counts.missing_waiver_clearance,
             team.ahl_team
         );
+    }
+    out
+}
+
+fn render_affiliate_facts_application(view: &AhlPreseasonLeagueFactsApplicationView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "AHL PRESEASON FACTS APPLICATION — {} — {} rows applied",
+        view.target_season, view.rows_applied
+    );
+    let _ = writeln!(
+        out,
+        "CANDIDATES: {} | FACTS READY: {} | SOURCE: {} | OVERLAY: {}",
+        view.candidates,
+        view.facts_ready_candidates,
+        view.source_workboard_fingerprint,
+        view.overlay_fingerprint
+    );
+    for line in render_affiliate_facts_board(&view.workboard)
+        .lines()
+        .skip(2)
+    {
+        let _ = writeln!(out, "{line}");
     }
     out
 }

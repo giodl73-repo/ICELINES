@@ -499,3 +499,32 @@ silently clear a blocker.
 **Verdict:** pass for the workboard slice. S2 remains open for a sourced,
 fingerprint-bound facts overlay/application and the resulting all-32 affiliate
 and organization-lineup projections.
+
+### S2 facts overlay/application review
+
+HART/KEEL accepted the overlay as an application layer rather than a second
+roster model. Organization status remains owned by rollover review;
+professional games and final rule qualification remain ledger-owned; only
+position, score, prospect, recall, assignment, and waiver facts can be supplied.
+
+TAPE/WIRE required exact workboard binding plus evidence on every finalized
+row. Reviewer identity, RFC3339 time, absolute HTTP(S) URLs, notes, duplicate
+refusal, and deterministic overlay/result fingerprints are enforced before a
+state change.
+
+PACE/SCOUT accepted explicit false values: a player can be reviewed as not a
+prospect or not assigned without either fact being confused with missingness.
+`not_assigned` removes the player from the candidate pool but makes no departed,
+other-league, waiver, or quality claim.
+
+FORGE/BENCH/EDGE verified stale/draft refusal, conflict checks, partial blocker
+clearing, readiness bounds, exact position coherence, and an all-32 binary
+smoke. The one-row smoke reduces only the expected league queues and is labeled
+synthetic rather than retained as source evidence.
+
+GLASS/CREST/broadcast retain one user story: generate a review draft, source
+only known facts, apply it, and inspect the blocker delta. Future TUI/Web
+surfaces consume the application document and may not infer omitted values.
+
+**Verdict:** pass for overlay/application. S2 remains open at facts acquisition
+and facts-ready application-to-projection lowering.

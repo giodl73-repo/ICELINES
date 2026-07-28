@@ -72,6 +72,16 @@ a workboard, not an assignment model: even a fully measured candidate remains
 blocked until explicit assignment, prospect, and recall authorities exist.
 Goalies do not receive the dressed-skater development-rule blocker.
 
+The workboard carries a canonical SHA-256 fingerprint. A generated
+`ahl_preseason_league_facts_overlay.v1` draft exactly lists every canonical
+candidate but contains no facts and cannot be applied. A finalized overlay
+requires reviewer, RFC3339 timestamp, absolute evidence URLs, notes, and the
+exact source fingerprint. Each optional field clears only its corresponding
+blocker. Explicit `assigned_to_affiliate: false` changes the row to
+`not_assigned` and removes it from the candidate pool without relabeling it as
+departed or assigned to another league. Conflicting sealed facts fail closed.
+The application retains both source and result fingerprints.
+
 ## Surface
 
 ```powershell
@@ -105,6 +115,15 @@ icelines icecast affiliate-facts-board `
   --rollover league-rollover.json `
   --professional-games professional-games.json `
   --json --out affiliate-facts-board.json
+
+icelines icecast affiliate-facts-draft `
+  --workboard affiliate-facts-board.json `
+  --out affiliate-facts-overlay-draft.json
+
+icelines icecast affiliate-facts-apply `
+  --workboard affiliate-facts-board.json `
+  --overlay affiliate-facts-overlay-final.json `
+  --json --out affiliate-facts-application.json
 ```
 
 The apply command emits a sourced `AhlPreseasonRolloverConfig`; it does not

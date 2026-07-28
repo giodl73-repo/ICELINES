@@ -232,6 +232,22 @@ next S2 slice is a sourced overlay/application contract that reduces these
 blockers and then feeds the existing affiliate and organization-lineup
 primitives.
 
+**Facts application checkpoint — 2026-07-28:** the sourced overlay/application
+contract is implemented. Draft generation exactly covers canonical candidates;
+final application requires reviewer, timestamp, per-row evidence and notes,
+and the exact workboard fingerprint. Optional facts clear only their owned
+blocker, sealed-value conflicts fail, and `not_assigned` is a distinct outcome.
+A real all-32 command-path smoke changed one synthetic validation row from
+candidate to not-assigned, reduced the league candidate/assignment/waiver
+queues by exactly one, preserved all other blockers, and produced distinct
+source, overlay, and result fingerprints. The smoke is not roster evidence.
+
+The remaining S2 acquisition work is now explicit: finalize organization-
+status review, publish/finalize the season rule policy, and author sourced
+assignment/prospect/recall/waiver/score/position facts. The next code bridge
+will lower a facts-ready application into the existing per-team
+`AhlAffiliateProjectionInput` contract and refuse incomplete team pools.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

@@ -343,6 +343,8 @@ icelines icecast affiliate-status-apply-league --prior-snapshot prior-ahl.json -
 icelines fetch career --league-crosswalk ahl-league-fully-reviewed.json
 icelines icecast affiliate-professional-games --league-crosswalk ahl-league-fully-reviewed.json --career-history ~/.icelines/career_history.json --policy examples/ahl-professional-game-policy-2026-27.json --json --out professional-games.json
 icelines icecast affiliate-facts-board --rollover league-rollover.json --professional-games professional-games.json --json --out affiliate-facts-board.json
+icelines icecast affiliate-facts-draft --workboard affiliate-facts-board.json --out affiliate-facts-overlay-draft.json
+icelines icecast affiliate-facts-apply --workboard affiliate-facts-board.json --overlay affiliate-facts-overlay-final.json --json --out affiliate-facts-application.json
 icelines icecast affiliate-professional-games-apply --crosswalk hartford-identity-reviewed.json --ledger professional-games-final.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-projection-facts-reviewed.json
 icelines icecast affiliate-rollover-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json

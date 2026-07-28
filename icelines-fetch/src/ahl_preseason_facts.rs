@@ -6,8 +6,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use chrono::DateTime;
 use icelines_core::Position;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::{
     ahl::AhlFeedError,
@@ -20,6 +22,9 @@ use crate::{
 
 pub const AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA: &str =
     "ahl_preseason_league_facts_workboard.v1";
+pub const AHL_PRESEASON_LEAGUE_FACTS_OVERLAY_SCHEMA: &str = "ahl_preseason_league_facts_overlay.v1";
+pub const AHL_PRESEASON_LEAGUE_FACTS_APPLICATION_SCHEMA: &str =
+    "ahl_preseason_league_facts_application.v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -40,6 +45,7 @@ pub enum AhlPreseasonFactBlocker {
 #[serde(rename_all = "snake_case")]
 pub enum AhlPreseasonFactsCandidateStatus {
     Candidate,
+    NotAssigned,
     ProjectedNhlRoster,
     Departed,
     OtherLeague,
@@ -56,6 +62,14 @@ pub struct AhlPreseasonFactsPlayerRow {
     pub primary_position: Option<Position>,
     pub eligible_positions: Vec<Position>,
     pub projected_score: Option<f64>,
+    #[serde(default)]
+    pub prospect: Option<bool>,
+    #[serde(default)]
+    pub recall_readiness: Option<f64>,
+    #[serde(default)]
+    pub assigned_to_affiliate: Option<bool>,
+    #[serde(default)]
+    pub waiver_cleared: Option<bool>,
     pub professional_games_at_season_start: Option<u32>,
     pub development_rule_qualified: Option<bool>,
     pub blockers: Vec<AhlPreseasonFactBlocker>,
@@ -66,6 +80,8 @@ pub struct AhlPreseasonFactsTeamCounts {
     pub players: usize,
     pub candidates: usize,
     pub facts_ready_candidates: usize,
+    #[serde(default)]
+    pub not_assigned: usize,
     pub projected_nhl_roster: usize,
     pub explicit_departures: usize,
     pub identity_blocked: usize,
@@ -95,11 +111,66 @@ pub struct AhlPreseasonLeagueFactsWorkboardView {
     pub target_season: u32,
     pub professional_game_policy_id: String,
     pub professional_game_policy_authority: String,
+    #[serde(default)]
+    pub source_fingerprint: String,
     pub teams: usize,
     pub candidates: usize,
     pub facts_ready_candidates: usize,
     pub blocker_counts: BTreeMap<AhlPreseasonFactBlocker, usize>,
     pub team_workboards: Vec<AhlPreseasonFactsTeamView>,
+    pub disclosures: Vec<String>,
+}
+
+/// Separately reviewed facts. Every optional field clears only its matching
+/// blocker; absence is never interpreted as false or zero.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AhlPreseasonPlayerFactsOverlayRow {
+    pub nhl_team: String,
+    pub nhl_player_id: u32,
+    #[serde(default)]
+    pub primary_position: Option<Position>,
+    #[serde(default)]
+    pub eligible_positions: Option<Vec<Position>>,
+    #[serde(default)]
+    pub projected_score: Option<f64>,
+    #[serde(default)]
+    pub prospect: Option<bool>,
+    #[serde(default)]
+    pub recall_readiness: Option<f64>,
+    #[serde(default)]
+    pub assigned_to_affiliate: Option<bool>,
+    #[serde(default)]
+    pub waiver_cleared: Option<bool>,
+    pub source_urls: Vec<String>,
+    pub note: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AhlPreseasonLeagueFactsOverlay {
+    pub schema: String,
+    pub prior_season: u32,
+    pub target_season: u32,
+    pub workboard_fingerprint: String,
+    pub draft: bool,
+    #[serde(default)]
+    pub reviewer: Option<String>,
+    #[serde(default)]
+    pub reviewed_at: Option<String>,
+    pub rows: Vec<AhlPreseasonPlayerFactsOverlayRow>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AhlPreseasonLeagueFactsApplicationView {
+    pub schema: String,
+    pub source_workboard_fingerprint: String,
+    pub overlay_fingerprint: String,
+    pub prior_season: u32,
+    pub target_season: u32,
+    pub rows_applied: usize,
+    pub candidates: usize,
+    pub facts_ready_candidates: usize,
+    pub blocker_counts: BTreeMap<AhlPreseasonFactBlocker, usize>,
+    pub workboard: AhlPreseasonLeagueFactsWorkboardView,
     pub disclosures: Vec<String>,
 }
 
@@ -218,6 +289,10 @@ pub fn build_ahl_preseason_league_facts_workboard(
                 primary_position: player.primary_position,
                 eligible_positions: player.eligible_positions.clone(),
                 projected_score: player.projected_score,
+                prospect: None,
+                recall_readiness: None,
+                assigned_to_affiliate: None,
+                waiver_cleared: player.waiver_exempt.filter(|waiver_exempt| *waiver_exempt),
                 professional_games_at_season_start,
                 development_rule_qualified,
                 blockers,
@@ -247,7 +322,7 @@ pub fn build_ahl_preseason_league_facts_workboard(
         .iter()
         .map(|team| team.counts.facts_ready_candidates)
         .sum();
-    Ok(AhlPreseasonLeagueFactsWorkboardView {
+    let mut view = AhlPreseasonLeagueFactsWorkboardView {
         schema: AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA.to_owned(),
         prior_season: rollover.prior_season,
         target_season: rollover.target_season,
@@ -257,6 +332,7 @@ pub fn build_ahl_preseason_league_facts_workboard(
             professional_games.policy_authority_status
         )
         .to_ascii_lowercase(),
+        source_fingerprint: String::new(),
         teams: team_workboards.len(),
         candidates,
         facts_ready_candidates,
@@ -267,7 +343,404 @@ pub fn build_ahl_preseason_league_facts_workboard(
             "Every viable preseason candidate requires explicit assignment, prospect-status, and recall-readiness authority. Waiver exposure is not clearance.".to_owned(),
             "Skater development-rule qualification remains blocked until the professional-game policy is final; goaltenders are outside the dressed-skater development rule.".to_owned(),
         ],
+    };
+    view.source_fingerprint = fingerprint_workboard(&view)?;
+    Ok(view)
+}
+
+pub fn apply_ahl_preseason_league_facts_overlay(
+    workboard: &AhlPreseasonLeagueFactsWorkboardView,
+    overlay: &AhlPreseasonLeagueFactsOverlay,
+) -> Result<AhlPreseasonLeagueFactsApplicationView, AhlFeedError> {
+    validate_workboard(workboard)?;
+    validate_overlay(workboard, overlay)?;
+    let overlay_fingerprint = fingerprint_overlay(overlay)?;
+    let source_workboard_fingerprint = workboard.source_fingerprint.clone();
+    let mut applied = workboard.clone();
+    let locations = applied
+        .team_workboards
+        .iter()
+        .enumerate()
+        .flat_map(|(team_index, team)| {
+            team.players
+                .iter()
+                .enumerate()
+                .filter_map(move |(player_index, player)| {
+                    player.nhl_player_id.map(|player_id| {
+                        (
+                            (team.nhl_team.clone(), player_id),
+                            (team_index, player_index),
+                        )
+                    })
+                })
+        })
+        .collect::<BTreeMap<_, _>>();
+    for fact in &overlay.rows {
+        let (team_index, player_index) = locations
+            .get(&(fact.nhl_team.clone(), fact.nhl_player_id))
+            .copied()
+            .ok_or_else(|| {
+                AhlFeedError::Validation(format!(
+                    "preseason facts overlay references unknown player {} for {}",
+                    fact.nhl_player_id, fact.nhl_team
+                ))
+            })?;
+        let player = &mut applied.team_workboards[team_index].players[player_index];
+        if player.status != AhlPreseasonFactsCandidateStatus::Candidate {
+            return Err(AhlFeedError::Validation(format!(
+                "preseason facts overlay can only review active candidates; {} for {} is {:?}",
+                fact.nhl_player_id, fact.nhl_team, player.status
+            )));
+        }
+        apply_player_fact(player, fact)?;
+    }
+    recompute_workboard(&mut applied)?;
+    applied.disclosures.push(format!(
+        "Reviewed facts overlay {} applied by {} at {}; fields absent from the overlay remain blocked.",
+        overlay_fingerprint,
+        overlay.reviewer.as_deref().unwrap_or_default(),
+        overlay.reviewed_at.as_deref().unwrap_or_default()
+    ));
+    applied.source_fingerprint = fingerprint_workboard(&applied)?;
+    Ok(AhlPreseasonLeagueFactsApplicationView {
+        schema: AHL_PRESEASON_LEAGUE_FACTS_APPLICATION_SCHEMA.to_owned(),
+        source_workboard_fingerprint,
+        overlay_fingerprint,
+        prior_season: applied.prior_season,
+        target_season: applied.target_season,
+        rows_applied: overlay.rows.len(),
+        candidates: applied.candidates,
+        facts_ready_candidates: applied.facts_ready_candidates,
+        blocker_counts: applied.blocker_counts.clone(),
+        workboard: applied,
+        disclosures: vec![
+            "Application clears only explicitly reviewed facts and never creates an AHL assignment from a camp outcome.".to_owned(),
+            "A reviewed not-assigned decision removes that player from the candidate pool; it is not rewritten as another-league or departed status.".to_owned(),
+        ],
     })
+}
+
+pub fn build_ahl_preseason_league_facts_overlay_draft(
+    workboard: &AhlPreseasonLeagueFactsWorkboardView,
+) -> Result<AhlPreseasonLeagueFactsOverlay, AhlFeedError> {
+    validate_workboard(workboard)?;
+    let rows = workboard
+        .team_workboards
+        .iter()
+        .flat_map(|team| {
+            team.players.iter().filter_map(|player| {
+                (player.status == AhlPreseasonFactsCandidateStatus::Candidate)
+                    .then_some(player.nhl_player_id)
+                    .flatten()
+                    .map(|nhl_player_id| AhlPreseasonPlayerFactsOverlayRow {
+                        nhl_team: team.nhl_team.clone(),
+                        nhl_player_id,
+                        primary_position: None,
+                        eligible_positions: None,
+                        projected_score: None,
+                        prospect: None,
+                        recall_readiness: None,
+                        assigned_to_affiliate: None,
+                        waiver_cleared: None,
+                        source_urls: Vec::new(),
+                        note: String::new(),
+                    })
+            })
+        })
+        .collect();
+    Ok(AhlPreseasonLeagueFactsOverlay {
+        schema: AHL_PRESEASON_LEAGUE_FACTS_OVERLAY_SCHEMA.to_owned(),
+        prior_season: workboard.prior_season,
+        target_season: workboard.target_season,
+        workboard_fingerprint: workboard.source_fingerprint.clone(),
+        draft: true,
+        reviewer: None,
+        reviewed_at: None,
+        rows,
+    })
+}
+
+fn validate_workboard(
+    workboard: &AhlPreseasonLeagueFactsWorkboardView,
+) -> Result<(), AhlFeedError> {
+    if workboard.schema != AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA
+        || workboard.teams != workboard.team_workboards.len()
+        || workboard.source_fingerprint.trim().is_empty()
+        || workboard.source_fingerprint != fingerprint_workboard(workboard)?
+    {
+        return Err(AhlFeedError::Validation(
+            "preseason facts workboard is mismatched, incomplete, or fingerprint-invalid"
+                .to_owned(),
+        ));
+    }
+    let mut teams = BTreeSet::new();
+    let mut players = BTreeSet::new();
+    if workboard.team_workboards.iter().any(|team| {
+        team.nhl_team.trim().is_empty()
+            || !teams.insert(team.nhl_team.as_str())
+            || team.players.iter().any(|player| {
+                player
+                    .nhl_player_id
+                    .is_some_and(|id| !players.insert((team.nhl_team.as_str(), id)))
+            })
+    }) {
+        return Err(AhlFeedError::Validation(
+            "preseason facts workboard contains empty or duplicate team/player identities"
+                .to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_overlay(
+    workboard: &AhlPreseasonLeagueFactsWorkboardView,
+    overlay: &AhlPreseasonLeagueFactsOverlay,
+) -> Result<(), AhlFeedError> {
+    let reviewed_at_valid = overlay
+        .reviewed_at
+        .as_deref()
+        .and_then(|value| DateTime::parse_from_rfc3339(value).ok())
+        .is_some();
+    if overlay.schema != AHL_PRESEASON_LEAGUE_FACTS_OVERLAY_SCHEMA
+        || overlay.prior_season != workboard.prior_season
+        || overlay.target_season != workboard.target_season
+        || overlay.workboard_fingerprint != workboard.source_fingerprint
+        || overlay.draft
+        || overlay
+            .reviewer
+            .as_deref()
+            .is_none_or(|reviewer| reviewer.trim().is_empty())
+        || !reviewed_at_valid
+        || overlay.rows.is_empty()
+    {
+        return Err(AhlFeedError::Validation(
+            "preseason facts overlay must be finalized and bound to the exact workboard".to_owned(),
+        ));
+    }
+    let mut identities = BTreeSet::new();
+    if overlay.rows.iter().any(|row| {
+        row.nhl_team.trim().is_empty()
+            || row.nhl_player_id == 0
+            || row.note.trim().is_empty()
+            || row.source_urls.is_empty()
+            || row.source_urls.iter().any(|source| {
+                reqwest::Url::parse(source)
+                    .ok()
+                    .is_none_or(|url| !matches!(url.scheme(), "http" | "https"))
+            })
+            || !identities.insert((row.nhl_team.as_str(), row.nhl_player_id))
+            || row.projected_score.is_some_and(|score| !score.is_finite())
+            || row.recall_readiness.is_some_and(|readiness| {
+                !readiness.is_finite() || !(0.0..=1.0).contains(&readiness)
+            })
+            || row.eligible_positions.as_ref().is_some_and(|positions| {
+                positions.is_empty()
+                    || positions
+                        .iter()
+                        .enumerate()
+                        .any(|(index, position)| positions[index + 1..].contains(position))
+            })
+            || matches!(row.waiver_cleared, Some(false))
+                && matches!(row.assigned_to_affiliate, Some(true))
+    }) {
+        return Err(AhlFeedError::Validation(
+            "preseason facts overlay contains invalid, duplicate, contradictory, or unsourced rows"
+                .to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+fn apply_player_fact(
+    player: &mut AhlPreseasonFactsPlayerRow,
+    fact: &AhlPreseasonPlayerFactsOverlayRow,
+) -> Result<(), AhlFeedError> {
+    if let Some(false) = fact.assigned_to_affiliate {
+        player.status = AhlPreseasonFactsCandidateStatus::NotAssigned;
+        player.assigned_to_affiliate = Some(false);
+        player.waiver_cleared = fact.waiver_cleared;
+        player.blockers.clear();
+        return Ok(());
+    }
+    merge_exact(
+        &mut player.primary_position,
+        fact.primary_position,
+        "primary position",
+    )?;
+    if let Some(positions) = &fact.eligible_positions {
+        if !player.eligible_positions.is_empty() && player.eligible_positions != *positions {
+            return Err(AhlFeedError::Validation(format!(
+                "preseason facts overlay conflicts with eligible positions for {}",
+                player.display_name
+            )));
+        }
+        player.eligible_positions = positions.clone();
+    }
+    if player.primary_position.is_some_and(|position| {
+        !player.eligible_positions.is_empty() && !player.eligible_positions.contains(&position)
+    }) {
+        return Err(AhlFeedError::Validation(format!(
+            "preseason facts overlay omits primary eligibility for {}",
+            player.display_name
+        )));
+    }
+    if let Some(score) = fact.projected_score {
+        if player
+            .projected_score
+            .is_some_and(|current| (current - score).abs() > 1e-9)
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "preseason facts overlay conflicts with projected score for {}",
+                player.display_name
+            )));
+        }
+        player.projected_score = Some(score);
+    }
+    merge_exact(&mut player.prospect, fact.prospect, "prospect status")?;
+    merge_exact(
+        &mut player.recall_readiness,
+        fact.recall_readiness,
+        "recall readiness",
+    )?;
+    merge_exact(
+        &mut player.assigned_to_affiliate,
+        fact.assigned_to_affiliate,
+        "assignment",
+    )?;
+    merge_exact(
+        &mut player.waiver_cleared,
+        fact.waiver_cleared,
+        "waiver clearance",
+    )?;
+    let has_exact_position = player
+        .primary_position
+        .is_some_and(|position| player.eligible_positions.contains(&position));
+    let has_projected_score = player.projected_score.is_some();
+    let has_prospect_status = player.prospect.is_some();
+    let has_recall_readiness = player.recall_readiness.is_some();
+    let has_assignment = player.assigned_to_affiliate.is_some();
+    let has_waiver_clearance = player.waiver_cleared == Some(true);
+    clear_if(
+        &mut player.blockers,
+        AhlPreseasonFactBlocker::ExactPosition,
+        has_exact_position,
+    );
+    clear_if(
+        &mut player.blockers,
+        AhlPreseasonFactBlocker::ProjectedScore,
+        has_projected_score,
+    );
+    clear_if(
+        &mut player.blockers,
+        AhlPreseasonFactBlocker::ProspectStatus,
+        has_prospect_status,
+    );
+    clear_if(
+        &mut player.blockers,
+        AhlPreseasonFactBlocker::RecallReadiness,
+        has_recall_readiness,
+    );
+    clear_if(
+        &mut player.blockers,
+        AhlPreseasonFactBlocker::AssignmentAuthority,
+        has_assignment,
+    );
+    clear_if(
+        &mut player.blockers,
+        AhlPreseasonFactBlocker::WaiverClearance,
+        has_waiver_clearance,
+    );
+    Ok(())
+}
+
+fn merge_exact<T: Copy + PartialEq>(
+    current: &mut Option<T>,
+    supplied: Option<T>,
+    label: &str,
+) -> Result<(), AhlFeedError> {
+    if let Some(supplied) = supplied {
+        if current.is_some_and(|current| current != supplied) {
+            return Err(AhlFeedError::Validation(format!(
+                "preseason facts overlay conflicts with existing {label}"
+            )));
+        }
+        *current = Some(supplied);
+    }
+    Ok(())
+}
+
+fn clear_if(
+    blockers: &mut Vec<AhlPreseasonFactBlocker>,
+    blocker: AhlPreseasonFactBlocker,
+    predicate: bool,
+) {
+    if predicate {
+        blockers.retain(|candidate| *candidate != blocker);
+    }
+}
+
+fn recompute_workboard(
+    workboard: &mut AhlPreseasonLeagueFactsWorkboardView,
+) -> Result<(), AhlFeedError> {
+    let mut blocker_counts = BTreeMap::new();
+    for team in &mut workboard.team_workboards {
+        for player in &team.players {
+            for blocker in &player.blockers {
+                *blocker_counts.entry(*blocker).or_default() += 1;
+            }
+        }
+        team.counts = team_counts(&team.players);
+    }
+    workboard.candidates = workboard
+        .team_workboards
+        .iter()
+        .map(|team| team.counts.candidates)
+        .sum();
+    workboard.facts_ready_candidates = workboard
+        .team_workboards
+        .iter()
+        .map(|team| team.counts.facts_ready_candidates)
+        .sum();
+    workboard.blocker_counts = blocker_counts;
+    workboard.source_fingerprint.clear();
+    Ok(())
+}
+
+fn fingerprint_workboard(
+    workboard: &AhlPreseasonLeagueFactsWorkboardView,
+) -> Result<String, AhlFeedError> {
+    let mut canonical = workboard.clone();
+    canonical.source_fingerprint.clear();
+    canonical
+        .team_workboards
+        .sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
+    for team in &mut canonical.team_workboards {
+        team.players.sort_by(|left, right| {
+            left.nhl_player_id
+                .cmp(&right.nhl_player_id)
+                .then_with(|| left.display_name.cmp(&right.display_name))
+        });
+    }
+    let bytes = serde_json::to_vec(&canonical).map_err(|error| {
+        AhlFeedError::Validation(format!("serialize preseason facts workboard: {error}"))
+    })?;
+    Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
+}
+
+fn fingerprint_overlay(overlay: &AhlPreseasonLeagueFactsOverlay) -> Result<String, AhlFeedError> {
+    let mut canonical = overlay.clone();
+    canonical.rows.sort_by(|left, right| {
+        left.nhl_team
+            .cmp(&right.nhl_team)
+            .then_with(|| left.nhl_player_id.cmp(&right.nhl_player_id))
+    });
+    for row in &mut canonical.rows {
+        row.source_urls.sort();
+    }
+    let bytes = serde_json::to_vec(&canonical).map_err(|error| {
+        AhlFeedError::Validation(format!("serialize preseason facts overlay: {error}"))
+    })?;
+    Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
 }
 
 impl AhlPreseasonFactsCandidateStatus {
@@ -275,9 +748,10 @@ impl AhlPreseasonFactsCandidateStatus {
         match self {
             Self::Candidate => 0,
             Self::IdentityBlocked => 1,
-            Self::ProjectedNhlRoster => 2,
-            Self::Departed => 3,
-            Self::OtherLeague => 4,
+            Self::NotAssigned => 2,
+            Self::ProjectedNhlRoster => 3,
+            Self::Departed => 4,
+            Self::OtherLeague => 5,
         }
     }
 }
@@ -302,6 +776,10 @@ fn team_counts(players: &[AhlPreseasonFactsPlayerRow]) -> AhlPreseasonFactsTeamC
                 player.status == AhlPreseasonFactsCandidateStatus::Candidate
                     && player.blockers.is_empty()
             })
+            .count(),
+        not_assigned: players
+            .iter()
+            .filter(|player| player.status == AhlPreseasonFactsCandidateStatus::NotAssigned)
             .count(),
         projected_nhl_roster: players
             .iter()
@@ -490,5 +968,104 @@ mod tests {
         assert!(row
             .blockers
             .contains(&AhlPreseasonFactBlocker::AssignmentAuthority));
+    }
+
+    fn overlay(
+        board: &AhlPreseasonLeagueFactsWorkboardView,
+        assigned_to_affiliate: bool,
+    ) -> AhlPreseasonLeagueFactsOverlay {
+        AhlPreseasonLeagueFactsOverlay {
+            schema: AHL_PRESEASON_LEAGUE_FACTS_OVERLAY_SCHEMA.to_owned(),
+            prior_season: board.prior_season,
+            target_season: board.target_season,
+            workboard_fingerprint: board.source_fingerprint.clone(),
+            draft: false,
+            reviewer: Some("facts-reviewer".to_owned()),
+            reviewed_at: Some("2026-07-28T12:00:00Z".to_owned()),
+            rows: vec![AhlPreseasonPlayerFactsOverlayRow {
+                nhl_team: "NYR".to_owned(),
+                nhl_player_id: 1,
+                primary_position: None,
+                eligible_positions: None,
+                projected_score: None,
+                prospect: Some(false),
+                recall_readiness: Some(0.7),
+                assigned_to_affiliate: Some(assigned_to_affiliate),
+                waiver_cleared: None,
+                source_urls: vec!["https://example.com/assignment".to_owned()],
+                note: "Reviewed assignment and organization facts".to_owned(),
+            }],
+        }
+    }
+
+    #[test]
+    fn finalized_overlay_clears_only_explicit_matching_blockers() {
+        let board = build_ahl_preseason_league_facts_workboard(
+            &rollover(),
+            &ledger(AhlProfessionalGamePolicyAuthority::Final),
+        )
+        .unwrap();
+        let applied =
+            apply_ahl_preseason_league_facts_overlay(&board, &overlay(&board, true)).unwrap();
+        let player = &applied.workboard.team_workboards[0].players[0];
+        assert_eq!(player.prospect, Some(false));
+        assert_eq!(player.recall_readiness, Some(0.7));
+        assert_eq!(player.assigned_to_affiliate, Some(true));
+        assert!(player.blockers.is_empty());
+        assert_eq!(applied.facts_ready_candidates, 1);
+        assert_ne!(
+            applied.source_workboard_fingerprint,
+            applied.workboard.source_fingerprint
+        );
+    }
+
+    #[test]
+    fn reviewed_not_assigned_decision_removes_candidate_without_relabeling() {
+        let board = build_ahl_preseason_league_facts_workboard(
+            &rollover(),
+            &ledger(AhlProfessionalGamePolicyAuthority::Provisional),
+        )
+        .unwrap();
+        let applied =
+            apply_ahl_preseason_league_facts_overlay(&board, &overlay(&board, false)).unwrap();
+        let team = &applied.workboard.team_workboards[0];
+        assert_eq!(
+            team.players[0].status,
+            AhlPreseasonFactsCandidateStatus::NotAssigned
+        );
+        assert!(team.players[0].blockers.is_empty());
+        assert_eq!(team.counts.candidates, 0);
+        assert_eq!(team.counts.not_assigned, 1);
+    }
+
+    #[test]
+    fn overlay_rejects_stale_workboard_binding_and_draft_authority() {
+        let board = build_ahl_preseason_league_facts_workboard(
+            &rollover(),
+            &ledger(AhlProfessionalGamePolicyAuthority::Final),
+        )
+        .unwrap();
+        let mut facts = overlay(&board, true);
+        facts.workboard_fingerprint = "sha256:stale".to_owned();
+        assert!(apply_ahl_preseason_league_facts_overlay(&board, &facts).is_err());
+        facts.workboard_fingerprint = board.source_fingerprint.clone();
+        facts.draft = true;
+        assert!(apply_ahl_preseason_league_facts_overlay(&board, &facts).is_err());
+    }
+
+    #[test]
+    fn overlay_draft_exactly_covers_canonical_candidates_without_claiming_facts() {
+        let board = build_ahl_preseason_league_facts_workboard(
+            &rollover(),
+            &ledger(AhlProfessionalGamePolicyAuthority::Final),
+        )
+        .unwrap();
+        let draft = build_ahl_preseason_league_facts_overlay_draft(&board).unwrap();
+        assert!(draft.draft);
+        assert_eq!(draft.workboard_fingerprint, board.source_fingerprint);
+        assert_eq!(draft.rows.len(), 1);
+        assert_eq!(draft.rows[0].nhl_player_id, 1);
+        assert!(draft.rows[0].source_urls.is_empty());
+        assert!(draft.rows[0].assigned_to_affiliate.is_none());
     }
 }

@@ -330,6 +330,12 @@ per-player blocker set for assignment, organization status, waiver clearance,
 score, prospect status, recall readiness, professional games, and final rule
 qualification. This makes the remaining all-32 data work measurable while
 keeping final assignments and player-quality judgments outside the join.
+The companion overlay draft/application contract is fingerprint-bound and
+partial: it can record exact position, projected score, independent prospect
+status, recall readiness, assignment, and waiver clearance, while professional
+games and rule qualification remain ledger-owned and organization status
+remains rollover-review-owned. This prevents one convenient player-facts file
+from becoming a second authority for every preseason decision.
 
 Historical replay uses season-dated catalogs rather than applying the current
 affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves

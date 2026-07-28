@@ -3165,6 +3165,18 @@ icelines icecast affiliate-facts-board \
   --rollover league-rollover.json \
   --professional-games professional-games.json \
   --json --out affiliate-facts-board.json
+
+# Create the exact candidate review envelope; edit sourced fields, reviewer,
+# timestamp, and draft status before application.
+icelines icecast affiliate-facts-draft \
+  --workboard affiliate-facts-board.json \
+  --out affiliate-facts-overlay-draft.json
+
+# Apply only finalized facts bound to that exact workboard fingerprint.
+icelines icecast affiliate-facts-apply \
+  --workboard affiliate-facts-board.json \
+  --overlay affiliate-facts-overlay-final.json \
+  --json --out affiliate-facts-application.json
 ```
 
 The JSON artifact is keyed by canonical NHL player ID where identity is
@@ -3172,6 +3184,12 @@ available, preserves exact eligible positions, and lists every remaining
 authority blocker by player and team. Text output is a compact 32-team review
 queue. A provisional professional-game policy can populate raw totals but
 cannot certify final AHL development-rule qualification.
+
+Overlay rows are partial by design. Omitted values stay blocked; `false` is an
+explicit reviewed value for prospect status or assignment, not a synonym for
+missing. Conflicts with sealed position/score facts, duplicate player rows,
+non-HTTP evidence, invalid readiness, stale fingerprints, and draft overlays
+fail before output.
 
 ---
 
