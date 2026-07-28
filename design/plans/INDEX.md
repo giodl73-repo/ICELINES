@@ -51,6 +51,7 @@ editorial/stathead workflows, and data freshness authority.
 | Plan | Status | Summary |
 |------|--------|---------|
 | [Prospect Conversion Performance Authority](2026-07-27-prospect-conversion-performance.md) | Complete | Derives position-aware, confidence-weighted NHL outcomes from official history and publishes hit/breakout/miss/developing comparison classes for frozen prospect cohorts. |
+| [The Window — Organization Health](2026-07-27-organization-window.md) | Planned | Standardizes reusable profiles, configurable scoring Frames, and explainable 32-team organization-health, movement, and scenario boards. |
 | [UI-Neutral Card System](2026-07-21-ui-neutral-card-system.md) | Complete | One versioned IceLines-owned document drives prognosis, fantasy, prospective simulation, and historical replay cards across JSON/Web/TUI/reference renderers. |
 | [Documentation Consolidation](2026-07-21-documentation-consolidation.md) | Planned | Classifies the current 57 specs and 157 plans, limits the active set, archives closed micro-plans without losing history, and adds drift checks. |
 | [Fantasy War Room Roadmap](2026-07-18-fantasy-war-room-roadmap.md) | Active | Sequences weekly matchup strategy, playoff portfolio, live draft sessions, four-move pickup planning, injury contingencies, goalie decisions, trade counters, archetypes, decision review, and readiness. |
