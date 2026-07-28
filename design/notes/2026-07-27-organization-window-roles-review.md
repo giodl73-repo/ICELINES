@@ -426,3 +426,15 @@ identity mappings, 144 waiver gates, and aggregate shortages of 357F/171D/59G
 are now explicit work queues. The next S2 slice must reduce those queues with
 sourced status and professional-game authorities; it may not reinterpret them
 as assignments.
+
+FORGE/BENCH then verified forecast-native parity for organization-status draft
+and application, plus an exact league envelope over all 1,425 appearances. The
+real envelope builds 32/32 children, reports 1,174 required decisions and 15
+identity blockers, and has zero source-binding failures. League application is
+atomic and reuses each canonical child validator.
+
+EDGE identified an over-coupled failure mode: one explicitly rejected identity
+blocked otherwise valid status decisions for the entire affiliate. The gates
+are now independent. A mapping rejection still prevents projection readiness
+and canonical player joins, while complete evidence-backed decisions for other
+players can be preserved in the config.

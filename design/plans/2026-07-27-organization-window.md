@@ -181,6 +181,13 @@ candidates remain waiver-gated. Aggregate position shortages are 357F/171D/59G.
 These are now typed team/player work queues. They are not filled by assuming a
 camp cut or prior roster appearance proves a 2026-27 assignment.
 
+The league organization-status draft now materializes all 1,425 appearances as
+32 fingerprint-bound child reviews with 1,174 required decisions, 15 identity
+blockers, and zero failed teams. Forecast-native review and application are
+artifact-identical to the explicit camp-input path. Finalized application is
+atomic across the league; mapping rejection stays a readiness blocker without
+discarding valid status decisions for other players.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

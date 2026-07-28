@@ -1500,6 +1500,22 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Generate the non-applicable organization-status draft for every camp team.
+    #[command(name = "affiliate-status-draft-league")]
+    AffiliateStatusDraftLeague {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Inspect an existing affiliate organization-status review artifact.
     #[command(name = "affiliate-status-show")]
     AffiliateStatusShow {
@@ -1519,6 +1535,22 @@ pub enum IceCastSubcommand {
         crosswalk: PathBuf,
         #[arg(long, value_name = "PATH")]
         camp: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Atomically apply finalized league organization-status review children.
+    #[command(name = "affiliate-status-apply-league")]
+    AffiliateStatusApplyLeague {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
         #[arg(long, value_name = "PATH")]
         review: PathBuf,
         #[arg(long, value_name = "PATH")]
@@ -4280,6 +4312,28 @@ mod tui_surface_tests {
                 Commands::Icecast(IceCastSubcommand::AffiliateStatusDraft { .. })
             ));
 
+            let status_draft_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-draft-league",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--camp-forecast",
+                "league-camp.json",
+                "--config",
+                "league-rollover-config.json",
+                "--json",
+                "--out",
+                "league-status-draft.json",
+            ])
+            .expect("league organization-status review draft should parse");
+            assert!(matches!(
+                status_draft_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusDraftLeague { json: true, .. })
+            ));
+
             let status_show = Cli::try_parse_from([
                 "icelines",
                 "icecast",
@@ -4317,6 +4371,29 @@ mod tui_surface_tests {
             assert!(matches!(
                 status_apply.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateStatusApply { .. })
+            ));
+
+            let status_apply_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-apply-league",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--camp-forecast",
+                "league-camp.json",
+                "--review",
+                "league-status-review.json",
+                "--config",
+                "league-rollover-base.json",
+                "--out",
+                "league-rollover-reviewed.json",
+            ])
+            .expect("league organization-status review application should parse");
+            assert!(matches!(
+                status_apply_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusApplyLeague { .. })
             ));
 
             let input = Cli::try_parse_from([

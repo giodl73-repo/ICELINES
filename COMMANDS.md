@@ -1043,6 +1043,8 @@ icelines icecast affiliate-status-apply --prior-snapshot prior-ahl.json --crossw
 icelines icecast affiliate-input --snapshot ahl-roster-stats.json --crosswalk hartford-identity-reviewed.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-affiliate-input.json
 icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk prior-identities.json --camp camp.json --camp-forecast camp-forecast.json --config rollover-config.json --json --out rollover.json
 icelines icecast affiliate-rollover-config-league --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --prior-affiliations examples/ahl-affiliations-2025-26.json --affiliations examples/ahl-affiliations-2026-27.json --as-of 2026-07-28 --source-url https://theahl.com/mediaguide --source-url https://theahl.com/nhl-affiliations --out league-rollover-config.json
+icelines icecast affiliate-status-draft-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-status-review.json
+icelines icecast affiliate-status-apply-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --review league-status-review-final.json --config league-rollover-config.json --out league-rollover-reviewed.json
 icelines icecast affiliate-rollover-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json
@@ -1385,6 +1387,16 @@ team forecasts or source bindings are typed failures; built-but-not-ready teams
 retain their identity, organization-status, position-shape, and waiver queues.
 The sealed forecast path is semantically identical to the original explicit
 camp-input path for every field used by rollover.
+
+`icecast affiliate-status-draft-league` creates the corresponding
+`ahl_preseason_league_organization_review.v1` envelope directly from the sealed
+league forecast. Each child is the existing crosswalk-fingerprint-bound review
+contract; the league layer adds exact team coverage and recomputed aggregate
+counts but no decisions. After every required child row has sourced status,
+reviewer, timestamp, and note evidence, set the league and child `draft` fields
+to false and use `affiliate-status-apply-league`. Application is atomic across
+the cohort. Mapping-rejected identities remain projection blockers but do not
+invalidate unrelated, otherwise-complete status decisions.
 
 `icecast affiliate-map` emits the dated `ahl_affiliation_catalog.v1` authority
 used to connect all 32 NHL organizations to their current AHL affiliates. For

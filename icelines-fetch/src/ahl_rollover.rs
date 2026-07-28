@@ -25,6 +25,8 @@ pub const AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA: &str = "ahl_preseason_organi
 pub const AHL_PRESEASON_LEAGUE_ROLLOVER_CONFIG_SCHEMA: &str =
     "ahl_preseason_league_rollover_config.v1";
 pub const AHL_PRESEASON_LEAGUE_ROLLOVER_SCHEMA: &str = "ahl_preseason_league_rollover.v1";
+pub const AHL_PRESEASON_LEAGUE_ORGANIZATION_REVIEW_SCHEMA: &str =
+    "ahl_preseason_league_organization_review.v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -233,6 +235,109 @@ pub struct AhlPreseasonOrganizationReview {
     pub rows: Vec<AhlPreseasonOrganizationReviewRow>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlPreseasonLeagueOrganizationReviewFailure {
+    pub nhl_team: String,
+    pub prior_ahl_team: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlPreseasonLeagueOrganizationReview {
+    pub schema: String,
+    pub prior_season: u32,
+    pub target_season: u32,
+    pub draft: bool,
+    pub teams_requested: usize,
+    pub teams_built: usize,
+    pub identity_blockers: usize,
+    pub decisions_required: usize,
+    pub reviews: Vec<AhlPreseasonOrganizationReview>,
+    pub failures: Vec<AhlPreseasonLeagueOrganizationReviewFailure>,
+    pub disclosures: Vec<String>,
+}
+
+pub fn build_ahl_preseason_league_organization_review_draft(
+    prior_snapshot: &AhlRosterStatsSnapshot,
+    league_crosswalk: &AhlIdentityLeagueCrosswalkView,
+    camp_league: &TrainingCampLeagueForecastView,
+    config: &AhlPreseasonLeagueRolloverConfig,
+) -> Result<AhlPreseasonLeagueOrganizationReview, AhlFeedError> {
+    validate_league_rollover_inputs(prior_snapshot, league_crosswalk, camp_league, config)?;
+    let crosswalks = league_crosswalk
+        .crosswalks
+        .iter()
+        .map(|crosswalk| (crosswalk.ahl_team.as_str(), crosswalk))
+        .collect::<BTreeMap<_, _>>();
+    let forecasts = camp_league
+        .teams
+        .iter()
+        .map(|team| (team.team.as_str(), team))
+        .collect::<BTreeMap<_, _>>();
+    let mut reviews = Vec::with_capacity(config.teams.len());
+    let mut failures = Vec::new();
+    for team_config in &config.teams {
+        let prior_team = prior_ahl_team(team_config);
+        let team_forecast = forecasts
+            .get(team_config.nhl_team.as_str())
+            .expect("validated league forecast team");
+        let result = team_forecast
+            .forecast
+            .as_ref()
+            .ok_or_else(|| {
+                AhlFeedError::Validation(
+                    team_forecast
+                        .error
+                        .clone()
+                        .unwrap_or_else(|| "league camp forecast is unavailable".to_owned()),
+                )
+            })
+            .and_then(|forecast| {
+                let crosswalk = crosswalks.get(prior_team).copied().ok_or_else(|| {
+                    AhlFeedError::Validation(format!(
+                        "reviewed league crosswalk has no prior affiliate `{prior_team}`"
+                    ))
+                })?;
+                build_ahl_preseason_organization_review_draft_from_forecast(
+                    prior_snapshot,
+                    crosswalk,
+                    forecast,
+                    &team_config.nhl_team,
+                    prior_team,
+                )
+            });
+        match result {
+            Ok(review) => reviews.push(review),
+            Err(error) => failures.push(AhlPreseasonLeagueOrganizationReviewFailure {
+                nhl_team: team_config.nhl_team.clone(),
+                prior_ahl_team: prior_team.to_owned(),
+                reason: error.to_string(),
+            }),
+        }
+    }
+    reviews.sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
+    failures.sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
+    let identity_blockers = reviews.iter().map(|review| review.identity_blockers).sum();
+    let decisions_required = reviews.iter().map(|review| review.decisions_required).sum();
+    Ok(AhlPreseasonLeagueOrganizationReview {
+        schema: AHL_PRESEASON_LEAGUE_ORGANIZATION_REVIEW_SCHEMA.to_owned(),
+        prior_season: config.prior_season,
+        target_season: config.target_season,
+        draft: true,
+        teams_requested: config.teams.len(),
+        teams_built: reviews.len(),
+        identity_blockers,
+        decisions_required,
+        reviews,
+        failures,
+        disclosures: vec![
+            "This is a non-applicable league review draft; it creates no retained, departed, or other-league decisions.".to_owned(),
+            "Each child remains bound to the prior official roster, reviewed identity fingerprint, sealed camp forecast, and explicit prior affiliate.".to_owned(),
+            "Mapping-rejected identities remain blockers. Prior-only reviewed players require sourced organization-status decisions before rollover readiness can change.".to_owned(),
+        ],
+    })
+}
+
 pub fn build_ahl_preseason_organization_review_draft(
     prior_snapshot: &AhlRosterStatsSnapshot,
     crosswalk: &AhlIdentityCrosswalkView,
@@ -243,10 +348,72 @@ pub fn build_ahl_preseason_organization_review_draft(
     validate_organization_review_sources(
         prior_snapshot,
         crosswalk,
-        camp_input,
         nhl_team,
         ahl_team,
+        &camp_input.team,
     )?;
+    let camp_ids = camp_input
+        .players
+        .iter()
+        .map(|row| row.player_id)
+        .collect::<BTreeSet<_>>();
+    build_ahl_preseason_organization_review_draft_from_ids(
+        prior_snapshot,
+        crosswalk,
+        nhl_team,
+        ahl_team,
+        camp_input.season,
+        &camp_ids,
+    )
+}
+
+pub fn build_ahl_preseason_organization_review_draft_from_forecast(
+    prior_snapshot: &AhlRosterStatsSnapshot,
+    crosswalk: &AhlIdentityCrosswalkView,
+    camp_forecast: &TrainingCampForecastView,
+    nhl_team: &str,
+    ahl_team: &str,
+) -> Result<AhlPreseasonOrganizationReview, AhlFeedError> {
+    if camp_forecast.schema != TRAINING_CAMP_FORECAST_SCHEMA {
+        return Err(AhlFeedError::Validation(
+            "organization review requires a sealed training camp forecast".to_owned(),
+        ));
+    }
+    validate_organization_review_sources(
+        prior_snapshot,
+        crosswalk,
+        nhl_team,
+        ahl_team,
+        &camp_forecast.team,
+    )?;
+    let mut camp_ids = BTreeSet::new();
+    if camp_forecast
+        .players
+        .iter()
+        .any(|row| row.player_id == 0 || !camp_ids.insert(row.player_id))
+    {
+        return Err(AhlFeedError::Validation(
+            "organization review forecast contains zero or duplicate player IDs".to_owned(),
+        ));
+    }
+    build_ahl_preseason_organization_review_draft_from_ids(
+        prior_snapshot,
+        crosswalk,
+        nhl_team,
+        ahl_team,
+        camp_forecast.season,
+        &camp_ids,
+    )
+}
+
+fn build_ahl_preseason_organization_review_draft_from_ids(
+    prior_snapshot: &AhlRosterStatsSnapshot,
+    crosswalk: &AhlIdentityCrosswalkView,
+    nhl_team: &str,
+    ahl_team: &str,
+    target_season: u32,
+    camp_ids: &BTreeSet<u32>,
+) -> Result<AhlPreseasonOrganizationReview, AhlFeedError> {
     let prior_team = prior_snapshot
         .teams
         .iter()
@@ -257,11 +424,6 @@ pub fn build_ahl_preseason_organization_review_draft(
         .iter()
         .map(|row| (row.provider_player_id.as_str(), row))
         .collect::<BTreeMap<_, _>>();
-    let camp_ids = camp_input
-        .players
-        .iter()
-        .map(|row| row.player_id)
-        .collect::<BTreeSet<_>>();
     let rows = prior_team
         .roster
         .iter()
@@ -291,7 +453,7 @@ pub fn build_ahl_preseason_organization_review_draft(
     Ok(AhlPreseasonOrganizationReview {
         schema: AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA.to_owned(),
         prior_season: prior_snapshot.season,
-        target_season: camp_input.season,
+        target_season,
         nhl_team: nhl_team.to_owned(),
         ahl_team: ahl_team.to_owned(),
         provider: prior_snapshot.provider.clone(),
@@ -320,6 +482,139 @@ pub fn apply_ahl_preseason_organization_review(
         &base_config.nhl_team,
         prior_ahl_team(base_config),
     )?;
+    apply_ahl_preseason_organization_review_against_expected(
+        base_config,
+        review,
+        &expected,
+        camp_input.season,
+    )
+}
+
+pub fn apply_ahl_preseason_organization_review_from_forecast(
+    prior_snapshot: &AhlRosterStatsSnapshot,
+    crosswalk: &AhlIdentityCrosswalkView,
+    camp_forecast: &TrainingCampForecastView,
+    base_config: &AhlPreseasonRolloverConfig,
+    review: &AhlPreseasonOrganizationReview,
+) -> Result<AhlPreseasonRolloverConfig, AhlFeedError> {
+    let expected = build_ahl_preseason_organization_review_draft_from_forecast(
+        prior_snapshot,
+        crosswalk,
+        camp_forecast,
+        &base_config.nhl_team,
+        prior_ahl_team(base_config),
+    )?;
+    apply_ahl_preseason_organization_review_against_expected(
+        base_config,
+        review,
+        &expected,
+        camp_forecast.season,
+    )
+}
+
+pub fn apply_ahl_preseason_league_organization_review(
+    prior_snapshot: &AhlRosterStatsSnapshot,
+    league_crosswalk: &AhlIdentityLeagueCrosswalkView,
+    camp_league: &TrainingCampLeagueForecastView,
+    base_config: &AhlPreseasonLeagueRolloverConfig,
+    review: &AhlPreseasonLeagueOrganizationReview,
+) -> Result<AhlPreseasonLeagueRolloverConfig, AhlFeedError> {
+    validate_league_rollover_inputs(prior_snapshot, league_crosswalk, camp_league, base_config)?;
+    let recomputed_identity_blockers = review
+        .reviews
+        .iter()
+        .map(|child| child.identity_blockers)
+        .sum::<usize>();
+    let recomputed_decisions_required = review
+        .reviews
+        .iter()
+        .map(|child| child.decisions_required)
+        .sum::<usize>();
+    if review.schema != AHL_PRESEASON_LEAGUE_ORGANIZATION_REVIEW_SCHEMA
+        || review.prior_season != base_config.prior_season
+        || review.target_season != base_config.target_season
+        || review.draft
+        || review.teams_requested != base_config.teams.len()
+        || review.teams_built != base_config.teams.len()
+        || review.reviews.len() != base_config.teams.len()
+        || !review.failures.is_empty()
+        || review.identity_blockers != recomputed_identity_blockers
+        || review.decisions_required != recomputed_decisions_required
+    {
+        return Err(AhlFeedError::Validation(
+            "league organization review is draft, stale, incomplete, or has failed teams"
+                .to_owned(),
+        ));
+    }
+    let crosswalks = league_crosswalk
+        .crosswalks
+        .iter()
+        .map(|crosswalk| (crosswalk.ahl_team.as_str(), crosswalk))
+        .collect::<BTreeMap<_, _>>();
+    let forecasts = camp_league
+        .teams
+        .iter()
+        .map(|team| (team.team.as_str(), team.forecast.as_ref()))
+        .collect::<BTreeMap<_, _>>();
+    let mut reviews = BTreeMap::new();
+    for child in &review.reviews {
+        if reviews.insert(child.nhl_team.as_str(), child).is_some() {
+            return Err(AhlFeedError::Validation(format!(
+                "league organization review duplicates team {}",
+                child.nhl_team
+            )));
+        }
+    }
+    let mut teams = Vec::with_capacity(base_config.teams.len());
+    for team_config in &base_config.teams {
+        let prior_team = prior_ahl_team(team_config);
+        let crosswalk = crosswalks.get(prior_team).copied().ok_or_else(|| {
+            AhlFeedError::Validation(format!(
+                "league organization review has no crosswalk for {prior_team}"
+            ))
+        })?;
+        let forecast = forecasts
+            .get(team_config.nhl_team.as_str())
+            .copied()
+            .flatten()
+            .ok_or_else(|| {
+                AhlFeedError::Validation(format!(
+                    "league organization review has no forecast for {}",
+                    team_config.nhl_team
+                ))
+            })?;
+        let child = reviews
+            .get(team_config.nhl_team.as_str())
+            .copied()
+            .ok_or_else(|| {
+                AhlFeedError::Validation(format!(
+                    "league organization review has no child for {}",
+                    team_config.nhl_team
+                ))
+            })?;
+        teams.push(apply_ahl_preseason_organization_review_from_forecast(
+            prior_snapshot,
+            crosswalk,
+            forecast,
+            team_config,
+            child,
+        )?);
+    }
+    teams.sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
+    Ok(AhlPreseasonLeagueRolloverConfig {
+        schema: AHL_PRESEASON_LEAGUE_ROLLOVER_CONFIG_SCHEMA.to_owned(),
+        prior_season: base_config.prior_season,
+        target_season: base_config.target_season,
+        teams,
+    })
+}
+
+fn apply_ahl_preseason_organization_review_against_expected(
+    base_config: &AhlPreseasonRolloverConfig,
+    review: &AhlPreseasonOrganizationReview,
+    expected: &AhlPreseasonOrganizationReview,
+    target_season: u32,
+) -> Result<AhlPreseasonRolloverConfig, AhlFeedError> {
     if review.schema != AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA
         || review.prior_season != expected.prior_season
         || review.target_season != expected.target_season
@@ -329,7 +624,6 @@ pub fn apply_ahl_preseason_organization_review(
         || review.roster_fetched_at != expected.roster_fetched_at
         || review.crosswalk_fingerprint != expected.crosswalk_fingerprint
         || review.draft
-        || expected.identity_blockers != 0
         || review.identity_blockers != expected.identity_blockers
         || review.decisions_required != expected.decisions_required
         || review
@@ -341,7 +635,7 @@ pub fn apply_ahl_preseason_organization_review(
             .as_deref()
             .is_none_or(|value| chrono::DateTime::parse_from_rfc3339(value).is_err())
         || review.rows.len() != expected.rows.len()
-        || base_config.target_season != camp_input.season
+        || base_config.target_season != target_season
         || base_config.as_of.trim().is_empty()
         || base_config.source_urls.is_empty()
         || base_config.source_urls.iter().any(|url| !absolute_url(url))
@@ -442,9 +736,9 @@ fn crosswalk_fingerprint(crosswalk: &AhlIdentityCrosswalkView) -> Result<String,
 fn validate_organization_review_sources(
     prior_snapshot: &AhlRosterStatsSnapshot,
     crosswalk: &AhlIdentityCrosswalkView,
-    camp_input: &TrainingCampSimulationInput,
     nhl_team: &str,
     ahl_team: &str,
+    camp_team: &str,
 ) -> Result<(), AhlFeedError> {
     prior_snapshot.validate()?;
     let team = prior_snapshot
@@ -454,7 +748,7 @@ fn validate_organization_review_sources(
         .ok_or_else(|| {
             AhlFeedError::Validation(format!("prior AHL snapshot has no team named `{ahl_team}`"))
         })?;
-    if nhl_team != camp_input.team
+    if nhl_team != camp_team
         || crosswalk.schema != AHL_IDENTITY_CROSSWALK_SCHEMA
         || crosswalk.season != prior_snapshot.season
         || crosswalk.provider != prior_snapshot.provider
@@ -1517,6 +1811,35 @@ mod tests {
         );
         assert!(drafted.teams[0].prior_player_decisions.is_empty());
 
+        let mut review = build_ahl_preseason_league_organization_review_draft(
+            &snapshot,
+            &league_crosswalk,
+            &camp_league,
+            &config,
+        )
+        .unwrap();
+        assert_eq!(
+            review.schema,
+            AHL_PRESEASON_LEAGUE_ORGANIZATION_REVIEW_SCHEMA
+        );
+        assert_eq!(review.teams_built, 1);
+        assert_eq!(review.identity_blockers, 0);
+        assert_eq!(review.decisions_required, 0);
+        assert!(review.failures.is_empty());
+        review.draft = false;
+        review.reviews[0].draft = false;
+        review.reviews[0].reviewer = Some("League Reviewer".to_owned());
+        review.reviews[0].reviewed_at = Some("2026-07-28T20:00:00Z".to_owned());
+        let applied = apply_ahl_preseason_league_organization_review(
+            &snapshot,
+            &league_crosswalk,
+            &camp_league,
+            &config,
+            &review,
+        )
+        .unwrap();
+        assert_eq!(applied, config);
+
         let view = build_ahl_preseason_league_rollover(
             &snapshot,
             &league_crosswalk,
@@ -1544,8 +1867,14 @@ mod tests {
 
     #[test]
     fn organization_review_draft_requires_finalized_sourced_prior_only_decision() {
-        let (snapshot, crosswalk, mut camp, _forecast, config) = inputs();
+        let (snapshot, crosswalk, mut camp, mut forecast, config) = inputs();
         camp.players.retain(|player| player.player_id != 8_482_193);
+        forecast
+            .players
+            .retain(|player| player.player_id != 8_482_193);
+        forecast
+            .modal_opening_roster_ids
+            .retain(|id| *id != 8_482_193);
         let mut review = build_ahl_preseason_organization_review_draft(
             &snapshot,
             &crosswalk,
@@ -1572,6 +1901,11 @@ mod tests {
         let applied =
             apply_ahl_preseason_organization_review(&snapshot, &crosswalk, &camp, &config, &review)
                 .unwrap();
+        let forecast_applied = apply_ahl_preseason_organization_review_from_forecast(
+            &snapshot, &crosswalk, &forecast, &config, &review,
+        )
+        .unwrap();
+        assert_eq!(forecast_applied, applied);
         assert_eq!(applied.prior_player_decisions.len(), 1);
         assert_eq!(
             applied.prior_player_decisions[0].kind,
@@ -1580,6 +1914,57 @@ mod tests {
         assert!(applied.prior_player_decisions[0]
             .note
             .contains("Test Reviewer"));
+    }
+
+    #[test]
+    fn forecast_native_organization_review_matches_explicit_camp_input() {
+        let (snapshot, crosswalk, camp, forecast, config) = inputs();
+        let explicit = build_ahl_preseason_organization_review_draft(
+            &snapshot,
+            &crosswalk,
+            &camp,
+            &config.nhl_team,
+            prior_ahl_team(&config),
+        )
+        .unwrap();
+        let forecast_native = build_ahl_preseason_organization_review_draft_from_forecast(
+            &snapshot,
+            &crosswalk,
+            &forecast,
+            &config.nhl_team,
+            prior_ahl_team(&config),
+        )
+        .unwrap();
+
+        assert_eq!(forecast_native, explicit);
+    }
+
+    #[test]
+    fn mapping_rejection_does_not_block_other_status_review_application() {
+        let (snapshot, mut crosswalk, camp, _forecast, config) = inputs();
+        crosswalk.rows[0].review_status = AhlIdentityReviewStatus::Rejected;
+        crosswalk.rows[0].nhl_player_id = None;
+        crosswalk.rows[0].nhl_display_name = None;
+        crosswalk.rows[0].nhl_birth_date = None;
+        let mut review = build_ahl_preseason_organization_review_draft(
+            &snapshot,
+            &crosswalk,
+            &camp,
+            &config.nhl_team,
+            prior_ahl_team(&config),
+        )
+        .unwrap();
+        assert_eq!(review.identity_blockers, 1);
+        assert_eq!(review.decisions_required, 0);
+        review.draft = false;
+        review.reviewer = Some("Status Reviewer".to_owned());
+        review.reviewed_at = Some("2026-07-28T20:00:00Z".to_owned());
+
+        let applied =
+            apply_ahl_preseason_organization_review(&snapshot, &crosswalk, &camp, &config, &review)
+                .unwrap();
+
+        assert!(applied.prior_player_decisions.is_empty());
     }
 
     #[test]

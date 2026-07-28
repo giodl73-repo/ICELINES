@@ -2211,6 +2211,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             ahl_team,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateStatusDraftLeague {
+            prior_snapshot,
+            league_crosswalk,
+            camp_forecast,
+            config,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_status_draft_league(
+            prior_snapshot,
+            league_crosswalk,
+            camp_forecast,
+            config,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::AffiliateStatusShow { review, json, out }) => {
             commands::icecast::run_affiliate_status_show(review, json, out)?
         }
@@ -2225,6 +2240,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             prior_snapshot,
             crosswalk,
             camp,
+            review,
+            config,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateStatusApplyLeague {
+            prior_snapshot,
+            league_crosswalk,
+            camp_forecast,
+            review,
+            config,
+            out,
+        }) => commands::icecast::run_affiliate_status_apply_league(
+            prior_snapshot,
+            league_crosswalk,
+            camp_forecast,
             review,
             config,
             out,

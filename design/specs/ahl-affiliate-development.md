@@ -247,6 +247,15 @@ binding. Forecast-native and explicit-input team adapters must produce
 identical artifacts. Neither surface converts candidate-pool readiness into an
 AHL assignment or lineup claim.
 
+The league organization-status envelope composes those team artifacts without
+creating a second decision format. Aggregate blocker and required-decision
+counts are recomputed from the children. League application requires exact
+team coverage, no failed children, finalized child reviewer authority, and all
+required evidence; it returns no updated config if any child fails. An explicit
+identity-mapping rejection remains visible in rollover and prevents projection
+readiness, but it does not prevent valid retained/departed/other-league
+decisions for different players from being applied.
+
 ## Data work remaining
 
 - continue resolving the three-season historical evidence queue; retain Conor McCollum as
