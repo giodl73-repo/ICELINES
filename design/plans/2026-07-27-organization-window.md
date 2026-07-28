@@ -172,6 +172,15 @@ target `ahl_team`. This removes the same-club assumption for affiliation
 changes such as NYI/Hamilton while retaining backward compatibility and an
 explicit disclosure of both authorities.
 
+**Rollover checkpoint — 2026-07-28:** the forecast-native league adapter and
+separate 2025-26/2026-27 affiliation catalogs build 32/32 team rollover plans
+with no schema, cohort, affiliation, or forecast failures. Zero teams are yet
+projection-ready: 1,174 prior-only appearances require sourced organization-
+status review, 15 appearances retain mapping rejection, and 144 camp
+candidates remain waiver-gated. Aggregate position shortages are 357F/171D/59G.
+These are now typed team/player work queues. They are not filled by assuming a
+camp cut or prior roster appearance proves a 2026-27 assignment.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

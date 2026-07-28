@@ -1568,6 +1568,41 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Draft exact prior/target affiliate bindings for every camp team.
+    #[command(name = "affiliate-rollover-config-league")]
+    AffiliateRolloverConfigLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        prior_affiliations: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        affiliations: PathBuf,
+        #[arg(long)]
+        as_of: String,
+        #[arg(long = "source-url", value_name = "URL", required = true)]
+        source_urls: Vec<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Reconcile every sealed league camp forecast with reviewed prior affiliates.
+    #[command(name = "affiliate-rollover-league")]
+    AffiliateRolloverLeague {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        /// League config with one explicit target/prior affiliation per camp team.
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Combine an NHL lineup and its AHL affiliate into The System.
     Organization {
         /// UI-neutral input containing `nhl_lineup` and `ahl_affiliate` documents.
@@ -4094,6 +4129,31 @@ mod tui_surface_tests {
                     && reviewer == "league-exception-pilot"
             ));
 
+            let config = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-rollover-config-league",
+                "--league-crosswalk",
+                "league-identities.json",
+                "--camp-forecast",
+                "league-camp.json",
+                "--prior-affiliations",
+                "ahl-affiliations-2025-26.json",
+                "--affiliations",
+                "ahl-affiliations.json",
+                "--as-of",
+                "2026-07-28",
+                "--source-url",
+                "https://theahl.com/nhl-affiliations",
+                "--out",
+                "league-rollover-config.json",
+            ])
+            .expect("league affiliate rollover config command should parse");
+            assert!(matches!(
+                config.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateRolloverConfigLeague { .. })
+            ));
+
             let league = Cli::try_parse_from([
                 "icelines",
                 "icecast",
@@ -4309,6 +4369,28 @@ mod tui_surface_tests {
             assert!(matches!(
                 cli.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateRollover { json: true, .. })
+            ));
+
+            let league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-rollover-league",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--league-crosswalk",
+                "league-identities.json",
+                "--camp-forecast",
+                "league-camp.json",
+                "--config",
+                "league-rollover-config.json",
+                "--json",
+                "--out",
+                "league-rollover.json",
+            ])
+            .expect("league affiliate rollover command should parse");
+            assert!(matches!(
+                league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateRolloverLeague { json: true, .. })
             ));
         });
     }

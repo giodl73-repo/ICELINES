@@ -96,10 +96,12 @@ use icelines_fetch::{
         AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
     },
     ahl_rollover::{
-        apply_ahl_preseason_organization_review, build_ahl_preseason_organization_review_draft,
-        build_ahl_preseason_rollover, AhlPreseasonOrganizationReview, AhlPreseasonPositionGroup,
-        AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
-        AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
+        apply_ahl_preseason_organization_review, build_ahl_preseason_league_rollover,
+        build_ahl_preseason_league_rollover_config_draft,
+        build_ahl_preseason_organization_review_draft, build_ahl_preseason_rollover,
+        AhlPreseasonLeagueRolloverConfig, AhlPreseasonLeagueRolloverView,
+        AhlPreseasonOrganizationReview, AhlPreseasonPositionGroup, AhlPreseasonRolloverConfig,
+        AhlPreseasonRolloverView, AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     },
     build_historical_organization_window_origin, build_organization_window_standings_snapshot,
     build_prospect_career_context_draft, build_prospect_career_discovery,
@@ -1882,6 +1884,81 @@ pub fn run_affiliate_rollover(
     Ok(())
 }
 
+pub fn run_affiliate_rollover_league(
+    prior_snapshot_path: PathBuf,
+    league_crosswalk_path: PathBuf,
+    camp_forecast_path: PathBuf,
+    config_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let prior_snapshot: AhlRosterStatsSnapshot =
+        read_icecast_json(&prior_snapshot_path, "prior AHL roster/stat snapshot")?;
+    let league_crosswalk: AhlIdentityLeagueCrosswalkView = read_icecast_json(
+        &league_crosswalk_path,
+        "reviewed AHL league identity crosswalk",
+    )?;
+    let camp_forecast: TrainingCampLeagueForecastView =
+        read_icecast_json(&camp_forecast_path, "league training camp forecast")?;
+    let config: AhlPreseasonLeagueRolloverConfig =
+        read_icecast_json(&config_path, "AHL league preseason rollover config")?;
+    let view = build_ahl_preseason_league_rollover(
+        &prior_snapshot,
+        &league_crosswalk,
+        &camp_forecast,
+        &config,
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_affiliate_rollover_league(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL league preseason rollover")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_rollover_config_league(
+    league_crosswalk_path: PathBuf,
+    camp_forecast_path: PathBuf,
+    prior_affiliations_path: PathBuf,
+    affiliations_path: PathBuf,
+    as_of: String,
+    source_urls: Vec<String>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let league_crosswalk: AhlIdentityLeagueCrosswalkView = read_icecast_json(
+        &league_crosswalk_path,
+        "reviewed AHL league identity crosswalk",
+    )?;
+    let camp_forecast: TrainingCampLeagueForecastView =
+        read_icecast_json(&camp_forecast_path, "league training camp forecast")?;
+    let prior_affiliations: AhlAffiliationCatalogView =
+        read_icecast_json(&prior_affiliations_path, "prior AHL affiliation catalog")?;
+    let affiliations: AhlAffiliationCatalogView =
+        read_icecast_json(&affiliations_path, "target AHL affiliation catalog")?;
+    let config = build_ahl_preseason_league_rollover_config_draft(
+        &league_crosswalk,
+        &camp_forecast,
+        &prior_affiliations,
+        &affiliations,
+        as_of,
+        source_urls,
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&config)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL league rollover config draft")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_organization(
     input_path: PathBuf,
     json: bool,
@@ -2581,6 +2658,48 @@ fn render_affiliate_rollover(view: &AhlPreseasonRolloverView) -> String {
             format!(" — {}", row.blockers.join(", "))
         };
         let _ = writeln!(out, "{group:<2} {state:<6} {}{blockers}", row.display_name);
+    }
+    out
+}
+
+fn render_affiliate_rollover_league(view: &AhlPreseasonLeagueRolloverView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "AHL LEAGUE ROLLOVER — {} → {}",
+        view.prior_season, view.target_season
+    );
+    let _ = writeln!(
+        out,
+        "BUILT: {}/{} | PROJECTION READY: {} | FAILURES: {}",
+        view.teams_built,
+        view.teams_requested,
+        view.teams_projection_ready,
+        view.failures.len()
+    );
+    for rollover in &view.rollovers {
+        let state = if rollover.counts.projection_ready {
+            "READY"
+        } else {
+            "REVIEW"
+        };
+        let _ = writeln!(
+            out,
+            "{:<3} {:<6} {:>2}F/{:>2}D/{:>2}G — {}",
+            rollover.nhl_team,
+            state,
+            rollover.counts.projectable_forwards,
+            rollover.counts.projectable_defensemen,
+            rollover.counts.projectable_goalies,
+            rollover.ahl_team
+        );
+    }
+    for failure in &view.failures {
+        let _ = writeln!(
+            out,
+            "{:<3} FAILED {} → {} — {}",
+            failure.nhl_team, failure.prior_ahl_team, failure.ahl_team, failure.reason
+        );
     }
     out
 }

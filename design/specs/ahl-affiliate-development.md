@@ -238,6 +238,15 @@ is optional and defaults to the target for backward compatibility. Outputs
 disclose both names. Historical players are never relabeled as members of a
 new or relocated club merely to make the join succeed.
 
+League rollover consumes separate prior- and target-season affiliation
+catalogs plus the sealed league camp forecast. The config draft requires exact
+NHL-team cohort coverage and creates no organization-status decisions. The
+league result retains one `ahl_preseason_rollover.v1` per successfully bound
+team and a typed failure row for any missing forecast, crosswalk, or source
+binding. Forecast-native and explicit-input team adapters must produce
+identical artifacts. Neither surface converts candidate-pool readiness into an
+AHL assignment or lineup claim.
+
 ## Data work remaining
 
 - continue resolving the three-season historical evidence queue; retain Conor McCollum as

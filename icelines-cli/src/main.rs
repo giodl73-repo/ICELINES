@@ -2256,6 +2256,38 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateRolloverConfigLeague {
+            league_crosswalk,
+            camp_forecast,
+            prior_affiliations,
+            affiliations,
+            as_of,
+            source_urls,
+            out,
+        }) => commands::icecast::run_affiliate_rollover_config_league(
+            league_crosswalk,
+            camp_forecast,
+            prior_affiliations,
+            affiliations,
+            as_of,
+            source_urls,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateRolloverLeague {
+            prior_snapshot,
+            league_crosswalk,
+            camp_forecast,
+            config,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_rollover_league(
+            prior_snapshot,
+            league_crosswalk,
+            camp_forecast,
+            config,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::Organization { input, json, out }) => {
             commands::icecast::run_organization(input, json, out)?
         }

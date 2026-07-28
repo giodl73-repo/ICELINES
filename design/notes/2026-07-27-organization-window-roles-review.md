@@ -412,3 +412,17 @@ projected role, readiness score, waiver fact, or professional-game total. The
 existing core contract explicitly forbids equating a camp cut with successful
 AHL assignment, so organization and recall depth remain missing until that
 season-aware authority is assembled.
+
+HART/KEEL then reviewed the forecast-native league rollover boundary. The
+sealed league camp forecast retains all fields rollover actually consumes, and
+the adapter produces the same team artifact as the legacy explicit-input path.
+Separate dated 2025-26 and 2026-27 affiliation catalogs prevent NYI's
+Bridgeport-to-Hamilton move from relabeling historical evidence.
+
+The real 32-team run built every team without a source-binding failure but
+found zero projection-ready pools. TAPE/PACE accepted this as a stronger result
+than proxy completion: 1,174 prior-only organization statuses, 15 rejected
+identity mappings, 144 waiver gates, and aggregate shortages of 357F/171D/59G
+are now explicit work queues. The next S2 slice must reduce those queues with
+sourced status and professional-game authorities; it may not reinterpret them
+as assignments.
