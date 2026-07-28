@@ -1,0 +1,30 @@
+{
+  "name": "The Bench — NYR adaptive lineup",
+  "trade_deadline": null,
+  "events": [],
+  "adaptive_lineup_policies": [
+    {
+      "team": "NYR",
+      "review_games": 6,
+      "minimum_points_percentage": 0.5,
+      "max_changes": 2,
+      "choices": [
+        {
+          "id": "baseline",
+          "label": "Submitted lineup",
+          "strength_delta": 0.0
+        },
+        {
+          "id": "swap-8481604-8484210",
+          "label": "Swap Pavel Dorofeyev and Gabe Perreault",
+          "strength_delta": 0.09809430465183411
+        },
+        {
+          "id": "swap-8477416-8482877",
+          "label": "Swap Oliver Bjorkstrand and Jaroslav Chmelar",
+          "strength_delta": 0.07899132920969798
+        }
+      ]
+    }
+  ]
+}

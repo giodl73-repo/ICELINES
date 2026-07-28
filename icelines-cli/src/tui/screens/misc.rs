@@ -52,9 +52,9 @@ pub fn chrome(state: &TonightScreenState) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
 
     let title = if state.date.is_empty() {
-        "Scores — today".to_owned()
+        "The Scoreboard — Scores — today".to_owned()
     } else {
-        format!("Scores — {}", state.date)
+        format!("The Scoreboard — Scores — {}", state.date)
     };
 
     let keybinds = vec![
@@ -138,7 +138,7 @@ mod norris_state_tests {
     fn l0_masterton_tonight_chrome_default_today() {
         let s = TonightScreenState::default();
         let c = chrome(&s);
-        assert_eq!(c.title, "Scores — today");
+        assert_eq!(c.title, "The Scoreboard — Scores — today");
         let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
         for needed in ["d", "t", "←/→"] {
             assert!(
@@ -179,11 +179,11 @@ pub fn render_tonight(f: &mut Frame, app: &App, area: Rect) {
     let updated = scores_updated_indicator(app);
 
     let title = match &state {
-        TonightState::Loading => format!(" Scores · {date_label} · fetching…{updated} "),
+        TonightState::Loading => format!(" The Scoreboard · Scores · {date_label} · fetching…{updated} "),
         TonightState::Error(_) => {
-            format!(" Scores · {date_label} · fetch failed · r:retry{updated} ")
+            format!(" The Scoreboard · Scores · {date_label} · fetch failed · r:retry{updated} ")
         }
-        _ => format!(" Scores · {date_label} ·  ←→:date  d:jump  t:today  Enter:detail{updated} "),
+        _ => format!(" The Scoreboard · Scores · {date_label} · ←→:date d:jump t:today Enter:detail{updated} "),
     };
 
     let block = Block::default().borders(Borders::ALL).title(title);

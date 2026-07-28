@@ -79,11 +79,11 @@ pub fn chrome(state: &QueriesState) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
 
     let title = match state.mode {
-        QueryMode::Build => "Stats / Queries".to_owned(),
-        QueryMode::FilterEdit => "Stats / Queries / Filter".to_owned(),
-        QueryMode::SaveName => "Stats / Queries / Save".to_owned(),
-        QueryMode::LoadList => "Stats / Queries / Load".to_owned(),
-        QueryMode::SortPicker => "Stats / Queries / Sort".to_owned(),
+        QueryMode::Build => "IceStats / Queries".to_owned(),
+        QueryMode::FilterEdit => "IceStats / Queries / Filter".to_owned(),
+        QueryMode::SaveName => "IceStats / Queries / Save".to_owned(),
+        QueryMode::LoadList => "IceStats / Queries / Load".to_owned(),
+        QueryMode::SortPicker => "IceStats / Queries / Sort".to_owned(),
     };
 
     let keybinds = match state.mode {
@@ -2890,7 +2890,7 @@ mod tests {
     fn l0_masterton_queries_chrome_default_is_build_mode() {
         let s = QueriesState::default();
         let c = chrome(&s);
-        assert_eq!(c.title, "Stats / Queries");
+        assert_eq!(c.title, "IceStats / Queries");
         let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
         for needed in ["f", "/", "s", "l"] {
             assert!(

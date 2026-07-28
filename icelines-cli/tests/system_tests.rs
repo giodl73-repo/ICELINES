@@ -2903,8 +2903,9 @@ fn l2_cmd_fantasy_help_exits_zero() {
 
 #[test]
 fn l2_cmd_fantasy_league_create_exits_zero() {
+    let tmp = tempfile::tempdir().expect("tempdir for isolated fantasy DB");
     let name = unique_league("create");
-    let out = run(&["fantasy", "league-create", &name]);
+    let out = run_isolated(tmp.path(), &["fantasy", "league-create", &name]);
     assert!(
         out.status.success(),
         "fantasy league-create must exit 0, stderr: {}",
@@ -2914,7 +2915,8 @@ fn l2_cmd_fantasy_league_create_exits_zero() {
 
 #[test]
 fn l2_cmd_fantasy_league_list_exits_zero() {
-    let out = run(&["fantasy", "league-list"]);
+    let tmp = tempfile::tempdir().expect("tempdir for isolated fantasy DB");
+    let out = run_isolated(tmp.path(), &["fantasy", "league-list"]);
     assert!(
         out.status.success(),
         "fantasy league-list must exit 0, stderr: {}",
@@ -2924,13 +2926,15 @@ fn l2_cmd_fantasy_league_list_exits_zero() {
 
 #[test]
 fn l2_cmd_fantasy_league_create_then_list_shows_league() {
+    let tmp = tempfile::tempdir().expect("tempdir for isolated fantasy DB");
+    let home = tmp.path();
     let name = unique_league("list-check");
     // Create a league
-    let create_out = run(&["fantasy", "league-create", &name]);
+    let create_out = run_isolated(home, &["fantasy", "league-create", &name]);
     assert!(create_out.status.success(), "league-create must exit 0");
 
     // List should include it (or at least not crash)
-    let list_out = run(&["fantasy", "league-list"]);
+    let list_out = run_isolated(home, &["fantasy", "league-list"]);
     assert!(
         list_out.status.success(),
         "league-list must exit 0 after create"
@@ -2939,8 +2943,9 @@ fn l2_cmd_fantasy_league_create_then_list_shows_league() {
 
 #[test]
 fn l2_cmd_fantasy_standings_exits_zero() {
+    let tmp = tempfile::tempdir().expect("tempdir for isolated fantasy DB");
     // Standings with no active league may print a message but must not panic
-    let out = run(&["fantasy", "standings"]);
+    let out = run_isolated(tmp.path(), &["fantasy", "standings"]);
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
         !stderr.contains("panic"),

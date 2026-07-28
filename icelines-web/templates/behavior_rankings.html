@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}The Front Office — Team Behavior Rankings{% endblock %}
+
+{% block content %}
+<h1>The Front Office — Team Behavior Rankings</h1>
+<p class="meta-line">
+    Three completed seasons feeding {{ target_season }} · {{ coverage }} evidence-backed trait coverage ·
+    tendencies describe style, not team quality.
+</p>
+
+<nav aria-label="Behavior scales" class="page-section">
+{% for item in scales %}
+    <a class="filter-chip{% if item.active %} active{% endif %}"
+       href="/icecast/{{ target_season }}/behavior-rankings?scale={{ item.key }}">{{ item.key }}</a>
+{% endfor %}
+</nav>
+
+<h2>{{ scale }}</h2>
+<div class="table-scroll">
+<table>
+    <thead><tr><th>#</th><th>Team</th><th>Tendency</th><th>Percentile</th><th>Evidence opportunities</th><th>Authority</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+    <tr>
+        <td class="numeric">{{ row.rank }}</td>
+        <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
+        <td class="numeric">{{ row.tendency }}</td>
+        <td class="numeric">{{ row.percentile }}</td>
+        <td class="numeric">{{ row.opportunities }}</td>
+        <td>{{ row.evidence }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<p class="page-section meta-line">
+    <a href="/api/v1/icecast/{{ target_season }}/behavior-rankings">Full UI-neutral evidence document</a>
+    includes all 96 team-season facts, calibrations, source URLs, disclosures, and NoRead traits.
+</p>
+{% endblock %}

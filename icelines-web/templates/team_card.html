@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<article class="team-prognosis-card"
+         style="--team-primary: {{ primary }}; --team-secondary: {{ secondary }}; --team-accent: {{ accent }};">
+    <header class="team-card-hero">
+        <div>
+            <p class="team-card-kicker">{{ team }} · {{ season }}</p>
+            <h1>{{ title }}</h1>
+            <p>{{ subtitle }}</p>
+        </div>
+        <a class="team-card-json" href="{{ json_href }}">View source JSON</a>
+    </header>
+
+    <nav class="team-card-tabs" aria-label="Team card pages">
+        <a href="{{ depth_href }}" {% if show_depth %}aria-current="page"{% endif %}>The Depth Chart</a>
+        <a href="{{ insider_href }}" {% if !show_depth %}aria-current="page"{% endif %}>The Insider</a>
+    </nav>
+
+    {% if show_depth %}
+    <section aria-labelledby="depth-title">
+        <h2 id="depth-title">The Depth Chart</h2>
+        <p class="team-card-deck">Faces, names, and IceLines player scores. Assignment evidence remains in the source document.</p>
+        <div class="team-card-lineup">
+        {% for group in lineup_groups %}
+            <section class="team-card-lineup-group">
+                <h3>{{ group.label }}</h3>
+                <div class="team-card-slots">
+                {% for slot in group.slots %}
+                    <article class="team-card-player-tile">
+                        {% if !slot.asset_url.is_empty() %}
+                        <img src="{{ slot.asset_url }}" alt="" loading="lazy" width="96" height="96">
+                        {% else %}
+                        <span class="team-card-fallback" aria-hidden="true">{{ slot.fallback }}</span>
+                        {% endif %}
+                        <span class="team-card-position">{{ slot.label }}</span>
+                        <strong>{{ slot.name }}</strong>
+                        <span class="team-card-score" aria-label="IceLines score {{ slot.score }}">{{ slot.score }}</span>
+                    </article>
+                {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+        </div>
+        <div class="team-card-metric-grid" aria-label="Baseline prognosis">
+        {% for metric in baseline_metrics %}
+            <article><span>{{ metric.label }}</span><strong>{{ metric.value }}</strong></article>
+        {% endfor %}
+        </div>
+    </section>
+    {% else %}
+    <section aria-labelledby="insider-title">
+        <h2 id="insider-title">The Insider</h2>
+        <p class="team-card-deck">Paired same-seed upside and downside analysis. Team strength is not standings points.</p>
+
+        <div class="team-card-insider-headlines">
+            <article><span>Baseline P10 / P50 / P90</span><strong>{{ points_range }}</strong></article>
+            <article><span>Scenario</span><strong>{{ scenario }}</strong></article>
+        </div>
+
+        <section class="team-card-bridge">
+            <h3>{{ bridge_title }}</h3>
+            <div class="team-card-metric-grid">
+            {% for metric in bridge_metrics %}
+                <article>
+                    <span>{{ metric.label }}</span>
+                    <strong>{{ metric.value }}</strong>
+                    {% if !metric.comparison.is_empty() %}<small>{{ metric.comparison }}</small>{% endif %}
+                </article>
+            {% endfor %}
+            </div>
+        </section>
+
+        <div class="team-card-scenarios">
+            <section>
+                <h3>Best breakout upside</h3>
+                {% for player in breakouts %}
+                <article class="team-card-insider-player">
+                    {% if !player.asset_url.is_empty() %}<img src="{{ player.asset_url }}" alt="" loading="lazy" width="72" height="72">{% else %}<span class="team-card-fallback">{{ player.fallback }}</span>{% endif %}
+                    <div><strong>{{ player.name }}</strong>{% if !player.role.is_empty() %}<span>{{ player.role }}</span>{% endif %}</div>
+                    <dl>{% for metric in player.metrics %}<div><dt>{{ metric.label }}</dt><dd>{{ metric.value }}</dd></div>{% endfor %}</dl>
+                </article>
+                {% endfor %}
+            </section>
+            <section>
+                <h3>Primary downside risks</h3>
+                {% for player in downturns %}
+                <article class="team-card-insider-player risk">
+                    {% if !player.asset_url.is_empty() %}<img src="{{ player.asset_url }}" alt="" loading="lazy" width="72" height="72">{% else %}<span class="team-card-fallback">{{ player.fallback }}</span>{% endif %}
+                    <div><strong>{{ player.name }}</strong>{% if !player.role.is_empty() %}<span>{{ player.role }}</span>{% endif %}</div>
+                    <dl>{% for metric in player.metrics %}<div><dt>{{ metric.label }}</dt><dd>{{ metric.value }}</dd></div>{% endfor %}</dl>
+                </article>
+                {% endfor %}
+            </section>
+        </div>
+
+        {% if !warnings.is_empty() %}<aside class="team-card-notice"><h3>Evidence warnings</h3><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></aside>{% endif %}
+        <details class="team-card-method"><summary>Methodology and limitations</summary><ul>{% for limitation in limitations %}<li>{{ limitation }}</li>{% endfor %}</ul></details>
+    </section>
+    {% endif %}
+</article>
+{% endblock %}

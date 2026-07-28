@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Center Ice — Dashboard{% endblock %}
 
 {% block head_extra %}
 <script src="/static/dashboard.js" defer></script>
 {% endblock %}
 
 {% block content %}
-<section class="jaw-shell" aria-label="IceLines dashboard">
+<section class="jaw-shell" aria-label="Center Ice — IceLines dashboard">
     <p class="visually-hidden">This workspace is server-rendered and URL-addressable.</p>
     <header class="jaw-ribbon" aria-label="Scores ribbon">
         <div class="jaw-ribbon-heading">
-            <strong>Scores</strong>
+            <strong>The Scoreboard — Scores</strong>
             <span class="jaw-detail">{{ scores_summary }}</span>
         </div>
         {% if !scores_preview.is_empty() %}
@@ -25,7 +25,7 @@
             {% endfor %}
         </div>
         {% endif %}
-        <a href="/scores" aria-label="Open full scores workspace">Open scores</a>
+        <a href="/scores" aria-label="Open full scores workspace">Open The Scoreboard</a>
     </header>
 
     <details class="jaw-workbench-nav" aria-label="Dashboard navigation" data-dashboard-nav>

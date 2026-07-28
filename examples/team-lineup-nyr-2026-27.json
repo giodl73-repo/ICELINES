@@ -1,0 +1,1438 @@
+{
+  "schema": "team_lineup_projection.v1",
+  "score_schema": "icelines_player_score.v1",
+  "score_method": "team_ceiling_multilens.v1",
+  "team": "NYR",
+  "roster_season": 20262027,
+  "assignment_evidence": [
+    "estimated"
+  ],
+  "forward_lines": [
+    {
+      "line": 1,
+      "left_wing": {
+        "player_id": 8482109,
+        "display_name": "Alexis Lafrenière",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "LeftWing",
+        "eligible_positions": [
+          "LeftWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8482109:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8482109.png",
+          "fallback_initials": "AL"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 45.8,
+          "display": "46",
+          "sample_games": 82,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 56.99999999999999,
+              "normalized_value": 47.49999999999999,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 24.0,
+              "normalized_value": 40.0,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 215.5,
+              "normalized_value": 47.888888888888886,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 54.91,
+              "normalized_value": 45.758333333333326,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "center": {
+        "player_id": 8476459,
+        "display_name": "Mika Zibanejad",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "Center",
+        "eligible_positions": [
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8476459:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8476459.png",
+          "fallback_initials": "MZ"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 62.8,
+          "display": "63",
+          "sample_games": 81,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 78.96296296296296,
+              "normalized_value": 65.80246913580247,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 34.41975308641975,
+              "normalized_value": 57.36625514403292,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 300.1604938271605,
+              "normalized_value": 66.70233196159123,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 66.34567901234567,
+              "normalized_value": 55.28806584362139,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "right_wing": {
+        "player_id": 8481604,
+        "display_name": "Pavel Dorofeyev",
+        "team": "NYR",
+        "prior_team": "VGK",
+        "primary_position": "RightWing",
+        "eligible_positions": [
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8481604:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8481604.png",
+          "fallback_initials": "PD"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 54.0,
+          "display": "54",
+          "sample_games": 82,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 64.0,
+              "normalized_value": 53.333333333333336,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 37.0,
+              "normalized_value": 61.66666666666667,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 219.5,
+              "normalized_value": 48.77777777777778,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 64.9,
+              "normalized_value": 54.083333333333336,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      }
+    },
+    {
+      "line": 2,
+      "left_wing": {
+        "player_id": 8482157,
+        "display_name": "Will Cuylle",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "LeftWing",
+        "eligible_positions": [
+          "LeftWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8482157:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8482157.png",
+          "fallback_initials": "WC"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 40.6,
+          "display": "41",
+          "sample_games": 82,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 38.0,
+              "normalized_value": 31.666666666666664,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 20.0,
+              "normalized_value": 33.33333333333333,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 287.5,
+              "normalized_value": 63.888888888888886,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 42.18,
+              "normalized_value": 35.15,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "center": {
+        "player_id": 8476468,
+        "display_name": "J.T. Miller",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "Center",
+        "eligible_positions": [
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8476468:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8476468.png",
+          "fallback_initials": "JM"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 48.8,
+          "display": "49",
+          "sample_games": 68,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 63.911764705882355,
+              "normalized_value": 53.259803921568626,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 20.5,
+              "normalized_value": 34.166666666666664,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 261.6764705882353,
+              "normalized_value": 58.150326797385624,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 49.347352941176474,
+              "normalized_value": 41.12279411764706,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "right_wing": {
+        "player_id": 8484210,
+        "display_name": "Gabe Perreault",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "RightWing",
+        "eligible_positions": [
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8484210:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8484210.png",
+          "fallback_initials": "GP"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 36.6,
+          "display": "37",
+          "sample_games": 49,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 45.18367346938775,
+              "normalized_value": 37.65306122448979,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 20.081632653061224,
+              "normalized_value": 33.469387755102034,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 159.81632653061226,
+              "normalized_value": 35.51473922902495,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 47.77836734693877,
+              "normalized_value": 39.81530612244898,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      }
+    },
+    {
+      "line": 3,
+      "left_wing": {
+        "player_id": 8483669,
+        "display_name": "Adam Sykora",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "LeftWing",
+        "eligible_positions": [
+          "LeftWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8483669:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8483669.png",
+          "fallback_initials": "AS"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 33.2,
+          "display": "33",
+          "sample_games": 11,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 29.81818181818182,
+              "normalized_value": 24.84848484848485,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 22.363636363636363,
+              "normalized_value": 37.27272727272727,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 193.81818181818184,
+              "normalized_value": 43.07070707070707,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 40.05454545454546,
+              "normalized_value": 33.37878787878788,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "center": {
+        "player_id": 8483690,
+        "display_name": "Noah Laba",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "Center",
+        "eligible_positions": [
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8483690:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8483690.png",
+          "fallback_initials": "NL"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 24.2,
+          "display": "24",
+          "sample_games": 74,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 26.594594594594597,
+              "normalized_value": 22.162162162162165,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 9.972972972972974,
+              "normalized_value": 16.621621621621625,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 152.91891891891893,
+              "normalized_value": 33.98198198198198,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 27.849189189189193,
+              "normalized_value": 23.20765765765766,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "right_wing": {
+        "player_id": 8477416,
+        "display_name": "Oliver Bjorkstrand",
+        "team": "NYR",
+        "prior_team": "TBL",
+        "primary_position": "RightWing",
+        "eligible_positions": [
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8477416:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8477416.png",
+          "fallback_initials": "OB"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 27.3,
+          "display": "27",
+          "sample_games": 80,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 32.800000000000004,
+              "normalized_value": 27.333333333333336,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 12.299999999999999,
+              "normalized_value": 20.5,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 153.75,
+              "normalized_value": 34.166666666666664,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 29.520000000000003,
+              "normalized_value": 24.6,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      }
+    },
+    {
+      "line": 4,
+      "left_wing": {
+        "player_id": 8481789,
+        "display_name": "Tye Kartye",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "LeftWing",
+        "eligible_positions": [
+          "LeftWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8481789:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8481789.png",
+          "fallback_initials": "TK"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 27.7,
+          "display": "28",
+          "sample_games": 64,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 28.1875,
+              "normalized_value": 23.489583333333332,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 10.25,
+              "normalized_value": 17.083333333333332,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 203.71875,
+              "normalized_value": 45.270833333333336,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 28.498125,
+              "normalized_value": 23.7484375,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "center": {
+        "player_id": 8480813,
+        "display_name": "Joe Veleno",
+        "team": "NYR",
+        "prior_team": "MTL",
+        "primary_position": "Center",
+        "eligible_positions": [
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8480813:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8480813.png",
+          "fallback_initials": "JV"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 12.7,
+          "display": "13",
+          "sample_games": 61,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 6.721311475409836,
+              "normalized_value": 5.601092896174864,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 2.6885245901639347,
+              "normalized_value": 4.480874316939891,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 149.88524590163934,
+              "normalized_value": 33.30783242258652,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 9.837049180327869,
+              "normalized_value": 8.197540983606558,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "right_wing": {
+        "player_id": 8482877,
+        "display_name": "Jaroslav Chmelar",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "RightWing",
+        "eligible_positions": [
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8482877:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8482877.png",
+          "fallback_initials": "JC"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 21.0,
+          "display": "21",
+          "sample_games": 28,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 17.57142857142857,
+              "normalized_value": 14.64285714285714,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 11.714285714285714,
+              "normalized_value": 19.523809523809526,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 149.35714285714286,
+              "normalized_value": 33.19047619047619,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 23.215714285714288,
+              "normalized_value": 19.34642857142857,
+              "weight": 0.15
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      }
+    }
+  ],
+  "defense_pairs": [
+    {
+      "pair": 1,
+      "left": {
+        "player_id": 8479323,
+        "display_name": "Adam Fox",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8479323:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8479323.png",
+          "fallback_initials": "AF"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 69.1,
+          "display": "69",
+          "sample_games": 55,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 79.01818181818182,
+              "normalized_value": 87.79797979797979,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 13.418181818181818,
+              "normalized_value": 44.72727272727273,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 267.6181818181818,
+              "normalized_value": 66.90454545454546,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 57.596000000000004,
+              "normalized_value": 57.596000000000004,
+              "weight": 0.2
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "right": {
+        "player_id": 8480434,
+        "display_name": "Sean Durzi",
+        "team": "NYR",
+        "prior_team": "UTA",
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8480434:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8480434.png",
+          "fallback_initials": "SD"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 37.9,
+          "display": "38",
+          "sample_games": 60,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 36.9,
+              "normalized_value": 41.0,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 6.833333333333333,
+              "normalized_value": 22.77777777777778,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 172.20000000000002,
+              "normalized_value": 43.050000000000004,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 30.30366666666667,
+              "normalized_value": 30.30366666666667,
+              "weight": 0.2
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      }
+    },
+    {
+      "pair": 2,
+      "left": {
+        "player_id": 8478882,
+        "display_name": "Vladislav Gavrikov",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8478882:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8478882.png",
+          "fallback_initials": "VG"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 31.5,
+          "display": "32",
+          "sample_games": 82,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 35.0,
+              "normalized_value": 38.88888888888889,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 14.000000000000002,
+              "normalized_value": 46.66666666666667,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 89.5,
+              "normalized_value": 22.375,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 31.009999999999998,
+              "normalized_value": 31.009999999999998,
+              "weight": 0.2
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "right": {
+        "player_id": 8482073,
+        "display_name": "Braden Schneider",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8482073:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8482073.png",
+          "fallback_initials": "BS"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 29.6,
+          "display": "30",
+          "sample_games": 82,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 18.0,
+              "normalized_value": 20.0,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 2.0,
+              "normalized_value": 6.666666666666667,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 189.5,
+              "normalized_value": 47.375,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 19.98,
+              "normalized_value": 19.98,
+              "weight": 0.2
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      }
+    },
+    {
+      "pair": 3,
+      "left": {
+        "player_id": 8481525,
+        "display_name": "Matthew Robertson",
+        "team": "NYR",
+        "prior_team": "NYR",
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8481525:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8481525.png",
+          "fallback_initials": "MR"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 29.3,
+          "display": "29",
+          "sample_games": 72,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 20.5,
+              "normalized_value": 22.77777777777778,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 6.833333333333333,
+              "normalized_value": 22.77777777777778,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 155.45833333333331,
+              "normalized_value": 38.86458333333333,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 23.290555555555557,
+              "normalized_value": 23.290555555555557,
+              "weight": 0.2
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      },
+      "right": {
+        "player_id": 8477969,
+        "display_name": "Marcus Pettersson",
+        "team": "NYR",
+        "prior_team": "VAN",
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8477969:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8477969.png",
+          "fallback_initials": "MP"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 24.5,
+          "display": "24",
+          "sample_games": 82,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 18.0,
+              "normalized_value": 20.0,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 3.0,
+              "normalized_value": 10.0,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 147.0,
+              "normalized_value": 36.75,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 14.040000000000001,
+              "normalized_value": 14.04,
+              "weight": 0.2
+            }
+          ]
+        },
+        "assignment_evidence": "estimated"
+      }
+    }
+  ],
+  "goalies": {
+    "starter": {
+      "player_id": 8482193,
+      "display_name": "Dylan Garand",
+      "team": "NYR",
+      "prior_team": "NYR",
+      "primary_position": "Goalie",
+      "eligible_positions": [
+        "Goalie"
+      ],
+      "portrait": {
+        "asset_id": "player:8482193:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8482193.png",
+        "fallback_initials": "DG"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "goalie",
+        "value": 98.7,
+        "display": "99",
+        "sample_games": 3,
+        "coverage_pct": 100.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Goalie quality",
+            "raw_value": 98.66001081466672,
+            "normalized_value": 98.66001081466672,
+            "weight": 1.0
+          }
+        ]
+      },
+      "assignment_evidence": "estimated"
+    },
+    "backup": {
+      "player_id": 8478048,
+      "display_name": "Igor Shesterkin",
+      "team": "NYR",
+      "prior_team": "NYR",
+      "primary_position": "Goalie",
+      "eligible_positions": [
+        "Goalie"
+      ],
+      "portrait": {
+        "asset_id": "player:8478048:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8478048.png",
+        "fallback_initials": "IS"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "goalie",
+        "value": 74.1,
+        "display": "74",
+        "sample_games": 51,
+        "coverage_pct": 100.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Goalie quality",
+            "raw_value": 74.07001256942746,
+            "normalized_value": 74.07001256942746,
+            "weight": 1.0
+          }
+        ]
+      },
+      "assignment_evidence": "estimated"
+    }
+  },
+  "extras": [
+    {
+      "player_id": 8476914,
+      "display_name": "Joonas Korpisalo",
+      "team": "NYR",
+      "prior_team": "BOS",
+      "primary_position": "Goalie",
+      "eligible_positions": [
+        "Goalie"
+      ],
+      "portrait": {
+        "asset_id": "player:8476914:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8476914.png",
+        "fallback_initials": "JK"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "goalie",
+        "value": 52.0,
+        "display": "52",
+        "sample_games": 31,
+        "coverage_pct": 100.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Goalie quality",
+            "raw_value": 51.99002170562742,
+            "normalized_value": 51.99002170562742,
+            "weight": 1.0
+          }
+        ]
+      },
+      "assignment_evidence": "estimated"
+    },
+    {
+      "player_id": 8479390,
+      "display_name": "Taylor Raddysh",
+      "team": "NYR",
+      "prior_team": "NYR",
+      "primary_position": "RightWing",
+      "eligible_positions": [
+        "RightWing"
+      ],
+      "portrait": {
+        "asset_id": "player:8479390:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8479390.png",
+        "fallback_initials": "TR"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "forward",
+        "value": 20.3,
+        "display": "20",
+        "sample_games": 68,
+        "coverage_pct": 100.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Points pace",
+            "raw_value": 22.911764705882355,
+            "normalized_value": 19.09313725490196,
+            "weight": 0.4
+          },
+          {
+            "lens": "goal_scoring",
+            "label": "Goal scoring",
+            "raw_value": 10.852941176470589,
+            "normalized_value": 18.088235294117645,
+            "weight": 0.2
+          },
+          {
+            "lens": "fantasy",
+            "label": "Fantasy/peripherals",
+            "raw_value": 112.14705882352942,
+            "normalized_value": 24.92156862745098,
+            "weight": 0.25
+          },
+          {
+            "lens": "upside",
+            "label": "Age-adjusted upside",
+            "raw_value": 22.584411764705884,
+            "normalized_value": 18.820343137254902,
+            "weight": 0.15
+          }
+        ]
+      },
+      "assignment_evidence": "estimated"
+    },
+    {
+      "player_id": 8482861,
+      "display_name": "Vincent Iorio",
+      "team": "NYR",
+      "prior_team": "NYR",
+      "primary_position": "Defense",
+      "eligible_positions": [
+        "Defense"
+      ],
+      "portrait": {
+        "asset_id": "player:8482861:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8482861.png",
+        "fallback_initials": "VI"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "defense",
+        "value": 15.4,
+        "display": "15",
+        "sample_games": 27,
+        "coverage_pct": 100.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Points pace",
+            "raw_value": 9.11111111111111,
+            "normalized_value": 10.123456790123456,
+            "weight": 0.3
+          },
+          {
+            "lens": "goal_scoring",
+            "label": "Goal scoring",
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 0.1
+          },
+          {
+            "lens": "fantasy",
+            "label": "Fantasy/peripherals",
+            "raw_value": 100.22222222222223,
+            "normalized_value": 25.055555555555557,
+            "weight": 0.4
+          },
+          {
+            "lens": "upside",
+            "label": "Age-adjusted upside",
+            "raw_value": 11.833333333333334,
+            "normalized_value": 11.833333333333334,
+            "weight": 0.2
+          }
+        ]
+      },
+      "assignment_evidence": "estimated"
+    },
+    {
+      "player_id": 8480001,
+      "display_name": "Urho Vaakanainen",
+      "team": "NYR",
+      "prior_team": "NYR",
+      "primary_position": "Defense",
+      "eligible_positions": [
+        "Defense"
+      ],
+      "portrait": {
+        "asset_id": "player:8480001:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8480001.png",
+        "fallback_initials": "UV"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "defense",
+        "value": 14.6,
+        "display": "15",
+        "sample_games": 34,
+        "coverage_pct": 100.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Points pace",
+            "raw_value": 14.470588235294118,
+            "normalized_value": 16.07843137254902,
+            "weight": 0.3
+          },
+          {
+            "lens": "goal_scoring",
+            "label": "Goal scoring",
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 0.1
+          },
+          {
+            "lens": "fantasy",
+            "label": "Fantasy/peripherals",
+            "raw_value": 73.55882352941177,
+            "normalized_value": 18.389705882352942,
+            "weight": 0.4
+          },
+          {
+            "lens": "upside",
+            "label": "Age-adjusted upside",
+            "raw_value": 12.177647058823531,
+            "normalized_value": 12.177647058823531,
+            "weight": 0.2
+          }
+        ]
+      },
+      "assignment_evidence": "estimated"
+    },
+    {
+      "player_id": 8482460,
+      "display_name": "Matt Rempe",
+      "team": "NYR",
+      "prior_team": "NYR",
+      "primary_position": "Center",
+      "eligible_positions": [
+        "Center"
+      ],
+      "portrait": {
+        "asset_id": "player:8482460:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8482460.png",
+        "fallback_initials": "MR"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "forward",
+        "value": 12.0,
+        "display": "12",
+        "sample_games": 26,
+        "coverage_pct": 100.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Points pace",
+            "raw_value": 3.153846153846154,
+            "normalized_value": 2.6282051282051286,
+            "weight": 0.4
+          },
+          {
+            "lens": "goal_scoring",
+            "label": "Goal scoring",
+            "raw_value": 3.153846153846154,
+            "normalized_value": 5.256410256410257,
+            "weight": 0.2
+          },
+          {
+            "lens": "fantasy",
+            "label": "Fantasy/peripherals",
+            "raw_value": 154.53846153846155,
+            "normalized_value": 34.34188034188034,
+            "weight": 0.25
+          },
+          {
+            "lens": "upside",
+            "label": "Age-adjusted upside",
+            "raw_value": 10.203846153846154,
+            "normalized_value": 8.503205128205128,
+            "weight": 0.15
+          }
+        ]
+      },
+      "assignment_evidence": "estimated"
+    },
+    {
+      "player_id": 8484169,
+      "display_name": "Drew Fortescue",
+      "team": "NYR",
+      "prior_team": "NYR",
+      "primary_position": "Defense",
+      "eligible_positions": [
+        "Defense"
+      ],
+      "portrait": {
+        "asset_id": "player:8484169:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8484169.png",
+        "fallback_initials": "DF"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "defense",
+        "value": null,
+        "display": "NR",
+        "sample_games": 9,
+        "coverage_pct": 25.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Points pace",
+            "raw_value": null,
+            "normalized_value": null,
+            "weight": 0.3
+          },
+          {
+            "lens": "goal_scoring",
+            "label": "Goal scoring",
+            "raw_value": null,
+            "normalized_value": null,
+            "weight": 0.1
+          },
+          {
+            "lens": "fantasy",
+            "label": "Fantasy/peripherals",
+            "raw_value": 95.66666666666667,
+            "normalized_value": 23.916666666666668,
+            "weight": 0.4
+          },
+          {
+            "lens": "upside",
+            "label": "Age-adjusted upside",
+            "raw_value": null,
+            "normalized_value": null,
+            "weight": 0.2
+          }
+        ]
+      },
+      "assignment_evidence": "estimated"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "unrated_players",
+      "message": "1 players have no qualifying NHL sample and display NR."
+    }
+  ]
+}

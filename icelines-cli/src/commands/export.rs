@@ -132,9 +132,12 @@ pub async fn run(cmd: ExportSubcommand) -> anyhow::Result<()> {
 /// Helper used by every render entry point: load a `LoadOutcome` and
 /// collect the skater views into a Vec the renderer borrows from. The
 /// outcome must outlive the views.
-fn load_views() -> anyhow::Result<icelines_fetch::stats_loader::LoadOutcome> {
-    let (outcome, _season, _ty) = load_repo_for_season(None, None)?;
-    Ok(outcome)
+fn load_views() -> anyhow::Result<(
+    icelines_fetch::stats_loader::LoadOutcome,
+    icelines_core::model::Season,
+)> {
+    let (outcome, season, _ty) = load_repo_for_season(None, None)?;
+    Ok((outcome, season))
 }
 
 fn load_views_for(
@@ -809,13 +812,10 @@ pub(crate) struct TeamOpts {
 }
 
 pub(crate) fn render_team(opts: TeamOpts) -> anyhow::Result<String> {
-    let outcome = load_views()?;
+    let (outcome, season) = load_views()?;
     let views: Vec<PlayerView<'_>> = outcome
         .repo
-        .skaters(
-            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
-            icelines_core::season_stats::SeasonType::Regular,
-        )
+        .skaters(season, icelines_core::season_stats::SeasonType::Regular)
         .collect();
     render_team_from_views(&views, &opts)
 }
@@ -1389,13 +1389,10 @@ pub(crate) struct DepthOpts {
 }
 
 pub(crate) fn render_depth(opts: DepthOpts) -> anyhow::Result<String> {
-    let outcome = load_views()?;
+    let (outcome, season) = load_views()?;
     let views: Vec<PlayerView<'_>> = outcome
         .repo
-        .skaters(
-            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
-            icelines_core::season_stats::SeasonType::Regular,
-        )
+        .skaters(season, icelines_core::season_stats::SeasonType::Regular)
         .collect();
     render_depth_from_views(&views, &opts)
 }
@@ -1578,13 +1575,10 @@ pub(crate) struct CompareOpts {
 }
 
 pub(crate) fn render_compare(opts: CompareOpts) -> anyhow::Result<String> {
-    let outcome = load_views()?;
+    let (outcome, season) = load_views()?;
     let views: Vec<PlayerView<'_>> = outcome
         .repo
-        .skaters(
-            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
-            icelines_core::season_stats::SeasonType::Regular,
-        )
+        .skaters(season, icelines_core::season_stats::SeasonType::Regular)
         .collect();
     render_compare_from_views(&views, &opts)
 }
@@ -2022,13 +2016,10 @@ pub(crate) struct RosterOpts {
 }
 
 pub(crate) fn render_roster(opts: RosterOpts) -> anyhow::Result<String> {
-    let outcome = load_views()?;
+    let (outcome, season) = load_views()?;
     let views: Vec<PlayerView<'_>> = outcome
         .repo
-        .skaters(
-            icelines_core::model::Season(icelines_core::CURRENT_SEASON),
-            icelines_core::season_stats::SeasonType::Regular,
-        )
+        .skaters(season, icelines_core::season_stats::SeasonType::Regular)
         .collect();
     render_roster_from_views(&views, &opts)
 }

@@ -7,7 +7,7 @@
 //! Each snapshot is immutable after sealing, integrity-verified on every read,
 //! and linked to its parent snapshot via a provenance key chain.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
@@ -16,6 +16,24 @@ use icelines_core::stats_catalog::ReportKind;
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize, Serializer};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
+
+pub const OFFICIAL_NHL_LIVE_ROSTER_SOURCE: &str = "official_nhl_api_live";
+pub const OFFICIAL_NHL_LIVE_ROSTER_SCHEMA: &str = "icelines.official_roster_capture.v1";
+pub const OFFICIAL_NHL_LIVE_ROSTER_MANIFEST_FILE: &str = "_official-roster-capture.json";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OfficialNhlRosterCapture {
+    pub team: String,
+    pub source_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OfficialNhlRosterCaptureManifest {
+    pub schema: String,
+    pub season: String,
+    pub observed_at: String,
+    pub captures: Vec<OfficialNhlRosterCapture>,
+}
 
 // ── Errors ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +57,9 @@ pub enum SnapshotError {
     )]
     MissingParent { name: String, parent: String },
 
+    #[error("snapshot parent chain contains a cycle at '{name}'")]
+    ParentCycle { name: String },
+
     #[error("no active snapshot — run `icelines fetch` first")]
     NoActiveSnapshot,
 
@@ -56,6 +77,7 @@ pub enum SnapshotError {
 pub enum SnapshotTier {
     Rosters,   // Tier 1 — 32 team rosters + headshots
     Stats,     // Tier 2 — skater bios + season stats
+    Ahl,       // Tier 2a — official AHL rosters + skater/goalie season stats
     Positions, // Tier 2b — boxscore-derived position eligibility
     Realtime,  // Tier 2c — NHL realtime stats (hits, blocks, giveaways, takeaways)
     MoneyPuck, // Tier 3b — MoneyPuck xG, CF%, FF%, xGF%
@@ -68,6 +90,7 @@ impl SnapshotTier {
         match self {
             Self::Rosters => "rosters",
             Self::Stats => "stats",
+            Self::Ahl => "ahl",
             Self::Positions => "positions",
             Self::Realtime => "realtime",
             Self::MoneyPuck => "moneypuck",
@@ -83,8 +106,14 @@ pub struct SnapshotEntry {
     pub name: String,
     pub season: String,
     pub tier: SnapshotTier,
-    pub date: String,               // YYYY-MM-DD
-    pub created_at: String,         // RFC3339
+    pub date: String,       // YYYY-MM-DD
+    pub created_at: String, // RFC3339
+    /// Upstream observation time when a trusted archive was imported later.
+    #[serde(default)]
+    pub evidence_at: Option<String>,
+    /// Bounded provenance class for the upstream observation.
+    #[serde(default)]
+    pub evidence_source: Option<String>,
     pub parent_key: Option<String>, // name of parent snapshot (tier chain)
     pub file_count: usize,
     pub sealed: bool,
@@ -454,9 +483,38 @@ impl SnapshotStore {
         parent_key: Option<String>,
         date: &str,
     ) -> Result<(), SnapshotError> {
+        self.create_with_evidence(name, season, tier, parent_key, date, None, None)
+    }
+
+    /// Create a snapshot whose upstream evidence predates local ingestion.
+    /// The caller is responsible for validating the evidence timestamp and
+    /// source before using this lower-level storage operation.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_with_evidence(
+        &self,
+        name: &str,
+        season: &str,
+        tier: SnapshotTier,
+        parent_key: Option<String>,
+        date: &str,
+        evidence_at: Option<String>,
+        evidence_source: Option<String>,
+    ) -> Result<(), SnapshotError> {
+        if parent_key.as_deref() == Some(name) {
+            return Err(SnapshotError::ParentCycle {
+                name: name.to_owned(),
+            });
+        }
         let dir = self.snapshot_dir(name);
         std::fs::create_dir_all(dir.join(tier.dir_name()))?;
 
+        let mut metadata = HashMap::new();
+        if let Some(value) = &evidence_at {
+            metadata.insert("evidence_at".to_owned(), value.clone());
+        }
+        if let Some(value) = &evidence_source {
+            metadata.insert("evidence_source".to_owned(), value.clone());
+        }
         let meta = SnapshotMeta {
             name: name.to_owned(),
             season: season.to_owned(),
@@ -464,18 +522,24 @@ impl SnapshotStore {
             created_at: now_rfc3339(),
             parent_key,
             integrity: HashMap::new(),
-            metadata: HashMap::new(),
+            metadata,
             sealed: false,
         };
         self.write_meta(name, &meta)?;
 
         let mut manifest = self.load_manifest()?;
+        // A same-day fetch retry reuses the deterministic snapshot name.
+        // Replace its stale unsealed index row instead of accumulating
+        // duplicate entries that can make later tier selection ambiguous.
+        manifest.snapshots.retain(|entry| entry.name != name);
         manifest.snapshots.push(SnapshotEntry {
             name: name.to_owned(),
             season: season.to_owned(),
             tier: meta.tier.clone(),
             date: date.to_owned(),
             created_at: meta.created_at.clone(),
+            evidence_at,
+            evidence_source,
             parent_key: meta.parent_key.clone(),
             file_count: 0,
             sealed: false,
@@ -533,7 +597,11 @@ impl SnapshotStore {
             .to_owned();
 
         let mut name = active.clone();
+        let mut visited = HashSet::new();
         loop {
+            if !visited.insert(name.clone()) {
+                return Err(SnapshotError::ParentCycle { name });
+            }
             let meta = self.load_meta(&name)?;
             let tier_dir = self.snapshot_dir(&name).join(tier.dir_name());
             if tier_dir.exists() && meta.sealed {
@@ -574,7 +642,11 @@ impl SnapshotStore {
             .to_owned();
 
         let mut name = active.clone();
+        let mut visited = HashSet::new();
         loop {
+            if !visited.insert(name.clone()) {
+                return Err(SnapshotError::ParentCycle { name });
+            }
             let meta = self.load_meta(&name)?;
             let tier_dir = self.snapshot_dir(&name).join(tier.dir_name());
             if tier_dir.exists() && meta.sealed && meta.season == requested_season {
@@ -1519,6 +1591,62 @@ mod tests {
         (dir, store)
     }
 
+    #[test]
+    fn l0_ahl_is_a_sealed_season_readable_snapshot_tier() {
+        let (_dir, store) = store();
+        store
+            .create(
+                "20252026-2026-07-24-ahl",
+                "20252026",
+                SnapshotTier::Ahl,
+                None,
+                "2026-07-24",
+            )
+            .unwrap();
+        store
+            .write_file(
+                "20252026-2026-07-24-ahl",
+                &SnapshotTier::Ahl,
+                "ahl-roster-stats.json",
+                br#"{"schema":"ahl_roster_stats.v1"}"#,
+            )
+            .unwrap();
+        store.seal("20252026-2026-07-24-ahl").unwrap();
+
+        let value: serde_json::Value = store
+            .read_tier_any_for_season(&SnapshotTier::Ahl, "ahl-roster-stats.json", "20252026")
+            .unwrap();
+        assert_eq!(value["schema"], "ahl_roster_stats.v1");
+        assert_eq!(SnapshotTier::Ahl.dir_name(), "ahl");
+    }
+
+    #[test]
+    fn l0_same_name_snapshot_retry_replaces_manifest_entry() {
+        let (_dir, store) = store();
+        store
+            .create(
+                "20262027-2026-07-16-rosters",
+                "20262027",
+                SnapshotTier::Rosters,
+                None,
+                "2026-07-16",
+            )
+            .unwrap();
+        store
+            .create(
+                "20262027-2026-07-16-rosters",
+                "20262027",
+                SnapshotTier::Rosters,
+                None,
+                "2026-07-16",
+            )
+            .unwrap();
+
+        let manifest = store.load_manifest().unwrap();
+        assert_eq!(manifest.snapshots.len(), 1);
+        assert_eq!(manifest.snapshots[0].name, "20262027-2026-07-16-rosters");
+    }
+
     // ── Phase T.0: atomic snapshot writer ─────────────────────────────────
 
     #[test]
@@ -1858,6 +1986,62 @@ mod tests {
             .unwrap();
         let manifest = store.load_manifest().unwrap();
         assert_eq!(manifest.snapshots.len(), 2);
+    }
+
+    #[test]
+    fn l0_snapshot_create_rejects_self_parent() {
+        let (_dir, store) = store();
+        let error = store
+            .create(
+                "self-parent",
+                "20252026",
+                SnapshotTier::Ahl,
+                Some("self-parent".to_owned()),
+                "2026-07-27",
+            )
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            SnapshotError::ParentCycle { name } if name == "self-parent"
+        ));
+    }
+
+    #[test]
+    fn l0_snapshot_chain_read_fails_fast_on_existing_cycle() {
+        let (_dir, store) = store();
+        store
+            .create("a", "20252026", SnapshotTier::Ahl, None, "2026-07-27")
+            .unwrap();
+        store.seal("a").unwrap();
+        store
+            .create(
+                "b",
+                "20252026",
+                SnapshotTier::Ahl,
+                Some("a".to_owned()),
+                "2026-07-27",
+            )
+            .unwrap();
+        store.seal("b").unwrap();
+        store
+            .create(
+                "a",
+                "20252026",
+                SnapshotTier::Ahl,
+                Some("b".to_owned()),
+                "2026-07-27",
+            )
+            .unwrap();
+        store.seal("a").unwrap();
+
+        let error = store
+            .find_snapshot_for_tier(&SnapshotTier::Stats)
+            .unwrap_err();
+        assert!(matches!(error, SnapshotError::ParentCycle { name } if name == "a"));
+        let error = store
+            .find_snapshot_for_tier_and_season(&SnapshotTier::Stats, "20252026")
+            .unwrap_err();
+        assert!(matches!(error, SnapshotError::ParentCycle { name } if name == "a"));
     }
 
     #[test]

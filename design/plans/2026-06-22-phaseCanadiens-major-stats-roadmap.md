@@ -1,8 +1,12 @@
 # Phase Canadiens - Major stats systems roadmap
 
-## Status
-
-Active - 2026-06-22
+**Date**: 2026-06-22
+**Status**: Active
+**Specification**: [`../specs/query-engine.md`](../specs/query-engine.md),
+[`../specs/data-sources.md`](../specs/data-sources.md), and
+[`../specs/surface-parity.md`](../specs/surface-parity.md)
+**Archive when**: every ordered workstream is complete, explicitly deferred,
+or transferred to a named successor roadmap
 
 ## Goal
 

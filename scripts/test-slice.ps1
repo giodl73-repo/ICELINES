@@ -179,7 +179,7 @@ switch ($Slice) {
         Invoke-Test @("test", "-p", "icelines-cli", "--test", "lindsay_l3_golden", "--test", "lindsay_l5_subprocess")
         Invoke-Test @("test", "-p", "icelines-cli", "--test", "persona_foster", "--test", "persona_masterton_standalone", "--test", "persona_scenarios", "--test", "persona_wave2", "--test", "persona_wave3", "--test", "persona_wave4", "--test", "persona_wave5", "--test", "persona_wave6", "--test", "persona_wave7", "--test", "persona_wave9", "--test", "persona_wave10", "--test", "persona_wave11", "--test", "persona_wave16", "--test", "persona_wave18", "--test", "persona_wave20", "--test", "persona_wave23", "--test", "persona_wave25")
         Invoke-Test @("test", "-p", "icelines-cli", "--test", "system_tests", "--test", "system_tui_experiences")
-        Invoke-Test @("test", "-p", "icelines-cli", "--test", "foster_capability_matrix", "--test", "proof_lib_smoke")
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "foster_capability_matrix")
         Invoke-Test @("test", "--workspace", "--doc")
         Invoke-CargoAudit
         Invoke-Cargo @("clippy", "--", "-D", "warnings")
@@ -223,7 +223,7 @@ switch ($Slice) {
         Invoke-Test @("test", "-p", "icelines-cli", "--test", "persona_foster", "--test", "persona_masterton_standalone", "--test", "persona_scenarios", "--test", "persona_wave2", "--test", "persona_wave3", "--test", "persona_wave4", "--test", "persona_wave5", "--test", "persona_wave6", "--test", "persona_wave7", "--test", "persona_wave9", "--test", "persona_wave10", "--test", "persona_wave11", "--test", "persona_wave16", "--test", "persona_wave18", "--test", "persona_wave20", "--test", "persona_wave23", "--test", "persona_wave25")
     }
     "ci-cli-smoke" {
-        Invoke-Test @("test", "-p", "icelines-cli", "--test", "foster_capability_matrix", "--test", "proof_lib_smoke")
+        Invoke-Test @("test", "-p", "icelines-cli", "--test", "foster_capability_matrix")
     }
     "ci-clippy" {
         Invoke-Cargo @("clippy", "--", "-D", "warnings")

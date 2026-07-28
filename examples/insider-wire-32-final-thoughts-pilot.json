@@ -1,0 +1,346 @@
+{
+  "schema": "icelines.insider_wire.podcast_pilot.v1",
+  "generated_at": "2026-07-23T00:00:00-07:00",
+  "status": "human_review_required",
+  "episode": {
+    "show": "32 Thoughts: The Podcast",
+    "title": "32 Final Thoughts",
+    "publisher": "Sportsnet",
+    "published_on": "2026-07-06",
+    "apple_show_id": "1332150124",
+    "apple_episode_id": "1000775624388",
+    "episode_url": "https://podcasts.apple.com/us/podcast/32-final-thoughts/id1332150124?i=1000775624388&uo=4",
+    "catalog_url": "https://itunes.apple.com/lookup?id=1332150124&entity=podcastEpisode&limit=10",
+    "audio_host": "Rogers/Simplecast"
+  },
+  "ingestion": {
+    "scope": "Two team chapters from one episode; this is a pipeline pilot, not a complete episode knowledge record.",
+    "chapter_source": "Publisher episode notes",
+    "transcription": {
+      "engine": "whisper.cpp",
+      "engine_revision": "080bbbe85230f624f0b52127f1ae1218247989f9",
+      "model": "ggml-base.en",
+      "language": "en",
+      "authority": "machine_transcript_under_review",
+      "speaker_diarization": false,
+      "full_transcript_retained": false,
+      "audio_retained": false
+    },
+    "alignment": {
+      "method": "Locate the spoken team anchor near the publisher chapter time, then preserve both clocks.",
+      "dynamic_ad_offset_detected": true,
+      "warning": "Downloaded audio contained dynamic ads. Publisher timestamps could not be used as byte-accurate audio offsets."
+    },
+    "copyright_policy": "Store paraphrased evidence markers, timestamps, provenance, and hashes only; do not publish or retain full episode transcripts or audio."
+  },
+  "segments": [
+    {
+      "segment_id": "32-final-thoughts-2026-07-06-nyr",
+      "team": "NYR",
+      "publisher_clock": {
+        "start_seconds": 9562,
+        "end_seconds": 10010,
+        "label": "2:39:22-2:46:50"
+      },
+      "observed_audio_clock": {
+        "start_seconds": 9700,
+        "end_seconds": 10148,
+        "publisher_offset_seconds": 138
+      },
+      "temporary_source_hashes": {
+        "audio_segment_sha256": "bd6a56084af3751ac7d20c21e0c1d3d7034dc4ce0a90e3712250ce62fb32712a",
+        "machine_transcript_sha256": "027d166234b972c9355b89273dc91662fc5482751f8d1af12f1c389eb1f328c1"
+      },
+      "entity_corrections": [
+        "Sean Durzi",
+        "Cole Beaudoin",
+        "Marcus Pettersson",
+        "Pavel Dorofeyev",
+        "Igor Shesterkin",
+        "Alexis Lafreniere",
+        "Gabe Perreault",
+        "Noah Laba",
+        "Alberts Smits"
+      ],
+      "markers": [
+        {
+          "marker_id": "nyr-ownership-day-to-day-transition",
+          "subject_kind": "ownership",
+          "subject": "James Dolan / Quentin Dolan",
+          "claim_kind": "cited_reporting",
+          "attribution": "Mollie Walker reporting as summarized by the hosts",
+          "local_time_seconds": { "start": 29.36, "end": 41.18 },
+          "publisher_time_seconds": { "start": 9591.36, "end": 9603.18 },
+          "summary": "The hosts discussed reported transfer of day-to-day Rangers oversight from James Dolan to Quentin Dolan.",
+          "confidence": 0.58,
+          "evidence_label": "under_review",
+          "simulation_disposition": "context_only",
+          "corroboration_required": true
+        },
+        {
+          "marker_id": "nyr-ownership-operating-continuity",
+          "subject_kind": "ownership",
+          "subject": "Quentin Dolan",
+          "claim_kind": "informed_analysis",
+          "attribution": "Elliotte Friedman; speaker inferred from dialogue context",
+          "local_time_seconds": { "start": 79.72, "end": 154.44 },
+          "publisher_time_seconds": { "start": 9641.72, "end": 9716.44 },
+          "summary": "Friedman expected little visible day-to-day change and connected Quentin Dolan with sports-science operations, while explicitly stating that his information was still limited.",
+          "candidate_traits": ["ownership.operating_continuity", "organization.sports_science_orientation"],
+          "confidence": 0.42,
+          "evidence_label": "under_review",
+          "simulation_disposition": "do_not_apply",
+          "corroboration_required": true
+        },
+        {
+          "marker_id": "nyr-drury-fox-retention",
+          "subject_kind": "general_manager",
+          "subject": "Chris Drury",
+          "claim_kind": "reported_intel",
+          "attribution": "Elliotte Friedman; speaker inferred from dialogue context",
+          "local_time_seconds": { "start": 182.24, "end": 194.20 },
+          "publisher_time_seconds": { "start": 9744.24, "end": 9756.20 },
+          "summary": "Teams reportedly asked about Adam Fox and were firmly rebuffed, indicating strong protection of a cornerstone player.",
+          "candidate_traits": ["general_manager.core_asset_retention"],
+          "confidence": 0.72,
+          "evidence_label": "under_review",
+          "simulation_disposition": "candidate_behavior_marker",
+          "corroboration_required": true
+        },
+        {
+          "marker_id": "nyr-defense-improvement-outlook",
+          "subject_kind": "team",
+          "subject": "New York Rangers",
+          "claim_kind": "host_analysis",
+          "local_time_seconds": { "start": 194.20, "end": 221.00 },
+          "publisher_time_seconds": { "start": 9756.20, "end": 9783.00 },
+          "summary": "The revised defense group was assessed as materially better and likely to improve the environment in front of Igor Shesterkin.",
+          "candidate_traits": ["team.defensive_support_outlook"],
+          "direction": "positive",
+          "confidence": 0.62,
+          "evidence_label": "opinion",
+          "simulation_disposition": "scenario_input_only",
+          "corroboration_required": false
+        },
+        {
+          "marker_id": "nyr-trocheck-relationship-exit",
+          "subject_kind": "team_player_relationship",
+          "subject": "New York Rangers / Vincent Trocheck",
+          "claim_kind": "reported_intel_plus_analysis",
+          "attribution": "Elliotte Friedman; speaker inferred from dialogue context",
+          "local_time_seconds": { "start": 256.40, "end": 285.72 },
+          "publisher_time_seconds": { "start": 9818.40, "end": 9847.72 },
+          "summary": "The Rangers reportedly considered retaining Trocheck, but the relationship was assessed as too far gone for that outcome.",
+          "candidate_traits": ["relationship.repairability"],
+          "direction": "negative",
+          "confidence": 0.67,
+          "evidence_label": "under_review",
+          "simulation_disposition": "historical_context_only",
+          "corroboration_required": true,
+          "guardrail": "Do not convert this context-specific relationship into a permanent player personality trait."
+        },
+        {
+          "marker_id": "nyr-lafreniere-role-reset",
+          "subject_kind": "team_player_relationship",
+          "subject": "New York Rangers / Alexis Lafreniere",
+          "claim_kind": "informed_analysis",
+          "local_time_seconds": { "start": 295.20, "end": 350.72 },
+          "publisher_time_seconds": { "start": 9857.20, "end": 9912.72 },
+          "summary": "The relationship and role outlook appeared improved, with a larger post-Panarin opportunity framed as a possible fresh start that needs an early positive result.",
+          "candidate_traits": ["player.role_fit", "player.breakout_context", "relationship.repairability"],
+          "direction": "positive_conditional",
+          "confidence": 0.58,
+          "evidence_label": "opinion",
+          "simulation_disposition": "scenario_input_only",
+          "corroboration_required": false
+        },
+        {
+          "marker_id": "nyr-young-player-dependence",
+          "subject_kind": "team",
+          "subject": "New York Rangers",
+          "claim_kind": "host_analysis",
+          "local_time_seconds": { "start": 356.28, "end": 399.04 },
+          "publisher_time_seconds": { "start": 9918.28, "end": 9961.04 },
+          "summary": "Improvement was described as dependent on continued impact from younger players, especially Noah Laba and Gabe Perreault, while Trocheck's departure remains a meaningful hole.",
+          "candidate_traits": ["team.development_dependence", "team.center_depth_risk"],
+          "confidence": 0.61,
+          "evidence_label": "opinion",
+          "simulation_disposition": "scenario_input_only",
+          "corroboration_required": false
+        },
+        {
+          "marker_id": "nyr-smits-open-job-path",
+          "subject_kind": "player_opportunity",
+          "subject": "Alberts Smits",
+          "claim_kind": "host_analysis",
+          "local_time_seconds": { "start": 399.04, "end": 444.72 },
+          "publisher_time_seconds": { "start": 9961.04, "end": 10006.72 },
+          "summary": "The hosts viewed Smits as unusually NHL-ready and believed the Rangers would welcome him pushing for a job, including a third-pair development path.",
+          "candidate_traits": ["player.camp_opportunity", "general_manager.rookie_opportunity"],
+          "direction": "positive_conditional",
+          "confidence": 0.50,
+          "evidence_label": "opinion",
+          "simulation_disposition": "scenario_input_only",
+          "corroboration_required": true,
+          "guardrail": "This is not sufficient by itself to change the Rangers' calibrated rookie-opportunity trait."
+        }
+      ]
+    },
+    {
+      "segment_id": "32-final-thoughts-2026-07-06-sea",
+      "team": "SEA",
+      "publisher_clock": {
+        "start_seconds": 11986,
+        "end_seconds": 12425,
+        "label": "3:19:46-3:27:05"
+      },
+      "observed_audio_clock": {
+        "start_seconds": 12126,
+        "end_seconds": 12565,
+        "publisher_offset_seconds": 140
+      },
+      "temporary_source_hashes": {
+        "audio_segment_sha256": "f632d56add3d36820127e5b2e127821008c9e0a25353c0fd53a4b995c69db821",
+        "machine_transcript_sha256": "ec9660a954e35e3fab305b6d6d2fa491828e5595e103fcae9e99e9331fe831b4"
+      },
+      "entity_corrections": [
+        "Shane Wright",
+        "Kurt Overhardt",
+        "Berkly Catton",
+        "Matty Beniers",
+        "Ryker Evans",
+        "Oscar Fisker Molgaard",
+        "Vince Dunn",
+        "Brandon Montour",
+        "Jared McCann"
+      ],
+      "markers": [
+        {
+          "marker_id": "sea-wright-trade-direction",
+          "subject_kind": "team_player_relationship",
+          "subject": "Seattle Kraken / Shane Wright",
+          "claim_kind": "reported_intel",
+          "attribution": "Elliotte Friedman; speaker inferred from dialogue context",
+          "local_time_seconds": { "start": 14.32, "end": 92.32 },
+          "publisher_time_seconds": { "start": 12000.32, "end": 12078.32 },
+          "summary": "A Wright trade was described as the likely direction, with outside interest, but Seattle was expected to require a return it considers fair rather than force a deal.",
+          "candidate_traits": ["general_manager.fair_value_discipline", "player.trade_likelihood"],
+          "direction": "trade_likely_price_conditional",
+          "confidence": 0.78,
+          "evidence_label": "under_review",
+          "simulation_disposition": "candidate_transaction_scenario",
+          "corroboration_required": true
+        },
+        {
+          "marker_id": "sea-internal-operating-audit",
+          "subject_kind": "organization",
+          "subject": "Seattle Kraken",
+          "claim_kind": "reported_context",
+          "local_time_seconds": { "start": 118.44, "end": 126.32 },
+          "publisher_time_seconds": { "start": 12104.44, "end": 12112.32 },
+          "summary": "Seattle was described as having conducted a broad internal review of how the organization operates.",
+          "candidate_traits": ["organization.self_review", "organization.adaptability"],
+          "direction": "positive_process_signal",
+          "confidence": 0.54,
+          "evidence_label": "under_review",
+          "simulation_disposition": "context_only",
+          "corroboration_required": true
+        },
+        {
+          "marker_id": "sea-drafted-core-strategy",
+          "subject_kind": "team",
+          "subject": "Seattle Kraken",
+          "claim_kind": "host_recommendation",
+          "local_time_seconds": { "start": 126.32, "end": 185.08 },
+          "publisher_time_seconds": { "start": 12112.32, "end": 12171.08 },
+          "summary": "The hosts recommended rebuilding organizational attachment around drafted young players and treating the young core as the primary development engine.",
+          "candidate_traits": ["general_manager.rookie_opportunity", "team.young_core_commitment"],
+          "direction": "recommended_positive",
+          "confidence": 0.45,
+          "evidence_label": "opinion",
+          "simulation_disposition": "do_not_apply",
+          "corroboration_required": false,
+          "guardrail": "A host recommendation is not evidence that the front office follows the recommended policy."
+        },
+        {
+          "marker_id": "sea-wright-development-context",
+          "subject_kind": "player",
+          "subject": "Shane Wright",
+          "claim_kind": "host_analysis",
+          "local_time_seconds": { "start": 185.08, "end": 208.80 },
+          "publisher_time_seconds": { "start": 12171.08, "end": 12194.80 },
+          "summary": "Wright's disrupted development was attributed substantially to the COVID-era interruption, and a fresh start was presented as beneficial.",
+          "candidate_traits": ["player.development_interruption", "player.change_of_environment_upside"],
+          "direction": "contextual_upside",
+          "confidence": 0.55,
+          "evidence_label": "opinion",
+          "simulation_disposition": "scenario_input_only",
+          "corroboration_required": false,
+          "guardrail": "Do not turn an external development interruption into a negative player character marker."
+        },
+        {
+          "marker_id": "sea-young-core-drivers",
+          "subject_kind": "team",
+          "subject": "Seattle Kraken",
+          "claim_kind": "host_analysis",
+          "local_time_seconds": { "start": 208.80, "end": 301.80 },
+          "publisher_time_seconds": { "start": 12194.80, "end": 12287.80 },
+          "summary": "The organization's younger players and prospects were framed as the group Seattle should build through to improve its future attractiveness and results.",
+          "candidate_traits": ["team.young_core_commitment", "team.development_dependence"],
+          "direction": "positive_long_term_conditional",
+          "confidence": 0.51,
+          "evidence_label": "opinion",
+          "simulation_disposition": "scenario_input_only",
+          "corroboration_required": false
+        },
+        {
+          "marker_id": "sea-veteran-decision-window",
+          "subject_kind": "roster_strategy",
+          "subject": "Vince Dunn / Jared McCann",
+          "claim_kind": "host_analysis",
+          "local_time_seconds": { "start": 301.80, "end": 342.72 },
+          "publisher_time_seconds": { "start": 12287.80, "end": 12328.72 },
+          "summary": "Dunn and McCann were identified as consequential veteran extension-or-trade decisions, with Dunn's role affected by Montour's presence.",
+          "candidate_traits": ["general_manager.veteran_preference", "general_manager.trade_aggression"],
+          "direction": "decision_pending",
+          "confidence": 0.48,
+          "evidence_label": "opinion",
+          "simulation_disposition": "candidate_scenario_branch",
+          "corroboration_required": true
+        },
+        {
+          "marker_id": "sea-youth-return-retool-path",
+          "subject_kind": "roster_strategy",
+          "subject": "Seattle Kraken",
+          "claim_kind": "host_recommendation",
+          "local_time_seconds": { "start": 342.72, "end": 439.04 },
+          "publisher_time_seconds": { "start": 12328.72, "end": 12425.04 },
+          "summary": "If veterans are not part of the long-term plan, the hosts favored maximizing younger-player returns and accepting a temporary step backward to build a stronger opportunity-driven core.",
+          "candidate_traits": ["general_manager.trade_aggression", "general_manager.rookie_opportunity", "team.retool_patience"],
+          "direction": "recommended_retool",
+          "confidence": 0.46,
+          "evidence_label": "opinion",
+          "simulation_disposition": "scenario_input_only",
+          "corroboration_required": false,
+          "guardrail": "This recommendation must not be recorded as an observed Seattle management behavior."
+        }
+      ]
+    }
+  ],
+  "review_queue": [
+    "Verify all named entities against the episode audio and authoritative roster/person records.",
+    "Resolve speaker attribution with diarization or a human reviewer before promoting reported-intel markers.",
+    "Corroborate cited reporting and reported intel with the underlying article or a second reliable source.",
+    "Keep host recommendations separate from observed management behavior and player capability scores.",
+    "Use accepted markers only as bounded simulation evidence with explicit confidence and effective dates."
+  ],
+  "pilot_result": {
+    "segments": 2,
+    "markers": 15,
+    "reported_or_cited_markers": 5,
+    "analysis_or_opinion_markers": 10,
+    "automatically_promoted_markers": 0,
+    "alignment_defect_found": "dynamic_ad_timestamp_drift",
+    "recommendation": "Proceed to a human-review acceptance pass before generalizing the adapter to multiple years."
+  }
+}

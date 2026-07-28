@@ -3,6 +3,7 @@ use crate::cli::{
 };
 use crate::config::Config;
 use anyhow::{anyhow, Context};
+use chrono::Utc;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::stats_catalog::{ReportKind, Tier, TIER1_REPORTS};
 use icelines_fetch::{
@@ -12,7 +13,11 @@ use icelines_fetch::{
     moneypuck,
     nhl_api::NhlApiClient,
     schema::SkaterBio,
-    snapshot::{today_date, SnapshotStore, SnapshotTier},
+    snapshot::{
+        today_date, OfficialNhlRosterCapture, OfficialNhlRosterCaptureManifest, SnapshotStore,
+        SnapshotTier, OFFICIAL_NHL_LIVE_ROSTER_MANIFEST_FILE, OFFICIAL_NHL_LIVE_ROSTER_SCHEMA,
+        OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
+    },
 };
 use sha2::{Digest, Sha256};
 
@@ -126,13 +131,30 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
         FetchSubcommand::Career {
             dry_run,
             bundled_seasons,
-        } => do_career(dry_run, bundled_seasons).await,
+            prospect_context,
+            camp_forecast,
+        } => {
+            do_career(
+                dry_run,
+                bundled_seasons,
+                prospect_context.as_deref(),
+                camp_forecast.as_deref(),
+            )
+            .await
+        }
         FetchSubcommand::Goalies {
             season,
             refresh: _,
             dry_run,
             season_type,
         } => do_goalies(&season, dry_run, season_type).await,
+        FetchSubcommand::Ahl {
+            season,
+            teams,
+            out,
+            refresh,
+            dry_run,
+        } => do_ahl(&season, &teams, out.as_deref(), refresh, dry_run).await,
         FetchSubcommand::Transactions { season, dry_run } => {
             do_transactions(&season, dry_run).await
         }
@@ -155,6 +177,116 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             dry_run,
         } => do_report(kind, &season, season_type, no_lock, dry_run).await,
     }
+}
+
+async fn do_ahl(
+    season: &str,
+    teams: &[String],
+    out: Option<&std::path::Path>,
+    refresh: bool,
+    dry_run: bool,
+) -> anyhow::Result<()> {
+    let season_id: u32 = season
+        .parse()
+        .with_context(|| format!("AHL season must be an 8-digit value, got `{season}`"))?;
+    if season.len() != 8 {
+        return Err(anyhow!(
+            "AHL season must be an 8-digit value, got `{season}`"
+        ));
+    }
+
+    if dry_run {
+        let scope = if teams.is_empty() {
+            "all provider-catalog teams".to_owned()
+        } else {
+            teams.join(", ")
+        };
+        println!("Would resolve AHL regular season {season} from the official season catalog.");
+        println!("Would acquire roster/skater/goalie reports for {scope} through FLETCH.");
+        let snapshot_scope = if teams.is_empty() {
+            String::new()
+        } else {
+            format!("-{}", teams.join("-").to_ascii_lowercase())
+        };
+        println!("Would seal {season}-<date>-ahl{snapshot_scope}/ahl/ahl-roster-stats.json.");
+        if let Some(out) = out {
+            println!("Would also export {}", out.display());
+        }
+        return Ok(());
+    }
+
+    let cfg = Config::load().context("loading IceLines config for AHL snapshot")?;
+    let icelines_home = cfg
+        .snapshot_dir()
+        .parent()
+        .map(|path| path.to_path_buf())
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let _lock = fetch_lock::acquire(&icelines_home, std::time::Duration::from_secs(120))
+        .with_context(|| {
+            format!(
+                "acquiring AHL fetch lock at {}/.fetch.lock",
+                icelines_home.display()
+            )
+        })?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let parent = store
+        .load_manifest()
+        .context("loading snapshot manifest before AHL side-fetch")?
+        .active;
+    let snapshot =
+        icelines_fetch::ahl::AhlFeedClient::production_cached(fletch_cache_root(&cfg), refresh)
+            .fetch_roster_stats(season_id, teams)
+            .await
+            .context("fetching official AHL roster/stat snapshot")?;
+    let bytes =
+        serde_json::to_vec_pretty(&snapshot).context("serializing AHL roster/stat snapshot")?;
+    let today = today_date();
+    // A team-scoped fetch is a useful side snapshot, but must never replace the
+    // same-day full-league AHL snapshot in the manifest or on disk.
+    let snapshot_scope = if teams.is_empty() {
+        String::new()
+    } else {
+        let mut team_codes: Vec<_> = snapshot
+            .teams
+            .iter()
+            .map(|team| team.team_code.to_ascii_lowercase())
+            .collect();
+        team_codes.sort();
+        format!("-{}", team_codes.join("-"))
+    };
+    let snapshot_name = format!("{season}-{today}-ahl{snapshot_scope}");
+    store
+        .create(&snapshot_name, season, SnapshotTier::Ahl, parent, &today)
+        .context("creating AHL snapshot")?;
+    store
+        .write_file(
+            &snapshot_name,
+            &SnapshotTier::Ahl,
+            "ahl-roster-stats.json",
+            &bytes,
+        )
+        .context("writing typed AHL snapshot")?;
+    store.seal(&snapshot_name).context("sealing AHL snapshot")?;
+    if let Some(out) = out {
+        icelines_fetch::atomic_write::write_bytes_atomic(out, &bytes)
+            .with_context(|| format!("exporting AHL roster/stat snapshot to {}", out.display()))?;
+    }
+    let skaters: usize = snapshot.teams.iter().map(|team| team.skaters.len()).sum();
+    let goalies: usize = snapshot.teams.iter().map(|team| team.goalies.len()).sum();
+    let roster_players: usize = snapshot.teams.iter().map(|team| team.roster.len()).sum();
+    println!(
+        "AHL {}: {} team(s), {} roster player(s), {} skater row(s), {} goalie row(s)",
+        snapshot.provider_season_name,
+        snapshot.teams.len(),
+        roster_players,
+        skaters,
+        goalies
+    );
+    println!("Sealed snapshot '{snapshot_name}' (tier: ahl).");
+    if let Some(out) = out {
+        println!("Exported {}", out.display());
+    }
+    Ok(())
 }
 
 async fn do_fletch_quivers(
@@ -597,21 +729,16 @@ async fn do_report(
     Ok(())
 }
 
-const TEAMS: &[&str] = &[
-    "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
-    "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
-    "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
-];
-
 async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Result<()> {
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let today = today_date();
     let snap = format!("{season}-{today}-rosters");
+    let teams = icelines_fetch::nhl_teams_for_season(season);
 
     if dry_run {
         println!("Would create snapshot: {snap}");
-        for team in TEAMS {
+        for team in &teams {
             println!("  {team}: would fetch {}", roster_url(team, season));
         }
         return Ok(());
@@ -620,37 +747,86 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
     // Check if already sealed today
     if !refresh {
         if let Ok(entries) = store.list() {
-            if entries.iter().any(|e| e.name == snap && e.sealed) {
+            if entries
+                .iter()
+                .any(|e| e.name == snap && e.sealed && e.file_count >= teams.len())
+            {
                 println!("Rosters already fetched today (use --refresh to re-fetch).");
                 println!("  Snapshot: {snap}");
                 return Ok(());
             }
+            if entries
+                .iter()
+                .any(|e| e.name == snap && e.file_count < teams.len())
+            {
+                println!("Roster snapshot is incomplete; resuming from verified cache.");
+            }
         }
     }
 
+    let resumed_files: std::collections::HashMap<&str, Vec<u8>> = if refresh {
+        std::collections::HashMap::new()
+    } else {
+        teams
+            .iter()
+            .filter_map(|team| {
+                let path = store
+                    .root()
+                    .join(&snap)
+                    .join(SnapshotTier::Rosters.dir_name())
+                    .join(format!("{team}.json"));
+                std::fs::read(path).ok().map(|bytes| (*team, bytes))
+            })
+            .collect()
+    };
+
+    let observed_at = Utc::now().to_rfc3339();
     store
-        .create(&snap, season, SnapshotTier::Rosters, None, &today)
+        .create_with_evidence(
+            &snap,
+            season,
+            SnapshotTier::Rosters,
+            None,
+            &today,
+            Some(observed_at.clone()),
+            Some(OFFICIAL_NHL_LIVE_ROSTER_SOURCE.to_owned()),
+        )
         .context("creating roster snapshot")?;
 
     println!("Fetching rosters → snapshot '{snap}'");
     let fletch_cache = fletch_cache_root(&cfg);
-    for team in TEAMS {
-        let url = icelines_fetch::fletch::roster_url(team, season);
+    let requests: Vec<_> = teams
+        .iter()
+        .filter(|team| !resumed_files.contains_key(**team))
+        .map(|team| {
+            (
+                icelines_fetch::fletch::roster_dataset_id(team, season),
+                icelines_fetch::fletch::roster_url(team, season),
+            )
+        })
+        .collect();
+    let fetched =
+        icelines_fetch::fletch::fetch_generic_http_batch_async(requests, fletch_cache, refresh, 8)
+            .await;
+    let fetched_by_id: std::collections::HashMap<_, _> = fetched.into_iter().collect();
+    let mut written = 0usize;
+    for team in &teams {
         let fletch_id = icelines_fetch::fletch::roster_dataset_id(team, season);
-        let roster_bytes = match icelines_fetch::fletch::fetch_generic_http_bytes_async(
-            fletch_id,
-            url,
-            fletch_cache.clone(),
-            refresh,
-        )
-        .await
-        {
-            Ok(bytes) => bytes,
-            Err(e) => {
-                // Skip teams that didn't exist in this season (e.g. UTA before 2024-25)
-                println!("  {team}: skipped ({e})");
-                continue;
-            }
+        let roster_bytes = match resumed_files.get(team) {
+            Some(bytes) => bytes.clone(),
+            None => match fetched_by_id.get(&fletch_id) {
+                Some(Ok(bytes)) => bytes.clone(),
+                Some(Err(e)) => {
+                    // Preserve an explicit partial failure if an expected
+                    // season member cannot be fetched.
+                    println!("  {team}: skipped ({e:#})");
+                    continue;
+                }
+                None => {
+                    println!("  {team}: skipped (fetch result missing)");
+                    continue;
+                }
+            },
         };
         let roster: icelines_fetch::schema::RosterResponse = serde_json::from_slice(&roster_bytes)
             .with_context(|| format!("parsing roster JSON for {team}"))?;
@@ -664,9 +840,37 @@ async fn do_rosters(season: &str, refresh: bool, dry_run: bool) -> anyhow::Resul
                 &json,
             )
             .with_context(|| format!("writing {team} to snapshot"))?;
+        written += 1;
         println!("  {team}: {count} players");
     }
 
+    if written != teams.len() {
+        anyhow::bail!(
+            "roster snapshot incomplete: wrote {written}/{} teams; retry without --refresh to resume",
+            teams.len()
+        );
+    }
+    let source_manifest = OfficialNhlRosterCaptureManifest {
+        schema: OFFICIAL_NHL_LIVE_ROSTER_SCHEMA.to_owned(),
+        season: season.to_owned(),
+        observed_at,
+        captures: teams
+            .iter()
+            .map(|team| OfficialNhlRosterCapture {
+                team: (*team).to_owned(),
+                source_url: roster_url(team, season),
+            })
+            .collect(),
+    };
+    store
+        .write_file(
+            &snap,
+            &SnapshotTier::Rosters,
+            OFFICIAL_NHL_LIVE_ROSTER_MANIFEST_FILE,
+            &serde_json::to_vec_pretty(&source_manifest)
+                .context("serializing official roster source manifest")?,
+        )
+        .context("writing official roster source manifest")?;
     store.seal(&snap).context("sealing roster snapshot")?;
     println!("Snapshot '{snap}' sealed and set as active.");
     Ok(())
@@ -1239,7 +1443,7 @@ async fn do_contracts(
 
     if let Some(upper_limit) = cap_limit {
         let mut roster_players = Vec::new();
-        for team in TEAMS {
+        for team in icelines_fetch::nhl_teams_for_season(season) {
             let roster: icelines_fetch::schema::RosterResponse = match store
                 .read_tier_file_any_for_season(
                     &SnapshotTier::Rosters,
@@ -1255,7 +1459,7 @@ async fn do_contracts(
                     .iter()
                     .chain(&roster.defensemen)
                     .chain(&roster.goalies)
-                    .map(|player| ((*team).to_owned(), player.id)),
+                    .map(|player| (team.to_owned(), player.id)),
             );
         }
         if roster_players.is_empty() {
@@ -1287,7 +1491,12 @@ async fn do_contracts(
 /// `CareerHistory`, and writes the merged result to
 /// `~/.icelines/career_history.json` (single global blob — career
 /// history is per-player, not per-season).
-async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
+async fn do_career(
+    dry_run: bool,
+    bundled_seasons: u8,
+    prospect_context_path: Option<&std::path::Path>,
+    camp_forecast_path: Option<&std::path::Path>,
+) -> anyhow::Result<()> {
     use icelines_fetch::career_landing::CareerHistoryStore;
 
     let cfg = Config::load()?;
@@ -1301,21 +1510,83 @@ async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
     // - bundled_seasons == 0: read the active stats snapshot's
     //   bios.json. Used for the user's local refresh after pulling
     //   new stats.
-    let player_ids_result: anyhow::Result<Vec<u32>> = if bundled_seasons > 0 {
-        Ok(union_pids_from_bundled(bundled_seasons))
-    } else {
-        store
-            .read_tier::<Vec<SkaterBio>>(&SnapshotTier::Stats, "bios.json")
-            .context("reading bios.json from active Stats snapshot")
-            .map(|bios| bios.iter().map(|b| b.player_id).collect())
-    };
+    let target_modes = usize::from(prospect_context_path.is_some())
+        + usize::from(camp_forecast_path.is_some())
+        + usize::from(bundled_seasons > 0);
+    if target_modes > 1 {
+        anyhow::bail!(
+            "choose only one of --prospect-context, --camp-forecast, or --bundled-seasons"
+        );
+    }
+    let player_ids_result: anyhow::Result<Vec<u32>> =
+        if let Some(context_path) = prospect_context_path {
+            let context: icelines_fetch::ProspectLeagueContext =
+                serde_json::from_slice(&std::fs::read(context_path).with_context(|| {
+                    format!("read prospect context {}", context_path.display())
+                })?)
+                .with_context(|| format!("parse prospect context {}", context_path.display()))?;
+            if context.schema != icelines_fetch::PROSPECT_LEAGUE_CONTEXT_SCHEMA {
+                anyhow::bail!(
+                    "invalid prospect context schema in {}",
+                    context_path.display()
+                );
+            }
+            Ok(context
+                .players
+                .into_iter()
+                .map(|player| player.player_id)
+                .collect())
+        } else if let Some(forecast_path) = camp_forecast_path {
+            let forecast: icelines_core::TrainingCampLeagueForecastView = serde_json::from_slice(
+                &std::fs::read(forecast_path)
+                    .with_context(|| format!("read camp forecast {}", forecast_path.display()))?,
+            )
+            .with_context(|| format!("parse camp forecast {}", forecast_path.display()))?;
+            if forecast.schema != icelines_core::TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA {
+                anyhow::bail!(
+                    "invalid camp forecast schema in {}",
+                    forecast_path.display()
+                );
+            }
+            let mut ids = std::collections::BTreeSet::new();
+            for team in forecast.teams {
+                if let Some(team_forecast) = team.forecast {
+                    ids.extend(
+                        team_forecast
+                            .players
+                            .into_iter()
+                            .filter(|player| player.prospect)
+                            .map(|player| player.player_id),
+                    );
+                }
+            }
+            Ok(ids.into_iter().collect())
+        } else if bundled_seasons > 0 {
+            Ok(union_pids_from_bundled(bundled_seasons))
+        } else {
+            store
+                .read_tier::<Vec<SkaterBio>>(&SnapshotTier::Stats, "bios.json")
+                .context("reading bios.json from active Stats snapshot")
+                .map(|bios| bios.iter().map(|b| b.player_id).collect())
+        };
 
     if dry_run {
+        if (prospect_context_path.is_some() || camp_forecast_path.is_some())
+            && player_ids_result.is_err()
+        {
+            return player_ids_result
+                .map(|_| ())
+                .context("could not resolve explicit player set for `fetch career --dry-run`");
+        }
         let n = player_ids_result.as_ref().map(|p| p.len()).unwrap_or(0);
         let est_secs = (n.max(700) as f64 * 0.06).ceil() as u64;
         println!("Would fetch career history for {n} players.");
         if bundled_seasons > 0 {
             println!("Source: union of last {bundled_seasons} bundled seasons (skaters + goalies)");
+        } else if let Some(context_path) = prospect_context_path {
+            println!("Source: prospect context {}", context_path.display());
+        } else if let Some(forecast_path) = camp_forecast_path {
+            println!("Source: camp prospects in {}", forecast_path.display());
         }
         println!("Endpoint: /v1/player/{{id}}/landing.seasonTotals (50ms delay between calls)");
         println!("Estimated time: ~{est_secs}s");
@@ -1348,6 +1619,7 @@ async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
     .await
     .context("fetching player landing career batch through FLETCH")?;
     let mut histories = Vec::with_capacity(landing_by_player.len());
+    let mut birth_dates = Vec::new();
     let mut skipped = Vec::new();
     for player_id in &player_ids {
         let Some(raw_bytes) = landing_by_player.get(player_id) else {
@@ -1361,6 +1633,9 @@ async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
                 continue;
             }
         };
+        if let Some(birth_date) = raw.get("birthDate").and_then(serde_json::Value::as_str) {
+            birth_dates.push((*player_id, birth_date.to_owned()));
+        }
         match icelines_fetch::career_landing::parse_career_history(*player_id, &raw) {
             Ok(history) => histories.push(history),
             Err(error) => skipped.push((*player_id, error.to_string())),
@@ -1373,6 +1648,9 @@ async fn do_career(dry_run: bool, bundled_seasons: u8) -> anyhow::Result<()> {
     let mut blob = CareerHistoryStore::load(&path).context("loading existing career_history")?;
     for h in &histories {
         blob.upsert(h.clone());
+    }
+    for (player_id, birth_date) in birth_dates {
+        blob.upsert_birth_date(player_id, birth_date);
     }
     blob.stamp_now();
     blob.save(&path).context("saving career_history.json")?;

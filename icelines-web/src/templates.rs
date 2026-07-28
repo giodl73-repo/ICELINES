@@ -37,6 +37,31 @@
 
 use askama::Template;
 
+#[derive(Template)]
+#[template(path = "behavior_rankings.html")]
+pub struct BehaviorRankingsTemplate {
+    pub active_label: String,
+    pub target_season: String,
+    pub scale: String,
+    pub scales: Vec<BehaviorScaleTemplate>,
+    pub rows: Vec<BehaviorRankingRowTemplate>,
+    pub coverage: String,
+}
+
+pub struct BehaviorScaleTemplate {
+    pub key: String,
+    pub active: bool,
+}
+
+pub struct BehaviorRankingRowTemplate {
+    pub team: String,
+    pub rank: String,
+    pub percentile: String,
+    pub tendency: String,
+    pub opportunities: String,
+    pub evidence: String,
+}
+
 /// `home.html` — the `/` page.
 ///
 /// Carries `active_label` (e.g. `"25-26 · Regular"`) into the base
@@ -619,6 +644,8 @@ pub struct TransactionsTemplate {
     /// Earliest season ESPN archives, surfaced in the out-of-coverage
     /// note so the user knows what's available.
     pub earliest_season_pretty: String,
+    /// Non-empty when the current season has no installed transaction source.
+    pub source_warning: String,
 }
 
 /// One row in the transactions feed, projected for the template so
@@ -765,6 +792,125 @@ pub struct TeamTemplate {
     /// HTML-only; `/api/v1/team/:abbrev` remains the tabular contract.
     pub skater_pts82_svg: Option<String>,
     pub goalies: Vec<GoalieRow>,
+}
+
+#[derive(Template)]
+#[template(path = "team_card.html")]
+pub struct TeamCardTemplate {
+    pub active_label: String,
+    pub title: String,
+    pub subtitle: String,
+    pub team: String,
+    pub season: u32,
+    pub scenario: String,
+    pub show_depth: bool,
+    pub primary: String,
+    pub secondary: String,
+    pub accent: String,
+    pub json_href: String,
+    pub depth_href: String,
+    pub insider_href: String,
+    pub lineup_groups: Vec<TeamCardLineupGroup>,
+    pub baseline_metrics: Vec<TeamCardMetric>,
+    pub points_range: String,
+    pub bridge_title: String,
+    pub bridge_metrics: Vec<TeamCardMetric>,
+    pub breakouts: Vec<TeamCardPlayer>,
+    pub downturns: Vec<TeamCardPlayer>,
+    pub warnings: Vec<String>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Template)]
+#[template(path = "fantasy_roster_card.html")]
+pub struct FantasyRosterCardTemplate {
+    pub active_label: String,
+    pub title: String,
+    pub subtitle: String,
+    pub fingerprint: String,
+    pub kicker: String,
+    pub nav_label: String,
+    pub json_href: String,
+    pub first_href: String,
+    pub insider_href: String,
+    pub first_label: String,
+    pub show_first: bool,
+    pub page_title: String,
+    pub page_summary: String,
+    pub primary: String,
+    pub secondary: String,
+    pub accent: String,
+    pub lineup_groups: Vec<TeamCardLineupGroup>,
+    pub metric_groups: Vec<GenericCardMetricGroup>,
+    pub decisions: Vec<GenericCardDecision>,
+    pub player_groups: Vec<GenericCardPlayerGroup>,
+    pub timeline_groups: Vec<GenericCardTimelineGroup>,
+    pub warnings: Vec<String>,
+    pub limitations: Vec<String>,
+}
+
+pub struct GenericCardPlayerGroup {
+    pub title: String,
+    pub players: Vec<TeamCardPlayer>,
+}
+
+pub struct GenericCardTimelineGroup {
+    pub title: String,
+    pub items: Vec<GenericCardTimelineItem>,
+}
+
+pub struct GenericCardTimelineItem {
+    pub label: String,
+    pub effective_at: String,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct GenericCardMetricGroup {
+    pub title: String,
+    pub metrics: Vec<TeamCardMetric>,
+}
+
+#[derive(Debug, Clone)]
+pub struct GenericCardDecision {
+    pub title: String,
+    pub recommendation: String,
+    pub rationale: Vec<String>,
+    pub alternatives: Vec<GenericCardAlternative>,
+}
+
+#[derive(Debug, Clone)]
+pub struct GenericCardAlternative {
+    pub label: String,
+    pub detail: String,
+}
+
+pub struct TeamCardLineupGroup {
+    pub label: String,
+    pub slots: Vec<TeamCardLineupSlot>,
+}
+
+pub struct TeamCardLineupSlot {
+    pub label: String,
+    pub name: String,
+    pub score: String,
+    pub asset_url: String,
+    pub fallback: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct TeamCardMetric {
+    pub label: String,
+    pub value: String,
+    pub comparison: String,
+}
+
+pub struct TeamCardPlayer {
+    pub name: String,
+    pub role: String,
+    pub asset_url: String,
+    pub fallback: String,
+    pub metrics: Vec<TeamCardMetric>,
 }
 
 #[derive(Template)]

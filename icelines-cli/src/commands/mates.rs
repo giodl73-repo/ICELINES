@@ -7,12 +7,10 @@
 
 use anyhow::Context as _;
 use icelines_core::identity::PlayerId;
-use icelines_core::model::Season;
 use icelines_core::name::normalize_name;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::stats_repository::PlayerView;
 use icelines_fetch::snapshot::{SnapshotStore, SnapshotTier};
-use icelines_fetch::stats_loader::load_into_repo;
 use icelines_fetch::ShiftProfile;
 
 use crate::config::Config;
@@ -30,17 +28,10 @@ pub async fn run(
 
     // Hart.5b2: load via load_into_repo + collect skaters into Vec<PlayerView>.
     let cfg = Config::load()?;
-    let season_u32: u32 = cfg
-        .season_str()
-        .parse()
-        .map_err(|_| anyhow::anyhow!("season '{}' is not a YYYYZZZZ id", cfg.season_str()))?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = load_into_repo(Season(season_u32), SeasonType::Regular, &store)
-        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))?;
-    let views: Vec<PlayerView<'_>> = outcome
-        .repo
-        .skaters(Season(season_u32), SeasonType::Regular)
-        .collect();
+    let (outcome, season, _) =
+        crate::commands::players::load_repo_for_season(None, Some(SeasonType::Regular))?;
+    let views: Vec<PlayerView<'_>> = outcome.repo.skaters(season, SeasonType::Regular).collect();
 
     let target = find_view(&views, &player_name)?;
     let format = Format::resolve(csv, json)?;
@@ -67,7 +58,7 @@ fn display_profile(
 ) -> anyhow::Result<()> {
     use crate::commands::output::Format;
 
-    let headers = &["rank", "partner", "shared_shifts", "co_ice_pct"];
+    let headers = &["rank", "partner", "shared_games", "coappearance_pct"];
     let rows: Vec<Vec<String>> = profile
         .top_linemates
         .iter()
@@ -77,7 +68,7 @@ fn display_profile(
             vec![
                 (i + 1).to_string(),
                 find_view_name(views, lm.partner_id),
-                lm.shared_shifts.to_string(),
+                lm.shared_games.to_string(),
                 format!("{:.1}", lm.co_ice_pct * 100.0),
             ]
         })

@@ -47,7 +47,7 @@ pub fn chrome(state: &PlayoffsScreenState) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
 
     let title = format!(
-        "Playoffs — round {} · series {}",
+        "The Goal Line — Cup Chase — Playoffs — round {} · series {}",
         state.round + 1,
         state.series + 1
     );
@@ -132,6 +132,9 @@ mod norris_state_tests {
         let c = chrome(&s);
         assert!(c.title.contains("round 1"));
         assert!(c.title.contains("series 1"));
+        assert!(c.title.contains("The Goal Line"));
+        assert!(c.title.contains("Cup Chase"));
+        assert!(c.title.contains("Playoffs"));
         let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
         assert!(keys.contains(&"←/→"));
         assert!(keys.contains(&"y"));
@@ -157,7 +160,7 @@ use icelines_fetch::nhl_api::{PlayoffBracket, PlayoffSeries};
 
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let title = format!(
-        " Playoffs · {}  ·  ↑↓:series  ←→:round  Enter:detail  r:retry  y:season ",
+        " The Goal Line · Cup Chase · Playoffs · {} · ↑↓:series ←→:round Enter:detail y:season ",
         season_label(&app.active_season),
     );
     let block = Block::default().borders(Borders::ALL).title(title);

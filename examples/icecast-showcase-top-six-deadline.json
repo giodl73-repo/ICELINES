@@ -1,0 +1,26 @@
+{
+  "name": "Rangers and Kraken add a top-six forward at the deadline",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "nyr-deadline-top-six-addition",
+      "kind": "trade",
+      "team": "NYR",
+      "player": "Hypothetical top-six forward",
+      "effective_date": "2027-03-05",
+      "strength_delta": 4.0,
+      "occurrence_probability": 1.0,
+      "label": "NYR adds a top-six forward at the March 5 deadline for non-roster assets"
+    },
+    {
+      "id": "sea-deadline-top-six-addition",
+      "kind": "trade",
+      "team": "SEA",
+      "player": "Hypothetical top-six forward",
+      "effective_date": "2027-03-05",
+      "strength_delta": 4.0,
+      "occurrence_probability": 1.0,
+      "label": "SEA adds a top-six forward at the March 5 deadline for non-roster assets"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-//! ShiftProfile — linemate co-occurrence analysis from boxscore data.
+//! Legacy ShiftProfile — same-game linemate co-occurrence from boxscores.
 //!
 //! Builds a per-player profile tracking which forwards appear together across
 //! games, providing linemate relationships for the `icelines mates` command.
@@ -28,8 +28,9 @@ pub struct ShiftProfile {
 pub struct LinematePair {
     pub partner_id: u32,
     /// Number of games in which both players appeared on the same team.
-    pub shared_shifts: u32,
-    /// shared_shifts / games_analyzed (fraction of target's games with this partner).
+    #[serde(alias = "shared_shifts")]
+    pub shared_games: u32,
+    /// shared_games / games_analyzed (fraction of target's games with this partner).
     pub co_ice_pct: f32,
 }
 
@@ -123,17 +124,17 @@ pub fn build_profile_from_boxscores(
 
     let avg_ev_toi_seconds_per_game = (total_toi_secs / u64::from(games_analyzed)) as u32;
 
-    // Build top-5 linemates sorted by shared_shifts descending.
+    // Build top-5 linemates sorted by shared game coappearances descending.
     let mut linemate_vec: Vec<(u32, u32)> = shared_game_counts.into_iter().collect();
     linemate_vec.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
 
     let top_linemates: Vec<LinematePair> = linemate_vec
         .into_iter()
         .take(5)
-        .map(|(partner_id, shared_shifts)| LinematePair {
+        .map(|(partner_id, shared_games)| LinematePair {
             partner_id,
-            shared_shifts,
-            co_ice_pct: shared_shifts as f32 / games_analyzed as f32,
+            shared_games,
+            co_ice_pct: shared_games as f32 / games_analyzed as f32,
         })
         .collect();
 
@@ -209,7 +210,7 @@ mod tests {
         // co_ice_pct = 1 shared game / 1 game analyzed = 1.0
         for lm in &profile.top_linemates {
             assert!((lm.co_ice_pct - 1.0).abs() < f32::EPSILON);
-            assert_eq!(lm.shared_shifts, 1);
+            assert_eq!(lm.shared_games, 1);
         }
     }
 

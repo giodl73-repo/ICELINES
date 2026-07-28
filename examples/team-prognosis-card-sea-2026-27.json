@@ -1,0 +1,2497 @@
+{
+  "schema": "card_document.v1",
+  "card_kind": "team_prognosis",
+  "document_id": "team-prognosis:SEA:20262027",
+  "fingerprint": "35de1f1e39d5ef586e773bc0c93afd84436ae9638184d723283677e0eb2a993d",
+  "title": "Seattle Kraken 2026-27 prognosis",
+  "subtitle": "Baseline and +17 Path",
+  "context": {
+    "view": {
+      "window": {
+        "season": 20262027,
+        "season_type": "regular"
+      },
+      "generated_at": "2026-07-22T12:00:00Z",
+      "source_state": [
+        {
+          "source": "roster",
+          "state": "complete",
+          "provenance": null,
+          "fetched_at": null,
+          "stale_reason": null,
+          "message": null
+        },
+        {
+          "source": "schedule",
+          "state": "complete",
+          "provenance": null,
+          "fetched_at": null,
+          "stale_reason": null,
+          "message": null
+        },
+        {
+          "source": "snapshot",
+          "state": "complete",
+          "provenance": null,
+          "fetched_at": null,
+          "stale_reason": null,
+          "message": null
+        }
+      ],
+      "completeness": "partial",
+      "data_generation": null
+    },
+    "evidence_at": "2026-07-22T12:00:00Z",
+    "evidence_label": "simulated",
+    "builder_version": "team_prognosis_card.v1",
+    "methodology_versions": {
+      "isolated_impact": "paired_same_seed_one_event.v1",
+      "lineup_score": "team_ceiling_multilens.v1"
+    },
+    "joins": {
+      "league_id": null,
+      "roster_snapshot_id": null,
+      "calendar_fingerprint": "ccea66b0d1df62ae2dac3c00060131173879d14a1ab5a79fa6e0c1fce5ccd699",
+      "scoring_scheme_id": null,
+      "scenario_id": "sea-development-variance",
+      "scenario_comparison_key": "development-variance",
+      "team_ids": [
+        "SEA"
+      ],
+      "player_ids": [
+        "8477955",
+        "8482259",
+        "8474586",
+        "8482665",
+        "8481554",
+        "8476905",
+        "8482713",
+        "8483524",
+        "8477986",
+        "8478407",
+        "8476457",
+        "8482858",
+        "8479985",
+        "8479372",
+        "8475831",
+        "8478916",
+        "8477919",
+        "8483570",
+        "8482751",
+        "8484800",
+        "8479324"
+      ],
+      "game_ids": []
+    },
+    "simulation": {
+      "model_id": "icecast",
+      "model_version": "team_season_forecast.v1",
+      "parameter_fingerprint": "aaea968ef479fb05d0b0caaa9941a6e184a8b290c013bdb7797504c87cc6adaa",
+      "seed": 20262027,
+      "trials": 1000
+    }
+  },
+  "theme": {
+    "theme_key": "team_sea",
+    "primary": "#001628",
+    "secondary": "#99D9D9",
+    "accent": "#E9072B",
+    "surface": "#FFFFFF",
+    "text": "#111111",
+    "team_abbreviation": "SEA",
+    "ascii_identity": "SEA",
+    "minimum_text_contrast_x100": 450
+  },
+  "required_capabilities": [],
+  "pages": [
+    {
+      "id": "depth-chart",
+      "literal_label": "Projected lineup and player scores",
+      "display_label": "The Depth Chart",
+      "order": 1,
+      "accessible_summary": "Seattle Kraken projected lineup with names and IceLines player scores.",
+      "sections": [
+        {
+          "section_type": "identity_header",
+          "id": "team-identity",
+          "eyebrow": "2026-27",
+          "title": "Seattle Kraken",
+          "subtitle": "Projected roster prognosis",
+          "identities": [
+            {
+              "kind": "team",
+              "subject_id": "team:SEA",
+              "label": "Seattle Kraken",
+              "asset_id": null
+            }
+          ]
+        },
+        {
+          "section_type": "lineup",
+          "id": "projected-lineup",
+          "title": "Projected team lineup and IceLines player scores",
+          "groups": [
+            {
+              "id": "forward-line-1",
+              "label": "Line 1",
+              "kind": "forward_line",
+              "slots": [
+                {
+                  "id": "line-1-lw",
+                  "label": "LW",
+                  "subject_id": "player:8477955",
+                  "subject_label": "Jared McCann",
+                  "asset_id": "player:8477955:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 51.3
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "51",
+                      "accessible_text": "Jared McCann IceLines player score 51 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "line-1-c",
+                  "label": "C",
+                  "subject_id": "player:8482259",
+                  "subject_label": "Bobby McMann",
+                  "asset_id": "player:8482259:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 45.5
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "46",
+                      "accessible_text": "Bobby McMann IceLines player score 46 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "line-1-rw",
+                  "label": "RW",
+                  "subject_id": "player:8474586",
+                  "subject_label": "Jordan Eberle",
+                  "asset_id": "player:8474586:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 44.9
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "45",
+                      "accessible_text": "Jordan Eberle IceLines player score 45 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            },
+            {
+              "id": "forward-line-2",
+              "label": "Line 2",
+              "kind": "forward_line",
+              "slots": [
+                {
+                  "id": "line-2-lw",
+                  "label": "LW",
+                  "subject_id": null,
+                  "subject_label": null,
+                  "asset_id": null,
+                  "metrics": [],
+                  "evidence_label": "no_read"
+                },
+                {
+                  "id": "line-2-c",
+                  "label": "C",
+                  "subject_id": "player:8482665",
+                  "subject_label": "Matty Beniers",
+                  "asset_id": "player:8482665:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 39.3
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "39",
+                      "accessible_text": "Matty Beniers IceLines player score 39 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "line-2-rw",
+                  "label": "RW",
+                  "subject_id": "player:8481554",
+                  "subject_label": "Kaapo Kakko",
+                  "asset_id": "player:8481554:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 36.3
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "36",
+                      "accessible_text": "Kaapo Kakko IceLines player score 36 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            },
+            {
+              "id": "forward-line-3",
+              "label": "Line 3",
+              "kind": "forward_line",
+              "slots": [
+                {
+                  "id": "line-3-lw",
+                  "label": "LW",
+                  "subject_id": null,
+                  "subject_label": null,
+                  "asset_id": null,
+                  "metrics": [],
+                  "evidence_label": "no_read"
+                },
+                {
+                  "id": "line-3-c",
+                  "label": "C",
+                  "subject_id": "player:8476905",
+                  "subject_label": "Chandler Stephenson",
+                  "asset_id": "player:8476905:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 36.6
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "37",
+                      "accessible_text": "Chandler Stephenson IceLines player score 37 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "line-3-rw",
+                  "label": "RW",
+                  "subject_id": "player:8482713",
+                  "subject_label": "Mackie Samoskevich",
+                  "asset_id": "player:8482713:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 30.2
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "30",
+                      "accessible_text": "Mackie Samoskevich IceLines player score 30 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            },
+            {
+              "id": "forward-line-4",
+              "label": "Line 4",
+              "kind": "forward_line",
+              "slots": [
+                {
+                  "id": "line-4-lw",
+                  "label": "LW",
+                  "subject_id": null,
+                  "subject_label": null,
+                  "asset_id": null,
+                  "metrics": [],
+                  "evidence_label": "no_read"
+                },
+                {
+                  "id": "line-4-c",
+                  "label": "C",
+                  "subject_id": "player:8483524",
+                  "subject_label": "Shane Wright",
+                  "asset_id": "player:8483524:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 26.6
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "27",
+                      "accessible_text": "Shane Wright IceLines player score 27 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "line-4-rw",
+                  "label": "RW",
+                  "subject_id": null,
+                  "subject_label": null,
+                  "asset_id": null,
+                  "metrics": [],
+                  "evidence_label": "no_read"
+                }
+              ]
+            },
+            {
+              "id": "defense-pair-1",
+              "label": "Pair 1",
+              "kind": "defense_pair",
+              "slots": [
+                {
+                  "id": "pair-1-left",
+                  "label": "LD",
+                  "subject_id": "player:8477986",
+                  "subject_label": "Brandon Montour",
+                  "asset_id": "player:8477986:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 46.3
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "46",
+                      "accessible_text": "Brandon Montour IceLines player score 46 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "pair-1-right",
+                  "label": "RD",
+                  "subject_id": "player:8478407",
+                  "subject_label": "Vince Dunn",
+                  "asset_id": "player:8478407:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 43.1
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "43",
+                      "accessible_text": "Vince Dunn IceLines player score 43 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            },
+            {
+              "id": "defense-pair-2",
+              "label": "Pair 2",
+              "kind": "defense_pair",
+              "slots": [
+                {
+                  "id": "pair-2-left",
+                  "label": "LD",
+                  "subject_id": "player:8476457",
+                  "subject_label": "Adam Larsson",
+                  "asset_id": "player:8476457:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 33.8
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "34",
+                      "accessible_text": "Adam Larsson IceLines player score 34 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "pair-2-right",
+                  "label": "RD",
+                  "subject_id": "player:8482858",
+                  "subject_label": "Ryker Evans",
+                  "asset_id": "player:8482858:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 27.8
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "28",
+                      "accessible_text": "Ryker Evans IceLines player score 28 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            },
+            {
+              "id": "defense-pair-3",
+              "label": "Pair 3",
+              "kind": "defense_pair",
+              "slots": [
+                {
+                  "id": "pair-3-left",
+                  "label": "LD",
+                  "subject_id": "player:8479985",
+                  "subject_label": "Cale Fleury",
+                  "asset_id": "player:8479985:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 24.8
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "25",
+                      "accessible_text": "Cale Fleury IceLines player score 25 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "pair-3-right",
+                  "label": "RD",
+                  "subject_id": "player:8479372",
+                  "subject_label": "Joshua Mahura",
+                  "asset_id": "player:8479372:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 20.8
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "21",
+                      "accessible_text": "Joshua Mahura IceLines player score 21 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            },
+            {
+              "id": "goalies",
+              "label": "Goalies",
+              "kind": "goalies",
+              "slots": [
+                {
+                  "id": "goalie-starter",
+                  "label": "Starter",
+                  "subject_id": "player:8475831",
+                  "subject_label": "Philipp Grubauer",
+                  "asset_id": "player:8475831:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 66.8
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "67",
+                      "accessible_text": "Philipp Grubauer IceLines player score 67 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "goalie-backup",
+                  "label": "Backup",
+                  "subject_id": "player:8478916",
+                  "subject_label": "Joey Daccord",
+                  "asset_id": "player:8478916:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 59.2
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "59",
+                      "accessible_text": "Joey Daccord IceLines player score 59 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            },
+            {
+              "id": "extras",
+              "label": "Extras",
+              "kind": "extras",
+              "slots": [
+                {
+                  "id": "extra-1",
+                  "label": "Extra",
+                  "subject_id": "player:8477919",
+                  "subject_label": "Frederick Gaudreau",
+                  "asset_id": "player:8477919:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 21.8
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "22",
+                      "accessible_text": "Frederick Gaudreau IceLines player score 22 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "extra-2",
+                  "label": "Extra",
+                  "subject_id": "player:8483570",
+                  "subject_label": "Ben Meyers",
+                  "asset_id": "player:8483570:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 21.4
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "21",
+                      "accessible_text": "Ben Meyers IceLines player score 21 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "extra-3",
+                  "label": "Extra",
+                  "subject_id": "player:8482751",
+                  "subject_label": "Ryan Winterton",
+                  "asset_id": "player:8482751:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 18.1
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "18",
+                      "accessible_text": "Ryan Winterton IceLines player score 18 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "extra-4",
+                  "label": "Extra",
+                  "subject_id": "player:8484800",
+                  "subject_label": "Berkly Catton",
+                  "asset_id": "player:8484800:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 17.7
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "18",
+                      "accessible_text": "Berkly Catton IceLines player score 18 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                },
+                {
+                  "id": "extra-5",
+                  "label": "Extra",
+                  "subject_id": "player:8479324",
+                  "subject_label": "Ryan Lindgren",
+                  "asset_id": "player:8479324:headshot",
+                  "metrics": [
+                    {
+                      "metric": {
+                        "key": "icelines_player_score",
+                        "label": "IceLines score",
+                        "value": {
+                          "decimal": 17.2
+                        },
+                        "unit": "score",
+                        "precision": "integer",
+                        "token": null
+                      },
+                      "display_text": "17",
+                      "accessible_text": "Ryan Lindgren IceLines player score 17 out of 100",
+                      "comparison": null,
+                      "evidence_label": "confirmed"
+                    }
+                  ],
+                  "evidence_label": "estimated"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "baseline-headlines",
+          "title": "Baseline prognosis",
+          "metrics": [
+            {
+              "metric": {
+                "key": "baseline_points",
+                "label": "Projected points",
+                "value": {
+                  "decimal": 89.665
+                },
+                "unit": "points",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "89.7",
+              "accessible_text": "Projected points 89.7",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "baseline_playoff_probability",
+                "label": "Playoffs",
+                "value": {
+                  "decimal": 41.0
+                },
+                "unit": "percentage",
+                "precision": "percent_one_decimal",
+                "token": null
+              },
+              "display_text": "41.0%",
+              "accessible_text": "Playoffs 41.0 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "baseline_cup_probability",
+                "label": "Stanley Cup",
+                "value": {
+                  "decimal": 1.6
+                },
+                "unit": "percentage",
+                "precision": "percent_one_decimal",
+                "token": null
+              },
+              "display_text": "1.6%",
+              "accessible_text": "Stanley Cup 1.6 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "insider",
+      "literal_label": "Scenario prognosis and evidence",
+      "display_label": "The Insider",
+      "order": 2,
+      "accessible_summary": "Seattle Kraken baseline, upside, downside, and isolated player impacts.",
+      "sections": [
+        {
+          "section_type": "probability_range",
+          "id": "points-range",
+          "title": "Baseline points distribution",
+          "ranges": [
+            {
+              "key": "points_p10_p50_p90",
+              "label": "Projected points",
+              "low": {
+                "key": "points_p10",
+                "label": "P10",
+                "value": {
+                  "decimal": 78.0
+                },
+                "unit": "points",
+                "precision": "integer",
+                "token": null
+              },
+              "median": {
+                "key": "points_p50",
+                "label": "P50",
+                "value": {
+                  "decimal": 90.0
+                },
+                "unit": "points",
+                "precision": "integer",
+                "token": null
+              },
+              "high": {
+                "key": "points_p90",
+                "label": "P90",
+                "value": {
+                  "decimal": 102.0
+                },
+                "unit": "points",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "78 / 90 / 102",
+              "accessible_text": "Projected points: 10th percentile 78, median 90, 90th percentile 102",
+              "evidence_label": "simulated"
+            }
+          ]
+        },
+        {
+          "section_type": "scenario_bridge",
+          "id": "internal-ceiling",
+          "title": "Internal ceiling — +17 Path",
+          "from_label": "Baseline",
+          "to_label": "Forced positive-event ceiling",
+          "metrics": [
+            {
+              "metric": {
+                "key": "ceiling_points",
+                "label": "Ceiling points",
+                "value": {
+                  "decimal": 94.318
+                },
+                "unit": "points",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "94.3",
+              "accessible_text": "Ceiling points 94.3",
+              "comparison": {
+                "label": "Baseline",
+                "baseline": {
+                  "decimal": 89.665
+                },
+                "delta": {
+                  "decimal": 4.652999999999992
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "ceiling_playoff_probability",
+                "label": "Ceiling playoffs",
+                "value": {
+                  "decimal": 61.1
+                },
+                "unit": "percentage",
+                "precision": "percent_one_decimal",
+                "token": null
+              },
+              "display_text": "61.1%",
+              "accessible_text": "Ceiling playoffs 61.1 percent",
+              "comparison": {
+                "label": "Baseline",
+                "baseline": {
+                  "decimal": 41.0
+                },
+                "delta": {
+                  "decimal": 20.1
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "ceiling_cup_probability",
+                "label": "Ceiling Stanley Cup",
+                "value": {
+                  "decimal": 2.7
+                },
+                "unit": "percentage",
+                "precision": "percent_one_decimal",
+                "token": null
+              },
+              "display_text": "2.7%",
+              "accessible_text": "Ceiling Stanley Cup 2.7 percent",
+              "comparison": {
+                "label": "Baseline",
+                "baseline": {
+                  "decimal": 1.6
+                },
+                "delta": {
+                  "decimal": 1.1000000000000003
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "ceiling_team_strength",
+                "label": "Path team strength",
+                "value": {
+                  "decimal": 17.0669
+                },
+                "unit": "score",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "17.07",
+              "accessible_text": "Path team strength 17.07",
+              "comparison": {
+                "label": "Baseline",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 17.0669
+                }
+              },
+              "evidence_label": "simulated"
+            }
+          ],
+          "evidence_label": "simulated"
+        },
+        {
+          "section_type": "player_list",
+          "id": "breakout-upside",
+          "title": "Best breakout upside",
+          "rows": [
+            {
+              "player_id": "player:8482665",
+              "name": "Matty Beniers",
+              "role": null,
+              "asset_id": "player:8482665:headshot",
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "current_player_score",
+                    "label": "Current IceLines score",
+                    "value": {
+                      "decimal": 39.3
+                    },
+                    "unit": "score",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "39",
+                  "accessible_text": "Current IceLines score 39 out of 100",
+                  "comparison": null,
+                  "evidence_label": "confirmed"
+                },
+                {
+                  "metric": {
+                    "key": "occurrence_probability",
+                    "label": "Modeled likelihood",
+                    "value": {
+                      "decimal": 23.31
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "23.3%",
+                  "accessible_text": "Modeled likelihood 23.3 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "team_strength_delta",
+                    "label": "Team strength delta",
+                    "value": {
+                      "decimal": 3.5124
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "3.51",
+                  "accessible_text": "Team strength delta 3.51",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "standings_points_delta",
+                    "label": "Conditional points delta",
+                    "value": {
+                      "decimal": 0.9679999999999893
+                    },
+                    "unit": "points",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "1.0",
+                  "accessible_text": "Conditional points delta 1.0",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "playoff_probability_delta",
+                    "label": "Conditional playoff delta",
+                    "value": {
+                      "decimal": 3.9000000000000035
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "+3.9 pp",
+                  "accessible_text": "Conditional playoff delta +3.9 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "cup_probability_delta",
+                    "label": "Conditional Cup delta",
+                    "value": {
+                      "decimal": -0.29999999999999993
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.3 pp",
+                  "accessible_text": "Conditional Cup delta -0.3 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                }
+              ],
+              "tokens": [
+                "rising"
+              ],
+              "evidence_label": "simulated"
+            },
+            {
+              "player_id": "player:8484800",
+              "name": "Berkly Catton",
+              "role": null,
+              "asset_id": "player:8484800:headshot",
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "current_player_score",
+                    "label": "Current IceLines score",
+                    "value": {
+                      "decimal": 17.7
+                    },
+                    "unit": "score",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "18",
+                  "accessible_text": "Current IceLines score 18 out of 100",
+                  "comparison": null,
+                  "evidence_label": "confirmed"
+                },
+                {
+                  "metric": {
+                    "key": "occurrence_probability",
+                    "label": "Modeled likelihood",
+                    "value": {
+                      "decimal": 40.2
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "40.2%",
+                  "accessible_text": "Modeled likelihood 40.2 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "team_strength_delta",
+                    "label": "Team strength delta",
+                    "value": {
+                      "decimal": 3.4358
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "3.44",
+                  "accessible_text": "Team strength delta 3.44",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "standings_points_delta",
+                    "label": "Conditional points delta",
+                    "value": {
+                      "decimal": 0.9409999999999883
+                    },
+                    "unit": "points",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "0.9",
+                  "accessible_text": "Conditional points delta 0.9",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "playoff_probability_delta",
+                    "label": "Conditional playoff delta",
+                    "value": {
+                      "decimal": 3.7000000000000033
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "+3.7 pp",
+                  "accessible_text": "Conditional playoff delta +3.7 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "cup_probability_delta",
+                    "label": "Conditional Cup delta",
+                    "value": {
+                      "decimal": -0.29999999999999993
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.3 pp",
+                  "accessible_text": "Conditional Cup delta -0.3 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                }
+              ],
+              "tokens": [
+                "rising"
+              ],
+              "evidence_label": "simulated"
+            },
+            {
+              "player_id": "player:8482858",
+              "name": "Ryker Evans",
+              "role": null,
+              "asset_id": "player:8482858:headshot",
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "current_player_score",
+                    "label": "Current IceLines score",
+                    "value": {
+                      "decimal": 27.8
+                    },
+                    "unit": "score",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "28",
+                  "accessible_text": "Current IceLines score 28 out of 100",
+                  "comparison": null,
+                  "evidence_label": "confirmed"
+                },
+                {
+                  "metric": {
+                    "key": "occurrence_probability",
+                    "label": "Modeled likelihood",
+                    "value": {
+                      "decimal": 25.509999999999998
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "25.5%",
+                  "accessible_text": "Modeled likelihood 25.5 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "team_strength_delta",
+                    "label": "Team strength delta",
+                    "value": {
+                      "decimal": 3.1705
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "3.17",
+                  "accessible_text": "Team strength delta 3.17",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "standings_points_delta",
+                    "label": "Conditional points delta",
+                    "value": {
+                      "decimal": 0.8759999999999906
+                    },
+                    "unit": "points",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "0.9",
+                  "accessible_text": "Conditional points delta 0.9",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "playoff_probability_delta",
+                    "label": "Conditional playoff delta",
+                    "value": {
+                      "decimal": 3.300000000000003
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "+3.3 pp",
+                  "accessible_text": "Conditional playoff delta +3.3 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "cup_probability_delta",
+                    "label": "Conditional Cup delta",
+                    "value": {
+                      "decimal": -0.4
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.4 pp",
+                  "accessible_text": "Conditional Cup delta -0.4 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                }
+              ],
+              "tokens": [
+                "rising"
+              ],
+              "evidence_label": "simulated"
+            },
+            {
+              "player_id": "player:8482713",
+              "name": "Mackie Samoskevich",
+              "role": null,
+              "asset_id": "player:8482713:headshot",
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "current_player_score",
+                    "label": "Current IceLines score",
+                    "value": {
+                      "decimal": 30.2
+                    },
+                    "unit": "score",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "30",
+                  "accessible_text": "Current IceLines score 30 out of 100",
+                  "comparison": null,
+                  "evidence_label": "confirmed"
+                },
+                {
+                  "metric": {
+                    "key": "occurrence_probability",
+                    "label": "Modeled likelihood",
+                    "value": {
+                      "decimal": 23.31
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "23.3%",
+                  "accessible_text": "Modeled likelihood 23.3 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "team_strength_delta",
+                    "label": "Team strength delta",
+                    "value": {
+                      "decimal": 3.5124
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "3.51",
+                  "accessible_text": "Team strength delta 3.51",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "standings_points_delta",
+                    "label": "Conditional points delta",
+                    "value": {
+                      "decimal": 0.9679999999999893
+                    },
+                    "unit": "points",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "1.0",
+                  "accessible_text": "Conditional points delta 1.0",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "playoff_probability_delta",
+                    "label": "Conditional playoff delta",
+                    "value": {
+                      "decimal": 3.9000000000000035
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "+3.9 pp",
+                  "accessible_text": "Conditional playoff delta +3.9 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "cup_probability_delta",
+                    "label": "Conditional Cup delta",
+                    "value": {
+                      "decimal": -0.29999999999999993
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.3 pp",
+                  "accessible_text": "Conditional Cup delta -0.3 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                }
+              ],
+              "tokens": [
+                "rising"
+              ],
+              "evidence_label": "simulated"
+            },
+            {
+              "player_id": "player:8483524",
+              "name": "Shane Wright",
+              "role": null,
+              "asset_id": "player:8483524:headshot",
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "current_player_score",
+                    "label": "Current IceLines score",
+                    "value": {
+                      "decimal": 26.6
+                    },
+                    "unit": "score",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "27",
+                  "accessible_text": "Current IceLines score 27 out of 100",
+                  "comparison": null,
+                  "evidence_label": "confirmed"
+                },
+                {
+                  "metric": {
+                    "key": "occurrence_probability",
+                    "label": "Modeled likelihood",
+                    "value": {
+                      "decimal": 40.2
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "40.2%",
+                  "accessible_text": "Modeled likelihood 40.2 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "team_strength_delta",
+                    "label": "Team strength delta",
+                    "value": {
+                      "decimal": 3.4358
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "3.44",
+                  "accessible_text": "Team strength delta 3.44",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "standings_points_delta",
+                    "label": "Conditional points delta",
+                    "value": {
+                      "decimal": 0.9409999999999883
+                    },
+                    "unit": "points",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "0.9",
+                  "accessible_text": "Conditional points delta 0.9",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "playoff_probability_delta",
+                    "label": "Conditional playoff delta",
+                    "value": {
+                      "decimal": 3.7000000000000033
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "+3.7 pp",
+                  "accessible_text": "Conditional playoff delta +3.7 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "cup_probability_delta",
+                    "label": "Conditional Cup delta",
+                    "value": {
+                      "decimal": -0.29999999999999993
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.3 pp",
+                  "accessible_text": "Conditional Cup delta -0.3 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                }
+              ],
+              "tokens": [
+                "rising"
+              ],
+              "evidence_label": "simulated"
+            }
+          ]
+        },
+        {
+          "section_type": "player_list",
+          "id": "downside-risks",
+          "title": "Primary downside risks",
+          "rows": [
+            {
+              "player_id": "player:8478916",
+              "name": "Joey Daccord",
+              "role": null,
+              "asset_id": "player:8478916:headshot",
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "current_player_score",
+                    "label": "Current IceLines score",
+                    "value": {
+                      "decimal": 59.2
+                    },
+                    "unit": "score",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "59",
+                  "accessible_text": "Current IceLines score 59 out of 100",
+                  "comparison": null,
+                  "evidence_label": "confirmed"
+                },
+                {
+                  "metric": {
+                    "key": "occurrence_probability",
+                    "label": "Modeled likelihood",
+                    "value": {
+                      "decimal": 40.739999999999995
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "40.7%",
+                  "accessible_text": "Modeled likelihood 40.7 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "team_strength_delta",
+                    "label": "Team strength delta",
+                    "value": {
+                      "decimal": -4.2949
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "-4.29",
+                  "accessible_text": "Team strength delta -4.29",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "standings_points_delta",
+                    "label": "Conditional points delta",
+                    "value": {
+                      "decimal": -1.0970000000000084
+                    },
+                    "unit": "points",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-1.1",
+                  "accessible_text": "Conditional points delta -1.1",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "playoff_probability_delta",
+                    "label": "Conditional playoff delta",
+                    "value": {
+                      "decimal": -3.799999999999998
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-3.8 pp",
+                  "accessible_text": "Conditional playoff delta -3.8 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "cup_probability_delta",
+                    "label": "Conditional Cup delta",
+                    "value": {
+                      "decimal": -0.5999999999999999
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.6 pp",
+                  "accessible_text": "Conditional Cup delta -0.6 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                }
+              ],
+              "tokens": [
+                "risk"
+              ],
+              "evidence_label": "simulated"
+            },
+            {
+              "player_id": "player:8474586",
+              "name": "Jordan Eberle",
+              "role": null,
+              "asset_id": "player:8474586:headshot",
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "current_player_score",
+                    "label": "Current IceLines score",
+                    "value": {
+                      "decimal": 44.9
+                    },
+                    "unit": "score",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "45",
+                  "accessible_text": "Current IceLines score 45 out of 100",
+                  "comparison": null,
+                  "evidence_label": "confirmed"
+                },
+                {
+                  "metric": {
+                    "key": "occurrence_probability",
+                    "label": "Modeled likelihood",
+                    "value": {
+                      "decimal": 41.839999999999996
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "41.8%",
+                  "accessible_text": "Modeled likelihood 41.8 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "team_strength_delta",
+                    "label": "Team strength delta",
+                    "value": {
+                      "decimal": -3.3248
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "-3.32",
+                  "accessible_text": "Team strength delta -3.32",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "standings_points_delta",
+                    "label": "Conditional points delta",
+                    "value": {
+                      "decimal": -0.8050000000000068
+                    },
+                    "unit": "points",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.8",
+                  "accessible_text": "Conditional points delta -0.8",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "playoff_probability_delta",
+                    "label": "Conditional playoff delta",
+                    "value": {
+                      "decimal": -2.799999999999997
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-2.8 pp",
+                  "accessible_text": "Conditional playoff delta -2.8 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "cup_probability_delta",
+                    "label": "Conditional Cup delta",
+                    "value": {
+                      "decimal": -0.4
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.4 pp",
+                  "accessible_text": "Conditional Cup delta -0.4 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                }
+              ],
+              "tokens": [
+                "risk"
+              ],
+              "evidence_label": "simulated"
+            },
+            {
+              "player_id": "player:8476457",
+              "name": "Adam Larsson",
+              "role": null,
+              "asset_id": "player:8476457:headshot",
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "current_player_score",
+                    "label": "Current IceLines score",
+                    "value": {
+                      "decimal": 33.8
+                    },
+                    "unit": "score",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "34",
+                  "accessible_text": "Current IceLines score 34 out of 100",
+                  "comparison": null,
+                  "evidence_label": "confirmed"
+                },
+                {
+                  "metric": {
+                    "key": "occurrence_probability",
+                    "label": "Modeled likelihood",
+                    "value": {
+                      "decimal": 31.080000000000002
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "31.1%",
+                  "accessible_text": "Modeled likelihood 31.1 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "team_strength_delta",
+                    "label": "Team strength delta",
+                    "value": {
+                      "decimal": -2.9894
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "-2.99",
+                  "accessible_text": "Team strength delta -2.99",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "standings_points_delta",
+                    "label": "Conditional points delta",
+                    "value": {
+                      "decimal": -0.7540000000000049
+                    },
+                    "unit": "points",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.8",
+                  "accessible_text": "Conditional points delta -0.8",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "playoff_probability_delta",
+                    "label": "Conditional playoff delta",
+                    "value": {
+                      "decimal": -2.599999999999997
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-2.6 pp",
+                  "accessible_text": "Conditional playoff delta -2.6 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "cup_probability_delta",
+                    "label": "Conditional Cup delta",
+                    "value": {
+                      "decimal": -0.29999999999999993
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.3 pp",
+                  "accessible_text": "Conditional Cup delta -0.3 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                }
+              ],
+              "tokens": [
+                "risk"
+              ],
+              "evidence_label": "simulated"
+            },
+            {
+              "player_id": "player:8477986",
+              "name": "Brandon Montour",
+              "role": null,
+              "asset_id": "player:8477986:headshot",
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "current_player_score",
+                    "label": "Current IceLines score",
+                    "value": {
+                      "decimal": 46.3
+                    },
+                    "unit": "score",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "46",
+                  "accessible_text": "Current IceLines score 46 out of 100",
+                  "comparison": null,
+                  "evidence_label": "confirmed"
+                },
+                {
+                  "metric": {
+                    "key": "occurrence_probability",
+                    "label": "Modeled likelihood",
+                    "value": {
+                      "decimal": 34.150000000000006
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "34.2%",
+                  "accessible_text": "Modeled likelihood 34.2 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "team_strength_delta",
+                    "label": "Team strength delta",
+                    "value": {
+                      "decimal": -3.3871
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "-3.39",
+                  "accessible_text": "Team strength delta -3.39",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "standings_points_delta",
+                    "label": "Conditional points delta",
+                    "value": {
+                      "decimal": -0.8210000000000122
+                    },
+                    "unit": "points",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.8",
+                  "accessible_text": "Conditional points delta -0.8",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "playoff_probability_delta",
+                    "label": "Conditional playoff delta",
+                    "value": {
+                      "decimal": -2.799999999999997
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-2.8 pp",
+                  "accessible_text": "Conditional playoff delta -2.8 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "cup_probability_delta",
+                    "label": "Conditional Cup delta",
+                    "value": {
+                      "decimal": -0.4
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "-0.4 pp",
+                  "accessible_text": "Conditional Cup delta -0.4 percentage points",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                }
+              ],
+              "tokens": [
+                "risk"
+              ],
+              "evidence_label": "simulated"
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "natural-realization",
+          "title": "Naturally sampled realization",
+          "metrics": [
+            {
+              "metric": {
+                "key": "any_positive_event_probability",
+                "label": "At least one upside event",
+                "value": {
+                  "decimal": 85.9
+                },
+                "unit": "percentage",
+                "precision": "percent_one_decimal",
+                "token": null
+              },
+              "display_text": "85.9%",
+              "accessible_text": "At least one upside event 85.9 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "any_negative_event_probability",
+                "label": "At least one downside event",
+                "value": {
+                  "decimal": 84.20000000000002
+                },
+                "unit": "percentage",
+                "precision": "percent_one_decimal",
+                "token": null
+              },
+              "display_text": "84.2%",
+              "accessible_text": "At least one downside event 84.2 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            }
+          ]
+        },
+        {
+          "section_type": "state_notice",
+          "id": "source-warnings",
+          "title": "Evidence warnings",
+          "detail": "Lineup and forecast limitations remain part of the document.",
+          "empty_state": null,
+          "warnings": [
+            {
+              "kind": "estimated_deployment",
+              "source": "roster",
+              "message": "incomplete_roster_shape: Projected shape is missing 4 forward, 0 defense, and 0 goalie slots.",
+              "recovery": []
+            }
+          ],
+          "token": "warning"
+        },
+        {
+          "section_type": "methodology",
+          "id": "methodology",
+          "title": "Methodology",
+          "methods": [
+            {
+              "key": "lineup",
+              "label": "The Depth Chart",
+              "version": "team_lineup_projection.v1",
+              "summary": "Position-aware roster assignment and multi-lens player scores."
+            },
+            {
+              "key": "forecast",
+              "label": "IceCast",
+              "version": "team_season_forecast.v1",
+              "summary": "Seeded chronological full-league regular season and playoff simulation."
+            },
+            {
+              "key": "isolation",
+              "label": "The Insider",
+              "version": "paired_same_seed_one_event.v1",
+              "summary": "One authored event forced at a time against an identical baseline."
+            }
+          ],
+          "limitations": [
+            "Scenario events are modeled hypotheses, not reports that they will occur: SEA multi-lens historically calibrated development and regression range.",
+            "Raw team strength is a model input and is not standings points.",
+            "The forced ceiling is conditional; natural realization probabilities remain separate."
+          ]
+        },
+        {
+          "section_type": "provenance",
+          "id": "sources",
+          "title": "Source authority",
+          "provenance_ids": [
+            "lineup-projection",
+            "season-forecast",
+            "isolated-impact"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "player:8477955:headshot",
+      "subject_id": "player:8477955",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8477955.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Jared McCann headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "JM"
+      }
+    },
+    {
+      "id": "player:8482259:headshot",
+      "subject_id": "player:8482259",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482259.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Bobby McMann headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "BM"
+      }
+    },
+    {
+      "id": "player:8474586:headshot",
+      "subject_id": "player:8474586",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8474586.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Jordan Eberle headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "JE"
+      }
+    },
+    {
+      "id": "player:8482665:headshot",
+      "subject_id": "player:8482665",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482665.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Matty Beniers headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "MB"
+      }
+    },
+    {
+      "id": "player:8481554:headshot",
+      "subject_id": "player:8481554",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8481554.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Kaapo Kakko headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "KK"
+      }
+    },
+    {
+      "id": "player:8476905:headshot",
+      "subject_id": "player:8476905",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8476905.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Chandler Stephenson headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "CS"
+      }
+    },
+    {
+      "id": "player:8482713:headshot",
+      "subject_id": "player:8482713",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482713.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Mackie Samoskevich headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "MS"
+      }
+    },
+    {
+      "id": "player:8483524:headshot",
+      "subject_id": "player:8483524",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8483524.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Shane Wright headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "SW"
+      }
+    },
+    {
+      "id": "player:8477986:headshot",
+      "subject_id": "player:8477986",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8477986.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Brandon Montour headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "BM"
+      }
+    },
+    {
+      "id": "player:8478407:headshot",
+      "subject_id": "player:8478407",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8478407.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Vince Dunn headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "VD"
+      }
+    },
+    {
+      "id": "player:8476457:headshot",
+      "subject_id": "player:8476457",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8476457.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Adam Larsson headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "AL"
+      }
+    },
+    {
+      "id": "player:8482858:headshot",
+      "subject_id": "player:8482858",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482858.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Ryker Evans headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "RE"
+      }
+    },
+    {
+      "id": "player:8479985:headshot",
+      "subject_id": "player:8479985",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8479985.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Cale Fleury headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "CF"
+      }
+    },
+    {
+      "id": "player:8479372:headshot",
+      "subject_id": "player:8479372",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8479372.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Joshua Mahura headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "JM"
+      }
+    },
+    {
+      "id": "player:8475831:headshot",
+      "subject_id": "player:8475831",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8475831.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Philipp Grubauer headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "PG"
+      }
+    },
+    {
+      "id": "player:8478916:headshot",
+      "subject_id": "player:8478916",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8478916.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Joey Daccord headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "JD"
+      }
+    },
+    {
+      "id": "player:8477919:headshot",
+      "subject_id": "player:8477919",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8477919.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Frederick Gaudreau headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "FG"
+      }
+    },
+    {
+      "id": "player:8483570:headshot",
+      "subject_id": "player:8483570",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8483570.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Ben Meyers headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "BM"
+      }
+    },
+    {
+      "id": "player:8482751:headshot",
+      "subject_id": "player:8482751",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482751.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Ryan Winterton headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "RW"
+      }
+    },
+    {
+      "id": "player:8484800:headshot",
+      "subject_id": "player:8484800",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8484800.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Berkly Catton headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "BC"
+      }
+    },
+    {
+      "id": "player:8479324:headshot",
+      "subject_id": "player:8479324",
+      "kind": "headshot",
+      "reference": {
+        "reference_type": "external_url",
+        "value": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8479324.png"
+      },
+      "source": "roster",
+      "observed_at": null,
+      "integrity_sha256": null,
+      "alt": "Ryan Lindgren headshot",
+      "state": "available",
+      "fallback": {
+        "fallback_type": "initials",
+        "value": "RL"
+      }
+    }
+  ],
+  "provenance": [
+    {
+      "id": "lineup-projection",
+      "source": "roster",
+      "label": "IceLines projected lineup",
+      "state": "partial",
+      "observed_at": "2026-07-22T12:00:00Z",
+      "fingerprint": "7350aa1aea163c50c5f506e791186ef84fe3be970663b2996416cde9b0749801",
+      "note": "Assignments retain actual, reported, estimated, or scenario evidence labels."
+    },
+    {
+      "id": "season-forecast",
+      "source": "schedule",
+      "label": "IceCast season simulation",
+      "state": "complete",
+      "observed_at": "2026-07-22T12:00:00Z",
+      "fingerprint": "11c8bbc9c4ad3b890b40581dda680333654a1890074dad0b533b678b96572625",
+      "note": "Scenario: SEA multi-lens historically calibrated development and regression range"
+    },
+    {
+      "id": "isolated-impact",
+      "source": "snapshot",
+      "label": "Paired same-seed isolated impact",
+      "state": "complete",
+      "observed_at": "2026-07-22T12:00:00Z",
+      "fingerprint": "aaea968ef479fb05d0b0caaa9941a6e184a8b290c013bdb7797504c87cc6adaa",
+      "note": "Conditional one-event effects and forced positive-event ceiling."
+    }
+  ],
+  "warnings": [
+    {
+      "kind": "estimated_deployment",
+      "source": "roster",
+      "message": "incomplete_roster_shape: Projected shape is missing 4 forward, 0 defense, and 0 goalie slots.",
+      "recovery": []
+    }
+  ],
+  "empty_state": null
+}

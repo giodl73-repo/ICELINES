@@ -115,6 +115,8 @@ pub enum ScreenSpec {
     Player(Needle),
     /// LB.3 — `team:ABBR`. Validated against the 32-team set.
     Team(String),
+    /// UI-neutral IceCast prognosis card for one showcase team.
+    TeamCard(String),
     /// LB.3 — `goalie:NAME` or `goalie:PID`. Same lookup as Player but
     /// the resolved Screen is `GoalieDetailById` rather than `PlayerById`.
     Goalie(Needle),
@@ -152,6 +154,19 @@ impl ScreenSpec {
                     });
                 }
                 Ok(Screen::Team(upper))
+            }
+            ScreenSpec::TeamCard(team) => {
+                let upper = team.trim().to_ascii_uppercase();
+                if !matches!(upper.as_str(), "NYR" | "SEA") {
+                    return Err(ResolveError::UnknownTeam {
+                        input: team,
+                        valid: vec!["NYR", "SEA"],
+                    });
+                }
+                Ok(Screen::TeamCard {
+                    team: upper,
+                    compare: false,
+                })
             }
         }
     }

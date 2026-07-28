@@ -1,0 +1,1073 @@
+{
+  "schema": "card_document.v1",
+  "card_kind": "forecast_history",
+  "document_id": "forecast-history:NYR:20242025:20250131:20250331",
+  "fingerprint": "f5cd604f5aa8dce364ddf9c1a707a78bb51d1531200385cbded483e7bcceb730",
+  "title": "New York Rangers forecast history",
+  "subtitle": "2025-01-31 → 2025-03-31 · 3 checkpoints · 1000 trials · seed 20242025",
+  "context": {
+    "view": {
+      "window": {
+        "season": 20242025,
+        "season_type": "regular"
+      },
+      "generated_at": "2025-04-01T00:00:00Z",
+      "source_state": [],
+      "completeness": "complete",
+      "data_generation": null
+    },
+    "evidence_at": "2025-04-01T00:00:00Z",
+    "evidence_label": "simulated",
+    "builder_version": "forecast_history_card.v1",
+    "methodology_versions": {
+      "card_projection": "forecast_history_card.v1",
+      "forecast_history": "team_season_forecast_history.v1"
+    },
+    "joins": {
+      "league_id": null,
+      "roster_snapshot_id": null,
+      "calendar_fingerprint": null,
+      "scoring_scheme_id": null,
+      "scenario_id": null,
+      "scenario_comparison_key": "history:2025-01-31:2025-03-31",
+      "team_ids": [
+        "NYR"
+      ],
+      "player_ids": [],
+      "game_ids": []
+    },
+    "simulation": {
+      "model_id": "icecast-history",
+      "model_version": "team_season_forecast_history.v1",
+      "parameter_fingerprint": "13c1dc96036428acedd88a98d7f5a3ab9b50d3972d7abb2b9877ca18d8acda4b",
+      "seed": 20242025,
+      "trials": 1000
+    }
+  },
+  "theme": {
+    "theme_key": "team_nyr",
+    "primary": "#0038A8",
+    "secondary": "#CE1126",
+    "accent": "#FFFFFF",
+    "surface": "#FFFFFF",
+    "text": "#111111",
+    "team_abbreviation": "NYR",
+    "ascii_identity": "NYR",
+    "minimum_text_contrast_x100": 450
+  },
+  "required_capabilities": [],
+  "pages": [
+    {
+      "id": "tape",
+      "literal_label": "Chronological forecast levels and movement",
+      "display_label": "The Tape",
+      "order": 1,
+      "accessible_summary": "New York Rangers forecast levels and consecutive movement across 3 sealed checkpoints.",
+      "sections": [
+        {
+          "section_type": "identity_header",
+          "id": "history-team",
+          "eyebrow": "IceCast forecast history",
+          "title": "New York Rangers",
+          "subtitle": "3 sealed checkpoints",
+          "identities": [
+            {
+              "kind": "team",
+              "subject_id": "NYR",
+              "label": "New York Rangers",
+              "asset_id": null
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "checkpoint-1",
+          "title": "Through 2025-01-31 · 50 games complete",
+          "metrics": [
+            {
+              "metric": {
+                "key": "projected_points",
+                "label": "Projected points",
+                "value": {
+                  "decimal": 87.453
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "87.45",
+              "accessible_text": "Projected points 87.45",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "projected_points_distribution",
+                "label": "Projected points P10 / P50 / P90",
+                "value": {
+                  "text": "80 / 88 / 95"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "80 / 88 / 95",
+              "accessible_text": "Projected points P10 / P50 / P90 80 / 88 / 95",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "playoff_probability",
+                "label": "Playoff odds",
+                "value": {
+                  "decimal": 24.6
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "24.6%",
+              "accessible_text": "Playoff odds 24.6 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "cup_probability",
+                "label": "Stanley Cup odds",
+                "value": {
+                  "decimal": 1.0999999999999999
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "1.1%",
+              "accessible_text": "Stanley Cup odds 1.1 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "observed_points",
+                "label": "Observed standings points",
+                "value": {
+                  "decimal": 52.0
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "52.00",
+              "accessible_text": "Observed standings points 52.00",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "expected_remaining_points",
+                "label": "Expected remaining points",
+                "value": {
+                  "decimal": 35.453
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "35.45",
+              "accessible_text": "Expected remaining points 35.45",
+              "comparison": null,
+              "evidence_label": "simulated"
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "checkpoint-2",
+          "title": "Through 2025-02-28 · 59 games complete",
+          "metrics": [
+            {
+              "metric": {
+                "key": "projected_points",
+                "label": "Projected points",
+                "value": {
+                  "decimal": 87.516
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "87.52",
+              "accessible_text": "Projected points 87.52",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "projected_points_distribution",
+                "label": "Projected points P10 / P50 / P90",
+                "value": {
+                  "text": "82 / 88 / 93"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "82 / 88 / 93",
+              "accessible_text": "Projected points P10 / P50 / P90 82 / 88 / 93",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "playoff_probability",
+                "label": "Playoff odds",
+                "value": {
+                  "decimal": 25.7
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "25.7%",
+              "accessible_text": "Playoff odds 25.7 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "cup_probability",
+                "label": "Stanley Cup odds",
+                "value": {
+                  "decimal": 1.7999999999999998
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "1.8%",
+              "accessible_text": "Stanley Cup odds 1.8 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "observed_points",
+                "label": "Observed standings points",
+                "value": {
+                  "decimal": 62.0
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "62.00",
+              "accessible_text": "Observed standings points 62.00",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "expected_remaining_points",
+                "label": "Expected remaining points",
+                "value": {
+                  "decimal": 25.516000000000005
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "25.52",
+              "accessible_text": "Expected remaining points 25.52",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "prior_expected_points_for_completed_interval_from_previous",
+                "label": "Prior expected points for 9 newly completed games",
+                "value": {
+                  "decimal": 9.97115625
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+9.97",
+              "accessible_text": "Prior expected points for 9 newly completed games +9.97",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 9.97115625
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "realized_points_vs_prior_remaining_pace_from_previous",
+                "label": "Realized points versus prior checkpoint pace",
+                "value": {
+                  "decimal": 0.028843750000000057
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+0.03",
+              "accessible_text": "Realized points versus prior checkpoint pace +0.03",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 0.028843750000000057
+                }
+              },
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "remaining_outlook_revaluation_from_previous",
+                "label": "Still-unplayed outlook revaluation from prior checkpoint",
+                "value": {
+                  "decimal": 0.03415625000000233
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+0.03",
+              "accessible_text": "Still-unplayed outlook revaluation from prior checkpoint +0.03",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 0.03415625000000233
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "projected_points_delta",
+                "label": "Change in projected points",
+                "value": {
+                  "decimal": 0.06300000000000239
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+0.06",
+              "accessible_text": "Change in projected points +0.06",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 0.06300000000000239
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "playoff_probability_delta",
+                "label": "Change in playoff odds",
+                "value": {
+                  "decimal": 1.100000000000001
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+1.10 pp",
+              "accessible_text": "Change in playoff odds +1.10 pp",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 1.100000000000001
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "cup_probability_delta",
+                "label": "Change in Stanley Cup odds",
+                "value": {
+                  "decimal": 0.7
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+0.70 pp",
+              "accessible_text": "Change in Stanley Cup odds +0.70 pp",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 0.7
+                }
+              },
+              "evidence_label": "simulated"
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "checkpoint-3",
+          "title": "Through 2025-03-31 · 74 games complete",
+          "metrics": [
+            {
+              "metric": {
+                "key": "projected_points",
+                "label": "Projected points",
+                "value": {
+                  "decimal": 85.703
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "85.70",
+              "accessible_text": "Projected points 85.70",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "projected_points_distribution",
+                "label": "Projected points P10 / P50 / P90",
+                "value": {
+                  "text": "82 / 86 / 89"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "82 / 86 / 89",
+              "accessible_text": "Projected points P10 / P50 / P90 82 / 86 / 89",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "playoff_probability",
+                "label": "Playoff odds",
+                "value": {
+                  "decimal": 20.5
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "20.5%",
+              "accessible_text": "Playoff odds 20.5 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "cup_probability",
+                "label": "Stanley Cup odds",
+                "value": {
+                  "decimal": 1.4000000000000001
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "1.4%",
+              "accessible_text": "Stanley Cup odds 1.4 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "observed_points",
+                "label": "Observed standings points",
+                "value": {
+                  "decimal": 77.0
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "77.00",
+              "accessible_text": "Observed standings points 77.00",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "expected_remaining_points",
+                "label": "Expected remaining points",
+                "value": {
+                  "decimal": 8.703000000000003
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "8.70",
+              "accessible_text": "Expected remaining points 8.70",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "prior_expected_points_for_completed_interval_from_previous",
+                "label": "Prior expected points for 15 newly completed games",
+                "value": {
+                  "decimal": 16.640869565217393
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+16.64",
+              "accessible_text": "Prior expected points for 15 newly completed games +16.64",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 16.640869565217393
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "realized_points_vs_prior_remaining_pace_from_previous",
+                "label": "Realized points versus prior checkpoint pace",
+                "value": {
+                  "decimal": -1.6408695652173932
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-1.64",
+              "accessible_text": "Realized points versus prior checkpoint pace -1.64",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -1.6408695652173932
+                }
+              },
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "remaining_outlook_revaluation_from_previous",
+                "label": "Still-unplayed outlook revaluation from prior checkpoint",
+                "value": {
+                  "decimal": -0.17213043478260914
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-0.17",
+              "accessible_text": "Still-unplayed outlook revaluation from prior checkpoint -0.17",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -0.17213043478260914
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "projected_points_delta",
+                "label": "Change in projected points",
+                "value": {
+                  "decimal": -1.8130000000000024
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-1.81",
+              "accessible_text": "Change in projected points -1.81",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -1.8130000000000024
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "playoff_probability_delta",
+                "label": "Change in playoff odds",
+                "value": {
+                  "decimal": -5.200000000000002
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-5.20 pp",
+              "accessible_text": "Change in playoff odds -5.20 pp",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -5.200000000000002
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "cup_probability_delta",
+                "label": "Change in Stanley Cup odds",
+                "value": {
+                  "decimal": -0.39999999999999986
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-0.40 pp",
+              "accessible_text": "Change in Stanley Cup odds -0.40 pp",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -0.39999999999999986
+                }
+              },
+              "evidence_label": "simulated"
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "history-net-movement",
+          "title": "Net change · 2025-01-31 → 2025-03-31",
+          "metrics": [
+            {
+              "metric": {
+                "key": "projected_points_movement_rank",
+                "label": "League movement rank",
+                "value": {
+                  "integer": 19
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "19 of 32",
+              "accessible_text": "League projected points movement rank 19 of 32, highest gain first",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "projected_points_trend",
+                "label": "Trajectory",
+                "value": {
+                  "text": "mixed"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "mixed",
+              "accessible_text": "Trajectory mixed",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "net_points_movement_materiality",
+                "label": "Movement materiality",
+                "value": {
+                  "text": "moderate"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "moderate",
+              "accessible_text": "Movement materiality moderate",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "largest_projected_points_swing",
+                "label": "Largest checkpoint swing · 2025-02-28 → 2025-03-31",
+                "value": {
+                  "decimal": -1.8130000000000024
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-1.81",
+              "accessible_text": "Largest checkpoint swing · 2025-02-28 → 2025-03-31 -1.81",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -1.8130000000000024
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "net_projected_points_delta",
+                "label": "Net change in projected points",
+                "value": {
+                  "decimal": -1.75
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-1.75",
+              "accessible_text": "Net change in projected points -1.75",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -1.75
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "observed_standings_points_delta_first_to_last",
+                "label": "Confirmed standings points gained",
+                "value": {
+                  "decimal": 25.0
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+25.00",
+              "accessible_text": "Confirmed standings points gained +25.00",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 25.0
+                }
+              },
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "expected_remaining_points_delta_first_to_last",
+                "label": "Change in expected remaining points",
+                "value": {
+                  "decimal": -26.75
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-26.75",
+              "accessible_text": "Change in expected remaining points -26.75",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -26.75
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "points_movement_bridge_status",
+                "label": "Movement bridge",
+                "value": {
+                  "text": "confirmed points + remainder change = net movement"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "confirmed points + remainder change = net movement",
+              "accessible_text": "Movement bridge confirmed points + remainder change = net movement",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "net_playoff_probability_delta",
+                "label": "Net change in playoff odds",
+                "value": {
+                  "decimal": -4.1000000000000005
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-4.10 pp",
+              "accessible_text": "Net change in playoff odds -4.10 pp",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -4.1000000000000005
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "net_cup_probability_delta",
+                "label": "Net change in Stanley Cup odds",
+                "value": {
+                  "decimal": 0.3000000000000001
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+0.30 pp",
+              "accessible_text": "Net change in Stanley Cup odds +0.30 pp",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 0.3000000000000001
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "prior_expected_points_for_completed_interval",
+                "label": "Prior expected points for 24 newly completed games",
+                "value": {
+                  "decimal": 26.58975
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+26.59",
+              "accessible_text": "Prior expected points for 24 newly completed games +26.59",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 26.58975
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "realized_points_vs_prior_remaining_pace",
+                "label": "Realized points versus prior expected pace",
+                "value": {
+                  "decimal": -1.5897500000000022
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-1.59",
+              "accessible_text": "Realized points versus prior expected pace -1.59",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -1.5897500000000022
+                }
+              },
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "remaining_outlook_revaluation",
+                "label": "Still-unplayed outlook revaluation",
+                "value": {
+                  "decimal": -0.16024999999999778
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-0.16",
+              "accessible_text": "Still-unplayed outlook revaluation -0.16",
+              "comparison": {
+                "label": "change from previous checkpoint",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -0.16024999999999778
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "pace_attribution_status",
+                "label": "Pace-normalized attribution",
+                "value": {
+                  "text": "realized versus prior pace + remaining revaluation = net movement"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "realized versus prior pace + remaining revaluation = net movement",
+              "accessible_text": "Pace-normalized attribution realized versus prior pace + remaining revaluation = net movement",
+              "comparison": null,
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "net_points_movement_share_of_range",
+                "label": "Net movement / average outcome spread",
+                "value": {
+                  "decimal": 15.909090909090908
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "15.9%",
+              "accessible_text": "Net movement / average outcome spread 15.9 percent",
+              "comparison": null,
+              "evidence_label": "simulated"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "insider",
+      "literal_label": "Forecast history methodology and source authority",
+      "display_label": "The Insider",
+      "order": 2,
+      "accessible_summary": "How chronological checkpoints are aligned and which sealed league runs support every level and delta.",
+      "sections": [
+        {
+          "section_type": "methodology",
+          "id": "history-methodology",
+          "title": "How to read The Tape",
+          "methods": [
+            {
+              "key": "chronological-checkpoint-history",
+              "label": "Chronological checkpoint history",
+              "version": "team_season_forecast_history.v1",
+              "summary": "Absolute values come from each sealed league forecast. Change values are computed in core against the immediately preceding checkpoint."
+            }
+          ],
+          "limitations": [
+            "History is chronological and every checkpoint is a sealed point-in-time replay using the same season, schedule, trials, seed, and teams.",
+            "Checkpoint deltas are later minus the immediately preceding checkpoint; the first checkpoint has no prior delta.",
+            "First-to-last movement and league riser/faller rankings are computed in core; observed standings and expected remaining points are core-owned checkpoint fields, not renderer calculations.",
+            "Movement materiality is a descriptive heuristic, not a significance test: absolute net points movement is divided by the average first/last P10-P90 points width; below 10% is small, 10%-25% moderate, and 25% or more large.",
+            "The first-to-last movement bridge reconciles projected-points change to confirmed standings points gained plus the change in expected remaining points.",
+            "Pace-normalized attribution is descriptive, not causal: newly completed games are valued at the first checkpoint's average expected remaining points per game; realized performance versus that pace plus revaluation of the still-unplayed outlook reconciles to net movement."
+          ]
+        },
+        {
+          "section_type": "provenance",
+          "id": "history-sources",
+          "title": "Checkpoint authority",
+          "provenance_ids": [
+            "checkpoint-1",
+            "checkpoint-2",
+            "checkpoint-3"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "provenance": [
+    {
+      "id": "checkpoint-1",
+      "source": "schedule",
+      "label": "Sealed IceCast checkpoint through 2025-01-31",
+      "state": "complete",
+      "observed_at": null,
+      "fingerprint": "11cdcfcf9c10338a0384454803ca0aa67abdcb1ddce371c7f0b71c7faf320fef",
+      "note": "824 league games complete; 488 remaining"
+    },
+    {
+      "id": "checkpoint-2",
+      "source": "schedule",
+      "label": "Sealed IceCast checkpoint through 2025-02-28",
+      "state": "complete",
+      "observed_at": null,
+      "fingerprint": "5f14d35e417c6ca1897e9ebccfbe773fb92452b1b23282b9cc868460db3ac20a",
+      "note": "946 league games complete; 366 remaining"
+    },
+    {
+      "id": "checkpoint-3",
+      "source": "schedule",
+      "label": "Sealed IceCast checkpoint through 2025-03-31",
+      "state": "complete",
+      "observed_at": "2025-04-01T00:00:00Z",
+      "fingerprint": "157113ae4df458492428072e5634580db6affe61c9ae69635fbca9f1cd65e8b1",
+      "note": "1180 league games complete; 132 remaining"
+    }
+  ],
+  "warnings": [],
+  "empty_state": null
+}

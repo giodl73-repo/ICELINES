@@ -1,8 +1,8 @@
 # IceLines — System Architecture
 
-**Version**: 2.2
-**Date**: 2026-05-01
-**Status**: Active — replaces the v1 (pre-Hart) architecture doc.
+**Version**: 2.3
+**Date**: 2026-07-22
+**Status**: Active — v2.3 adds the UI-neutral document boundary and current surfaces.
 v2.0 → v2.1 incorporated 5-role review (forge / tape / glass / bench / pace).
 v2.1 → v2.2 incorporates third-round review with HART + KEEL added (10 roles).
 
@@ -10,17 +10,33 @@ v2.1 → v2.2 incorporates third-round review with HART + KEEL added (10 roles).
 
 ## Mission
 
-A single-user, local-only NHL hockey analytics + fantasy tool. Four surfaces — TUI,
-CLI, mkdocs site, HTTP server — all driven by one data engine and one normalized
-domain model.
+A single-user, local-only NHL hockey analytics + fantasy tool. Three interactive
+surfaces—TUI, CLI, and the axum HTTP server—plus durable JSON, Markdown, SVG,
+and PDF artifacts are driven by one data engine and one normalized domain model.
+The old mkdocs/static-site command surface is retired; `icelines-site` remains a
+supporting crate/artifact path, not an advertised interactive surface.
 
 The architectural invariant: **for the canonical view path (depth chart, query,
 scouting, fantasy scoring, `export md`, HTTP `/api/team/<abbr>/roster`), every
-surface produces the same output for the same data state.** The TUI's depth chart, the CLI's `team EDM`, the site's team page,
+surface produces the same output for the same data state.** The TUI's depth chart, the CLI's `team EDM`,
 and the HTTP server's `/api/team/EDM/roster` all call the same `StatsRepository`
 and shared team depth ViewModels. Surface-specific behaviors
 (TUI admin overlay, fantasy SQLite, transactions feed UI affordances) are
 explicitly per-surface; only the data + computation path converges.
+
+Multi-page decisions add one stricter boundary:
+
+```text
+domain ViewModels -> builder in icelines-core -> sealed CardDocumentView
+                                              -> CLI / TUI / Web / SVG / PDF
+```
+
+The card envelope, joins, evidence, simulation identity, section grammar, and
+renderer restrictions are owned by
+[`specs/ui-neutral-card-system.md`](specs/ui-neutral-card-system.md). This
+architecture does not duplicate that schema. Renderers may change density and
+composition, but never calculate hockey values or refocus a simulation before
+the complete league run is fingerprinted.
 
 ---
 
@@ -218,8 +234,8 @@ cross-season leakage is a documented gap, not a present-tense invariant.
 │                                        │  │  per request handler:           │
 └────────────────────────────────────────┘  │    let (outcome, s) = load();   │
                                             │    let views = pools_views(...);│
-┌─ mkdocs site builder ─────────────────┐  │    score_team(...) -> JSON      │
-│  (icelines build / serve / deploy)    │  │                                 │
+┌─ retired site-support path ───────────┐  │    score_team(...) -> JSON      │
+│  (`icelines-site`; no active command) │  │                                 │
 │                                        │  │  reads SQLite (fantasy_db)      │
 │  one shot:                             │  │  for league/team/roster state. │
 │    load_into_repo(current_season)      │  │                                 │
@@ -236,7 +252,7 @@ cross-season leakage is a documented gap, not a present-tense invariant.
 ```
 
 Only the TUI is long-lived — its `App` holds the repo across many render frames.
-CLI / site / HTTP-handler are one-shot: load, use, drop. This shapes the cache
+CLI / artifact / HTTP-handler paths are one-shot: load, use, drop. This shapes the cache
 invalidation contract: only the TUI needs to think about cache invalidation on
 season switch.
 
@@ -709,7 +725,7 @@ in this section.
 |---|---|---|
 | Data type, scoring, projection, filter | `icelines-core` | Pure logic |
 | NHL API endpoint, snapshot, bundled data | `icelines-fetch` | I/O |
-| mkdocs / markdown generation | `icelines-site` | Site only |
+| Durable Markdown/SVG/PDF projection | renderer crate/script | Consume shared ViewModels or sealed card documents only |
 | CLI command, TUI screen, HTTP handler | `icelines-cli` | Thin UI |
 
 Business logic must NOT live in `icelines-cli`. CLI commands call library functions;

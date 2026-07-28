@@ -1,0 +1,322 @@
+THE BUBBLE — 20262027
+TEAM RK PLAYER                    POS LANE                   AUTH     SCORE  EXIT SCRATCH WAIVER PRESSURE
+ANA   1 Sam Colangelo             RW  ROSTER DECISION        NO READ   52.7%  93.6%    4.2%  93.6% —
+ANA   2 Tyson Hinds               D   DEVELOPMENT ASSIGN     NO READ   52.0%  93.0%    2.7%   0.0% —
+ANA   3 Nikita Nesterenko         C   ROSTER DECISION        NO READ   51.2%  87.6%    9.8%  87.6% Nathan Gaucher 1%
+ANA   4 Nathan Gaucher            C   DEVELOPMENT ASSIGN     NO READ   50.7%  87.6%    8.3%   0.0% —
+ANA   5 Radko Gudas               D   ROSTER DECISION        NO READ   40.0%  55.8%   29.6%  55.8% Tyson Hinds 3%
+ANA   6 Ian Moore                 D   ROSTER DECISION        NO READ   30.9%  35.6%   36.7%  35.6% Tyson Hinds 2%
+ANA   7 Frank Vatrano             RW  SCRATCH ROTATION       NO READ   23.0%   7.1%   61.8%   7.1% Nathan Gaucher 3%
+ANA   8 Jansen Harkins            C   ROSTER DECISION        NO READ   22.3%  14.1%   46.8%  14.1% Nathan Gaucher 4%
+ANA   9 Petr Mrazek               G   ROSTER DECISION        NO READ   21.9%  39.9%    0.0%  39.9% —
+ANA  10 Ville Husso               G   ROSTER DECISION        NO READ   19.6%  35.7%    0.0%  35.7% —
+BOS   1 Victor Soderstrom         D   ROSTER DECISION        NO READ   54.8%  99.2%    0.7%  99.2% —
+BOS   2 Matej Blümel              RW  ROSTER DECISION        NO READ   53.3%  95.4%    2.7%  95.4% —
+BOS   3 Riley Tufte               LW  ROSTER DECISION        NO READ   52.2%  92.8%    3.9%  92.8% —
+BOS   4 Jordan Harris             D   ROSTER DECISION        NO READ   42.1%  71.0%   10.3%  71.0% —
+BOS   5 Lukas Reichel             LW  ROSTER DECISION        NO READ   31.5%  36.2%   22.7%  36.2% James Hagens 32%
+BOS   6 James Hagens              C   DEVELOPMENT ASSIGN     NO READ   29.6%  41.6%   22.4%   0.0% —
+BOS   7 Andrew Peeke              D   ROSTER DECISION        NO READ   22.5%  14.2%   49.1%  14.2% —
+BOS   8 Mark Kastelic             C   ROSTER DECISION        NO READ   16.5%  11.6%   29.7%  11.6% James Hagens 8%
+BOS   9 Michael Eyssimont         C   SCRATCH ROTATION       NO READ   16.3%   8.0%   36.7%   8.0% James Hagens 6%
+BOS  10 Sean Kuraly               C   SCRATCH ROTATION       NO READ   16.2%   7.6%   36.7%   7.6% James Hagens 7%
+BUF   1 Tyson Kozak               C   ROSTER DECISION        NO READ   52.0%  85.1%   11.7%  85.1% Jiri Kulich 11%
+BUF   2 Jordan Greenway           LW  ROSTER DECISION        NO READ   51.8%  79.3%   17.5%  79.3% Jiri Kulich 19%
+BUF   3 Luke Schenn               D   ROSTER DECISION        NO READ   49.3%  81.3%   15.3%  81.3% —
+BUF   4 Justin Danforth           RW  ROSTER DECISION        NO READ   46.3%  77.6%   12.1%  77.6% —
+BUF   5 Zach Metsa                D   ROSTER DECISION        NO READ   45.7%  68.5%   26.9%  68.5% —
+BUF   6 Beck Malenstyn            LW  ROSTER DECISION        NO READ   43.0%  55.0%   32.2%  55.0% Jiri Kulich 21%
+BUF   7 Colten Ellis              G   ROSTER DECISION        NO READ   34.2%  62.2%    0.0%  62.2% —
+BUF   8 Tanner Pearson            LW  ROSTER DECISION        NO READ   33.4%  33.0%   42.5%  33.0% Jiri Kulich 17%
+BUF   9 Michael Kesselring        D   ROSTER DECISION        NO READ   29.2%  38.5%   26.7%  38.5% —
+BUF  10 Sam Carrick               C   ROSTER DECISION        NO READ   29.1%  26.8%   42.0%  26.8% Jiri Kulich 12%
+CAR   1 Noah Philp                C   ROSTER DECISION        NO READ   54.3%  97.4%    2.4%  97.4% —
+CAR   2 Charles Alexis Legault    D   DEVELOPMENT ASSIGN     NO READ   54.2%  97.8%    1.5%   0.0% —
+CAR   3 Joel Nystrom              D   ROSTER DECISION        NO READ   54.1%  97.2%    2.1%  97.2% Charles Alexis Legault 0%
+CAR   4 Skyler Brind'Amour        C   ROSTER DECISION        NO READ   52.6%  92.8%    5.3%  92.8% —
+CAR   5 Bradly Nadeau             LW  DEVELOPMENT ASSIGN     NO READ   51.4%  88.3%    9.5%   0.0% —
+CAR   6 Pyotr Kochetkov           G   ROSTER DECISION        NO READ   48.0%  87.2%    0.0%  87.2% —
+CAR   7 Jesperi Kotkaniemi        C   SCRATCH ROTATION       NO READ   26.2%   8.7%   68.7%   8.7% Bradly Nadeau 6%
+CAR   8 Mike Reilly               D   SCRATCH ROTATION       NO READ   21.2%   3.2%   64.0%   3.2% Charles Alexis Legault 1%
+CAR   9 Nicolas Deslauriers       LW  ROSTER DECISION        NO READ   20.8%  10.7%   47.0%  10.7% Bradly Nadeau 5%
+CAR  10 William Carrier           LW  SCRATCH ROTATION       NO READ    9.0%   1.4%   27.2%   1.4% Bradly Nadeau 0%
+CBJ   1 Luca Del Bel Belluz       C   DEVELOPMENT ASSIGN     NO READ   54.7%  99.0%    0.8%   0.0% —
+CBJ   2 Zach Aston-Reese          LW  ROSTER DECISION        NO READ   54.5%  97.8%    2.2%  97.8% —
+CBJ   3 Brendan Gaunce            C   ROSTER DECISION        NO READ   54.4%  98.0%    1.6%  98.0% —
+CBJ   4 Jake Christiansen         D   ROSTER DECISION        NO READ   47.1%  76.9%   16.1%  76.9% —
+CBJ   5 Brendan Smith             D   ROSTER DECISION        NO READ   30.2%  43.7%   20.4%  43.7% —
+CBJ   6 Dante Fabbro              D   ROSTER DECISION        NO READ   22.9%  25.8%   28.9%  25.8% —
+CBJ   7 Erik Gudbranson           D   ROSTER DECISION        NO READ   21.8%  29.4%   18.7%  29.4% —
+CBJ   8 Isac Lundeström           C   SCRATCH ROTATION       NO READ   20.3%   2.9%   62.1%   2.9% Luca Del Bel Belluz 0%
+CBJ   9 Miles Wood                LW  SCRATCH ROTATION       NO READ   19.4%   1.4%   61.9%   1.4% Luca Del Bel Belluz 0%
+CBJ  10 Egor Zamula               D   ROSTER DECISION        NO READ   18.1%  24.2%   15.8%  24.2% —
+CGY   1 Ryan Lomberg              LW  ROSTER DECISION        NO READ   54.9%  84.1%   15.3%  84.1% Samuel Honzek 20%, Aydar Suniev 7%
+CGY   2 Abram Wiebe               D   DEVELOPMENT ASSIGN     NO READ   52.5%  94.3%    2.1%   0.0% —
+CGY   3 Rory Kerins               C   ROSTER DECISION        NO READ   51.3%  88.4%    8.9%  88.4% —
+CGY   4 Tyson Gross               C   ROSTER DECISION        NO READ   50.3%  88.1%    6.3%  88.1% —
+CGY   5 Aydar Suniev              LW  DEVELOPMENT ASSIGN     NO READ   49.3%  84.0%   10.2%   0.0% —
+CGY   6 Martin Pospisil           C   ROSTER DECISION        NO READ   45.3%  67.3%   20.4%  67.3% Samuel Honzek 10%, Aydar Suniev 5%
+CGY   7 Jake Bean                 D   ROSTER DECISION        NO READ   38.8%  65.2%    9.7%  65.2% —
+CGY   8 Samuel Honzek             LW  DEVELOPMENT ASSIGN     NO READ   34.4%  49.2%   24.6%   0.0% —
+CGY   9 Joel Hanley               D   ROSTER DECISION        NO READ   33.3%  45.9%   25.9%  45.9% Abram Wiebe 2%
+CGY  10 Yan Kuznetsov             D   ROSTER DECISION        NO READ   28.5%  41.2%   18.8%  41.2% Abram Wiebe 1%
+CHI   1 Sam Lafferty              C   ROSTER DECISION        NO READ   47.2%  52.7%   35.8%  52.7% Anton Frondell 44%, Sacha Boisvert 5%
+CHI   2 Landon Slaggert           LW  ROSTER DECISION        NO READ   44.4%  40.0%   56.5%  40.0% Anton Frondell 32%, Sacha Boisvert 5%
+CHI   3 Dominic Toninato          C   ROSTER DECISION        NO READ   43.1%  63.3%   27.6%  63.3% —
+CHI   4 Ethan Del Mastro          D   DEVELOPMENT ASSIGN     NO READ   37.3%  56.8%   20.3%   0.0% —
+CHI   5 Sacha Boisvert            C   DEVELOPMENT ASSIGN     NO READ   33.6%  40.8%   37.3%   0.0% —
+CHI   6 Kevin Korchinski          D   DEVELOPMENT ASSIGN     NO READ   26.4%  32.2%   29.0%   0.0% —
+CHI   7 Matt Grzelcyk             D   ROSTER SECURE          NO READ    9.9%   6.4%   18.2%   6.4% Ethan Del Mastro 4%, Kevin Korchinski 3%
+CHI   8 Sam Rinzel                D   SCRATCH ROTATION       NO READ    8.8%   3.4%   21.5%   0.0% Kevin Korchinski 2%, Ethan Del Mastro 1%
+CHI   9 Andrew Mangiapane         LW  ROSTER SECURE          NO READ    6.8%   2.2%   17.5%   2.2% Anton Frondell 2%, Sacha Boisvert 1%
+CHI  10 Oliver Moore              C   ROSTER SECURE          NO READ    3.9%   0.4%   11.9%   0.0% Anton Frondell 0%
+COL   1 Isak Posch                G   ROSTER DECISION        NO READ   54.7%  99.5%    0.0%  99.5% —
+COL   2 Gavin Brindley            C   DEVELOPMENT ASSIGN     NO READ   54.1%  96.5%    3.5%   0.0% —
+COL   3 Taylor Makar              LW  ROSTER DECISION        NO READ   53.9%  96.4%    3.1%  96.4% —
+COL   4 Jack Ahcan                D   ROSTER DECISION        NO READ   53.7%  95.1%    4.7%  95.1% —
+COL   5 Ivan Ivan                 C   ROSTER DECISION        NO READ   52.0%  89.7%    8.8%  89.7% —
+COL   6 Keaton Middleton          D   ROSTER DECISION        NO READ   51.0%  86.2%   12.1%  86.2% —
+COL   7 Brett Kulak               D   ROSTER DECISION        NO READ   34.4%  18.7%   80.5%  18.7% —
+COL   8 Joel Kiviranta            LW  SCRATCH ROTATION       NO READ   28.4%   6.5%   82.9%   6.5% —
+COL   9 Zakhar Bardakov           C   SCRATCH ROTATION       NO READ   18.7%   1.8%   59.2%   1.8% —
+COL  10 Logan O'Connor            RW  SCRATCH ROTATION       NO READ   15.4%   9.1%   34.6%   9.1% —
+DAL   1 Kyle Capobianco           D   ROSTER DECISION        NO READ   51.0%  91.4%    2.4%  91.4% —
+DAL   2 Adam Erne                 LW  ROSTER DECISION        NO READ   50.3%  82.5%   16.5%  82.5% —
+DAL   3 Oskar Bäck                C   ROSTER DECISION        NO READ   47.7%  74.5%   22.5%  74.5% —
+DAL   4 Colin Blackwell           C   ROSTER DECISION        NO READ   35.7%  44.6%   37.3%  44.6% —
+DAL   5 Radek Faksa               C   ROSTER DECISION        NO READ   35.6%  34.0%   56.4%  34.0% —
+DAL   6 Arttu Hyry                RW  ROSTER DECISION        NO READ   27.8%  38.9%   21.2%  38.9% —
+DAL   7 Ilya Lyubushkin           D   ROSTER DECISION        NO READ   23.5%  31.0%   21.5%  31.0% —
+DAL   8 Lian Bichsel              D   DEVELOPMENT ASSIGN     NO READ   23.4%  32.1%   19.1%   0.0% —
+DAL   9 Alexander Petrovic        D   ROSTER DECISION        NO READ   19.5%  22.4%   24.0%  22.4% —
+DAL  10 Nathan Bastian            RW  ROSTER DECISION        NO READ   19.3%  22.0%   24.0%  22.0% —
+DET   1 Carter Mazur              LW  ROSTER DECISION        NO READ   53.1%  93.4%    5.9%  93.4% —
+DET   2 Dominik Shine             RW  ROSTER DECISION        NO READ   53.1%  93.1%    6.3%  93.1% —
+DET   3 Erik Gustafsson           D   ROSTER DECISION        NO READ   53.0%  95.0%    2.5%  95.0% —
+DET   4 John Leonard              LW  ROSTER DECISION        NO READ   48.5%  80.0%   15.1%  80.0% —
+DET   5 Axel Sandin-Pellikka      D   DEVELOPMENT ASSIGN     NO READ   39.2%  53.6%   32.4%   0.0% —
+DET   6 Travis Hamonic            D   ROSTER DECISION        NO READ   28.7%  40.0%   22.4%  40.0% —
+DET   7 Michael Brandsegg-Nygård  RW  SCRATCH ROTATION       NO READ   23.8%  17.5%   47.1%   0.0% —
+DET   8 Nate Danielson            C   SCRATCH ROTATION       NO READ   18.3%   9.3%   40.1%   0.0% Michael Brandsegg-Nygård 8%
+DET   9 Jacob Bernard-Docker      D   SCRATCH ROTATION       NO READ   11.4%   7.8%   23.6%   7.8% —
+DET  10 Michael Rasmussen         C   SCRATCH ROTATION       NO READ   10.9%   3.3%   28.9%   3.3% Michael Brandsegg-Nygård 3%
+EDM   1 Isaac Howard              LW  DEVELOPMENT ASSIGN     NO READ   54.8%  99.4%    0.4%   0.0% —
+EDM   2 Alec Regula               D   ROSTER DECISION        NO READ   54.7%  99.1%    0.6%  99.1% —
+EDM   3 Riley Stillman            D   ROSTER DECISION        NO READ   54.3%  98.2%    1.1%  98.2% —
+EDM   4 Trent Frederic            C   ROSTER DECISION        NO READ   40.8%  57.0%   31.6%  57.0% —
+EDM   5 Calvin Pickard            G   ROSTER DECISION        NO READ   40.8%  74.1%    0.0%  74.1% —
+EDM   6 Curtis Lazar              C   ROSTER DECISION        NO READ   39.6%  51.6%   37.4%  51.6% —
+EDM   7 Mattias Janmark           C   ROSTER DECISION        NO READ   27.3%  24.8%   45.5%  24.8% —
+EDM   8 Josh Samanski             C   ROSTER DECISION        NO READ   25.5%  35.8%   19.5%  35.8% —
+EDM   9 Max Jones                 LW  ROSTER DECISION        NO READ   16.8%  20.5%   18.3%  20.5% —
+EDM  10 Spencer Stastney          D   SCRATCH ROTATION       NO READ   13.7%   1.2%   43.5%   1.2% —
+FLA   1 Tobias Bjornfot           D   ROSTER DECISION        NO READ   51.4%  87.8%   10.3%  87.8% —
+FLA   2 Mike Benning              D   ROSTER DECISION        NO READ   49.5%  81.3%   15.9%  81.3% —
+FLA   3 Aleksander Barkov         C   ROSTER DECISION        NO READ   45.8%  78.0%    9.8%  78.0% —
+FLA   4 Jesper Boqvist            C   ROSTER DECISION        NO READ   33.4%  40.5%   37.1%  40.5% —
+FLA   5 Luke Kunin                C   ROSTER DECISION        NO READ   33.4%  40.6%   36.9%  40.6% —
+FLA   6 Cole Reinhardt            LW  ROSTER DECISION        NO READ   30.8%  30.6%   46.7%  30.6% —
+FLA   7 Cole Schwindt             C   ROSTER DECISION        NO READ   29.9%  43.8%   19.2%  43.8% —
+FLA   8 Tomas Nosek               LW  ROSTER DECISION        NO READ   29.7%  43.0%   20.1%  43.0% —
+FLA   9 Dmitry Kulikov            D   ROSTER DECISION        NO READ   28.6%  27.1%   45.7%  27.1% —
+FLA  10 Jonah Gadjovich           LW  ROSTER DECISION        NO READ   14.3%  19.6%   11.7%  19.6% —
+LAK   1 Andre Lee                 LW  ROSTER DECISION        NO READ   53.8%  95.6%    4.1%  95.6% —
+LAK   2 Jeff Malott               LW  ROSTER DECISION        NO READ   50.2%  80.6%   19.4%  80.6% —
+LAK   3 Angus Booth               D   DEVELOPMENT ASSIGN     NO READ   45.5%  74.3%   15.5%   0.0% —
+LAK   4 Mathieu Joseph            RW  ROSTER DECISION        NO READ   42.9%  53.4%   45.2%  53.4% —
+LAK   5 Jared Wright              RW  ROSTER DECISION        NO READ   40.6%  53.2%   37.7%  53.2% —
+LAK   6 Taylor Ward               RW  ROSTER DECISION        NO READ   23.9%  17.2%   48.1%  17.2% —
+LAK   7 Jacob Moverare            D   ROSTER DECISION        NO READ   23.6%  21.9%   38.6%  21.9% —
+LAK   8 Cody Ceci                 D   SCRATCH ROTATION       NO READ   13.2%   3.1%   37.8%   3.1% Angus Booth 1%
+LAK   9 Joel Armia                RW  SCRATCH ROTATION       NO READ    7.0%   0.0%   23.5%   0.0% —
+LAK  10 Andrei Kuzmenko           LW  ROSTER SECURE          NO READ    5.9%   0.0%   19.6%   0.0% —
+MIN   1 Cal Petersen              G   ROSTER DECISION        NO READ   54.9%  99.9%    0.0%  99.9% —
+MIN   2 Chase Wutzke              G   DEVELOPMENT ASSIGN     NO READ   54.9%  99.9%    0.0%   0.0% —
+MIN   3 Riley Mercer              G   DEVELOPMENT ASSIGN     NO READ   54.9%  99.9%    0.0%   0.0% —
+MIN   4 David Spacek              D   DEVELOPMENT ASSIGN     NO READ   49.7%  86.8%    6.5%   0.0% —
+MIN   5 Viking Gustafsson Nyberg  D   DEVELOPMENT ASSIGN     NO READ   49.4%  86.5%    6.1%   0.0% —
+MIN   6 Matt Kiersted             D   ROSTER DECISION        NO READ   49.3%  86.7%    5.4%  86.7% —
+MIN   7 Carson Lambos             D   DEVELOPMENT ASSIGN     NO READ   49.2%  87.3%    3.9%   0.0% —
+MIN   8 Zach Bogosian             D   ROSTER DECISION        NO READ   46.7%  73.2%   15.6%  73.2% David Spacek 5%, Viking Gustafsson Nyberg 3%, Carson Lambos 3%
+MIN   9 Marcus Foligno            LW  ROSTER DECISION        NO READ   46.0%  61.5%   37.1%  61.5% Hunter Haight 7%
+MIN  10 Nicolas Aube-Kubel        RW  ROSTER DECISION        NO READ   41.1%  57.2%   32.2%  57.2% —
+MTL   1 Owen Beck                 C   DEVELOPMENT ASSIGN     NO READ   53.9%  95.6%    4.3%   0.0% —
+MTL   2 Jared Davidson            C   ROSTER DECISION        NO READ   52.4%  90.8%    8.3%  90.8% —
+MTL   3 Samuel Blais              LW  ROSTER DECISION        NO READ   50.9%  82.9%   15.7%  82.9% Owen Beck 4%
+MTL   4 Arber Xhekaj              D   ROSTER DECISION        NO READ   49.2%  58.0%   28.7%  58.0% Adam Engstrom 33%, David Reinbacher 25%
+MTL   5 David Reinbacher          D   DEVELOPMENT ASSIGN     NO READ   35.1%  54.1%   17.7%   0.0% —
+MTL   6 Jayden Struble            D   ROSTER DECISION        NO READ   34.6%  38.4%   25.8%  38.4% David Reinbacher 20%, Adam Engstrom 18%
+MTL   7 Samuel Montembeault       G   ROSTER DECISION        NO READ   33.1%  47.3%    0.0%  47.3% Jacob Fowler 47%
+MTL   8 Adam Engstrom             D   DEVELOPMENT ASSIGN     NO READ   32.4%  47.6%   20.6%   0.0% —
+MTL   9 Patrik Laine              RW  ROSTER DECISION        NO READ   31.9%  28.1%   54.7%  28.1% —
+MTL  10 Jacob Fowler              G   DEVELOPMENT ASSIGN     NO READ   19.9%  36.1%    0.0%   0.0% —
+NJD   1 Colton White              D   ROSTER DECISION        NO READ   54.9%  99.8%    0.1%  99.8% —
+NJD   2 Brian Halonen             LW  ROSTER DECISION        NO READ   49.3%  81.7%   14.5%  81.7% —
+NJD   3 Angus Crookshank          C   ROSTER DECISION        NO READ   48.6%  79.1%   17.0%  79.1% —
+NJD   4 Lenni Hameenaho           RW  DEVELOPMENT ASSIGN     NO READ   47.3%  77.2%   16.2%   0.0% —
+NJD   5 Dennis Cholowski          D   ROSTER DECISION        NO READ   35.8%  56.8%   15.3%  56.8% —
+NJD   6 Zack MacEwen              RW  ROSTER DECISION        NO READ   27.0%  31.2%   32.9%  31.2% —
+NJD   7 Maxim Tsyplakov           RW  SCRATCH ROTATION       NO READ   23.7%   9.0%   62.5%   9.0% —
+NJD   8 Evgenii Dadonov           LW  ROSTER DECISION        NO READ   22.8%  20.2%   39.0%  20.2% —
+NJD   9 Brenden Dillon            D   ROSTER DECISION        NO READ   17.5%  16.1%   28.8%  16.1% —
+NJD  10 Jonas Siegenthaler        D   SCRATCH ROTATION       NO READ   14.1%   8.7%   31.1%   8.7% —
+NSH   1 Zachary L'Heureux         LW  DEVELOPMENT ASSIGN     NO READ   61.5%  83.0%   14.9%   0.0% Joakim Kemell 39%, Brady Martin 24%, Aiden Fink 13%
+NSH   2 Jordan Oesterle           D   ROSTER DECISION        NO READ   54.0%  96.8%    2.4%  96.8% —
+NSH   3 Kevin Gravel              D   ROSTER DECISION        NO READ   53.1%  95.3%    2.4%  95.3% —
+NSH   4 Cole O'Hara               RW  ROSTER DECISION        NO READ   35.5%  48.9%   28.6%  48.9% —
+NSH   5 Aiden Fink                RW  DEVELOPMENT ASSIGN     NO READ   30.8%  39.1%   30.9%   0.0% —
+NSH   6 Justin Barron             D   SCRATCH ROTATION       NO READ   22.2%   5.3%   61.9%   5.3% Ryan Ufko 5%
+NSH   7 Brady Martin              C   SCRATCH ROTATION       NO READ   16.8%  15.7%   27.1%   0.0% —
+NSH   8 Ozzy Wiesblatt            C   SCRATCH ROTATION       NO READ   14.6%   2.8%   42.6%   2.8% Brady Martin 1%, Aiden Fink 0%, Joakim Kemell 0%
+NSH   9 Reid Schaefer             LW  SCRATCH ROTATION       NO READ   12.5%   4.2%   32.1%   0.0% Joakim Kemell 2%, Brady Martin 1%, Aiden Fink 0%
+NSH  10 Joakim Kemell             RW  ROSTER SECURE          NO READ    8.6%   6.1%   17.6%   0.0% —
+NYI   1 Semyon Varlamov           G   ROSTER DECISION        NO READ   54.6%  99.3%    0.0%  99.3% —
+NYI   2 Travis Mitchell           D   ROSTER DECISION        NO READ   54.1%  96.9%    2.6%  96.9% —
+NYI   3 Matt Luff                 RW  ROSTER DECISION        NO READ   52.3%  91.4%    6.7%  91.4% —
+NYI   4 Liam Foudy                C   ROSTER DECISION        NO READ   50.5%  87.3%    8.3%  87.3% —
+NYI   5 Kyle MacLean              C   ROSTER DECISION        NO READ   44.3%  61.8%   34.2%  61.8% —
+NYI   6 Marc Gatcomb              C   ROSTER DECISION        NO READ   35.8%  40.0%   46.1%  40.0% —
+NYI   7 Alexander Romanov         D   ROSTER DECISION        NO READ   31.9%  43.7%   26.3%  43.7% —
+NYI   8 Adam Boqvist              D   ROSTER DECISION        NO READ   30.9%  43.6%   22.9%  43.6% —
+NYI   9 Calum Ritchie             C   SCRATCH ROTATION       NO READ   23.4%  14.7%   51.1%   0.0% —
+NYI  10 Ondrej Palat              LW  SCRATCH ROTATION       NO READ   11.6%   2.9%   33.4%   2.9% —
+NYR   1 Joonas Korpisalo          G   ROSTER DECISION        NO READ   38.8%  70.6%    0.0%  70.6% —
+NYR   2 Urho Vaakanainen          D   ROSTER DECISION        NO READ   37.6%  56.7%   21.2%  56.7% —
+NYR   3 Cole Beaudoin             C   DEVELOPMENT ASSIGN     NO READ   36.4%  53.0%   23.9%   0.0% —
+NYR   4 Liam Greentree            RW  DEVELOPMENT ASSIGN     NO READ   35.3%  64.1%    0.0%   0.0% —
+NYR   5 Vincent Iorio             D   DEVELOPMENT ASSIGN     NO READ   31.1%  48.0%   15.5%   0.0% —
+NYR   6 Joe Veleno                C   ROSTER DECISION        NO READ   23.4%  18.1%   39.3%  18.1% Liam Greentree 7%, Cole Beaudoin 4%
+NYR   7 Drew Fortescue            D   DEVELOPMENT ASSIGN     NO READ   19.9%  29.6%   11.9%   0.0% —
+NYR   8 Marcus Pettersson         D   ROSTER DECISION        NO READ   18.6%  20.1%   25.1%  20.1% —
+NYR   9 Taylor Raddysh            RW  SCRATCH ROTATION       NO READ   16.0%   5.9%   40.3%   5.9% Liam Greentree 3%, Cole Beaudoin 1%
+NYR  10 Matt Rempe                C   ROSTER DECISION        NO READ   15.5%  16.2%   21.8%  16.2% —
+OTT   1 Nikolas Matinpalo         D   ROSTER DECISION        NO READ   56.3%  93.0%    6.4%  93.0% Carter Yakemchuk 22%
+OTT   2 Dennis Gilbert            D   ROSTER DECISION        NO READ   51.6%  91.1%    5.0%  91.1% —
+OTT   3 Cameron Crotty            D   ROSTER DECISION        NO READ   50.8%  89.3%    5.6%  89.3% —
+OTT   4 Graeme Clarke             RW  ROSTER DECISION        NO READ   50.6%  88.8%    5.9%  88.8% —
+OTT   5 Tyler Boucher             RW  DEVELOPMENT ASSIGN     NO READ   49.9%  85.8%    9.1%   0.0% —
+OTT   6 Oskar Pettersson          RW  DEVELOPMENT ASSIGN     NO READ   49.7%  85.2%    9.5%   0.0% —
+OTT   7 Kurtis MacDermid          LW  ROSTER DECISION        NO READ   43.6%  69.5%   18.0%  69.5% —
+OTT   8 Carter Yakemchuk          D   DEVELOPMENT ASSIGN     NO READ   43.4%  73.2%   10.5%   0.0% —
+OTT   9 Hayden Hodgson            RW  ROSTER DECISION        NO READ   38.7%  58.3%   22.0%  58.3% —
+OTT  10 Arthur Kaliyev            RW  ROSTER DECISION        NO READ   38.3%  60.3%   17.0%  60.3% —
+PHI   1 Garnet Hathaway           RW  ROSTER DECISION        NO READ   59.8%  84.0%   13.2%  84.0% Porter Martone 34%, Alex Bump 30%
+PHI   2 Carson Bjarnason          G   DEVELOPMENT ASSIGN     NO READ   54.8%  99.7%    0.0%   0.0% —
+PHI   3 Aleksei Kolosov           G   ROSTER DECISION        NO READ   53.5%  97.3%    0.0%  97.3% —
+PHI   4 David Jiricek             D   DEVELOPMENT ASSIGN     NO READ   49.3%  83.6%    7.1%   0.0% Oliver Bonk 8%
+PHI   5 Oscar Eklind              LW  ROSTER DECISION        NO READ   49.0%  84.2%    9.0%  84.2% —
+PHI   6 Tyson Foerster            RW  ROSTER DECISION        NO READ   47.3%  81.6%    8.0%  81.6% —
+PHI   7 Nick Seeler               D   ROSTER DECISION        NO READ   46.6%  70.2%   15.7%  70.2% Oliver Bonk 22%
+PHI   8 Helge Grans               D   ROSTER DECISION        NO READ   46.5%  81.2%    6.2%  81.2% —
+PHI   9 Noah Juulsen              D   ROSTER DECISION        NO READ   45.5%  63.7%   21.8%  63.7% Oliver Bonk 26%
+PHI  10 Jacob Gaucher             C   ROSTER DECISION        NO READ   44.3%  75.2%    9.7%  75.2% —
+PIT   1 Rutger McGroarty          RW  DEVELOPMENT ASSIGN     NO READ   54.2%  97.4%    2.1%   0.0% —
+PIT   2 Connor Clifton            D   ROSTER DECISION        NO READ   53.6%  92.8%    6.8%  92.8% Jake Livanavage 3%
+PIT   3 Ryan Graves               D   ROSTER DECISION        NO READ   49.6%  83.7%   11.4%  83.7% Jake Livanavage 1%
+PIT   4 Elmer Soderblom           LW  ROSTER DECISION        NO READ   49.0%  78.0%   20.2%  78.0% —
+PIT   5 Jake Livanavage           D   DEVELOPMENT ASSIGN     NO READ   48.8%  85.4%    6.2%   0.0% —
+PIT   6 Kevin Hayes               RW  ROSTER DECISION        NO READ   33.4%  44.6%   29.4%  44.6% —
+PIT   7 Blake Lizotte             C   ROSTER DECISION        NO READ   26.7%  20.3%   51.9%  20.3% —
+PIT   8 Jack St. Ivany            D   ROSTER DECISION        NO READ   25.3%  27.1%   32.3%  27.1% Jake Livanavage 4%
+PIT   9 Ville Koivunen            RW  DEVELOPMENT ASSIGN     NO READ   25.2%  30.6%   27.8%   0.0% —
+PIT  10 Filip Hallander           C   ROSTER DECISION        NO READ   22.7%  26.5%   27.0%  26.5% —
+SEA   1 Ryden Evers               LW  DEVELOPMENT ASSIGN     NO READ   53.6%  97.5%    0.0%   0.0% —
+SEA   2 Nikke Kokko               G   DEVELOPMENT ASSIGN     NO READ   52.9%  96.1%    0.0%   0.0% —
+SEA   3 Jani Nyman                RW  DEVELOPMENT ASSIGN     NO READ   52.5%  95.4%    0.0%   0.0% —
+SEA   4 Chase Reid                D   DEVELOPMENT ASSIGN     NO READ   52.1%  92.8%    3.5%   0.0% —
+SEA   5 Jagger Firkus             RW  DEVELOPMENT ASSIGN     NO READ   52.0%  94.6%    0.0%   0.0% —
+SEA   6 Logan Morrison            C   DEVELOPMENT ASSIGN     NO READ   51.7%  94.0%    0.0%   0.0% —
+SEA   7 Ty Nelson                 D   DEVELOPMENT ASSIGN     NO READ   46.7%  76.9%   14.7%   0.0% —
+SEA   8 Oscar Fisker Molgaard     C   DEVELOPMENT ASSIGN     NO READ   46.0%  73.6%   18.4%   0.0% —
+SEA   9 Ville Ottavainen          D   DEVELOPMENT ASSIGN     NO READ   44.5%  69.2%   21.4%   0.0% —
+SEA  10 John Hayden               C   ROSTER DECISION        NO READ   44.0%  60.9%   34.9%  60.9% —
+SJS   1 Luca Cagnoni              D   DEVELOPMENT ASSIGN     NO READ   54.0%  97.3%    1.5%   0.0% —
+SJS   2 Ethan Cardwell            RW  ROSTER DECISION        NO READ   51.8%  90.3%    7.0%  90.3% —
+SJS   3 Ryan Reaves               RW  ROSTER DECISION        NO READ   50.4%  83.3%   15.2%  83.3% —
+SJS   4 Zack Ostapchuk            C   DEVELOPMENT ASSIGN     NO READ   46.8%  70.4%   26.8%   0.0% —
+SJS   5 Barclay Goodrow           C   ROSTER DECISION        NO READ   30.0%  17.0%   68.7%  17.0% —
+SJS   6 Vincent Desharnais        D   SCRATCH ROTATION       NO READ   24.9%   2.0%   78.3%   2.0% Luca Cagnoni 2%
+SJS   7 Igor Chernyshov           LW  DEVELOPMENT ASSIGN     NO READ   23.2%  25.7%   30.2%   0.0% —
+SJS   8 Ty Dellandrea             C   SCRATCH ROTATION       NO READ   16.9%   8.1%   41.6%   8.1% —
+SJS   9 Pavol Regenda             LW  ROSTER SECURE          NO READ    5.6%   5.2%    9.2%   5.2% —
+SJS  10 Sam Dickinson             D   ROSTER SECURE          NO READ    2.7%   0.0%    9.1%   0.0% —
+STL   1 Aleksanteri Kaskimaki     C   DEVELOPMENT ASSIGN     NO READ   50.7%  91.6%    1.2%   0.0% —
+STL   2 Hunter Skinner            D   ROSTER DECISION        NO READ   50.0%  84.9%   11.0%  84.9% —
+STL   3 Hugh McGing               LW  ROSTER DECISION        NO READ   49.0%  81.2%   14.4%  81.2% —
+STL   4 Otto Stenberg             C   DEVELOPMENT ASSIGN     NO READ   47.0%  85.1%    0.1%   0.0% Aleksanteri Kaskimaki 1%
+STL   5 Theo Lindstein            D   DEVELOPMENT ASSIGN     NO READ   46.7%  76.7%   15.0%   0.0% —
+STL   6 Alexey Toropchenko        RW  ROSTER DECISION        NO READ   30.5%  15.0%   73.1%  15.0% Aleksanteri Kaskimaki 2%
+STL   7 Justin Holl               D   ROSTER DECISION        NO READ   28.9%  28.6%   44.0%  28.6% —
+STL   8 Nathan Walker             LW  SCRATCH ROTATION       NO READ   28.3%   6.4%   81.9%   6.4% Aleksanteri Kaskimaki 1%
+STL   9 Matthew Kessel            D   SCRATCH ROTATION       NO READ   13.8%   9.7%   26.2%   9.7% Theo Lindstein 4%
+STL  10 Jack Finley               C   ROSTER DECISION        NO READ   11.8%  19.1%    2.5%  19.1% Aleksanteri Kaskimaki 3%
+TBL   1 Harrison Meneghin         G   DEVELOPMENT ASSIGN     NO READ   54.0%  98.1%    0.0%   0.0% —
+TBL   2 Declan Carlile            D   ROSTER DECISION        NO READ   53.7%  95.4%    4.1%  95.4% —
+TBL   3 Mitchell Chaffee          RW  ROSTER DECISION        NO READ   53.0%  92.4%    7.3%  92.4% —
+TBL   4 Jakob Pelletier           LW  ROSTER DECISION        NO READ   50.6%  85.7%   11.4%  85.7% —
+TBL   5 Dylan Duke                LW  DEVELOPMENT ASSIGN     NO READ   48.9%  81.6%   13.5%   0.0% —
+TBL   6 Emil Lilleberg            D   ROSTER DECISION        NO READ   39.0%  53.5%   32.0%  53.5% —
+TBL   7 Erik Cernak               D   ROSTER DECISION        NO READ   35.0%  37.8%   47.3%  37.8% —
+TBL   8 Scott Sabourin            RW  ROSTER DECISION        NO READ   27.8%  23.0%   40.0%  23.0% Conor Geekie 20%, Dylan Duke 1%
+TBL   9 Nick Paul                 LW  SCRATCH ROTATION       NO READ   16.4%   4.4%   44.5%   4.4% Conor Geekie 3%, Dylan Duke 1%
+TBL  10 Conor Geekie              C   SCRATCH ROTATION       NO READ   15.4%  11.2%   30.9%   0.0% —
+TOR   1 Dakota Mermis             D   ROSTER DECISION        NO READ   54.8%  99.5%    0.3%  99.5% —
+TOR   2 Jacob Quillan             C   ROSTER DECISION        NO READ   51.6%  83.6%   14.6%  83.6% Luke Haymes 8%
+TOR   3 Michael Pezzetta          LW  ROSTER DECISION        NO READ   47.1%  73.9%   21.6%  73.9% —
+TOR   4 Max Domi                  C   ROSTER DECISION        NO READ   27.9%  23.7%   49.7%  23.7% —
+TOR   5 Brandon Carlo             D   ROSTER DECISION        NO READ   27.9%  32.1%   34.2%  32.1% —
+TOR   6 Simon Benoit              D   ROSTER DECISION        NO READ   20.5%  20.1%   31.5%  20.1% —
+TOR   7 Chris Tanev               D   ROSTER DECISION        NO READ   20.3%  28.0%   16.3%  28.0% —
+TOR   8 Ryan Tverberg             C   ROSTER DECISION        NO READ   16.4%  10.9%   34.6%  10.9% —
+TOR   9 Philippe Myers            D   ROSTER DECISION        NO READ   15.7%  19.8%   15.9%  19.8% —
+TOR  10 Luke Haymes               C   SCRATCH ROTATION       NO READ   14.2%   7.1%   34.4%   0.0% —
+UTA   1 Brandon Tanev             LW  ROSTER DECISION        NO READ   54.2%  97.3%    2.3%  97.3% —
+UTA   2 Matt Villalta             G   ROSTER DECISION        NO READ   53.7%  97.7%    0.0%  97.7% —
+UTA   3 Jaxson Stauber            G   ROSTER DECISION        NO READ   53.6%  97.4%    0.0%  97.4% —
+UTA   4 Cam Hebig                 C   ROSTER DECISION        NO READ   48.9%  83.8%    9.2%  83.8% —
+UTA   5 Ben McCartney             LW  ROSTER DECISION        NO READ   48.8%  83.8%    9.0%  83.8% —
+UTA   6 Mikhail Sergachev         D   ROSTER DECISION        NO READ   48.3%  82.2%   10.2%  82.2% —
+UTA   7 Maksymilian Szuber        D   ROSTER DECISION        NO READ   46.9%  76.8%   15.5%  76.8% —
+UTA   8 Scott Perunovich          D   ROSTER DECISION        NO READ   46.1%  76.8%   12.9%  76.8% —
+UTA   9 Andrew Agozzino           LW  ROSTER DECISION        NO READ   42.1%  68.5%   14.8%  68.5% —
+UTA  10 Daniil But                LW  DEVELOPMENT ASSIGN     NO READ   33.0%  47.6%   22.6%   0.0% —
+VAN   1 Arshdeep Bains            LW  ROSTER DECISION        NO READ   60.4%  98.0%    2.0%  98.0% Jonathan Lekkerimäki 39%
+VAN   2 Mackenzie MacEachern      LW  ROSTER DECISION        NO READ   49.3%  82.8%   12.4%  82.8% —
+VAN   3 Nils Aman                 C   ROSTER DECISION        NO READ   41.5%  61.7%   25.2%  61.7% —
+VAN   4 Kirill Kudryavtsev        D   DEVELOPMENT ASSIGN     NO READ   41.4%  60.1%   27.8%   0.0% —
+VAN   5 Derek Forbort             D   ROSTER DECISION        NO READ   26.2%  28.4%   35.3%  28.4% —
+VAN   6 Nikita Tolopilo           G   ROSTER DECISION        NO READ   22.6%  41.0%    0.0%  41.0% —
+VAN   7 Jonathan Lekkerimäki      RW  SCRATCH ROTATION       NO READ   21.2%  19.7%   34.5%   0.0% —
+VAN   8 Filip Chytil              C   ROSTER DECISION        NO READ   19.2%  19.5%   28.3%  19.5% —
+VAN   9 Thatcher Demko            G   ROSTER DECISION        NO READ   19.2%  34.9%    0.0%  34.9% —
+VAN  10 Nils Hoglander            LW  ROSTER DECISION        NO READ   17.6%  13.2%   32.0%  13.2% Jonathan Lekkerimäki 5%
+VGK   1 Dylan Coghlan             D   ROSTER DECISION        NO READ   54.7%  99.1%    0.7%  99.1% —
+VGK   2 Jaycob Megna              D   ROSTER DECISION        NO READ   54.7%  99.1%    0.5%  99.1% —
+VGK   3 Jonas Rondbjerg           RW  ROSTER DECISION        NO READ   49.6%  86.6%    6.5%  86.6% —
+VGK   4 Tanner Laczynski          C   ROSTER DECISION        NO READ   43.8%  73.7%   11.0%  73.7% —
+VGK   5 Brandon Saad              LW  ROSTER DECISION        NO READ   34.2%  44.6%   32.1%  44.6% —
+VGK   6 Braeden Bowman            RW  DEVELOPMENT ASSIGN     NO READ   27.1%  33.1%   29.5%   0.0% —
+VGK   7 Adin Hill                 G   ROSTER DECISION        NO READ   26.1%  47.4%    0.0%  47.4% —
+VGK   8 Carter Hart               G   ROSTER DECISION        NO READ   22.4%  40.7%    0.0%  40.7% —
+VGK   9 Colton Sissons            C   ROSTER DECISION        NO READ   22.2%  20.0%   37.2%  20.0% —
+VGK  10 Keegan Kolesar            RW  ROSTER DECISION        NO READ   16.4%  13.9%   29.2%  13.9% —
+WPG   1 Brad Lambert              C   DEVELOPMENT ASSIGN     NO READ   67.3%  94.7%    5.3%   0.0% Nikita Chibrikov 82%, Danil Zhilkin 9%
+WPG   2 Parker Ford               C   ROSTER DECISION        NO READ   53.8%  95.6%    4.2%  95.6% —
+WPG   3 Danil Zhilkin             C   DEVELOPMENT ASSIGN     NO READ   52.4%  90.3%    9.0%   0.0% —
+WPG   4 Ville Heinola             D   ROSTER DECISION        NO READ   50.6%  89.5%    4.6%  89.5% —
+WPG   5 Colin Miller              D   ROSTER DECISION        NO READ   31.9%  48.7%   17.2%  48.7% —
+WPG   6 Jacob Bryson              D   ROSTER DECISION        NO READ   24.9%  27.4%   32.6%  27.4% —
+WPG   7 Nikita Chibrikov          RW  SCRATCH ROTATION       NO READ   24.0%  14.8%   52.9%   0.0% —
+WPG   8 Gustav Nyquist            RW  SCRATCH ROTATION       NO READ   20.4%   2.7%   61.7%   2.7% Nikita Chibrikov 2%, Danil Zhilkin 0%
+WPG   9 Haydn Fleury              D   ROSTER DECISION        NO READ   12.2%  13.6%   15.9%  13.6% —
+WPG  10 Elias Salomonsson         D   ROSTER SECURE          NO READ    8.7%  11.1%    8.7%   0.0% —
+WSH   1 Sonny Milano              LW  ROSTER DECISION        NO READ   66.8%  94.5%    4.6%  94.5% Ilya Protas 48%, Ivan Miroshnichenko 42%
+WSH   2 Brett Leason              RW  ROSTER DECISION        NO READ   53.3%  94.1%    5.2%  94.1% —
+WSH   3 Brandon Duhaime           LW  ROSTER DECISION        NO READ   48.1%  49.2%   45.7%  49.2% Ivan Miroshnichenko 26%, Ilya Protas 23%
+WSH   4 Dylan McIlrath            D   ROSTER DECISION        NO READ   41.8%  71.0%    9.1%  71.0% —
+WSH   5 Clay Stevenson            G   ROSTER DECISION        NO READ   39.3%  71.4%    0.0%  71.4% —
+WSH   6 Timothy Liljegren         D   ROSTER DECISION        NO READ   37.7%  45.4%   23.9%  45.4% Cole Hutson 37%
+WSH   7 David Kampf               C   ROSTER DECISION        NO READ   37.1%  31.6%   50.5%  31.6% Ilya Protas 17%, Ivan Miroshnichenko 14%
+WSH   8 Declan Chisholm           D   ROSTER DECISION        NO READ   31.3%  41.7%   14.0%  41.7% Cole Hutson 28%
+WSH   9 Trevor van Riemsdyk       D   ROSTER DECISION        NO READ   21.3%  18.9%   28.4%  18.9% Cole Hutson 16%
+WSH  10 Ivan Miroshnichenko       LW  SCRATCH ROTATION       NO READ   18.3%  16.9%   30.0%   0.0% —

@@ -18,7 +18,9 @@ team standings.
 This spec covers data model, CLI commands, scoring algorithm, trade
 evaluation, and the HTTP server. It does **not** cover scheme TOML
 authoring (see `fantasy-scheme.md`) or scheme CLI ops (see
-`scheme-customization.md`).
+`scheme-customization.md`). Draft, daily lineup, injury reserve, waiver, and
+weekly acquisition optimization are specified separately in
+`fantasy-draft-daily-assistant.md`.
 
 ---
 
@@ -115,7 +117,12 @@ references use partial-name matching against the loaded player set.
 
 ```
 icelines fantasy standings [--league LEAGUE] [--scheme SCHEME]
-icelines fantasy trade <P1> --to-team <T> --for-player <P2> [--execute] [--league LEAGUE]
+icelines fantasy trade <P1[,P2,P3]> --to-team <T> --for-player <P1[,P2,P3]> [--execute] [--league LEAGUE]
+icelines fantasy trade-finder [--team TEAM] [--to-team TEAM] [--max-package 2] [--fairness-percent 10]
+icelines fantasy trade-readiness [--team TEAM] [--stats-season 20252026] [--json]
+icelines fantasy trade-history [--limit 50] [--json]
+icelines fantasy trade-offers [--status pending] [--actionable-only] [--limit 50] [--json]
+icelines fantasy trade-offer-close <ID> --status <accepted|rejected|cancelled|expired>
 icelines fantasy serve [--port 8080] [--league LEAGUE]
 ```
 
@@ -123,6 +130,22 @@ icelines fantasy serve [--port 8080] [--league LEAGUE]
 the league's scheme for what-if analysis.
 `trade` defaults to **dry-run** (shows projected pts before/after); pass
 `--execute` to actually mutate rosters in a single transaction.
+
+### Yahoo roster import and synchronization
+
+```
+icelines fantasy import-yahoo --file rosters.csv --league LEAGUE --dry-run [--my-team TEAM]
+Get-Clipboard | icelines fantasy import-yahoo --file - --league LEAGUE --dry-run --replace
+icelines fantasy import-yahoo --file rosters.csv --league LEAGUE --dry-run --replace
+icelines fantasy import-yahoo --file rosters.csv --league LEAGUE --replace
+```
+
+The default import is additive. `--replace` treats every team present in the CSV
+as authoritative, permits players to move between fantasy teams, removes saved
+memberships absent from the new export, and commits included roster replacements
+atomically. Apply is refused if any row is skipped, unresolved, duplicated, or
+invalid. The dry run reports the number of stale memberships that would be
+removed and must be the normal preflight before an exact synchronization.
 
 ---
 
@@ -164,21 +187,67 @@ record (no auto-drop) so the user can decide.
 
 ## Trade evaluation
 
-`fantasy trade <P1> --to-team <T> --for-player <P2>`:
+`fantasy trade <P1[,P2,P3]> --to-team <T> --for-player <P1[,P2,P3]>`:
 
-1. Resolve P1 and P2 to canonical players.
-2. Find each player's current team in the active league.
-3. If `--execute` is **not** set: compute and print before/after totals
-   for both teams; show the points delta and a verdict
-   (`UPGRADE`/`DOWNGRADE`/`even` — same threshold as `icelines trade`).
-4. If `--execute` is set: in a single SQLite transaction, swap the two
-   roster rows. Print confirmation.
+1. Resolve every skater or goalie in each one-to-three-player package.
+2. Require every outgoing player to belong to one sending team and every
+   incoming player to belong to `--to-team`.
+3. Derive league points per game from the selected completed `--stats-season`,
+   then project both packages and complete rosters over their remaining games
+   with the active league's exact scoring scheme.
+4. Report production-value delta, remaining 2026-27 games delta, roster capacity,
+   and active-slot legality using persisted C/LW/RW/D/G multi-position eligibility.
+5. Emit the same evaluation as `fantasy_trade_evaluation.v1` with `--json`.
+6. `--execute` commits any legal one-to-three-player package atomically. Every
+   outgoing player is revalidated inside the transaction; stale state or any
+   write failure leaves both rosters unchanged.
+7. The same transaction appends an immutable local audit row. `trade-history`
+   returns newest-first text or `fantasy_trade_history.v1` JSON; failed trades
+   never create history.
+8. `--save-offer` persists a legal evaluation as pending without changing either
+   roster. Saved offers can be listed and closed as accepted, rejected,
+   cancelled, or expired. Closing is status-only; external acceptance must be
+   reconciled through explicit local execution or an exact Yahoo roster sync.
+9. Offer listing rechecks every saved player against current roster membership,
+   labels stale packages with concrete ownership issues, and can hide them with
+   `--actionable-only`. This check does not silently change offer status.
 
 Edge cases:
 - P1 and P2 on the same team → error: trade requires two teams.
 - Either player not on any team in this league → error.
+- Repeated players or packages larger than three → error.
+- A package that increases missing active slots or exceeds the 16-player standard
+  capacity → reject and refuse execution.
 - `--to-team` doesn't match P1's destination logic (P2 must be on
   `--to-team`) → error with clarifying message.
+
+`fantasy trade-finder` searches every opponent by default, or one manager with
+`--to-team`. It enumerates legal one- and two-player packages, rejects offers
+outside the configured projected-value gap, and ranks positive fits using:
+
+- rest-of-season league value;
+- required active-slot coverage for both rosters;
+- remaining games and quiet-slate games;
+- change in the user's 2026-27 schedule equivalence-class diversity.
+
+The finder separately scores projected active-lineup value per game, total
+rest-of-season value, and counterpart fit. Its mutual-fit ranking rewards offers
+that give the other manager a defensible reason to accept. User fit must be
+material and counterpart fit cannot be negative. The user's top rest-of-season
+player is protected automatically; `--protect` adds named players
+and `--include-anchors` opts into searching the default anchor. The counterpart's
+schedule deltas are disclosed rather than hidden. Results from partial saved
+rosters are explicitly provisional. Each result can be passed to `fantasy trade`
+for the full two-team audit before an offer is made.
+
+`fantasy trade-readiness` checks every saved team, or one selected team, against
+the configured 16-player standard capacity and active C/LW/RW/D/UTIL/G slots.
+It reports missing roster spots, unfillable active slots, players without
+position eligibility, and players without scoring data as
+`fantasy_trade_readiness.v1`. A league-wide report is
+ready only when at least two teams exist and every checked roster passes.
+`trade-finder --require-complete` applies the same gate to the user and every
+searched opponent and refuses to emit provisional recommendations.
 
 ---
 
@@ -261,13 +330,13 @@ and the user is told to run `--repair-active` (planned; not in v1).
 5. **Multi-user / cloud sync**: Out of scope. The HTTP server is a
    single-user local dashboard, not a multi-tenant web app.
 
-6. **Draft tools**: Not in v1. `icelines query leaders --sort
-   pts-pace` covers draft prep; a dedicated `fantasy draft` mode is
-   backlog.
+6. **Draft tools**: Not in v1. The dedicated draft and daily decision loop is
+   now planned in `fantasy-draft-daily-assistant.md`; generic leader queries
+   remain supporting evidence rather than the league-specific optimizer.
 
-7. **Yahoo / ESPN import**: CSV import via `icelines scheme fromcsv`
-   handles scheme detection (see `scheme-customization.md`); roster
-   import from a Yahoo league export is **not** implemented in v1.
+7. **Yahoo / ESPN import**: `scheme fromcsv` handles scoring detection and
+   `fantasy import-yahoo` handles additive or exact roster synchronization.
+   Direct authenticated platform sync and ESPN roster import remain out of scope.
 
 ---
 
@@ -303,7 +372,7 @@ HTTP-route tests via in-process `axum::Router` (TODO — see Future work).
 | Goalie scoring | HIGH | Needs data-sources tier 2 wins/SV%/SO; not bundled |
 | Head-to-head matchups (`fl_matchups`) | MED | Common but requires schedule walker; standings = pace works for now |
 | Roster shape enforcement (per scheme) | MED | Yahoo / ESPN have different rules; punt to scheme TOML |
-| Yahoo league CSV import (rosters, not just scheme) | MED | Useful but not blocking |
+| Authenticated Yahoo/ESPN roster sync | MED | CSV roster synchronization is implemented; OAuth remains optional future work |
 | Auth for HTTP server | LOW | Single-user assumption; reverse-proxy if needed |
 | Daily delta scoring (`yesterday's stats`) | LOW | Backlog; see plans/INDEX.md |
-| Draft mode (`fantasy draft`) | LOW | `query leaders` covers most prep |
+| Draft/daily assistant | HIGH | Planned in `fantasy-draft-daily-assistant.md` |

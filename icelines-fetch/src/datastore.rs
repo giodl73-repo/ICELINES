@@ -649,6 +649,45 @@ impl DataStore {
         Ok(())
     }
 
+    /// Persist one deduplicated full-season schedule for offline fantasy analysis.
+    pub fn persist_schedule(
+        &self,
+        season: Season,
+        games: &[crate::nhl_api::ScheduledGame],
+    ) -> Result<(), DataError> {
+        let path = self.schedule_path(season);
+        write_json_atomic(&path, &games).map_err(|e| DataError::Io {
+            path: path.clone(),
+            source: e,
+        })?;
+        self.manifest.upsert(
+            DataKind::Schedule,
+            ManifestEntry {
+                key: DataKey::Season(season),
+                path,
+                freshness: Freshness {
+                    fetched_at: self.clock.now(),
+                    source: FetchSource::Live,
+                    ttl: Ttl::After(std::time::Duration::from_secs(86400)),
+                },
+            },
+        )?;
+        Ok(())
+    }
+
+    pub fn load_schedule(
+        &self,
+        season: Season,
+    ) -> Result<Vec<crate::nhl_api::ScheduledGame>, DataError> {
+        let kind = DataKind::Schedule;
+        let key = DataKey::Season(season);
+        let entry = self
+            .manifest
+            .get(kind, &key)
+            .ok_or(DataError::NotInstalled { kind, key })?;
+        self.read_json(&entry.path)
+    }
+
     fn persist_career_history(&self, pid: PlayerId, ch: &CareerHistory) -> Result<(), DataError> {
         let path = self.career_history_path(pid);
         write_json_atomic(&path, ch).map_err(|e| DataError::Io {
@@ -704,6 +743,13 @@ impl DataStore {
 
     fn career_history_path(&self, pid: PlayerId) -> PathBuf {
         self.root.join("career_history").join(format!("{pid}.json"))
+    }
+
+    fn schedule_path(&self, season: Season) -> PathBuf {
+        self.root
+            .join("seasons")
+            .join(season.as_str())
+            .join("schedule.json")
     }
 }
 
@@ -951,6 +997,8 @@ mod tests {
                 tier: SnapshotTier::Stats,
                 date: "2026-01-01".into(),
                 created_at: "2026-01-01T00:00:00Z".into(),
+                evidence_at: None,
+                evidence_source: None,
                 parent_key: None,
                 file_count: 1,
                 sealed: true,
@@ -1031,6 +1079,8 @@ mod tests {
                 tier: SnapshotTier::Stats,
                 date: "2026-01-01".into(),
                 created_at: "2026-01-01T00:00:00Z".into(),
+                evidence_at: None,
+                evidence_source: None,
                 parent_key: None,
                 file_count: 1,
                 sealed: false, // <-- unsealed; shim must skip
@@ -1072,5 +1122,38 @@ mod tests {
             "manifest season present"
         );
         assert!(seasons.contains(&Season(20252026)), "bundle season present");
+    }
+
+    #[test]
+    fn l0_full_season_schedule_persists_and_loads() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = DataStore::open(dir.path()).unwrap();
+        let games = vec![crate::nhl_api::ScheduledGame {
+            game_id: 2026020001,
+            date: "2026-09-29".to_owned(),
+            game_type: 2,
+            away_abbrev: "NYR".to_owned(),
+            away_name: "New York".to_owned(),
+            home_abbrev: "BOS".to_owned(),
+            home_name: "Boston".to_owned(),
+            start_time_utc: "2026-09-30T00:00:00Z".to_owned(),
+            away_score: None,
+            home_score: None,
+            game_state: Some("FUT".to_owned()),
+            last_period: None,
+            series_game: None,
+            away_wins: None,
+            home_wins: None,
+        }];
+        let season = Season(20262027);
+        store.persist_schedule(season, &games).unwrap();
+        let loaded = store.load_schedule(season).unwrap();
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].game_id, games[0].game_id);
+        assert_eq!(loaded[0].away_abbrev, "NYR");
+        assert!(store
+            .manifest()
+            .get(DataKind::Schedule, &DataKey::Season(season))
+            .is_some());
     }
 }

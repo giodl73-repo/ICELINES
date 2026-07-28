@@ -156,7 +156,9 @@ pub struct RosterPlayer {
     pub height_in_inches: Option<u32>,
     pub weight_in_pounds: Option<u32>,
     pub headshot: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_optional_localized_string")]
     pub birth_city: Option<LocalizedString>,
+    #[serde(default, deserialize_with = "deserialize_optional_localized_string")]
     pub birth_state_province: Option<LocalizedString>,
 }
 
@@ -179,6 +181,54 @@ impl LocalizedString {
 impl std::fmt::Display for LocalizedString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_str())
+    }
+}
+
+fn deserialize_optional_localized_string<'de, D>(
+    deserializer: D,
+) -> Result<Option<LocalizedString>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<serde_json::Value>::deserialize(deserializer)?;
+    match value {
+        None => Ok(None),
+        Some(serde_json::Value::Object(map)) if map.is_empty() => Ok(None),
+        Some(value) => serde_json::from_value(value)
+            .map(Some)
+            .map_err(serde::de::Error::custom),
+    }
+}
+
+#[cfg(test)]
+mod roster_schema_tests {
+    use super::RosterResponse;
+
+    #[test]
+    fn empty_optional_location_object_is_missing_but_empty_name_is_invalid() {
+        let valid = br#"{
+            "forwards": [{
+                "id": 1,
+                "firstName": {"default": "Test"},
+                "lastName": {"default": "Player"},
+                "positionCode": "C",
+                "birthCity": {"default": "Stockholm"},
+                "birthStateProvince": {}
+            }],
+            "defensemen": [],
+            "goalies": []
+        }"#;
+        let roster: RosterResponse = serde_json::from_slice(valid).unwrap();
+        assert!(roster.forwards[0].birth_state_province.is_none());
+        assert_eq!(
+            roster.forwards[0].birth_city.as_ref().unwrap().as_str(),
+            "Stockholm"
+        );
+
+        let invalid = String::from_utf8(valid.to_vec())
+            .unwrap()
+            .replace(r#"{"default": "Test"}"#, "{}");
+        assert!(serde_json::from_str::<RosterResponse>(&invalid).is_err());
     }
 }
 

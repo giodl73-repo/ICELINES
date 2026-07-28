@@ -1,6 +1,7 @@
 param(
     [string]$BinaryPath = "",
     [int]$ServePort = 18987,
+    [int]$CommandTimeoutSeconds = 60,
     [switch]$SkipBuild
 )
 
@@ -32,9 +33,32 @@ function Invoke-Smoke {
     Write-Host "smoke: $Name" -ForegroundColor Cyan
     $env:NO_COLOR = "1"
     $env:COLUMNS = "80"
-    $out = & $Binary @CommandArgs 2>&1
-    $code = $LASTEXITCODE
-    $text = ($out | Out-String)
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $Binary
+    $startInfo.Arguments = (($CommandArgs | ForEach-Object {
+        '"' + $_.Replace('"', '\"') + '"'
+    }) -join ' ')
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    if (-not $process.Start()) {
+        Write-Error "smoke '$Name' could not start: $($CommandArgs -join ' ')"
+    }
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    if (-not $process.WaitForExit($CommandTimeoutSeconds * 1000)) {
+        $process.Kill()
+        $process.WaitForExit()
+        Write-Error "smoke '$Name' exceeded ${CommandTimeoutSeconds}s: $($CommandArgs -join ' ')"
+    }
+    $process.WaitForExit()
+    $code = $process.ExitCode
+    $stdout = $stdoutTask.Result
+    $stderr = $stderrTask.Result
+    $text = "$stdout$stderr"
     if ($code -ne 0) {
         Write-Error "smoke '$Name' failed with exit code $code`n$text"
     }
@@ -52,8 +76,8 @@ Invoke-Smoke "goalies" @("query", "goalies", "--top", "3", "--season", "20242025
 Invoke-Smoke "tui help" @("tui", "--help") @("Launch the interactive", "goalies", "poach")
 Invoke-Smoke "serve help" @("serve", "--help") @("web dashboard", "--no-open")
 Invoke-Smoke "docs" @("docs") @("IceLines", "Command Reference")
-Invoke-Smoke "markdown export" @("export", "md", "leaders", "--out", "-", "--top", "3") @("type: leaderboard", "| Rank | Player |")
-Invoke-Smoke "poach" @("poach", "--top", "3") @("Rank Player", "Why/Risk", "Source state:")
+Invoke-Smoke "markdown export" @("export", "md", "leaders", "--out", "-", "--top", "3", "--season", "20242025") @("type: leaderboard", "| Rank | Player |")
+Invoke-Smoke "poach" @("poach", "--top", "3", "--season", "20242025") @("Rank Player", "Why/Risk", "Source state:")
 
 Write-Host "smoke: serve url" -ForegroundColor Cyan
 $stdoutPath = Join-Path $env:TEMP "icelines-release-smoke-stdout.txt"

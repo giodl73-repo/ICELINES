@@ -72,9 +72,9 @@ pub fn chrome(state: &ScheduleScreenState) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
 
     let title = if state.week.is_empty() {
-        "Schedule".to_owned()
+        "Center Ice — Schedule".to_owned()
     } else {
-        format!("Schedule — week of {}", state.week)
+        format!("Center Ice — Schedule — week of {}", state.week)
     };
 
     let keybinds = if state.search_mode {
@@ -248,8 +248,8 @@ mod norris_state_tests {
         let s = ScheduleScreenState::default();
         let c = chrome(&s);
         assert!(
-            c.title.starts_with("Schedule"),
-            "Schedule chrome title must start with 'Schedule'; got: {}",
+            c.title.starts_with("Center Ice — Schedule"),
+            "Schedule chrome title must identify Center Ice; got: {}",
             c.title
         );
         let keys: Vec<&str> = c.keybinds.iter().map(|k| k.key).collect();
@@ -315,13 +315,13 @@ fn render_week_block(f: &mut Frame, app: &App, area: Rect) {
     let label = week_label(&app.schedule.week);
     let title = match &app.schedule.filter {
         SearchFilter::None => {
-            format!(" Schedule · Week of {label}  ·  /:search  ←→:week  t:today ")
+            format!(" Center Ice · Schedule · Week of {label} · /:search ←→:week t:today ")
         }
         SearchFilter::Team(t) => {
-            format!(" Schedule · {label} · filter: {t}  ·  Enter: full season ")
+            format!(" Center Ice · Schedule · {label} · filter: {t} · Enter: full season ")
         }
         SearchFilter::Matchup(a, b) => {
-            format!(" Schedule · {label} · filter: {a} vs {b}  ·  Enter: head-to-head ")
+            format!(" Center Ice · Schedule · {label} · filter: {a} vs {b} · Enter: head-to-head ")
         }
     };
     let block = tui_panel_block(title);

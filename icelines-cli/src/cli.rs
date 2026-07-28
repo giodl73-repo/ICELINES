@@ -1003,6 +1003,1040 @@ Examples:
 "#
     )]
     Fantasy(FantasySubcommand),
+
+    /// Forecast NHL games and seasons from The Goal Line.
+    #[command(subcommand)]
+    Icecast(IceCastSubcommand),
+}
+
+#[derive(Debug, Subcommand)]
+pub enum IceCastSubcommand {
+    /// Gather and rank three seasons of all-team management behavior evidence.
+    #[command(name = "behavior-rankings")]
+    BehaviorRankings {
+        /// Season being forecast; completed evidence seasons precede it.
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        target_season: u32,
+        /// Number of completed seasons to gather.
+        #[arg(long, default_value_t = 3)]
+        window: u8,
+        #[arg(long)]
+        json: bool,
+        /// Write the full UI-neutral evidence and ranking document as JSON.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply citation-backed GM/coach research to one calibrated team profile.
+    #[command(name = "behavior-research")]
+    BehaviorResearch {
+        /// UI-neutral output from `icecast behavior-rankings`.
+        #[arg(long, value_name = "PATH")]
+        rankings: PathBuf,
+        /// `team_behavior_research.v1` leadership timeline and marker document.
+        #[arg(long, value_name = "PATH")]
+        research: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Simulate training-camp cuts and opening-roster probabilities in The Cut.
+    Camp {
+        /// `training_camp_simulation_input.v1`-compatible JSON document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Override the input trial count.
+        #[arg(long)]
+        trials: Option<u32>,
+        /// Override the input simulation seed.
+        #[arg(long)]
+        seed: Option<u64>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Write reusable probabilistic Cut-to-Blender lineup branches.
+        #[arg(long, value_name = "PATH")]
+        lineup_set_out: Option<PathBuf>,
+        /// Number of most-common camp roster branches to retain.
+        #[arg(long, default_value_t = 5)]
+        max_lineup_branches: usize,
+        /// Score retained camp branches through The Blender.
+        #[arg(long, value_name = "PATH")]
+        blender_set_out: Option<PathBuf>,
+        /// Write an IceCast scenario that samples one camp roster per season trial.
+        #[arg(long, value_name = "PATH")]
+        season_scenario_out: Option<PathBuf>,
+        /// Camp outcomes scored into the compact season scenario.
+        #[arg(long, default_value_t = 3000)]
+        season_max_roster_branches: usize,
+        /// Maximum Blender candidates evaluated per retained camp branch.
+        #[arg(long, default_value_t = 24)]
+        camp_max_candidates: usize,
+    },
+    /// Run The Cut across every team from current roster and prior-season evidence.
+    CampLeague {
+        /// Current roster identity map written by `icelines fetch rosters`.
+        #[arg(long, default_value = "data/rosters.json", value_name = "PATH")]
+        rosters: PathBuf,
+        /// Completed prior-season skater bios used only to fill incomplete camp pools.
+        #[arg(
+            long,
+            default_value = "data/seasons/20252026/bios.json",
+            value_name = "PATH"
+        )]
+        bios: PathBuf,
+        /// Completed prior-season skater statistics.
+        #[arg(
+            long,
+            default_value = "data/seasons/20252026/stats.json",
+            value_name = "PATH"
+        )]
+        stats: PathBuf,
+        /// Completed prior-season goalie statistics.
+        #[arg(
+            long,
+            default_value = "data/seasons/20252026/goalie-stats.json",
+            value_name = "PATH"
+        )]
+        goalie_stats: PathBuf,
+        /// Sourced organizational candidates not present in the current NHL roster snapshot.
+        #[arg(long, value_name = "PATH")]
+        candidate_overlay: Option<PathBuf>,
+        /// Authored team camp inputs that replace automatically inferred pools.
+        #[arg(long, value_name = "PATH")]
+        authored_input: Vec<PathBuf>,
+        #[arg(long, default_value_t = 20262027)]
+        season: u32,
+        #[arg(long, default_value_t = 1000)]
+        trials: u32,
+        #[arg(long, default_value_t = 20262027)]
+        seed: u64,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rank each team's roster, waiver, scratch, and prospect pressure in The Bubble.
+    Bubble {
+        /// UI-neutral `training_camp_league_forecast.v1` JSON document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Optional sourced contract, protection, and waiver context.
+        #[arg(long, value_name = "PATH")]
+        transaction_context: Option<PathBuf>,
+        /// Players retained in each team's exposure ranking.
+        #[arg(long, default_value_t = 5)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Show the dated NHL-to-AHL affiliation map used by organization projections.
+    #[command(name = "affiliate-map")]
+    AffiliateMap {
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Project an NHL organization's AHL affiliate lineup under the development rule.
+    Affiliate {
+        /// UI-neutral `ahl_affiliate_projection` input JSON.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Propose a reviewable AHL-provider to NHL-player identity crosswalk.
+    #[command(name = "affiliate-identities")]
+    AffiliateIdentities {
+        /// UI-neutral `ahl_roster_stats.v1` snapshot.
+        #[arg(long, value_name = "PATH")]
+        snapshot: PathBuf,
+        /// Exact AHL team name from the snapshot.
+        #[arg(long, value_name = "AHL_TEAM")]
+        team: String,
+        /// Canonical identity catalog or sourced league camp candidate overlay to merge.
+        #[arg(
+            long,
+            value_name = "PATH",
+            required_unless_present = "discover_official"
+        )]
+        candidates: Option<PathBuf>,
+        /// Discover exact-name proposals through official NHL search and player landing records.
+        #[arg(long)]
+        discover_official: bool,
+        /// Refresh official NHL discovery cachelines instead of accepting cached bytes.
+        #[arg(long, requires = "discover_official")]
+        refresh: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Propose identity crosswalks for every team in an AHL season snapshot.
+    #[command(name = "affiliate-identities-league")]
+    AffiliateIdentitiesLeague {
+        #[arg(long, value_name = "PATH")]
+        snapshot: PathBuf,
+        /// Canonical identity catalog or sourced league camp candidate overlay to merge.
+        #[arg(
+            long,
+            value_name = "PATH",
+            required_unless_present = "discover_official"
+        )]
+        candidates: Option<PathBuf>,
+        /// Discover proposals through deduplicated official NHL search and landing records.
+        #[arg(long)]
+        discover_official: bool,
+        #[arg(long, requires = "discover_official")]
+        refresh: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Generate a non-applicable review draft for exact AHL identity proposals.
+    #[command(name = "affiliate-review-draft")]
+    AffiliateReviewDraft {
+        /// Generated `ahl_identity_crosswalk.v1` proposal queue.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// Add sourced surname-and-birth alias remap proposals to the draft.
+        #[arg(long)]
+        include_aliases: bool,
+        /// Add exact-name birth-conflict proposals for explicit review.
+        #[arg(long)]
+        include_conflicts: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Generate non-applicable review drafts across a league identity envelope.
+    #[command(name = "affiliate-review-draft-league")]
+    AffiliateReviewDraftLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Add sourced surname-and-birth alias remap proposals to the draft.
+        #[arg(long)]
+        include_aliases: bool,
+        /// Add exact-name birth-conflict proposals for explicit review.
+        #[arg(long)]
+        include_conflicts: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Accept only sourced exact-name-and-birth-date AHL identity proposals.
+    #[command(name = "affiliate-review-exact")]
+    AffiliateReviewExact {
+        /// Generated `ahl_identity_crosswalk.v1` proposal queue.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// Human or process authority recorded on every applied decision.
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        /// Optionally retain the applicable exact-only decision document.
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        /// Reviewed crosswalk output; stdout is used when omitted.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Accept exact identity proposals across every eligible team in a league envelope.
+    #[command(name = "affiliate-review-exact-league")]
+    AffiliateReviewExactLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long)]
+        reviewer: String,
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Approve sourced surname-and-birth-date AHL identity aliases as remaps.
+    #[command(name = "affiliate-review-aliases")]
+    AffiliateReviewAliases {
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Approve sourced aliases across every eligible team in a league envelope.
+    #[command(name = "affiliate-review-aliases-league")]
+    AffiliateReviewAliasesLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long)]
+        reviewer: String,
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Resolve selected league birth-date conflicts with explicit sourced overrides.
+    #[command(name = "affiliate-review-conflicts-league")]
+    AffiliateReviewConflictsLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Proposed canonical NHL player ID; repeat to resolve multiple identities.
+        #[arg(long, value_name = "ID", required = true)]
+        nhl_player_id: Vec<u32>,
+        /// Additional absolute source URL supporting the override; repeat as needed.
+        #[arg(long = "evidence-url", value_name = "URL", required = true)]
+        evidence_urls: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        /// Evidence-backed explanation for selecting the canonical NHL identity/date.
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Correct a canonical NHL birth date while preserving the NHL identity.
+    #[command(name = "affiliate-review-birth-date-league")]
+    AffiliateReviewBirthDateLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "ID")]
+        nhl_player_id: u32,
+        #[arg(long)]
+        canonical_birth_date: String,
+        /// Additional absolute source URL supporting the corrected date; repeat as needed.
+        #[arg(long = "evidence-url", value_name = "URL", required = true)]
+        evidence_urls: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Replace a probable same-name collision with the sourced canonical NHL identity.
+    #[command(name = "affiliate-review-collision-league")]
+    AffiliateReviewCollisionLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Incorrect NHL proposal selected by the exception board.
+        #[arg(long, value_name = "ID")]
+        proposed_nhl_player_id: u32,
+        #[arg(long, value_name = "ID")]
+        canonical_nhl_player_id: u32,
+        #[arg(long)]
+        canonical_name: String,
+        #[arg(long)]
+        canonical_birth_date: String,
+        /// Additional absolute source URL supporting the remap; repeat as needed.
+        #[arg(long = "evidence-url", value_name = "URL", required = true)]
+        evidence_urls: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Reject selected pending NHL identity mappings with retained review authority.
+    #[command(name = "affiliate-review-reject")]
+    AffiliateReviewReject {
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// AHL provider player ID to reject; repeat for multiple rows sharing one rationale.
+        #[arg(long, value_name = "ID", required = true)]
+        provider_player_id: Vec<String>,
+        /// Absolute source URL supporting the rejection; repeat as needed.
+        #[arg(long = "evidence-url", value_name = "URL")]
+        evidence_urls: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        /// RFC3339 review timestamp.
+        #[arg(long)]
+        reviewed_at: String,
+        /// Evidence-backed explanation; rejection applies only to the NHL identity mapping.
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Aggregate team-season crosswalks into league coverage and exception groups.
+    #[command(name = "affiliate-review-league")]
+    AffiliateReviewLeague {
+        /// Repeat for each reviewed or in-progress team-season crosswalk.
+        #[arg(long = "crosswalk", value_name = "PATH")]
+        crosswalks: Vec<PathBuf>,
+        /// Repeat for each league crosswalk envelope; child team queues are flattened.
+        #[arg(long = "league-crosswalk", value_name = "PATH")]
+        league_crosswalks: Vec<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rank the read-only league identity exception queue by review leverage.
+    #[command(name = "affiliate-review-board")]
+    AffiliateReviewBoard {
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Inspect an existing AHL identity crosswalk without changing review state.
+    #[command(name = "affiliate-review-show")]
+    AffiliateReviewShow {
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// Show only non-routine rows needing reviewer attention.
+        #[arg(long)]
+        attention_only: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply a finalized, reviewer-authored identity decision batch.
+    #[command(name = "affiliate-review-apply")]
+    AffiliateReviewApply {
+        /// Generated `ahl_identity_crosswalk.v1` proposal queue.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// Finalized `ahl_identity_review_decisions.v1` document.
+        #[arg(long, value_name = "PATH")]
+        decisions: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Generate a non-applicable prior-affiliate organization-status draft.
+    #[command(name = "affiliate-status-draft")]
+    AffiliateStatusDraft {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp: PathBuf,
+        #[arg(long, value_name = "NHL_TEAM")]
+        nhl_team: String,
+        #[arg(long, value_name = "AHL_TEAM")]
+        ahl_team: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Inspect an existing affiliate organization-status review artifact.
+    #[command(name = "affiliate-status-show")]
+    AffiliateStatusShow {
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply finalized retained/departed/other-league decisions to rollover config.
+    #[command(name = "affiliate-status-apply")]
+    AffiliateStatusApply {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Join reviewed AHL identities to separate projection facts.
+    #[command(name = "affiliate-input")]
+    AffiliateInput {
+        /// UI-neutral `ahl_roster_stats.v1` snapshot.
+        #[arg(long, value_name = "PATH")]
+        snapshot: PathBuf,
+        /// Fully reviewed `ahl_identity_crosswalk.v1` document.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// JSON array of projection facts keyed by AHL provider player ID.
+        #[arg(long, value_name = "PATH")]
+        facts: PathBuf,
+        #[arg(long, value_name = "NHL_TEAM")]
+        nhl_team: String,
+        #[arg(long, value_name = "AHL_TEAM")]
+        ahl_team: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Reconcile a prior affiliate roster with the current NHL camp pool.
+    #[command(name = "affiliate-rollover")]
+    AffiliateRollover {
+        /// Prior-season UI-neutral `ahl_roster_stats.v1` snapshot.
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        /// Snapshot-bound `ahl_identity_crosswalk.v1`, which may retain pending rows.
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        /// Current `training_camp_simulation` input.
+        #[arg(long, value_name = "PATH")]
+        camp: PathBuf,
+        /// Matching `training_camp_forecast.v1` output.
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        /// Target-season rollover authority, sources, and prior-player decisions.
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Combine an NHL lineup and its AHL affiliate into The System.
+    Organization {
+        /// UI-neutral input containing `nhl_lineup` and `ahl_affiliate` documents.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rank lineup alternatives in The Blender and write a reusable Bench scenario.
+    Blender {
+        /// UI-neutral `team_lineup_projection.v1` JSON document.
+        #[arg(long, value_name = "PATH")]
+        lineup: PathBuf,
+        /// Optional JSON array of explicitly labeled pair-evidence inputs.
+        #[arg(long, value_name = "PATH", conflicts_with = "shift_season")]
+        pair_evidence: Option<PathBuf>,
+        /// Fetch/cache official interval shifts from this completed season.
+        #[arg(long, conflicts_with = "pair_evidence")]
+        shift_season: Option<u32>,
+        /// Refresh official shift-chart cache for `--shift-season`.
+        #[arg(long, requires = "shift_season")]
+        refresh_shifts: bool,
+        /// Write the full official pair/trio deployment overlap report.
+        #[arg(long, value_name = "PATH", requires = "shift_season")]
+        shift_report_out: Option<PathBuf>,
+        #[arg(long, default_value_t = 24)]
+        max_candidates: usize,
+        /// Allow wings to switch sides and natural centers to fill wing vacancies.
+        #[arg(long)]
+        allow_off_wing: bool,
+        /// Number of team games in each result review window.
+        #[arg(long, default_value_t = 6)]
+        review_games: u8,
+        /// Keep the active lineup when its window points percentage meets this value.
+        #[arg(long, default_value_t = 0.5)]
+        minimum_points_percentage: f64,
+        #[arg(long, default_value_t = 2)]
+        max_changes: u8,
+        /// Baseline plus this many total ranked choices in The Bench policy.
+        #[arg(long, default_value_t = 3)]
+        max_choices: usize,
+        /// Write a `team_season_scenario.v1` accepted by `icecast season --scenario`.
+        #[arg(long, value_name = "PATH")]
+        scenario_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Author opponent-specific plans and a season scenario from sealed evidence.
+    Bench {
+        /// UI-neutral `team_game_forecast.v1` written by `icecast season --game-forecast-out`.
+        #[arg(long, value_name = "PATH")]
+        forecast: PathBuf,
+        /// UI-neutral `team_lineup_projection.v1` for one team.
+        #[arg(long, value_name = "PATH")]
+        lineup: PathBuf,
+        /// `team_decision_profile.v1` for the team's current leadership.
+        #[arg(long, value_name = "PATH")]
+        profile: PathBuf,
+        /// JSON array of sealed `opponent_style_evidence.v1` rows.
+        #[arg(long, value_name = "PATH")]
+        style_evidence: PathBuf,
+        /// Completed stats window used for current-roster player role evidence.
+        #[arg(long, default_value_t = 20252026)]
+        stats_season: u32,
+        /// Write the simulation-ready `team_season_scenario.v1` separately.
+        #[arg(long, value_name = "PATH")]
+        scenario_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build baseline forecasts for every game in a season.
+    Season {
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        /// Completed player-stat season used by roster/depth strength.
+        #[arg(long, default_value_t = 20252026)]
+        stats_season: u32,
+        /// Repeat to focus text output; JSON always retains the full league run.
+        #[arg(long = "team")]
+        teams: Vec<String>,
+        /// Number of seeded chronological league simulations.
+        #[arg(long, default_value_t = 10_000)]
+        trials: u32,
+        /// Reproducible simulation seed.
+        #[arg(long, default_value_t = 20_262_027)]
+        seed: u64,
+        /// JSON file containing dated injury, goalie, trade, return, or form events.
+        #[arg(long, value_name = "PATH", conflicts_with = "scenario_id")]
+        scenario: Option<PathBuf>,
+        /// Stable ID from the local scenario registry.
+        #[arg(long, value_name = "ID", conflicts_with = "scenario")]
+        scenario_id: Option<String>,
+        /// Run paired baseline/one-event attribution for every scenario event.
+        #[arg(long)]
+        isolated_impacts: bool,
+        /// Generate seeded injury and goalie-availability events from player records.
+        #[arg(long)]
+        auto_personnel: bool,
+        /// Simulated trade market: off or plausible.
+        #[arg(long, default_value = "off", value_parser = ["off", "plausible"])]
+        trade_mode: String,
+        /// Forecast evidence mode: off freezes roster strength; rolling uses only earlier results.
+        #[arg(long, default_value = "off", value_parser = ["off", "rolling"])]
+        replay_mode: String,
+        /// Condition a rolling replay on final results through this date, then simulate the remainder.
+        #[arg(long)]
+        through: Option<chrono::NaiveDate>,
+        /// Use each team's official first-game dressed lineup as retrospective evaluation evidence.
+        #[arg(long)]
+        retrospective_opening_lineups: bool,
+        #[arg(long)]
+        all_games: bool,
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Write the underlying UI-neutral per-game forecast for The Bench and other consumers.
+        #[arg(long, value_name = "PATH")]
+        game_forecast_out: Option<PathBuf>,
+    },
+    /// Project one team from a sealed forecast history into `card_document.v1`.
+    #[command(name = "history-card")]
+    HistoryCard {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        team_name: Option<String>,
+        /// Evidence timestamp for deterministic output.
+        #[arg(long)]
+        generated_at: Option<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Project one team from a sealed league forecast into `card_document.v1`.
+    #[command(name = "season-card")]
+    SeasonCard {
+        /// Full `icecast season --json` artifact; filtering happens only after it is fingerprinted.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        team_name: Option<String>,
+        /// Evidence timestamp for deterministic output.
+        #[arg(long)]
+        generated_at: Option<String>,
+        #[arg(long)]
+        calendar_fingerprint: Option<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compare two sealed league runs and report how each team's outlook moved.
+    Movement {
+        #[arg(long, value_name = "PATH")]
+        earlier: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        later: PathBuf,
+        /// Repeat to focus text output; JSON always retains every team.
+        #[arg(long = "team")]
+        teams: Vec<String>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Project one team from a sealed movement artifact into `card_document.v1`.
+    #[command(name = "movement-card")]
+    MovementCard {
+        /// Full `icecast movement --json` artifact; filtering happens after it is loaded.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        team_name: Option<String>,
+        /// Evidence timestamp for deterministic output.
+        #[arg(long)]
+        generated_at: Option<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build a chronological trend from two or more sealed point-in-time forecasts.
+    History {
+        /// Repeat in chronological order for each `icecast season --through ... --json` artifact.
+        #[arg(long = "input", required = true, value_name = "PATH")]
+        inputs: Vec<PathBuf>,
+        /// Repeat to focus text output; JSON always retains every team.
+        #[arg(long = "team")]
+        teams: Vec<String>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Cross-validate Elo blends from three or more season forecast JSON files.
+    Backtest {
+        /// Repeat for each `icecast season --json` artifact.
+        #[arg(long = "input", required = true)]
+        inputs: Vec<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Calibrate player breakout and downturn rates from consecutive completed seasons.
+    #[command(name = "calibrate-development")]
+    CalibrateDevelopment {
+        #[arg(long, default_value_t = 20052006)]
+        start_season: u32,
+        #[arg(long, default_value_t = 20252026)]
+        end_season: u32,
+        /// Team-strength gain that defines a breakout.
+        #[arg(long, default_value_t = 2.0)]
+        breakout_threshold: f64,
+        /// Team-strength loss that defines a downturn (must be negative).
+        #[arg(long, default_value_t = -2.0, allow_hyphen_values = true)]
+        downturn_threshold: f64,
+        /// Global pseudo-observations used to stabilize small cohorts.
+        #[arg(long, default_value_t = 20.0)]
+        prior_sample_size: f64,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Explain a prospect's development, opportunity, injury, and attention gap.
+    #[command(name = "prospect-study")]
+    ProspectStudy {
+        /// Authored `ProspectDevelopmentStudyInput` JSON with sourced context.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Generate a conservative all-team AHL prospect context from reviewed identities.
+    #[command(name = "prospect-context")]
+    ProspectContext {
+        /// Repeat for each official `ahl_roster_stats.v1` season snapshot.
+        #[arg(long = "snapshot", required = true, value_name = "PATH")]
+        snapshots: Vec<PathBuf>,
+        /// Repeat for each reviewed `ahl_identity_league_crosswalk.v1` season envelope.
+        #[arg(long = "league-crosswalk", required = true, value_name = "PATH")]
+        league_crosswalks: Vec<PathBuf>,
+        /// Dated `ahl_affiliation_catalog.v1` mapping the latest AHL clubs to NHL organizations.
+        #[arg(long, value_name = "PATH")]
+        affiliations: PathBuf,
+        /// Age calculation date in YYYY-MM-DD form.
+        #[arg(long, default_value = "2026-09-15")]
+        as_of: String,
+        /// Oldest player retained in the observed prospect draft.
+        #[arg(long, default_value_t = 24)]
+        max_age: u8,
+        /// Minimum number of joined AHL seasons required.
+        #[arg(long, default_value_t = 2)]
+        minimum_ahl_seasons: usize,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Join reviewed AHL season facts into prospect studies and a discovery board.
+    #[command(name = "prospect-league")]
+    ProspectLeague {
+        /// Repeat for each official `ahl_roster_stats.v1` season snapshot.
+        #[arg(long = "snapshot", required = true, value_name = "PATH")]
+        snapshots: Vec<PathBuf>,
+        /// Repeat for each reviewed team crosswalk or league crosswalk envelope.
+        #[arg(long = "crosswalk", required = true, value_name = "PATH")]
+        crosswalks: Vec<PathBuf>,
+        /// `prospect_league_context.v1` with separately authored non-feed facts.
+        #[arg(long, value_name = "PATH")]
+        context: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Generate neutral multi-league prospect context from the league camp pool.
+    #[command(name = "prospect-career-context")]
+    ProspectCareerContext {
+        /// `training_camp_league_forecast.v1` selecting the prospect pool.
+        #[arg(long = "camp-forecast", value_name = "PATH")]
+        camp_forecast: PathBuf,
+        /// Current canonical roster identity map containing birth dates.
+        #[arg(long, value_name = "PATH")]
+        rosters: PathBuf,
+        /// Season bios used to cover camp fallback candidates.
+        #[arg(long, value_name = "PATH")]
+        bios: PathBuf,
+        /// Optional sourced camp-candidate overlay used by the camp forecast.
+        #[arg(long = "candidate-overlay", value_name = "PATH")]
+        candidate_overlay: Option<PathBuf>,
+        /// Optional career cache whose official landing birth dates fill identity gaps.
+        #[arg(long = "career-history", value_name = "PATH")]
+        career_history: Option<PathBuf>,
+        #[arg(long, default_value = "2026-09-15")]
+        as_of: String,
+        #[arg(long, default_value_t = 24)]
+        max_age: u8,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Adapt cached official multi-league career totals into prospect studies.
+    #[command(name = "prospect-career")]
+    ProspectCareer {
+        /// `prospect_league_context.v1` with authored player context.
+        #[arg(long, value_name = "PATH")]
+        context: PathBuf,
+        /// Cached `career_history.json` populated from official NHL player landing feeds.
+        #[arg(long = "career-history", value_name = "PATH")]
+        career_history: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rank organizations by observed prospect pool, development, and pipeline signals.
+    #[command(name = "prospect-program")]
+    ProspectProgram {
+        /// Repeat for each `prospect_league_discovery.v1` artifact.
+        #[arg(long = "league-discovery", value_name = "PATH")]
+        league_discoveries: Vec<PathBuf>,
+        /// Repeat for each `prospect_career_discovery.v1` CHL/NCAA/Europe artifact.
+        #[arg(long = "career-discovery", value_name = "PATH")]
+        career_discoveries: Vec<PathBuf>,
+        /// Add a canonical `prospect_development_study.v1` from another adapter.
+        #[arg(long = "study", value_name = "PATH")]
+        studies: Vec<PathBuf>,
+        /// Optional prior `prospect_program_board.v2` used only for rank deltas.
+        #[arg(long, value_name = "PATH")]
+        prior_board: Option<PathBuf>,
+        /// Maximum regular-season NHL GP retained in reserve-system scoring.
+        /// Higher-GP players remain visible as graduates.
+        #[arg(long, default_value_t = 50)]
+        maximum_nhl_games: u32,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Measure organization rank sensitivity across prospect graduation boundaries.
+    #[command(name = "prospect-program-sensitivity")]
+    ProspectProgramSensitivity {
+        #[arg(long = "league-discovery", value_name = "PATH")]
+        league_discoveries: Vec<PathBuf>,
+        #[arg(long = "career-discovery", value_name = "PATH")]
+        career_discoveries: Vec<PathBuf>,
+        #[arg(long = "study", value_name = "PATH")]
+        studies: Vec<PathBuf>,
+        /// NHL-GP graduation boundaries to compare.
+        #[arg(long, value_delimiter = ',', default_value = "25,50,82")]
+        thresholds: Vec<u32>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Recompute adjacent and first-to-latest trends from comparable annual program boards.
+    #[command(name = "prospect-program-history")]
+    ProspectProgramHistory {
+        /// Repeat for each dated `prospect_program_board.v2` artifact.
+        #[arg(long = "board", required = true, value_name = "PATH")]
+        boards: Vec<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Measure frozen prospect cohorts against later official NHL outcomes.
+    #[command(name = "prospect-conversion")]
+    ProspectConversion {
+        /// Repeat for each frozen `prospect_league_discovery.v1` artifact.
+        #[arg(long = "league-discovery", value_name = "PATH")]
+        league_discoveries: Vec<PathBuf>,
+        /// Repeat for each frozen `prospect_career_discovery.v1` artifact.
+        #[arg(long = "career-discovery", value_name = "PATH")]
+        career_discoveries: Vec<PathBuf>,
+        /// Add a frozen canonical `prospect_development_study.v1` artifact.
+        #[arg(long = "study", value_name = "PATH")]
+        studies: Vec<PathBuf>,
+        /// Cached official NHL player landing career histories.
+        #[arg(long = "career-history", value_name = "PATH")]
+        career_history: PathBuf,
+        /// Season represented by the frozen study cohort.
+        #[arg(long = "baseline-season")]
+        baseline_season: u32,
+        /// Last NHL season included in realized outcomes.
+        #[arg(long = "through-season")]
+        through_season: u32,
+        /// Optional `prospect_conversion_performance.v2` canonical NHL scores.
+        /// When omitted, IceLines derives them from the official career cache.
+        #[arg(long, value_name = "PATH")]
+        performance: Option<PathBuf>,
+        /// Write the supplied or derived NHL-performance authority for audit/reuse.
+        #[arg(long = "performance-out", value_name = "PATH")]
+        performance_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rank validated prospect studies into Hidden Gems, Buyer Beware, and Watch.
+    #[command(name = "prospect-board")]
+    ProspectBoard {
+        /// Repeat for each `ProspectDevelopmentStudyView` JSON artifact.
+        #[arg(long = "study", required = true, value_name = "PATH")]
+        studies: Vec<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Import complete, timestamped Internet Archive captures of official NHL opening rosters.
+    #[command(name = "import-opening-rosters")]
+    ImportOpeningRosters {
+        /// Provenance manifest with one immutable official NHL archive URL per season team.
+        #[arg(long, value_name = "PATH")]
+        manifest: PathBuf,
+        /// Validate provenance and team coverage without downloading or writing a snapshot.
+        #[arg(long)]
+        dry_run: bool,
+        /// Permit a sealed evaluation-only snapshot with less than full league coverage.
+        #[arg(long)]
+        allow_partial_evaluation: bool,
+    },
+    /// Discover pre-opening official NHL roster captures in the Internet Archive.
+    #[command(name = "discover-opening-rosters")]
+    DiscoverOpeningRosters {
+        #[arg(long)]
+        season: u32,
+        /// Write the complete coverage report; stdout is used when omitted.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Write an importer-ready manifest only when every season team is covered.
+        #[arg(long, value_name = "PATH")]
+        manifest_out: Option<PathBuf>,
+        /// Write a partial evaluation manifest whenever at least one team is covered.
+        #[arg(long, value_name = "PATH")]
+        partial_manifest_out: Option<PathBuf>,
+        /// Re-evaluate cached CDX responses without contacting the Internet Archive.
+        #[arg(long)]
+        cache_only: bool,
+    },
+    /// Import, inspect, and list stable IceCast scenarios.
+    Scenario {
+        #[command(subcommand)]
+        command: IceCastScenarioSubcommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum IceCastScenarioSubcommand {
+    /// Import a CLI-authored JSON scenario into the stable local registry.
+    Import {
+        #[arg(long, value_name = "ID")]
+        id: String,
+        #[arg(long, value_name = "PATH")]
+        path: PathBuf,
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(
+            long,
+            default_value = "estimated",
+            value_parser = ["confirmed", "reported", "estimated", "simulated", "under-review", "no-read"]
+        )]
+        evidence: String,
+        #[arg(long)]
+        json: bool,
+    },
+    /// List registered scenario IDs and immutable hashes.
+    List {
+        #[arg(long)]
+        json: bool,
+    },
+    /// Show one registered scenario and its metadata.
+    Show {
+        id: String,
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 // ── Tui sub-commands (LB.2 sugar) ─────────────────────────────────────────────
@@ -1048,6 +2082,11 @@ pub enum TuiSurface {
         /// 3-letter team abbreviation. Case-insensitive.
         abbrev: String,
     },
+    /// Open the sealed IceCast prognosis card for NYR or SEA.
+    TeamCard {
+        /// Showcase team abbreviation (`NYR` or `SEA`).
+        team: String,
+    },
     /// Open a goalie card directly. Accepts a name or pid.
     Goalie {
         /// Goalie name or pid.
@@ -1081,6 +2120,7 @@ impl TuiSurface {
             // resolved; main.rs calls into_screen() to resolve.
             TuiSurface::Player { needle } => ScreenSpec::Player(Needle::from_arg(&needle)),
             TuiSurface::Team { abbrev } => ScreenSpec::Team(abbrev),
+            TuiSurface::TeamCard { team } => ScreenSpec::TeamCard(team),
             TuiSurface::Goalie { needle } => ScreenSpec::Goalie(Needle::from_arg(&needle)),
             TuiSurface::Comps { needle } => ScreenSpec::Comps(Needle::from_arg(&needle)),
         }
@@ -1196,6 +2236,29 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_tui_team_card_surface_parses_and_resolves() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from(["icelines", "tui", "team-card", "sea"])
+                .expect("team-card sugar parses");
+            let spec = match cli.command {
+                Commands::Tui {
+                    surface: Some(surface),
+                    ..
+                } => surface.into_screen_spec(),
+                other => panic!("expected Tui team-card, got {other:?}"),
+            };
+            assert_eq!(spec, ScreenSpec::TeamCard("sea".to_string()));
+            assert_eq!(
+                spec.into_screen().unwrap(),
+                crate::tui::app::Screen::TeamCard {
+                    team: "SEA".to_string(),
+                    compare: false,
+                }
+            );
+        });
+    }
+
+    #[test]
     fn l0_tui_classic_flag_parses_as_sdi_escape_hatch() {
         let cli = Cli::try_parse_from(["icelines", "tui", "--classic"]).unwrap();
         match cli.command {
@@ -1284,6 +2347,1753 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_icecast_season_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "season",
+                "--season",
+                "20262027",
+                "--stats-season",
+                "20252026",
+                "--team",
+                "NYR",
+                "--team",
+                "SEA",
+                "--trials",
+                "25000",
+                "--seed",
+                "17",
+                "--scenario",
+                "scenario.json",
+                "--isolated-impacts",
+                "--auto-personnel",
+                "--trade-mode",
+                "plausible",
+                "--replay-mode",
+                "rolling",
+                "--through",
+                "2027-01-15",
+                "--retrospective-opening-lineups",
+                "--all-games",
+                "--game-forecast-out",
+                "games.json",
+                "--json",
+            ])
+            .expect("IceCast season command should parse");
+
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Season {
+                    season,
+                    stats_season,
+                    teams,
+                    trials,
+                    seed,
+                    scenario,
+                    scenario_id,
+                    isolated_impacts,
+                    auto_personnel,
+                    trade_mode,
+                    replay_mode,
+                    through,
+                    retrospective_opening_lineups,
+                    all_games,
+                    game_forecast_out,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(season, 20262027);
+                    assert_eq!(stats_season, 20252026);
+                    assert_eq!(teams, ["NYR", "SEA"]);
+                    assert_eq!(trials, 25_000);
+                    assert_eq!(seed, 17);
+                    assert_eq!(scenario, Some(PathBuf::from("scenario.json")));
+                    assert_eq!(scenario_id, None);
+                    assert!(isolated_impacts);
+                    assert!(auto_personnel);
+                    assert_eq!(trade_mode, "plausible");
+                    assert_eq!(replay_mode, "rolling");
+                    assert_eq!(through.unwrap().to_string(), "2027-01-15");
+                    assert!(retrospective_opening_lineups);
+                    assert!(all_games);
+                    assert_eq!(game_forecast_out, Some(PathBuf::from("games.json")));
+                    assert!(json);
+                }
+                other => panic!("expected IceCast season command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_blender_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "blender",
+                "--lineup",
+                "lineup.json",
+                "--pair-evidence",
+                "pairs.json",
+                "--review-games",
+                "8",
+                "--minimum-points-percentage",
+                "0.55",
+                "--max-changes",
+                "2",
+                "--max-choices",
+                "4",
+                "--scenario-out",
+                "bench.json",
+                "--json",
+            ])
+            .expect("IceCast Blender command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Blender {
+                    lineup,
+                    pair_evidence,
+                    review_games,
+                    minimum_points_percentage,
+                    max_changes,
+                    max_choices,
+                    scenario_out,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(lineup, PathBuf::from("lineup.json"));
+                    assert_eq!(pair_evidence, Some(PathBuf::from("pairs.json")));
+                    assert_eq!(review_games, 8);
+                    assert_eq!(minimum_points_percentage, 0.55);
+                    assert_eq!(max_changes, 2);
+                    assert_eq!(max_choices, 4);
+                    assert_eq!(scenario_out, Some(PathBuf::from("bench.json")));
+                    assert!(json);
+                }
+                other => panic!("expected IceCast Blender command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_bench_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "bench",
+                "--forecast",
+                "games.json",
+                "--lineup",
+                "lineup.json",
+                "--profile",
+                "manager.json",
+                "--style-evidence",
+                "styles.json",
+                "--stats-season",
+                "20252026",
+                "--scenario-out",
+                "scenario.json",
+                "--json",
+            ])
+            .expect("IceCast Bench command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Bench {
+                    forecast,
+                    lineup,
+                    profile,
+                    style_evidence,
+                    stats_season,
+                    scenario_out,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(forecast, PathBuf::from("games.json"));
+                    assert_eq!(lineup, PathBuf::from("lineup.json"));
+                    assert_eq!(profile, PathBuf::from("manager.json"));
+                    assert_eq!(style_evidence, PathBuf::from("styles.json"));
+                    assert_eq!(stats_season, 20252026);
+                    assert_eq!(scenario_out, Some(PathBuf::from("scenario.json")));
+                    assert!(json);
+                }
+                other => panic!("expected IceCast Bench command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_camp_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "camp",
+                "--input",
+                "camp.json",
+                "--trials",
+                "5000",
+                "--seed",
+                "27",
+                "--lineup-set-out",
+                "lineups.json",
+                "--max-lineup-branches",
+                "3",
+                "--blender-set-out",
+                "blenders.json",
+                "--season-scenario-out",
+                "camp-scenario.json",
+                "--season-max-roster-branches",
+                "2500",
+                "--json",
+            ])
+            .expect("IceCast camp command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Camp {
+                    input,
+                    trials,
+                    seed,
+                    json,
+                    lineup_set_out,
+                    max_lineup_branches,
+                    blender_set_out,
+                    season_scenario_out,
+                    season_max_roster_branches,
+                    ..
+                }) => {
+                    assert_eq!(input, PathBuf::from("camp.json"));
+                    assert_eq!(trials, Some(5000));
+                    assert_eq!(seed, Some(27));
+                    assert_eq!(lineup_set_out, Some(PathBuf::from("lineups.json")));
+                    assert_eq!(max_lineup_branches, 3);
+                    assert_eq!(blender_set_out, Some(PathBuf::from("blenders.json")));
+                    assert_eq!(
+                        season_scenario_out,
+                        Some(PathBuf::from("camp-scenario.json"))
+                    );
+                    assert_eq!(season_max_roster_branches, 2500);
+                    assert!(json);
+                }
+                other => panic!("expected IceCast camp command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_blender_shift_surface_parses_and_conflicts_with_manual_pairs() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "blender",
+                "--lineup",
+                "lineup.json",
+                "--shift-season",
+                "20252026",
+                "--shift-report-out",
+                "shifts.json",
+                "--allow-off-wing",
+            ])
+            .expect("IceCast Blender shift command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Blender {
+                    shift_season,
+                    shift_report_out,
+                    allow_off_wing,
+                    ..
+                }) => {
+                    assert_eq!(shift_season, Some(20252026));
+                    assert_eq!(shift_report_out, Some(PathBuf::from("shifts.json")));
+                    assert!(allow_off_wing);
+                }
+                other => panic!("expected IceCast Blender command, got {other:?}"),
+            }
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "blender",
+                "--lineup",
+                "lineup.json",
+                "--shift-season",
+                "20252026",
+                "--pair-evidence",
+                "pairs.json",
+            ])
+            .is_err());
+        });
+    }
+
+    #[test]
+    fn l0_icecast_season_card_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "season-card",
+                "--input",
+                "league-run.json",
+                "--team",
+                "NYR",
+                "--team-name",
+                "New York Rangers",
+                "--generated-at",
+                "2026-07-22T12:00:00Z",
+                "--calendar-fingerprint",
+                "schedule-2026-27",
+                "--out",
+                "nyr-card.json",
+            ])
+            .expect("IceCast season-card command should parse");
+
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::SeasonCard {
+                    input,
+                    team,
+                    team_name,
+                    generated_at,
+                    calendar_fingerprint,
+                    out,
+                }) => {
+                    assert_eq!(input, PathBuf::from("league-run.json"));
+                    assert_eq!(team, "NYR");
+                    assert_eq!(team_name.as_deref(), Some("New York Rangers"));
+                    assert_eq!(generated_at.as_deref(), Some("2026-07-22T12:00:00Z"));
+                    assert_eq!(calendar_fingerprint.as_deref(), Some("schedule-2026-27"));
+                    assert_eq!(out, Some(PathBuf::from("nyr-card.json")));
+                }
+                other => panic!("expected IceCast season-card command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_movement_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "movement",
+                "--earlier",
+                "jan.json",
+                "--later",
+                "feb.json",
+                "--team",
+                "NYR",
+                "--team",
+                "SEA",
+                "--json",
+                "--out",
+                "movement.json",
+            ])
+            .expect("IceCast movement command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Movement {
+                    earlier,
+                    later,
+                    teams,
+                    json,
+                    out,
+                }) => {
+                    assert_eq!(earlier, PathBuf::from("jan.json"));
+                    assert_eq!(later, PathBuf::from("feb.json"));
+                    assert_eq!(teams, ["NYR", "SEA"]);
+                    assert!(json);
+                    assert_eq!(out, Some(PathBuf::from("movement.json")));
+                }
+                other => panic!("expected IceCast movement command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_movement_card_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "movement-card",
+                "--input",
+                "movement.json",
+                "--team",
+                "NYR",
+                "--team-name",
+                "New York Rangers",
+                "--generated-at",
+                "2027-02-15T12:00:00Z",
+                "--out",
+                "nyr-movement-card.json",
+            ])
+            .expect("IceCast movement-card command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::MovementCard {
+                    input,
+                    team,
+                    team_name,
+                    generated_at,
+                    out,
+                }) => {
+                    assert_eq!(input, PathBuf::from("movement.json"));
+                    assert_eq!(team, "NYR");
+                    assert_eq!(team_name.as_deref(), Some("New York Rangers"));
+                    assert_eq!(generated_at.as_deref(), Some("2027-02-15T12:00:00Z"));
+                    assert_eq!(out, Some(PathBuf::from("nyr-movement-card.json")));
+                }
+                other => panic!("expected IceCast movement-card command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_history_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "history",
+                "--input",
+                "jan.json",
+                "--input",
+                "feb.json",
+                "--team",
+                "NYR",
+                "--json",
+                "--out",
+                "history.json",
+            ])
+            .expect("IceCast history command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::History {
+                    inputs,
+                    teams,
+                    json,
+                    out,
+                }) => {
+                    assert_eq!(
+                        inputs,
+                        [PathBuf::from("jan.json"), PathBuf::from("feb.json")]
+                    );
+                    assert_eq!(teams, ["NYR"]);
+                    assert!(json);
+                    assert_eq!(out, Some(PathBuf::from("history.json")));
+                }
+                other => panic!("expected IceCast history command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_history_card_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "history-card",
+                "--input",
+                "history.json",
+                "--team",
+                "SEA",
+                "--team-name",
+                "Seattle Kraken",
+                "--generated-at",
+                "2025-03-01T12:00:00Z",
+                "--out",
+                "sea-history-card.json",
+            ])
+            .expect("IceCast history-card command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::HistoryCard {
+                    input,
+                    team,
+                    team_name,
+                    generated_at,
+                    out,
+                }) => {
+                    assert_eq!(input, PathBuf::from("history.json"));
+                    assert_eq!(team, "SEA");
+                    assert_eq!(team_name.as_deref(), Some("Seattle Kraken"));
+                    assert_eq!(generated_at.as_deref(), Some("2025-03-01T12:00:00Z"));
+                    assert_eq!(out, Some(PathBuf::from("sea-history-card.json")));
+                }
+                other => panic!("expected IceCast history-card command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_scenario_registry_surfaces_parse_and_paths_conflict() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "season",
+                "--scenario-id",
+                "nyr-development-variance",
+            ])
+            .expect("registered scenario ID should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Season {
+                    scenario,
+                    scenario_id,
+                    ..
+                }) => {
+                    assert_eq!(scenario, None);
+                    assert_eq!(scenario_id.as_deref(), Some("nyr-development-variance"));
+                }
+                other => panic!("expected IceCast season command, got {other:?}"),
+            }
+
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "season",
+                "--scenario",
+                "scenario.json",
+                "--scenario-id",
+                "nyr-development-variance",
+            ])
+            .is_err());
+
+            for args in [
+                vec![
+                    "icelines",
+                    "icecast",
+                    "scenario",
+                    "import",
+                    "--id",
+                    "nyr-development-variance",
+                    "--path",
+                    "scenario.json",
+                    "--season",
+                    "20262027",
+                    "--evidence",
+                    "estimated",
+                    "--json",
+                ],
+                vec!["icelines", "icecast", "scenario", "list", "--json"],
+                vec![
+                    "icelines",
+                    "icecast",
+                    "scenario",
+                    "show",
+                    "nyr-development-variance",
+                    "--json",
+                ],
+            ] {
+                Cli::try_parse_from(args).expect("scenario registry command should parse");
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_backtest_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "backtest",
+                "--input",
+                "2021.json",
+                "--input",
+                "2022.json",
+                "--input",
+                "2023.json",
+                "--json",
+            ])
+            .expect("IceCast backtest command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Backtest { inputs, json, .. }) => {
+                    assert_eq!(inputs.len(), 3);
+                    assert!(json);
+                }
+                other => panic!("expected IceCast backtest command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_team_lineup_report_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "report",
+                "team-lineup",
+                "--team",
+                "NYR",
+                "--roster-season",
+                "20262027",
+                "--stats-season",
+                "20252026",
+                "--json",
+            ])
+            .expect("team lineup report should parse");
+            match cli.command {
+                Commands::Report(ReportSubcommand::TeamLineup {
+                    roster_season,
+                    stats_season,
+                    team,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(roster_season, "20262027");
+                    assert_eq!(stats_season, "20252026");
+                    assert_eq!(team, "NYR");
+                    assert!(json);
+                }
+                other => panic!("expected team lineup report, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_organization_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "organization",
+                "--input",
+                "organization.json",
+                "--json",
+                "--out",
+                "the-system.json",
+            ])
+            .expect("organization lineup command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::Organization { input, json, out }) => {
+                    assert_eq!(input, PathBuf::from("organization.json"));
+                    assert!(json);
+                    assert_eq!(out, Some(PathBuf::from("the-system.json")));
+                }
+                other => panic!("expected IceCast organization command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_affiliate_identity_surfaces_parse() {
+        with_large_stack(|| {
+            let review = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-identities",
+                "--snapshot",
+                "ahl.json",
+                "--team",
+                "Hartford Wolf Pack",
+                "--candidates",
+                "candidates.json",
+                "--json",
+                "--out",
+                "review.json",
+            ])
+            .expect("affiliate identity review command should parse");
+            assert!(matches!(
+                review.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateIdentities { json: true, .. })
+            ));
+
+            let discovered = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-identities",
+                "--snapshot",
+                "ahl.json",
+                "--team",
+                "Hartford Wolf Pack",
+                "--discover-official",
+                "--refresh",
+                "--json",
+            ])
+            .expect("official affiliate identity discovery should parse without a catalog");
+            assert!(matches!(
+                discovered.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateIdentities {
+                    candidates: None,
+                    discover_official: true,
+                    refresh: true,
+                    ..
+                })
+            ));
+
+            let league_discovered = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-identities-league",
+                "--snapshot",
+                "ahl-season.json",
+                "--discover-official",
+                "--refresh",
+                "--json",
+                "--out",
+                "ahl-league-crosswalk.json",
+            ])
+            .expect("official league affiliate identity discovery should parse");
+            assert!(matches!(
+                league_discovered.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateIdentitiesLeague {
+                    candidates: None,
+                    discover_official: true,
+                    refresh: true,
+                    json: true,
+                    ..
+                })
+            ));
+
+            let draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-draft",
+                "--crosswalk",
+                "review.json",
+                "--include-aliases",
+                "--include-conflicts",
+                "--out",
+                "decisions-draft.json",
+            ])
+            .expect("affiliate identity review draft should parse");
+            assert!(matches!(
+                draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft {
+                    include_aliases: true,
+                    include_conflicts: true,
+                    ..
+                })
+            ));
+
+            let league_draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-draft-league",
+                "--league-crosswalk",
+                "ahl-reviewed.json",
+                "--include-conflicts",
+                "--out",
+                "ahl-exception-drafts.json",
+            ])
+            .expect("league affiliate identity review draft should parse");
+            assert!(matches!(
+                league_draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewDraftLeague {
+                    include_aliases: false,
+                    include_conflicts: true,
+                    ..
+                })
+            ));
+
+            let exact = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-exact",
+                "--crosswalk",
+                "review.json",
+                "--reviewer",
+                "identity-pilot",
+                "--reviewed-at",
+                "2026-07-25T12:00:00Z",
+                "--decisions-out",
+                "exact-decisions.json",
+                "--json",
+                "--out",
+                "exact-reviewed.json",
+            ])
+            .expect("exact affiliate identity review should parse");
+            assert!(matches!(
+                exact.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewExact {
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "identity-pilot"
+            ));
+
+            let exact_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-exact-league",
+                "--league-crosswalk",
+                "ahl-league.json",
+                "--reviewer",
+                "league-exact-pilot",
+                "--reviewed-at",
+                "2026-07-25T12:30:00Z",
+                "--decisions-out",
+                "league-exact-decisions.json",
+                "--json",
+                "--out",
+                "league-exact-reviewed.json",
+            ])
+            .expect("exact league affiliate identity review should parse");
+            assert!(matches!(
+                exact_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewExactLeague {
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "league-exact-pilot"
+            ));
+
+            let aliases = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-aliases",
+                "--crosswalk",
+                "exact-reviewed.json",
+                "--reviewer",
+                "alias-pilot",
+                "--reviewed-at",
+                "2026-07-25T13:00:00Z",
+                "--decisions-out",
+                "alias-decisions.json",
+                "--json",
+                "--out",
+                "alias-reviewed.json",
+            ])
+            .expect("alias affiliate identity review should parse");
+            assert!(matches!(
+                aliases.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewAliases {
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "alias-pilot"
+            ));
+
+            let aliases_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-aliases-league",
+                "--league-crosswalk",
+                "league-exact-reviewed.json",
+                "--reviewer",
+                "league-alias-pilot",
+                "--reviewed-at",
+                "2026-07-25T13:30:00Z",
+                "--decisions-out",
+                "league-alias-decisions.json",
+                "--json",
+                "--out",
+                "league-alias-reviewed.json",
+            ])
+            .expect("alias league affiliate identity review should parse");
+            assert!(matches!(
+                aliases_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewAliasesLeague {
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "league-alias-pilot"
+            ));
+
+            let conflicts_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-conflicts-league",
+                "--league-crosswalk",
+                "league-alias-reviewed.json",
+                "--nhl-player-id",
+                "8482739",
+                "--evidence-url",
+                "https://example.test/ahl/brett-harrison",
+                "--evidence-url",
+                "https://example.test/nhl/brett-harrison",
+                "--reviewer",
+                "league-conflict-pilot",
+                "--reviewed-at",
+                "2026-07-26T20:10:00Z",
+                "--note",
+                "official NHL club evidence controls the canonical date",
+                "--decisions-out",
+                "league-conflict-decisions.json",
+                "--json",
+                "--out",
+                "league-conflict-reviewed.json",
+            ])
+            .expect("conflict league affiliate identity review should parse");
+            assert!(matches!(
+                conflicts_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewConflictsLeague {
+                    nhl_player_id,
+                    evidence_urls,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if nhl_player_id == [8_482_739]
+                    && evidence_urls.len() == 2
+                    && reviewer == "league-conflict-pilot"
+            ));
+
+            let birth_date_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-birth-date-league",
+                "--league-crosswalk",
+                "league-conflict-reviewed.json",
+                "--nhl-player-id",
+                "8484115",
+                "--canonical-birth-date",
+                "1999-04-17",
+                "--evidence-url",
+                "https://www.iowawild.com/players/detail/zmolek-1",
+                "--reviewer",
+                "league-date-pilot",
+                "--reviewed-at",
+                "2026-07-26T22:50:00Z",
+                "--note",
+                "official club and college sources agree with the provider date",
+                "--decisions-out",
+                "league-date-decisions.json",
+                "--json",
+                "--out",
+                "league-date-reviewed.json",
+            ])
+            .expect("birth-date league affiliate identity review should parse");
+            assert!(matches!(
+                birth_date_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewBirthDateLeague {
+                    nhl_player_id: 8_484_115,
+                    canonical_birth_date,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if canonical_birth_date == "1999-04-17"
+                    && reviewer == "league-date-pilot"
+            ));
+
+            let collision_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-collision-league",
+                "--league-crosswalk",
+                "league-conflict-reviewed.json",
+                "--proposed-nhl-player-id",
+                "8475366",
+                "--canonical-nhl-player-id",
+                "8484302",
+                "--canonical-name",
+                "Matt Brown",
+                "--canonical-birth-date",
+                "1999-08-09",
+                "--evidence-url",
+                "https://api-web.nhle.com/v1/player/8484302/landing",
+                "--reviewer",
+                "league-collision-pilot",
+                "--reviewed-at",
+                "2026-07-26T21:10:00Z",
+                "--note",
+                "official landing record identifies the younger same-name player",
+                "--decisions-out",
+                "league-collision-decisions.json",
+                "--json",
+                "--out",
+                "league-collision-reviewed.json",
+            ])
+            .expect("collision league affiliate identity review should parse");
+            assert!(matches!(
+                collision_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewCollisionLeague {
+                    proposed_nhl_player_id: 8_475_366,
+                    canonical_nhl_player_id: 8_484_302,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if reviewer == "league-collision-pilot"
+            ));
+
+            let reject = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-reject",
+                "--crosswalk",
+                "alias-reviewed.json",
+                "--provider-player-id",
+                "11069",
+                "--evidence-url",
+                "https://example.test/stalletti",
+                "--reviewer",
+                "exception-pilot",
+                "--reviewed-at",
+                "2026-07-25T14:00:00Z",
+                "--note",
+                "official team evidence identifies non-player personnel",
+                "--decisions-out",
+                "reject-decisions.json",
+                "--json",
+                "--out",
+                "rejection-reviewed.json",
+            ])
+            .expect("affiliate identity rejection review should parse");
+            assert!(matches!(
+                reject.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewReject {
+                    provider_player_id,
+                    evidence_urls,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if provider_player_id == ["11069"]
+                    && evidence_urls == ["https://example.test/stalletti"]
+                    && reviewer == "exception-pilot"
+            ));
+
+            let league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-league",
+                "--crosswalk",
+                "hartford-2025.json",
+                "--crosswalk",
+                "coachella-2025.json",
+                "--json",
+                "--out",
+                "league-review.json",
+            ])
+            .expect("affiliate league identity review should parse");
+            assert!(matches!(
+                league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewLeague {
+                    crosswalks,
+                    league_crosswalks,
+                    json: true,
+                    ..
+                }) if crosswalks.len() == 2 && league_crosswalks.is_empty()
+            ));
+
+            let league_envelopes = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-league",
+                "--league-crosswalk",
+                "ahl-2024.json",
+                "--league-crosswalk",
+                "ahl-2025.json",
+                "--json",
+            ])
+            .expect("affiliate league envelopes should parse");
+            assert!(matches!(
+                league_envelopes.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewLeague {
+                    crosswalks,
+                    league_crosswalks,
+                    json: true,
+                    ..
+                }) if crosswalks.is_empty() && league_crosswalks.len() == 2
+            ));
+
+            let board = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-board",
+                "--review",
+                "league-review.json",
+                "--json",
+                "--out",
+                "league-exception-board.json",
+            ])
+            .expect("affiliate identity exception board should parse");
+            assert!(matches!(
+                board.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewBoard {
+                    review,
+                    json: true,
+                    ..
+                }) if review == PathBuf::from("league-review.json")
+            ));
+
+            let show = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-show",
+                "--crosswalk",
+                "review.json",
+                "--attention-only",
+                "--json",
+                "--out",
+                "review-attention.json",
+            ])
+            .expect("affiliate identity review inspection should parse");
+            assert!(matches!(
+                show.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewShow {
+                    attention_only: true,
+                    json: true,
+                    ..
+                })
+            ));
+
+            let apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-apply",
+                "--crosswalk",
+                "review.json",
+                "--decisions",
+                "decisions.json",
+                "--json",
+                "--out",
+                "reviewed.json",
+            ])
+            .expect("affiliate identity review application should parse");
+            assert!(matches!(
+                apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewApply { json: true, .. })
+            ));
+
+            let status_draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-draft",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--crosswalk",
+                "reviewed.json",
+                "--camp",
+                "camp.json",
+                "--nhl-team",
+                "NYR",
+                "--ahl-team",
+                "Hartford Wolf Pack",
+                "--out",
+                "status-draft.json",
+            ])
+            .expect("affiliate organization-status review draft should parse");
+            assert!(matches!(
+                status_draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusDraft { .. })
+            ));
+
+            let status_show = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-show",
+                "--review",
+                "status-review.json",
+                "--json",
+                "--out",
+                "status-review-copy.json",
+            ])
+            .expect("affiliate organization-status review inspection should parse");
+            assert!(matches!(
+                status_show.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusShow { json: true, .. })
+            ));
+
+            let status_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-apply",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--crosswalk",
+                "reviewed.json",
+                "--camp",
+                "camp.json",
+                "--review",
+                "status-review.json",
+                "--config",
+                "rollover-base.json",
+                "--out",
+                "rollover-config.json",
+            ])
+            .expect("affiliate organization-status review application should parse");
+            assert!(matches!(
+                status_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusApply { .. })
+            ));
+
+            let input = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-input",
+                "--snapshot",
+                "ahl.json",
+                "--crosswalk",
+                "reviewed.json",
+                "--facts",
+                "facts.json",
+                "--nhl-team",
+                "NYR",
+                "--ahl-team",
+                "Hartford Wolf Pack",
+                "--out",
+                "affiliate-input.json",
+            ])
+            .expect("reviewed affiliate input command should parse");
+            assert!(matches!(
+                input.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateInput { .. })
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_affiliate_rollover_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-rollover",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--crosswalk",
+                "prior-identities.json",
+                "--camp",
+                "camp.json",
+                "--camp-forecast",
+                "camp-forecast.json",
+                "--config",
+                "rollover-config.json",
+                "--json",
+                "--out",
+                "rollover.json",
+            ])
+            .expect("affiliate rollover command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateRollover { json: true, .. })
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_team_card_report_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "report",
+                "team-card",
+                "--team",
+                "NYR",
+                "--scenario-id",
+                "nyr-development-variance",
+                "--scenario-comparison-key",
+                "development-variance",
+                "--trials",
+                "25000",
+                "--seed",
+                "73",
+                "--generated-at",
+                "2026-07-22T12:00:00Z",
+                "--json",
+            ])
+            .expect("team card report should parse");
+            match cli.command {
+                Commands::Report(ReportSubcommand::TeamCard {
+                    team,
+                    scenario_id,
+                    scenario_comparison_key,
+                    trials,
+                    seed,
+                    generated_at,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(team, "NYR");
+                    assert_eq!(scenario_id, "nyr-development-variance");
+                    assert_eq!(
+                        scenario_comparison_key.as_deref(),
+                        Some("development-variance")
+                    );
+                    assert_eq!(trials, 25_000);
+                    assert_eq!(seed, 73);
+                    assert_eq!(generated_at.as_deref(), Some("2026-07-22T12:00:00Z"));
+                    assert!(json);
+                }
+                other => panic!("expected team card report, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_development_calibration_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "calibrate-development",
+                "--start-season",
+                "20152016",
+                "--end-season",
+                "20252026",
+                "--breakout-threshold",
+                "2.5",
+                "--downturn-threshold",
+                "-2.5",
+                "--prior-sample-size",
+                "30",
+                "--json",
+            ])
+            .expect("IceCast development calibration command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::CalibrateDevelopment {
+                    start_season,
+                    end_season,
+                    breakout_threshold,
+                    downturn_threshold,
+                    prior_sample_size,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(start_season, 20152016);
+                    assert_eq!(end_season, 20252026);
+                    assert_eq!(breakout_threshold, 2.5);
+                    assert_eq!(downturn_threshold, -2.5);
+                    assert_eq!(prior_sample_size, 30.0);
+                    assert!(json);
+                }
+                other => panic!("expected development calibration command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_study_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-study",
+                "--input",
+                "firkus.json",
+                "--json",
+                "--out",
+                "firkus-study.json",
+            ])
+            .expect("IceCast prospect study command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectStudy {
+                    input,
+                    json: true,
+                    out: Some(out),
+                }) if input == PathBuf::from("firkus.json") && out == PathBuf::from("firkus-study.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_board_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-board",
+                "--study",
+                "firkus-study.json",
+                "--study",
+                "another-study.json",
+                "--json",
+                "--out",
+                "prospect-board.json",
+            ])
+            .expect("IceCast prospect board command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectBoard {
+                    studies,
+                    json: true,
+                    out: Some(out),
+                }) if studies == vec![PathBuf::from("firkus-study.json"), PathBuf::from("another-study.json")]
+                    && out == PathBuf::from("prospect-board.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_league_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-league",
+                "--snapshot",
+                "ahl-2024.json",
+                "--snapshot",
+                "ahl-2025.json",
+                "--crosswalk",
+                "reviewed-2024.json",
+                "--crosswalk",
+                "reviewed-2025.json",
+                "--context",
+                "prospects.json",
+                "--json",
+                "--out",
+                "league-discovery.json",
+            ])
+            .expect("IceCast prospect league command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectLeague {
+                    snapshots,
+                    crosswalks,
+                    context,
+                    json: true,
+                    out: Some(out),
+                }) if snapshots.len() == 2
+                    && crosswalks.len() == 2
+                    && context == PathBuf::from("prospects.json")
+                    && out == PathBuf::from("league-discovery.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_context_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-context",
+                "--snapshot",
+                "ahl-2024.json",
+                "--snapshot",
+                "ahl-2025.json",
+                "--league-crosswalk",
+                "league-2024.json",
+                "--league-crosswalk",
+                "league-2025.json",
+                "--affiliations",
+                "affiliations.json",
+                "--as-of",
+                "2026-09-15",
+                "--max-age",
+                "24",
+                "--minimum-ahl-seasons",
+                "2",
+                "--json",
+                "--out",
+                "prospect-context.json",
+            ])
+            .expect("IceCast prospect context command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectContext {
+                    snapshots,
+                    league_crosswalks,
+                    affiliations,
+                    as_of,
+                    max_age: 24,
+                    minimum_ahl_seasons: 2,
+                    json: true,
+                    out: Some(out),
+                }) if snapshots.len() == 2
+                    && league_crosswalks.len() == 2
+                    && affiliations == PathBuf::from("affiliations.json")
+                    && as_of == "2026-09-15"
+                    && out == PathBuf::from("prospect-context.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_program_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-program",
+                "--league-discovery",
+                "league-discovery.json",
+                "--career-discovery",
+                "career-discovery.json",
+                "--study",
+                "college-study.json",
+                "--prior-board",
+                "prior-program-board.json",
+                "--json",
+                "--out",
+                "program-board.json",
+            ])
+            .expect("IceCast prospect program command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectProgram {
+                    league_discoveries,
+                    career_discoveries,
+                    studies,
+                    prior_board: Some(prior),
+                    maximum_nhl_games: 50,
+                    json: true,
+                    out: Some(out),
+                }) if league_discoveries == vec![PathBuf::from("league-discovery.json")]
+                    && career_discoveries == vec![PathBuf::from("career-discovery.json")]
+                    && studies == vec![PathBuf::from("college-study.json")]
+                    && prior == PathBuf::from("prior-program-board.json")
+                    && out == PathBuf::from("program-board.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_program_sensitivity_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-program-sensitivity",
+                "--league-discovery",
+                "league.json",
+                "--career-discovery",
+                "career.json",
+                "--thresholds",
+                "25,50,82",
+                "--json",
+                "--out",
+                "sensitivity.json",
+            ])
+            .expect("IceCast prospect program sensitivity command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectProgramSensitivity {
+                    league_discoveries,
+                    career_discoveries,
+                    studies,
+                    thresholds,
+                    json: true,
+                    out: Some(out),
+                }) if league_discoveries == vec![PathBuf::from("league.json")]
+                    && career_discoveries == vec![PathBuf::from("career.json")]
+                    && studies.is_empty()
+                    && thresholds == vec![25, 50, 82]
+                    && out == PathBuf::from("sensitivity.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_program_history_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-program-history",
+                "--board",
+                "2024.json",
+                "--board",
+                "2025.json",
+                "--json",
+                "--out",
+                "history.json",
+            ])
+            .expect("IceCast prospect program history command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectProgramHistory {
+                    boards,
+                    json: true,
+                    out: Some(out),
+                }) if boards == vec![PathBuf::from("2024.json"), PathBuf::from("2025.json")]
+                    && out == PathBuf::from("history.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_conversion_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-conversion",
+                "--league-discovery",
+                "frozen-league.json",
+                "--career-history",
+                "career_history.json",
+                "--baseline-season",
+                "20222023",
+                "--through-season",
+                "20252026",
+                "--performance",
+                "performance.json",
+                "--performance-out",
+                "derived-performance.json",
+                "--json",
+                "--out",
+                "conversion.json",
+            ])
+            .expect("IceCast prospect conversion command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectConversion {
+                    league_discoveries,
+                    career_discoveries,
+                    studies,
+                    career_history,
+                    baseline_season: 20222023,
+                    through_season: 20252026,
+                    performance: Some(performance),
+                    performance_out: Some(performance_out),
+                    json: true,
+                    out: Some(out),
+                }) if league_discoveries == vec![PathBuf::from("frozen-league.json")]
+                    && career_discoveries.is_empty()
+                    && studies.is_empty()
+                    && career_history == PathBuf::from("career_history.json")
+                    && performance == PathBuf::from("performance.json")
+                    && performance_out == PathBuf::from("derived-performance.json")
+                    && out == PathBuf::from("conversion.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_career_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-career",
+                "--context",
+                "prospect-context.json",
+                "--career-history",
+                "career_history.json",
+                "--json",
+                "--out",
+                "career-discovery.json",
+            ])
+            .expect("IceCast prospect career command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectCareer {
+                    context,
+                    career_history,
+                    json: true,
+                    out: Some(out),
+                }) if context == PathBuf::from("prospect-context.json")
+                    && career_history == PathBuf::from("career_history.json")
+                    && out == PathBuf::from("career-discovery.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_career_context_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-career-context",
+                "--camp-forecast",
+                "camp.json",
+                "--rosters",
+                "rosters.json",
+                "--bios",
+                "bios.json",
+                "--career-history",
+                "career.json",
+                "--json",
+                "--out",
+                "context.json",
+            ])
+            .expect("IceCast prospect career context command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectCareerContext {
+                    camp_forecast,
+                    rosters,
+                    bios,
+                    candidate_overlay: None,
+                    career_history: Some(career_history),
+                    json: true,
+                    out: Some(out),
+                    ..
+                }) if camp_forecast == PathBuf::from("camp.json")
+                    && rosters == PathBuf::from("rosters.json")
+                    && bios == PathBuf::from("bios.json")
+                    && career_history == PathBuf::from("career.json")
+                    && out == PathBuf::from("context.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fetch_career_camp_target_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fetch",
+                "career",
+                "--camp-forecast",
+                "camp.json",
+                "--dry-run",
+            ])
+            .expect("fetch career camp target should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fetch(FetchSubcommand::Career {
+                    dry_run: true,
+                    bundled_seasons: 0,
+                    prospect_context: None,
+                    camp_forecast: Some(path),
+                }) if path == PathBuf::from("camp.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_opening_roster_archive_import_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "import-opening-rosters",
+                "--manifest",
+                "opening-rosters.json",
+                "--dry-run",
+                "--allow-partial-evaluation",
+            ])
+            .expect("IceCast opening-roster archive import should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::ImportOpeningRosters {
+                    manifest,
+                    dry_run,
+                    allow_partial_evaluation,
+                }) => {
+                    assert_eq!(manifest, PathBuf::from("opening-rosters.json"));
+                    assert!(dry_run);
+                    assert!(allow_partial_evaluation);
+                }
+                other => panic!("expected IceCast archive import command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_opening_roster_discovery_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "discover-opening-rosters",
+                "--season",
+                "20242025",
+                "--out",
+                "coverage.json",
+                "--manifest-out",
+                "import.json",
+                "--partial-manifest-out",
+                "partial.json",
+                "--cache-only",
+            ])
+            .expect("IceCast opening-roster discovery should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::DiscoverOpeningRosters {
+                    season,
+                    out,
+                    manifest_out,
+                    partial_manifest_out,
+                    cache_only,
+                }) => {
+                    assert_eq!(season, 20242025);
+                    assert_eq!(out, Some(PathBuf::from("coverage.json")));
+                    assert_eq!(manifest_out, Some(PathBuf::from("import.json")));
+                    assert_eq!(partial_manifest_out, Some(PathBuf::from("partial.json")));
+                    assert!(cache_only);
+                }
+                other => panic!("expected IceCast archive discovery command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
     fn l0_fantasy_simulate_clap_surface_parses() {
         let cli = Cli::try_parse_from([
             "icelines",
@@ -1349,6 +4159,152 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_fantasy_roster_card_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "roster-card",
+                "--date",
+                "2026-10-05",
+                "--league",
+                "Ice League",
+                "--classes",
+                "6",
+                "--json",
+            ])
+            .expect("fantasy roster-card should parse");
+
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::RosterCard {
+                    date,
+                    league,
+                    classes,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(date.as_deref(), Some("2026-10-05"));
+                    assert_eq!(league.as_deref(), Some("Ice League"));
+                    assert_eq!(classes, 6);
+                    assert!(json);
+                }
+                other => panic!("expected fantasy roster-card, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_morning_card_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "morning-card",
+                "--date",
+                "2026-10-08",
+                "--at",
+                "2026-10-08T14:00:00Z",
+                "--league",
+                "Ice League",
+                "--current-goalie-appearances",
+                "2.0",
+                "--json",
+            ])
+            .expect("fantasy morning-card should parse");
+
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::MorningCard {
+                    date,
+                    at,
+                    league,
+                    current_goalie_appearances,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(date.as_deref(), Some("2026-10-08"));
+                    assert_eq!(at.as_deref(), Some("2026-10-08T14:00:00Z"));
+                    assert_eq!(league.as_deref(), Some("Ice League"));
+                    assert_eq!(current_goalie_appearances, 2.0);
+                    assert!(json);
+                }
+                other => panic!("expected fantasy morning-card, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_trade_card_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade-card",
+                "Adam Fox",
+                "--to-team",
+                "Blue Line Bandits",
+                "--for-player",
+                "Mikko Rantanen",
+                "--json",
+            ])
+            .expect("fantasy trade-card should parse");
+
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::TradeCard {
+                    player1,
+                    to_team,
+                    for_player,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(player1, "Adam Fox");
+                    assert_eq!(to_team, "Blue Line Bandits");
+                    assert_eq!(for_player, "Mikko Rantanen");
+                    assert!(json);
+                }
+                other => panic!("expected fantasy trade-card, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_draft_card_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "draft-card",
+                "--taken-file",
+                "taken.txt",
+                "--pick",
+                "Nathan MacKinnon",
+                "--top",
+                "8",
+                "--json",
+            ])
+            .expect("fantasy draft-card should parse");
+
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::DraftCard {
+                    taken_file,
+                    pick,
+                    top,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(
+                        taken_file.as_deref(),
+                        Some(std::path::Path::new("taken.txt"))
+                    );
+                    assert_eq!(pick.as_deref(), Some("Nathan MacKinnon"));
+                    assert_eq!(top, 8);
+                    assert!(json);
+                }
+                other => panic!("expected fantasy draft-card, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
     fn l0_fantasy_matchup_clap_surface_parses() {
         with_large_stack(|| {
             let read = Cli::try_parse_from([
@@ -1404,38 +4360,328 @@ mod tui_surface_tests {
     }
 
     #[test]
-    fn l0_fantasy_import_yahoo_clap_surface_parses() {
-        let cli = Cli::try_parse_from([
-            "icelines",
-            "fantasy",
-            "import-yahoo",
-            "--file",
-            "rosters.csv",
-            "--league",
-            "Office Pool",
-            "--my-team",
-            "My Team",
-            "--dry-run",
-            "--json",
-        ])
-        .expect("fantasy import-yahoo should parse");
+    fn l0_fantasy_matchup_plan_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "matchup-plan",
+                "--week",
+                "2026-10-08",
+                "--opponent",
+                "Rival",
+                "--team",
+                "My Team",
+                "--strategy",
+                "floor",
+                "--through",
+                "2026-10-07",
+                "--user-current",
+                "42.5",
+                "--opponent-current",
+                "39.0",
+                "--candidates",
+                "40",
+                "--json",
+            ])
+            .expect("fantasy matchup-plan should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::MatchupPlan {
+                    week,
+                    team: Some(team),
+                    opponent: Some(opponent),
+                    strategy,
+                    through: Some(through),
+                    user_current: Some(user_current),
+                    opponent_current: Some(opponent_current),
+                    candidates: 40,
+                    json: true,
+                    ..
+                }) if week.to_string() == "2026-10-08"
+                    && team == "My Team"
+                    && opponent == "Rival"
+                    && strategy == "floor"
+                    && through.to_string() == "2026-10-07"
+                    && user_current == 42.5
+                    && opponent_current == 39.0
+            ));
+        });
+    }
 
-        match cli.command {
-            Commands::Fantasy(FantasySubcommand::ImportYahoo {
-                file,
-                league,
-                my_team,
-                dry_run,
-                json,
-            }) => {
-                assert_eq!(file, std::path::PathBuf::from("rosters.csv"));
-                assert_eq!(league, "Office Pool");
-                assert_eq!(my_team.as_deref(), Some("My Team"));
-                assert!(dry_run);
-                assert!(json);
+    #[test]
+    fn l0_fantasy_playoff_portfolio_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "playoff-portfolio",
+                "--rounds",
+                "3",
+                "--start",
+                "2027-03-15",
+                "--team",
+                "Dexter's Dawgs",
+                "--season",
+                "20262027",
+                "--json",
+            ])
+            .expect("fantasy playoff-portfolio should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::PlayoffPortfolio {
+                    rounds: Some(3),
+                    start: Some(start),
+                    team: Some(team),
+                    season: 20262027,
+                    candidates: 25,
+                    top: 10,
+                    json: true,
+                    ..
+                }) if team == "Dexter's Dawgs" && start.to_string() == "2027-03-15"
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_playoff_calendar_set_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "playoff-calendar-set",
+                "--start",
+                "2027-03-15",
+                "--rounds",
+                "3",
+                "--league",
+                "My League",
+                "--json",
+            ])
+            .expect("fantasy playoff-calendar-set should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::PlayoffCalendarSet {
+                    start,
+                    rounds: 3,
+                    league: Some(league),
+                    json: true,
+                }) if start.to_string() == "2027-03-15" && league == "My League"
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_competition_set_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "competition-set",
+                "--mode",
+                "categories",
+                "--category",
+                "goals:higher:sum",
+                "--category",
+                "save_percentage:higher:ratio:0.0001",
+                "--minimum-goalie-appearances",
+                "3",
+            ])
+            .expect("fantasy competition-set should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::CompetitionSet {
+                    mode,
+                    categories,
+                    minimum_goalie_appearances: 3,
+                    ..
+                }) if mode == "categories" && categories.len() == 2
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_matchup_plan_category_snapshot_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "matchup-plan",
+                "--week",
+                "2026-10-08",
+                "--opponent",
+                "Rival",
+                "--category-snapshot",
+                "-",
+            ])
+            .expect("category snapshot should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::MatchupPlan {
+                    category_snapshot: Some(path),
+                    ..
+                }) if path.as_os_str() == "-"
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_import_yahoo_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "import-yahoo",
+                "--file",
+                "-",
+                "--league",
+                "Office Pool",
+                "--my-team",
+                "My Team",
+                "--dry-run",
+                "--replace",
+                "--json",
+            ])
+            .expect("fantasy import-yahoo should parse");
+
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::ImportYahoo {
+                    file,
+                    league,
+                    my_team,
+                    dry_run,
+                    replace,
+                    json,
+                }) => {
+                    assert_eq!(file, std::path::PathBuf::from("-"));
+                    assert_eq!(league, "Office Pool");
+                    assert_eq!(my_team.as_deref(), Some("My Team"));
+                    assert!(dry_run);
+                    assert!(replace);
+                    assert!(json);
+                }
+                other => panic!("expected fantasy import-yahoo, got {other:?}"),
             }
-            other => panic!("expected fantasy import-yahoo, got {other:?}"),
-        }
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_trade_readiness_and_complete_gate_parse() {
+        with_large_stack(|| {
+            let readiness = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade-readiness",
+                "--league",
+                "Office Pool",
+                "--team",
+                "My Team",
+                "--stats-season",
+                "20252026",
+                "--json",
+            ])
+            .expect("fantasy trade-readiness should parse");
+            assert!(matches!(
+                readiness.command,
+                Commands::Fantasy(FantasySubcommand::TradeReadiness {
+                    team: Some(team),
+                    json: true,
+                    ..
+                }) if team == "My Team"
+            ));
+
+            let finder = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade-finder",
+                "--team",
+                "My Team",
+                "--require-complete",
+            ])
+            .expect("fantasy trade-finder complete gate should parse");
+            assert!(matches!(
+                finder.command,
+                Commands::Fantasy(FantasySubcommand::TradeFinder {
+                    require_complete: true,
+                    ..
+                })
+            ));
+
+            let history = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade-history",
+                "--league",
+                "Office Pool",
+                "--limit",
+                "25",
+                "--json",
+            ])
+            .expect("fantasy trade-history should parse");
+            assert!(matches!(
+                history.command,
+                Commands::Fantasy(FantasySubcommand::TradeHistory {
+                    limit: 25,
+                    json: true,
+                    ..
+                })
+            ));
+
+            let offers = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade-offers",
+                "--status",
+                "pending",
+                "--limit",
+                "25",
+                "--actionable-only",
+            ])
+            .expect("fantasy trade-offers should parse");
+            assert!(matches!(
+                offers.command,
+                Commands::Fantasy(FantasySubcommand::TradeOffers {
+                    status: Some(status),
+                    limit: 25,
+                    actionable_only: true,
+                    ..
+                }) if status == "pending"
+            ));
+
+            let save = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade",
+                "Bouchard",
+                "--to-team",
+                "Rival",
+                "--for-player",
+                "Werenski",
+                "--save-offer",
+            ])
+            .expect("fantasy trade --save-offer should parse");
+            assert!(matches!(
+                save.command,
+                Commands::Fantasy(FantasySubcommand::Trade {
+                    save_offer: true,
+                    execute: false,
+                    ..
+                })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "trade",
+                "Bouchard",
+                "--to-team",
+                "Rival",
+                "--for-player",
+                "Werenski",
+                "--save-offer",
+                "--execute",
+            ])
+            .is_err());
+        });
     }
 
     #[test]
@@ -1497,6 +4743,69 @@ mod tui_surface_tests {
                     assert!(json);
                 }
                 other => panic!("expected fantasy roster-shape-validate, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_goalie_evidence_and_plan_commands_parse() {
+        with_large_stack(|| {
+            for args in [
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-start-record",
+                    "Igor Shesterkin",
+                    "--date",
+                    "2026-11-12",
+                    "--state",
+                    "confirmed-starting",
+                    "--source",
+                    "team reporter",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-start-show",
+                    "--week",
+                    "2026-11-09",
+                    "--max-age-minutes",
+                    "180",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-start-import",
+                    "--file",
+                    "-",
+                    "--source",
+                    "daily goalie report",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-start-template",
+                    "--date",
+                    "2026-11-12",
+                    "--top-streams",
+                    "5",
+                    "--out",
+                    "-",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "goalie-plan",
+                    "--date",
+                    "2026-11-12",
+                    "--strategy",
+                    "floor",
+                    "--current-appearances",
+                    "2",
+                    "--json",
+                ],
+            ] {
+                Cli::try_parse_from(args).expect("fantasy goalie command should parse");
             }
         });
     }
@@ -1575,6 +4884,95 @@ pub enum ReportSubcommand {
         team: Option<String>,
 
         /// Emit cap_projection.v1 JSON instead of the text report.
+        #[arg(long)]
+        json: bool,
+
+        /// Write report to path. Pass '-' or omit for stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+
+    /// Compare 2026-27 current-roster ceiling with the prior-season roster.
+    TeamCeiling {
+        /// Current roster authority season.
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        roster_season: String,
+
+        /// Completed production season used to rate players and form the baseline.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+
+        /// Limit rendered output to one team while preserving league normalization.
+        #[arg(long)]
+        team: Option<String>,
+
+        /// Emit team_ceiling.v1 JSON instead of text.
+        #[arg(long)]
+        json: bool,
+
+        /// Write report to path. Pass '-' or omit for stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+
+    /// Project one team's four lines, three pairs, goalies, extras, faces, and IceLines scores.
+    TeamLineup {
+        /// Current roster authority season.
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        roster_season: String,
+
+        /// Completed production season used by the player score.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+
+        /// Current NHL roster to project.
+        #[arg(long)]
+        team: String,
+
+        /// Emit team_lineup_projection.v1 JSON instead of text.
+        #[arg(long)]
+        json: bool,
+
+        /// Write report to path. Pass '-' or omit for stdout.
+        #[arg(long, value_name = "PATH")]
+        out: Option<std::path::PathBuf>,
+    },
+
+    /// Build the two-page UI-neutral team prognosis card from IceLines sources.
+    TeamCard {
+        /// Current roster authority season.
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        roster_season: String,
+
+        /// Completed production season used by player scores.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+
+        /// NHL team abbreviation.
+        #[arg(long)]
+        team: String,
+
+        /// Stable scenario ID from the local IceCast registry.
+        #[arg(long)]
+        scenario_id: String,
+
+        /// Explicit cross-team scenario dimension for safe side-by-side deltas.
+        #[arg(long)]
+        scenario_comparison_key: Option<String>,
+
+        /// Paired simulation trials.
+        #[arg(long, default_value_t = 10_000)]
+        trials: u32,
+
+        /// Deterministic simulation seed.
+        #[arg(long, default_value_t = 20_262_027)]
+        seed: u64,
+
+        /// Fixed RFC 3339 generation/evidence timestamp for reproducible documents.
+        #[arg(long)]
+        generated_at: Option<String>,
+
+        /// Emit the complete card_document.v1 JSON instead of compact text.
         #[arg(long)]
         json: bool,
 
@@ -2095,6 +5493,12 @@ pub enum FetchSubcommand {
         /// and union the pids. 0 (default) = use active snapshot.
         #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u8).range(0..=38))]
         bundled_seasons: u8,
+        /// Restrict acquisition to player IDs in a `prospect_league_context.v1` file.
+        #[arg(long = "prospect-context", value_name = "PATH")]
+        prospect_context: Option<PathBuf>,
+        /// Restrict acquisition to prospects in a `training_camp_league_forecast.v1` file.
+        #[arg(long = "camp-forecast", value_name = "PATH")]
+        camp_forecast: Option<PathBuf>,
     },
     /// Fetch boxscores for one date and write score events to the
     /// EventStream (Phase Foster.3). With --for-favorites, only
@@ -2151,6 +5555,26 @@ pub enum FetchSubcommand {
         /// Season type: regular (default), playoff, or both.
         #[arg(long = "type", value_enum, default_value_t = FetchSeasonType::Regular)]
         season_type: FetchSeasonType,
+    },
+    /// Fetch official AHL team rosters plus skater and goalie season stats.
+    /// Provider player IDs remain explicitly separate from NHL player IDs.
+    Ahl {
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
+        /// Restrict to an AHL team code or exact name. Repeat for multiple teams.
+        /// With no filter, fetches every team in the provider season catalog.
+        #[arg(long = "team", value_name = "AHL_CODE_OR_NAME")]
+        teams: Vec<String>,
+        /// Also export the UI-neutral snapshot to this path. The canonical
+        /// copy is always sealed in the IceLines snapshot store.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Revalidate source bytes instead of accepting a verified FLETCH cacheline.
+        #[arg(long)]
+        refresh: bool,
+        /// Print the planned fetch without making network requests or writing.
+        #[arg(long)]
+        dry_run: bool,
     },
     /// Fetch league-wide transactions from ESPN — Phase T.3.
     /// Trades, waivers, signings, IR, recalls, reassignments. Writes
@@ -2905,6 +6329,37 @@ pub enum FantasySubcommand {
     LeagueSwitch { name: String },
     /// Delete a fantasy league and all its teams.
     LeagueDelete { name: String },
+    /// Change the scoring scheme for an existing fantasy league.
+    LeagueSchemeSet {
+        scheme: String,
+        #[arg(long)]
+        league: Option<String>,
+    },
+    /// Show the active league's exact points/category competition contract.
+    #[command(name = "competition-show")]
+    CompetitionShow {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Set points mode or exact category rules for a league.
+    #[command(name = "competition-set")]
+    CompetitionSet {
+        /// points or categories.
+        #[arg(long)]
+        mode: String,
+        /// KEY:DIRECTION:AGGREGATION[:TIE_EPSILON], repeat for every category.
+        #[arg(long = "category")]
+        categories: Vec<String>,
+        #[arg(long, default_value_t = 0)]
+        minimum_goalie_appearances: u8,
+        /// tie or higher_seed_wins.
+        #[arg(long, default_value = "tie")]
+        tie_policy: String,
+        #[arg(long)]
+        league: Option<String>,
+    },
 
     // Team management
     /// Create a new fantasy team in the active league.
@@ -2931,6 +6386,8 @@ pub enum FantasySubcommand {
         name: String,
         #[arg(long)]
         league: Option<String>,
+        #[arg(long)]
+        stats_season: Option<String>,
     },
     /// Add a player to a fantasy team.
     TeamAdd {
@@ -2938,6 +6395,8 @@ pub enum FantasySubcommand {
         player: String,
         #[arg(long)]
         league: Option<String>,
+        #[arg(long)]
+        stats_season: Option<String>,
     },
     /// Drop a player from a fantasy team.
     TeamDrop {
@@ -2990,6 +6449,134 @@ pub enum FantasySubcommand {
         json: bool,
     },
 
+    /// Stress-test a complete fantasy season with injuries, pickups, and trades.
+    #[command(name = "season-sim")]
+    SeasonSim {
+        #[arg(long)]
+        league: Option<String>,
+        /// Fantasy team whose current partial or complete roster is locked into team one.
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long, default_value_t = 12)]
+        teams: usize,
+        #[arg(long, default_value_t = 6)]
+        playoff_teams: usize,
+        #[arg(long, default_value_t = 100)]
+        trials: usize,
+        #[arg(long, default_value_t = 20_262_027)]
+        seed: u64,
+        /// Per-player probability of a new injury on each scheduled game day.
+        #[arg(long, default_value_t = 0.0015)]
+        injury_rate: f64,
+        /// Probability that each fantasy team attempts a trade each week.
+        #[arg(long, default_value_t = 0.10)]
+        trade_probability: f64,
+        /// Chance an opponent selects the top projected weekly pickup; team one always does.
+        #[arg(long, default_value_t = 1.0)]
+        opponent_pickup_accuracy: f64,
+        /// Team-one acquisitions held back through Friday for injury replacements.
+        #[arg(long, default_value_t = 1)]
+        pickup_reserve: u8,
+        /// Minimum simulated net value required to spend the protected final move.
+        #[arg(long, default_value_t = 6.0)]
+        exceptional_reserve_min_value: f64,
+        /// Minimum seven-day game-volume gain required to spend the protected move.
+        #[arg(long, default_value_t = 3)]
+        exceptional_reserve_min_games: i8,
+        /// Disable the exceptional-value escape hatch and keep a strict reserve.
+        #[arg(long)]
+        strict_pickup_reserve: bool,
+        /// Compare clean, baseline, and high-chaos environments with the same seed.
+        #[arg(long)]
+        scenario_matrix: bool,
+        /// Compare 100%, 85%, and 70% opponent pickup accuracy with the same seed.
+        #[arg(long)]
+        manager_matrix: bool,
+        /// Compare all-in, strict-reserve, and adaptive-reserve acquisition policies.
+        #[arg(long)]
+        reserve_matrix: bool,
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Find weekly game volume, quiet-slate teams, and schedule-diverse draft fits.
+    #[command(name = "schedule-edge")]
+    ScheduleEdge {
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        /// Show only the Monday-Sunday week containing this date.
+        #[arg(long)]
+        week: Option<chrono::NaiveDate>,
+        /// Explicit NHL teams to analyze as a roster (overrides the active fantasy roster).
+        #[arg(long = "teams", value_delimiter = ',')]
+        teams: Vec<String>,
+        /// Fantasy league used to resolve the marked user roster.
+        #[arg(long)]
+        league: Option<String>,
+        /// A game is an off-night opportunity when the NHL slate has at most this many games.
+        #[arg(long, default_value_t = 4)]
+        off_night_max_games: usize,
+        /// Number of exact-date schedule equivalence classes.
+        #[arg(long, default_value_t = 8)]
+        classes: usize,
+        /// Ignore the locally cached schedule and reload all teams from the official NHL API.
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+
+    /// Rank the marked roster's legal usable starts across the final playoff weeks.
+    #[command(name = "playoff-portfolio")]
+    PlayoffPortfolio {
+        /// Number of final Monday-Sunday fantasy playoff rounds to inspect.
+        #[arg(long)]
+        rounds: Option<usize>,
+        /// Monday starting the first fantasy playoff round; defaults to the final season weeks.
+        #[arg(long)]
+        start: Option<chrono::NaiveDate>,
+        /// Team perspective; otherwise use the marked user team.
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// A quiet-slate start occurs on a date with at most this many NHL games.
+        #[arg(long, default_value_t = 4)]
+        off_night_max_games: usize,
+        /// Maximum unrostered completed-season value leaders evaluated as add candidates.
+        #[arg(long, default_value_t = 25)]
+        candidates: usize,
+        /// Maximum candidate add/drop fits returned.
+        #[arg(long, default_value_t = 10)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Persist the league's first fantasy playoff Monday and number of rounds.
+    #[command(name = "playoff-calendar-set")]
+    PlayoffCalendarSet {
+        /// Monday starting the first fantasy playoff round.
+        #[arg(long)]
+        start: chrono::NaiveDate,
+        #[arg(long, default_value_t = 3)]
+        rounds: u8,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Show fantasy points earned on a date from cached finalized boxscores.
     Daily {
         /// Date to score, in YYYY-MM-DD format.
@@ -3020,6 +6607,53 @@ pub enum FantasySubcommand {
         json: bool,
     },
 
+    /// Project a points-mode weekly matchup using legal daily lineups.
+    #[command(name = "matchup-plan")]
+    MatchupPlan {
+        /// Date inside the Monday-Sunday matchup week.
+        #[arg(long)]
+        week: chrono::NaiveDate,
+        /// Team perspective; otherwise use the marked user team.
+        #[arg(long)]
+        team: Option<String>,
+        /// Opponent override; otherwise use the saved matchup schedule.
+        #[arg(long)]
+        opponent: Option<String>,
+        /// Risk posture: floor, balanced, or upside.
+        #[arg(long, default_value = "balanced")]
+        strategy: String,
+        /// Whether your team owns the higher-seed tiebreak (required by that policy).
+        #[arg(long)]
+        user_higher_seed: Option<bool>,
+        /// JSON category totals snapshot, or - to read pasted JSON from stdin.
+        #[arg(long)]
+        category_snapshot: Option<PathBuf>,
+        /// Last matchup date already included in both current point totals.
+        #[arg(long)]
+        through: Option<chrono::NaiveDate>,
+        /// Your platform matchup points through --through.
+        #[arg(long, requires = "through")]
+        user_current: Option<f64>,
+        /// Opponent platform matchup points through --through.
+        #[arg(long, requires = "through")]
+        opponent_current: Option<f64>,
+        /// Human-readable authority for supplied current totals.
+        #[arg(long, default_value = "manual platform entry")]
+        current_source: String,
+        /// Maximum age of saved status evidence before it becomes advisory only.
+        #[arg(long, default_value_t = 360)]
+        status_max_age_minutes: i64,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// Maximum free agents considered for the one-move swing.
+        #[arg(long, default_value_t = 75)]
+        candidates: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Add a local fantasy matchup schedule row for a week.
     MatchupSet {
         /// Date inside the matchup week, in YYYY-MM-DD format.
@@ -3036,7 +6670,7 @@ pub enum FantasySubcommand {
 
     /// Import a Yahoo roster CSV into the local FantasyDb.
     ImportYahoo {
-        /// Yahoo roster CSV export to parse.
+        /// Yahoo roster CSV export to parse, or `-` to read pasted CSV from stdin.
         #[arg(long)]
         file: PathBuf,
         /// Fantasy league name to preview or create/update.
@@ -3048,6 +6682,9 @@ pub enum FantasySubcommand {
         /// Preview diagnostics without writing FantasyDb changes.
         #[arg(long)]
         dry_run: bool,
+        /// Replace each included team's saved roster instead of only adding rows.
+        #[arg(long)]
+        replace: bool,
         #[arg(long)]
         json: bool,
     },
@@ -3077,18 +6714,469 @@ pub enum FantasySubcommand {
         json: bool,
     },
 
+    /// Verify that saved rosters are complete enough for actionable trade search.
+    #[command(name = "trade-readiness")]
+    TradeReadiness {
+        #[arg(long)]
+        league: Option<String>,
+        /// Limit the report to one team.
+        #[arg(long)]
+        team: Option<String>,
+        /// Completed season used to resolve canonical player positions.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Persist the configured 2026 draft/daily assistant roster and transaction rules.
+    AssistantSetup {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show the active league's persisted draft/daily assistant rules.
+    AssistantRules {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Rank the best available players for the next draft pick.
+    DraftBoard {
+        /// Newline or CSV list of drafted players; use `-` to read stdin.
+        #[arg(long)]
+        taken_file: Option<PathBuf>,
+        /// Yahoo/player-pool CSV containing player names and eligible positions.
+        #[arg(long)]
+        eligibility_file: Option<PathBuf>,
+        /// Preview the recommendation after hypothetically drafting this player.
+        #[arg(long)]
+        pick: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        /// Completed stats season evaluated under the active league scheme.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 15)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Build the sealed two-page fantasy draft card from the live draft board.
+    #[command(name = "draft-card")]
+    DraftCard {
+        /// Newline or CSV list of drafted players; use `-` to read stdin.
+        #[arg(long)]
+        taken_file: Option<PathBuf>,
+        /// Yahoo/player-pool CSV containing player names and eligible positions.
+        #[arg(long)]
+        eligibility_file: Option<PathBuf>,
+        /// Preview the recommendation after hypothetically drafting this player.
+        #[arg(long)]
+        pick: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        /// Completed stats season evaluated under the active league scheme.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 15)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show the Monday-Sunday acquisition budget for the selected league.
+    WeeklyBudget {
+        #[arg(long)]
+        league: Option<String>,
+        /// RFC3339 evaluation time; defaults to now.
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Rank legal add/drop moves for the remaining Monday-Sunday fantasy week.
+    WeeklyPickups {
+        /// Evaluation date in YYYY-MM-DD; defaults to today in league timezone.
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 50)]
+        candidates: usize,
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Find unrostered skaters with rising league-scored and category rates.
+    Sleepers {
+        #[arg(long)]
+        league: Option<String>,
+        /// Evaluation season, normally the latest completed or in-progress sample.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// Prior season used as the player-rate baseline.
+        #[arg(long, default_value = "20242025")]
+        baseline_season: String,
+        /// Restrict to one or more positions: C, LW, RW, D.
+        #[arg(long, value_delimiter = ',')]
+        positions: Vec<String>,
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Record a completed local fantasy add and optional drop.
+    AcquisitionRecord {
+        #[arg(long)]
+        add: String,
+        #[arg(long)]
+        drop: Option<String>,
+        #[arg(long, default_value = "free-agent")]
+        kind: String,
+        /// RFC3339 effective time; defaults to now.
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        /// Store the event without consuming the weekly limit.
+        #[arg(long)]
+        no_count: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Record a sourced fantasy availability observation for a player.
+    StatusRecord {
+        player: String,
+        #[arg(long)]
+        status: String,
+        #[arg(long)]
+        source: String,
+        #[arg(long)]
+        source_url: Option<String>,
+        #[arg(long)]
+        observed_at: Option<String>,
+        #[arg(long, default_value = "reported")]
+        confidence: String,
+        #[arg(long)]
+        detail: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show latest evidence-aware availability statuses.
+    StatusShow {
+        player: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Record sourced starter evidence for one goalie and NHL game date.
+    GoalieStartRecord {
+        player: String,
+        #[arg(long)]
+        date: String,
+        #[arg(long)]
+        state: String,
+        #[arg(long)]
+        source: String,
+        #[arg(long)]
+        source_url: Option<String>,
+        #[arg(long)]
+        observed_at: Option<String>,
+        #[arg(long)]
+        detail: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Atomically import same-day goalie starter evidence from CSV or stdin.
+    GoalieStartImport {
+        /// CSV path, or - for clipboard/stdin input.
+        #[arg(long, default_value = "-")]
+        file: PathBuf,
+        /// Fallback source applied when a CSV row has no source.
+        #[arg(long)]
+        source: Option<String>,
+        /// Fallback RFC3339 observation time applied when a row omits observed_at.
+        #[arg(long)]
+        observed_at: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Export today's rostered-goalie and stream-candidate evidence checklist CSV.
+    GoalieStartTemplate {
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 5)]
+        top_streams: usize,
+        /// Output CSV path; omit or use - for stdout.
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+
+    /// Show latest game-specific goalie starter evidence and freshness.
+    GoalieStartShow {
+        player: Option<String>,
+        #[arg(long)]
+        week: Option<String>,
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Build a weekly goalie evidence, slot-capacity, and minimum-appearance plan.
+    GoaliePlan {
+        #[arg(long)]
+        week: Option<String>,
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value = "balanced")]
+        strategy: String,
+        #[arg(long, default_value_t = 0.0)]
+        current_appearances: f64,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Build an evidence-aware lineup and IR/IR+ placement plan.
+    InjuryPlan {
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Build the sealed two-page fantasy roster card from the legal daily lineup.
+    #[command(name = "roster-card")]
+    RosterCard {
+        #[arg(long)]
+        date: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        #[arg(long, default_value_t = 4)]
+        off_night_max_games: usize,
+        #[arg(long, default_value_t = 8)]
+        classes: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Build the evidence-aware 07:00 lineup, IR, and pickup briefing.
+    Morning {
+        #[arg(long)]
+        date: Option<String>,
+        /// RFC3339 pregame evaluation time; omitted means 07:00 local baseline.
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        /// Goalie appearances already recorded in the current Monday-Sunday matchup.
+        #[arg(long, default_value_t = 0.0)]
+        current_goalie_appearances: f64,
+        /// Suppress text/actions when the decision-bearing fingerprint is unchanged.
+        #[arg(long)]
+        material_only: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Build the sealed two-page Morning Skate card from today's briefing.
+    #[command(name = "morning-card")]
+    MorningCard {
+        #[arg(long)]
+        date: Option<String>,
+        /// RFC3339 pregame evaluation time; omitted means 07:00 local baseline.
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        /// Goalie appearances already recorded in the current Monday-Sunday matchup.
+        #[arg(long, default_value_t = 0.0)]
+        current_goalie_appearances: f64,
+        #[arg(long)]
+        json: bool,
+    },
+
     // Trade
-    /// Evaluate or execute a player trade between two teams.
+    /// Evaluate or atomically execute a player trade between two teams.
     Trade {
+        /// Player or comma-separated package your side sends.
         player1: String,
         #[arg(long)]
         to_team: String,
         #[arg(long = "for-player")]
+        /// Player or comma-separated package the other side sends.
         for_player: String,
         #[arg(long)]
         execute: bool,
+        /// Save this legal evaluation as a pending offer without changing rosters.
+        #[arg(long, conflicts_with = "execute")]
+        save_offer: bool,
         #[arg(long)]
         league: Option<String>,
+        /// Completed production season used to value the players.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Evaluate a trade and seal the result as a two-page UI-neutral card.
+    #[command(name = "trade-card")]
+    TradeCard {
+        /// Player or comma-separated package your side sends.
+        player1: String,
+        #[arg(long)]
+        to_team: String,
+        #[arg(long = "for-player")]
+        /// Player or comma-separated package the other side sends.
+        for_player: String,
+        #[arg(long)]
+        league: Option<String>,
+        /// Completed production season used to value the players.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show locally executed fantasy trades, newest first.
+    #[command(name = "trade-history")]
+    TradeHistory {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// List saved trade offers, newest first.
+    #[command(name = "trade-offers")]
+    TradeOffers {
+        /// Filter by pending, accepted, rejected, cancelled, or expired.
+        #[arg(long)]
+        status: Option<String>,
+        /// Hide offers whose saved players no longer belong to the expected teams.
+        #[arg(long)]
+        actionable_only: bool,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Close a pending saved trade offer without changing rosters.
+    #[command(name = "trade-offer-close")]
+    TradeOfferClose {
+        id: String,
+        /// accepted, rejected, cancelled, or expired.
+        #[arg(long)]
+        status: String,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Search opponent rosters for fair, legal trade offers.
+    #[command(name = "trade-finder")]
+    TradeFinder {
+        /// Team to improve; defaults to the marked user team.
+        #[arg(long)]
+        team: Option<String>,
+        /// Search only this opponent instead of the entire league.
+        #[arg(long)]
+        to_team: Option<String>,
+        /// Largest package on either side (one or two players).
+        #[arg(long, default_value_t = 2)]
+        max_package: usize,
+        /// Maximum projected value gap for a mutually plausible offer.
+        #[arg(long, default_value_t = 10.0)]
+        fairness_percent: f64,
+        /// Player names that must not appear in outgoing packages.
+        #[arg(long, value_delimiter = ',')]
+        protect: Vec<String>,
+        /// Allow the roster's highest-value player to appear in offers.
+        #[arg(long)]
+        include_anchors: bool,
+        /// Refuse to rank offers unless every searched roster is complete and legal.
+        #[arg(long)]
+        require_complete: bool,
+        #[arg(long, default_value_t = 20)]
+        top: usize,
+        #[arg(long)]
+        league: Option<String>,
+        /// Completed production season used to value the players.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long)]
+        json: bool,
     },
 
     // Server

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Transactions{% endblock %}
+{% block title %}The Boards — Transactions{% endblock %}
 
 {% block content %}
 <p style="margin-bottom: 0.5rem;">
     <a href="/">← back to dashboard</a>
 </p>
 
-<h1>Transactions</h1>
+<h1 aria-label="NHL transactions">The Boards — Transactions</h1>
 <p style="color:#616161; margin-top:-0.25rem;">
     {{ season_pretty }} league moves — source: ESPN site.api
 </p>
@@ -18,6 +18,12 @@
     The active season is outside ESPN's archive — switch seasons in
     <code>~/.icelines/config.toml</code> or run
     <code>icelines fetch transactions --season 20242025</code>.
+</p>
+{% endif %}
+
+{% if !source_warning.is_empty() %}
+<p class="state-warning" role="status">
+    <strong>Under Review — source unavailable.</strong> {{ source_warning }}
 </p>
 {% endif %}
 

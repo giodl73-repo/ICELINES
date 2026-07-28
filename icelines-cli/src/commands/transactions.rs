@@ -42,7 +42,8 @@ pub async fn run(
 
     // ── Resolve season ────────────────────────────────────────────────
     let cfg = Config::load()?;
-    let season = season.unwrap_or_else(|| cfg.season_str());
+    let explicit_season = season.is_some();
+    let mut season = season.unwrap_or_else(|| cfg.season_str());
 
     if season.as_str() < TRANSACTIONS_EARLIEST_SEASON {
         // EDGE-mandated: never tell the user to fetch a season ESPN
@@ -75,8 +76,17 @@ pub async fn run(
     // ── Load snapshot + meta flags ────────────────────────────────────
     let snapshots_root = cfg.snapshot_dir();
     let store = SnapshotStore::new(snapshots_root.clone());
-    let envelope = load_transactions_with_fallback(&season, &store)
-        .context("loading transactions snapshot")?;
+    let envelope = match load_transactions_with_fallback(&season, &store) {
+        Ok(envelope) => envelope,
+        Err(_)
+            if !explicit_season && !icelines_fetch::BUNDLED_SEASONS.contains(&season.as_str()) =>
+        {
+            season = icelines_fetch::BUNDLED_SEASONS[0].to_owned();
+            load_transactions_with_fallback(&season, &store)
+                .context("loading transactions snapshot")?
+        }
+        Err(error) => return Err(error).context("loading transactions snapshot"),
+    };
 
     let flags = SnapshotMetaFlags::load(&snapshots_root, &season);
     if flags.transactions_stale && format == Format::Table && out.is_none() {

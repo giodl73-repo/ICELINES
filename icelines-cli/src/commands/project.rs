@@ -10,7 +10,6 @@ use icelines_core::{
 };
 use icelines_fetch::career::load_career;
 use icelines_fetch::snapshot::SnapshotStore;
-use icelines_fetch::stats_loader::load_into_repo;
 
 const DEFAULT_REMAINING: u32 = 20; // fallback when schedule not available
 
@@ -41,13 +40,10 @@ pub async fn run(
     // Hart.5b2: load via load_into_repo + .skaters() instead of
     // load_all_players (Vec<Player>).
     let cfg = Config::load()?;
-    let season_u32: u32 = cfg
-        .season_str()
-        .parse()
-        .map_err(|_| anyhow::anyhow!("season '{}' is not a YYYYZZZZ id", cfg.season_str()))?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = load_into_repo(Season(season_u32), SeasonType::Regular, &store)
-        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))?;
+    let (outcome, season, _) =
+        crate::commands::players::load_repo_for_season(None, Some(SeasonType::Regular))?;
+    let season_u32 = season.0;
 
     let remaining = games.unwrap_or(DEFAULT_REMAINING);
     let format = Format::resolve(csv, json)?;

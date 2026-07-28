@@ -3877,6 +3877,7 @@ mod tests {
             active_team: "SEA".to_string(),
             out_of_coverage: false,
             earliest_season_pretty: "2023-24".to_string(),
+            source_warning: String::new(),
         };
 
         let rows = transactions_summary_rows(&result);

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Schedule{% endblock %}
+{% block title %}Center Ice — Schedule{% endblock %}
 
 {% block content %}
 <p class="back-link-row">
     <a href="/">← back to dashboard</a>
 </p>
 
-<h1>Team schedule — {{ season_pretty }}</h1>
+<h1 aria-label="Team schedule">Center Ice — Team Schedule — {{ season_pretty }}</h1>
 <p class="context-line">
     Full season schedule for one team. Source:
     <code>api-web.nhle.com/v1/club-schedule-season</code>

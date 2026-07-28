@@ -29,6 +29,8 @@ fn l2_lindsay_l5_query_leaders_catalog_sort_points_per_game() {
             "points-per-game",
             "--top",
             "5",
+            "--season",
+            "20242025",
         ])
         .output()
         .expect("spawn icelines");
@@ -67,7 +69,9 @@ fn l2_lindsay_l5_query_leaders_catalog_sort_points_per_game() {
 #[test]
 fn l2_lindsay_l5_query_leaders_catalog_sort_goalie_key_no_panic() {
     let out = Command::new(icelines_bin())
-        .args(["query", "leaders", "--sort", "save-pct", "--top", "3"])
+        .args([
+            "query", "leaders", "--sort", "save-pct", "--top", "3", "--season", "20242025",
+        ])
         .output()
         .expect("spawn icelines");
     assert!(
@@ -94,6 +98,8 @@ fn l2_lindsay_l5_export_md_leaders_columns_renders_custom_table() {
             "goals,assists,points",
             "--top",
             "3",
+            "--season",
+            "20242025",
         ])
         .output()
         .expect("spawn icelines");
@@ -138,6 +144,8 @@ fn l2_lindsay_l5_export_md_leaders_columns_unknown_bails() {
             "not-a-real-stat",
             "--top",
             "3",
+            "--season",
+            "20242025",
         ])
         .output()
         .expect("spawn icelines");
@@ -157,7 +165,9 @@ fn l2_lindsay_l5_export_md_leaders_columns_unknown_bails() {
 #[test]
 fn l2_lindsay_l5_export_md_leaders_no_columns_preserves_canonical() {
     let out = Command::new(icelines_bin())
-        .args(["export", "md", "leaders", "--out", "-", "--top", "3"])
+        .args([
+            "export", "md", "leaders", "--out", "-", "--top", "3", "--season", "20242025",
+        ])
         .output()
         .expect("spawn icelines");
     assert!(out.status.success());

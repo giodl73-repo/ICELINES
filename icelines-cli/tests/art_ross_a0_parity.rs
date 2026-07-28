@@ -5,7 +5,7 @@
 //! match as the legacy pipeline (`parse_filter_expr` →
 //! `FilterExpr::matches`) for a corpus of filter strings.
 //!
-//! Runs against bundled current-season data — no network, no
+//! Runs against the newest bundled season — no network, no
 //! tempdir. The shared corpus is a curated subset of Wave 11's
 //! 201 scenarios chosen to exercise every legacy code path that
 //! the new pipeline must reproduce identically:
@@ -105,8 +105,10 @@ const FILTER_CORPUS: &[&str] = &[
     "NOT g>=10 AND NOT a>=10",
 ];
 
-fn current_season_u32() -> u32 {
-    icelines_core::CURRENT_SEASON
+fn bundled_season_u32() -> u32 {
+    icelines_fetch::bundled::BUNDLED_SEASONS[0]
+        .parse()
+        .expect("newest bundled season id")
 }
 
 /// Build a repo populated with sample players' careers. Uses the
@@ -133,7 +135,7 @@ fn fixed_today() -> chrono::NaiveDate {
 #[test]
 fn art_ross_a0_parity_corpus_agrees_on_every_player() {
     let repo = build_sample_repo();
-    let season = icelines_core::model::Season(current_season_u32());
+    let season = icelines_core::model::Season(bundled_season_u32());
     let season_type = icelines_core::season_stats::SeasonType::Regular;
 
     let provider = NoOpProvider;
@@ -142,7 +144,7 @@ fn art_ross_a0_parity_corpus_agrees_on_every_player() {
         StrictMode::Off,
         false,
         fixed_today(),
-        current_season_u32(),
+        bundled_season_u32(),
     );
 
     let mut diffs: Vec<String> = Vec::new();
@@ -198,7 +200,7 @@ fn art_ross_a0_parity_corpus_agrees_on_every_player() {
 #[test]
 fn art_ross_a0_corpus_has_actual_diversity() {
     let repo = build_sample_repo();
-    let season = icelines_core::model::Season(current_season_u32());
+    let season = icelines_core::model::Season(bundled_season_u32());
     let season_type = icelines_core::season_stats::SeasonType::Regular;
     let provider = NoOpProvider;
     let ctx = EvalCtx::new(
@@ -206,7 +208,7 @@ fn art_ross_a0_corpus_has_actual_diversity() {
         StrictMode::Off,
         false,
         fixed_today(),
-        current_season_u32(),
+        bundled_season_u32(),
     );
 
     let mut found_true = false;

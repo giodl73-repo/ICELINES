@@ -1,6 +1,18 @@
 <section class="jaw-workspace" aria-label="Workspace" data-workspace-url="{{ workspace_url }}">
     <div class="jaw-workspace-heading">
+        {% if show_full_leaders %}
+        <h1 aria-label="Player leaderboards">IceStats — Leaderboards</h1>
+        {% else if show_full_goalies %}
+        <h1 aria-label="Goalie statistics">The Crease — Goalies</h1>
+        {% else if show_full_depth %}
+        <h1 aria-label="Team depth rankings">The Depth Chart — Team Rankings</h1>
+        {% else if show_full_scores %}
+        <h1 aria-label="NHL game scores">The Scoreboard — Scores</h1>
+        {% else if show_full_schedule %}
+        <h1 aria-label="Team schedule">Center Ice — Team Schedule</h1>
+        {% else %}
         <h1>{{ workspace_label }}</h1>
+        {% endif %}
         <a class="link-button-secondary" href="{{ workspace_url }}" aria-label="Open full {{ workspace_label }} workspace">Open full {{ workspace_label }}</a>
         <a class="link-button-secondary" href="{{ center_pin_left_href }}" aria-label="Pin {{ workspace_label }} workspace to left pane" data-dashboard-composition-link>Pin left</a>
         <a class="link-button-secondary" href="{{ center_pin_right_href }}" aria-label="Pin {{ workspace_label }} workspace to right pane" data-dashboard-composition-link>Pin right</a>

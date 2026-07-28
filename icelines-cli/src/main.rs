@@ -17,8 +17,8 @@ mod visual;
 use anyhow::Context;
 use clap::Parser;
 use cli::{
-    Cli, Commands, FantasySubcommand, QuerySubcommand, RecordsSubcommand, ReportSubcommand,
-    WatchSubcommand,
+    Cli, Commands, FantasySubcommand, IceCastScenarioSubcommand, IceCastSubcommand,
+    QuerySubcommand, RecordsSubcommand, ReportSubcommand, WatchSubcommand,
 };
 use config::Config;
 use icelines_core::{WorkbenchId, WorkbenchLayoutStore};
@@ -66,6 +66,27 @@ fn print_short_banner() {
     println!("  icelines --help    All commands and flags");
 }
 
+/// Build Clap's large command tree on an explicitly sized stack.
+///
+/// IceLines has a deliberately broad command surface. On Windows, deriving and
+/// traversing that tree can exceed the default main-thread stack, especially
+/// while rendering nested help. Keep this boundary in production as well as in
+/// the CLI surface tests instead of relying on the caller's platform default.
+fn run_on_cli_stack<T: Send + 'static>(
+    operation: impl FnOnce() -> T + Send + 'static,
+) -> anyhow::Result<T> {
+    let handle = std::thread::Builder::new()
+        .name("icelines-cli-parser".to_string())
+        .stack_size(16 * 1024 * 1024)
+        .spawn(operation)
+        .context("spawn IceLines CLI parser")?;
+
+    match handle.join() {
+        Ok(value) => Ok(value),
+        Err(payload) => std::panic::resume_unwind(payload),
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     reset_sigpipe_handler();
@@ -84,7 +105,7 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let cli = Cli::parse();
+    let cli = run_on_cli_stack(Cli::parse)?;
     let is_setup_command = matches!(&cli.command, Commands::Setup { .. });
     if should_auto_setup(
         cli.no_setup,
@@ -189,6 +210,62 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     json,
                     out,
                 })?;
+            }
+            ReportSubcommand::TeamCeiling {
+                roster_season,
+                stats_season,
+                team,
+                json,
+                out,
+            } => {
+                commands::report::run_team_ceiling(commands::report::TeamCeilingArgs {
+                    roster_season,
+                    stats_season,
+                    team,
+                    json,
+                    out,
+                })?;
+            }
+            ReportSubcommand::TeamLineup {
+                roster_season,
+                stats_season,
+                team,
+                json,
+                out,
+            } => {
+                commands::report::run_team_lineup(commands::report::TeamLineupArgs {
+                    roster_season,
+                    stats_season,
+                    team,
+                    json,
+                    out,
+                })?;
+            }
+            ReportSubcommand::TeamCard {
+                roster_season,
+                stats_season,
+                team,
+                scenario_id,
+                scenario_comparison_key,
+                trials,
+                seed,
+                generated_at,
+                json,
+                out,
+            } => {
+                commands::report::run_team_card(commands::report::TeamCardArgs {
+                    roster_season,
+                    stats_season,
+                    team,
+                    scenario_id,
+                    scenario_comparison_key,
+                    trials,
+                    seed,
+                    generated_at,
+                    json,
+                    out,
+                })
+                .await?;
             }
             ReportSubcommand::Poach {
                 season,
@@ -1072,6 +1149,28 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             FantasySubcommand::LeagueDelete { name } => {
                 commands::fantasy::run_league_delete(name).await?
             }
+            FantasySubcommand::LeagueSchemeSet { scheme, league } => {
+                commands::fantasy::run_league_scheme_set(scheme, league).await?
+            }
+            FantasySubcommand::CompetitionShow { league, json } => {
+                commands::fantasy::run_competition_show(league, json).await?
+            }
+            FantasySubcommand::CompetitionSet {
+                mode,
+                categories,
+                minimum_goalie_appearances,
+                tie_policy,
+                league,
+            } => {
+                commands::fantasy::run_competition_set(
+                    mode,
+                    categories,
+                    minimum_goalie_appearances,
+                    tie_policy,
+                    league,
+                )
+                .await?
+            }
             FantasySubcommand::TeamCreate {
                 name,
                 owner,
@@ -1083,14 +1182,17 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             FantasySubcommand::TeamUse { name, league } => {
                 commands::fantasy::run_team_use(name, league).await?
             }
-            FantasySubcommand::TeamShow { name, league } => {
-                commands::fantasy::run_team_show(name, league).await?
-            }
+            FantasySubcommand::TeamShow {
+                name,
+                league,
+                stats_season,
+            } => commands::fantasy::run_team_show(name, league, stats_season).await?,
             FantasySubcommand::TeamAdd {
                 team,
                 player,
                 league,
-            } => commands::fantasy::run_team_add(team, player, league).await?,
+                stats_season,
+            } => commands::fantasy::run_team_add(team, player, league, stats_season).await?,
             FantasySubcommand::TeamDrop {
                 team,
                 player,
@@ -1124,6 +1226,106 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 )
                 .await?
             }
+            FantasySubcommand::SeasonSim {
+                league,
+                team,
+                teams,
+                playoff_teams,
+                trials,
+                seed,
+                injury_rate,
+                trade_probability,
+                opponent_pickup_accuracy,
+                pickup_reserve,
+                exceptional_reserve_min_value,
+                exceptional_reserve_min_games,
+                strict_pickup_reserve,
+                scenario_matrix,
+                manager_matrix,
+                reserve_matrix,
+                season,
+                stats_season,
+                json,
+            } => {
+                commands::fantasy::run_season_sim(commands::fantasy::SeasonSimArgs {
+                    league,
+                    team,
+                    teams,
+                    playoff_teams,
+                    trials,
+                    seed,
+                    injury_rate,
+                    trade_probability,
+                    opponent_pickup_accuracy,
+                    pickup_reserve,
+                    exceptional_reserve_min_value,
+                    exceptional_reserve_min_games,
+                    strict_pickup_reserve,
+                    scenario_matrix,
+                    manager_matrix,
+                    reserve_matrix,
+                    season,
+                    stats_season,
+                    json,
+                })
+                .await?
+            }
+            FantasySubcommand::ScheduleEdge {
+                season,
+                week,
+                teams,
+                league,
+                off_night_max_games,
+                classes,
+                refresh,
+                json,
+                out,
+            } => {
+                commands::fantasy::run_schedule_edge(commands::fantasy::ScheduleEdgeArgs {
+                    season,
+                    week,
+                    teams,
+                    league,
+                    off_night_max_games,
+                    classes,
+                    refresh,
+                    json,
+                    out,
+                })
+                .await?
+            }
+            FantasySubcommand::PlayoffPortfolio {
+                rounds,
+                start,
+                team,
+                league,
+                season,
+                stats_season,
+                off_night_max_games,
+                candidates,
+                top,
+                json,
+            } => {
+                commands::fantasy::run_playoff_portfolio(
+                    rounds,
+                    start,
+                    team,
+                    league,
+                    season,
+                    stats_season,
+                    off_night_max_games,
+                    candidates,
+                    top,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::PlayoffCalendarSet {
+                start,
+                rounds,
+                league,
+                json,
+            } => commands::fantasy::run_playoff_calendar_set(start, rounds, league, json).await?,
             FantasySubcommand::Daily {
                 date,
                 league,
@@ -1144,6 +1346,42 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 commands::fantasy::run_matchup(date, league, season, season_type.to_core(), json)
                     .await?
             }
+            FantasySubcommand::MatchupPlan {
+                week,
+                team,
+                opponent,
+                strategy,
+                user_higher_seed,
+                category_snapshot,
+                through,
+                user_current,
+                opponent_current,
+                current_source,
+                status_max_age_minutes,
+                league,
+                stats_season,
+                candidates,
+                json,
+            } => {
+                commands::fantasy::run_matchup_plan(
+                    week,
+                    team,
+                    opponent,
+                    strategy,
+                    user_higher_seed,
+                    category_snapshot,
+                    through,
+                    user_current,
+                    opponent_current,
+                    current_source,
+                    status_max_age_minutes,
+                    league,
+                    stats_season,
+                    candidates,
+                    json,
+                )
+                .await?
+            }
             FantasySubcommand::MatchupSet {
                 week,
                 home,
@@ -1155,8 +1393,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 league,
                 my_team,
                 dry_run,
+                replace,
                 json,
-            } => commands::fantasy::run_import_yahoo(file, league, my_team, dry_run, json).await?,
+            } => {
+                commands::fantasy::run_import_yahoo(file, league, my_team, dry_run, replace, json)
+                    .await?
+            }
             FantasySubcommand::RosterShape { league, json } => {
                 commands::fantasy::run_roster_shape_show(league, json).await?
             }
@@ -1166,17 +1408,1105 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             FantasySubcommand::RosterShapeValidate { league, team, json } => {
                 commands::fantasy::run_roster_shape_validate(league, team, json).await?
             }
+            FantasySubcommand::TradeReadiness {
+                league,
+                team,
+                stats_season,
+                json,
+            } => commands::fantasy::run_trade_readiness(league, team, stats_season, json).await?,
+            FantasySubcommand::AssistantSetup { league, json } => {
+                commands::fantasy::run_assistant_setup(league, json).await?
+            }
+            FantasySubcommand::AssistantRules { league, json } => {
+                commands::fantasy::run_assistant_rules(league, json).await?
+            }
+            FantasySubcommand::DraftBoard {
+                taken_file,
+                eligibility_file,
+                pick,
+                league,
+                stats_season,
+                top,
+                json,
+            } => {
+                commands::fantasy::run_draft_board(
+                    taken_file,
+                    eligibility_file,
+                    pick,
+                    league,
+                    stats_season,
+                    top,
+                    json,
+                    false,
+                )
+                .await?
+            }
+            FantasySubcommand::DraftCard {
+                taken_file,
+                eligibility_file,
+                pick,
+                league,
+                stats_season,
+                top,
+                json,
+            } => {
+                commands::fantasy::run_draft_board(
+                    taken_file,
+                    eligibility_file,
+                    pick,
+                    league,
+                    stats_season,
+                    top,
+                    json,
+                    true,
+                )
+                .await?
+            }
+            FantasySubcommand::WeeklyBudget { league, at, json } => {
+                commands::fantasy::run_weekly_budget(league, at, json).await?
+            }
+            FantasySubcommand::WeeklyPickups {
+                date,
+                league,
+                stats_season,
+                candidates,
+                top,
+                json,
+            } => {
+                commands::fantasy::run_weekly_pickups(
+                    date,
+                    league,
+                    stats_season,
+                    candidates,
+                    top,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::Sleepers {
+                league,
+                stats_season,
+                baseline_season,
+                positions,
+                top,
+                json,
+            } => {
+                commands::fantasy::run_sleepers(
+                    league,
+                    stats_season,
+                    baseline_season,
+                    positions,
+                    top,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::AcquisitionRecord {
+                add,
+                drop,
+                kind,
+                at,
+                league,
+                no_count,
+                json,
+            } => {
+                commands::fantasy::run_acquisition_record(
+                    add, drop, kind, at, league, no_count, json,
+                )
+                .await?
+            }
+            FantasySubcommand::StatusRecord {
+                player,
+                status,
+                source,
+                source_url,
+                observed_at,
+                confidence,
+                detail,
+                league,
+                json,
+            } => {
+                commands::fantasy::run_status_record(
+                    player,
+                    status,
+                    source,
+                    source_url,
+                    observed_at,
+                    confidence,
+                    detail,
+                    league,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::StatusShow {
+                player,
+                league,
+                max_age_minutes,
+                json,
+            } => commands::fantasy::run_status_show(player, league, max_age_minutes, json).await?,
+            FantasySubcommand::GoalieStartRecord {
+                player,
+                date,
+                state,
+                source,
+                source_url,
+                observed_at,
+                detail,
+                league,
+                json,
+            } => {
+                commands::fantasy::run_goalie_start_record(
+                    player,
+                    date,
+                    state,
+                    source,
+                    source_url,
+                    observed_at,
+                    detail,
+                    league,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::GoalieStartShow {
+                player,
+                week,
+                date,
+                league,
+                max_age_minutes,
+                json,
+            } => {
+                commands::fantasy::run_goalie_start_show(
+                    player,
+                    week,
+                    date,
+                    league,
+                    max_age_minutes,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::GoalieStartImport {
+                file,
+                source,
+                observed_at,
+                league,
+                json,
+            } => {
+                commands::fantasy::run_goalie_start_import(file, source, observed_at, league, json)
+                    .await?
+            }
+            FantasySubcommand::GoalieStartTemplate {
+                date,
+                team,
+                league,
+                stats_season,
+                top_streams,
+                out,
+            } => {
+                commands::fantasy::run_goalie_start_template(
+                    date,
+                    team,
+                    league,
+                    stats_season,
+                    top_streams,
+                    out,
+                )
+                .await?
+            }
+            FantasySubcommand::GoaliePlan {
+                week,
+                date,
+                team,
+                league,
+                stats_season,
+                strategy,
+                current_appearances,
+                max_age_minutes,
+                json,
+            } => {
+                commands::fantasy::run_goalie_plan(
+                    week,
+                    date,
+                    team,
+                    league,
+                    stats_season,
+                    strategy,
+                    current_appearances,
+                    max_age_minutes,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::InjuryPlan {
+                date,
+                league,
+                stats_season,
+                max_age_minutes,
+                json,
+            } => {
+                commands::fantasy::run_injury_plan(
+                    date,
+                    league,
+                    stats_season,
+                    max_age_minutes,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::RosterCard {
+                date,
+                league,
+                season,
+                stats_season,
+                max_age_minutes,
+                off_night_max_games,
+                classes,
+                json,
+            } => {
+                commands::fantasy::run_roster_card(
+                    date,
+                    league,
+                    season,
+                    stats_season,
+                    max_age_minutes,
+                    off_night_max_games,
+                    classes,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::Morning {
+                date,
+                at,
+                league,
+                stats_season,
+                max_age_minutes,
+                current_goalie_appearances,
+                material_only,
+                json,
+            } => {
+                commands::fantasy::run_morning(
+                    date,
+                    at,
+                    league,
+                    stats_season,
+                    max_age_minutes,
+                    current_goalie_appearances,
+                    material_only,
+                    json,
+                    false,
+                )
+                .await?
+            }
+            FantasySubcommand::MorningCard {
+                date,
+                at,
+                league,
+                stats_season,
+                max_age_minutes,
+                current_goalie_appearances,
+                json,
+            } => {
+                commands::fantasy::run_morning(
+                    date,
+                    at,
+                    league,
+                    stats_season,
+                    max_age_minutes,
+                    current_goalie_appearances,
+                    false,
+                    json,
+                    true,
+                )
+                .await?
+            }
             FantasySubcommand::Trade {
                 player1,
                 to_team,
                 for_player,
                 execute,
+                save_offer,
                 league,
+                stats_season,
+                json,
             } => {
-                commands::fantasy::run_trade(player1, to_team, for_player, execute, league).await?
+                commands::fantasy::run_trade(
+                    player1,
+                    to_team,
+                    for_player,
+                    execute,
+                    save_offer,
+                    league,
+                    stats_season,
+                    json,
+                    false,
+                )
+                .await?
+            }
+            FantasySubcommand::TradeCard {
+                player1,
+                to_team,
+                for_player,
+                league,
+                stats_season,
+                json,
+            } => {
+                commands::fantasy::run_trade(
+                    player1,
+                    to_team,
+                    for_player,
+                    false,
+                    false,
+                    league,
+                    stats_season,
+                    json,
+                    true,
+                )
+                .await?
+            }
+            FantasySubcommand::TradeHistory {
+                league,
+                limit,
+                json,
+            } => commands::fantasy::run_trade_history(league, limit, json)?,
+            FantasySubcommand::TradeOffers {
+                status,
+                actionable_only,
+                league,
+                limit,
+                json,
+            } => commands::fantasy::run_trade_offers(status, actionable_only, league, limit, json)?,
+            FantasySubcommand::TradeOfferClose {
+                id,
+                status,
+                league,
+                json,
+            } => commands::fantasy::run_trade_offer_close(id, status, league, json)?,
+            FantasySubcommand::TradeFinder {
+                team,
+                to_team,
+                max_package,
+                fairness_percent,
+                protect,
+                include_anchors,
+                require_complete,
+                top,
+                league,
+                stats_season,
+                json,
+            } => {
+                commands::fantasy::run_trade_finder(
+                    team,
+                    to_team,
+                    max_package,
+                    fairness_percent,
+                    protect,
+                    include_anchors,
+                    require_complete,
+                    top,
+                    league,
+                    stats_season,
+                    json,
+                )
+                .await?
             }
             FantasySubcommand::Serve { port, league } => {
                 commands::fantasy::run_serve(port, league).await?
+            }
+        },
+        Commands::Icecast(IceCastSubcommand::Season {
+            season,
+            stats_season,
+            teams,
+            trials,
+            seed,
+            scenario,
+            scenario_id,
+            isolated_impacts,
+            auto_personnel,
+            trade_mode,
+            replay_mode,
+            through,
+            retrospective_opening_lineups,
+            all_games,
+            refresh,
+            json,
+            out,
+            game_forecast_out,
+        }) => {
+            commands::icecast::run_season(commands::icecast::IceCastSeasonArgs {
+                season,
+                stats_season,
+                teams,
+                trials,
+                seed,
+                scenario,
+                scenario_id,
+                isolated_impacts,
+                auto_personnel,
+                trade_mode,
+                replay_mode,
+                through,
+                retrospective_opening_lineups,
+                all_games,
+                refresh,
+                json,
+                out,
+                game_forecast_out,
+            })
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::BehaviorRankings {
+            target_season,
+            window,
+            json,
+            out,
+        }) => commands::icecast::run_behavior_rankings(target_season, window, json, out).await?,
+        Commands::Icecast(IceCastSubcommand::BehaviorResearch {
+            rankings,
+            research,
+            json,
+            out,
+        }) => commands::icecast::run_behavior_research(rankings, research, json, out)?,
+        Commands::Icecast(IceCastSubcommand::Camp {
+            input,
+            trials,
+            seed,
+            json,
+            out,
+            lineup_set_out,
+            max_lineup_branches,
+            blender_set_out,
+            season_scenario_out,
+            season_max_roster_branches,
+            camp_max_candidates,
+        }) => commands::icecast::run_camp(
+            input,
+            trials,
+            seed,
+            json,
+            out,
+            lineup_set_out,
+            max_lineup_branches,
+            blender_set_out,
+            season_scenario_out,
+            season_max_roster_branches,
+            camp_max_candidates,
+        )?,
+        Commands::Icecast(IceCastSubcommand::CampLeague {
+            rosters,
+            bios,
+            stats,
+            goalie_stats,
+            candidate_overlay,
+            authored_input,
+            season,
+            trials,
+            seed,
+            json,
+            out,
+        }) => commands::icecast::run_camp_league(
+            rosters,
+            bios,
+            stats,
+            goalie_stats,
+            candidate_overlay,
+            authored_input,
+            season,
+            trials,
+            seed,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::Bubble {
+            input,
+            transaction_context,
+            top,
+            json,
+            out,
+        }) => commands::icecast::run_bubble(input, transaction_context, top, json, out)?,
+        Commands::Icecast(IceCastSubcommand::AffiliateMap { json, out }) => {
+            commands::icecast::run_affiliate_map(json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::Affiliate { input, json, out }) => {
+            commands::icecast::run_affiliate(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::AffiliateIdentities {
+            snapshot,
+            team,
+            candidates,
+            discover_official,
+            refresh,
+            json,
+            out,
+        }) => {
+            commands::icecast::run_affiliate_identities(
+                snapshot,
+                team,
+                candidates,
+                discover_official,
+                refresh,
+                json,
+                out,
+                &cfg,
+            )
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::AffiliateIdentitiesLeague {
+            snapshot,
+            candidates,
+            discover_official,
+            refresh,
+            json,
+            out,
+        }) => {
+            commands::icecast::run_affiliate_identities_league(
+                snapshot,
+                candidates,
+                discover_official,
+                refresh,
+                json,
+                out,
+                &cfg,
+            )
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewDraft {
+            crosswalk,
+            include_aliases,
+            include_conflicts,
+            out,
+        }) => commands::icecast::run_affiliate_review_draft(
+            crosswalk,
+            include_aliases,
+            include_conflicts,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewDraftLeague {
+            league_crosswalk,
+            include_aliases,
+            include_conflicts,
+            out,
+        }) => commands::icecast::run_affiliate_review_draft_league(
+            league_crosswalk,
+            include_aliases,
+            include_conflicts,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewExact {
+            crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_exact(
+            crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewExactLeague {
+            league_crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_exact_league(
+            league_crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewAliases {
+            crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_aliases(
+            crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewAliasesLeague {
+            league_crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_aliases_league(
+            league_crosswalk,
+            reviewer,
+            reviewed_at,
+            decisions_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewConflictsLeague {
+            league_crosswalk,
+            nhl_player_id,
+            evidence_urls,
+            reviewer,
+            reviewed_at,
+            note,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_conflicts_league(
+            league_crosswalk,
+            nhl_player_id,
+            evidence_urls,
+            reviewer,
+            reviewed_at,
+            note,
+            decisions_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewBirthDateLeague {
+            league_crosswalk,
+            nhl_player_id,
+            canonical_birth_date,
+            evidence_urls,
+            reviewer,
+            reviewed_at,
+            note,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_birth_date_league(
+            league_crosswalk,
+            nhl_player_id,
+            canonical_birth_date,
+            evidence_urls,
+            reviewer,
+            reviewed_at,
+            note,
+            decisions_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewCollisionLeague {
+            league_crosswalk,
+            proposed_nhl_player_id,
+            canonical_nhl_player_id,
+            canonical_name,
+            canonical_birth_date,
+            evidence_urls,
+            reviewer,
+            reviewed_at,
+            note,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_collision_league(
+            league_crosswalk,
+            proposed_nhl_player_id,
+            canonical_nhl_player_id,
+            canonical_name,
+            canonical_birth_date,
+            evidence_urls,
+            reviewer,
+            reviewed_at,
+            note,
+            decisions_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewReject {
+            crosswalk,
+            provider_player_id,
+            evidence_urls,
+            reviewer,
+            reviewed_at,
+            note,
+            decisions_out,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_reject(
+            crosswalk,
+            provider_player_id,
+            evidence_urls,
+            reviewer,
+            reviewed_at,
+            note,
+            decisions_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewLeague {
+            crosswalks,
+            league_crosswalks,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_league(
+            crosswalks,
+            league_crosswalks,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewBoard { review, json, out }) => {
+            commands::icecast::run_affiliate_review_board(review, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewShow {
+            crosswalk,
+            attention_only,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_show(crosswalk, attention_only, json, out)?,
+        Commands::Icecast(IceCastSubcommand::AffiliateReviewApply {
+            crosswalk,
+            decisions,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_review_apply(crosswalk, decisions, json, out)?,
+        Commands::Icecast(IceCastSubcommand::AffiliateStatusDraft {
+            prior_snapshot,
+            crosswalk,
+            camp,
+            nhl_team,
+            ahl_team,
+            out,
+        }) => commands::icecast::run_affiliate_status_draft(
+            prior_snapshot,
+            crosswalk,
+            camp,
+            nhl_team,
+            ahl_team,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateStatusShow { review, json, out }) => {
+            commands::icecast::run_affiliate_status_show(review, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::AffiliateStatusApply {
+            prior_snapshot,
+            crosswalk,
+            camp,
+            review,
+            config,
+            out,
+        }) => commands::icecast::run_affiliate_status_apply(
+            prior_snapshot,
+            crosswalk,
+            camp,
+            review,
+            config,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateInput {
+            snapshot,
+            crosswalk,
+            facts,
+            nhl_team,
+            ahl_team,
+            out,
+        }) => commands::icecast::run_affiliate_input(
+            snapshot, crosswalk, facts, nhl_team, ahl_team, out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateRollover {
+            prior_snapshot,
+            crosswalk,
+            camp,
+            camp_forecast,
+            config,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_rollover(
+            prior_snapshot,
+            crosswalk,
+            camp,
+            camp_forecast,
+            config,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::Organization { input, json, out }) => {
+            commands::icecast::run_organization(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::Blender {
+            lineup,
+            pair_evidence,
+            shift_season,
+            refresh_shifts,
+            shift_report_out,
+            max_candidates,
+            allow_off_wing,
+            review_games,
+            minimum_points_percentage,
+            max_changes,
+            max_choices,
+            scenario_out,
+            json,
+            out,
+        }) => {
+            commands::icecast::run_blender(commands::icecast::IceCastBlenderArgs {
+                lineup,
+                pair_evidence,
+                shift_season,
+                refresh_shifts,
+                shift_report_out,
+                max_candidates,
+                allow_off_wing,
+                review_games,
+                minimum_points_percentage,
+                max_changes,
+                max_choices,
+                scenario_out,
+                json,
+                out,
+            })
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::Bench {
+            forecast,
+            lineup,
+            profile,
+            style_evidence,
+            stats_season,
+            scenario_out,
+            json,
+            out,
+        }) => commands::icecast::run_bench(commands::icecast::IceCastBenchArgs {
+            forecast,
+            lineup,
+            profile,
+            style_evidence,
+            stats_season,
+            scenario_out,
+            json,
+            out,
+        })?,
+        Commands::Icecast(IceCastSubcommand::SeasonCard {
+            input,
+            team,
+            team_name,
+            generated_at,
+            calendar_fingerprint,
+            out,
+        }) => commands::icecast::run_season_card(
+            input,
+            team,
+            team_name,
+            generated_at,
+            calendar_fingerprint,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::Movement {
+            earlier,
+            later,
+            teams,
+            json,
+            out,
+        }) => commands::icecast::run_movement(earlier, later, teams, json, out)?,
+        Commands::Icecast(IceCastSubcommand::MovementCard {
+            input,
+            team,
+            team_name,
+            generated_at,
+            out,
+        }) => commands::icecast::run_movement_card(input, team, team_name, generated_at, out)?,
+        Commands::Icecast(IceCastSubcommand::History {
+            inputs,
+            teams,
+            json,
+            out,
+        }) => commands::icecast::run_history(inputs, teams, json, out)?,
+        Commands::Icecast(IceCastSubcommand::HistoryCard {
+            input,
+            team,
+            team_name,
+            generated_at,
+            out,
+        }) => commands::icecast::run_history_card(input, team, team_name, generated_at, out)?,
+        Commands::Icecast(IceCastSubcommand::Backtest { inputs, json, out }) => {
+            commands::icecast::run_backtest(inputs, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::CalibrateDevelopment {
+            start_season,
+            end_season,
+            breakout_threshold,
+            downturn_threshold,
+            prior_sample_size,
+            json,
+            out,
+        }) => commands::icecast::run_development_calibration(
+            start_season,
+            end_season,
+            breakout_threshold,
+            downturn_threshold,
+            prior_sample_size,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::ProspectStudy { input, json, out }) => {
+            commands::icecast::run_prospect_study(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::ProspectContext {
+            snapshots,
+            league_crosswalks,
+            affiliations,
+            as_of,
+            max_age,
+            minimum_ahl_seasons,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_context(
+            snapshots,
+            league_crosswalks,
+            affiliations,
+            as_of,
+            max_age,
+            minimum_ahl_seasons,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::ProspectLeague {
+            snapshots,
+            crosswalks,
+            context,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_league(snapshots, crosswalks, context, json, out)?,
+        Commands::Icecast(IceCastSubcommand::ProspectCareerContext {
+            camp_forecast,
+            rosters,
+            bios,
+            candidate_overlay,
+            career_history,
+            as_of,
+            max_age,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_career_context(
+            camp_forecast,
+            rosters,
+            bios,
+            candidate_overlay,
+            career_history,
+            as_of,
+            max_age,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::ProspectCareer {
+            context,
+            career_history,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_career(context, career_history, json, out)?,
+        Commands::Icecast(IceCastSubcommand::ProspectProgram {
+            league_discoveries,
+            career_discoveries,
+            studies,
+            prior_board,
+            maximum_nhl_games,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_program(
+            league_discoveries,
+            career_discoveries,
+            studies,
+            prior_board,
+            maximum_nhl_games,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::ProspectProgramSensitivity {
+            league_discoveries,
+            career_discoveries,
+            studies,
+            thresholds,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_program_sensitivity(
+            league_discoveries,
+            career_discoveries,
+            studies,
+            thresholds,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::ProspectProgramHistory { boards, json, out }) => {
+            commands::icecast::run_prospect_program_history(boards, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::ProspectConversion {
+            league_discoveries,
+            career_discoveries,
+            studies,
+            career_history,
+            baseline_season,
+            through_season,
+            performance,
+            performance_out,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_conversion(
+            league_discoveries,
+            career_discoveries,
+            studies,
+            career_history,
+            baseline_season,
+            through_season,
+            performance,
+            performance_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::ProspectBoard { studies, json, out }) => {
+            commands::icecast::run_prospect_board(studies, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::ImportOpeningRosters {
+            manifest,
+            dry_run,
+            allow_partial_evaluation,
+        }) => {
+            commands::icecast::run_import_opening_rosters(
+                manifest,
+                dry_run,
+                allow_partial_evaluation,
+            )
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::DiscoverOpeningRosters {
+            season,
+            out,
+            manifest_out,
+            partial_manifest_out,
+            cache_only,
+        }) => {
+            commands::icecast::run_discover_opening_rosters(
+                season,
+                out,
+                manifest_out,
+                partial_manifest_out,
+                cache_only,
+            )
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::Scenario { command }) => match command {
+            IceCastScenarioSubcommand::Import {
+                id,
+                path,
+                season,
+                evidence,
+                json,
+            } => commands::icecast::run_scenario_import(id, path, season, evidence, json).await?,
+            IceCastScenarioSubcommand::List { json } => commands::icecast::run_scenario_list(json)?,
+            IceCastScenarioSubcommand::Show { id, json } => {
+                commands::icecast::run_scenario_show(id, json)?
             }
         },
     }
@@ -1186,6 +2516,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clap::error::ErrorKind;
 
     #[test]
     fn l0_auto_setup_runs_only_for_interactive_missing_config() {
@@ -1203,6 +2534,19 @@ mod tests {
         assert!(!should_auto_setup(true, false, false, true, true));
         assert!(!should_auto_setup(false, false, false, false, true));
         assert!(!should_auto_setup(false, false, false, true, false));
+    }
+
+    #[test]
+    fn l0_nested_icecast_help_renders_on_production_parser_stack() {
+        let result =
+            run_on_cli_stack(|| Cli::try_parse_from(["icelines", "icecast", "backtest", "--help"]))
+                .expect("large-stack parser thread should start");
+        let help = result.expect_err("--help should stop argument parsing");
+
+        assert_eq!(help.kind(), ErrorKind::DisplayHelp);
+        let rendered = help.to_string();
+        assert!(rendered.contains("Cross-validate Elo blends"));
+        assert!(rendered.contains("--input <INPUTS>"));
     }
 }
 

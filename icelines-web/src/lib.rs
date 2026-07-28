@@ -32,6 +32,7 @@
 #![deny(unsafe_code)]
 
 pub mod api;
+pub mod card_store;
 pub mod config;
 pub mod dashboard_command;
 pub mod error;
@@ -133,6 +134,78 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/goalies", get(handlers::goalies::get_goalies_json))
         // Team roster — King.4.1. /team/SEA, /team/EDM, etc.
         .route("/team/:abbrev", get(handlers::team::get_team))
+        .route(
+            "/icecast/:season/:team/card",
+            get(handlers::team_card::get_team_card),
+        )
+        .route(
+            "/api/v1/cards/team-prognosis/:season/:team",
+            get(handlers::team_card::get_team_card_json),
+        )
+        .route(
+            "/icecast/:season/behavior-rankings",
+            get(handlers::behavior_rankings::get_behavior_rankings),
+        )
+        .route(
+            "/api/v1/icecast/:season/behavior-rankings",
+            get(handlers::behavior_rankings::get_behavior_rankings_json),
+        )
+        .route(
+            "/icecast/:season/:team/simulation",
+            get(handlers::team_card::get_season_simulation_card),
+        )
+        .route(
+            "/api/v1/cards/season-simulation/:season/:team",
+            get(handlers::team_card::get_season_simulation_card_json),
+        )
+        .route(
+            "/icecast/:season/:team/movement",
+            get(handlers::team_card::get_forecast_movement_card),
+        )
+        .route(
+            "/api/v1/cards/forecast-movement/:season/:team",
+            get(handlers::team_card::get_forecast_movement_card_json),
+        )
+        .route(
+            "/icecast/:season/:team/history",
+            get(handlers::team_card::get_forecast_history_card),
+        )
+        .route(
+            "/api/v1/cards/forecast-history/:season/:team",
+            get(handlers::team_card::get_forecast_history_card_json),
+        )
+        .route(
+            "/fantasy/cards/roster/:team",
+            get(handlers::team_card::get_fantasy_roster_card),
+        )
+        .route(
+            "/api/v1/cards/fantasy-roster/:team",
+            get(handlers::team_card::get_fantasy_roster_card_json),
+        )
+        .route(
+            "/fantasy/cards/draft/:team",
+            get(handlers::team_card::get_fantasy_draft_card),
+        )
+        .route(
+            "/api/v1/cards/fantasy-draft/:team",
+            get(handlers::team_card::get_fantasy_draft_card_json),
+        )
+        .route(
+            "/fantasy/cards/morning/:team",
+            get(handlers::team_card::get_fantasy_morning_card),
+        )
+        .route(
+            "/api/v1/cards/fantasy-morning/:team",
+            get(handlers::team_card::get_fantasy_morning_card_json),
+        )
+        .route(
+            "/fantasy/cards/trade/:team",
+            get(handlers::team_card::get_fantasy_trade_card),
+        )
+        .route(
+            "/api/v1/cards/fantasy-trade/:team",
+            get(handlers::team_card::get_fantasy_trade_card_json),
+        )
         .route("/team/:abbrev/season", get(handlers::team::get_team_season))
         .route(
             "/team/:abbrev/streaks",
@@ -527,6 +600,7 @@ pub fn router(state: WebState) -> Router {
 }
 
 mod handlers {
+    pub mod behavior_rankings;
     // QueryA — bio filter primitives moved to the icelines-query
     // crate so the CLI can share them. The web handlers reach in via
     // `super::extract_bio` / `super::BioConstraints`; the CLI's
@@ -568,6 +642,7 @@ mod handlers {
 
     /// `/team/:abbrev` — King.4.1 roster page.
     pub mod team;
+    pub mod team_card;
 
     /// `/goalies` — King.5.1 + King.5.2 goalie leaderboard.
     pub mod goalies;

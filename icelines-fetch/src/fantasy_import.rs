@@ -45,6 +45,8 @@ pub struct FantasyRosterImportOptions {
     pub mode: FantasyImportMode,
     pub known_player_keys: Option<BTreeSet<String>>,
     pub known_player_positions: Option<BTreeMap<String, Vec<Position>>>,
+    /// Make every included team's saved roster exactly match its CSV rows.
+    pub replace_rosters: bool,
 }
 
 impl FantasyRosterImportOptions {
@@ -56,6 +58,7 @@ impl FantasyRosterImportOptions {
             mode: FantasyImportMode::DryRun,
             known_player_keys: None,
             known_player_positions: None,
+            replace_rosters: false,
         }
     }
 
@@ -79,13 +82,23 @@ pub struct YahooRosterCsvRow {
 
 pub fn parse_yahoo_roster_csv(path: &Path) -> anyhow::Result<Vec<YahooRosterCsvRow>> {
     let raw = read_file_strip_bom(path)?;
+    parse_yahoo_roster_csv_text(&raw, &path.display().to_string())
+}
+
+/// Parse Yahoo roster CSV text read from a pipe, clipboard, or other in-memory
+/// source. `source_label` is used only to make diagnostics actionable.
+pub fn parse_yahoo_roster_csv_text(
+    raw: &str,
+    source_label: &str,
+) -> anyhow::Result<Vec<YahooRosterCsvRow>> {
+    let raw = raw.trim_start_matches('\u{feff}');
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)
         .flexible(true)
         .from_reader(raw.as_bytes());
     let headers = rdr
         .headers()
-        .with_context(|| format!("read CSV headers from {}", path.display()))?
+        .with_context(|| format!("read CSV headers from {source_label}"))?
         .clone();
     let selection = HeaderSelection::from_headers(&headers)?;
     let mut rows = Vec::new();
@@ -362,12 +375,14 @@ fn row_input(
             message = Some(format!(
                 "'{player_name}' appears more than once on '{fantasy_team}' in this CSV"
             ));
-        } else if let Some(existing_team) = existing_owner_by_player.get(normalized) {
-            if existing_team != &fantasy_team {
-                status = FantasyImportRowStatus::Duplicate;
-                message = Some(format!(
-                    "'{player_name}' is already rostered by '{existing_team}'"
-                ));
+        } else if !options.replace_rosters {
+            if let Some(existing_team) = existing_owner_by_player.get(normalized) {
+                if existing_team != &fantasy_team {
+                    status = FantasyImportRowStatus::Duplicate;
+                    message = Some(format!(
+                        "'{player_name}' is already rostered by '{existing_team}'"
+                    ));
+                }
             }
         }
     }
@@ -417,22 +432,29 @@ fn team_inputs(
                 .collect::<BTreeSet<_>>();
             let existing = existing_rosters.get(&team).cloned().unwrap_or_default();
             let existing_team = existing_teams.get(&team);
+            let roster_changed = if options.replace_rosters {
+                imported != existing
+            } else {
+                imported.iter().any(|player| !existing.contains(player))
+            };
             let status = if imported.is_empty() && existing_team.is_none() {
                 FantasyImportTeamStatus::Error
             } else if existing_team.is_none() {
                 FantasyImportTeamStatus::Created
-            } else if imported.iter().any(|player| !existing.contains(player)) {
+            } else if roster_changed {
                 FantasyImportTeamStatus::Updated
             } else {
                 FantasyImportTeamStatus::Unchanged
             };
             let rostered_players_after =
                 (!imported.is_empty() || existing_team.is_some()).then(|| {
-                    existing
-                        .union(&imported)
-                        .count()
-                        .try_into()
-                        .unwrap_or(u16::MAX)
+                    (if options.replace_rosters {
+                        imported.len()
+                    } else {
+                        existing.union(&imported).count()
+                    })
+                    .try_into()
+                    .unwrap_or(u16::MAX)
                 });
 
             FantasyImportTeamInput {
@@ -458,6 +480,36 @@ fn import_warnings(
     existing_rosters: &BTreeMap<String, BTreeSet<String>>,
 ) -> anyhow::Result<Vec<ViewWarning>> {
     let mut warnings = Vec::new();
+    if options.replace_rosters {
+        let removed = teams
+            .iter()
+            .filter_map(|team| {
+                let existing = existing_rosters.get(&team.team)?;
+                let imported = rows
+                    .iter()
+                    .filter(|row| {
+                        row.fantasy_team.as_deref() == Some(team.team.as_str())
+                            && row.status == FantasyImportRowStatus::Imported
+                    })
+                    .filter_map(|row| row.normalized_name.as_ref())
+                    .collect::<BTreeSet<_>>();
+                Some(
+                    existing
+                        .iter()
+                        .filter(|player| !imported.contains(player))
+                        .count(),
+                )
+            })
+            .sum::<usize>();
+        warnings.push(ViewWarning {
+            kind: WarningKind::PartialSource,
+            source: Some(SourceKind::FantasyImport),
+            message: format!(
+                "replacement mode will make included team rosters exactly match the CSV and remove {removed} stale membership(s)"
+            ),
+            recovery: Vec::new(),
+        });
+    }
     if let Some(user_team) = options.user_team.as_ref() {
         if !teams.iter().any(|team| &team.team == user_team) {
             warnings.push(ViewWarning {
@@ -481,6 +533,7 @@ fn import_warnings(
             rows,
             existing_rosters,
             player_positions,
+            options.replace_rosters,
         ) {
             if validation.status == RosterShapeStatus::Invalid {
                 warnings.push(roster_shape_warning(&validation));
@@ -498,15 +551,20 @@ fn validate_import_roster_shapes(
     rows: &[FantasyImportRowInput],
     existing_rosters: &BTreeMap<String, BTreeSet<String>>,
     player_positions: &BTreeMap<String, Vec<Position>>,
+    replace_rosters: bool,
 ) -> Vec<RosterShapeValidationView> {
     teams
         .iter()
         .filter(|team| team.status != FantasyImportTeamStatus::Error)
         .map(|team| {
-            let mut roster_keys = existing_rosters
-                .get(&team.team)
-                .cloned()
-                .unwrap_or_default();
+            let mut roster_keys = if replace_rosters {
+                BTreeSet::new()
+            } else {
+                existing_rosters
+                    .get(&team.team)
+                    .cloned()
+                    .unwrap_or_default()
+            };
             rows.iter()
                 .filter(|row| {
                     row.fantasy_team.as_deref() == Some(team.team.as_str())
@@ -598,6 +656,15 @@ fn apply_import(
     teams: &[FantasyImportTeamInput],
     rows: &[FantasyImportRowInput],
 ) -> anyhow::Result<()> {
+    if options.replace_rosters
+        && rows
+            .iter()
+            .any(|row| row.status != FantasyImportRowStatus::Imported)
+    {
+        bail!(
+            "refusing --replace because the import contains skipped, unresolved, duplicate, or error rows; fix all diagnostics and retry"
+        );
+    }
     let has_importable_changes = teams
         .iter()
         .any(|team| team.status == FantasyImportTeamStatus::Created)
@@ -625,6 +692,28 @@ fn apply_import(
         if teams.iter().any(|team| &team.team == user_team) {
             db.set_user_team(&league_id, user_team)?;
         }
+    }
+
+    if options.replace_rosters {
+        let replacements = teams
+            .iter()
+            .filter(|team| team.status != FantasyImportTeamStatus::Error)
+            .map(|team| {
+                let team_row = db
+                    .get_team_by_name(&league_id, &team.team)?
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("team '{}' not found during replacement", team.team)
+                    })?;
+                let players = rows
+                    .iter()
+                    .filter(|row| row.fantasy_team.as_deref() == Some(team.team.as_str()))
+                    .filter_map(|row| row.normalized_name.clone())
+                    .collect::<Vec<_>>();
+                Ok((team_row.id, players))
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?;
+        db.replace_rosters(&replacements)?;
+        return Ok(());
     }
 
     for row in rows
@@ -688,6 +777,21 @@ mod tests {
         assert_eq!(rows[0].fantasy_team, "Alpha");
         assert_eq!(rows[0].owner.as_deref(), Some("Alice"));
         assert_eq!(rows[0].position_hint.as_deref(), Some("LW"));
+    }
+
+    #[test]
+    fn l1_fantasy_import_parses_pasted_csv_text_with_bom() {
+        let rows = parse_yahoo_roster_csv_text(
+            "\u{feff}Player,Fantasy Team,Owner\nConnor McDavid,Dexter's Dawgs,Gio\n",
+            "stdin",
+        )
+        .expect("parse pasted roster csv");
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].row_number, 2);
+        assert_eq!(rows[0].player_name, "Connor McDavid");
+        assert_eq!(rows[0].fantasy_team, "Dexter's Dawgs");
+        assert_eq!(rows[0].owner.as_deref(), Some("Gio"));
     }
 
     #[test]
@@ -881,5 +985,77 @@ mod tests {
         assert!(view.rows.iter().any(|row| {
             row.player_name == "Connor McDavid" && row.status == FantasyImportRowStatus::Skipped
         }));
+    }
+
+    #[test]
+    fn l1_fantasy_import_replace_atomically_moves_players_and_removes_stale_memberships() {
+        let db = FantasyDb::open_in_memory().expect("open db");
+        let league_id = db
+            .create_league("Office League", "yahoo-standard")
+            .expect("create league");
+        let alpha = db
+            .create_team(&league_id, "Alpha", "Alice")
+            .expect("create alpha");
+        let bravo = db
+            .create_team(&league_id, "Bravo", "Bob")
+            .expect("create bravo");
+        db.add_player(&alpha, &normalize_name("Connor McDavid"))
+            .expect("add McDavid");
+        db.add_player(&alpha, &normalize_name("Nikita Kucherov"))
+            .expect("add Kucherov");
+        db.add_player(&bravo, &normalize_name("Nathan MacKinnon"))
+            .expect("add MacKinnon");
+        let file = write_csv(
+            "Player,Fantasy Team,Owner\nNikita Kucherov,Alpha,Alice\nConnor McDavid,Bravo,Bob\n",
+        );
+        let mut options = FantasyRosterImportOptions::apply("Office League");
+        options.replace_rosters = true;
+        options.known_player_keys = Some(known(&[
+            "Connor McDavid",
+            "Nikita Kucherov",
+            "Nathan MacKinnon",
+        ]));
+
+        let view = import_yahoo_roster_csv(&db, file.path(), options).expect("replace rosters");
+
+        assert_eq!(view.summary.players_imported, 2);
+        assert_eq!(
+            db.list_roster(&alpha).expect("alpha roster"),
+            vec![normalize_name("Nikita Kucherov")]
+        );
+        assert_eq!(
+            db.list_roster(&bravo).expect("bravo roster"),
+            vec![normalize_name("Connor McDavid")]
+        );
+        assert!(view.warnings.iter().any(|warning| {
+            warning.message.contains("replacement mode")
+                && warning.message.contains("remove 2 stale membership")
+        }));
+    }
+
+    #[test]
+    fn l1_fantasy_import_replace_refuses_diagnostics_without_mutating_roster() {
+        let db = FantasyDb::open_in_memory().expect("open db");
+        let league_id = db
+            .create_league("Office League", "yahoo-standard")
+            .expect("create league");
+        let alpha = db
+            .create_team(&league_id, "Alpha", "Alice")
+            .expect("create alpha");
+        db.add_player(&alpha, &normalize_name("Connor McDavid"))
+            .expect("add McDavid");
+        let file = write_csv("Player,Fantasy Team\nUnknown Player,Alpha\n");
+        let mut options = FantasyRosterImportOptions::apply("Office League");
+        options.replace_rosters = true;
+        options.known_player_keys = Some(known(&["Connor McDavid"]));
+
+        let error = import_yahoo_roster_csv(&db, file.path(), options)
+            .expect_err("diagnostic replacement must fail");
+
+        assert!(error.to_string().contains("refusing --replace"));
+        assert_eq!(
+            db.list_roster(&alpha).expect("unchanged roster"),
+            vec![normalize_name("Connor McDavid")]
+        );
     }
 }

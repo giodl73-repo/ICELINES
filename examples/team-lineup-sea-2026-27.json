@@ -1,0 +1,1409 @@
+{
+  "schema": "team_lineup_projection.v1",
+  "score_schema": "icelines_player_score.v1",
+  "score_method": "team_ceiling_multilens.v1",
+  "team": "SEA",
+  "roster_season": 20262027,
+  "assignment_evidence": [
+    "estimated",
+    "scenario"
+  ],
+  "forward_lines": [
+    {
+      "line": 1,
+      "left_wing": {
+        "player_id": 8482259,
+        "display_name": "Bobby McMann",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "LeftWing",
+        "eligible_positions": [
+          "LeftWing",
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8482259:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482259.png",
+          "fallback_initials": "BM"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 41.0,
+          "display": "41",
+          "sample_games": 78,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 48.4,
+              "normalized_value": 40.33333333333333,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 48.4,
+              "normalized_value": 80.66666666666666,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 48.4,
+              "normalized_value": 10.755555555555556,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 48.4,
+              "normalized_value": 40.33333333333333,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "center": {
+        "player_id": 8482665,
+        "display_name": "Matty Beniers",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Center",
+        "eligible_positions": [
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8482665:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482665.png",
+          "fallback_initials": "MB"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 42.4,
+          "display": "42",
+          "sample_games": 82,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 50.0,
+              "normalized_value": 41.66666666666667,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 50.0,
+              "normalized_value": 83.33333333333334,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 50.0,
+              "normalized_value": 11.11111111111111,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 50.0,
+              "normalized_value": 41.66666666666667,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "right_wing": {
+        "player_id": 8474586,
+        "display_name": "Jordan Eberle",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "RightWing",
+        "eligible_positions": [
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8474586:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8474586.png",
+          "fallback_initials": "JE"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 47.8,
+          "display": "48",
+          "sample_games": 80,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 56.4,
+              "normalized_value": 47.0,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 56.4,
+              "normalized_value": 94.0,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 56.4,
+              "normalized_value": 12.533333333333333,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 56.4,
+              "normalized_value": 47.0,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      }
+    },
+    {
+      "line": 2,
+      "left_wing": {
+        "player_id": 8477955,
+        "display_name": "Jared McCann",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "LeftWing",
+        "eligible_positions": [
+          "LeftWing",
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8477955:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8477955.png",
+          "fallback_initials": "JM"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 52.4,
+          "display": "52",
+          "sample_games": 52,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 63.1,
+              "normalized_value": 52.583333333333336,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 63.1,
+              "normalized_value": 100.0,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 63.1,
+              "normalized_value": 14.022222222222222,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 63.1,
+              "normalized_value": 52.583333333333336,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "center": {
+        "player_id": 8483524,
+        "display_name": "Shane Wright",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Center",
+        "eligible_positions": [
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8483524:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8483524.png",
+          "fallback_initials": "SW"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 25.3,
+          "display": "25",
+          "sample_games": 74,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 29.9,
+              "normalized_value": 24.916666666666664,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 29.9,
+              "normalized_value": 49.83333333333333,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 29.9,
+              "normalized_value": 6.644444444444445,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 29.9,
+              "normalized_value": 24.916666666666664,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "right_wing": {
+        "player_id": 8484800,
+        "display_name": "Berkly Catton",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Center",
+        "eligible_positions": [
+          "Center",
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8484800:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8484800.png",
+          "fallback_initials": "BC"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 17.9,
+          "display": "18",
+          "sample_games": 66,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 21.1,
+              "normalized_value": 17.583333333333336,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 21.1,
+              "normalized_value": 35.16666666666667,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 21.1,
+              "normalized_value": 4.688888888888889,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 21.1,
+              "normalized_value": 17.583333333333336,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      }
+    },
+    {
+      "line": 3,
+      "left_wing": {
+        "player_id": 8482713,
+        "display_name": "Mackie Samoskevich",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "RightWing",
+        "eligible_positions": [
+          "LeftWing",
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8482713:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482713.png",
+          "fallback_initials": "MS"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 28.9,
+          "display": "29",
+          "sample_games": 77,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 34.1,
+              "normalized_value": 28.416666666666668,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 34.1,
+              "normalized_value": 56.833333333333336,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 34.1,
+              "normalized_value": 7.5777777777777775,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 34.1,
+              "normalized_value": 28.416666666666668,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "center": {
+        "player_id": 8476905,
+        "display_name": "Chandler Stephenson",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Center",
+        "eligible_positions": [
+          "LeftWing",
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8476905:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8476905.png",
+          "fallback_initials": "CS"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 42.5,
+          "display": "42",
+          "sample_games": 80,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 50.2,
+              "normalized_value": 41.833333333333336,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 50.2,
+              "normalized_value": 83.66666666666667,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 50.2,
+              "normalized_value": 11.155555555555557,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 50.2,
+              "normalized_value": 41.833333333333336,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "right_wing": {
+        "player_id": 8481554,
+        "display_name": "Kaapo Kakko",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "RightWing",
+        "eligible_positions": [
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8481554:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8481554.png",
+          "fallback_initials": "KK"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 42.8,
+          "display": "43",
+          "sample_games": 65,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 50.5,
+              "normalized_value": 42.083333333333336,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 50.5,
+              "normalized_value": 84.16666666666667,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 50.5,
+              "normalized_value": 11.222222222222221,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 50.5,
+              "normalized_value": 42.083333333333336,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      }
+    },
+    {
+      "line": 4,
+      "left_wing": {
+        "player_id": 8482751,
+        "display_name": "Ryan Winterton",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "LeftWing",
+        "eligible_positions": [
+          "LeftWing",
+          "Center",
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8482751:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482751.png",
+          "fallback_initials": "RW"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 18.4,
+          "display": "18",
+          "sample_games": 68,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 21.7,
+              "normalized_value": 18.083333333333332,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 21.7,
+              "normalized_value": 36.166666666666664,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 21.7,
+              "normalized_value": 4.822222222222222,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 21.7,
+              "normalized_value": 18.083333333333332,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "center": {
+        "player_id": 8477919,
+        "display_name": "Frederick Gaudreau",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Center",
+        "eligible_positions": [
+          "Center"
+        ],
+        "portrait": {
+          "asset_id": "player:8477919:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8477919.png",
+          "fallback_initials": "FG"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 18.6,
+          "display": "19",
+          "sample_games": 70,
+          "coverage_pct": 100.0,
+          "evidence_label": "reported",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 22.0,
+              "normalized_value": 18.333333333333332,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 22.0,
+              "normalized_value": 36.666666666666664,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 22.0,
+              "normalized_value": 4.888888888888889,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 22.0,
+              "normalized_value": 18.333333333333332,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "right_wing": {
+        "player_id": 8482874,
+        "display_name": "Jacob Melanson",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "RightWing",
+        "eligible_positions": [
+          "RightWing"
+        ],
+        "portrait": {
+          "asset_id": "player:8482874:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482874.png",
+          "fallback_initials": "JM"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "forward",
+          "value": 9.7,
+          "display": "10",
+          "sample_games": 36,
+          "coverage_pct": 100.0,
+          "evidence_label": "estimated",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 11.4,
+              "normalized_value": 9.5,
+              "weight": 0.4
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 11.4,
+              "normalized_value": 19.0,
+              "weight": 0.2
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 11.4,
+              "normalized_value": 2.533333333333333,
+              "weight": 0.25
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 11.4,
+              "normalized_value": 9.5,
+              "weight": 0.15
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      }
+    }
+  ],
+  "defense_pairs": [
+    {
+      "pair": 1,
+      "left": {
+        "player_id": 8478407,
+        "display_name": "Vince Dunn",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8478407:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8478407.png",
+          "fallback_initials": "VD"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 37.9,
+          "display": "38",
+          "sample_games": 81,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 44.0,
+              "normalized_value": 48.888888888888886,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 44.0,
+              "normalized_value": 100.0,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 44.0,
+              "normalized_value": 11.0,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 44.0,
+              "normalized_value": 44.0,
+              "weight": 0.2
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "right": {
+        "player_id": 8476457,
+        "display_name": "Adam Larsson",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8476457:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8476457.png",
+          "fallback_initials": "AL"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 24.2,
+          "display": "24",
+          "sample_games": 82,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 25.0,
+              "normalized_value": 27.77777777777778,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 25.0,
+              "normalized_value": 83.33333333333334,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 25.0,
+              "normalized_value": 6.25,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 25.0,
+              "normalized_value": 25.0,
+              "weight": 0.2
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      }
+    },
+    {
+      "pair": 2,
+      "left": {
+        "player_id": 8482858,
+        "display_name": "Ryker Evans",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8482858:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482858.png",
+          "fallback_initials": "RE"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 20.1,
+          "display": "20",
+          "sample_games": 67,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 20.8,
+              "normalized_value": 23.111111111111114,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 20.8,
+              "normalized_value": 69.33333333333334,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 20.8,
+              "normalized_value": 5.2,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 20.8,
+              "normalized_value": 20.8,
+              "weight": 0.2
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "right": {
+        "player_id": 8477986,
+        "display_name": "Brandon Montour",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8477986:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8477986.png",
+          "fallback_initials": "BM"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 36.0,
+          "display": "36",
+          "sample_games": 64,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 41.0,
+              "normalized_value": 45.55555555555556,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 41.0,
+              "normalized_value": 100.0,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 41.0,
+              "normalized_value": 10.25,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 41.0,
+              "normalized_value": 41.0,
+              "weight": 0.2
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      }
+    },
+    {
+      "pair": 3,
+      "left": {
+        "player_id": 8479324,
+        "display_name": "Ryan Lindgren",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8479324:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8479324.png",
+          "fallback_initials": "RL"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 13.5,
+          "display": "14",
+          "sample_games": 76,
+          "coverage_pct": 100.0,
+          "evidence_label": "confirmed",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 14.0,
+              "normalized_value": 15.555555555555555,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 14.0,
+              "normalized_value": 46.666666666666664,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 14.0,
+              "normalized_value": 3.5000000000000004,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 14.0,
+              "normalized_value": 14.000000000000002,
+              "weight": 0.2
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      },
+      "right": {
+        "player_id": 8479985,
+        "display_name": "Cale Fleury",
+        "team": "SEA",
+        "prior_team": null,
+        "primary_position": "Defense",
+        "eligible_positions": [
+          "Defense"
+        ],
+        "portrait": {
+          "asset_id": "player:8479985:headshot",
+          "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8479985.png",
+          "fallback_initials": "CF"
+        },
+        "score": {
+          "schema": "icelines_player_score.v1",
+          "method": "team_ceiling_multilens.v1",
+          "position_group": "defense",
+          "value": 10.3,
+          "display": "10",
+          "sample_games": 23,
+          "coverage_pct": 100.0,
+          "evidence_label": "estimated",
+          "components": [
+            {
+              "lens": "points_pace",
+              "label": "Points pace",
+              "raw_value": 10.7,
+              "normalized_value": 11.888888888888888,
+              "weight": 0.3
+            },
+            {
+              "lens": "goal_scoring",
+              "label": "Goal scoring",
+              "raw_value": 10.7,
+              "normalized_value": 35.666666666666664,
+              "weight": 0.1
+            },
+            {
+              "lens": "fantasy",
+              "label": "Fantasy/peripherals",
+              "raw_value": 10.7,
+              "normalized_value": 2.675,
+              "weight": 0.4
+            },
+            {
+              "lens": "upside",
+              "label": "Age-adjusted upside",
+              "raw_value": 10.7,
+              "normalized_value": 10.7,
+              "weight": 0.2
+            }
+          ]
+        },
+        "power_play_role_score": null,
+        "penalty_kill_role_score": null,
+        "special_teams_evidence": null,
+        "assignment_evidence": "scenario"
+      }
+    }
+  ],
+  "goalies": {
+    "starter": {
+      "player_id": 8478916,
+      "display_name": "Joey Daccord",
+      "team": "SEA",
+      "prior_team": null,
+      "primary_position": "Goalie",
+      "eligible_positions": [
+        "Goalie"
+      ],
+      "portrait": {
+        "asset_id": "player:8478916:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8478916.png",
+        "fallback_initials": "JD"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "goalie",
+        "value": 64.0,
+        "display": "64",
+        "sample_games": 47,
+        "coverage_pct": 100.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Goalie quality",
+            "raw_value": 64.0,
+            "normalized_value": 64.0,
+            "weight": 1.0
+          }
+        ]
+      },
+      "power_play_role_score": null,
+      "penalty_kill_role_score": null,
+      "special_teams_evidence": null,
+      "assignment_evidence": "scenario"
+    },
+    "backup": {
+      "player_id": 8475831,
+      "display_name": "Philipp Grubauer",
+      "team": "SEA",
+      "prior_team": null,
+      "primary_position": "Goalie",
+      "eligible_positions": [
+        "Goalie"
+      ],
+      "portrait": {
+        "asset_id": "player:8475831:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8475831.png",
+        "fallback_initials": "PG"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "goalie",
+        "value": 61.0,
+        "display": "61",
+        "sample_games": 32,
+        "coverage_pct": 100.0,
+        "evidence_label": "confirmed",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Goalie quality",
+            "raw_value": 61.0,
+            "normalized_value": 61.0,
+            "weight": 1.0
+          }
+        ]
+      },
+      "power_play_role_score": null,
+      "penalty_kill_role_score": null,
+      "special_teams_evidence": null,
+      "assignment_evidence": "scenario"
+    }
+  },
+  "special_teams": {
+    "power_play": [
+      {
+        "kind": "power_play",
+        "unit": 1,
+        "quarterback_id": null,
+        "player_ids": [],
+        "average_role_score": null,
+        "evidence_label": "estimated"
+      },
+      {
+        "kind": "power_play",
+        "unit": 2,
+        "quarterback_id": null,
+        "player_ids": [],
+        "average_role_score": null,
+        "evidence_label": "estimated"
+      }
+    ],
+    "penalty_kill": [
+      {
+        "kind": "penalty_kill",
+        "unit": 1,
+        "quarterback_id": null,
+        "player_ids": [],
+        "average_role_score": null,
+        "evidence_label": "estimated"
+      },
+      {
+        "kind": "penalty_kill",
+        "unit": 2,
+        "quarterback_id": null,
+        "player_ids": [],
+        "average_role_score": null,
+        "evidence_label": "estimated"
+      }
+    ],
+    "warnings": [
+      "PP1 lacks enough rated deployment evidence for one quarterback and four forwards.",
+      "PP2 lacks enough rated deployment evidence for one quarterback and four forwards.",
+      "PK1 lacks enough rated shorthanded deployment evidence for two defensemen and two forwards.",
+      "PK2 lacks enough rated shorthanded deployment evidence for two defensemen and two forwards."
+    ]
+  },
+  "extras": [
+    {
+      "player_id": 8483684,
+      "display_name": "Tyson Jugnauth",
+      "team": "SEA",
+      "prior_team": null,
+      "primary_position": "Defense",
+      "eligible_positions": [
+        "Defense"
+      ],
+      "portrait": {
+        "asset_id": "player:8483684:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8483684.png",
+        "fallback_initials": "TJ"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "defense",
+        "value": 17.4,
+        "display": "17",
+        "sample_games": 24,
+        "coverage_pct": 100.0,
+        "evidence_label": "estimated",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Points pace",
+            "raw_value": 18.0,
+            "normalized_value": 20.0,
+            "weight": 0.3
+          },
+          {
+            "lens": "goal_scoring",
+            "label": "Goal scoring",
+            "raw_value": 18.0,
+            "normalized_value": 60.0,
+            "weight": 0.1
+          },
+          {
+            "lens": "fantasy",
+            "label": "Fantasy/peripherals",
+            "raw_value": 18.0,
+            "normalized_value": 4.5,
+            "weight": 0.4
+          },
+          {
+            "lens": "upside",
+            "label": "Age-adjusted upside",
+            "raw_value": 18.0,
+            "normalized_value": 18.0,
+            "weight": 0.2
+          }
+        ]
+      },
+      "power_play_role_score": null,
+      "penalty_kill_role_score": null,
+      "special_teams_evidence": null,
+      "assignment_evidence": "estimated"
+    },
+    {
+      "player_id": 8483570,
+      "display_name": "Ben Meyers",
+      "team": "SEA",
+      "prior_team": null,
+      "primary_position": "Center",
+      "eligible_positions": [
+        "LeftWing",
+        "Center"
+      ],
+      "portrait": {
+        "asset_id": "player:8483570:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8483570.png",
+        "fallback_initials": "BM"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "forward",
+        "value": 12.7,
+        "display": "13",
+        "sample_games": 55,
+        "coverage_pct": 100.0,
+        "evidence_label": "reported",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Points pace",
+            "raw_value": 15.0,
+            "normalized_value": 12.5,
+            "weight": 0.4
+          },
+          {
+            "lens": "goal_scoring",
+            "label": "Goal scoring",
+            "raw_value": 15.0,
+            "normalized_value": 25.0,
+            "weight": 0.2
+          },
+          {
+            "lens": "fantasy",
+            "label": "Fantasy/peripherals",
+            "raw_value": 15.0,
+            "normalized_value": 3.3333333333333335,
+            "weight": 0.25
+          },
+          {
+            "lens": "upside",
+            "label": "Age-adjusted upside",
+            "raw_value": 15.0,
+            "normalized_value": 12.5,
+            "weight": 0.15
+          }
+        ]
+      },
+      "power_play_role_score": null,
+      "penalty_kill_role_score": null,
+      "special_teams_evidence": null,
+      "assignment_evidence": "estimated"
+    },
+    {
+      "player_id": 8480876,
+      "display_name": "Curtis Douglas",
+      "team": "SEA",
+      "prior_team": null,
+      "primary_position": "Center",
+      "eligible_positions": [
+        "LeftWing",
+        "Center"
+      ],
+      "portrait": {
+        "asset_id": "player:8480876:headshot",
+        "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8480876.png",
+        "fallback_initials": "CD"
+      },
+      "score": {
+        "schema": "icelines_player_score.v1",
+        "method": "team_ceiling_multilens.v1",
+        "position_group": "forward",
+        "value": 6.4,
+        "display": "6",
+        "sample_games": 43,
+        "coverage_pct": 100.0,
+        "evidence_label": "reported",
+        "components": [
+          {
+            "lens": "points_pace",
+            "label": "Points pace",
+            "raw_value": 7.6,
+            "normalized_value": 6.333333333333332,
+            "weight": 0.4
+          },
+          {
+            "lens": "goal_scoring",
+            "label": "Goal scoring",
+            "raw_value": 7.6,
+            "normalized_value": 12.666666666666664,
+            "weight": 0.2
+          },
+          {
+            "lens": "fantasy",
+            "label": "Fantasy/peripherals",
+            "raw_value": 7.6,
+            "normalized_value": 1.6888888888888887,
+            "weight": 0.25
+          },
+          {
+            "lens": "upside",
+            "label": "Age-adjusted upside",
+            "raw_value": 7.6,
+            "normalized_value": 6.333333333333332,
+            "weight": 0.15
+          }
+        ]
+      },
+      "power_play_role_score": null,
+      "penalty_kill_role_score": null,
+      "special_teams_evidence": null,
+      "assignment_evidence": "estimated"
+    }
+  ],
+  "warnings": []
+}

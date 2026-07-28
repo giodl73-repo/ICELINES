@@ -22,7 +22,7 @@ use crate::visual::{
 pub fn chrome() -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
     ScreenChrome {
-        title: "Poach - yahoo-standard - top adds".to_string(),
+        title: "The Bench - Waiver Wire - best available".to_string(),
         keybinds: vec![
             KeyHint::new("up/down", "select"),
             KeyHint::new("Enter", "player card"),
@@ -90,7 +90,7 @@ impl PoachScreenState {
 }
 
 pub fn render(f: &mut Frame, app: &App, area: Rect) {
-    let block = tui_panel_block(" Fantasy Poacher - adds, stashes, category fit ");
+    let block = tui_panel_block(" The Bench - Waiver Wire - best available ");
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -348,7 +348,9 @@ mod tests {
         let app = App::new(true);
         let text = render_text(&app);
 
-        assert!(text.contains("Fantasy Poacher"));
+        assert!(text.contains("The Bench"));
+        assert!(text.contains("Waiver Wire"));
+        assert!(text.contains("best available"));
         assert!(text.contains("Missing poacher source data"));
     }
 
@@ -356,7 +358,9 @@ mod tests {
     fn l0_poach_tui_chrome_names_surface() {
         let chrome = super::chrome();
 
-        assert!(chrome.title.contains("Poach"));
+        assert!(chrome.title.contains("The Bench"));
+        assert!(chrome.title.contains("Waiver Wire"));
+        assert!(chrome.title.contains("best available"));
         assert!(chrome.keybinds.iter().any(|key| key.key == "p"));
         assert!(chrome.keybinds.iter().any(|key| key.key == "w"));
     }

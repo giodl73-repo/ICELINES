@@ -20,7 +20,7 @@ use icelines_query::data_provider::{
     DataProvider, EvalCtx, FetchError, FetchEvent, PlanRequirement,
 };
 use icelines_query::{parse_query, FilterInput, StrictMode};
-use icelines_web::{router, WebState};
+use icelines_web::{router, WebConfig, WebState};
 use tower::util::ServiceExt;
 
 const SAMPLE_PIDS: &[(u32, &str)] = &[
@@ -88,7 +88,10 @@ fn library_match(repo: &StatsRepository, filter: &str) -> HashSet<String> {
 /// SAME repo (via `WebState::with_repo`) so we can compare apples-
 /// to-apples.
 async fn web_match(repo: StatsRepository, filter: &str) -> HashSet<String> {
-    let state = WebState::with_repo(repo);
+    // Keep the web surface on the same completed fixture season as the
+    // direct-library evaluation. The product default advances annually and
+    // must not silently move this historical parity fixture to an empty year.
+    let state = WebState::with_repo_and_config(repo, WebConfig::new("20252026", "regular"));
     let app = router(state);
     let url = format!("/api/v1/leaders?filter={}&top=500", urlencode(filter));
     let response = app

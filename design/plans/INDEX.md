@@ -10,7 +10,32 @@ For the final forward-roadmap role review, see
 
 ---
 
-## Current Forward Roadmap
+## Canonical Active Workstreams
+
+These are the only plans currently counted as active portfolio work. The limit
+is eight; adding another requires a named parent or an explicit roadmap review.
+The larger ledger below remains temporarily in place while closed plans move to
+the historical archive.
+
+<!-- active-plans:start -->
+| Plan | Status | Contract owned |
+|---|---|---|
+| [Team Season Forecast](2026-07-19-team-season-forecast.md) | Active | IceCast schedule, forecast, replay, scenario, and calibration engine |
+| [Fantasy War Room](2026-07-18-fantasy-war-room-roadmap.md) | Active | Draft, daily, matchup, pickup, goalie, trade, and playoff decisions |
+| [Phase Canadiens](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Forward major-stat and source-authority roadmap |
+| [Documentation Consolidation](2026-07-21-documentation-consolidation.md) | Active | Active-set reduction, historical archive, and drift gates |
+<!-- active-plans:end -->
+
+Line-combination simulation is an active child workstream of Team Season
+Forecast and does not consume another top-level active-plan slot: see
+[`2026-07-23-line-combination-simulation.md`](2026-07-23-line-combination-simulation.md).
+
+The older Fantasy Draft and Daily Assistant plan is absorbed by the Fantasy War
+Room roadmap for active navigation. Its durable league rules remain canonical
+in the linked feature specification until the consolidation migration rewrites
+that plan's status and archive metadata.
+
+## Roadmap Ledger
 
 Jennings restored the measured baseline, Campbell established the shared
 ViewModel contract path, the Messier/Lester/Ted/Selke parity wave moved the
@@ -25,6 +50,13 @@ editorial/stathead workflows, and data freshness authority.
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [Prospect Conversion Performance Authority](2026-07-27-prospect-conversion-performance.md) | Complete | Derives position-aware, confidence-weighted NHL outcomes from official history and publishes hit/breakout/miss/developing comparison classes for frozen prospect cohorts. |
+| [UI-Neutral Card System](2026-07-21-ui-neutral-card-system.md) | Complete | One versioned IceLines-owned document drives prognosis, fantasy, prospective simulation, and historical replay cards across JSON/Web/TUI/reference renderers. |
+| [Documentation Consolidation](2026-07-21-documentation-consolidation.md) | Planned | Classifies the current 57 specs and 157 plans, limits the active set, archives closed micro-plans without losing history, and adds drift checks. |
+| [Fantasy War Room Roadmap](2026-07-18-fantasy-war-room-roadmap.md) | Active | Sequences weekly matchup strategy, playoff portfolio, live draft sessions, four-move pickup planning, injury contingencies, goalie decisions, trade counters, archetypes, decision review, and readiness. |
+| [Fantasy Draft and Daily Assistant](2026-07-16-fantasy-draft-daily-assistant.md) | Superseded for active navigation | Original execution plan retained pending archive migration; active work is owned by Fantasy War Room. |
+| [Team Season Forecast](2026-07-19-team-season-forecast.md) | Implemented | Forecasts every game, runs seeded standings/playoff/streak trials, models player risks and atomic trades, and supports rolling plus cutoff-conditioned historical replay/calibration. |
+| [Line Combination Simulation](2026-07-23-line-combination-simulation.md) | Active child workstream | Adds The Blender lineup comparison and The Bench adaptive, result-aware coaching policy to IceCast. |
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
 | [Phase Canadiens Stathead - Query packs](2026-06-23-phaseCanadiensStathead-query-packs.md) | Closed | Adds `icelines stathead [pack] [--json]` with curated query-pack recipes for era leaders, young stars, playoff runs, and goalie notebooks. |
 | [Phase Canadiens Packaging - Checksums](2026-06-23-phaseCanadiensPackaging-checksums.md) | Closed | Adds SHA-256 sidecars to local Windows packaging and every GitHub release archive, with workflow verification and release-checklist documentation. |
@@ -132,8 +164,8 @@ editorial/stathead workflows, and data freshness authority.
 | [Phase 2 — Site & Analysis](2026-04-25-phase2-site-analysis.md) | 2026-04-25 | Lady Byng | mkdocs site, scheme engine, snapshot store, players command |
 | [Phase 3 — TUI & Projections](2026-04-25-phase3-tui-projections.md) | 2026-04-25 | Art Ross | ratatui TUI, projections, career history, scouting |
 | [Phase 4 — Data, History & Polish](2026-04-26-phase4-data-history-polish.md) | 2026-04-26 | King Clancy | Multi-season bundled data, L0/L1/L2 test coverage, CI |
-| [Phase 5 — Query Engine](2026-04-26-phase5-query-engine.md) | 2026-04-27 | Bill Masterton | `query leaders/player/compare`, --seasons N, improvement sort, 30+ metrics |
-| [Phase 6 — Export & Dashboards](2026-04-26-phase6-export-dashboard.md) | 2026-04-29 (partial) | Mark Messier | `export md` 5/7 shapes shipped; `dashboard-engine` CUT (proof cancelled) |
+| [Phase 5 — Query Engine](../specs/query-engine.md) | 2026-04-27 | Bill Masterton | `query leaders/player/compare`, --seasons N, improvement sort, 30+ metrics |
+| [Phase 6 — Export & Dashboards](../specs/export-markdown.md) | 2026-04-29 (partial) | Mark Messier | `export md` 5/7 shapes shipped; `dashboard-engine` CUT (proof cancelled) |
 | [Phase 7 — TUI v2 Redesign](2026-04-28-phase7-tui-v2-redesign.md) | 2026-04-28 | Jack Adams | 6/7-tab nav, season time-travel, Scores/Schedule/Playoffs (7a–7e) |
 | [Phase 8 — Spec Delta + Chunks](2026-04-28-spec-delta-catchup.md) | 2026-04-29 | Norris | Spec catch-up, snapshot operations, multi-season query support |
 | [Phase 8h — Chunked Snapshots](2026-04-29-phase8h-chunked-snapshots.md) | 2026-04-29 | Norris | Content-addressed object store; 10× storage savings on daily snapshots |

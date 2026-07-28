@@ -28,13 +28,15 @@ commit being tagged.
 - Confirm `COMMANDS.md` is current or intentionally unchanged.
 - Confirm `design/plans/INDEX.md` and `design/phases.md` reflect any phase
   status changes.
+- Confirm card fixtures, routes, and `design/specs/surface-parity.md` reflect
+  any changed card builder or IceCast contract.
 
 ## 3. Data and season sanity
 
 - Confirm `icelines-core/src/lib.rs` has the intended `CURRENT_SEASON` and
   `CURRENT_SEASON_STR`.
-- Confirm the bundled season list includes the current season and excludes the
-  2004-05 lockout.
+- Confirm the current season matches or immediately follows the newest
+  completed bundled-stat season and that the list excludes the 2004-05 lockout.
 - Confirm README data-source claims match reality:
   - bundled binary data;
   - GitHub release data bundles;
@@ -60,6 +62,20 @@ For code changes touching shared contracts or multiple surfaces, also run:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci
 ```
+
+For UI-neutral card or IceCast simulation/replay changes, also run:
+
+```powershell
+cargo test -p icelines-core --test season_simulation_card
+cargo test -p icelines-web --test team_card_routes
+cargo test -p icelines-cli --bin icelines tui::screens::team_card::tests
+powershell -ExecutionPolicy Bypass -File scripts/validate-card-document.ps1 -Path examples/season-simulation-card-nyr-2026-27.json
+powershell -ExecutionPolicy Bypass -File scripts/test-card-reference-renderer.ps1
+```
+
+The NYR and SEA focused season cards must share the same complete league-run
+fingerprint for a given artifact. Completed replay cards must label actual and
+calibration metrics as confirmed evidence and retain zero pending games.
 
 The `ci` slice includes the dependency vulnerability audit, clippy, fmt, and
 release build/smoke sequence after the split test gates.
@@ -179,3 +195,4 @@ Current warning-class advisory ledger:
 | `RUSTSEC-2025-0052` (`async-std`) | unmaintained warning | `httpmock` -> `icelines-fetch` tests | BENCH / FORGE | Test-only mock dependency; not shipped in the release binary. Keep visible so a fixture/mock replacement can retire it. | Remove when `httpmock` drops `async-std`, or replace the mock stack if the warning becomes a vulnerability or runtime dependency. |
 | `RUSTSEC-2024-0436` (`paste`) | unmaintained warning | `ratatui` -> `icelines-cli` | FORGE | Transitive TUI dependency with no current vulnerability finding. Not ignored; audit continues to report it. | Remove when the TUI stack upgrades past the `paste` dependency, or replace the dependency if the warning becomes a vulnerability. |
 | `RUSTSEC-2026-0002` (`lru`) | unsound warning | `ratatui` -> `icelines-cli` | FORGE | Transitive TUI dependency; IceLines does not call `lru` directly. Not ignored; audit continues to report it for upgrade pressure. | Remove when `ratatui` upgrades past affected `lru`, or patch/replace the TUI dependency if RustSec reclassifies the issue or a reachable unsafe path is identified. |
+| `RUSTSEC-2026-0190` (`anyhow`) | unsound warning | direct workspace dependency | FORGE | The advisory affects `Error::downcast_mut`; IceLines does not call that API. Audit remains visible and blocking for vulnerability-class findings. | Upgrade immediately when a fixed compatible `anyhow` release is published; reassess sooner if `downcast_mut` enters the codebase. |

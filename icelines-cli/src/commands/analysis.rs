@@ -1,7 +1,6 @@
 //! class, peers, compare, history, group commands.
 
 use crate::cli::GroupSubcommand;
-use crate::config::Config;
 use crate::db::GroupDb;
 use anyhow::{bail, Context};
 use icelines_core::filter::PlayerFilter;
@@ -10,23 +9,14 @@ use icelines_core::name::normalize_name;
 use icelines_core::position::PositionResolver;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::stats_repository::PlayerView;
-use icelines_fetch::snapshot::SnapshotStore;
-use icelines_fetch::stats_loader::load_into_repo;
 
 /// Hart.5b2: load all skaters as PlayerView for the configured season.
-/// Caller holds the LoadOutcome alive so the views' borrows remain valid.
-fn load_views() -> anyhow::Result<icelines_fetch::stats_loader::LoadOutcome> {
-    let cfg = Config::load()?;
-    let season = active_season_from_config(&cfg)?;
-    let store = SnapshotStore::new(cfg.snapshot_dir());
-    load_into_repo(season, SeasonType::Regular, &store)
-        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))
-}
-
-fn active_season_from_config(cfg: &Config) -> anyhow::Result<Season> {
-    cfg.season_str()
-        .parse::<Season>()
-        .with_context(|| format!("season '{}' is not a valid YYYYZZZZ id", cfg.season_str()))
+/// The shared loader also supplies the effective season so July/October
+/// rollover builds can fall back to the newest bundled completed season.
+fn load_views() -> anyhow::Result<(icelines_fetch::stats_loader::LoadOutcome, Season)> {
+    let (outcome, season, _) =
+        crate::commands::players::load_repo_for_season(None, Some(SeasonType::Regular))?;
+    Ok((outcome, season))
 }
 
 // ── icelines class ────────────────────────────────────────────────────────────
@@ -41,9 +31,7 @@ pub async fn run_class(
 ) -> anyhow::Result<()> {
     use crate::commands::output::Format;
 
-    let outcome = load_views()?;
-    let cfg = Config::load()?;
-    let season = active_season_from_config(&cfg)?;
+    let (outcome, season) = load_views()?;
 
     let mut filter = PlayerFilter::new();
     filter.draft_years = Some(vec![year]);
@@ -112,9 +100,7 @@ pub async fn run_peers(
 ) -> anyhow::Result<()> {
     use crate::commands::output::Format;
 
-    let outcome = load_views()?;
-    let cfg = Config::load()?;
-    let season = active_season_from_config(&cfg)?;
+    let (outcome, season) = load_views()?;
 
     // Find target by partial name match across all skaters.
     let target_norm = normalize_name(&player_name);
@@ -208,9 +194,7 @@ pub async fn run_compare(
 ) -> anyhow::Result<()> {
     use crate::commands::output::Format;
 
-    let outcome = load_views()?;
-    let cfg = Config::load()?;
-    let season = active_season_from_config(&cfg)?;
+    let (outcome, season) = load_views()?;
     let views: Vec<PlayerView<'_>> = outcome.repo.skaters(season, SeasonType::Regular).collect();
 
     let v1 = find_view(&views, &name1)?;
@@ -425,9 +409,7 @@ pub async fn run_group(cmd: GroupSubcommand) -> anyhow::Result<()> {
                 .collect();
 
             if !player_keys.is_empty() {
-                let outcome = load_views()?;
-                let cfg = Config::load()?;
-                let season = active_season_from_config(&cfg)?;
+                let (outcome, season) = load_views()?;
                 let views: Vec<PlayerView<'_>> =
                     outcome.repo.skaters(season, SeasonType::Regular).collect();
                 println!("Players ({}):", player_keys.len());

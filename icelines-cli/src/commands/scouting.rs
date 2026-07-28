@@ -4,15 +4,18 @@ use icelines_core::{
     compute_projection,
     cross_team::{compute_all_views, CrossTeamMetrics},
     history::CareerSummary,
-    model::{Season, MIN_GP},
+    model::MIN_GP,
     name::normalize_name,
     scouting_report_sections,
     season_stats::SeasonType,
     stats_repository::PlayerView,
     ProjectionMode, ReportFormat, ReportKind, ReportView, ViewContext, ViewWindow,
 };
-use icelines_fetch::{career::load_career, snapshot::SnapshotStore, stats_loader::load_into_repo};
+use icelines_fetch::{career::load_career, snapshot::SnapshotStore};
 use std::fmt::Write as _;
+
+#[cfg(test)]
+use icelines_core::model::Season;
 
 /// Normalize the user-supplied format string. Returns the canonical name
 /// on success, or a user-facing error listing the valid options.
@@ -30,16 +33,10 @@ pub async fn run(player_name: String, format: String) -> anyhow::Result<()> {
     let fmt = validate_format(&format)?;
 
     let cfg = Config::load()?;
-    let season_u32: u32 = cfg
-        .season_str()
-        .parse()
-        .unwrap_or(icelines_core::CURRENT_SEASON);
-    let season = Season(season_u32);
     let stype = SeasonType::Regular;
 
     let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome =
-        load_into_repo(season, stype, &store).map_err(|e| anyhow::anyhow!("loading repo: {e}"))?;
+    let (outcome, season, _) = crate::commands::players::load_repo_for_season(None, Some(stype))?;
     let repo = &outcome.repo;
     let all_views: Vec<PlayerView<'_>> = repo.skaters(season, stype).collect();
 

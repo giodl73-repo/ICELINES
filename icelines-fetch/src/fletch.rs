@@ -1,13 +1,13 @@
-use crate::schema::RawTransaction;
+use crate::{atomic_write::write_bytes_atomic, schema::RawTransaction};
 use anyhow::{Context, Result};
 use fletch_core::{
     adapter_handoff_report, cache_index_from_manifest, cache_index_gate_report, dry_run_flight,
     fetch_batch_to_cache_best_effort, fetch_batch_to_cache_best_effort_with_delay,
     fetch_paged_json_to_cache, fetch_plan_with_kind, fetch_to_cache, graph_from_registry,
-    read_cache_manifest_json, upsert_cache_manifest_entries, validate_registry,
-    write_cache_manifest_json, CacheEntry, CacheIndexGatePolicy, CacheManifest, CachePolicy,
-    DataFormat, FetchOptions, FletchDefinition, FletchRegistry, FreshnessPolicy, GraphNodeKind,
-    PagedJsonOptions, SourceKind, SourceSpec, FLETCH_CACHE_INDEX_SCHEMA, FLETCH_REGISTRY_SCHEMA,
+    read_cache_manifest_json, upsert_cache_manifest_entries, validate_registry, CacheEntry,
+    CacheIndexGatePolicy, CacheManifest, CachePolicy, DataFormat, FetchOptions, FletchDefinition,
+    FletchRegistry, FreshnessPolicy, GraphNodeKind, PagedJsonOptions, SourceKind, SourceSpec,
+    FLETCH_CACHE_INDEX_SCHEMA, FLETCH_REGISTRY_SCHEMA,
 };
 use icelines_core::stats_catalog::ReportKind;
 use serde::Serialize;
@@ -278,6 +278,15 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
 
     for (id_suffix, surface, source_url, target, acquisition, activation, validation) in [
         (
+            "ahl",
+            "ahl",
+            format!("icelines-ahl-hockeytech-batch://season/{season}"),
+            format!("snapshots/{season}-<date>-ahl/ahl/ahl-roster-stats.json"),
+            "generic-batch-http-cacheline-after-season",
+            "FLETCH owns verified source cachelines; ICELINES owns season/team expansion, JSONP parsing, typed validation, snapshot sealing, and affiliation joins",
+            "ICELINES validates provider-scoped identities, team codes, roster/stat shapes, counting totals, and current-season affiliation authority",
+        ),
+        (
             "transactions",
             "transactions",
             format!("icelines-espn-transactions://season/{season}"),
@@ -303,6 +312,24 @@ pub fn fletch_registry_for_season(season: &str, season_type: &str) -> FletchRegi
             "generic-batch-http-cacheline-after-player-set",
             "ICELINES owns active/bundled player-set expansion, merge/upsert semantics, rate limit, and skipped-player reporting",
             "ICELINES validates career landing parsing, multi-league history merge, and preserved existing entries",
+        ),
+        (
+            "player-search",
+            "player-search",
+            "icelines-nhl-player-search-batch://from-provider-roster-names".to_string(),
+            "~/.icelines/data/.fletch + ahl_identity_crosswalk.v1 review artifact".to_string(),
+            "generic-batch-http-cacheline-after-provider-roster",
+            "ICELINES owns provider-name expansion, exact-name filtering, player-landing corroboration, and explicit human review",
+            "ICELINES preserves provider-local IDs, accepts only exact normalized-name proposals, validates landing ID/name/birth date, and never auto-approves a crosswalk",
+        ),
+        (
+            "player-landing",
+            "player-landing",
+            "icelines-player-landing-batch://from-resolved-player-ids".to_string(),
+            "~/.icelines/data/.fletch/objects".to_string(),
+            "generic-batch-http-cacheline-after-player-set",
+            "FLETCH owns reusable per-player landing bytes; ICELINES consumers own career, contract, and identity semantics",
+            "ICELINES validates player ID and consumer-specific landing fields before any derived artifact is accepted",
         ),
         (
             "boxscore",
@@ -380,6 +407,8 @@ pub fn fletch_source_handoff_report(season: &str, season_type: &str) -> FletchSo
                     metadata(definition, "acquisition_mode").as_str(),
                     "generic-batch-http-cacheline-after-schedule"
                         | "generic-batch-http-cacheline-after-player-set"
+                        | "generic-batch-http-cacheline-after-provider-roster"
+                        | "generic-batch-http-cacheline-after-season"
                         | "generic-window-batch-http-cacheline-after-season"
                 )
             {
@@ -456,6 +485,7 @@ pub fn fletch_query_partition_report(
                             metadata(definition, "acquisition_mode").as_str(),
                             "generic-batch-http-cacheline-after-schedule"
                                 | "generic-batch-http-cacheline-after-player-set"
+                                | "generic-batch-http-cacheline-after-season"
                                 | "generic-window-batch-http-cacheline-after-season"
                         ) =>
                     {
@@ -812,6 +842,8 @@ fn fletch_cache_index_registry_id(
     for (prefix, registered_suffix) in [
         ("icelines.player.contracts.", "contracts"),
         ("icelines.player.career.", "career"),
+        ("icelines.player.landing.", "player-landing"),
+        ("icelines.nhl.player-search.", "player-search"),
         ("icelines.gamecenter.boxscore.", "boxscore"),
         ("icelines.gamecenter.play-by-play.", "play-by-play"),
     ] {
@@ -824,6 +856,12 @@ fn fletch_cache_index_registry_id(
     let transaction_prefix = format!("icelines.transactions.{season}.");
     let registered_id = format!("icelines.transactions.{season}");
     if dataset_id.starts_with(&transaction_prefix) && expected_ids.contains(&registered_id) {
+        return Some(registered_id);
+    }
+
+    let ahl_prefix = format!("icelines.ahl.{season}.");
+    let registered_id = format!("icelines.ahl.{season}");
+    if dataset_id.starts_with(&ahl_prefix) && expected_ids.contains(&registered_id) {
         return Some(registered_id);
     }
 
@@ -1008,8 +1046,14 @@ fn upsert_fletch_cache_manifest_entries(
     };
     manifest = upsert_cache_manifest_entries(manifest, entries)
         .context("upserting FLETCH cache manifest entries")?;
-    write_cache_manifest_json(&manifest_path, &manifest)
-        .with_context(|| format!("writing FLETCH cache manifest {}", manifest_path.display()))?;
+    let bytes =
+        serde_json::to_vec_pretty(&manifest).context("serializing FLETCH cache manifest")?;
+    write_bytes_atomic(&manifest_path, &bytes).with_context(|| {
+        format!(
+            "atomically writing FLETCH cache manifest {}",
+            manifest_path.display()
+        )
+    })?;
     Ok(manifest)
 }
 
@@ -1038,8 +1082,27 @@ pub fn fetch_generic_http_bytes(
     cache_root: &Path,
     force: bool,
 ) -> Result<Vec<u8>> {
-    let fletch_id = fletch_id.into();
-    let source_url = source_url.into();
+    let (bytes, entry) =
+        fetch_generic_http_bytes_unindexed(fletch_id.into(), source_url.into(), cache_root, force)?;
+    if let Some(entry) = entry {
+        upsert_fletch_cache_manifest_entries(cache_root, [entry])?;
+    }
+    Ok(bytes)
+}
+
+fn fetch_generic_http_bytes_unindexed(
+    fletch_id: String,
+    source_url: String,
+    cache_root: &Path,
+    force: bool,
+) -> Result<(Vec<u8>, Option<CacheEntry>)> {
+    if !force {
+        if let Some(bytes) = read_verified_fletch_cache_bytes(cache_root, &fletch_id)
+            .with_context(|| format!("reading cached FLETCH object for {fletch_id}"))?
+        {
+            return Ok((bytes, None));
+        }
+    }
     let mut plan = fetch_plan_with_kind(fletch_id.clone(), source_url, SourceKind::Http)
         .with_context(|| format!("building FLETCH fetch plan for {fletch_id}"))?;
     plan.cache_policy = CachePolicy {
@@ -1061,7 +1124,7 @@ pub fn fetch_generic_http_bytes(
             if let Some(bytes) = read_verified_fletch_cache_bytes(cache_root, &fletch_id)
                 .with_context(|| format!("reading cached FLETCH object for {fletch_id}"))?
             {
-                return Ok(bytes);
+                return Ok((bytes, None));
             }
             return Err(error).with_context(|| format!("fetching {fletch_id} through FLETCH"));
         }
@@ -1069,10 +1132,9 @@ pub fn fetch_generic_http_bytes(
             return Err(error).with_context(|| format!("fetching {fletch_id} through FLETCH"));
         }
     };
-    upsert_fletch_cache_manifest_entries(cache_root, [outcome.entry.clone()])?;
-
-    std::fs::read(&outcome.path)
-        .with_context(|| format!("reading FLETCH cache object {}", outcome.path.display()))
+    let bytes = std::fs::read(&outcome.path)
+        .with_context(|| format!("reading FLETCH cache object {}", outcome.path.display()))?;
+    Ok((bytes, Some(outcome.entry)))
 }
 
 pub async fn fetch_generic_http_bytes_async(
@@ -1089,6 +1151,96 @@ pub async fn fetch_generic_http_bytes_async(
     })
     .await
     .context("joining FLETCH fetch task")?
+}
+
+/// Fetch independent HTTP cachelines concurrently while writing the shared
+/// ICELINES FLETCH manifest once. Per-request manifest writes are deliberately
+/// deferred so concurrent read-modify-write cycles cannot drop entries.
+pub async fn fetch_generic_http_batch_async(
+    requests: Vec<(String, String)>,
+    cache_root: impl Into<std::path::PathBuf>,
+    force: bool,
+    max_concurrency: usize,
+) -> Vec<(String, Result<Vec<u8>>)> {
+    let cache_root = cache_root.into();
+    let mut fetched = Vec::new();
+    let mut pending = requests;
+    if !force {
+        let manifest_path = fletch_cache_manifest_path(&cache_root);
+        if manifest_path.exists() {
+            match read_fletch_cache_manifest(&manifest_path) {
+                Ok(manifest) => {
+                    let cached = manifest
+                        .entries
+                        .into_iter()
+                        .filter(|entry| entry.verified)
+                        .map(|entry| (entry.dataset_id.clone(), entry))
+                        .collect::<BTreeMap<_, _>>();
+                    let mut missing = Vec::new();
+                    for (dataset_id, source_url) in pending {
+                        let bytes = cached.get(&dataset_id).and_then(|entry| {
+                            std::fs::read(cache_root.join(&entry.relative_path)).ok()
+                        });
+                        if let Some(bytes) = bytes {
+                            fetched.push((dataset_id, Ok(bytes)));
+                        } else {
+                            missing.push((dataset_id, source_url));
+                        }
+                    }
+                    pending = missing;
+                }
+                Err(error) => {
+                    fetched.push(("fletch-manifest".to_owned(), Err(error)));
+                    pending.clear();
+                }
+            }
+        }
+    }
+    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(max_concurrency.max(1)));
+    let mut tasks = tokio::task::JoinSet::new();
+    for (dataset_id, source_url) in pending {
+        let task_id = dataset_id.clone();
+        let root = cache_root.clone();
+        let semaphore = semaphore.clone();
+        tasks.spawn(async move {
+            let permit = semaphore
+                .acquire_owned()
+                .await
+                .context("acquiring generic HTTP batch permit")?;
+            let outcome = tokio::task::spawn_blocking(move || {
+                let _permit = permit;
+                fetch_generic_http_bytes_unindexed(dataset_id, source_url, &root, force)
+            })
+            .await
+            .context("joining generic HTTP batch task")?;
+            Ok::<_, anyhow::Error>((task_id, outcome))
+        });
+    }
+
+    let mut entries = Vec::new();
+    while let Some(joined) = tasks.join_next().await {
+        match joined {
+            Ok(Ok((dataset_id, Ok((bytes, entry))))) => {
+                if let Some(entry) = entry {
+                    entries.push(entry);
+                }
+                fetched.push((dataset_id, Ok(bytes)));
+            }
+            Ok(Ok((dataset_id, Err(error)))) => fetched.push((dataset_id, Err(error))),
+            Ok(Err(error)) => fetched.push(("unknown".to_owned(), Err(error))),
+            Err(error) => fetched.push((
+                "unknown".to_owned(),
+                Err(anyhow::anyhow!("generic HTTP batch task failed: {error}")),
+            )),
+        }
+    }
+    if !entries.is_empty() {
+        if let Err(error) = upsert_fletch_cache_manifest_entries(&cache_root, entries) {
+            fetched.push(("fletch-manifest".to_owned(), Err(error)));
+        }
+    }
+    fetched.sort_by(|a, b| a.0.cmp(&b.0));
+    fetched
 }
 
 pub fn stats_report_url(kind: ReportKind, season: &str, season_type: &str) -> String {
@@ -1296,7 +1448,34 @@ pub fn fetch_player_landing_batch_bytes_with_base(
     force: bool,
     delay_between_items_ms: u64,
 ) -> Result<BTreeMap<u32, Vec<u8>>> {
-    let plans = player_ids
+    let mut bytes_by_player = BTreeMap::new();
+    let mut pending_ids = player_ids.to_vec();
+    if !force {
+        let manifest_path = fletch_cache_manifest_path(cache_root);
+        if manifest_path.exists() {
+            let manifest = read_fletch_cache_manifest(&manifest_path)?;
+            let cached = manifest
+                .entries
+                .into_iter()
+                .filter(|entry| entry.verified)
+                .map(|entry| (entry.dataset_id.clone(), entry))
+                .collect::<BTreeMap<_, _>>();
+            pending_ids.retain(|player_id| {
+                let dataset_id = format!("icelines.player.{}.{player_id}", artifact.id_segment());
+                let Some(entry) = cached.get(&dataset_id) else {
+                    return true;
+                };
+                match std::fs::read(cache_root.join(&entry.relative_path)) {
+                    Ok(bytes) => {
+                        bytes_by_player.insert(*player_id, bytes);
+                        false
+                    }
+                    Err(_) => true,
+                }
+            });
+        }
+    }
+    let plans = pending_ids
         .iter()
         .map(|player_id| {
             let fletch_id = format!("icelines.player.{}.{player_id}", artifact.id_segment());
@@ -1322,6 +1501,9 @@ pub fn fetch_player_landing_batch_bytes_with_base(
             Ok((*player_id, plan))
         })
         .collect::<Result<Vec<_>>>()?;
+    if plans.is_empty() {
+        return Ok(bytes_by_player);
+    }
     let plan_only = plans
         .iter()
         .map(|(_, plan)| plan.clone())
@@ -1353,7 +1535,6 @@ pub fn fetch_player_landing_batch_bytes_with_base(
         .iter()
         .map(|(player_id, plan)| (plan.dataset_id.clone(), *player_id))
         .collect::<BTreeMap<_, _>>();
-    let mut bytes_by_player = BTreeMap::new();
     for outcome in &outcome.outcomes {
         let Some(player_id) = player_by_dataset.get(&outcome.entry.dataset_id) else {
             continue;
@@ -1808,8 +1989,9 @@ mod tests {
             fletch_source_handoff_gate_failures(&report),
             Vec::<String>::new()
         );
+        let requested_roster_id = roster_dataset_id("EDM", "20252026");
         assert!(report.rows.iter().any(|row| {
-            row.fletch_id == "icelines.roster.20252026.current.EDM"
+            row.fletch_id == requested_roster_id
                 && row.source_kind == "http"
                 && row.handoff_status == "generic-fetch-ready"
         }));
@@ -1828,7 +2010,10 @@ mod tests {
         );
         assert_eq!(
             roster_dataset_id("NYR", icelines_core::CURRENT_SEASON_STR),
-            "icelines.roster.20252026.current.NYR"
+            format!(
+                "icelines.roster.{}.current.NYR",
+                icelines_core::CURRENT_SEASON_STR
+            )
         );
         assert_eq!(
             roster_url("NYR", "20242025"),
@@ -1855,6 +2040,12 @@ mod tests {
                 && row.acquisition_mode == "generic-window-batch-http-cacheline-after-season"
                 && row.handoff_status == "batch-expansion-ready-after-domain-set"
         }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.ahl.20252026"
+                && row.source_kind == "adapter"
+                && row.acquisition_mode == "generic-batch-http-cacheline-after-season"
+                && row.handoff_status == "batch-expansion-ready-after-domain-set"
+        }));
     }
 
     #[test]
@@ -1868,6 +2059,15 @@ mod tests {
         assert!(report.rows.iter().any(|row| {
             row.fletch_id == "icelines.career.20252026"
                 && row.acquisition_mode == "generic-batch-http-cacheline-after-player-set"
+                && row.handoff_status == "batch-expansion-ready-after-domain-set"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.player-search.20252026"
+                && row.acquisition_mode == "generic-batch-http-cacheline-after-provider-roster"
+                && row.handoff_status == "batch-expansion-ready-after-domain-set"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.player-landing.20252026"
                 && row.handoff_status == "batch-expansion-ready-after-domain-set"
         }));
     }
@@ -1981,6 +2181,9 @@ mod tests {
                 test_cache_entry("icelines.transactions.20252026.2025-10-01_2025-10-31", true),
                 test_cache_entry("icelines.gamecenter.boxscore.2025020001", true),
                 test_cache_entry("icelines.player.contracts.8478402", true),
+                test_cache_entry("icelines.nhl.player-search.abcdef", true),
+                test_cache_entry("icelines.player.landing.8482193", true),
+                test_cache_entry("icelines.ahl.20252026.team.HFD.roster", true),
             ],
         )
         .expect("manifest should build");
@@ -2000,6 +2203,21 @@ mod tests {
         assert!(report.rows.iter().any(|row| {
             row.fletch_id == "icelines.contracts.20252026"
                 && row.dataset_id == "icelines.player.contracts.8478402"
+                && row.evidence_status == "indexed-verified"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.player-search.20252026"
+                && row.dataset_id == "icelines.nhl.player-search.abcdef"
+                && row.evidence_status == "indexed-verified"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.player-landing.20252026"
+                && row.dataset_id == "icelines.player.landing.8482193"
+                && row.evidence_status == "indexed-verified"
+        }));
+        assert!(report.rows.iter().any(|row| {
+            row.fletch_id == "icelines.ahl.20252026"
+                && row.dataset_id == "icelines.ahl.20252026.team.HFD.roster"
                 && row.evidence_status == "indexed-verified"
         }));
     }
@@ -2042,6 +2260,28 @@ mod tests {
     }
 
     #[test]
+    fn cache_manifest_upsert_atomically_replaces_existing_manifest() {
+        let dir = tempfile::tempdir().unwrap();
+        let manifest_path = fletch_cache_manifest_path(dir.path());
+
+        upsert_fletch_cache_manifest_entries(
+            dir.path(),
+            [test_cache_entry("icelines.test.first", true)],
+        )
+        .expect("first manifest write should succeed");
+        upsert_fletch_cache_manifest_entries(
+            dir.path(),
+            [test_cache_entry("icelines.test.second", true)],
+        )
+        .expect("existing manifest should be replaced atomically");
+
+        let manifest = read_fletch_cache_manifest(&manifest_path)
+            .expect("replacement manifest should remain readable");
+        assert_eq!(manifest.entries.len(), 2);
+        assert!(!dir.path().join("cache-manifest.json.tmp").exists());
+    }
+
+    #[test]
     fn fetch_generic_http_bytes_uses_cached_object_when_source_unavailable() {
         let server = MockServer::start();
         let mock = server.mock(|when, then| {
@@ -2062,14 +2302,20 @@ mod tests {
         );
         mock.assert_hits(1);
 
-        let cached = fetch_generic_http_bytes(
+        let cached =
+            fetch_generic_http_bytes(fletch_id, server.url("/source.csv"), dir.path(), false)
+                .expect("verified cache should be used without source revalidation");
+        assert_eq!(cached, fetched);
+        mock.assert_hits(1);
+
+        let cached_offline = fetch_generic_http_bytes(
             fletch_id,
             "http://127.0.0.1:9/source.csv",
             dir.path(),
             false,
         )
         .expect("offline fallback should reuse the cached object");
-        assert_eq!(cached, fetched);
+        assert_eq!(cached_offline, fetched);
 
         let forced =
             fetch_generic_http_bytes(fletch_id, "http://127.0.0.1:9/source.csv", dir.path(), true);
@@ -2230,6 +2476,19 @@ mod tests {
             serde_json::from_slice::<serde_json::Value>(&bytes[&8477934]).unwrap()["playerId"],
             8477934
         );
+        first.assert_hits(1);
+        second.assert_hits(1);
+
+        let cached = fetch_player_landing_batch_bytes_with_base(
+            &server.base_url(),
+            &[8478402, 8477934],
+            FletchPlayerLandingArtifact::Landing,
+            dir.path(),
+            false,
+            1,
+        )
+        .unwrap();
+        assert_eq!(cached, bytes);
         first.assert_hits(1);
         second.assert_hits(1);
     }

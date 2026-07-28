@@ -1,0 +1,34 @@
+AHL AFFILIATIONS — 20262027 | checked 2026-07-24
+ANA  San Diego Gulls
+BOS  Providence Bruins
+BUF  Rochester Americans
+CAR  Chicago Wolves
+CBJ  Cleveland Monsters
+CGY  Calgary Wranglers
+CHI  Rockford IceHogs
+COL  Colorado Eagles
+DAL  Texas Stars
+DET  Grand Rapids Griffins
+EDM  Bakersfield Condors
+FLA  Charlotte Checkers
+LAK  Ontario Reign
+MIN  Iowa Wild
+MTL  Laval Rocket
+NJD  Utica Comets
+NSH  Milwaukee Admirals
+NYI  Hamilton Hammers
+NYR  Hartford Wolf Pack
+OTT  Belleville Senators
+PHI  Lehigh Valley Phantoms
+PIT  Wilkes-Barre/Scranton Penguins
+SEA  Coachella Valley Firebirds
+SJS  San Jose Barracuda
+STL  Springfield Thunderbirds
+TBL  Syracuse Crunch
+TOR  Toronto Marlies
+UTA  Tucson Roadrunners
+VAN  Abbotsford Canucks
+VGK  Henderson Silver Knights
+WPG  Manitoba Moose
+WSH  Hershey Bears
+SOURCE  https://theahl.com/nhl-affiliations

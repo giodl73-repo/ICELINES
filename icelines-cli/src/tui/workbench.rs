@@ -48,6 +48,7 @@ pub fn workbench_for_screen(screen: &Screen) -> Option<WorkbenchId> {
         Screen::Goalies | Screen::GoalieDetailById(_) => Some(WorkbenchId::Goalies),
         Screen::Depth | Screen::DepthTeam(_) => Some(WorkbenchId::Depth),
         Screen::Team(_) => Some(WorkbenchId::Team),
+        Screen::TeamCard { .. } => Some(WorkbenchId::Simulate),
         Screen::PlayerById(_) => Some(WorkbenchId::Player),
         Screen::Tonight => Some(WorkbenchId::Scores),
         Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(_, _) => {

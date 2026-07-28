@@ -49,6 +49,17 @@ pub enum Completeness {
     Unavailable,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EvidenceLabel {
+    Confirmed,
+    Reported,
+    Estimated,
+    Simulated,
+    UnderReview,
+    NoRead,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SourceState {
     pub source: SourceKind,

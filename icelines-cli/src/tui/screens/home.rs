@@ -102,7 +102,7 @@ fn render_col(f: &mut Frame, app: &App, area: Rect, from: usize, to: usize, rank
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(" IceLines — League Tracker "),
+                .title(" Center Ice — League Tracker "),
         )
         .highlight_style(
             Style::default()
@@ -159,11 +159,11 @@ mod tests {
     #[test]
     fn l1_every_ranked_team_has_players_in_bundled_bios() {
         // The strongest catch: every Home entry must produce ≥1 player
-        // in the current-season bundled bios. A regression that spelled
+        // in the newest completed-season bundled bios. A regression that spelled
         // 'TB' instead of 'TBL' would surface here as a clear failure
         // pointing at the offending abbrev.
-        let bios = icelines_fetch::get_bundled_bios(icelines_core::CURRENT_SEASON_STR)
-            .expect("25-26 bios must be bundled");
+        let bios = icelines_fetch::get_bundled_bios(icelines_fetch::BUNDLED_SEASONS[0])
+            .expect("newest completed-season bios must be bundled");
         let teams_in_bios: HashSet<String> = bios
             .iter()
             .filter_map(|b| b.current_team_abbrev.clone())

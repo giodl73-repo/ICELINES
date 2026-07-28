@@ -1,0 +1,106 @@
+{
+  "schema": "training_camp_transaction_context.v1",
+  "season": 20262027,
+  "checked_at": "2026-07-24T12:00:00-07:00",
+  "players": [
+    {
+      "player_id": 8476914,
+      "display_name": "Joonas Korpisalo",
+      "team": "NYR",
+      "cap_hit": 3000000,
+      "expiry_year": 2028,
+      "expiry_type": "UFA",
+      "trade_protection": "modified_no_trade",
+      "requires_waivers": true,
+      "source_urls": [
+        "https://puckpedia.com/trade/1189",
+        "https://puckpedia.com/player/joonas-korpisalo/contracts",
+        "https://puckpedia.com/waivers-tracker/joonas-korpisalo"
+      ]
+    },
+    {
+      "player_id": 8480001,
+      "display_name": "Urho Vaakanainen",
+      "team": "NYR",
+      "cap_hit": 1550000,
+      "expiry_year": 2027,
+      "expiry_type": "UFA",
+      "trade_protection": "none",
+      "requires_waivers": true,
+      "source_urls": [
+        "https://puckpedia.com/signing/9522",
+        "https://puckpedia.com/waivers-tracker/urho-vaakanainen"
+      ]
+    },
+    {
+      "player_id": 8480813,
+      "display_name": "Joe Veleno",
+      "team": "NYR",
+      "cap_hit": 1200000,
+      "expiry_year": 2027,
+      "expiry_type": "UFA",
+      "trade_protection": "none",
+      "requires_waivers": true,
+      "source_urls": [
+        "https://puckpedia.com/player/joseph-veleno/contracts",
+        "https://puckpedia.com/waivers-tracker/joseph-veleno",
+        "https://www.nhl.com/rangers/news/topic/press-releases/rangers-agree-to-terms-with-joe-veleno"
+      ]
+    },
+    {
+      "player_id": 8477969,
+      "display_name": "Marcus Pettersson",
+      "team": "NYR",
+      "cap_hit": 5500000,
+      "expiry_year": 2031,
+      "expiry_type": "UFA",
+      "trade_protection": "no_move",
+      "requires_waivers": true,
+      "source_urls": [
+        "https://puckpedia.com/player/marcus-pettersson/contracts",
+        "https://puckpedia.com/waivers-tracker/marcus-pettersson"
+      ]
+    },
+    {
+      "player_id": 8479390,
+      "display_name": "Taylor Raddysh",
+      "team": "NYR",
+      "cap_hit": 1500000,
+      "expiry_year": 2027,
+      "expiry_type": "UFA",
+      "trade_protection": "none",
+      "requires_waivers": true,
+      "source_urls": [
+        "https://puckpedia.com/player/taylor-raddysh",
+        "https://puckpedia.com/waivers-tracker/taylor-raddysh"
+      ]
+    },
+    {
+      "player_id": 8482460,
+      "display_name": "Matt Rempe",
+      "team": "NYR",
+      "cap_hit": 975000,
+      "expiry_year": 2027,
+      "expiry_type": "RFA",
+      "trade_protection": "none",
+      "requires_waivers": true,
+      "source_urls": [
+        "https://puckpedia.com/player/matt-rempe"
+      ]
+    },
+    {
+      "player_id": 8477401,
+      "display_name": "John Hayden",
+      "team": "SEA",
+      "cap_hit": 850000,
+      "expiry_year": 2027,
+      "expiry_type": "UFA",
+      "trade_protection": "none",
+      "requires_waivers": true,
+      "source_urls": [
+        "https://puckpedia.com/player/john-hayden",
+        "https://puckpedia.com/player/john-hayden/transactions"
+      ]
+    }
+  ]
+}
