@@ -14,7 +14,8 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     ahl::{
-        AhlFeedError, AhlIdentityLeagueCrosswalkView, AhlIdentityReviewStatus,
+        AhlFeedError, AhlIdentityCrosswalkView, AhlIdentityLeagueCrosswalkView,
+        AhlIdentityReviewStatus, AhlProjectionPlayerFacts, AHL_IDENTITY_CROSSWALK_SCHEMA,
         AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
     },
     career_landing::CareerHistoryStore,
@@ -22,6 +23,7 @@ use crate::{
 
 pub const AHL_PROFESSIONAL_GAME_POLICY_SCHEMA: &str = "ahl_professional_game_policy.v1";
 pub const AHL_PROFESSIONAL_GAME_LEDGER_SCHEMA: &str = "ahl_professional_game_ledger.v1";
+pub const AHL_PROFESSIONAL_GAME_FACTS_SCHEMA: &str = "ahl_professional_game_facts_application.v1";
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -134,6 +136,138 @@ pub struct AhlProfessionalGameLedgerView {
     pub unresolved_players: usize,
     pub players: Vec<AhlProfessionalGamePlayerRow>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AhlProfessionalGameFactsApplicationView {
+    pub schema: String,
+    pub prior_season: u32,
+    pub target_season: u32,
+    pub nhl_team: String,
+    pub ahl_team: String,
+    pub policy_id: String,
+    pub ledger_fingerprint: String,
+    pub players_applied: usize,
+    pub facts: Vec<AhlProjectionPlayerFacts>,
+    pub disclosures: Vec<String>,
+}
+
+/// Apply a final, age/exemption-aware ledger to existing team projection facts.
+/// Every other fact remains authored by its own authority; this adapter only
+/// supplies and verifies professional-game totals and final rule qualification.
+pub fn apply_ahl_professional_game_ledger_to_facts(
+    crosswalk: &AhlIdentityCrosswalkView,
+    ledger: &AhlProfessionalGameLedgerView,
+    nhl_team: &str,
+    ahl_team: &str,
+    facts: &[AhlProjectionPlayerFacts],
+) -> Result<AhlProfessionalGameFactsApplicationView, AhlFeedError> {
+    if crosswalk.schema != AHL_IDENTITY_CROSSWALK_SCHEMA
+        || crosswalk.season != ledger.prior_season
+        || crosswalk.ahl_team != ahl_team
+        || crosswalk
+            .nhl_affiliate
+            .as_deref()
+            .is_some_and(|affiliate| affiliate != nhl_team)
+        || ledger.schema != AHL_PROFESSIONAL_GAME_LEDGER_SCHEMA
+        || ledger.policy_authority_status != AhlProfessionalGamePolicyAuthority::Final
+        || ledger.source_fingerprint.trim().is_empty()
+        || facts.is_empty()
+    {
+        return Err(AhlFeedError::Validation(
+            "professional-game facts application requires matching team identity and final ledger authority"
+                .to_owned(),
+        ));
+    }
+    let identity_by_provider = crosswalk
+        .rows
+        .iter()
+        .map(|row| (row.provider_player_id.as_str(), row))
+        .collect::<BTreeMap<_, _>>();
+    let ledger_by_player = ledger
+        .players
+        .iter()
+        .map(|row| (row.nhl_player_id, row))
+        .collect::<BTreeMap<_, _>>();
+    if ledger_by_player.len() != ledger.players.len() {
+        return Err(AhlFeedError::Validation(
+            "professional-game ledger contains duplicate canonical players".to_owned(),
+        ));
+    }
+    let mut provider_ids = BTreeSet::new();
+    let mut applied = Vec::with_capacity(facts.len());
+    for fact in facts {
+        if !provider_ids.insert(fact.provider_player_id.as_str()) {
+            return Err(AhlFeedError::Validation(format!(
+                "duplicate projection facts for provider player {}",
+                fact.provider_player_id
+            )));
+        }
+        let identity = identity_by_provider
+            .get(fact.provider_player_id.as_str())
+            .copied()
+            .ok_or_else(|| {
+                AhlFeedError::Validation(format!(
+                    "projection facts reference provider player {} absent from team identity",
+                    fact.provider_player_id
+                ))
+            })?;
+        let player_id = identity
+            .nhl_player_id
+            .filter(|_| identity.review_status == AhlIdentityReviewStatus::Reviewed)
+            .ok_or_else(|| {
+                AhlFeedError::Validation(format!(
+                    "projection facts reference provider player {} without reviewed canonical identity",
+                    fact.provider_player_id
+                ))
+            })?;
+        let evidence = ledger_by_player.get(&player_id).copied().ok_or_else(|| {
+            AhlFeedError::Validation(format!(
+                "final professional-game ledger has no player {player_id}"
+            ))
+        })?;
+        let games = evidence.professional_games_at_season_start.ok_or_else(|| {
+            AhlFeedError::Validation(format!(
+                "final professional-game ledger has no total for player {player_id}"
+            ))
+        })?;
+        let qualified = evidence.development_rule_qualified.ok_or_else(|| {
+            AhlFeedError::Validation(format!(
+                "final professional-game ledger has no qualification for player {player_id}"
+            ))
+        })?;
+        if fact
+            .professional_games_at_season_start
+            .is_some_and(|existing| existing != games)
+            || fact
+                .development_rule_qualified
+                .is_some_and(|existing| existing != qualified)
+        {
+            return Err(AhlFeedError::Validation(format!(
+                "projection facts conflict with final professional-game evidence for player {player_id}"
+            )));
+        }
+        let mut enriched = fact.clone();
+        enriched.professional_games_at_season_start = Some(games);
+        enriched.development_rule_qualified = Some(qualified);
+        applied.push(enriched);
+    }
+    applied.sort_by(|left, right| left.provider_player_id.cmp(&right.provider_player_id));
+    Ok(AhlProfessionalGameFactsApplicationView {
+        schema: AHL_PROFESSIONAL_GAME_FACTS_SCHEMA.to_owned(),
+        prior_season: ledger.prior_season,
+        target_season: ledger.target_season,
+        nhl_team: nhl_team.to_owned(),
+        ahl_team: ahl_team.to_owned(),
+        policy_id: ledger.policy_id.clone(),
+        ledger_fingerprint: ledger.source_fingerprint.clone(),
+        players_applied: applied.len(),
+        facts: applied,
+        disclosures: vec![
+            "Only professional-game totals and final development-rule qualification come from the bound ledger; projection, role, prospect, assignment, recall, and waiver facts retain their separate authorities.".to_owned(),
+            "A draft or provisional policy cannot be applied to affiliate projection facts.".to_owned(),
+        ],
+    })
 }
 
 /// Build a deterministic ledger for every canonical identity in a reviewed
@@ -758,5 +892,71 @@ mod tests {
             .blockers
             .iter()
             .any(|blocker| blocker == "missing_birth_date_for_european_exemption"));
+    }
+
+    #[test]
+    fn final_ledger_applies_only_rule_facts_and_provisional_ledger_is_rejected() {
+        let mut final_policy = policy();
+        final_policy.authority_status = AhlProfessionalGamePolicyAuthority::Final;
+        final_policy.age_qualification = Some(AhlDevelopmentAgeQualification {
+            cutoff_date: "2026-07-01".to_owned(),
+            automatically_qualifies_under_age: 25,
+            evidence_urls: vec!["https://example.com/rulebook".to_owned()],
+            note: "Age rule.".to_owned(),
+        });
+        final_policy.european_elite_youth_exemption = Some(AhlEuropeanEliteYouthExemption {
+            maximum_non_overage_age: 19,
+            evidence_urls: vec!["https://example.com/rulebook".to_owned()],
+            note: "Youth exemption.".to_owned(),
+        });
+        let league_crosswalk = crosswalk();
+        let team_crosswalk = &league_crosswalk.crosswalks[0];
+        let mut store = CareerHistoryStore::new();
+        store.fetched_at = Some("2026-07-28T00:00:00Z".to_owned());
+        store.upsert_birth_date(1, "1990-01-01");
+        store.upsert(CareerHistory {
+            player_id: 1,
+            stints: vec![stint(20252026, "AHL", CareerGameType::Regular, 261)],
+        });
+        let ledger =
+            build_ahl_professional_game_ledger(&league_crosswalk, &store, &final_policy).unwrap();
+        let facts = vec![AhlProjectionPlayerFacts {
+            provider_player_id: "p1".to_owned(),
+            primary_position: icelines_core::Position::Center,
+            eligible_positions: vec![icelines_core::Position::Center],
+            projected_score: 42.0,
+            prospect: false,
+            recall_readiness: Some(0.6),
+            professional_games_at_season_start: None,
+            development_rule_qualified: None,
+            assigned_to_affiliate: true,
+            waiver_required: false,
+        }];
+        let applied = apply_ahl_professional_game_ledger_to_facts(
+            team_crosswalk,
+            &ledger,
+            "NYR",
+            "Hartford Wolf Pack",
+            &facts,
+        )
+        .unwrap();
+        assert_eq!(applied.players_applied, 1);
+        assert_eq!(applied.facts[0].projected_score, 42.0);
+        assert_eq!(
+            applied.facts[0].professional_games_at_season_start,
+            Some(261)
+        );
+        assert_eq!(applied.facts[0].development_rule_qualified, Some(false));
+
+        let mut provisional = ledger;
+        provisional.policy_authority_status = AhlProfessionalGamePolicyAuthority::Provisional;
+        assert!(apply_ahl_professional_game_ledger_to_facts(
+            team_crosswalk,
+            &provisional,
+            "NYR",
+            "Hartford Wolf Pack",
+            &facts,
+        )
+        .is_err());
     }
 }

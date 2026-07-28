@@ -209,6 +209,12 @@ classification bug. Affiliate inputs and views preserve a separate final
 reviewed policy supplies it. The forthcoming league facts composer must require
 that final field before promoting a preseason affiliate projection.
 
+The official-snapshot facts bridge is implemented: a final ledger can now be
+applied to one team's provider-keyed projection facts without altering score,
+position, prospect, recall, assignment, or waiver authority, and the existing
+affiliate-input builder consumes the fingerprint-bound envelope. Preseason
+camp-only players still require the planned NHL-ID-keyed league facts composer.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

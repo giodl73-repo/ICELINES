@@ -96,8 +96,9 @@ use icelines_fetch::{
         AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
     },
     ahl_professional_games::{
-        build_ahl_professional_game_ledger, AhlProfessionalGameLedgerView,
-        AhlProfessionalGamePolicy,
+        apply_ahl_professional_game_ledger_to_facts, build_ahl_professional_game_ledger,
+        AhlProfessionalGameFactsApplicationView, AhlProfessionalGameLedgerView,
+        AhlProfessionalGamePolicy, AHL_PROFESSIONAL_GAME_FACTS_SCHEMA,
     },
     ahl_rollover::{
         apply_ahl_preseason_league_organization_review, apply_ahl_preseason_organization_review,
@@ -1668,6 +1669,37 @@ pub fn run_affiliate_professional_games(
     Ok(())
 }
 
+pub fn run_affiliate_professional_games_apply(
+    crosswalk_path: PathBuf,
+    ledger_path: PathBuf,
+    facts_path: PathBuf,
+    nhl_team: String,
+    ahl_team: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let crosswalk: AhlIdentityCrosswalkView =
+        read_icecast_json(&crosswalk_path, "reviewed AHL identity crosswalk")?;
+    let ledger: AhlProfessionalGameLedgerView =
+        read_icecast_json(&ledger_path, "AHL professional-game ledger")?;
+    let facts: Vec<AhlProjectionPlayerFacts> =
+        read_icecast_json(&facts_path, "AHL projection facts")?;
+    let applied = apply_ahl_professional_game_ledger_to_facts(
+        &crosswalk, &ledger, &nhl_team, &ahl_team, &facts,
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&applied)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "AHL professional-game facts application",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 fn read_affiliate_identity_catalog(path: &Path) -> anyhow::Result<AhlCanonicalIdentityCatalog> {
     let candidate_bytes = std::fs::read(path)
         .with_context(|| format!("read canonical NHL identity candidates {}", path.display()))?;
@@ -1947,8 +1979,24 @@ pub fn run_affiliate_input(
         read_icecast_json(&snapshot_path, "AHL roster/stat snapshot")?;
     let crosswalk: AhlIdentityCrosswalkView =
         read_icecast_json(&crosswalk_path, "reviewed AHL identity crosswalk")?;
-    let facts: Vec<AhlProjectionPlayerFacts> =
-        read_icecast_json(&facts_path, "AHL projection facts")?;
+    let facts_bytes = std::fs::read(&facts_path)
+        .with_context(|| format!("read AHL projection facts {}", facts_path.display()))?;
+    let facts: Vec<AhlProjectionPlayerFacts> = if let Ok(facts) =
+        serde_json::from_slice(&facts_bytes)
+    {
+        facts
+    } else {
+        let application: AhlProfessionalGameFactsApplicationView =
+            serde_json::from_slice(&facts_bytes)
+                .with_context(|| format!("parse AHL projection facts {}", facts_path.display()))?;
+        if application.schema != AHL_PROFESSIONAL_GAME_FACTS_SCHEMA
+            || application.nhl_team != nhl_team
+            || application.ahl_team != ahl_team
+        {
+            bail!("professional-game facts application does not match requested affiliate");
+        }
+        application.facts
+    };
     let input = affiliate_projection_input_from_reviewed_crosswalk(
         &snapshot,
         &nhl_team,

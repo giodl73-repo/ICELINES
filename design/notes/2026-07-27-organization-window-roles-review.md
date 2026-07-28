@@ -459,3 +459,9 @@ optimizer classified from 260 games alone and could mislabel an automatically
 age-qualified player. The player contract now carries the final reviewed rule
 qualification beside its raw total. New composition must provide it; legacy
 documents retain the count fallback so saved artifacts do not break.
+
+KEEL/WIRE accepted the official-snapshot application bridge because it is
+narrow: only final-policy game and qualification facts are filled, conflicting
+authored values fail, and all scoring/assignment/waiver fields remain owned by
+their original sources. HART keeps the preseason league composer open because
+camp-only candidates do not yet have provider-scoped AHL IDs.

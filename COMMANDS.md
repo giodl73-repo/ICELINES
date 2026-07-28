@@ -1047,6 +1047,7 @@ icelines icecast affiliate-status-draft-league --prior-snapshot prior-ahl.json -
 icelines icecast affiliate-status-apply-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --review league-status-review-final.json --config league-rollover-config.json --out league-rollover-reviewed.json
 icelines fetch career --league-crosswalk ahl-league-fully-reviewed.json
 icelines icecast affiliate-professional-games --league-crosswalk ahl-league-fully-reviewed.json --career-history ~/.icelines/career_history.json --policy examples/ahl-professional-game-policy-2026-27.json --json --out professional-games.json
+icelines icecast affiliate-professional-games-apply --crosswalk hartford-identity-reviewed.json --ledger professional-games-final.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-projection-facts-reviewed.json
 icelines icecast affiliate-rollover-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json
@@ -1412,6 +1413,10 @@ provisional runs may calculate threshold, age, and youth-exemption facts for
 review, but only a final policy can certify `development_rule_qualified`.
 Affiliate projection input preserves that certified value separately from its
 raw total; when present, it controls development/veteran classification.
+`affiliate-professional-games-apply` is the fail-closed bridge: it accepts only
+a final ledger, rejects identity/team/fact conflicts, changes only the two rule
+facts, and emits a fingerprint-bound application that `affiliate-input` can
+consume directly.
 
 `icecast affiliate-map` emits the dated `ahl_affiliation_catalog.v1` authority
 used to connect all 32 NHL organizations to their current AHL affiliates. For

@@ -313,6 +313,14 @@ new field retain threshold-only behavior for compatibility, but the production
 Window composition path must require final policy authority rather than rely on
 the fallback.
 
+`ahl_professional_game_facts_application.v1` is that production boundary for
+an official affiliate snapshot. It binds one reviewed team crosswalk to a final
+league ledger, verifies any pre-existing totals/classifications, and enriches
+only those two fields in the separate projection-facts rows. Draft or
+provisional ledgers, missing canonical players, and conflicting authored facts
+fail before output. The normal `affiliate-input` command accepts this envelope
+as well as its legacy bare facts array.
+
 Historical replay uses season-dated catalogs rather than applying the current
 affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves
 the official 2021-22 shared Charlotte affiliation as two relationship rows

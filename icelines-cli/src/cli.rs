@@ -1575,6 +1575,23 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Apply a final professional-game ledger to separate team projection facts.
+    #[command(name = "affiliate-professional-games-apply")]
+    AffiliateProfessionalGamesApply {
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        /// JSON array of projection facts keyed by AHL provider player ID.
+        #[arg(long, value_name = "PATH")]
+        facts: PathBuf,
+        #[arg(long, value_name = "NHL_TEAM")]
+        nhl_team: String,
+        #[arg(long, value_name = "AHL_TEAM")]
+        ahl_team: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Join reviewed AHL identities to separate projection facts.
     #[command(name = "affiliate-input")]
     AffiliateInput {
@@ -1584,7 +1601,7 @@ pub enum IceCastSubcommand {
         /// Fully reviewed `ahl_identity_crosswalk.v1` document.
         #[arg(long, value_name = "PATH")]
         crosswalk: PathBuf,
-        /// JSON array of projection facts keyed by AHL provider player ID.
+        /// JSON array of projection facts, or a final professional-game facts application.
         #[arg(long, value_name = "PATH")]
         facts: PathBuf,
         #[arg(long, value_name = "NHL_TEAM")]
@@ -4431,6 +4448,29 @@ mod tui_surface_tests {
             assert!(matches!(
                 professional_games.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGames { json: true, .. })
+            ));
+
+            let professional_games_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-professional-games-apply",
+                "--crosswalk",
+                "hartford-reviewed.json",
+                "--ledger",
+                "professional-game-ledger.json",
+                "--facts",
+                "hartford-facts.json",
+                "--nhl-team",
+                "NYR",
+                "--ahl-team",
+                "Hartford Wolf Pack",
+                "--out",
+                "hartford-final-facts.json",
+            ])
+            .expect("affiliate professional-game facts application should parse");
+            assert!(matches!(
+                professional_games_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGamesApply { .. })
             ));
 
             let input = Cli::try_parse_from([

@@ -2272,6 +2272,16 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGamesApply {
+            crosswalk,
+            ledger,
+            facts,
+            nhl_team,
+            ahl_team,
+            out,
+        }) => commands::icecast::run_affiliate_professional_games_apply(
+            crosswalk, ledger, facts, nhl_team, ahl_team, out,
+        )?,
         Commands::Icecast(IceCastSubcommand::AffiliateInput {
             snapshot,
             crosswalk,
