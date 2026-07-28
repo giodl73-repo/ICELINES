@@ -23,7 +23,7 @@ pub async fn run(team: String, _scheme: Option<String>, no_color: bool) -> anyho
     // roster as PlayerView slice, build the depth chart from views.
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let outcome = load_into_repo(season, SeasonType::Regular, &store)
-        .map_err(|e| anyhow::anyhow!("loading repo: {e}"))?;
+        .map_err(|e| anyhow::anyhow!("loading repo: {e}\n  Try: icelines fetch all"))?;
     let view = TeamDepthView::from_repository(
         &outcome.repo,
         team_abbr.clone(),

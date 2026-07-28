@@ -469,6 +469,16 @@ lookup for reproducible next-season cohort selection. Entry-cohort rates are
 conditional on reaching the NHL workload gate; they are not prospect arrival
 probabilities.
 
+`icecast prospect-conversion` closes that historical loop. Given a frozen
+prospect cohort and the official career cache, it derives auditable forward,
+defense, and goalie NHL-performance scores, confidence-weights small samples,
+and compares baseline signal with later arrival, role, and quality. The neutral
+JSON includes player-level expected-hit, breakout, miss, and developing buckets,
+organization totals and rank blockers, plus every component and NHL landing
+URL. Use `--performance-out` to retain the derived authority; pass it back with
+`--performance` for a reproducible replay. Complete zero-game histories count
+as observed zeros, while missing official facts fail closed.
+
 IceCast loads the complete official schedule and produces one explained
 baseline probability for every league game. For 2026–27 it enforces 1,344
 unique games, 84 per team, and 42 home/42 road. The current baseline combines

@@ -302,15 +302,16 @@ pub use poach::{
 };
 pub use prospect_conversion::{
     adapt_prospect_conversion_input, build_prospect_conversion_board,
-    ProspectConversionBaselineInput, ProspectConversionBoardView,
-    ProspectConversionCalibrationBandView, ProspectConversionConfig, ProspectConversionDisposition,
-    ProspectConversionInput, ProspectConversionMethodologyView, ProspectConversionOrganizationView,
-    ProspectConversionPerformanceDocument, ProspectConversionPerformanceInput,
-    ProspectConversionPlayerView, ProspectConversionRankBlocker,
+    build_prospect_nhl_performance_document, ProspectConversionBaselineInput,
+    ProspectConversionBoardView, ProspectConversionCalibrationBandView, ProspectConversionConfig,
+    ProspectConversionDisposition, ProspectConversionInput, ProspectConversionMethodologyView,
+    ProspectConversionOrganizationView, ProspectConversionPerformanceDocument,
+    ProspectConversionPerformanceInput, ProspectConversionPlayerView,
+    ProspectConversionRankBlocker, ProspectConversionResultClass,
     ProspectConversionSignalCalibrationView, ProspectConversionSignalInput,
-    ProspectConversionSignalKind, ProspectNhlOutcomeInput, PROSPECT_CONVERSION_BOARD_SCHEMA,
-    PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
-    PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
+    ProspectConversionSignalKind, ProspectNhlOutcomeInput, ProspectNhlPerformanceComponentView,
+    PROSPECT_CONVERSION_BOARD_SCHEMA, PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
+    PROSPECT_CONVERSION_PERFORMANCE_SCHEMA, PROSPECT_NHL_PERFORMANCE_METHOD,
 };
 pub use prospect_study::{
     build_prospect_development_study, build_prospect_discovery_board,

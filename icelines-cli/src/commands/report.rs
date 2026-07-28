@@ -767,14 +767,8 @@ pub fn run_cap_forecast(args: CapForecastArgs) -> anyhow::Result<()> {
         .transpose()
         .map_err(|error| anyhow::anyhow!(error))?;
 
-    let cfg = Config::load()?;
-    let stats_season: Season = cfg
-        .season_str()
-        .parse()
-        .map_err(|_| anyhow::anyhow!("season '{}' is not a YYYYZZZZ id", cfg.season_str()))?;
-    let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = load_into_repo(stats_season, SeasonType::Regular, &store)
-        .map_err(|error| anyhow::anyhow!("{error}\n  Try: icelines fetch all"))?;
+    let (outcome, stats_season, _) =
+        crate::commands::players::load_repo_for_season(None, Some(SeasonType::Regular))?;
 
     let mut players = Vec::new();
     let teams: Vec<_> = match selected_team.as_ref() {

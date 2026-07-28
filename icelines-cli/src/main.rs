@@ -2450,6 +2450,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             baseline_season,
             through_season,
             performance,
+            performance_out,
             json,
             out,
         }) => commands::icecast::run_prospect_conversion(
@@ -2460,6 +2461,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             baseline_season,
             through_season,
             performance,
+            performance_out,
             json,
             out,
         )?,

@@ -1946,9 +1946,13 @@ pub enum IceCastSubcommand {
         /// Last NHL season included in realized outcomes.
         #[arg(long = "through-season")]
         through_season: u32,
-        /// Optional `prospect_conversion_performance.v1` canonical NHL scores.
+        /// Optional `prospect_conversion_performance.v2` canonical NHL scores.
+        /// When omitted, IceLines derives them from the official career cache.
         #[arg(long, value_name = "PATH")]
         performance: Option<PathBuf>,
+        /// Write the supplied or derived NHL-performance authority for audit/reuse.
+        #[arg(long = "performance-out", value_name = "PATH")]
+        performance_out: Option<PathBuf>,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -3899,6 +3903,8 @@ mod tui_surface_tests {
                 "20252026",
                 "--performance",
                 "performance.json",
+                "--performance-out",
+                "derived-performance.json",
                 "--json",
                 "--out",
                 "conversion.json",
@@ -3914,6 +3920,7 @@ mod tui_surface_tests {
                     baseline_season: 20222023,
                     through_season: 20252026,
                     performance: Some(performance),
+                    performance_out: Some(performance_out),
                     json: true,
                     out: Some(out),
                 }) if league_discoveries == vec![PathBuf::from("frozen-league.json")]
@@ -3921,6 +3928,7 @@ mod tui_surface_tests {
                     && studies.is_empty()
                     && career_history == PathBuf::from("career_history.json")
                     && performance == PathBuf::from("performance.json")
+                    && performance_out == PathBuf::from("derived-performance.json")
                     && out == PathBuf::from("conversion.json")
             ));
         });

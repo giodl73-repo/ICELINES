@@ -1532,7 +1532,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-cli"
-version = "0.25.0"
+version = "0.26.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1570,7 +1570,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-core"
-version = "0.25.0"
+version = "0.26.0"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -1587,7 +1587,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-fetch"
-version = "0.25.0"
+version = "0.26.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1611,7 +1611,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-query"
-version = "0.25.0"
+version = "0.26.0"
 dependencies = [
  "chrono",
  "icelines-core",
@@ -1623,7 +1623,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-site"
-version = "0.25.0"
+version = "0.26.0"
 dependencies = [
  "icelines-core",
  "icelines-fetch",
@@ -1636,7 +1636,7 @@ dependencies = [
 
 [[package]]
 name = "icelines-web"
-version = "0.25.0"
+version = "0.26.0"
 dependencies = [
  "anyhow",
  "askama",

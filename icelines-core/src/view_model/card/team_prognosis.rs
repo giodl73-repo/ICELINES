@@ -305,6 +305,7 @@ pub fn build_team_prognosis_card(
         .map_err(|error| TeamPrognosisCardError::Document(error.to_string()))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn insider_sections(
     baseline: &TeamSeasonForecastRow,
     forced_impact: Option<&crate::view_model::TeamSeasonScenarioImpactRow>,

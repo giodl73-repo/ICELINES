@@ -6,7 +6,7 @@
 `prospect_goalie_development_study.v1`, `prospect_career_discovery.v1`,
 `prospect_program_board.v2`, `prospect_program_sensitivity.v1`,
 `prospect_program_history.v1`, `prospect_conversion_input.v2`,
-`prospect_conversion_performance.v1`, `prospect_conversion_board.v2`
+`prospect_conversion_performance.v2`, `prospect_conversion_board.v2`
 
 ## Purpose
 
@@ -71,6 +71,12 @@ icelines icecast prospect-program-history \
   --board prospect-programs-2025.json \
   --board prospect-programs-2026.json \
   --json --out prospect-program-history.json
+icelines icecast prospect-conversion \
+  --league-discovery frozen-2022-23-prospects.json \
+  --career-history ~/.icelines/career_history.json \
+  --baseline-season 20222023 --through-season 20252026 \
+  --performance-out nhl-performance.json \
+  --json --out prospect-conversion.json
 ```
 
 ## Contract
@@ -288,34 +294,54 @@ claim about development or future NHL success.
 
 `ProspectConversionBoardView` compares a frozen, attention-free prospect signal
 with NHL outcomes observed after a configurable minimum horizon. Arrival uses
-NHL games, role uses NHL time on ice per game with separate forward, defense,
-and goalie benchmarks, and performance accepts an optional canonical 0..100
-value measure with an explicit basis. Missing performance is never imputed: it
-reduces outcome coverage, and an organization below the configured coverage
-floor remains unranked.
+NHL games and role uses NHL time on ice per game with separate forward,
+defense, and goalie benchmarks. Performance is a canonical position-normalized
+0..100 measure derived from the same official landing histories by default.
+An authored `prospect_conversion_performance.v2` document may override that
+authority, and `--performance-out` freezes either version for audit and reuse.
+
+Skater performance combines points/82 (35%), goals/82 (20%), average TOI
+(20%), power-play points/82 (15%), and shots/82 (10%), with separate forward
+and defense targets. Goalie performance combines save percentage (50%),
+inverse GAA (25%), start share (15%), and shutouts per game (10%). The raw
+position score is multiplied by `GP/(GP+30)` for skaters or `GP/(GP+20)` for
+goalies. The document publishes each raw metric, normalized component, weight,
+raw-quality score, sample confidence, final score, horizon, and official player
+landing URL. These are fixed modern-horizon quality benchmarks, not an
+era-wide WAR model.
+
+A complete official history with no post-baseline NHL games is an observed
+zero. Missing official history, time on ice, or a required rate input fails the
+adapter instead of becoming zero. This distinction permits full source
+coverage without confusing a verified non-arrival with absent data.
 
 `adapt_prospect_conversion_input` consumes the complete frozen skater and goalie
 study cohorts rather than the top-five summaries on a program board. It applies
 the program method's same production/trajectory/opportunity signal, copies the
 baseline evidence, and totals only official regular-season NHL stints after the
 baseline season through the declared outcome season. Missing career history or
-TOI fails adaptation instead of becoming a zero-value outcome. Optional player
-performance must arrive as an explicit 0..100 score with its named basis.
+TOI fails adaptation instead of becoming a zero-value outcome. Supplied player
+performance must arrive as a complete v2 authority with an explicit method,
+horizon, component evidence, and 0..100 score.
 
 The application surface is `icelines icecast prospect-conversion`. It accepts
 the same repeatable frozen league-discovery, career-discovery, and study inputs
 as the program board, plus `--career-history`, `--baseline-season`, and
 `--through-season`. An optional `--performance` document must use
-`prospect_conversion_performance.v1`. Without sufficient performance coverage,
-the command still emits the complete board and typed rank blockers but does not
-manufacture organization ranks.
+`prospect_conversion_performance.v2`. When omitted, the command derives the
+document from `--career-history`; `--performance-out` writes it separately.
+Without sufficient performance coverage, the command still emits the complete
+board and typed rank blockers but does not manufacture organization ranks.
 
 Each player retains baseline season and confidence, outcome season, arrival,
 role, performance, realized value, conversion delta, efficiency index,
-established-player state, disposition, and evidence URLs. Organization rows
+established-player state, disposition, evidence URLs, and a typed comparison
+class: `expected_hit`, `breakout`, `miss`, or `developing`. The labels compare
+the frozen baseline and realized value against a disclosed 60-point threshold;
+they are historical comparison buckets, not scouting verdicts. Organization rows
 publish converted and established counts, retained and traded counts, aggregate
 baseline and realized scores, baseline confidence, coverage, efficiency, an
-optional rank, and typed rank blockers.
+optional rank, class counts, and typed rank blockers.
 Trade or retention status does not add value until a separate sourced return
 model exists.
 
@@ -335,8 +361,16 @@ baseline denominator floor. A program also needs at least five players, 0.50
 mean baseline confidence, and 0.80 outcome coverage to receive a rank. Programs
 that miss any floor remain visible with the precise blockers. These are
 transparent IceLines cohort rules, not a claim that the organization caused an
-individual result. Official historical outcome and baseline-study adapters
-remain the next acquisition layer over this core primitive.
+individual result.
+
+The July 2026 2022-23-to-2025-26 proof covered all 247 frozen players and all 32
+organizations from official landing histories. It produced complete
+performance authority and made 19 organizations rankable; the remaining 13
+were held out only by cohort-size or baseline-confidence floors. The Rangers'
+five-player slice remained unranked for 0.44 baseline confidence, and Seattle's
+three-player slice remained unranked for insufficient cohort size. Those rows
+are useful side-by-side validation examples precisely because their rank
+blockers remain visible.
 
 On the July 2026 all-organization proof, Seattle ranked first at all three
 default boundaries; its score ranged only from 56.04 to 57.05. The Rangers

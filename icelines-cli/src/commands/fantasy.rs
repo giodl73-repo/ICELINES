@@ -1129,8 +1129,8 @@ pub async fn run_season_sim(args: SeasonSimArgs) -> anyhow::Result<()> {
             ),
             (
                 "high-chaos",
-                args.injury_rate.max(0.003).min(1.0),
-                args.trade_probability.max(0.35).min(1.0),
+                args.injury_rate.clamp(0.003, 1.0),
+                args.trade_probability.clamp(0.35, 1.0),
                 args.opponent_pickup_accuracy,
                 args.pickup_reserve,
                 !args.strict_pickup_reserve,
@@ -1592,6 +1592,7 @@ pub async fn run_schedule_edge(args: ScheduleEdgeArgs) -> anyhow::Result<()> {
 }
 
 /// Rank the marked roster by legal usable starts across the final fantasy playoff weeks.
+#[allow(clippy::too_many_arguments)]
 pub async fn run_playoff_portfolio(
     rounds: Option<usize>,
     start: Option<NaiveDate>,
@@ -2282,6 +2283,7 @@ pub async fn run_matchup(
 }
 
 /// Build the points-mode pre-week matchup strategy war-room view.
+#[allow(clippy::too_many_arguments)]
 pub async fn run_matchup_plan(
     week: NaiveDate,
     team_override: Option<String>,
@@ -4283,6 +4285,7 @@ pub async fn run_injury_plan(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run_roster_card(
     date: Option<String>,
     league_override: Option<String>,
@@ -4406,6 +4409,7 @@ fn print_injury_plan(plan: &FantasyInjuryPlanView) {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run_morning(
     date: Option<String>,
     at: Option<String>,
@@ -4730,6 +4734,7 @@ fn load_week_budget(
     .map_err(anyhow::Error::msg)
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn build_weekly_pickups_view(
     db: &FantasyDb,
     league: &LeagueRow,
@@ -4782,7 +4787,7 @@ async fn build_weekly_pickups_view(
             .ok_or_else(|| anyhow::anyhow!("07:00 local time is ambiguous on {evaluation_date}"))?
             .with_timezone(&Utc),
     );
-    let budget = load_week_budget(&db, &league.id, &rules, evaluation_time)?;
+    let budget = load_week_budget(db, &league.id, &rules, evaluation_time)?;
     let user_team = if let Some(team) = team_override {
         require_team(db, &league.id, team)?
     } else {
@@ -5385,6 +5390,7 @@ fn parse_sleeper_position(value: &str) -> anyhow::Result<Position> {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run_draft_board(
     taken_file: Option<PathBuf>,
     eligibility_file: Option<PathBuf>,
@@ -6550,6 +6556,7 @@ fn trade_roster_missing_slots(
 }
 
 /// Evaluate or atomically execute a one-for-one or comma-separated package trade.
+#[allow(clippy::too_many_arguments)]
 pub async fn run_trade(
     player1_q: String,
     to_team_name: String,

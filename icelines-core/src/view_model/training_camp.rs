@@ -683,7 +683,7 @@ pub fn build_training_camp_lineup_set(
     forecast: &TrainingCampForecastView,
     max_branches: usize,
 ) -> Result<TrainingCampLineupSetView, String> {
-    if input.team.trim().to_ascii_uppercase() != forecast.team.trim().to_ascii_uppercase()
+    if !input.team.trim().eq_ignore_ascii_case(forecast.team.trim())
         || input.season != forecast.season
     {
         return Err("training-camp input and forecast identify different teams or seasons".into());
@@ -1385,12 +1385,11 @@ pub fn simulate_training_camp(
                 f64::from(scratch_counts[index]) / probability_denominator;
             let mut displaced_incumbents = displacements
                 .iter()
-                .filter_map(|((prospect, incumbent), count)| {
-                    (*prospect == index).then(|| TrainingCampDisplacementView {
-                        player_id: input.players[*incumbent].player_id,
-                        display_name: input.players[*incumbent].display_name.clone(),
-                        probability: f64::from(*count) / probability_denominator,
-                    })
+                .filter(|((prospect, _), _)| *prospect == index)
+                .map(|((_, incumbent), count)| TrainingCampDisplacementView {
+                    player_id: input.players[*incumbent].player_id,
+                    display_name: input.players[*incumbent].display_name.clone(),
+                    probability: f64::from(*count) / probability_denominator,
                 })
                 .collect::<Vec<_>>();
             displaced_incumbents.sort_by(|a, b| {

@@ -829,6 +829,7 @@ impl FantasyDb {
             .context("list platform eligibility collect")
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn record_acquisition(
         &self,
         league_id: &str,

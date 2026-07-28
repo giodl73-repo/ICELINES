@@ -1,12 +1,8 @@
 use crate::commands::output::Format;
-use crate::config::Config;
 use crate::render::terminal::render_rank_table;
-use icelines_core::model::Season;
 use icelines_core::scoring::sort_views_by_pace;
 use icelines_core::season_stats::SeasonType;
 use icelines_core::{position::PositionResolver, Position};
-use icelines_fetch::snapshot::SnapshotStore;
-use icelines_fetch::stats_loader::load_into_repo;
 
 pub async fn run(
     top: usize,
@@ -25,18 +21,12 @@ pub async fn run(
     // Hart.5c.7: single load + view-based path for both Table and
     // JSON/CSV outputs. The legacy load_all_players() / &[Player]
     // bridge is gone.
-    let cfg = Config::load()?;
-    let season_u32: u32 = cfg
-        .season_str()
-        .parse()
-        .map_err(|_| anyhow::anyhow!("season '{}' is not a YYYYZZZZ id", cfg.season_str()))?;
-    let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = load_into_repo(Season(season_u32), SeasonType::Regular, &store)
-        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))?;
+    let (outcome, season, _) =
+        crate::commands::players::load_repo_for_season(None, Some(SeasonType::Regular))?;
 
     let mut views: Vec<_> = outcome
         .repo
-        .skaters(Season(season_u32), SeasonType::Regular)
+        .skaters(season, SeasonType::Regular)
         .filter(|v| pos_filter.is_none_or(|p| v.position() == p))
         .filter(|v| v.is_rankable())
         .collect();

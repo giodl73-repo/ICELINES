@@ -7,7 +7,7 @@
 //! Each snapshot is immutable after sealing, integrity-verified on every read,
 //! and linked to its parent snapshot via a provenance key chain.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
@@ -56,6 +56,9 @@ pub enum SnapshotError {
         "stats snapshot '{name}' requires parent rosters snapshot '{parent}' which is missing"
     )]
     MissingParent { name: String, parent: String },
+
+    #[error("snapshot parent chain contains a cycle at '{name}'")]
+    ParentCycle { name: String },
 
     #[error("no active snapshot — run `icelines fetch` first")]
     NoActiveSnapshot,
@@ -486,6 +489,7 @@ impl SnapshotStore {
     /// Create a snapshot whose upstream evidence predates local ingestion.
     /// The caller is responsible for validating the evidence timestamp and
     /// source before using this lower-level storage operation.
+    #[allow(clippy::too_many_arguments)]
     pub fn create_with_evidence(
         &self,
         name: &str,
@@ -496,6 +500,11 @@ impl SnapshotStore {
         evidence_at: Option<String>,
         evidence_source: Option<String>,
     ) -> Result<(), SnapshotError> {
+        if parent_key.as_deref() == Some(name) {
+            return Err(SnapshotError::ParentCycle {
+                name: name.to_owned(),
+            });
+        }
         let dir = self.snapshot_dir(name);
         std::fs::create_dir_all(dir.join(tier.dir_name()))?;
 
@@ -588,7 +597,11 @@ impl SnapshotStore {
             .to_owned();
 
         let mut name = active.clone();
+        let mut visited = HashSet::new();
         loop {
+            if !visited.insert(name.clone()) {
+                return Err(SnapshotError::ParentCycle { name });
+            }
             let meta = self.load_meta(&name)?;
             let tier_dir = self.snapshot_dir(&name).join(tier.dir_name());
             if tier_dir.exists() && meta.sealed {
@@ -629,7 +642,11 @@ impl SnapshotStore {
             .to_owned();
 
         let mut name = active.clone();
+        let mut visited = HashSet::new();
         loop {
+            if !visited.insert(name.clone()) {
+                return Err(SnapshotError::ParentCycle { name });
+            }
             let meta = self.load_meta(&name)?;
             let tier_dir = self.snapshot_dir(&name).join(tier.dir_name());
             if tier_dir.exists() && meta.sealed && meta.season == requested_season {
@@ -1969,6 +1986,62 @@ mod tests {
             .unwrap();
         let manifest = store.load_manifest().unwrap();
         assert_eq!(manifest.snapshots.len(), 2);
+    }
+
+    #[test]
+    fn l0_snapshot_create_rejects_self_parent() {
+        let (_dir, store) = store();
+        let error = store
+            .create(
+                "self-parent",
+                "20252026",
+                SnapshotTier::Ahl,
+                Some("self-parent".to_owned()),
+                "2026-07-27",
+            )
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            SnapshotError::ParentCycle { name } if name == "self-parent"
+        ));
+    }
+
+    #[test]
+    fn l0_snapshot_chain_read_fails_fast_on_existing_cycle() {
+        let (_dir, store) = store();
+        store
+            .create("a", "20252026", SnapshotTier::Ahl, None, "2026-07-27")
+            .unwrap();
+        store.seal("a").unwrap();
+        store
+            .create(
+                "b",
+                "20252026",
+                SnapshotTier::Ahl,
+                Some("a".to_owned()),
+                "2026-07-27",
+            )
+            .unwrap();
+        store.seal("b").unwrap();
+        store
+            .create(
+                "a",
+                "20252026",
+                SnapshotTier::Ahl,
+                Some("b".to_owned()),
+                "2026-07-27",
+            )
+            .unwrap();
+        store.seal("a").unwrap();
+
+        let error = store
+            .find_snapshot_for_tier(&SnapshotTier::Stats)
+            .unwrap_err();
+        assert!(matches!(error, SnapshotError::ParentCycle { name } if name == "a"));
+        let error = store
+            .find_snapshot_for_tier_and_season(&SnapshotTier::Stats, "20252026")
+            .unwrap_err();
+        assert!(matches!(error, SnapshotError::ParentCycle { name } if name == "a"));
     }
 
     #[test]

@@ -2236,42 +2236,20 @@ struct GoalieRow {
 
 pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     use icelines_core::stats_repository::PlayerView;
-    use icelines_fetch::snapshot::SnapshotStore;
 
     if args.json && args.csv {
         bail!("--json and --csv are mutually exclusive");
     }
 
-    let cfg = Config::load()?;
-    let season = match args.season.as_deref() {
-        Some(s) => {
-            crate::commands::players::validate_bundled_season(s)?;
-            s.to_owned()
-        }
-        None => cfg.season_str(),
-    };
-    let season_u32: u32 = season
-        .parse()
-        .map_err(|_| anyhow::anyhow!("season '{season}' is not a YYYYZZZZ id"))?;
-    let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = icelines_fetch::stats_loader::load_into_repo(
-        icelines_core::model::Season(season_u32),
-        args.season_type,
-        &store,
-    )
-    .map_err(|e| {
-        let hint = match args.season_type {
-            icelines_core::season_stats::SeasonType::Regular => "Try: icelines fetch goalies",
-            icelines_core::season_stats::SeasonType::Playoff => {
-                "Try: icelines fetch goalies --type playoff"
-            }
-        };
-        anyhow::anyhow!("{e}\n  {hint}")
-    })?;
+    let (outcome, season, _) = crate::commands::players::load_repo_for_season(
+        args.season.as_deref(),
+        Some(args.season_type),
+    )?;
+    let season_u32 = season.0;
 
     let mut views: Vec<PlayerView<'_>> = outcome
         .repo
-        .goalies(icelines_core::model::Season(season_u32), args.season_type)
+        .goalies(season, args.season_type)
         .filter(|v| v.gp() >= args.min_gp)
         .collect();
 

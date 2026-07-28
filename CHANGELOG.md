@@ -1,5 +1,69 @@
 # IceLines Changelog
 
+## v0.26.0 - 2026-07-27 - The Rink intelligence release
+
+Headline: **IceLines now connects real-team season simulation, fantasy roster
+decisions, organization depth, and prospect development through shared,
+evidence-aware hockey primitives.**
+
+### Forecasting, scenarios, and cards
+
+- Added explained 84-game 2026-27 forecasts for all 32 teams, seeded league
+  simulation, standings/playoff/Cup/streak outcomes, schedule fatigue and travel,
+  hunt/spoiler behavior, injuries, goalie variance, roster events, and the
+  March 5, 2027 trade deadline.
+- Added historical rolling replay, cutoff-conditioned calibration, scenario
+  realization buckets, automatic personnel branches, paired trade
+  counterfactuals, line-combination chemistry, adaptive coaching decisions,
+  special teams, matchup roles, and management-behavior evidence.
+- Added the UI-neutral card system so CLI, web, TUI, reports, fantasy, and
+  simulation can consume the same prognosis and comparison documents without
+  recomputing hockey logic.
+
+### Fantasy war room
+
+- Added league scoring and roster-shape contracts, Yahoo import, weekly schedule
+  classes, sparse-day and overlap analysis, draft and gap recommendations,
+  same-day pickups, waiver timing, four-move budgets, IR/IR+ contingencies,
+  goalie planning, matchup/playoff portfolios, trades, daily deltas, season
+  simulation, and injury-aware morning decisions.
+- Added shared Rink navigation and product language across The Insider, The
+  Depth Chart, The Factory, The Blender, The Bench, and related surfaces.
+
+### NHL/AHL organization and prospect intelligence
+
+- Added NHL/AHL organization lineup forecasts, affiliation and preseason
+  rollover models, league-wide official AHL acquisition, reviewed identity
+  crosswalks and exception workflows, goalie development, multi-league career
+  studies, hidden-gem and hype-risk lenses, reserve-system graduation rules,
+  32-team prospect program ranks, sensitivity, and annual history.
+- Added frozen-cohort prospect conversion calibration and canonical
+  `prospect_conversion_performance.v2`: separate forward, defense, and goalie
+  NHL-quality models, official landing provenance, sample-size confidence,
+  reproducible performance artifacts, and expected-hit/breakout/miss/developing
+  comparisons. The 2022-23 replay covered 247 players and all 32 organizations.
+
+### Platform and evidence
+
+- Expanded the MDI TUI and responsive web workbench, Signals source authority,
+  analytics-cache handoffs, scoring-strength labels, records, awards, streaks,
+  MoneyPuck historical xG, Stathead packs, data-status JSON, cap projections,
+  setup safety, and release packaging/checksums.
+- Adopted FLETCH acquisition/cache primitives and bounded SLICE query lowering,
+  kept unsupported historical shifts explicitly locked, moved CI actions to
+  Node 24, and retained audit, smoke, parity, and artifact verification gates.
+- Fixed snapshot parent cycles that could make historical commands spin before
+  bundled fallback. New self-parent snapshots are rejected, existing cycles
+  fail fast, and each release-smoke command now has a bounded timeout.
+- Unified implicit season loading across player, goalie, rank, group, export,
+  projection, scouting, linemate, transaction, and cap surfaces: an installed
+  live snapshot still wins, otherwise preseason builds use the newest completed
+  bundle; explicit season requests remain strict.
+- Removed a stale CI reference to the retired PROOF smoke target and updated
+  the workspace for Rust 1.95's warnings-as-errors lint set.
+
+---
+
 ## v0.25.0 - 2026-05-13 - Phase Prince of Wales + Jim Gregory closeout
 
 Headline: **Prince of Wales is closed as the visual-system phase: IceLines now

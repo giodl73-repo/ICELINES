@@ -19,7 +19,8 @@ pub fn load_repo_for_season(
     season_type: Option<SeasonType>,
 ) -> anyhow::Result<(LoadOutcome, Season, SeasonType)> {
     let cfg = Config::load()?;
-    let resolved_season = match season {
+    let explicit_season = season.is_some();
+    let mut resolved_season = match season {
         Some(s) => {
             validate_bundled_season(s)?;
             s.to_owned()
@@ -29,17 +30,31 @@ pub fn load_repo_for_season(
     let season_u32: u32 = resolved_season
         .parse()
         .map_err(|_| anyhow::anyhow!("season '{resolved_season}' is not a YYYYZZZZ id"))?;
-    let season = Season(season_u32);
+    let mut resolved = Season(season_u32);
     let ty = season_type.unwrap_or(SeasonType::Regular);
     let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = load_into_repo(season, ty, &store).map_err(|e| {
-        let hint = match ty {
-            SeasonType::Regular => "Try: icelines fetch all",
-            SeasonType::Playoff => "Try: icelines fetch stats --type playoff",
-        };
-        anyhow::anyhow!("{e}\n  {hint}")
-    })?;
-    Ok((outcome, season, ty))
+    let outcome = match load_into_repo(resolved, ty, &store) {
+        Ok(outcome) => outcome,
+        Err(_) if !explicit_season && !BUNDLED_SEASONS.contains(&resolved_season.as_str()) => {
+            resolved_season = BUNDLED_SEASONS[0].to_owned();
+            resolved = Season(
+                resolved_season
+                    .parse()
+                    .expect("bundled season identifiers are validated at build time"),
+            );
+            load_into_repo(resolved, ty, &store).map_err(|error| load_error(error, ty))?
+        }
+        Err(error) => return Err(load_error(error, ty)),
+    };
+    Ok((outcome, resolved, ty))
+}
+
+fn load_error(error: impl std::fmt::Display, season_type: SeasonType) -> anyhow::Error {
+    let hint = match season_type {
+        SeasonType::Regular => "Try: icelines fetch all",
+        SeasonType::Playoff => "Try: icelines fetch stats --type playoff",
+    };
+    anyhow::anyhow!("{error}\n  {hint}")
 }
 
 /// Reject `--season` values that aren't in the bundled list. Empty string and
@@ -76,14 +91,7 @@ pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
     // Hart.5b2: refactored off Vec<Player> onto PlayerView via
     // load_into_repo + apply_views. Identity bio access (birth_date)
     // goes through view.identity.bio per the new model.
-    let cfg = Config::load()?;
-    let season_u32: u32 = cfg
-        .season_str()
-        .parse()
-        .map_err(|_| anyhow::anyhow!("season '{}' is not a YYYYZZZZ id", cfg.season_str()))?;
-    let store = SnapshotStore::new(cfg.snapshot_dir());
-    let outcome = load_into_repo(Season(season_u32), SeasonType::Regular, &store)
-        .map_err(|e| anyhow::anyhow!("{e}\n  Try: icelines fetch all"))?;
+    let (outcome, season, _) = load_repo_for_season(None, Some(SeasonType::Regular))?;
 
     let mut filter = PlayerFilter::new();
     if let Some(p) = args.pos {
@@ -102,11 +110,7 @@ pub async fn run(args: PlayersArgs) -> anyhow::Result<()> {
     filter.ppg_min = args.ppg_min;
     filter.gp_min = args.gp_min;
 
-    let matched = filter.apply_views(
-        outcome
-            .repo
-            .skaters(Season(season_u32), SeasonType::Regular),
-    );
+    let matched = filter.apply_views(outcome.repo.skaters(season, SeasonType::Regular));
     let total = matched.len();
     let take = total.min(args.top);
 

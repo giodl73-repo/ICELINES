@@ -774,7 +774,7 @@ fn playoff_round_count(playoff_teams: usize) -> usize {
 }
 
 fn fantasy_week_matchups(team_count: usize, week: usize) -> Vec<(usize, usize)> {
-    let bracket_count = if team_count % 2 == 0 {
+    let bracket_count = if team_count.is_multiple_of(2) {
         team_count
     } else {
         team_count + 1
@@ -1056,6 +1056,7 @@ fn slot_accepts(slot: FantasyActiveSlotKind, positions: &[Position]) -> bool {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn make_weekly_pickup_with_values(
     team_index: usize,
     date: NaiveDate,
@@ -1342,6 +1343,7 @@ fn clear_expired_waivers(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn make_trade(
     a: usize,
     date: NaiveDate,

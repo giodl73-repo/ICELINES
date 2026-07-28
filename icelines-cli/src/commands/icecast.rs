@@ -12,9 +12,9 @@ use icelines_core::{
     build_isolated_scenario_impact_as_of, build_line_combination_forecast,
     build_organization_lineup_forecast, build_prospect_conversion_board,
     build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_program_board_with_goalies, build_prospect_program_history,
-    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
-    build_team_game_forecast, build_team_game_forecast_validation,
+    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
+    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
+    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -269,6 +269,7 @@ pub fn run_behavior_research(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn run_camp(
     input_path: PathBuf,
     trials: Option<u32>,
@@ -731,6 +732,7 @@ pub fn run_affiliate(input_path: PathBuf, json: bool, out: Option<PathBuf>) -> a
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run_affiliate_identities(
     snapshot_path: PathBuf,
     team: String,
@@ -1216,6 +1218,7 @@ fn run_affiliate_review_routine_league(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn run_affiliate_review_reject(
     crosswalk_path: PathBuf,
     provider_player_ids: Vec<String>,
@@ -4610,6 +4613,7 @@ pub fn run_prospect_conversion(
     baseline_season: u32,
     through_season: u32,
     performance_path: Option<PathBuf>,
+    performance_out: Option<PathBuf>,
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
@@ -4622,7 +4626,7 @@ pub fn run_prospect_conversion(
         )
     })?;
     let histories = store.histories.into_values().collect::<Vec<_>>();
-    let performance = performance_path
+    let supplied_performance = performance_path
         .as_deref()
         .map(|path| {
             read_icecast_json::<ProspectConversionPerformanceDocument>(
@@ -4631,22 +4635,40 @@ pub fn run_prospect_conversion(
             )
         })
         .transpose()?;
-    if performance
+    if supplied_performance
         .as_ref()
         .is_some_and(|document| document.schema != PROSPECT_CONVERSION_PERFORMANCE_SCHEMA)
     {
         bail!("invalid prospect conversion performance schema");
     }
-    let performance_scores = performance
-        .as_ref()
-        .map_or(&[][..], |document| document.scores.as_slice());
+    let performance = match supplied_performance {
+        Some(document) => document,
+        None => build_prospect_nhl_performance_document(
+            &studies,
+            &goalie_studies,
+            &histories,
+            baseline_season,
+            through_season,
+        )
+        .map_err(anyhow::Error::msg)?,
+    };
+    if performance.baseline_season != baseline_season
+        || performance.through_season != through_season
+        || performance.players != performance.scores.len()
+    {
+        bail!("prospect conversion performance horizon or player count mismatch");
+    }
+    if let Some(path) = performance_out.as_deref() {
+        let body = format!("{}\n", serde_json::to_string_pretty(&performance)?);
+        write_icecast_file(path, body.as_bytes(), "IceCast NHL performance authority")?;
+    }
     let input = adapt_prospect_conversion_input(
         &studies,
         &goalie_studies,
         &histories,
         baseline_season,
         through_season,
-        performance_scores,
+        &performance.scores,
         ProspectConversionConfig::default(),
     )
     .map_err(anyhow::Error::msg)?;
@@ -5646,15 +5668,18 @@ fn render_prospect_conversion(view: &ProspectConversionBoardView) -> String {
             .take(3)
             .map(|player| {
                 format!(
-                    "{} {:.1} realized / {:+.1} delta",
-                    player.player, player.realized_value_score, player.conversion_delta
+                    "{} {:.1} realized / {:+.1} delta / {:?}",
+                    player.player,
+                    player.realized_value_score,
+                    player.conversion_delta,
+                    player.result_class
                 )
             })
             .collect::<Vec<_>>()
             .join(" · ");
         let _ = writeln!(
             out,
-            "{} {} · efficiency {:.1} · realized {:.1} vs baseline {:.1} ({:+.1}) · {} established / {} players · coverage {:.0}%",
+            "{} {} · efficiency {:.1} · realized {:.1} vs baseline {:.1} ({:+.1}) · {} established / {} players · {} hits / {} breakouts / {} misses · coverage {:.0}%",
             rank,
             program.organization,
             program.efficiency_index,
@@ -5663,6 +5688,9 @@ fn render_prospect_conversion(view: &ProspectConversionBoardView) -> String {
             program.conversion_delta,
             program.established_players,
             program.players,
+            program.expected_hits,
+            program.breakouts,
+            program.misses,
             program.outcome_coverage * 100.0
         );
         if !leaders.is_empty() {
@@ -6079,7 +6107,7 @@ fn select_latest_cdx_capture(
                 .then_some((timestamp, captured_at))
         })
         .collect::<Vec<_>>();
-    candidates.sort_by(|a, b| b.1.cmp(&a.1));
+    candidates.sort_by_key(|row| std::cmp::Reverse(row.1));
     Ok(candidates
         .first()
         .map(|(timestamp, _)| OpeningRosterArchiveCapture {

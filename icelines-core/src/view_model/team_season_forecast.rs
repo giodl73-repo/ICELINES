@@ -2957,7 +2957,7 @@ fn active_team_strength_delta(
             active_events.contains(&event.id)
                 && event.team.eq_ignore_ascii_case(team)
                 && date >= event.effective_date
-                && event.end_date.map_or(true, |end| date <= end)
+                && event.end_date.is_none_or(|end| date <= end)
         })
         .map(|event| event.strength_delta)
         .sum()

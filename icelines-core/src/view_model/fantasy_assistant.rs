@@ -1623,6 +1623,7 @@ pub struct FantasyMorningBriefingView {
     pub warnings: Vec<String>,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn build_fantasy_morning_briefing(
     generated_at: DateTime<Utc>,
     evaluated_at: DateTime<Utc>,

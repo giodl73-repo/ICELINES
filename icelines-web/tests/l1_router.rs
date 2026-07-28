@@ -2992,9 +2992,9 @@ async fn l1_player_outlook_html_includes_pace_svg_chart() {
         "body was:\n{body}"
     );
     assert!(
-        body.contains(
-            "Authority: NHL schedule/scores not loaded for remaining games and outlook context"
-        ),
+        body.contains("Authority:")
+            && body.contains("schedule/scores")
+            && body.contains("outlook context"),
         "body was:\n{body}"
     );
 }

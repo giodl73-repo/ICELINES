@@ -198,7 +198,7 @@ pub fn build_shift_overlap_report(
             }
         })
         .collect::<Vec<_>>();
-    pairs.sort_by(|a, b| b.shared_seconds.cmp(&a.shared_seconds));
+    pairs.sort_by_key(|row| std::cmp::Reverse(row.shared_seconds));
     let mut trios = trio_seconds
         .into_iter()
         .map(|(player_ids, shared_seconds)| ShiftOverlapTrioRow {
@@ -207,7 +207,7 @@ pub fn build_shift_overlap_report(
             shared_seconds,
         })
         .collect::<Vec<_>>();
-    trios.sort_by(|a, b| b.shared_seconds.cmp(&a.shared_seconds));
+    trios.sort_by_key(|row| std::cmp::Reverse(row.shared_seconds));
     Ok(ShiftOverlapReport {
         schema: SHIFT_OVERLAP_SCHEMA.to_owned(),
         source: SHIFT_CHART_SOURCE.to_owned(),

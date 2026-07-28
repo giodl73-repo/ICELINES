@@ -425,6 +425,7 @@ pub fn build_fantasy_category_matchup(
     })
 }
 
+#[allow(clippy::type_complexity)]
 fn validate_snapshot(
     snapshot: &FantasyCategorySnapshotInput,
     week_start: NaiveDate,
@@ -544,6 +545,7 @@ fn add_components(current: Option<&(f64, f64)>, remaining: Option<&(f64, f64)>) 
     (current.0 + remaining.0, current.1 + remaining.1)
 }
 
+#[allow(clippy::type_complexity)]
 fn project_team(
     input: &FantasyCategoryTeamInput,
     week_start: NaiveDate,

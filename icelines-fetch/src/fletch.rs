@@ -407,6 +407,7 @@ pub fn fletch_source_handoff_report(season: &str, season_type: &str) -> FletchSo
                     metadata(definition, "acquisition_mode").as_str(),
                     "generic-batch-http-cacheline-after-schedule"
                         | "generic-batch-http-cacheline-after-player-set"
+                        | "generic-batch-http-cacheline-after-provider-roster"
                         | "generic-batch-http-cacheline-after-season"
                         | "generic-window-batch-http-cacheline-after-season"
                 )

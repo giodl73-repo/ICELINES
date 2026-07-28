@@ -1051,6 +1051,8 @@ icelines icecast prospect-program --league-discovery league-discovery.json --jso
 icelines icecast prospect-program --league-discovery league-discovery.json --study college-prospect-study.json --prior-board prior-prospect-programs.json --out prospect-programs.txt
 icelines icecast prospect-program-sensitivity --league-discovery league-discovery.json --thresholds 25,50,82 --json --out prospect-program-sensitivity.json
 icelines icecast prospect-program-history --board prospect-programs-2024.json --board prospect-programs-2025.json --board prospect-programs-2026.json --json --out prospect-program-history.json
+icelines icecast prospect-conversion --league-discovery frozen-2022-23-prospects.json --career-history ~/.icelines/career_history.json --baseline-season 20222023 --through-season 20252026 --performance-out nhl-performance.json --json --out prospect-conversion.json
+icelines icecast prospect-conversion --league-discovery frozen-2022-23-prospects.json --career-history ~/.icelines/career_history.json --baseline-season 20222023 --through-season 20252026 --performance nhl-performance.json --json --out replayed-conversion.json
 icelines icecast prospect-board --study firkus-study.json
 icelines icecast prospect-board --study firkus-study.json --study another-study.json --json --out prospect-board.json
 icelines icecast organization --input organization.json --json --out the-system.json

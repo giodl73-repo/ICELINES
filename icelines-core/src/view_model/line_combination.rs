@@ -802,7 +802,7 @@ fn forward_slot_position(index: usize) -> Position {
 
 fn defense_slot(lineup: &TeamLineupProjectionView, index: usize) -> Option<&TeamLineupPlayerView> {
     let pair = &lineup.defense_pairs[index / 2];
-    if index % 2 == 0 {
+    if index.is_multiple_of(2) {
         pair.left.as_ref()
     } else {
         pair.right.as_ref()
@@ -814,7 +814,7 @@ fn defense_slot_mut(
     index: usize,
 ) -> &mut Option<TeamLineupPlayerView> {
     let pair = &mut lineup.defense_pairs[index / 2];
-    if index % 2 == 0 {
+    if index.is_multiple_of(2) {
         &mut pair.left
     } else {
         &mut pair.right

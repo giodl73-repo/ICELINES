@@ -4,7 +4,7 @@
 //! User pushback after Wave 13 was correct: parsing + IR-shape
 //! tests verify the surface of the grammar but NOT that queries
 //! return the right players. This wave closes that gap by loading
-//! the bundled current season + running each filter against a
+//! the bundled 2025-26 season + running each filter against a
 //! curated set of well-known players + asserting the matched set
 //! contains/excludes specific names.
 //!
@@ -144,7 +144,9 @@ const SAMPLES: &[Sample] = &[
     // ground-truth tests once a goalie-aware loader is wired in.
 ];
 
-const CURRENT_SEASON: u32 = icelines_core::CURRENT_SEASON;
+// These age expectations are authored against 2025-26. Binding the fixture to
+// CURRENT_SEASON changes its ages and availability during a season rollover.
+const CURRENT_SEASON: u32 = 20252026;
 const PREV_SEASON: u32 = 20242025;
 const SEASON_BEFORE: u32 = 20232024;
 

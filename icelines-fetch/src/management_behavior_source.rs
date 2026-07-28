@@ -258,10 +258,12 @@ fn build_season_evidence(
             .filter(|p| p.team == *team)
             .collect::<Vec<_>>();
         team_players.sort_by_key(|p| std::cmp::Reverse(p.games));
-        let mut row = TeamCounts::default();
-        row.skaters = team_players.len() as u32;
-        row.player_games = team_players.iter().map(|p| p.games).sum();
-        row.continuity_games = team_players.iter().take(18).map(|p| p.games).sum();
+        let mut row = TeamCounts {
+            skaters: team_players.len() as u32,
+            player_games: team_players.iter().map(|p| p.games).sum(),
+            continuity_games: team_players.iter().take(18).map(|p| p.games).sum(),
+            ..TeamCounts::default()
+        };
         let cutoff =
             NaiveDate::from_ymd_opt((season / 10_000) as i32, 10, 1).expect("valid season date");
         for player in &team_players {

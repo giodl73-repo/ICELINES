@@ -1069,11 +1069,9 @@ pub fn build_ahl_identity_exception_board(
 }
 
 fn coverage_basis_points(numerator: usize, denominator: usize) -> u16 {
-    if denominator == 0 {
-        0
-    } else {
-        ((numerator * 10_000 + denominator / 2) / denominator) as u16
-    }
+    (numerator * 10_000 + denominator / 2)
+        .checked_div(denominator)
+        .unwrap_or(0) as u16
 }
 
 /// Project a crosswalk into a read-only, UI-neutral inspection view. Filtering
