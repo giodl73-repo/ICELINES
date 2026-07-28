@@ -28,6 +28,7 @@ pub mod management_behavior_source;
 pub mod manifest;
 pub mod moneypuck;
 pub mod nhl_api;
+pub mod organization_window_history;
 pub mod playoffs_bundle;
 pub mod prospect_career;
 pub mod prospect_discovery;
@@ -72,6 +73,12 @@ pub use management_behavior_source::{
 };
 pub use moneypuck::{parse_csv as parse_moneypuck_csv, MoneyPuckStats};
 pub use nhl_api::NhlApiClient;
+pub use organization_window_history::{
+    build_organization_window_standings_snapshot, historical_franchise_organization,
+    OrganizationWindowHistoryError, OrganizationWindowStandingRow,
+    OrganizationWindowStandingsSnapshot, NHL_STANDINGS_SOURCE_BASE,
+    ORGANIZATION_WINDOW_HISTORICAL_IDENTITY_VERSION, ORGANIZATION_WINDOW_STANDINGS_SCHEMA,
+};
 pub use playoffs_bundle::PlayoffsBundle;
 pub use prospect_career::{
     build_prospect_career_context_draft, build_prospect_career_discovery,
