@@ -1101,6 +1101,7 @@ icelines icecast window-history --input october.json --input january.json --inpu
 icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --out window-impact.json
 icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --authority trade-authority.json --out attributed-window-impact.json
 icelines icecast window-calibrate --target next-season-organization-value --origin 2023-origin.json --origin 2024-origin.json --origin 2025-origin.json --minimum-origins 3 --out rolling-calibration.json
+icelines icecast window-evaluate --target next-season-organization-value --origin 2022-train.json --origin 2023-train.json --origin 2024-validation.json --origin 2025-retrospective-holdout.json --minimum-training-origins 2 --out split-evaluation.json
 powershell -ExecutionPolicy Bypass -File scripts/window-browser-review.ps1
 powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
 powershell -ExecutionPolicy Bypass -File scripts/verify-release-artifact.ps1 -ArtifactPath dist/release/icelines-windows-x86_64.zip

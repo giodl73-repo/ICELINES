@@ -1801,6 +1801,19 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Evaluate frozen training, validation, and retrospective-holdout origins.
+    #[command(name = "window-evaluate")]
+    WindowEvaluate {
+        #[arg(long)]
+        target: String,
+        /// Labeled origin document; repeat in any order.
+        #[arg(long = "origin", required = true, value_name = "PATH")]
+        origins: Vec<PathBuf>,
+        #[arg(long, default_value_t = 2)]
+        minimum_training_origins: usize,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Project one team from a sealed league forecast into `card_document.v1`.
     #[command(name = "season-card")]
     SeasonCard {
@@ -2341,6 +2354,31 @@ mod tui_surface_tests {
                     minimum_origins: 3,
                     ..
                 }) if origins.len() == 3
+            ));
+
+            let evaluation = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-evaluate",
+                "--target",
+                "next-season-value",
+                "--origin",
+                "2022-train.json",
+                "--origin",
+                "2023-train.json",
+                "--origin",
+                "2024-validation.json",
+                "--origin",
+                "2025-holdout.json",
+            ])
+            .expect("split Window evaluation should parse");
+            assert!(matches!(
+                evaluation.command,
+                Commands::Icecast(IceCastSubcommand::WindowEvaluate {
+                    origins,
+                    minimum_training_origins: 2,
+                    ..
+                }) if origins.len() == 4
             ));
 
             let report = Cli::try_parse_from([

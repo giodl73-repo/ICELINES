@@ -2404,6 +2404,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             minimum_origins,
             out,
         }) => commands::icecast::run_window_calibrate(target, origins, minimum_origins, out)?,
+        Commands::Icecast(IceCastSubcommand::WindowEvaluate {
+            target,
+            origins,
+            minimum_training_origins,
+            out,
+        }) => {
+            commands::icecast::run_window_evaluate(target, origins, minimum_training_origins, out)?
+        }
         Commands::Icecast(IceCastSubcommand::Backtest { inputs, json, out }) => {
             commands::icecast::run_backtest(inputs, json, out)?
         }

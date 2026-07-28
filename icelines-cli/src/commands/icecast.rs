@@ -62,8 +62,9 @@ use icelines_core::{
     PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };
 use icelines_core::{
-    calibrate_organization_window_rolling_origins, load_organization_window_profile_inventory,
-    rebase_organization_window_board, validate_organization_window_board,
+    calibrate_organization_window_rolling_origins, evaluate_organization_window_origins,
+    load_organization_window_profile_inventory, rebase_organization_window_board,
+    validate_organization_window_board, WindowCalibrationEvaluationOriginInput,
     WindowCalibrationOriginInput,
 };
 use icelines_fetch::{
@@ -3675,6 +3676,25 @@ pub fn run_window_calibrate(
         &calibration,
         out.as_deref(),
         "organization Window rolling calibration",
+    )
+}
+
+pub fn run_window_evaluate(
+    target: String,
+    origins: Vec<PathBuf>,
+    minimum_training_origins: usize,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let origins = origins
+        .iter()
+        .map(|path| read_icecast_json(path, "labeled organization Window evaluation origin"))
+        .collect::<anyhow::Result<Vec<WindowCalibrationEvaluationOriginInput>>>()?;
+    let evaluation =
+        evaluate_organization_window_origins(&target, &origins, minimum_training_origins)?;
+    write_window_json(
+        &evaluation,
+        out.as_deref(),
+        "organization Window split evaluation",
     )
 }
 

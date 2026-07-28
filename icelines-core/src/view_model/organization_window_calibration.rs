@@ -17,6 +17,9 @@ pub const ORGANIZATION_WINDOW_ROLLING_CALIBRATION_SCHEMA: &str =
     "organization_window_rolling_calibration.v1";
 pub const ORGANIZATION_WINDOW_ROLLING_CALIBRATION_JSON_SCHEMA: &str =
     include_str!("../../../design/schemas/organization_window_rolling_calibration.v1.schema.json");
+pub const ORGANIZATION_WINDOW_EVALUATION_SCHEMA: &str = "organization_window_evaluation.v1";
+pub const ORGANIZATION_WINDOW_EVALUATION_JSON_SCHEMA: &str =
+    include_str!("../../../design/schemas/organization_window_evaluation.v1.schema.json");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -133,6 +136,46 @@ pub struct OrganizationWindowRollingCalibrationView {
     pub fingerprint: String,
 }
 
+/// Frozen role assigned before outcomes are inspected. A retrospective
+/// holdout is useful regression evidence, but is deliberately not described as
+/// an untouched future holdout.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WindowCalibrationOriginRole {
+    Training,
+    Validation,
+    RetrospectiveHoldout,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WindowCalibrationEvaluationOriginInput {
+    pub role: WindowCalibrationOriginRole,
+    pub origin: WindowCalibrationOriginInput,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WindowCalibrationSplitView {
+    pub role: WindowCalibrationOriginRole,
+    pub origin_ids: Vec<String>,
+    pub overall: WindowCalibrationMetricView,
+    pub leakage_blocked: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationWindowEvaluationView {
+    pub schema: String,
+    pub target: String,
+    pub manifest_fingerprint: String,
+    pub training: WindowCalibrationSplitView,
+    pub validation: WindowCalibrationSplitView,
+    pub retrospective_holdout: WindowCalibrationSplitView,
+    pub development_calibration: OrganizationWindowRollingCalibrationView,
+    /// The headline status is determined only by the frozen holdout split.
+    pub claim_status: WindowCalibrationClaimStatus,
+    pub disclosures: Vec<String>,
+    pub fingerprint: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum OrganizationWindowCalibrationError {
     #[error("Window calibration target is empty")]
@@ -164,6 +207,14 @@ pub enum OrganizationWindowCalibrationError {
     },
     #[error("rolling Window calibration serialization failed: {0}")]
     Serialization(String),
+    #[error("Window evaluation requires at least {required} training origins; found {found}")]
+    InsufficientTrainingOrigins { required: usize, found: usize },
+    #[error("Window evaluation requires at least one validation origin")]
+    MissingValidationOrigin,
+    #[error("Window evaluation requires exactly one retrospective holdout; found {0}")]
+    InvalidHoldoutCount(usize),
+    #[error("Window evaluation origin roles are not chronological")]
+    NonChronologicalSplit,
 }
 
 pub fn calibrate_organization_window(
@@ -469,6 +520,197 @@ pub fn calibrate_organization_window_rolling_origins(
     };
     result.fingerprint = rolling_calibration_fingerprint(&result)?;
     Ok(result)
+}
+
+/// Evaluate a method with roles frozen at the origin boundary. Training and
+/// validation origins remain visible as development evidence, while the
+/// headline claim is computed exclusively from the retrospective holdout.
+pub fn evaluate_organization_window_origins(
+    target: &str,
+    origins: &[WindowCalibrationEvaluationOriginInput],
+    minimum_training_origins: usize,
+) -> Result<OrganizationWindowEvaluationView, OrganizationWindowCalibrationError> {
+    if target.trim().is_empty() {
+        return Err(OrganizationWindowCalibrationError::EmptyTarget);
+    }
+    let mut origin_ids = BTreeSet::new();
+    for labeled in origins {
+        if labeled.origin.origin_id.trim().is_empty()
+            || !origin_ids.insert(labeled.origin.origin_id.as_str())
+        {
+            return Err(OrganizationWindowCalibrationError::InvalidOrigin(
+                labeled.origin.origin_id.clone(),
+            ));
+        }
+    }
+    let required_training = minimum_training_origins.max(2);
+    let training_count = origins
+        .iter()
+        .filter(|row| row.role == WindowCalibrationOriginRole::Training)
+        .count();
+    if training_count < required_training {
+        return Err(
+            OrganizationWindowCalibrationError::InsufficientTrainingOrigins {
+                required: required_training,
+                found: training_count,
+            },
+        );
+    }
+    if !origins
+        .iter()
+        .any(|row| row.role == WindowCalibrationOriginRole::Validation)
+    {
+        return Err(OrganizationWindowCalibrationError::MissingValidationOrigin);
+    }
+    let holdout_count = origins
+        .iter()
+        .filter(|row| row.role == WindowCalibrationOriginRole::RetrospectiveHoldout)
+        .count();
+    if holdout_count != 1 {
+        return Err(OrganizationWindowCalibrationError::InvalidHoldoutCount(
+            holdout_count,
+        ));
+    }
+
+    let mut chronological = origins.iter().collect::<Vec<_>>();
+    chronological.sort_by(|left, right| {
+        (
+            left.origin.board.season,
+            left.origin.board.as_of,
+            left.origin.origin_id.as_str(),
+        )
+            .cmp(&(
+                right.origin.board.season,
+                right.origin.board.as_of,
+                right.origin.origin_id.as_str(),
+            ))
+    });
+    if chronological
+        .windows(2)
+        .any(|pair| pair[0].role > pair[1].role)
+    {
+        return Err(OrganizationWindowCalibrationError::NonChronologicalSplit);
+    }
+
+    let manifest_fingerprints = origins
+        .iter()
+        .map(|row| row.origin.board.manifest.fingerprint.as_str())
+        .collect::<BTreeSet<_>>();
+    if manifest_fingerprints.len() != 1 {
+        return Err(OrganizationWindowCalibrationError::MixedManifest);
+    }
+    let manifest_fingerprint = manifest_fingerprints
+        .into_iter()
+        .next()
+        .unwrap_or_default()
+        .to_owned();
+
+    let training = evaluation_split(
+        target,
+        WindowCalibrationOriginRole::Training,
+        &chronological,
+    )?;
+    let validation = evaluation_split(
+        target,
+        WindowCalibrationOriginRole::Validation,
+        &chronological,
+    )?;
+    let retrospective_holdout = evaluation_split(
+        target,
+        WindowCalibrationOriginRole::RetrospectiveHoldout,
+        &chronological,
+    )?;
+    let development_origins = chronological
+        .iter()
+        .filter(|row| row.role != WindowCalibrationOriginRole::RetrospectiveHoldout)
+        .map(|row| row.origin.clone())
+        .collect::<Vec<_>>();
+    let development_calibration = calibrate_organization_window_rolling_origins(
+        target,
+        &development_origins,
+        required_training + 1,
+    )?;
+    let claim_status = retrospective_holdout.overall.claim_status;
+    let mut result = OrganizationWindowEvaluationView {
+        schema: ORGANIZATION_WINDOW_EVALUATION_SCHEMA.to_owned(),
+        target: target.to_owned(),
+        manifest_fingerprint,
+        training,
+        validation,
+        retrospective_holdout,
+        development_calibration,
+        claim_status,
+        disclosures: vec![
+            "Origin roles must be frozen before target outcomes are inspected.".to_owned(),
+            "The headline claim status is determined only by the retrospective holdout and its frozen per-origin baseline.".to_owned(),
+            "A retrospective holdout tests historical generalization; it is not an untouched future-season result.".to_owned(),
+            "Training and validation origins are reported as development evidence and cannot rescue a failed holdout.".to_owned(),
+        ],
+        fingerprint: String::new(),
+    };
+    result.fingerprint = evaluation_fingerprint(&result)?;
+    Ok(result)
+}
+
+fn evaluation_split(
+    target: &str,
+    role: WindowCalibrationOriginRole,
+    origins: &[&WindowCalibrationEvaluationOriginInput],
+) -> Result<WindowCalibrationSplitView, OrganizationWindowCalibrationError> {
+    let selected = origins
+        .iter()
+        .filter(|row| row.role == role)
+        .collect::<Vec<_>>();
+    let mut predicted = Vec::new();
+    let mut actual = Vec::new();
+    let mut baselines = Vec::new();
+    let mut origin_ids = Vec::new();
+    let mut leakage_blocked = false;
+    for labeled in selected {
+        let origin = &labeled.origin;
+        calibrate_organization_window(
+            target,
+            &origin.board,
+            &origin.outcomes,
+            &origin.leakage_audit,
+        )?;
+        if !origin.baseline_value.is_finite() || !(0.0..=100.0).contains(&origin.baseline_value) {
+            return Err(OrganizationWindowCalibrationError::InvalidBaseline(
+                origin.origin_id.clone(),
+            ));
+        }
+        let outcomes = outcome_map(&origin.outcomes)?;
+        for organization in &origin.board.organizations {
+            predicted.push(organization.overall.score.unwrap());
+            actual.push(outcomes[organization.organization.as_str()]);
+            baselines.push(origin.baseline_value);
+        }
+        leakage_blocked |= origin
+            .leakage_audit
+            .iter()
+            .any(|audit| !audit.point_in_time_safe);
+        origin_ids.push(origin.origin_id.clone());
+    }
+    Ok(WindowCalibrationSplitView {
+        role,
+        origin_ids,
+        overall: metric_with_baseline("overall", &predicted, &actual, &baselines, leakage_blocked),
+        leakage_blocked,
+    })
+}
+
+fn evaluation_fingerprint(
+    evaluation: &OrganizationWindowEvaluationView,
+) -> Result<String, OrganizationWindowCalibrationError> {
+    let mut canonical = evaluation.clone();
+    canonical.fingerprint.clear();
+    canonical.training.origin_ids.sort();
+    canonical.validation.origin_ids.sort();
+    canonical.retrospective_holdout.origin_ids.sort();
+    canonical.disclosures.sort();
+    let bytes = serde_json::to_vec(&canonical)
+        .map_err(|error| OrganizationWindowCalibrationError::Serialization(error.to_string()))?;
+    Ok(format!("{:x}", Sha256::digest(bytes)))
 }
 
 fn build_dimension_ablations(
@@ -916,5 +1158,121 @@ mod tests {
         )
         .unwrap();
         assert_eq!(blocked.claim_status, WindowCalibrationClaimStatus::Blocked);
+    }
+
+    #[test]
+    fn frozen_split_uses_only_retrospective_holdout_for_headline_claim() {
+        let mut holdout = rolling_origin(
+            "2025-holdout",
+            20252026,
+            NaiveDate::from_ymd_opt(2025, 6, 30).unwrap(),
+            0.0,
+        );
+        for outcome in &mut holdout.outcomes {
+            outcome.target_value = 100.0 - outcome.target_value;
+        }
+        let origins = vec![
+            WindowCalibrationEvaluationOriginInput {
+                role: WindowCalibrationOriginRole::Training,
+                origin: rolling_origin(
+                    "2022-train",
+                    20222023,
+                    NaiveDate::from_ymd_opt(2022, 6, 30).unwrap(),
+                    1.0,
+                ),
+            },
+            WindowCalibrationEvaluationOriginInput {
+                role: WindowCalibrationOriginRole::Training,
+                origin: rolling_origin(
+                    "2023-train",
+                    20232024,
+                    NaiveDate::from_ymd_opt(2023, 6, 30).unwrap(),
+                    2.0,
+                ),
+            },
+            WindowCalibrationEvaluationOriginInput {
+                role: WindowCalibrationOriginRole::Validation,
+                origin: rolling_origin(
+                    "2024-validation",
+                    20242025,
+                    NaiveDate::from_ymd_opt(2024, 6, 30).unwrap(),
+                    3.0,
+                ),
+            },
+            WindowCalibrationEvaluationOriginInput {
+                role: WindowCalibrationOriginRole::RetrospectiveHoldout,
+                origin: holdout,
+            },
+        ];
+
+        let result =
+            evaluate_organization_window_origins("next-season organization value", &origins, 2)
+                .unwrap();
+        assert_eq!(
+            result.development_calibration.claim_status,
+            WindowCalibrationClaimStatus::Calibrated
+        );
+        assert_eq!(
+            result.retrospective_holdout.overall.claim_status,
+            WindowCalibrationClaimStatus::Inconclusive
+        );
+        assert_eq!(
+            result.claim_status,
+            WindowCalibrationClaimStatus::Inconclusive
+        );
+        assert_eq!(result.fingerprint.len(), 64);
+
+        let mut reversed = origins.clone();
+        reversed.reverse();
+        let same =
+            evaluate_organization_window_origins("next-season organization value", &reversed, 2)
+                .unwrap();
+        assert_eq!(result.fingerprint, same.fingerprint);
+    }
+
+    #[test]
+    fn frozen_split_rejects_a_holdout_that_precedes_development() {
+        let origins = vec![
+            WindowCalibrationEvaluationOriginInput {
+                role: WindowCalibrationOriginRole::RetrospectiveHoldout,
+                origin: rolling_origin(
+                    "2022-holdout",
+                    20222023,
+                    NaiveDate::from_ymd_opt(2022, 6, 30).unwrap(),
+                    0.0,
+                ),
+            },
+            WindowCalibrationEvaluationOriginInput {
+                role: WindowCalibrationOriginRole::Training,
+                origin: rolling_origin(
+                    "2023-train",
+                    20232024,
+                    NaiveDate::from_ymd_opt(2023, 6, 30).unwrap(),
+                    0.0,
+                ),
+            },
+            WindowCalibrationEvaluationOriginInput {
+                role: WindowCalibrationOriginRole::Training,
+                origin: rolling_origin(
+                    "2024-train",
+                    20242025,
+                    NaiveDate::from_ymd_opt(2024, 6, 30).unwrap(),
+                    0.0,
+                ),
+            },
+            WindowCalibrationEvaluationOriginInput {
+                role: WindowCalibrationOriginRole::Validation,
+                origin: rolling_origin(
+                    "2025-validation",
+                    20252026,
+                    NaiveDate::from_ymd_opt(2025, 6, 30).unwrap(),
+                    0.0,
+                ),
+            },
+        ];
+        assert_eq!(
+            evaluate_organization_window_origins("target", &origins, 2),
+            Err(OrganizationWindowCalibrationError::NonChronologicalSplit)
+        );
     }
 }

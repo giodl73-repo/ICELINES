@@ -111,6 +111,25 @@ icelines icecast window-calibrate \
   --out rolling-calibration.json
 ```
 
+Freeze the role of every origin before inspecting its outcome, then evaluate
+development evidence separately from the newest completed-season checkpoint:
+
+```bash
+icelines icecast window-evaluate \
+  --target next-season-organization-value \
+  --origin 2022-train.json \
+  --origin 2023-train.json \
+  --origin 2024-validation.json \
+  --origin 2025-retrospective-holdout.json \
+  --minimum-training-origins 2 \
+  --out split-evaluation.json
+```
+
+Each input is a `WindowCalibrationEvaluationOriginInput`: `role` plus the
+existing frozen calibration `origin`. The output headline is determined only
+by the retrospective holdout. It is historical generalization evidence, not an
+untouched future-season result.
+
 `organization_window_rolling_calibration.v1` reports pooled and per-origin
 error/rank correlation, pane metrics, leave-one-pane-out ablations,
 organization stability, and a between-origin MAE confidence interval. It
