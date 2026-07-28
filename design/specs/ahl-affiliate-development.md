@@ -337,6 +337,14 @@ games and rule qualification remain ledger-owned and organization status
 remains rollover-review-owned. This prevents one convenient player-facts file
 from becoming a second authority for every preseason decision.
 
+Facts-ready lowering reuses `build_ahl_affiliate_projection`; it does not add a
+parallel roster selector. The league result carries successful canonical
+inputs and deterministic team failures. It refuses provisional professional-
+game authority even when raw totals are complete, requires rule-threshold
+agreement, retains source URLs and review timestamps, and proves each emitted
+pool can satisfy roster shape and the AHL development rule before downstream
+organization composition.
+
 Historical replay uses season-dated catalogs rather than applying the current
 affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves
 the official 2021-22 shared Charlotte affiliation as two relationship rows

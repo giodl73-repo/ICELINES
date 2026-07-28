@@ -3177,6 +3177,12 @@ icelines icecast affiliate-facts-apply \
   --workboard affiliate-facts-board.json \
   --overlay affiliate-facts-overlay-final.json \
   --json --out affiliate-facts-application.json
+
+# Lower only complete teams through the canonical AHL lineup optimizer.
+icelines icecast affiliate-inputs-league \
+  --application affiliate-facts-application.json \
+  --rule ahl-development-rule-final.json \
+  --json --out affiliate-inputs-league.json
 ```
 
 The JSON artifact is keyed by canonical NHL player ID where identity is
@@ -3190,6 +3196,12 @@ explicit reviewed value for prospect status or assignment, not a synonym for
 missing. Conflicts with sealed position/score facts, duplicate player rows,
 non-HTTP evidence, invalid readiness, stale fingerprints, and draft overlays
 fail before output.
+
+League input lowering also requires `professional_game_policy_authority=final`,
+a matching 260-game threshold, and explicit 18-dressed/12-development rule
+authority. Every emitted team has already passed the canonical 12F/6D/2G and
+development-rule projection builder. Incomplete teams remain named failures in
+the league document.
 
 ---
 

@@ -2289,6 +2289,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         }) => commands::icecast::run_affiliate_facts_apply(workboard, overlay, json, out)?,
+        Commands::Icecast(IceCastSubcommand::AffiliateInputsLeague {
+            application,
+            rule,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_inputs_league(application, rule, json, out)?,
         Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGamesApply {
             crosswalk,
             ledger,

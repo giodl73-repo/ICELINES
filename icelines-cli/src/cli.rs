@@ -1609,6 +1609,19 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Lower facts-ready teams into canonical preseason affiliate projection inputs.
+    #[command(name = "affiliate-inputs-league")]
+    AffiliateInputsLeague {
+        #[arg(long, value_name = "PATH")]
+        application: PathBuf,
+        /// Final target-season dressed-roster development rule authority.
+        #[arg(long, value_name = "PATH")]
+        rule: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Apply a final professional-game ledger to separate team projection facts.
     #[command(name = "affiliate-professional-games-apply")]
     AffiliateProfessionalGamesApply {
@@ -4533,6 +4546,24 @@ mod tui_surface_tests {
             assert!(matches!(
                 facts_apply.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateFactsApply { json: true, .. })
+            ));
+
+            let inputs_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-inputs-league",
+                "--application",
+                "affiliate-facts-application.json",
+                "--rule",
+                "ahl-development-rule.json",
+                "--json",
+                "--out",
+                "affiliate-inputs-league.json",
+            ])
+            .expect("affiliate preseason league inputs should parse");
+            assert!(matches!(
+                inputs_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateInputsLeague { json: true, .. })
             ));
 
             let professional_games_apply = Cli::try_parse_from([

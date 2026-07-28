@@ -248,6 +248,19 @@ assignment/prospect/recall/waiver/score/position facts. The next code bridge
 will lower a facts-ready application into the existing per-team
 `AhlAffiliateProjectionInput` contract and refuse incomplete team pools.
 
+**Projection-input lowering checkpoint — 2026-07-28:** that bridge is now
+implemented as `ahl_preseason_league_projection_inputs.v1`. It revalidates the
+facts application, requires final matching rule authority, retains rollover
+and review provenance, and calls the existing affiliate optimizer before a team
+is emitted. A complete 12F/6D/2G fixture builds; removing one goalie produces a
+named team failure; the real provisional all-32 artifact is refused at the
+authority boundary. No provisional team input was published.
+
+S2 now has all composition primitives needed for real output. Its remaining
+work is source acquisition/review, followed by building affiliate projections
+and the existing organization-lineup documents from the resulting complete
+inputs.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

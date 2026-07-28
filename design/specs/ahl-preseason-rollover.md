@@ -82,6 +82,16 @@ blocker. Explicit `assigned_to_affiliate: false` changes the row to
 departed or assigned to another league. Conflicting sealed facts fail closed.
 The application retains both source and result fingerprints.
 
+`ahl_preseason_league_projection_inputs.v1` lowers the reviewed application
+into the existing `AhlAffiliateProjectionInput` contract. Lowering requires a
+final professional-game policy, a matching threshold, and explicit dated AHL
+dressed-roster rule authority. A team is emitted only when it has no identity
+or player-fact blockers and the canonical affiliate builder can dress 12F/6D/2G
+while satisfying the development minimum. Every other organization remains a
+named failure with its blocker counts or optimizer reason; partial league
+success never shrinks the requested cohort silently. Team rollover sources and
+per-player review evidence survive in the preseason pool authority.
+
 ## Surface
 
 ```powershell
@@ -124,6 +134,11 @@ icelines icecast affiliate-facts-apply `
   --workboard affiliate-facts-board.json `
   --overlay affiliate-facts-overlay-final.json `
   --json --out affiliate-facts-application.json
+
+icelines icecast affiliate-inputs-league `
+  --application affiliate-facts-application.json `
+  --rule ahl-development-rule-final.json `
+  --json --out affiliate-inputs-league.json
 ```
 
 The apply command emits a sourced `AhlPreseasonRolloverConfig`; it does not

@@ -528,3 +528,29 @@ surfaces consume the application document and may not infer omitted values.
 
 **Verdict:** pass for overlay/application. S2 remains open at facts acquisition
 and facts-ready application-to-projection lowering.
+
+### S2 projection-input lowering review
+
+HART/KEEL verified that lowering targets the existing
+`AhlAffiliateProjectionInput` and calls the canonical affiliate projection
+builder as its acceptance gate. There is no second lineup optimizer.
+
+TAPE/WIRE accepted provenance retention from team rollover sources, per-player
+review evidence, rule source, review timestamps, application fingerprint, and
+result-workboard fingerprint. Provisional policy authority is rejected even
+when every raw career total is available.
+
+SCOUT/PACE required both hockey-shape and rule feasibility, not merely empty
+blocker vectors. The positive fixture dresses 12F/6D/2G with 12 development
+skaters; a missing second goalie remains a team failure.
+
+FORGE/BENCH/EDGE verified complete application replay, threshold/rule checks,
+deterministic ordering, named partial failures, CLI parsing, and a real all-32
+provisional-authority refusal. No production input is emitted from that smoke.
+
+GLASS/CREST/broadcast accepted the league envelope because `teams_requested`,
+`teams_built`, and every failure stay visible. Downstream surfaces may focus a
+team only after consuming the complete envelope state.
+
+**Verdict:** pass for lowering. S2 remains open for real source review and
+32/32 affiliate plus organization-lineup artifacts.

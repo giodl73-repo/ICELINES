@@ -97,8 +97,9 @@ use icelines_fetch::{
     },
     ahl_preseason_facts::{
         apply_ahl_preseason_league_facts_overlay, build_ahl_preseason_league_facts_overlay_draft,
-        build_ahl_preseason_league_facts_workboard, AhlPreseasonLeagueFactsApplicationView,
-        AhlPreseasonLeagueFactsOverlay, AhlPreseasonLeagueFactsWorkboardView,
+        build_ahl_preseason_league_facts_workboard, build_ahl_preseason_league_projection_inputs,
+        AhlPreseasonLeagueFactsApplicationView, AhlPreseasonLeagueFactsOverlay,
+        AhlPreseasonLeagueFactsWorkboardView, AhlPreseasonLeagueProjectionInputsView,
     },
     ahl_professional_games::{
         apply_ahl_professional_game_ledger_to_facts, build_ahl_professional_game_ledger,
@@ -1741,6 +1742,31 @@ pub fn run_affiliate_facts_draft(
     Ok(())
 }
 
+pub fn run_affiliate_inputs_league(
+    application_path: PathBuf,
+    rule_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let application: AhlPreseasonLeagueFactsApplicationView =
+        read_icecast_json(&application_path, "AHL preseason facts application")?;
+    let rule: icelines_core::AhlDevelopmentRuleInput =
+        read_icecast_json(&rule_path, "AHL development rule")?;
+    let view = build_ahl_preseason_league_projection_inputs(&application, &rule)
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_affiliate_inputs_league(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL preseason league inputs")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_affiliate_professional_games_apply(
     crosswalk_path: PathBuf,
     ledger_path: PathBuf,
@@ -3129,6 +3155,32 @@ fn render_affiliate_facts_application(view: &AhlPreseasonLeagueFactsApplicationV
         .skip(2)
     {
         let _ = writeln!(out, "{line}");
+    }
+    out
+}
+
+fn render_affiliate_inputs_league(view: &AhlPreseasonLeagueProjectionInputsView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "AHL PRESEASON PROJECTION INPUTS — {} — {}/{} teams built",
+        view.target_season, view.teams_built, view.teams_requested
+    );
+    for input in &view.inputs {
+        let _ = writeln!(
+            out,
+            "{:<3} READY {:>3} players — {}",
+            input.nhl_team,
+            input.players.len(),
+            input.ahl_team
+        );
+    }
+    for failure in &view.failures {
+        let _ = writeln!(
+            out,
+            "{:<3} BLOCKED — {} — {}",
+            failure.nhl_team, failure.ahl_team, failure.reason
+        );
     }
     out
 }
