@@ -165,6 +165,27 @@ not interpret a deletion as a destination, an addition as opening-night
 assignment, or absence as any status; those semantics belong to a separately
 versioned, cutoff-aware state ledger.
 
+`ahl_transaction_state_ledger.v1` supplies that interpretation without
+changing the workboard. It groups each provider player at a caller-selected
+cutoff and evaluates only the latest calendar-date event set. One latest ADD
+establishes assignment when there is no same-team ADD/DEL or multiple-ADD
+conflict; an ADD paired with a DEL from another club establishes the explicit
+destination. DEL-only latest sets establish removal from the observed AHL
+transaction state. Unknown event kinds, multiple ADD destinations, and
+same-team ADD/DEL sets remain typed ambiguity because the source does not
+provide a trusted intraday order. Canonical player identity comes only from
+the reviewed crosswalk, and organization comes only from the target-season
+affiliation catalog. Source, identity, affiliation, cutoff, method, result,
+and counts are fingerprint-bound and tamper-validated.
+
+The completed 2025-26 replay reduces 4,011 events to 1,161 latest player
+states: 695 assigned, 403 removed, and 63 ambiguous; 1,149 join to reviewed
+NHL identities and 12 retain only provider identity. The 2026-27 snapshot has
+zero source rows as of July 28, so its ledger contains zero players and clears
+no assignment blockers. Absence remains a no-read. A separate narrow
+application must prove that a ledger row corresponds to the exact target
+workboard organization before it may clear `AssignmentAuthority`.
+
 The real July 28 league run rebuilt the camp seal with 933/933 exact position
 lists, including 26 multi-position players, then composed all 32 affiliates.
 It exposes 1,371 viable candidates and zero facts-ready candidates. The

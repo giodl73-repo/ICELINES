@@ -133,6 +133,8 @@ use icelines_fetch::{
         AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     },
+    ahl_transaction_state::{build_ahl_transaction_state_ledger, AhlTransactionStateLedgerView},
+    ahl_transactions::AhlTransactionSnapshot,
     build_historical_organization_window_origin, build_organization_window_standings_snapshot,
     build_prospect_career_context_draft, build_prospect_career_discovery,
     build_prospect_league_context_draft, build_prospect_league_discovery,
@@ -1654,6 +1656,38 @@ pub fn run_affiliate_status_evidence_apply(
             output.as_bytes(),
             "AHL organization-status evidence application",
         )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_transaction_state(
+    transactions_path: PathBuf,
+    league_crosswalk_path: PathBuf,
+    affiliations_path: PathBuf,
+    cutoff: String,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let transactions: AhlTransactionSnapshot =
+        read_icecast_json(&transactions_path, "official AHL transaction snapshot")?;
+    let identities: AhlIdentityLeagueCrosswalkView = read_icecast_json(
+        &league_crosswalk_path,
+        "reviewed AHL league identity crosswalk",
+    )?;
+    let affiliations: AhlAffiliationCatalogView =
+        read_icecast_json(&affiliations_path, "dated AHL affiliation catalog")?;
+    let ledger =
+        build_ahl_transaction_state_ledger(&transactions, &identities, &affiliations, cutoff)
+            .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&ledger)?)
+    } else {
+        render_affiliate_transaction_state(&ledger)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL transaction-state ledger")?;
     } else {
         print!("{output}");
     }
@@ -3345,6 +3379,24 @@ fn render_affiliate_professional_games(view: &AhlProfessionalGameLedgerView) -> 
         );
     }
     out
+}
+
+fn render_affiliate_transaction_state(view: &AhlTransactionStateLedgerView) -> String {
+    format!(
+        "AHL TRANSACTION STATE — {} through {}\nSource events: {} | Through cutoff: {} | Players: {}\nAssigned: {} | Removed: {} | Ambiguous: {}\nCanonical identities: {} | Identity unavailable: {}\nMethod: {}\nFingerprint: {}\n",
+        view.season,
+        view.cutoff,
+        view.counts.source_events,
+        view.counts.events_through_cutoff,
+        view.counts.players_with_events,
+        view.counts.assigned,
+        view.counts.removed,
+        view.counts.ambiguous,
+        view.counts.canonically_identified,
+        view.counts.identity_unavailable,
+        view.method,
+        view.source_fingerprint
+    )
 }
 
 fn render_affiliate_values(view: &AhlPlayerValueLedgerView) -> String {

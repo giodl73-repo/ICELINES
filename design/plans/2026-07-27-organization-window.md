@@ -355,8 +355,26 @@ The completed 2025-26 replay seals 4,011 events across 21 pages and 32 teams:
 2,259 additions and 1,752 deletions. The official 2026-27 season catalog is
 already present with 32 teams but currently returns zero transaction rows.
 Therefore no target-season assignment blocker is cleared yet. A separate
-cutoff-aware state ledger must interpret explicit event sequences; old-season
-events and target-season absence cannot be promoted into current assignments.
+cutoff-aware state ledger now interprets explicit event sequences; old-season
+events and target-season absence still cannot be promoted into current
+assignments.
+
+**AHL transaction-state checkpoint — 2026-07-28:**
+`ahl_transaction_state_ledger.v1` evaluates only each player's latest event
+date through an explicit cutoff. Single-destination ADD sets resolve assigned;
+DEL-only sets resolve removed; unknown events, multiple ADD destinations, and
+same-team ADD/DEL sets remain ambiguous because the feed has no trusted
+intraday order. Reviewed identity and target affiliation are separate bound
+inputs, and the ledger validates its counts and all four fingerprints against
+tampering or rebinding.
+
+The 2025-26 historical replay resolves 1,161 player states from 4,011 events:
+695 assigned, 403 removed, and 63 ambiguous. Reviewed identity covers 1,149;
+12 remain provider-only. The current 2026-27 feed contains zero events, so the
+target ledger correctly contains zero states and clears no blockers. S2 now
+needs a narrow exact-workboard application plus actual target-season source
+events; waiver clearance, 98 score gaps, 625 organization decisions, and final
+rule authority remain separate work.
 
 ### S3 — Goalie dependency authority decision
 

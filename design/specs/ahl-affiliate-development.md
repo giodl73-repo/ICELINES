@@ -433,6 +433,15 @@ source evidence rather than an assignment model: missing transactions and old
 season events never imply current assignment, contract rights, waivers, or
 organization status.
 
+`icelines icecast affiliate-transaction-state` turns that source document into
+`ahl_transaction_state_ledger.v1` at an explicit date. Latest-date ADD/DEL
+sets are evaluated without assuming intraday order; conflicts stay ambiguous.
+The ledger joins provider identity through the reviewed league crosswalk and
+provider team through the dated affiliation catalog, then binds every input
+and its own output by SHA-256 fingerprint. It remains separate from preseason
+facts so transaction evidence cannot silently clear waivers, contracts,
+organization status, or target assignment.
+
 `affiliate_projection_input_from_snapshot` is the fail-closed bridge into the
 core projection contract. Its enrichment set must exactly cover the selected
 official roster and explicitly map every `provider_player_id` to a canonical

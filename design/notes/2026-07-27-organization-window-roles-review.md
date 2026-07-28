@@ -736,3 +736,35 @@ completed/target-season runs. The completed replay contains 4,011 events over
 **Verdict:** pass for official transaction acquisition; assignment authority
 remains open pending the cutoff-aware event-state ledger and new target-season
 source events.
+
+### S2 cutoff-aware AHL transaction-state review
+
+HART/KEEL kept the state ledger separate from source acquisition and preseason
+facts. The schema carries source season, cutoff, method, source/identity/
+affiliation fingerprints, result fingerprint, typed counts, and player rows;
+renderers consume it without reproducing event rules.
+
+TAPE/WIRE required provider IDs to remain local until the reviewed crosswalk
+join and provider teams to join only through the target dated affiliation
+catalog. A prior reviewed identity envelope may identify a target-season
+provider player, but prior transactions cannot establish target assignment.
+
+SCOUT/EDGE set conservative hockey semantics: one latest ADD destination may
+assign; a simultaneous DEL from a different club may express the move; DEL
+without ADD expresses removal from the observed AHL state. Same-team ADD/DEL,
+multiple ADD clubs, and unknown kinds cannot be ordered reliably and stay
+ambiguous. Transaction absence remains no-read.
+
+BENCH/FORGE added destination, same-team ambiguity, cutoff exclusion, empty
+target feed, tamper/rebinding, CLI parse, historical replay, and target replay
+checks. The completed season produces 695 assigned, 403 removed, and 63
+ambiguous states from 4,011 events; 1,149 of 1,161 states have reviewed NHL
+identity. The target season produces zero states from zero events.
+
+GLASS/CREST/broadcast retain method, cutoff, counts, source fingerprint, raw
+descriptions, and ambiguity in the UI-neutral document. They may summarize but
+cannot reinterpret same-day order or call the output waiver/contract evidence.
+
+**Verdict:** pass for cutoff-aware transaction state. Workboard assignment
+application remains open and must be exact-organization, fingerprint-bound,
+and no-op for the current empty 2026-27 ledger.

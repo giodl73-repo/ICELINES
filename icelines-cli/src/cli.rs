@@ -1548,6 +1548,26 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Interpret explicit official AHL ADD/DEL events as cutoff roster state.
+    #[command(name = "affiliate-transaction-state")]
+    AffiliateTransactionState {
+        /// Sealed `ahl_transaction_snapshot.v1` for the target season.
+        #[arg(long, value_name = "PATH")]
+        transactions: PathBuf,
+        /// Reviewed current or prior AHL provider-to-NHL identity envelope.
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Dated target-season NHL-to-AHL affiliation catalog.
+        #[arg(long, value_name = "PATH")]
+        affiliations: PathBuf,
+        /// Include only source events on or before this YYYY-MM-DD date.
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        cutoff: String,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Inspect an existing affiliate organization-status review artifact.
     #[command(name = "affiliate-status-show")]
     AffiliateStatusShow {
@@ -4579,6 +4599,28 @@ mod tui_surface_tests {
                     json: true,
                     ..
                 })
+            ));
+
+            let transaction_state = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-transaction-state",
+                "--transactions",
+                "transactions.json",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--affiliations",
+                "affiliations.json",
+                "--cutoff",
+                "2026-07-28",
+                "--json",
+                "--out",
+                "transaction-state.json",
+            ])
+            .expect("affiliate transaction-state ledger should parse");
+            assert!(matches!(
+                transaction_state.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateTransactionState { json: true, .. })
             ));
 
             let status_show = Cli::try_parse_from([

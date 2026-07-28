@@ -2250,6 +2250,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         }) => commands::icecast::run_affiliate_status_evidence_apply(review, ledger, json, out)?,
+        Commands::Icecast(IceCastSubcommand::AffiliateTransactionState {
+            transactions,
+            league_crosswalk,
+            affiliations,
+            cutoff,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_transaction_state(
+            transactions,
+            league_crosswalk,
+            affiliations,
+            cutoff,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::AffiliateStatusApply {
             prior_snapshot,
             crosswalk,
