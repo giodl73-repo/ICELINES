@@ -376,6 +376,8 @@ icelines icecast window-scenario --baseline baseline.json --scenario trade.json 
 icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --authority trade-authority.json --out attributed-window-impact.json
 icelines icecast window-calibrate --target next-season-organization-value --origin 2023-origin.json --origin 2024-origin.json --origin 2025-origin.json --minimum-origins 3 --out rolling-calibration.json
 icelines icecast window-evaluate --target next-season-organization-value --origin 2022-train.json --origin 2023-train.json --origin 2024-validation.json --origin 2025-retrospective-holdout.json --minimum-training-origins 2 --out split-evaluation.json
+icelines icecast window-standings --target-season 20252026 --date 2026-04-17 --captured-at 2026-07-28T08:00:00Z --out standings-2025-26.json
+icelines icecast window-origin-build --source-season 20242025 --target-season 20252026 --as-of 2025-06-30 --generated-at 2026-07-28T08:00:00Z --role retrospective_holdout --standings standings-2025-26.json --out origin-2025-26.json
 icelines icecast backtest --input 2021-22.json --input 2022-23.json --input 2023-24.json
 icelines icecast import-opening-rosters --manifest opening-rosters-2024.json --dry-run
 icelines icecast import-opening-rosters --manifest opening-rosters-2024.json

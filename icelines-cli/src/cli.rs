@@ -1814,6 +1814,37 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Fetch and seal an official final-standings outcome snapshot.
+    #[command(name = "window-standings")]
+    WindowStandings {
+        #[arg(long)]
+        target_season: u32,
+        #[arg(long)]
+        date: String,
+        #[arg(long)]
+        captured_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build one point-in-time historical Window origin from bundled facts.
+    #[command(name = "window-origin-build")]
+    WindowOriginBuild {
+        #[arg(long)]
+        source_season: u32,
+        #[arg(long)]
+        target_season: u32,
+        #[arg(long)]
+        as_of: String,
+        #[arg(long)]
+        generated_at: String,
+        /// One of: training, validation, retrospective_holdout.
+        #[arg(long)]
+        role: String,
+        #[arg(long, value_name = "PATH")]
+        standings: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Project one team from a sealed league forecast into `card_document.v1`.
     #[command(name = "season-card")]
     SeasonCard {
@@ -2379,6 +2410,55 @@ mod tui_surface_tests {
                     minimum_training_origins: 2,
                     ..
                 }) if origins.len() == 4
+            ));
+
+            let standings = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-standings",
+                "--target-season",
+                "20252026",
+                "--date",
+                "2026-04-17",
+                "--captured-at",
+                "2026-07-28T08:00:00Z",
+                "--out",
+                "standings.json",
+            ])
+            .expect("historical Window standings should parse");
+            assert!(matches!(
+                standings.command,
+                Commands::Icecast(IceCastSubcommand::WindowStandings {
+                    target_season: 20252026,
+                    ..
+                })
+            ));
+
+            let origin = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-origin-build",
+                "--source-season",
+                "20242025",
+                "--target-season",
+                "20252026",
+                "--as-of",
+                "2025-06-30",
+                "--generated-at",
+                "2026-07-28T08:00:00Z",
+                "--role",
+                "retrospective_holdout",
+                "--standings",
+                "standings.json",
+            ])
+            .expect("historical Window origin should parse");
+            assert!(matches!(
+                origin.command,
+                Commands::Icecast(IceCastSubcommand::WindowOriginBuild {
+                    source_season: 20242025,
+                    target_season: 20252026,
+                    ..
+                })
             ));
 
             let report = Cli::try_parse_from([

@@ -65,7 +65,7 @@ use icelines_core::{
     calibrate_organization_window_rolling_origins, evaluate_organization_window_origins,
     load_organization_window_profile_inventory, rebase_organization_window_board,
     validate_organization_window_board, WindowCalibrationEvaluationOriginInput,
-    WindowCalibrationOriginInput,
+    WindowCalibrationOriginInput, WindowCalibrationOriginRole,
 };
 use icelines_fetch::{
     ahl::{
@@ -94,6 +94,7 @@ use icelines_fetch::{
         AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     },
+    build_historical_organization_window_origin, build_organization_window_standings_snapshot,
     build_prospect_career_context_draft, build_prospect_career_discovery,
     build_prospect_league_context_draft, build_prospect_league_discovery,
     build_shift_overlap_report,
@@ -115,10 +116,12 @@ use icelines_fetch::{
         OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
     },
     stats_loader::load_into_repo,
-    NhlApiClient, OfficialShiftChartRow, ProspectCareerContextDraftConfig,
+    NhlApiClient, OfficialShiftChartRow, OrganizationWindowHistoricalOriginArtifact,
+    OrganizationWindowStandingsSnapshot, ProspectCareerContextDraftConfig,
     ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectLeagueContext,
     ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView, ScenarioRegistryStore,
-    ShiftOverlapReport, PROSPECT_CAREER_DISCOVERY_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
+    ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
+    PROSPECT_CAREER_DISCOVERY_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -3687,7 +3690,34 @@ pub fn run_window_evaluate(
 ) -> anyhow::Result<()> {
     let origins = origins
         .iter()
-        .map(|path| read_icecast_json(path, "labeled organization Window evaluation origin"))
+        .map(|path| {
+            let value: serde_json::Value =
+                read_icecast_json(path, "labeled organization Window evaluation origin")?;
+            if value["schema"].as_str() == Some(ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA) {
+                let artifact: OrganizationWindowHistoricalOriginArtifact =
+                    serde_json::from_value(value).with_context(|| {
+                        format!(
+                            "parse historical organization Window origin {}",
+                            path.display()
+                        )
+                    })?;
+                artifact.validate().with_context(|| {
+                    format!(
+                        "validate historical organization Window origin {}",
+                        path.display()
+                    )
+                })?;
+                Ok(artifact.evaluation_input())
+            } else {
+                serde_json::from_value::<WindowCalibrationEvaluationOriginInput>(value)
+                    .with_context(|| {
+                        format!(
+                            "parse labeled organization Window origin {}",
+                            path.display()
+                        )
+                    })
+            }
+        })
         .collect::<anyhow::Result<Vec<WindowCalibrationEvaluationOriginInput>>>()?;
     let evaluation =
         evaluate_organization_window_origins(&target, &origins, minimum_training_origins)?;
@@ -3695,6 +3725,75 @@ pub fn run_window_evaluate(
         &evaluation,
         out.as_deref(),
         "organization Window split evaluation",
+    )
+}
+
+pub async fn run_window_standings(
+    target_season: u32,
+    date: String,
+    captured_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let effective_date = NaiveDate::parse_from_str(&date, "%Y-%m-%d")
+        .with_context(|| format!("invalid standings date {date}; expected YYYY-MM-DD"))?;
+    let rows = NhlApiClient::production()
+        .fetch_standings_for_date(&date)
+        .await
+        .with_context(|| format!("fetch official NHL standings for {date}"))?;
+    let snapshot = build_organization_window_standings_snapshot(
+        target_season,
+        effective_date,
+        &captured_at,
+        &rows,
+    )?;
+    write_window_json(
+        &snapshot,
+        out.as_deref(),
+        "organization Window standings outcome",
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_window_origin_build(
+    source_season: u32,
+    target_season: u32,
+    as_of: String,
+    generated_at: String,
+    role: String,
+    standings: PathBuf,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let as_of = NaiveDate::parse_from_str(&as_of, "%Y-%m-%d")
+        .with_context(|| format!("invalid feature cutoff {as_of}; expected YYYY-MM-DD"))?;
+    let role = match role.trim().to_ascii_lowercase().replace('-', "_").as_str() {
+        "training" => WindowCalibrationOriginRole::Training,
+        "validation" => WindowCalibrationOriginRole::Validation,
+        "retrospective_holdout" => WindowCalibrationOriginRole::RetrospectiveHoldout,
+        value => bail!(
+            "invalid Window origin role {value}; expected training, validation, or retrospective_holdout"
+        ),
+    };
+    let outcome: OrganizationWindowStandingsSnapshot =
+        read_icecast_json(&standings, "organization Window standings outcome")?;
+    let source = source_season.to_string();
+    let stats = get_stats(&source)
+        .with_context(|| format!("bundled source season {source_season} has no stats.json"))?;
+    let bios = get_bios(&source)
+        .with_context(|| format!("bundled source season {source_season} has no bios.json"))?;
+    let artifact = build_historical_organization_window_origin(
+        source_season,
+        target_season,
+        as_of,
+        &generated_at,
+        role,
+        &stats,
+        &bios,
+        &outcome,
+    )?;
+    write_window_json(
+        &artifact,
+        out.as_deref(),
+        "historical organization Window origin",
     )
 }
 

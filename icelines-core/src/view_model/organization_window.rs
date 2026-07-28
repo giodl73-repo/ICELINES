@@ -1023,7 +1023,7 @@ pub fn validate_organization_window_board(
         if board.organizations.iter().any(|organization| {
             let expected = expected_by_team[organization.organization.as_str()];
             organization.overall.rank != expected.rank
-                || organization.overall.percentile != expected.percentile
+                || !close_optional(organization.overall.percentile, expected.percentile)
                 || organization.overall.rank_status.state != WindowRankState::Ranked
         }) {
             return Err(OrganizationWindowError::InvalidBoard(
@@ -1952,9 +1952,9 @@ mod tests {
     #[test]
     fn inventory_has_exact_reviewed_readiness_counts() {
         let inventory = load_organization_window_profile_inventory().expect("valid inventory");
-        assert_eq!(inventory.profiles.len(), 32);
+        assert_eq!(inventory.profiles.len(), 37);
         assert_eq!(inventory.counts.ready_for_adapter, 17);
-        assert_eq!(inventory.counts.evaluation, 8);
+        assert_eq!(inventory.counts.evaluation, 13);
         assert_eq!(inventory.counts.context_only, 4);
         assert_eq!(inventory.counts.blocked, 3);
         for key in [

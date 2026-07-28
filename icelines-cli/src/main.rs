@@ -2432,6 +2432,31 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::WindowStandings {
+            target_season,
+            date,
+            captured_at,
+            out,
+        }) => {
+            commands::icecast::run_window_standings(target_season, date, captured_at, out).await?
+        }
+        Commands::Icecast(IceCastSubcommand::WindowOriginBuild {
+            source_season,
+            target_season,
+            as_of,
+            generated_at,
+            role,
+            standings,
+            out,
+        }) => commands::icecast::run_window_origin_build(
+            source_season,
+            target_season,
+            as_of,
+            generated_at,
+            role,
+            standings,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::ProspectStudy { input, json, out }) => {
             commands::icecast::run_prospect_study(input, json, out)?
         }

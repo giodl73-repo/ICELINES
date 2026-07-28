@@ -74,10 +74,14 @@ pub use management_behavior_source::{
 pub use moneypuck::{parse_csv as parse_moneypuck_csv, MoneyPuckStats};
 pub use nhl_api::NhlApiClient;
 pub use organization_window_history::{
-    build_organization_window_standings_snapshot, historical_franchise_organization,
-    OrganizationWindowHistoryError, OrganizationWindowStandingRow,
-    OrganizationWindowStandingsSnapshot, NHL_STANDINGS_SOURCE_BASE,
-    ORGANIZATION_WINDOW_HISTORICAL_IDENTITY_VERSION, ORGANIZATION_WINDOW_STANDINGS_SCHEMA,
+    build_historical_organization_window_origin, build_organization_window_standings_snapshot,
+    historical_franchise_organization, historical_organization_window_manifest,
+    OrganizationWindowHistoricalOriginArtifact, OrganizationWindowHistoryError,
+    OrganizationWindowStandingRow, OrganizationWindowStandingsSnapshot, NHL_STANDINGS_SOURCE_BASE,
+    ORGANIZATION_WINDOW_HISTORICAL_IDENTITY_VERSION, ORGANIZATION_WINDOW_HISTORICAL_MANIFEST_ID,
+    ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA, ORGANIZATION_WINDOW_STANDINGS_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_STANDINGS_SCHEMA,
 };
 pub use playoffs_bundle::PlayoffsBundle;
 pub use prospect_career::{

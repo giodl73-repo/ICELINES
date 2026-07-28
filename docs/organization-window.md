@@ -130,6 +130,31 @@ existing frozen calibration `origin`. The output headline is determined only
 by the retrospective holdout. It is historical generalization evidence, not an
 untouched future-season result.
 
+Build reproducible historical inputs in two stages. First seal the official
+outcome, then construct the prior-season Frame without network access:
+
+```bash
+icelines icecast window-standings \
+  --target-season 20252026 \
+  --date 2026-04-17 \
+  --captured-at 2026-07-28T08:00:00Z \
+  --out standings-2025-26.json
+
+icelines icecast window-origin-build \
+  --source-season 20242025 \
+  --target-season 20252026 \
+  --as-of 2025-06-30 \
+  --generated-at 2026-07-28T08:00:00Z \
+  --role retrospective_holdout \
+  --standings standings-2025-26.json \
+  --out origin-2025-26.json
+```
+
+The checked [historical evidence set](../examples/window-history/README.md)
+contains two training origins, one validation origin, and one retrospective
+holdout. Its headline remains `inconclusive`; a successful validation checkpoint
+cannot override the failed holdout.
+
 `organization_window_rolling_calibration.v1` reports pooled and per-origin
 error/rank correlation, pane metrics, leave-one-pane-out ablations,
 organization stability, and a between-origin MAE confidence interval. It
