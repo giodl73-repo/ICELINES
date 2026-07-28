@@ -345,6 +345,15 @@ agreement, retains source URLs and review timestamps, and proves each emitted
 pool can satisfy roster shape and the AHL development rule before downstream
 organization composition.
 
+The official NHL landing cache retains primary position beside birth date and
+career history. The professional-game ledger carries that position through the
+same fingerprinted authority, and the preseason workboard uses it only when a
+rollover row has no exact primary position (for example, the AHL feed reports
+generic `F`). It never overwrites a camp position, invents multi-position
+eligibility, or implies assignment. The real 1,323-player refresh populated
+1,323 official positions and reduced the all-32 exact-position blocker queue
+from 255 to zero.
+
 Historical replay uses season-dated catalogs rather than applying the current
 affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves
 the official 2021-22 shared Charlotte affiliation as two relationship rows

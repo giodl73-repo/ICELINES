@@ -225,8 +225,9 @@ for 933/933 camp players, including 26 multi-position players, and composes
 The board identifies 1,371 viable candidates and zero facts-ready candidates.
 All 1,371 still require explicit assignment, prospect-status, and recall-
 readiness authority; 1,174 need organization-status and projected-score facts;
-144 need waiver clearance; 255 prior-only rows need exact positions; 52 lack
-professional-game totals; and 1,202 skaters await final rule qualification.
+144 need waiver clearance; the initial run had 255 prior-only exact-position
+gaps; 52 lack professional-game totals; and 1,202 skaters await final rule
+qualification.
 Those are independent, queryable queues, not inferred cuts or assignments. The
 next S2 slice is a sourced overlay/application contract that reduces these
 blockers and then feeds the existing affiliate and organization-lineup
@@ -260,6 +261,15 @@ S2 now has all composition primitives needed for real output. Its remaining
 work is source acquisition/review, followed by building affiliate projections
 and the existing organization-lineup documents from the resulting complete
 inputs.
+
+**Official-position cache checkpoint — 2026-07-28:** the same NHL landing
+payload already used for career totals now persists its official primary
+position beside birth date. All 1,323 canonical histories refreshed with zero
+skips and 1,323 official positions. The ledger/workboard fallback filled only
+generic prior-AHL positions, never overwrote camp eligibility, and reduced the
+exact-position queue from 255 to zero across all 32 teams. The remaining 1,174
+projected-score gaps require a separately versioned value model or authored
+projection authority; position metadata is not used as a scoring proxy.
 
 ### S3 — Goalie dependency authority decision
 

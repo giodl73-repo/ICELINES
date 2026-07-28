@@ -8,7 +8,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{Datelike, NaiveDate};
-use icelines_core::{CareerGameType, LeagueTier};
+use icelines_core::{CareerGameType, LeagueTier, Position};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -99,6 +99,11 @@ pub struct AhlProfessionalGamePlayerRow {
     pub nhl_player_id: u32,
     pub display_name: String,
     pub affiliate_appearances: usize,
+    /// Official primary position from the same NHL landing payload as the
+    /// career history. This can fill an otherwise generic AHL `F` position,
+    /// but never establishes assignment or multi-position eligibility.
+    #[serde(default)]
+    pub official_position: Option<Position>,
     pub professional_games_at_season_start: Option<u32>,
     /// Game-count test only. Age and European youth-season exemptions remain
     /// separate rule facts before a final development classification.
@@ -326,6 +331,9 @@ pub fn build_ahl_professional_game_ledger(
             nhl_player_id: player_id,
             display_name,
             affiliate_appearances,
+            official_position: career_store
+                .position(player_id)
+                .and_then(parse_official_position),
             professional_games_at_season_start: None,
             within_game_threshold: None,
             birth_date: career_store.birth_date(player_id).map(str::to_owned),
@@ -468,6 +476,17 @@ pub fn build_ahl_professional_game_ledger(
             "Final development-rule qualification is emitted only when the policy supplies the age rule and every applicable European elite youth exemption can be evaluated.".to_owned(),
         ],
     })
+}
+
+fn parse_official_position(value: &str) -> Option<Position> {
+    match value.trim().to_ascii_uppercase().as_str() {
+        "C" => Some(Position::Center),
+        "L" | "LW" => Some(Position::LeftWing),
+        "R" | "RW" => Some(Position::RightWing),
+        "D" => Some(Position::Defense),
+        "G" => Some(Position::Goalie),
+        _ => None,
+    }
 }
 
 fn validate_policy(
@@ -745,6 +764,7 @@ mod tests {
                 stint(20232024, "OHL", CareerGameType::Regular, 60),
             ],
         });
+        store.upsert_position(1, "C");
         let ledger =
             build_ahl_professional_game_ledger(&crosswalk(), &store, &policy()).expect("ledger");
         assert_eq!(ledger.complete_players, 1);
@@ -753,6 +773,7 @@ mod tests {
             Some(261)
         );
         assert_eq!(ledger.players[0].within_game_threshold, Some(false));
+        assert_eq!(ledger.players[0].official_position, Some(Position::Center));
         assert!(ledger.players[0].blockers.is_empty());
     }
 

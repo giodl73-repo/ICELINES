@@ -243,6 +243,10 @@ pub struct CareerHistoryStore {
     /// in season bios or current-roster snapshots.
     #[serde(default)]
     pub birth_dates: HashMap<String, String>,
+    /// Official NHL landing primary positions keyed by player ID. This is
+    /// identity metadata, not roster assignment or fantasy eligibility.
+    #[serde(default)]
+    pub positions: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -309,6 +313,7 @@ impl CareerHistoryStore {
             fetched_at: None,
             histories: HashMap::new(),
             birth_dates: HashMap::new(),
+            positions: HashMap::new(),
         }
     }
 
@@ -368,6 +373,17 @@ impl CareerHistoryStore {
     pub fn upsert_birth_date(&mut self, player_id: u32, birth_date: impl Into<String>) {
         self.birth_dates
             .insert(player_id.to_string(), birth_date.into());
+    }
+
+    pub fn position(&self, player_id: u32) -> Option<&str> {
+        self.positions
+            .get(&player_id.to_string())
+            .map(String::as_str)
+    }
+
+    pub fn upsert_position(&mut self, player_id: u32, position: impl Into<String>) {
+        self.positions
+            .insert(player_id.to_string(), position.into());
     }
 
     pub fn len(&self) -> usize {
@@ -746,6 +762,7 @@ mod tests {
         let original_count = mcdavid.stints.len();
         store.upsert(mcdavid);
         store.upsert_birth_date(8478402, "1997-01-13");
+        store.upsert_position(8478402, "C");
         store.stamp_now();
         store.save(&path).expect("save ok");
 
@@ -756,6 +773,7 @@ mod tests {
         let h = loaded.get(8478402).expect("McDavid present");
         assert_eq!(h.stints.len(), original_count);
         assert_eq!(loaded.birth_date(8478402), Some("1997-01-13"));
+        assert_eq!(loaded.position(8478402), Some("C"));
         // OHL stint still resolves after round-trip.
         assert!(h.stints.iter().any(|s| s.league.0 == "OHL"));
     }

@@ -482,8 +482,8 @@ reinterpret waiver exposure as clearance or a camp cut as assignment.
 SCOUT/PACE required exact player eligibility to survive the camp seal. The
 rebuild preserves position lists for all 933 camp players, including 26 with
 multiple positions. Old forecasts without primary eligibility now fail closed;
-the 255 missing exact-position blockers are prior-only evidence gaps, not
-forward-group guesses.
+the initial 255 missing exact-position blockers were prior-only evidence gaps,
+not forward-group guesses.
 
 FORGE/BENCH/EDGE reviewed the composition tests and real 32-team run. Matching
 season/schema/cohort checks, duplicate-team/player refusal, provisional/final
@@ -554,3 +554,24 @@ team only after consuming the complete envelope state.
 
 **Verdict:** pass for lowering. S2 remains open for real source review and
 32/32 affiliate plus organization-lineup artifacts.
+
+### S2 official-position cache review
+
+HART/KEEL/TAPE accepted official NHL landing `position` as additive identity
+metadata in the existing career cache. The ledger carries it through the same
+source fingerprint; the workboard consults it only when rollover position is
+missing.
+
+SCOUT/WIRE required narrow semantics: landing primary position can resolve a
+generic AHL `F`, but it cannot create dual eligibility, assignment, prospect
+status, recall readiness, or projected value. Camp-authored exact eligibility
+continues to win when present.
+
+BENCH/EDGE/FORGE verified old-cache compatibility, store round trip, fallback
+behavior, 1,323/1,323 refreshed positions with zero acquisition skips, and the
+real blocker delta from 255 to zero. The 1,174 projected-score gaps remain
+untouched rather than borrowing a position-based proxy.
+
+**Verdict:** pass. Exact-position acquisition is closed for the current
+all-32 workboard; S2 remains open on score, status, assignment, prospect,
+recall, waiver, and final-rule authority.

@@ -1656,6 +1656,7 @@ async fn do_career(
     .context("fetching player landing career batch through FLETCH")?;
     let mut histories = Vec::with_capacity(landing_by_player.len());
     let mut birth_dates = Vec::new();
+    let mut positions = Vec::new();
     let mut skipped = Vec::new();
     for player_id in &player_ids {
         let Some(raw_bytes) = landing_by_player.get(player_id) else {
@@ -1672,6 +1673,9 @@ async fn do_career(
         if let Some(birth_date) = raw.get("birthDate").and_then(serde_json::Value::as_str) {
             birth_dates.push((*player_id, birth_date.to_owned()));
         }
+        if let Some(position) = raw.get("position").and_then(serde_json::Value::as_str) {
+            positions.push((*player_id, position.to_owned()));
+        }
         match icelines_fetch::career_landing::parse_career_history(*player_id, &raw) {
             Ok(history) => histories.push(history),
             Err(error) => skipped.push((*player_id, error.to_string())),
@@ -1687,6 +1691,9 @@ async fn do_career(
     }
     for (player_id, birth_date) in birth_dates {
         blob.upsert_birth_date(player_id, birth_date);
+    }
+    for (player_id, position) in positions {
+        blob.upsert_position(player_id, position);
     }
     blob.stamp_now();
     blob.save(&path).context("saving career_history.json")?;

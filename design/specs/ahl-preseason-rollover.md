@@ -152,7 +152,8 @@ lists, including 26 multi-position players, then composed all 32 affiliates.
 It exposes 1,371 viable candidates and zero facts-ready candidates. The
 remaining queues include 1,371 assignment, prospect-status, and recall-
 readiness authorities; 1,174 organization-status and projected-score facts;
-144 waiver clearances; 255 exact positions for prior-only rows; 52 missing
-professional-game histories; and 1,202 skaters awaiting final development-rule
+144 waiver clearances; zero exact-position gaps after official NHL landing
+position composition; 52 missing professional-game histories; and 1,202
+skaters awaiting final development-rule
 qualification. These counts describe missing authority and are not roster
 predictions.

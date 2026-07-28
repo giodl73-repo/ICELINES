@@ -268,6 +268,27 @@ pub fn build_ahl_preseason_league_facts_workboard(
                 }
             };
             let evidence = player.nhl_player_id.and_then(|id| ledger.get(&id).copied());
+            let primary_position = player
+                .primary_position
+                .or_else(|| evidence.and_then(|row| row.official_position));
+            let eligible_positions = if player.eligible_positions.is_empty() {
+                primary_position.into_iter().collect()
+            } else {
+                player.eligible_positions.clone()
+            };
+            let position_group = if player.position_group == AhlPreseasonPositionGroup::Unknown {
+                primary_position.map_or(AhlPreseasonPositionGroup::Unknown, |position| {
+                    if position == Position::Goalie {
+                        AhlPreseasonPositionGroup::Goalie
+                    } else if position == Position::Defense {
+                        AhlPreseasonPositionGroup::Defense
+                    } else {
+                        AhlPreseasonPositionGroup::Forward
+                    }
+                })
+            } else {
+                player.position_group
+            };
             let professional_games_at_season_start =
                 evidence.and_then(|row| row.professional_games_at_season_start);
             let development_rule_qualified =
@@ -294,17 +315,16 @@ pub fn build_ahl_preseason_league_facts_workboard(
                 {
                     blockers.insert(AhlPreseasonFactBlocker::WaiverClearance);
                 }
-                if player.primary_position.is_none()
-                    || !player
-                        .primary_position
-                        .is_some_and(|position| player.eligible_positions.contains(&position))
+                if primary_position.is_none()
+                    || !primary_position
+                        .is_some_and(|position| eligible_positions.contains(&position))
                 {
                     blockers.insert(AhlPreseasonFactBlocker::ExactPosition);
                 }
                 if player.projected_score.is_none() {
                     blockers.insert(AhlPreseasonFactBlocker::ProjectedScore);
                 }
-                if player.position_group != AhlPreseasonPositionGroup::Goalie {
+                if position_group != AhlPreseasonPositionGroup::Goalie {
                     if professional_games_at_season_start.is_none() {
                         blockers.insert(AhlPreseasonFactBlocker::ProfessionalGames);
                     }
@@ -322,9 +342,9 @@ pub fn build_ahl_preseason_league_facts_workboard(
                 display_name: player.display_name.clone(),
                 status,
                 origins: player.origins.clone(),
-                position_group: player.position_group,
-                primary_position: player.primary_position,
-                eligible_positions: player.eligible_positions.clone(),
+                position_group,
+                primary_position,
+                eligible_positions,
                 projected_score: player.projected_score,
                 prospect: None,
                 recall_readiness: None,
@@ -1112,6 +1132,7 @@ mod tests {
                 nhl_player_id: 1,
                 display_name: "Player One".to_owned(),
                 affiliate_appearances: 1,
+                official_position: Some(Position::LeftWing),
                 professional_games_at_season_start: Some(100),
                 within_game_threshold: Some(true),
                 birth_date: Some("2000-01-01".to_owned()),
@@ -1178,6 +1199,24 @@ mod tests {
         assert!(row
             .blockers
             .contains(&AhlPreseasonFactBlocker::AssignmentAuthority));
+    }
+
+    #[test]
+    fn official_landing_position_fills_generic_prior_affiliate_position() {
+        let mut rollover = rollover();
+        rollover.rollovers[0].players[0].primary_position = None;
+        rollover.rollovers[0].players[0].eligible_positions.clear();
+        let board = build_ahl_preseason_league_facts_workboard(
+            &rollover,
+            &ledger(AhlProfessionalGamePolicyAuthority::Final),
+        )
+        .unwrap();
+        let row = &board.team_workboards[0].players[0];
+        assert_eq!(row.primary_position, Some(Position::LeftWing));
+        assert_eq!(row.eligible_positions, [Position::LeftWing]);
+        assert!(!row
+            .blockers
+            .contains(&AhlPreseasonFactBlocker::ExactPosition));
     }
 
     fn overlay(

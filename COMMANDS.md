@@ -3203,6 +3203,10 @@ authority. Every emitted team has already passed the canonical 12F/6D/2G and
 development-rule projection builder. Incomplete teams remain named failures in
 the league document.
 
+`fetch career --league-crosswalk ...` stores official NHL landing birth dates
+and primary positions beside career stints. The position is a fallback for a
+generic AHL `F` row only; it is not fantasy eligibility or assignment evidence.
+
 ---
 
 ## Global flags
