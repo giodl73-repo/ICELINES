@@ -496,7 +496,12 @@ mod tests {
         command::{execute_command, parse_command, Command},
         event::Action,
     };
+    use axum::{
+        body::Body,
+        http::{Request, StatusCode},
+    };
     use ratatui::{backend::TestBackend, Terminal};
+    use tower::ServiceExt;
 
     fn render_app(app: &App, width: u16, height: u16) -> String {
         let backend = TestBackend::new(width, height);
@@ -915,5 +920,110 @@ mod tests {
         ));
         app.handle(Action::Char('p'));
         assert_eq!(app.selected, 1);
+    }
+
+    #[tokio::test]
+    async fn l2_organization_window_golden_parity_across_cli_tui_and_web() {
+        let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let board_path =
+            manifest_dir.join("../examples/organization-window-board-evaluation-2026-27.json");
+        let expected_board = organization_window_board().clone();
+        let expected_card = card("WINDOW-NYR").clone();
+        let temp = tempfile::tempdir().unwrap();
+
+        let cli_board_path = temp.path().join("window.json");
+        crate::commands::icecast::run_window(
+            board_path.clone(),
+            None,
+            true,
+            false,
+            Some(cli_board_path.clone()),
+        )
+        .unwrap();
+        let cli_board: OrganizationWindowBoardView =
+            serde_json::from_slice(&std::fs::read(cli_board_path).unwrap()).unwrap();
+        assert_eq!(cli_board, expected_board);
+
+        let cli_card_path = temp.path().join("window-card.json");
+        crate::commands::icecast::run_window_card(
+            board_path,
+            "NYR".to_owned(),
+            Some("New York Rangers".to_owned()),
+            Some("2026-07-28T03:00:00Z".to_owned()),
+            Some(cli_card_path.clone()),
+        )
+        .unwrap();
+        let cli_card: CardDocumentView =
+            serde_json::from_slice(&std::fs::read(cli_card_path).unwrap()).unwrap();
+        assert_eq!(cli_card, expected_card);
+
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let board_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/window/balanced.v1/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(board_response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(board_response.into_body(), 8 * 1024 * 1024)
+            .await
+            .unwrap();
+        let web_board: OrganizationWindowBoardView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_board, expected_board);
+
+        let card_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/cards/organization-window/20262027/NYR")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(card_response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(card_response.into_body(), 4 * 1024 * 1024)
+            .await
+            .unwrap();
+        let web_card: CardDocumentView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_card, expected_card);
+
+        let html_response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/window/balanced.v1/20262027?team=NYR")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(html_response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(html_response.into_body(), 2 * 1024 * 1024)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body.to_vec()).unwrap();
+
+        let tui_card = document_lines(&expected_card, 0, 80).join("\n");
+        for expected in [
+            "Score: 42.4",
+            "League rank: NR",
+            "Confidence: 9%",
+            "Coverage: 16%",
+        ] {
+            assert!(tui_card.contains(expected), "TUI missing {expected}");
+            let value = expected.split_once(": ").unwrap().1;
+            assert!(html.contains(value), "Web HTML missing {value}");
+        }
+        let tui_board = organization_window_board_lines(&expected_board, 1, 80);
+        let nyr_row = tui_board
+            .iter()
+            .find(|line| line.split_whitespace().any(|cell| cell == "NYR"))
+            .unwrap();
+        let cells = nyr_row.split_whitespace().collect::<Vec<_>>();
+        assert_eq!(&cells[..5], &["NR", "NYR", "42.4", "9%", "16%"]);
     }
 }

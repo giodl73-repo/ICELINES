@@ -164,3 +164,13 @@ withheld, percentile boundaries can produce zero aggregate movement from a
 real raw change, and the shock assumptions are not labeled calibrated. This
 closes the real-scenario evidence blocker without changing the W3-W4 production
 coverage, W7 future-holdout, package-matrix, or cross-surface parity gates.
+
+### W8-W9 parity and package checkpoint
+
+The automated golden now proves exact sealed board/card equality across CLI
+JSON, TUI bundles, Web JSON, and the card API, then checks the renderer contract
+for score, rank-withheld state, confidence, and coverage in both TUI and focused
+HTML. The PR workflow also packages and verifies Linux x86_64, Windows x86_64,
+macOS ARM64, and macOS x86_64 archives using the tagged-release shape. W8 is
+complete; W9 still requires observing all four new package jobs green before
+release closeout.
