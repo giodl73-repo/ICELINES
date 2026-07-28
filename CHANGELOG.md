@@ -61,6 +61,8 @@ evidence-aware hockey primitives.**
   bundle; explicit season requests remain strict.
 - Removed a stale CI reference to the retired PROOF smoke target and updated
   the workspace for Rust 1.95's warnings-as-errors lint set.
+- Build the Linux x64 release on the runner-native GNU target so the shipped
+  OpenSSL-backed HTTP stack is linked and verified by the release workflow.
 
 ---
 
