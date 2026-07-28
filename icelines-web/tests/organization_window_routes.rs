@@ -52,6 +52,11 @@ async fn focused_window_html_and_card_use_same_registered_artifact() {
     assert!(html.contains("The Window"));
     assert!(html.contains("NYR"));
     assert!(!html.contains(">SEA</a>"));
+    assert!(html.contains("class=\"skip-link\""));
+    assert!(html.contains("<main id=\"main\" tabindex=\"-1\">"));
+    assert!(html.contains("<caption>"));
+    assert!(html.contains("aria-label=\"Organization Window standings\""));
+    assert!(html.contains("<th scope=\"col\">Team</th>"));
 
     let card_response = app
         .oneshot(

@@ -78,6 +78,16 @@ Invoke-Smoke "serve help" @("serve", "--help") @("web dashboard", "--no-open")
 Invoke-Smoke "docs" @("docs") @("IceLines", "Command Reference")
 Invoke-Smoke "markdown export" @("export", "md", "leaders", "--out", "-", "--top", "3", "--season", "20242025") @("type: leaderboard", "| Rank | Player |")
 Invoke-Smoke "poach" @("poach", "--top", "3", "--season", "20242025") @("Rank Player", "Why/Risk", "Source state:")
+$WindowBoard = Join-Path $RepoRoot "examples\organization-window-board-evaluation-2026-27.json"
+Invoke-Smoke "window no-live" @(
+    "--no-live",
+    "icecast",
+    "window",
+    "--input",
+    $WindowBoard,
+    "--team",
+    "NYR"
+) @("THE WINDOW", "NYR  score", "rank  NR", "RANK GATE:")
 
 Write-Host "smoke: serve url" -ForegroundColor Cyan
 $stdoutPath = Join-Path $env:TEMP "icelines-release-smoke-stdout.txt"

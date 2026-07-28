@@ -2330,13 +2330,21 @@ mod tests {
     }
 
     #[test]
-    fn loaded_board_validation_replays_derived_values_and_refuses_tampering() {
+    fn canonical_window_fingerprint_is_cross_platform_and_replay_valid() {
         let inventory = load_organization_window_profile_inventory().unwrap();
         let mut board: OrganizationWindowBoardView = serde_json::from_str(include_str!(
             "../../../examples/organization-window-board-evaluation-2026-27.json"
         ))
         .unwrap();
 
+        assert_eq!(
+            board.manifest.fingerprint,
+            "d736832af289254240834ebfe9c1a19a92bf927879489e8ffb465ffea54e3365"
+        );
+        assert_eq!(
+            board.fingerprint,
+            "3f0c171287fdfb4aeb4efaf9f610698b0480301fb9e7686764c66fbede8203eb"
+        );
         validate_organization_window_board(&board, &inventory).unwrap();
 
         let profile = &mut board.organizations[0].dimensions[0].profiles[0];

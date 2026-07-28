@@ -131,4 +131,17 @@ fixture registers a new method, adds it to a custom Frame, and scores all 32
 organizations without scorer or renderer changes. This closes the
 implementation trust-boundary blocker, but does not close the four product
 evidence blockers above: real checkpoint history, real scenario distributions,
-real rolling origins/holdout evidence, and live cross-surface review remain.
+real rolling origins/holdout evidence, and automated full cross-surface golden
+parity remain.
+
+The subsequent W9b pass added a fixed-hash Windows/Linux/macOS CI matrix,
+offline Window release smoke, verified Windows archive/checksum/manifest,
+dependency audit, and an optimized performance baseline. Live Edge review at
+1440px, 900px, and 390px exposed and fixed missing board skip/caption/focus
+semantics plus narrow fingerprint/card overflow. Five regenerated screenshots
+then passed dimension/nonblank checks and manual hierarchy/containment review.
+The subsequent keyboard run verified first-Tab skip links and Enter transfer to
+the main focus target on both board and card routes. Reduced-motion emulation
+reported no spinner animation and 0.01ms fallback durations; computed layout
+reported no page overflow at 390px. The remaining visual gate is automated full
+cross-surface golden parity, not first browser or interaction evidence.

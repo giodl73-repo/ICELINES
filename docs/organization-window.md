@@ -208,6 +208,37 @@ then rebuilds normalized scores, aggregates, classifications, drivers,
 blockers, and ranks from the stored raw observations. Rehashing hand-edited
 output values therefore cannot turn them into a trusted artifact.
 
+### Performance baseline
+
+The 2026-07-27 Windows x64 release baseline uses the 746,508-byte bundled
+all-32 evaluation board and the optimized `icelines 0.26.0` binary. Five
+consecutive offline focused-team runs of:
+
+```powershell
+icelines --no-live icecast window `
+  --input examples/organization-window-board-evaluation-2026-27.json `
+  --team NYR
+```
+
+measured 4,111.6 ms for the cold process/OS/antivirus start and 45.1, 44.7,
+44.2, and 47.9 ms warm (44.9 ms warm median). These are reproducible reference
+measurements, not a universal latency guarantee. Web and TUI retain the
+validated embedded board in a process-local `OnceLock`; CLI remains one-shot.
+No cache entry can bypass canonical replay validation, and fingerprints—not
+filesystem timestamps—remain the cache identity.
+
+Run the live narrow/desktop browser and semantic review with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/window-browser-review.ps1
+```
+
+The gate starts IceLines with `--no-live`, checks skip navigation, main focus,
+table captions/headers, rank-gate copy, focused-team isolation, and both card
+pages, then captures nonblank all-team/focused/card images at desktop, tablet,
+and 390-pixel mobile widths. Browser background networking and sync are
+disabled for the capture process.
+
 Release gates validate inventory counts, dependency graphs, schemas,
 fingerprints, the complete cohort, tied/inverse/target-range normalization,
 missingness, history/scenario compatibility, leakage status, surface parity,

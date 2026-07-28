@@ -113,9 +113,18 @@ now has typed authority adapters and direct/cohort/unchanged attribution with
 unattributed-change refusal; real isolated/combined multi-source boards,
 and rolling-origin calibration now has frozen baselines, ablations, stability,
 between-origin uncertainty, and deterministic sealing. Real point-in-time
-seasons, trial-noise propagation, untouched holdouts, and live
-browser/accessibility review remain open; owned by WP-011 and
+seasons, trial-noise propagation, untouched holdouts, and automated full
+cross-surface golden parity remain open; owned by WP-011 and
 REQ-WINDOW-001..008.
+
+Selected browser evidence now exists for the all-32 board, focused NYR board,
+and both NYR card pages at desktop/tablet/mobile widths. The reusable gate also
+checks skip navigation, main focus target, semantic captions/headers, rank-gate
+copy, focused-team isolation, and nonblank exact-dimension captures. Full
+golden parity, remote three-OS fingerprint results, and real historical evidence
+keep VAL-013 partial. A local explicit keyboard walkthrough verified first-Tab
+skip links and Enter focus transfer to `main` on both routes; reduced-motion
+emulation and 390px computed containment also passed.
 
 ## Deferred Validation
 
