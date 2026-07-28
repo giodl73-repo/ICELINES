@@ -174,3 +174,10 @@ HTML. The PR workflow also packages and verifies Linux x86_64, Windows x86_64,
 macOS ARM64, and macOS x86_64 archives using the tagged-release shape. W8 is
 complete; W9 still requires observing all four new package jobs green before
 release closeout.
+
+PR #23 run `30351304523` subsequently passed all 26 checks. Linux x86_64,
+Windows x86_64, macOS ARM64, and macOS x86_64 each built, archived,
+checksummed, inspected, and uploaded successfully. The existing release smoke,
+coverage, quality, test, and three-OS fingerprint jobs were green in the same
+run. This closes W9's package observation and release-evidence gate; it does
+not alter the explicit incomplete-source or future-holdout product status.

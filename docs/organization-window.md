@@ -16,8 +16,8 @@ calibration artifact supports a narrower predictive claim.
   compare sealed boards without rewriting them.
 - `card_document.v1` is the renderer-neutral focused-team projection.
 
-The reviewed registry contains 32 candidate profiles: 17 ready for typed
-adapters, 8 evaluation, 4 context-only, and 3 blocked. The blocked shift,
+The reviewed registry contains 37 candidate profiles: 17 ready for typed
+adapters, 13 evaluation, 4 context-only, and 3 blocked. The blocked shift,
 injury, and confirmed-cap signals receive no proxy score.
 
 ## Build and inspect
