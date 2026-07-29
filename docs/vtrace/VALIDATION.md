@@ -116,9 +116,12 @@ has frozen baselines, ablations, stability, between-origin uncertainty,
 deterministic sealing, and four real point-in-time origins. Calibration trial
 noise now has validated `not_provided`, `not_applicable`, and sealed-estimate
 propagation paths separate from between-origin variation; the retained real
-artifact remains honestly `not_provided`. Production source completion and a
-genuinely future untouched holdout remain open. These gates are owned by WP-011
-and REQ-WINDOW-001..009.
+artifact remains honestly `not_provided`. The next genuinely future test is
+now preregistered without outcomes: its complete feature board, neutral
+baseline, leakage audit, scoring date, and acceptance rule are sealed before
+the season, but results remain calendar-gated. Production source completion
+and the scored future holdout remain open. These gates are owned by WP-011 and
+REQ-WINDOW-001..009.
 
 Selected browser evidence now exists for the all-32 board, focused NYR board,
 and both NYR card pages at desktop/tablet/mobile widths. The reusable gate also

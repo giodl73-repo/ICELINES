@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_window_future_holdout_result.v1.schema.json",
+  "title": "IceLines Organization Window Future Holdout Result v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "registration",
+    "standings",
+    "scored_at",
+    "calibration",
+    "acceptance_passed",
+    "disclosures",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "organization_window_future_holdout_result.v1" },
+    "registration": { "type": "object" },
+    "standings": { "type": "object" },
+    "scored_at": { "type": "string", "format": "date-time" },
+    "calibration": { "type": "object" },
+    "acceptance_passed": { "type": "boolean" },
+    "disclosures": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "additionalProperties": false
+}

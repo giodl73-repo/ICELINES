@@ -2,24 +2,28 @@
 
 ## Organization Window
 
-- [ ] Inventory readiness totals and blocked authorities match the shipped registry.
-- [ ] Official Frame fingerprint and all-32 cohort are stable across input order/platforms.
-- [ ] Missing or uneven evidence withholds rank and is not zero-filled.
-- [ ] Saved board, CLI/TUI/Web projections, API JSON, and cards agree.
-- [ ] Historical/scenario comparisons reject incompatible manifests or incomplete sources.
-- [ ] Calibration claims include leakage audit, baseline, ablation, and multi-season evidence.
-- [ ] Profile-author, custom-Frame, compatibility, cache, and changelog docs match the release.
+- [x] Inventory readiness totals and blocked authorities match the shipped registry.
+- [x] Official Frame fingerprint and all-32 cohort are stable across input order/platforms.
+- [x] Missing or uneven evidence withholds rank and is not zero-filled.
+- [x] Saved board, CLI/TUI/Web projections, API JSON, and cards agree.
+- [x] Historical/scenario comparisons reject incompatible manifests or incomplete sources.
+- [x] Calibration claims include leakage audit, baseline, ablation, and multi-season evidence.
+- [x] Profile-author, custom-Frame, compatibility, cache, and changelog docs match the release.
 - [x] Registry lifecycle fingerprint is sealed; retired/deprecated/demoted methods pass new-authoring and saved-board replay checks.
+- [x] The next future holdout freezes its board, target, baseline, leakage audit, eligibility date, and acceptance rule without outcomes.
+- [ ] The production balanced Frame completes 16/16 required profiles and ranks all 32 teams without proxies.
+- [ ] The registered 2025-26 -> 2026-27 future holdout is scored once after April 11, 2027 and retained regardless of result.
 
 W9 evidence recorded 2026-07-27: fixed-hash replay passes on Windows, Linux,
 and macOS in PR CI;
 focused CLI/TUI/Web tests and nine schema checks pass; `cargo audit` has no
 blocking vulnerability; offline release smoke includes The Window; the Windows
 ZIP/checksum/package manifest verify; and the live desktop/tablet/mobile Window
-browser-review script passes. Leave the checklist open until the full package
-matrix, real multi-season calibration evidence, and automated
-cross-surface golden parity complete. The local keyboard/reduced-motion and
-390px containment review passes.
+browser-review script passes. Full package, multi-season retrospective evidence,
+and cross-surface golden parity now pass. The future holdout is preregistered
+without outcomes; production source completeness and its eventual score remain
+the two open product gates. The local keyboard/reduced-motion and 390px
+containment review passes.
 
 **Owner phase**: Jim Gregory - release and operations hardening
 **Applies to**: tagged GitHub releases and local release candidate builds

@@ -837,7 +837,14 @@ mod tests {
         assert!(shift.contains("Observed standings points: +10.00"));
         let insider = document_lines(nyr, 1, 100).join("\n");
         assert!(insider.contains("Sealed checkpoint delta"));
-        assert!(insider.contains("earlier-run, later-run"));
+        assert!(insider.contains("Earlier sealed IceCast league run"));
+        assert!(insider.contains("Later sealed IceCast league run"));
+        assert!(
+            insider.contains("11cdcfcf9c10338a0384454803ca0aa67abdcb1ddce371c7f0b71c7faf320fef")
+        );
+        assert!(
+            insider.contains("5f14d35e417c6ca1897e9ebccfbe773fb92452b1b23282b9cc868460db3ac20a")
+        );
         assert_eq!(
             parse_command("movement-card SEA").unwrap(),
             Command::TeamCard {

@@ -2447,6 +2447,34 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Freeze an outcome-free future Window holdout before results are observable.
+    #[command(name = "window-holdout-register")]
+    WindowHoldoutRegister {
+        #[arg(long)]
+        source_season: u32,
+        #[arg(long)]
+        target_season: u32,
+        #[arg(long)]
+        feature_cutoff: String,
+        #[arg(long)]
+        outcome_not_before: String,
+        #[arg(long)]
+        registered_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Score the exact registered future Window holdout after outcomes are eligible.
+    #[command(name = "window-holdout-score")]
+    WindowHoldoutScore {
+        #[arg(long, value_name = "PATH")]
+        registration: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        standings: PathBuf,
+        #[arg(long)]
+        scored_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Project one team from a sealed league forecast into `card_document.v1`.
     #[command(name = "season-card")]
     SeasonCard {
@@ -3392,6 +3420,52 @@ mod tui_surface_tests {
                     target_season: 20252026,
                     ..
                 })
+            ));
+
+            let holdout = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-holdout-register",
+                "--source-season",
+                "20252026",
+                "--target-season",
+                "20262027",
+                "--feature-cutoff",
+                "2026-06-30",
+                "--outcome-not-before",
+                "2027-04-11",
+                "--registered-at",
+                "2026-07-29T12:00:00Z",
+                "--out",
+                "future-holdout.json",
+            ])
+            .expect("future Window holdout registration should parse");
+            assert!(matches!(
+                holdout.command,
+                Commands::Icecast(IceCastSubcommand::WindowHoldoutRegister {
+                    source_season: 20252026,
+                    target_season: 20262027,
+                    ..
+                })
+            ));
+
+            let holdout_score = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-holdout-score",
+                "--registration",
+                "future-holdout.json",
+                "--standings",
+                "standings-2026-27.json",
+                "--scored-at",
+                "2027-04-11T13:00:00Z",
+                "--out",
+                "future-holdout-result.json",
+            ])
+            .expect("future Window holdout scoring should parse");
+            assert!(matches!(
+                holdout_score.command,
+                Commands::Icecast(IceCastSubcommand::WindowHoldoutScore { .. })
             ));
 
             let report = Cli::try_parse_from([

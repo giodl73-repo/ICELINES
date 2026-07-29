@@ -1,6 +1,6 @@
 # The Window — Organization Health and Competitive Window
 
-**Status:** Implemented for evaluation — production source and future-holdout gates open
+**Status:** Implemented for evaluation — production source and scored future-holdout gates open; future test preregistered
 **Date:** 2026-07-27 (consolidated 2026-07-28)
 **Owner:** IceCast organization intelligence
 **Surface coverage:** CLI implemented · TUI implemented · Web/API implemented · JSON implemented · Card implemented
@@ -700,6 +700,19 @@ separate propagated interval. Mixed or malformed trial evidence never produces
 a partial interval. Mixed Frame fingerprints,
 incomplete pane scores, invalid outcome cohorts, and incomplete leakage audits
 fail closed rather than being pooled.
+
+Before a genuinely future outcome is observable,
+`organization_window_future_holdout_registration.v1` seals the complete ranked
+feature board, target, neutral baseline, leakage audit, outcome-eligibility
+date, and acceptance rule. The closed document has no outcome or claim-status
+field. Its timestamp must fall between the feature cutoff and outcome
+eligibility date; the board must use the registered observed-history method and
+all 32 ranks must be present. A final result is scored once after eligibility
+against separately sealed official standings and is retained regardless of
+whether it passes, fails, or is inconclusive.
+`organization_window_future_holdout_result.v1` embeds both sealed inputs,
+recomputes the single-origin calibration, refuses early standings/capture/score
+dates, derives the committed acceptance result, and seals the complete replay.
 
 ## Failure policy
 

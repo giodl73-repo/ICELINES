@@ -18,6 +18,11 @@ evidence-aware hockey primitives.**
   special teams, matchup roles, and management-behavior evidence.
 - Added sealed per-origin calibration trial-noise states and fail-closed
   standard-error propagation, kept separate from between-season uncertainty.
+- Added an outcome-free future-holdout registration contract and command. The
+  first sealed 2025-26 -> 2026-27 commitment freezes the complete feature board,
+  baseline, leakage audit, eligibility date, and acceptance rule before results.
+  A paired scoring command refuses early outcomes, replays both seals, and
+  derives pass/inconclusive evidence without refitting the registered test.
 - Added the UI-neutral card system so CLI, web, TUI, reports, fantasy, and
   simulation can consume the same prognosis and comparison documents without
   recomputing hockey logic.
@@ -62,6 +67,8 @@ evidence-aware hockey primitives.**
 - Fixed snapshot parent cycles that could make historical commands spin before
   bundled fallback. New self-parent snapshots are rejected, existing cycles
   fail fast, and each release-smoke command now has a bounded timeout.
+- Fixed the full TUI suite's stale forecast-movement assertion after provenance
+  rendering was upgraded from raw IDs to sealed human-readable source details.
 - Unified implicit season loading across player, goalie, rank, group, export,
   projection, scouting, linemate, transaction, and cap surfaces: an installed
   live snapshot still wins, otherwise preseason builds use the newest completed

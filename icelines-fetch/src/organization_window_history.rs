@@ -4,9 +4,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{Datelike, NaiveDate};
 use icelines_core::{
-    build_organization_window_board, load_organization_window_profile_inventory,
-    load_organization_window_registry_lifecycle, seal_new_organization_window_manifest,
-    OrganizationProfileInput, OrganizationWindowBoardInput, OrganizationWindowManifestView,
+    build_organization_window_board, calibrate_organization_window,
+    load_organization_window_profile_inventory, load_organization_window_registry_lifecycle,
+    seal_new_organization_window_manifest, OrganizationProfileInput, OrganizationWindowBoardInput,
+    OrganizationWindowBoardView, OrganizationWindowCalibrationView, OrganizationWindowManifestView,
     WindowCalibrationEvaluationOriginInput, WindowCalibrationOriginInput,
     WindowCalibrationOriginRole, WindowCohortKind, WindowCohortManifest, WindowDimensionManifest,
     WindowEvidenceView, WindowFreshness, WindowHorizon, WindowLeakageAuditRow,
@@ -31,6 +32,15 @@ pub const ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA: &str =
     "organization_window_historical_origin.v1";
 pub const ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_JSON_SCHEMA: &str =
     include_str!("../../design/schemas/organization_window_historical_origin.v1.schema.json");
+pub const ORGANIZATION_WINDOW_FUTURE_HOLDOUT_REGISTRATION_SCHEMA: &str =
+    "organization_window_future_holdout_registration.v1";
+pub const ORGANIZATION_WINDOW_FUTURE_HOLDOUT_REGISTRATION_JSON_SCHEMA: &str = include_str!(
+    "../../design/schemas/organization_window_future_holdout_registration.v1.schema.json"
+);
+pub const ORGANIZATION_WINDOW_FUTURE_HOLDOUT_RESULT_SCHEMA: &str =
+    "organization_window_future_holdout_result.v1";
+pub const ORGANIZATION_WINDOW_FUTURE_HOLDOUT_RESULT_JSON_SCHEMA: &str =
+    include_str!("../../design/schemas/organization_window_future_holdout_result.v1.schema.json");
 pub const ORGANIZATION_WINDOW_STANDINGS_JSON_SCHEMA: &str =
     include_str!("../../design/schemas/organization_window_standings_snapshot.v1.schema.json");
 pub const ORGANIZATION_WINDOW_HISTORICAL_MANIFEST_ID: &str = "observed_history.v1";
@@ -128,6 +138,174 @@ pub struct OrganizationWindowHistoricalOriginArtifact {
     pub fingerprint: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationWindowHoldoutAcceptanceRule {
+    pub minimum_sample_size: usize,
+    pub require_mae_below_baseline: bool,
+    pub minimum_rank_correlation: f64,
+    pub require_complete_leakage_audit: bool,
+}
+
+/// Outcome-free commitment for one genuinely future Window holdout.
+///
+/// The complete feature board, baseline, target, cutoff, and acceptance rule
+/// are sealed before the target outcome is observable. Outcomes deliberately
+/// have no field in this document.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationWindowFutureHoldoutRegistration {
+    pub schema: String,
+    pub registration_id: String,
+    pub registered_at: String,
+    pub source_season: u32,
+    pub target_season: u32,
+    pub feature_cutoff: NaiveDate,
+    pub outcome_not_before: NaiveDate,
+    pub target: String,
+    pub origin_id: String,
+    pub board: OrganizationWindowBoardView,
+    pub leakage_audit: Vec<WindowLeakageAuditRow>,
+    pub baseline_value: f64,
+    pub acceptance: OrganizationWindowHoldoutAcceptanceRule,
+    pub source_fingerprints: Vec<String>,
+    pub disclosures: Vec<String>,
+    pub fingerprint: String,
+}
+
+impl OrganizationWindowFutureHoldoutRegistration {
+    pub fn validate(&self) -> Result<(), OrganizationWindowHistoryError> {
+        let inventory = load_organization_window_profile_inventory()
+            .map_err(|error| OrganizationWindowHistoryError::Board(error.to_string()))?;
+        let registered_date = chrono::DateTime::parse_from_rfc3339(&self.registered_at)
+            .map(|timestamp| timestamp.date_naive())
+            .map_err(|_| OrganizationWindowHistoryError::InvalidFutureHoldoutRegistration)?;
+        let expected_audit = self
+            .board
+            .manifest
+            .dimensions
+            .iter()
+            .flat_map(|dimension| &dimension.profiles)
+            .map(|profile| {
+                (
+                    profile.profile_key.as_str(),
+                    profile.method_version.as_str(),
+                )
+            })
+            .collect::<BTreeSet<_>>();
+        let actual_audit = self
+            .leakage_audit
+            .iter()
+            .map(|row| (row.profile_key.as_str(), row.method_version.as_str()))
+            .collect::<BTreeSet<_>>();
+        let mut expected_sources = self
+            .board
+            .source_fingerprints
+            .iter()
+            .filter(|fingerprint| fingerprint.starts_with("sha256:"))
+            .cloned()
+            .collect::<Vec<_>>();
+        expected_sources.sort();
+        let mut actual_sources = self.source_fingerprints.clone();
+        actual_sources.sort();
+        if self.schema != ORGANIZATION_WINDOW_FUTURE_HOLDOUT_REGISTRATION_SCHEMA
+            || self.registration_id
+                != format!(
+                    "future-holdout:{}-to-{}",
+                    self.source_season, self.target_season
+                )
+            || self.source_season % 10_000 != self.target_season / 10_000
+            || self.feature_cutoff >= self.outcome_not_before
+            || registered_date < self.feature_cutoff
+            || registered_date >= self.outcome_not_before
+            || self.target != "next-season-final-standings-percentile"
+            || self.origin_id != format!("{}-to-{}", self.source_season, self.target_season)
+            || self.board.season != self.target_season
+            || self.board.as_of != self.feature_cutoff
+            || self.board.generated_at != self.registered_at
+            || self.board.manifest.manifest_id != ORGANIZATION_WINDOW_HISTORICAL_MANIFEST_ID
+            || self.board.organizations.len() != CANONICAL_TEAMS.len()
+            || self
+                .board
+                .organizations
+                .iter()
+                .any(|organization| organization.overall.rank.is_none())
+            || expected_audit != actual_audit
+            || expected_audit.len() != self.leakage_audit.len()
+            || self
+                .leakage_audit
+                .iter()
+                .any(|row| !row.point_in_time_safe || row.evidence.trim().is_empty())
+            || self.baseline_value != 50.0
+            || self.acceptance.minimum_sample_size != CANONICAL_TEAMS.len()
+            || !self.acceptance.require_mae_below_baseline
+            || self.acceptance.minimum_rank_correlation != 0.3
+            || !self.acceptance.require_complete_leakage_audit
+            || self.source_fingerprints.len() < 2
+            || expected_sources != actual_sources
+            || self.disclosures.iter().any(|row| row.trim().is_empty())
+            || self.fingerprint != future_holdout_registration_fingerprint(self)?
+        {
+            return Err(OrganizationWindowHistoryError::InvalidFutureHoldoutRegistration);
+        }
+        icelines_core::validate_organization_window_board(&self.board, &inventory)
+            .map_err(|error| OrganizationWindowHistoryError::Board(error.to_string()))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationWindowFutureHoldoutResult {
+    pub schema: String,
+    pub registration: OrganizationWindowFutureHoldoutRegistration,
+    pub standings: OrganizationWindowStandingsSnapshot,
+    pub scored_at: String,
+    pub calibration: OrganizationWindowCalibrationView,
+    pub acceptance_passed: bool,
+    pub disclosures: Vec<String>,
+    pub fingerprint: String,
+}
+
+impl OrganizationWindowFutureHoldoutResult {
+    pub fn validate(&self) -> Result<(), OrganizationWindowHistoryError> {
+        self.registration.validate()?;
+        self.standings.validate()?;
+        let scored_date = chrono::DateTime::parse_from_rfc3339(&self.scored_at)
+            .map(|timestamp| timestamp.date_naive())
+            .map_err(|_| OrganizationWindowHistoryError::InvalidFutureHoldoutResult)?;
+        let captured_date = chrono::DateTime::parse_from_rfc3339(&self.standings.captured_at)
+            .map(|timestamp| timestamp.date_naive())
+            .map_err(|_| OrganizationWindowHistoryError::InvalidFutureHoldoutResult)?;
+        let outcomes = self.standings.outcomes();
+        let expected = calibrate_organization_window(
+            &self.registration.target,
+            &self.registration.board,
+            &outcomes,
+            &self.registration.leakage_audit,
+        )
+        .map_err(|error| OrganizationWindowHistoryError::Board(error.to_string()))?;
+        let registered_baseline_mae = outcomes
+            .iter()
+            .map(|row| (row.target_value - self.registration.baseline_value).abs())
+            .sum::<f64>()
+            / outcomes.len() as f64;
+        let expected_acceptance = holdout_acceptance_passed(&self.registration, &expected);
+        if self.schema != ORGANIZATION_WINDOW_FUTURE_HOLDOUT_RESULT_SCHEMA
+            || self.standings.target_season != self.registration.target_season
+            || self.standings.effective_date < self.registration.outcome_not_before
+            || captured_date < self.standings.effective_date
+            || scored_date < captured_date
+            || self.calibration != expected
+            || (self.calibration.overall.baseline_mean_absolute_error - registered_baseline_mae)
+                .abs()
+                > 1e-9
+            || self.acceptance_passed != expected_acceptance
+            || self.disclosures.iter().any(|row| row.trim().is_empty())
+            || self.fingerprint != future_holdout_result_fingerprint(self)?
+        {
+            return Err(OrganizationWindowHistoryError::InvalidFutureHoldoutResult);
+        }
+        Ok(())
+    }
+}
+
 impl OrganizationWindowHistoricalOriginArtifact {
     pub fn evaluation_input(&self) -> WindowCalibrationEvaluationOriginInput {
         WindowCalibrationEvaluationOriginInput {
@@ -177,6 +355,10 @@ pub enum OrganizationWindowHistoryError {
     Board(String),
     #[error("historical Window origin is invalid or its fingerprint does not match")]
     InvalidHistoricalOrigin,
+    #[error("future Window holdout registration is invalid or its fingerprint does not match")]
+    InvalidFutureHoldoutRegistration,
+    #[error("future Window holdout result is invalid, early, or its fingerprint does not match")]
+    InvalidFutureHoldoutResult,
 }
 
 #[derive(Debug, Default)]
@@ -190,6 +372,13 @@ struct HistoricalTeamAggregate {
     birth_dated_points: u64,
     young_points: u64,
     players: u64,
+}
+
+struct HistoricalFeatureBundle {
+    board: OrganizationWindowBoardView,
+    leakage_audit: Vec<WindowLeakageAuditRow>,
+    stats_fingerprint: String,
+    bios_fingerprint: String,
 }
 
 pub fn build_organization_window_standings_snapshot(
@@ -360,9 +549,6 @@ pub fn build_historical_organization_window_origin(
     bios: &[SkaterBio],
     outcomes: &OrganizationWindowStandingsSnapshot,
 ) -> Result<OrganizationWindowHistoricalOriginArtifact, OrganizationWindowHistoryError> {
-    if source_season % 10_000 != target_season / 10_000 {
-        return Err(OrganizationWindowHistoryError::NonConsecutiveSeasons);
-    }
     outcomes.validate()?;
     if outcomes.target_season != target_season {
         return Err(OrganizationWindowHistoryError::IncompleteSource(format!(
@@ -372,6 +558,169 @@ pub fn build_historical_organization_window_origin(
     }
     if outcomes.effective_date <= as_of {
         return Err(OrganizationWindowHistoryError::OutcomeBeforeFeatureCutoff);
+    }
+    let features = build_historical_feature_bundle(
+        source_season,
+        target_season,
+        as_of,
+        generated_at,
+        stats,
+        bios,
+    )?;
+    let outcome_fingerprint = format!("sha256:{}", outcomes.fingerprint);
+    let origin = WindowCalibrationOriginInput {
+        origin_id: format!("{source_season}-to-{target_season}"),
+        board: features.board,
+        outcomes: outcomes.outcomes(),
+        leakage_audit: features.leakage_audit,
+        baseline_value: 50.0,
+        trial_noise: WindowTrialNoiseInput::NotApplicable,
+    };
+    let mut artifact = OrganizationWindowHistoricalOriginArtifact {
+        schema: ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA.to_owned(),
+        source_season,
+        target_season,
+        as_of,
+        role,
+        origin,
+        source_fingerprints: vec![
+            features.stats_fingerprint,
+            features.bios_fingerprint,
+            outcome_fingerprint,
+        ],
+        disclosures: vec![
+            "This is a retrospective observed Frame and is separate from the current balanced.v1 descriptive Frame.".to_owned(),
+            "Features use only the completed source season; final target-season standings are attached after the feature cutoff.".to_owned(),
+            "The frozen comparison baseline is the neutral 50.0 league percentile for every organization.".to_owned(),
+            "Multi-team aggregate skater rows are omitted from team profiles rather than allocated without stint-level authority.".to_owned(),
+        ],
+        fingerprint: String::new(),
+    };
+    artifact.fingerprint = historical_origin_fingerprint(&artifact)?;
+    Ok(artifact)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn build_organization_window_future_holdout_registration(
+    source_season: u32,
+    target_season: u32,
+    feature_cutoff: NaiveDate,
+    outcome_not_before: NaiveDate,
+    registered_at: &str,
+    stats: &[SkaterStats],
+    bios: &[SkaterBio],
+) -> Result<OrganizationWindowFutureHoldoutRegistration, OrganizationWindowHistoryError> {
+    if feature_cutoff >= outcome_not_before
+        || chrono::DateTime::parse_from_rfc3339(registered_at).is_err()
+    {
+        return Err(OrganizationWindowHistoryError::InvalidFutureHoldoutRegistration);
+    }
+    let features = build_historical_feature_bundle(
+        source_season,
+        target_season,
+        feature_cutoff,
+        registered_at,
+        stats,
+        bios,
+    )?;
+    let mut registration = OrganizationWindowFutureHoldoutRegistration {
+        schema: ORGANIZATION_WINDOW_FUTURE_HOLDOUT_REGISTRATION_SCHEMA.to_owned(),
+        registration_id: format!("future-holdout:{source_season}-to-{target_season}"),
+        registered_at: registered_at.to_owned(),
+        source_season,
+        target_season,
+        feature_cutoff,
+        outcome_not_before,
+        target: "next-season-final-standings-percentile".to_owned(),
+        origin_id: format!("{source_season}-to-{target_season}"),
+        board: features.board,
+        leakage_audit: features.leakage_audit,
+        baseline_value: 50.0,
+        acceptance: OrganizationWindowHoldoutAcceptanceRule {
+            minimum_sample_size: CANONICAL_TEAMS.len(),
+            require_mae_below_baseline: true,
+            minimum_rank_correlation: 0.3,
+            require_complete_leakage_audit: true,
+        },
+        source_fingerprints: vec![features.stats_fingerprint, features.bios_fingerprint],
+        disclosures: vec![
+            "This outcome-free registration freezes the feature board before target-season results are observed.".to_owned(),
+            "The target, neutral baseline, cohort, leakage audit, and acceptance rule may not be changed after registration.".to_owned(),
+            "Scoring occurs once, no earlier than outcome_not_before, against a separately sealed official final-standings snapshot.".to_owned(),
+            "A failed or inconclusive holdout is retained; it is not replaced or reclassified as development evidence.".to_owned(),
+        ],
+        fingerprint: String::new(),
+    };
+    registration.fingerprint = future_holdout_registration_fingerprint(&registration)?;
+    registration.validate()?;
+    Ok(registration)
+}
+
+pub fn score_organization_window_future_holdout(
+    registration: &OrganizationWindowFutureHoldoutRegistration,
+    standings: &OrganizationWindowStandingsSnapshot,
+    scored_at: &str,
+) -> Result<OrganizationWindowFutureHoldoutResult, OrganizationWindowHistoryError> {
+    registration.validate()?;
+    standings.validate()?;
+    let calibration = calibrate_organization_window(
+        &registration.target,
+        &registration.board,
+        &standings.outcomes(),
+        &registration.leakage_audit,
+    )
+    .map_err(|error| OrganizationWindowHistoryError::Board(error.to_string()))?;
+    let acceptance_passed = holdout_acceptance_passed(registration, &calibration);
+    let mut result = OrganizationWindowFutureHoldoutResult {
+        schema: ORGANIZATION_WINDOW_FUTURE_HOLDOUT_RESULT_SCHEMA.to_owned(),
+        registration: registration.clone(),
+        standings: standings.clone(),
+        scored_at: scored_at.to_owned(),
+        calibration,
+        acceptance_passed,
+        disclosures: vec![
+            "This result scores the exact preregistered feature board and acceptance rule; neither is refit after outcomes.".to_owned(),
+            "The separately sealed official final-standings snapshot is retained inside the result for replay.".to_owned(),
+            "The result remains evidence when it fails or is inconclusive and may not be replaced by a later development split.".to_owned(),
+        ],
+        fingerprint: String::new(),
+    };
+    result.fingerprint = future_holdout_result_fingerprint(&result)?;
+    result.validate()?;
+    Ok(result)
+}
+
+fn holdout_acceptance_passed(
+    registration: &OrganizationWindowFutureHoldoutRegistration,
+    calibration: &OrganizationWindowCalibrationView,
+) -> bool {
+    calibration.overall.sample_size >= registration.acceptance.minimum_sample_size
+        && (!registration.acceptance.require_mae_below_baseline
+            || calibration.overall.mean_absolute_error
+                < calibration.overall.baseline_mean_absolute_error)
+        && calibration
+            .overall
+            .rank_correlation
+            .is_some_and(|correlation| {
+                correlation >= registration.acceptance.minimum_rank_correlation
+            })
+        && (!registration.acceptance.require_complete_leakage_audit
+            || calibration
+                .leakage_audit
+                .iter()
+                .all(|row| row.point_in_time_safe))
+}
+
+fn build_historical_feature_bundle(
+    source_season: u32,
+    target_season: u32,
+    as_of: NaiveDate,
+    generated_at: &str,
+    stats: &[SkaterStats],
+    bios: &[SkaterBio],
+) -> Result<HistoricalFeatureBundle, OrganizationWindowHistoryError> {
+    if source_season % 10_000 != target_season / 10_000 {
+        return Err(OrganizationWindowHistoryError::NonConsecutiveSeasons);
     }
     if stats.is_empty() || bios.is_empty() {
         return Err(OrganizationWindowHistoryError::IncompleteSource(
@@ -392,7 +741,6 @@ pub fn build_historical_organization_window_origin(
 
     let stats_fingerprint = format!("sha256:{}", sha256_json(stats)?);
     let bios_fingerprint = format!("sha256:{}", sha256_json(bios)?);
-    let outcome_fingerprint = format!("sha256:{}", outcomes.fingerprint);
     let birth_dates = bios
         .iter()
         .filter_map(|bio| {
@@ -606,40 +954,16 @@ pub fn build_historical_organization_window_origin(
             method_version: profile.method_version.clone(),
             point_in_time_safe: true,
             evidence: format!(
-                "uses only sealed {source_season} stats/bios available by {as_of}; target standings are attached only after board construction"
+                "uses only sealed {source_season} stats/bios available by {as_of}; target-season outcomes are excluded from feature construction"
             ),
         })
         .collect();
-    let origin = WindowCalibrationOriginInput {
-        origin_id: format!("{source_season}-to-{target_season}"),
+    Ok(HistoricalFeatureBundle {
         board,
-        outcomes: outcomes.outcomes(),
         leakage_audit,
-        baseline_value: 50.0,
-        trial_noise: WindowTrialNoiseInput::NotApplicable,
-    };
-    let mut artifact = OrganizationWindowHistoricalOriginArtifact {
-        schema: ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA.to_owned(),
-        source_season,
-        target_season,
-        as_of,
-        role,
-        origin,
-        source_fingerprints: vec![
-            stats_fingerprint,
-            bios_fingerprint,
-            outcome_fingerprint,
-        ],
-        disclosures: vec![
-            "This is a retrospective observed Frame and is separate from the current balanced.v1 descriptive Frame.".to_owned(),
-            "Features use only the completed source season; final target-season standings are attached after the feature cutoff.".to_owned(),
-            "The frozen comparison baseline is the neutral 50.0 league percentile for every organization.".to_owned(),
-            "Multi-team aggregate skater rows are omitted from team profiles rather than allocated without stint-level authority.".to_owned(),
-        ],
-        fingerprint: String::new(),
-    };
-    artifact.fingerprint = historical_origin_fingerprint(&artifact)?;
-    Ok(artifact)
+        stats_fingerprint,
+        bios_fingerprint,
+    })
 }
 
 fn historical_dimension(
@@ -721,6 +1045,36 @@ fn historical_origin_fingerprint(
     sha256_json(&normalized)
 }
 
+fn future_holdout_registration_fingerprint(
+    registration: &OrganizationWindowFutureHoldoutRegistration,
+) -> Result<String, OrganizationWindowHistoryError> {
+    let mut canonical = registration.clone();
+    canonical.fingerprint.clear();
+    canonical.leakage_audit.sort_by(|left, right| {
+        (&left.profile_key, &left.method_version).cmp(&(&right.profile_key, &right.method_version))
+    });
+    canonical.source_fingerprints.sort();
+    canonical.disclosures.sort();
+    let wire = serde_json::to_vec(&canonical)
+        .map_err(|error| OrganizationWindowHistoryError::Serialization(error.to_string()))?;
+    let normalized: OrganizationWindowFutureHoldoutRegistration = serde_json::from_slice(&wire)
+        .map_err(|error| OrganizationWindowHistoryError::Serialization(error.to_string()))?;
+    sha256_json(&normalized)
+}
+
+fn future_holdout_result_fingerprint(
+    result: &OrganizationWindowFutureHoldoutResult,
+) -> Result<String, OrganizationWindowHistoryError> {
+    let mut canonical = result.clone();
+    canonical.fingerprint.clear();
+    canonical.disclosures.sort();
+    let wire = serde_json::to_vec(&canonical)
+        .map_err(|error| OrganizationWindowHistoryError::Serialization(error.to_string()))?;
+    let normalized: OrganizationWindowFutureHoldoutResult = serde_json::from_slice(&wire)
+        .map_err(|error| OrganizationWindowHistoryError::Serialization(error.to_string()))?;
+    sha256_json(&normalized)
+}
+
 fn snapshot_fingerprint(
     snapshot: &OrganizationWindowStandingsSnapshot,
 ) -> Result<String, OrganizationWindowHistoryError> {
@@ -755,6 +1109,11 @@ mod tests {
             serde_json::from_str(ORGANIZATION_WINDOW_STANDINGS_JSON_SCHEMA).unwrap();
         let origin: serde_json::Value =
             serde_json::from_str(ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_JSON_SCHEMA).unwrap();
+        let registration: serde_json::Value =
+            serde_json::from_str(ORGANIZATION_WINDOW_FUTURE_HOLDOUT_REGISTRATION_JSON_SCHEMA)
+                .unwrap();
+        let result: serde_json::Value =
+            serde_json::from_str(ORGANIZATION_WINDOW_FUTURE_HOLDOUT_RESULT_JSON_SCHEMA).unwrap();
         assert_eq!(
             standings["properties"]["schema"]["const"],
             ORGANIZATION_WINDOW_STANDINGS_SCHEMA
@@ -762,6 +1121,14 @@ mod tests {
         assert_eq!(
             origin["properties"]["schema"]["const"],
             ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA
+        );
+        assert_eq!(
+            registration["properties"]["schema"]["const"],
+            ORGANIZATION_WINDOW_FUTURE_HOLDOUT_REGISTRATION_SCHEMA
+        );
+        assert_eq!(
+            result["properties"]["schema"]["const"],
+            ORGANIZATION_WINDOW_FUTURE_HOLDOUT_RESULT_SCHEMA
         );
     }
 
@@ -965,5 +1332,72 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn l1_future_holdout_registration_freezes_features_without_outcomes() {
+        let source = 20252026;
+        let target = 20262027;
+        let stats = crate::bundled::get_stats(&source.to_string()).unwrap();
+        let bios = crate::bundled::get_bios(&source.to_string()).unwrap();
+        let registration = build_organization_window_future_holdout_registration(
+            source,
+            target,
+            NaiveDate::from_ymd_opt(2026, 6, 30).unwrap(),
+            NaiveDate::from_ymd_opt(2027, 4, 11).unwrap(),
+            "2026-07-29T12:00:00Z",
+            &stats,
+            &bios,
+        )
+        .unwrap();
+        registration.validate().unwrap();
+        assert_eq!(registration.board.organizations.len(), 32);
+        assert!(registration
+            .board
+            .organizations
+            .iter()
+            .all(|team| team.overall.rank.is_some()));
+        assert_eq!(registration.leakage_audit.len(), 5);
+        assert_eq!(registration.acceptance.minimum_rank_correlation, 0.3);
+        assert_eq!(registration.fingerprint.len(), 64);
+        let value = serde_json::to_value(&registration).unwrap();
+        assert!(value.get("outcomes").is_none());
+        assert!(value.get("claim_status").is_none());
+
+        let standings = build_organization_window_standings_snapshot(
+            target,
+            NaiveDate::from_ymd_opt(2027, 4, 11).unwrap(),
+            "2027-04-11T12:00:00Z",
+            &historical_cohort(),
+        )
+        .unwrap();
+        let result = score_organization_window_future_holdout(
+            &registration,
+            &standings,
+            "2027-04-11T13:00:00Z",
+        )
+        .unwrap();
+        result.validate().unwrap();
+        assert_eq!(result.calibration.overall.sample_size, 32);
+        assert_eq!(result.fingerprint.len(), 64);
+
+        let early = build_organization_window_standings_snapshot(
+            target,
+            NaiveDate::from_ymd_opt(2027, 4, 10).unwrap(),
+            "2027-04-10T12:00:00Z",
+            &historical_cohort(),
+        )
+        .unwrap();
+        assert_eq!(
+            score_organization_window_future_holdout(&registration, &early, "2027-04-10T13:00:00Z"),
+            Err(OrganizationWindowHistoryError::InvalidFutureHoldoutResult)
+        );
+
+        let mut tampered = registration;
+        tampered.acceptance.minimum_rank_correlation = 0.2;
+        assert_eq!(
+            tampered.validate(),
+            Err(OrganizationWindowHistoryError::InvalidFutureHoldoutRegistration)
+        );
     }
 }

@@ -2856,6 +2856,27 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             standings,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::WindowHoldoutRegister {
+            source_season,
+            target_season,
+            feature_cutoff,
+            outcome_not_before,
+            registered_at,
+            out,
+        }) => commands::icecast::run_window_holdout_register(
+            source_season,
+            target_season,
+            feature_cutoff,
+            outcome_not_before,
+            registered_at,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::WindowHoldoutScore {
+            registration,
+            standings,
+            scored_at,
+            out,
+        }) => commands::icecast::run_window_holdout_score(registration, standings, scored_at, out)?,
         Commands::Icecast(IceCastSubcommand::ProspectStudy { input, json, out }) => {
             commands::icecast::run_prospect_study(input, json, out)?
         }

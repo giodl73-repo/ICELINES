@@ -46,7 +46,7 @@ preserved while the remaining work is completed:
 | W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate. The July 29 real package completes 14/16 required profiles. | Complete reviewed all-league AHL identity/assignment facts for organization and recall depth; then pass `--require-ranked`. |
 | W5 | complete | Comparable movement/history contracts, refusal tests, immutable bridge/rebase, a real three-checkpoint 2024-25 IceCast history, both earlier-scenario and later-counterfactual attribution bases, and a real Jan. 31 -> Feb. 28 paired rolling-replay personnel artifact with 219 dated events | Preserve raw profile effects when percentile normalization yields zero aggregate movement; keep the paired estimate explicitly non-causal and uncalibrated. |
 | W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
-| W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed trial-noise states/propagation, sealed claim status, frozen training/validation/retrospective-holdout roles, and four real point-in-time observed-history origins | Future untouched-holdout evidence; the current retrospective holdout is explicitly inconclusive. |
+| W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed trial-noise states/propagation, sealed claim status, frozen training/validation/retrospective-holdout roles, four real point-in-time observed-history origins, and an outcome-free 2025-26 -> 2026-27 future-holdout registration | Score the registered future holdout once final 2026-27 outcomes are eligible; the current retrospective holdout is explicitly inconclusive. |
 | W8 | complete | CLI, two-page TUI all-32 board/focused cards, Web/API, JSON, UI-neutral card, durable Markdown report, desktop/tablet/mobile live review, semantic checks, keyboard/reduced-motion/narrow review, and exact board/card plus semantic renderer golden parity across CLI/TUI/Web | Keep the shared golden test mandatory as surfaces evolve. |
 | W9 | complete | Authoring/compatibility/cache documentation, compatibility/extension fixtures, canonical replay and three-OS fingerprint gates, strict lint, schema/golden checks, offline smoke, dependency audit, performance/browser/accessibility evidence, and verified Linux x86_64, Windows x86_64, macOS ARM64, and macOS x86_64 packages; PR #23 run 30351304523 passed 26/26 checks | Keep these gates mandatory; production source completeness and a genuinely future untouched holdout remain W3-W4/W7 product gates rather than release-evidence claims. |
 
@@ -111,7 +111,7 @@ track may improve without implying that either of the others is complete.
 | Track | Current state | Promotion target | Hard gate |
 |---|---|---|---|
 | **Source completeness** | 14/16 required `balanced.v1` profiles complete; 0/32 teams rank eligible | Reproducible all-league package with every required profile value | `window-source-audit` reports 16/16 complete and `window-build --require-ranked` succeeds without proxies |
-| **Predictive evidence** | Four frozen historical origins; retrospective holdout inconclusive | Claims calibrated by target and horizon | A genuinely later untouched holdout, leakage pass, baseline comparison, and claim-specific acceptance rule |
+| **Predictive evidence** | Four frozen historical origins; retrospective holdout inconclusive; 2025-26 -> 2026-27 future test preregistered without outcomes | Claims calibrated by target and horizon | Score the sealed future holdout once eligible, retaining its leakage pass, baseline comparison, and frozen claim-specific acceptance rule |
 | **Extension maturity** | Typed registry, lifecycle amendment, manifests, bridges, scenarios, shared renderers, and authoring contract implemented | Safe addition, alteration, deprecation, demotion, supersession, or retirement of profiles, panes, Frames, sources, and schemas | Compatibility fixtures, method/version decision, role review, VTRACE mapping, and surface parity for each promoted extension |
 
 These tracks define the product labels:
@@ -554,11 +554,15 @@ source claim was promoted by proxy.
 
 ## Next predictive tranche — future holdout
 
-This tranche is calendar-gated, not coding-gated. Before outcomes become known,
-freeze the next origin, manifest, sources, targets, baselines, exclusions, and
-acceptance thresholds. After the target period closes, score it once and retain
-the result whether favorable or not. Trial-level uncertainty propagation is
-implemented, but it cannot substitute for the untouched holdout.
+This tranche is now calendar-gated, not coding-gated. The outcome-free
+`organization_window_future_holdout_registration.v1` artifact freezes the
+2025-26 -> 2026-27 origin board, manifest, sources, target, neutral baseline,
+leakage exclusions, April 11 scoring eligibility date, and acceptance threshold
+under fingerprint
+`17bab9aa568a7c3a5f788736c11671165a582da565641d1e24ed1fcfa95a68d1`.
+After the target period closes, score it once and retain the result whether
+favorable or not. Trial-level uncertainty propagation is implemented, but it
+cannot substitute for that scored untouched holdout.
 
 ## Extension backlog lanes
 

@@ -422,6 +422,40 @@ contains two training origins, one validation origin, and one retrospective
 holdout. Its headline remains `inconclusive`; a successful validation checkpoint
 cannot override the failed holdout.
 
+The next genuinely future holdout is committed before outcomes with a separate
+outcome-free document:
+
+```bash
+icelines icecast window-holdout-register \
+  --source-season 20252026 \
+  --target-season 20262027 \
+  --feature-cutoff 2026-06-30 \
+  --outcome-not-before 2027-04-11 \
+  --registered-at 2026-07-29T12:00:00Z \
+  --out future-holdout-registration.json
+```
+
+`organization_window_future_holdout_registration.v1` seals the complete ranked
+32-team feature board, target, neutral 50.0 baseline, leakage audit, scoring
+eligibility date, and the existing MAE-below-baseline plus 0.30 rank-correlation
+acceptance rule. Its closed schema has no outcomes or claim-status field. The
+checked 2025-26 -> 2026-27 registration fingerprint is
+`17bab9aa568a7c3a5f788736c11671165a582da565641d1e24ed1fcfa95a68d1`.
+Final 2026-27 standings are scored once after the eligibility date and retained
+even when the result is inconclusive or fails the rule:
+
+```bash
+icelines icecast window-holdout-score \
+  --registration future-holdout-registration.json \
+  --standings standings-2026-27.json \
+  --scored-at 2027-04-11T13:00:00Z \
+  --out future-holdout-result.json
+```
+
+The scorer revalidates both seals, refuses a standings effective date before
+eligibility, recomputes the calibration from the registered board, and derives
+`acceptance_passed`; callers cannot supply that conclusion.
+
 `organization_window_rolling_calibration.v1` reports pooled and per-origin
 error/rank correlation, pane metrics, leave-one-pane-out ablations,
 organization stability, and a between-origin MAE confidence interval. It

@@ -1128,6 +1128,8 @@ icelines icecast window-calibrate --target next-season-organization-value --orig
 icelines icecast window-evaluate --target next-season-organization-value --origin 2022-train.json --origin 2023-train.json --origin 2024-validation.json --origin 2025-retrospective-holdout.json --minimum-training-origins 2 --out split-evaluation.json
 icelines icecast window-standings --target-season 20252026 --date 2026-04-17 --captured-at 2026-07-28T08:00:00Z --out standings-2025-26.json
 icelines icecast window-origin-build --source-season 20242025 --target-season 20252026 --as-of 2025-06-30 --generated-at 2026-07-28T08:00:00Z --role retrospective_holdout --standings standings-2025-26.json --out origin-2025-26.json
+icelines icecast window-holdout-register --source-season 20252026 --target-season 20262027 --feature-cutoff 2026-06-30 --outcome-not-before 2027-04-11 --registered-at 2026-07-29T12:00:00Z --out future-holdout-registration.json
+icelines icecast window-holdout-score --registration future-holdout-registration.json --standings standings-2026-27.json --scored-at 2027-04-11T13:00:00Z --out future-holdout-result.json
 powershell -ExecutionPolicy Bypass -File scripts/window-browser-review.ps1
 powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
 powershell -ExecutionPolicy Bypass -File scripts/verify-release-artifact.ps1 -ArtifactPath dist/release/icelines-windows-x86_64.zip

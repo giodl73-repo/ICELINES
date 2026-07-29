@@ -152,10 +152,12 @@ use icelines_fetch::{
         finalize_ahl_waiver_clearance_review, AhlWaiverClearanceApplicationView,
         AhlWaiverClearanceDecisionsView, AhlWaiverClearanceReviewView,
     },
-    build_historical_organization_window_origin, build_organization_window_standings_snapshot,
-    build_prospect_career_context_draft, build_prospect_career_discovery,
-    build_prospect_league_context_draft, build_prospect_league_discovery,
-    build_prospect_program_from_camp_and_career_store, build_shift_overlap_report,
+    build_historical_organization_window_origin,
+    build_organization_window_future_holdout_registration,
+    build_organization_window_standings_snapshot, build_prospect_career_context_draft,
+    build_prospect_career_discovery, build_prospect_league_context_draft,
+    build_prospect_league_discovery, build_prospect_program_from_camp_and_career_store,
+    build_shift_overlap_report,
     bundled::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
         get_stats_installed, load_transactions_with_fallback,
@@ -168,17 +170,19 @@ use icelines_fetch::{
     },
     nhl_api::ScheduledGame,
     schema::{GoalieStats, LocalizedString, RosterPlayer, RosterResponse, SkaterBio, SkaterStats},
+    score_organization_window_future_holdout,
     snapshot::{
         OfficialNhlRosterCaptureManifest, SnapshotEntry, SnapshotStore, SnapshotTier,
         OFFICIAL_NHL_LIVE_ROSTER_MANIFEST_FILE, OFFICIAL_NHL_LIVE_ROSTER_SCHEMA,
         OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
     },
     stats_loader::load_into_repo,
-    NhlApiClient, OfficialShiftChartRow, OrganizationWindowHistoricalOriginArtifact,
-    OrganizationWindowStandingsSnapshot, ProspectCareerContextDraftConfig,
-    ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectCareerProgramConfig,
-    ProspectLeagueContext, ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView,
-    ScenarioRegistryStore, ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
+    NhlApiClient, OfficialShiftChartRow, OrganizationWindowFutureHoldoutRegistration,
+    OrganizationWindowHistoricalOriginArtifact, OrganizationWindowStandingsSnapshot,
+    ProspectCareerContextDraftConfig, ProspectCareerContextIdentityInput,
+    ProspectCareerDiscoveryView, ProspectCareerProgramConfig, ProspectLeagueContext,
+    ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView, ScenarioRegistryStore,
+    ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
     PROSPECT_CAREER_DISCOVERY_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
@@ -5554,6 +5558,61 @@ pub fn run_window_origin_build(
         &artifact,
         out.as_deref(),
         "historical organization Window origin",
+    )
+}
+
+pub fn run_window_holdout_register(
+    source_season: u32,
+    target_season: u32,
+    feature_cutoff: String,
+    outcome_not_before: String,
+    registered_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let feature_cutoff = NaiveDate::parse_from_str(&feature_cutoff, "%Y-%m-%d")
+        .with_context(|| format!("invalid feature cutoff {feature_cutoff}; expected YYYY-MM-DD"))?;
+    let outcome_not_before = NaiveDate::parse_from_str(&outcome_not_before, "%Y-%m-%d")
+        .with_context(|| {
+            format!("invalid outcome eligibility date {outcome_not_before}; expected YYYY-MM-DD")
+        })?;
+    let source = source_season.to_string();
+    let stats = get_stats(&source)
+        .with_context(|| format!("bundled source season {source_season} has no stats.json"))?;
+    let bios = get_bios(&source)
+        .with_context(|| format!("bundled source season {source_season} has no bios.json"))?;
+    let registration = build_organization_window_future_holdout_registration(
+        source_season,
+        target_season,
+        feature_cutoff,
+        outcome_not_before,
+        &registered_at,
+        &stats,
+        &bios,
+    )?;
+    write_window_json(
+        &registration,
+        out.as_deref(),
+        "future organization Window holdout registration",
+    )
+}
+
+pub fn run_window_holdout_score(
+    registration: PathBuf,
+    standings: PathBuf,
+    scored_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let registration: OrganizationWindowFutureHoldoutRegistration = read_icecast_json(
+        &registration,
+        "future organization Window holdout registration",
+    )?;
+    let standings: OrganizationWindowStandingsSnapshot =
+        read_icecast_json(&standings, "organization Window standings outcome")?;
+    let result = score_organization_window_future_holdout(&registration, &standings, &scored_at)?;
+    write_window_json(
+        &result,
+        out.as_deref(),
+        "future organization Window holdout result",
     )
 }
 
