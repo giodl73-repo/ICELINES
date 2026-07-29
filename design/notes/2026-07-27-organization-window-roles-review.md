@@ -932,3 +932,35 @@ now has `nhl.goalie_quality` at 32/32 and goalie dependency at 31/32. UTA is
 resolved through an estimated Stauber score; BOS remains correctly blocked
 because the official roster has no backup. A dated organization-pool/camp
 assignment authority is the next separate slice.
+
+### S3 camp goalie-assignment review
+
+HART/KEEL required camp assignment and goalie value to remain independent.
+The modal confirmed-pool branch can fill only an empty slot and cannot evict an
+existing goalie; the paired-career ledger supplies the inserted player's score.
+
+TAPE/WIRE required the existing full package fingerprint to validate before
+refresh and the complete package to reseal afterward. That replay exposed two
+additive-field compatibility defects: empty `eligible_positions` and absent
+`development_rule_qualified` were being serialized into old v1 documents.
+Omitting only empty/absent additive values restores the historical fingerprint
+without accepting a mismatched seal.
+
+PACE/SCOUT accepted Michael DiPietro only as the camp's scenario backup. His
+65.4 value comes from 16 confidence-adjusted paired-career games, not his
+one-game NHL rate or the camp's own score. Swayman's confirmed 70 remains
+unchanged.
+
+BENCH/EDGE/FORGE verified missing value refusal, exact skater preservation,
+explicit off-natural-side assignments, full two-goalie completion, parser
+coverage, old-package validation, refreshed-package sealing, and all-32 audit.
+The preservation test found and fixed the prior inability to replay a manager's
+off-natural-side forward choice; `FlexibleForward` records that deployment
+without falsifying natural eligibility.
+
+GLASS/CREST/broadcast retain compact score/evidence output and a method warning;
+renderers do not join the camp and value authorities themselves.
+
+**Verdict:** pass. Both goalie profiles are 32/32 and the refreshed full package
+is now 14/16 required profiles complete. Organization depth and recall depth
+are the only required source gaps.

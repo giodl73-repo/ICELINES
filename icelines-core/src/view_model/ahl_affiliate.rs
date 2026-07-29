@@ -146,7 +146,7 @@ pub struct AhlAffiliatePlayerInput {
     /// Final age/exemption-aware rule qualification from a reviewed policy.
     /// `true` means development-qualified; `false` means veteran. When absent,
     /// legacy inputs retain the raw professional-game threshold behavior.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub development_rule_qualified: Option<bool>,
     /// Whether this scenario assigns the player to the affiliate. NHL roster
     /// branches set this explicitly; IceLines never equates a camp cut with a
@@ -193,7 +193,7 @@ pub struct AhlAffiliatePlayerView {
     pub prospect: bool,
     pub recall_readiness: Option<f64>,
     pub professional_games_at_season_start: Option<u32>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub development_rule_qualified: Option<bool>,
     pub classification: Option<AhlDevelopmentClassification>,
     pub assigned_to_affiliate: bool,
@@ -939,6 +939,36 @@ mod tests {
             Some(AhlDevelopmentClassification::Development)
         );
         assert_eq!(player.development_rule_qualified, Some(true));
+    }
+
+    #[test]
+    fn legacy_missing_rule_qualification_stays_absent_from_v1_wire_shape() {
+        let players = (1..=12)
+            .map(|id| player(id, Position::Center, 100.0 - f64::from(id), 100))
+            .chain((20..=25).map(|id| player(id, Position::Defense, 100.0 - f64::from(id), 100)))
+            .chain([
+                player(30, Position::Goalie, 60.0, 100),
+                player(31, Position::Goalie, 55.0, 100),
+            ])
+            .collect::<Vec<_>>();
+        let view = build_ahl_affiliate_projection(&AhlAffiliateProjectionInput {
+            nhl_team: "NYR".to_owned(),
+            ahl_team: "Hartford Wolf Pack".to_owned(),
+            season: CURRENT_AHL_AFFILIATION_SEASON,
+            rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: AhlRosterPoolAuthority {
+                kind: AhlRosterPoolAuthorityKind::AuthoredScenario,
+                as_of: Some("2026-07-29".to_owned()),
+                source_urls: vec!["https://example.com/legacy".to_owned()],
+                note: Some("Legacy compatibility fixture".to_owned()),
+            },
+            players,
+        })
+        .unwrap();
+        let value = serde_json::to_value(&view).unwrap();
+        assert!(value["players"][0]
+            .get("development_rule_qualified")
+            .is_none());
     }
 
     #[test]

@@ -2185,8 +2185,8 @@ pub enum IceCastSubcommand {
         /// Build the prospect program from training camp and the configured career cache.
         #[arg(long, conflicts_with = "prospect_program", requires = "training_camp")]
         cache_prospect_program: bool,
-        /// Override the configured official NHL landing career-history cache.
-        #[arg(long, value_name = "PATH", requires = "cache_prospect_program")]
+        /// Override the official career cache for camp-completed goalies or prospects.
+        #[arg(long, value_name = "PATH")]
         career_history: Option<PathBuf>,
         #[arg(long, value_name = "PATH")]
         prospect_conversion: Option<PathBuf>,
@@ -2194,6 +2194,23 @@ pub enum IceCastSubcommand {
         training_camp: Option<PathBuf>,
         #[arg(long = "schedule-rest", value_name = "PATH")]
         schedule_rest: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Refresh cache-built NHL lineups inside an existing sealed Window package.
+    #[command(name = "window-source-refresh-lineups")]
+    WindowSourceRefreshLineups {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Completed production season used by cache-built player scores.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// Override the package's training-camp authority.
+        #[arg(long, value_name = "PATH")]
+        training_camp: Option<PathBuf>,
+        /// Override the configured official NHL landing career cache.
+        #[arg(long, value_name = "PATH")]
+        career_history: Option<PathBuf>,
         #[arg(long, value_name = "PATH")]
         out: PathBuf,
     },
@@ -2865,6 +2882,27 @@ mod tui_surface_tests {
             assert!(matches!(
                 source_package.command,
                 Commands::Icecast(IceCastSubcommand::WindowSourcePackage { .. })
+            ));
+
+            let refresh_lineups = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-lineups",
+                "--input",
+                "window-sources.json",
+                "--stats-season",
+                "20252026",
+                "--training-camp",
+                "camp.json",
+                "--career-history",
+                "career.json",
+                "--out",
+                "window-refreshed.json",
+            ])
+            .expect("Window lineup refresh should parse");
+            assert!(matches!(
+                refresh_lineups.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourceRefreshLineups { .. })
             ));
 
             let cache_prospects = Cli::try_parse_from([

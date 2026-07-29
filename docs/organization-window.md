@@ -107,9 +107,9 @@ claim.
 
 The July 29 real-source replay contains all 32 NHL lineups, the 32-team season
 and game forecasts, the sealed training-camp authority, and an explicit
-32-team prospect-program artifact. Its source audit completes 13 of 16 required
+32-team prospect-program artifact. Its source audit completes 14 of 16 required
 `balanced.v1` profiles. The remaining required gaps are organization depth
-(0/32), recall depth (0/32), and goalie dependency (31/32; BOS missing).
+(0/32) and recall depth (0/32).
 Rankings remain correctly withheld for every organization. IceLines does not
 fill those gaps with stale affiliations, former-team goalies, zero, or
 league-average proxies.
@@ -121,8 +121,25 @@ the translated save percentage to an explicit NHL prior before producing the
 same 0..100 goalie-quality scale. It never overwrites observed NHL production,
 and the UI-neutral lineup labels the fallback score `estimated`. The live
 replay supplies UTA's Jaxson Stauber with an estimated 46.3 score from 13
-effective games; Boston remains blocked because organization membership or a
-reported signing is not NHL backup assignment authority.
+effective games. A separate confirmed-pool camp branch supplies Boston's
+assignment decision, adding Michael DiPietro as a scenario backup at 65.4 from
+16 effective games without replacing Swayman's confirmed value. Goalie quality
+and goalie dependency are now both complete for all 32 organizations.
+
+Refresh a previously sealed full package without rebuilding unrelated source
+authorities:
+
+```powershell
+icelines icecast window-source-refresh-lineups `
+  --input window-sources.json `
+  --stats-season 20252026 `
+  --training-camp camp.json `
+  --out window-sources-refreshed.json
+```
+
+The command validates the input fingerprint before mutation and reseals the
+result. Empty additive fields remain omitted so older v1 package fingerprints
+continue to replay.
 
 The affiliate acquisition chain now also has a player-global operational
 prospect-status authority. It derives exact cutoff age and observed NHL

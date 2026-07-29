@@ -85,9 +85,10 @@ pub use management_behavior_source::{
 pub use moneypuck::{parse_csv as parse_moneypuck_csv, MoneyPuckStats};
 pub use nhl_api::NhlApiClient;
 pub use nhl_goalie_translation::{
-    build_nhl_goalie_translation_ledger, validate_nhl_goalie_translation_ledger,
-    NhlGoalieTranslationLedgerRow, NhlGoalieTranslationLedgerView,
-    NhlGoalieTranslationUnavailableRow, NHL_GOALIE_TRANSLATION_LEDGER_SCHEMA,
+    build_nhl_goalie_translation_ledger, complete_lineup_goalies_with_training_camp,
+    validate_nhl_goalie_translation_ledger, NhlGoalieTranslationLedgerRow,
+    NhlGoalieTranslationLedgerView, NhlGoalieTranslationUnavailableRow,
+    NHL_GOALIE_TRANSLATION_LEDGER_SCHEMA,
 };
 pub use organization_window_history::{
     build_historical_organization_window_origin, build_organization_window_standings_snapshot,

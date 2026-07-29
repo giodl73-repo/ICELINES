@@ -2677,6 +2677,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 out,
             },
         )?,
+        Commands::Icecast(IceCastSubcommand::WindowSourceRefreshLineups {
+            input,
+            stats_season,
+            training_camp,
+            career_history,
+            out,
+        }) => commands::icecast::run_window_source_refresh_lineups(
+            commands::icecast::WindowSourceRefreshLineupsArgs {
+                input,
+                stats_season,
+                training_camp,
+                career_history,
+                out,
+            },
+        )?,
         Commands::Icecast(IceCastSubcommand::WindowSourceAudit {
             input,
             generated_at,

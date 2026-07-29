@@ -43,7 +43,7 @@ preserved while the remaining work is completed:
 |---|---|---|---|
 | W0 | complete | 37-profile machine-readable inventory: 17 ready, 13 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
 | W1-W2 | complete | Versioned observations/manifests/boards, deterministic fingerprints, validation, normalization, aggregation, confidence/coverage, rank gates | Cross-platform fingerprint matrix in W9. |
-| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate. The July 29 real package completes 13/16 required profiles. | Complete reviewed all-league AHL identity/assignment facts for organization and recall depth; compose dated camp/organization-pool authority for Boston's missing backup assignment; then pass `--require-ranked`. |
+| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate. The July 29 real package completes 14/16 required profiles. | Complete reviewed all-league AHL identity/assignment facts for organization and recall depth; then pass `--require-ranked`. |
 | W5 | complete | Comparable movement/history contracts, refusal tests, immutable bridge/rebase, a real three-checkpoint 2024-25 IceCast history, both earlier-scenario and later-counterfactual attribution bases, and a real Jan. 31 -> Feb. 28 paired rolling-replay personnel artifact with 219 dated events | Preserve raw profile effects when percentile normalization yields zero aggregate movement; keep the paired estimate explicitly non-causal and uncalibrated. |
 | W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
 | W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed claim status, frozen training/validation/retrospective-holdout roles, and four real point-in-time observed-history origins | Trial-noise propagation and future untouched-holdout evidence; the current retrospective holdout is explicitly inconclusive. |
@@ -109,7 +109,7 @@ track may improve without implying that either of the others is complete.
 
 | Track | Current state | Promotion target | Hard gate |
 |---|---|---|---|
-| **Source completeness** | 13/16 required `balanced.v1` profiles complete; 0/32 teams rank eligible | Reproducible all-league package with every required profile value | `window-source-audit` reports 16/16 complete and `window-build --require-ranked` succeeds without proxies |
+| **Source completeness** | 14/16 required `balanced.v1` profiles complete; 0/32 teams rank eligible | Reproducible all-league package with every required profile value | `window-source-audit` reports 16/16 complete and `window-build --require-ranked` succeeds without proxies |
 | **Predictive evidence** | Four frozen historical origins; retrospective holdout inconclusive | Claims calibrated by target and horizon | A genuinely later untouched holdout, leakage pass, baseline comparison, and claim-specific acceptance rule |
 | **Extension maturity** | Typed registry, manifests, bridges, scenarios, shared renderers, and authoring contract implemented | Safe addition or alteration of profiles, panes, Frames, sources, and schemas | Compatibility fixtures, method/version decision, role review, VTRACE mapping, and surface parity for each promoted extension |
 
@@ -478,21 +478,28 @@ estimate, unavailable rows, disclosures, and fingerprint. The lineup marks the
 score `estimated` and carries the method in a warning; observed NHL values win.
 
 The real all-32 replay estimates Jaxson Stauber at 46.3 on the NHL lineup scale
-from 13 confidence-adjusted games of evidence. UTA's goalie dependency is now
-complete, and `nhl.goalie_quality` is 32/32. BOS remains the sole missing
-`resilience.goalie_dependency` organization because the official current-roster
-endpoint lists no backup. Reported signings and organization membership cannot
-be silently promoted to NHL assignment.
+from 13 confidence-adjusted games of evidence. UTA's goalie dependency is
+complete, and `nhl.goalie_quality` is 32/32.
 
-Next, compose the existing training-camp/organization-pool authorities into a
-dated goalie assignment scenario. It may select DiPietro, Patera, or another
-candidate only when the sealed evidence supports that assignment. The
-forbidden options remain stale former-team goalies, zero, league average,
-direct AHL score copying, or an unlabeled camp score.
+The dated camp composition is now implemented as a second independent
+authority. A confirmed-pool modal camp branch may fill only an empty goalie
+slot; it cannot replace an existing assigned goalie. The selected goalie still
+requires a separate paired-career value. Boston therefore adds Michael
+DiPietro as a scenario backup at 65.4 from 16 confidence-adjusted games while
+Swayman's confirmed score remains untouched. The full-package audit now has
+`resilience.goalie_dependency` at 32/32 and 14/16 required profiles complete.
 
-**Acceptance:** the paired value method remains green under PACE/TAPE/BENCH
-review, the dated BOS assignment authority completes 32/32 dependency values,
-and existing saved boards retain their original semantics.
+`window-source-refresh-lineups` validates an existing package fingerprint,
+refreshes all cache lineups, optionally replaces the camp authority, composes
+goalie assignments, clears only the derived package fingerprint, and reseals
+the complete document. Legacy package replay also exposed and fixed an
+additive-field fingerprint bug: absent optional/empty camp and affiliate fields
+remain omitted during serialization, preserving old v1 package identity.
+
+**Acceptance:** met. The paired value and dated assignment methods remain
+separate, both goalie profiles are 32/32, the old full package validates before
+refresh, and the refreshed package reseals and audits at 14/16 required
+profiles without changing existing goalie assignments.
 
 ### S4 — Production-rank gate and evidence package
 
@@ -840,13 +847,13 @@ W5 and W6 may proceed in parallel only after W4 seals board identity. W8 may
 prototype against fixtures but cannot own business logic or claim parity before
 W4-W7 gates are met.
 
-Current W3-W4 acquisition checkpoint (2026-07-28): the real all-league package
-completes 13/16 required profiles after cache-aligned schedule, frozen team
+Current W3-W4 acquisition checkpoint (2026-07-29): the real all-league package
+completes 14/16 required profiles after cache-aligned schedule, frozen team
 strength, official NHL special-teams TOI, and the explicit 32-team prospect
 program path. Rankings remain withheld at 0/32. The missing required methods
-are organization depth (0/32), recall depth (0/32), and goalie dependency
-(31/32; BOS missing). S1 automates prospect composition without changing
-its hockey semantics; S2-S3 own the remaining source decisions. W7 remains a
+are organization depth (0/32) and recall depth (0/32). S1 automates prospect
+composition without changing its hockey semantics; S2 owns the remaining
+source decisions. W7 remains a
 genuinely future untouched holdout.
 
 ## Crate ownership

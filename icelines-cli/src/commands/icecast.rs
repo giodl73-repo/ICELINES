@@ -36,10 +36,10 @@ use icelines_core::{
     DevelopmentCalibrationConfig, DevelopmentCalibrationView, DevelopmentPositionGroup,
     DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput,
     ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
-    LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow, OrganizationLevel,
-    OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
-    OrganizationUnitKind, OrganizationWindowBoardView, OrganizationWindowBridgeView,
-    OrganizationWindowCardInput, OrganizationWindowManifestView,
+    LineCombinationPairEvidenceInput, NhlGoalieTranslationPolicy, OpponentStyleEvidenceRow,
+    OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
+    OrganizationPositionGroup, OrganizationUnitKind, OrganizationWindowBoardView,
+    OrganizationWindowBridgeView, OrganizationWindowCardInput, OrganizationWindowManifestView,
     OrganizationWindowScenarioDistributionInput, OrganizationWindowSourcePackageView,
     OrganizationalProspectPolicy, ProspectConversionBoardView, ProspectConversionConfig,
     ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
@@ -157,7 +157,7 @@ use icelines_fetch::{
         get_stats_installed, load_transactions_with_fallback,
     },
     career_landing::CareerHistoryStore,
-    fetch_lock, fetch_team_behavior_league_evidence,
+    complete_lineup_goalies_with_training_camp, fetch_lock, fetch_team_behavior_league_evidence,
     fletch::{
         fetch_generic_http_batch_async, fetch_player_landing_batch_bytes_async, player_landing_url,
         roster_url, FletchPlayerLandingArtifact,
@@ -4590,6 +4590,14 @@ pub struct WindowSourcePackageArgs {
     pub out: PathBuf,
 }
 
+pub struct WindowSourceRefreshLineupsArgs {
+    pub input: PathBuf,
+    pub stats_season: String,
+    pub training_camp: Option<PathBuf>,
+    pub career_history: Option<PathBuf>,
+    pub out: PathBuf,
+}
+
 struct WindowSourcePaths<'a> {
     season: u32,
     as_of: NaiveDate,
@@ -4692,6 +4700,27 @@ pub fn run_window_source_package(args: WindowSourcePackageArgs) -> anyhow::Resul
         })?;
         package.team_lineups =
             super::report::load_league_team_lineup_views(roster_season, stats_season)?;
+        if let Some(camp) = package.training_camp.as_ref() {
+            let career_history_path = args
+                .career_history
+                .clone()
+                .unwrap_or(Config::load()?.career_history_path());
+            let career_store =
+                CareerHistoryStore::load(&career_history_path).with_context(|| {
+                    format!(
+                        "read Window goalie career cache {}",
+                        career_history_path.display()
+                    )
+                })?;
+            package.team_lineups = complete_lineup_goalies_with_training_camp(
+                &package.team_lineups,
+                camp,
+                &career_store,
+                stats_season.0,
+                &NhlGoalieTranslationPolicy::default(),
+            )
+            .map_err(anyhow::Error::msg)?;
+        }
     }
     if args.cache_prospect_program {
         let career_history_path = args
@@ -4736,6 +4765,53 @@ pub fn run_window_source_package(args: WindowSourcePackageArgs) -> anyhow::Resul
         &args.out,
         output.as_bytes(),
         "organization Window source package",
+    )
+}
+
+pub fn run_window_source_refresh_lineups(
+    args: WindowSourceRefreshLineupsArgs,
+) -> anyhow::Result<()> {
+    let package: OrganizationWindowSourcePackageView =
+        read_icecast_json(&args.input, "organization Window source package")?;
+    let mut package = seal_organization_window_source_package(package)?;
+    if let Some(path) = args.training_camp.as_deref() {
+        package.training_camp = Some(read_icecast_json(path, "training camp league forecast")?);
+    }
+    let roster_season: Season =
+        package.season.to_string().parse().map_err(|error| {
+            anyhow::anyhow!("invalid package season '{}': {error}", package.season)
+        })?;
+    let stats_season: Season = args.stats_season.parse().map_err(|error| {
+        anyhow::anyhow!("invalid stats season '{}': {error}", args.stats_season)
+    })?;
+    package.team_lineups =
+        super::report::load_league_team_lineup_views(roster_season, stats_season)?;
+    if let Some(camp) = package.training_camp.as_ref() {
+        let career_history_path = args
+            .career_history
+            .unwrap_or(Config::load()?.career_history_path());
+        let career_store = CareerHistoryStore::load(&career_history_path).with_context(|| {
+            format!(
+                "read Window goalie career cache {}",
+                career_history_path.display()
+            )
+        })?;
+        package.team_lineups = complete_lineup_goalies_with_training_camp(
+            &package.team_lineups,
+            camp,
+            &career_store,
+            stats_season.0,
+            &NhlGoalieTranslationPolicy::default(),
+        )
+        .map_err(anyhow::Error::msg)?;
+    }
+    package.fingerprint.clear();
+    package = seal_organization_window_source_package(package)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&package)?);
+    write_icecast_file(
+        &args.out,
+        output.as_bytes(),
+        "refreshed organization Window source package",
     )
 }
 

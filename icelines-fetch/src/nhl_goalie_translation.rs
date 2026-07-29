@@ -3,9 +3,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use icelines_core::{
-    calibrate_nhl_goalie_translation, estimate_nhl_goalie_quality, CareerGameType,
-    NhlGoalieTranslationCalibration, NhlGoalieTranslationEstimate, NhlGoalieTranslationPair,
-    NhlGoalieTranslationPolicy,
+    calibrate_nhl_goalie_translation, complete_lineup_goalies_from_training_camp,
+    estimate_nhl_goalie_quality, CareerGameType, EvidenceLabel, NhlGoalieTranslationCalibration,
+    NhlGoalieTranslationEstimate, NhlGoalieTranslationPair, NhlGoalieTranslationPolicy,
+    TeamLineupProjectionView, TrainingCampAuthorityStatus, TrainingCampGoalieValueInput,
+    TrainingCampLeagueForecastView,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -195,6 +197,142 @@ pub fn validate_nhl_goalie_translation_ledger(
         }
     }
     Ok(())
+}
+
+/// Complete empty NHL goalie slots from a confirmed training-camp modal
+/// assignment while sourcing player value independently from the paired
+/// career translation ledger.
+pub fn complete_lineup_goalies_with_training_camp(
+    lineups: &[TeamLineupProjectionView],
+    camp: &TrainingCampLeagueForecastView,
+    career_store: &CareerHistoryStore,
+    stats_season: u32,
+    policy: &NhlGoalieTranslationPolicy,
+) -> Result<Vec<TeamLineupProjectionView>, String> {
+    if camp.schema != icelines_core::view_model::training_camp::TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA
+        || lineups
+            .iter()
+            .any(|lineup| lineup.roster_season != camp.season)
+    {
+        return Err("camp goalie application requires aligned league and lineup axes".to_owned());
+    }
+    let camp_teams = camp
+        .teams
+        .iter()
+        .map(|team| (team.team.as_str(), team))
+        .collect::<BTreeMap<_, _>>();
+    if camp_teams.len() != camp.teams.len() {
+        return Err("camp goalie application requires unique team forecasts".to_owned());
+    }
+    let mut lineup_teams = BTreeSet::new();
+    let mut candidate_ids = BTreeSet::new();
+    for lineup in lineups {
+        if !lineup_teams.insert(lineup.team.as_str()) {
+            return Err("camp goalie application requires unique team lineups".to_owned());
+        }
+        if lineup.goalies.starter.is_some() && lineup.goalies.backup.is_some() {
+            continue;
+        }
+        let team = camp_teams
+            .get(lineup.team.as_str())
+            .ok_or_else(|| format!("camp forecast is missing {}", lineup.team))?;
+        if team.authority_status != TrainingCampAuthorityStatus::ConfirmedPool {
+            return Err(format!(
+                "camp goalie assignment for {} lacks confirmed-pool authority",
+                lineup.team
+            ));
+        }
+        let forecast = team
+            .forecast
+            .as_ref()
+            .ok_or_else(|| format!("camp forecast for {} is unavailable", lineup.team))?;
+        let existing = [
+            lineup
+                .goalies
+                .starter
+                .as_ref()
+                .map(|player| player.player_id),
+            lineup
+                .goalies
+                .backup
+                .as_ref()
+                .map(|player| player.player_id),
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<BTreeSet<_>>();
+        let branch = forecast
+            .most_common_rosters
+            .first()
+            .ok_or_else(|| format!("camp forecast for {} has no modal roster", lineup.team))?;
+        candidate_ids.extend(
+            branch
+                .goalie_ids
+                .iter()
+                .filter(|player_id| !existing.contains(player_id)),
+        );
+    }
+    if candidate_ids.is_empty() {
+        return Ok(lineups.to_vec());
+    }
+    let ledger = build_nhl_goalie_translation_ledger(
+        career_store,
+        camp.season,
+        stats_season,
+        candidate_ids,
+        policy,
+    )?;
+    validate_nhl_goalie_translation_ledger(&ledger)?;
+    if !ledger.unavailable.is_empty() {
+        return Err(format!(
+            "camp goalie assignment has {} candidate(s) without independent value authority: {}",
+            ledger.unavailable.len(),
+            ledger
+                .unavailable
+                .iter()
+                .map(|row| row.player_id.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
+    let values = ledger
+        .players
+        .iter()
+        .map(|row| {
+            (
+                row.player_id,
+                TrainingCampGoalieValueInput {
+                    player_id: row.player_id,
+                    goalie_quality_score: row.estimate.goalie_quality_score,
+                    sample_games: row.estimate.effective_games,
+                    evidence_label: EvidenceLabel::Estimated,
+                    source_method: row.estimate.method_version.clone(),
+                },
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    lineups
+        .iter()
+        .map(|lineup| {
+            if lineup.goalies.starter.is_some() && lineup.goalies.backup.is_some() {
+                return Ok(lineup.clone());
+            }
+            let forecast = camp_teams
+                .get(lineup.team.as_str())
+                .and_then(|team| team.forecast.as_ref())
+                .ok_or_else(|| format!("camp forecast for {} is unavailable", lineup.team))?;
+            let branch = forecast
+                .most_common_rosters
+                .first()
+                .ok_or_else(|| format!("camp forecast for {} has no modal roster", lineup.team))?;
+            let assigned_values = branch
+                .goalie_ids
+                .iter()
+                .filter_map(|player_id| values.get(player_id).cloned())
+                .collect::<Vec<_>>();
+            complete_lineup_goalies_from_training_camp(lineup, forecast, &assigned_values)
+        })
+        .collect()
 }
 
 fn aggregate_goalie_careers(
