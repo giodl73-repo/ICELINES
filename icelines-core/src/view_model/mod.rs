@@ -5,6 +5,7 @@
 //! recomputing hockey logic.
 
 pub mod ahl_affiliate;
+pub mod ahl_cross_league_value;
 pub mod ahl_player_value;
 pub mod ahl_recall_readiness;
 pub mod analytics_cache_consumer;
@@ -83,6 +84,12 @@ pub use ahl_affiliate::{
     AhlLineUnitView, AhlProspectPoolRowView, AhlRosterPoolAuthority, AhlRosterPoolAuthorityKind,
     AHL_AFFILIATE_PROJECTION_SCHEMA, AHL_AFFILIATION_CATALOG_SCHEMA, AHL_AFFILIATION_SOURCE_URL,
     CURRENT_AHL_AFFILIATION_SEASON,
+};
+pub use ahl_cross_league_value::{
+    calibrate_ahl_cross_league_value, estimate_ahl_cross_league_value,
+    validate_ahl_cross_league_value_policy, AhlCrossLeagueCalibration,
+    AhlCrossLeagueCalibrationPair, AhlCrossLeagueTranslationKind, AhlCrossLeagueValueEstimate,
+    AhlCrossLeagueValuePolicy, AHL_CROSS_LEAGUE_VALUE_METHOD, AHL_CROSS_LEAGUE_VALUE_POLICY_SCHEMA,
 };
 pub use ahl_player_value::{
     estimate_ahl_goalie_value, estimate_ahl_skater_value, AhlPlayerValueEstimate,

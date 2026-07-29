@@ -128,11 +128,14 @@ Recall readiness now has its own evaluation-only authority. The method combines
 within-position value, observed NHL workload, and camp proximity while keeping
 score, coverage, and confidence separate. It prefers independent prior-AHL
 value to camp value and suppresses camp proximity when camp already supplies
-the value signal. The real run estimated 1,185/1,282 canonical candidates and
-filled 1,273/1,371 appearances; 97 canonical players representing 98
-appearances remain blocked for insufficient evidence. The Window recall-depth
-adapter no longer substitutes a 0..100 player score when its required 0..1
-readiness input is missing.
+the value signal. A paired-career cross-league fallback now precedes this step
+when direct AHL value is missing. It supported 14 league/position calibrations
+and estimated 78/97 unique candidates, applying values to 79/98 organization
+appearances. Rebuilding recall readiness then estimated 1,263/1,282 canonical
+candidates and filled 1,352/1,371 appearances. The remaining 19 candidates stay
+blocked for insufficient evidence. The Window recall-depth adapter no longer
+substitutes a 0..100 player score when its required 0..1 readiness input is
+missing.
 
 Markdown reports retain season, cutoff, Frame, manifest/board fingerprints,
 league coverage, rank status, confidence, coverage, pane state, focused-team

@@ -359,6 +359,26 @@ Portable ledger sealing now canonicalizes through the supported JSON wire
 representation; the real saved-ledger replay exposed and closed the prior
 in-memory-only float fingerprint mismatch.
 
+**Cross-league value checkpoint — 2026-07-28:** core now owns
+`ahl_cross_league_value_policy.v1` and method
+`career_paired_ahl_translation.v1`. This is not a universal NHLe table. It
+learns frozen same-season or next-season source-to-AHL career pairs by position
+group: workload-weighted multiplicative points-per-game translations for
+skaters and additive save-percentage deltas for goalies. Pair count, unique
+players, aggregate and per-pair workload, recency, source sample, and RMSE fit
+all gate or discount the estimate. The sealed evaluation ledger binds the
+exact workboard, career source, policy, calibration diagnostics, and player
+evidence; its application fills only a missing score before prospect and
+recall-readiness evaluation.
+
+The real all-32 run supported 14 league/position calibrations and estimated 78
+of 97 unique missing-value candidates, applying 79 of 98 organization
+appearances. Rebuilding the dependent readiness chain increased coverage from
+1,185 to 1,263 of 1,282 canonical candidates and from 1,273 to 1,352 of 1,371
+appearances. Score and readiness queues fell from 98 appearances to 19. Those
+19 remain explicit insufficient-evidence rows; no organization, assignment,
+waiver, game-count, or development-rule authority was cleared.
+
 **Organization-status authority checkpoint — 2026-07-28:** the official NHL
 landing cache now preserves dated current-team observations per player.
 `ahl_organization_status_ledger.v1` compares only positive current-team facts
@@ -372,7 +392,8 @@ retained, 124 departed).
 All 625 unresolved rows have an official landing document but no current NHL
 team. They remain manual contract/league-status research; no camp-absence or
 unsigned-player inference was made. S2 remains open on those 625 decisions,
-assignment, waiver clearance, 98 score gaps, and final-rule authority.
+assignment, waiver clearance, 19 score/readiness gaps, and final-rule
+authority.
 
 **Official AHL transaction checkpoint — 2026-07-28:** source acquisition now
 captures the complete paginated league `ADD`/`DEL` stream, provider team
@@ -406,7 +427,7 @@ fingerprinted application writes only unambiguous canonical state, preserves
 row-level method/cutoff/source provenance, and refuses existing conflicts. Its
 real target run applied zero true and zero false facts and retained all 1,371
 assignment blockers. S2 now needs actual target-season source events; waiver
-clearance, 98 score gaps, 625 organization decisions, and final rule authority
+clearance, 19 score/readiness gaps, 625 organization decisions, and final rule authority
 remain separate work.
 
 **AHL waiver-clearance checkpoint — 2026-07-28:** the completed ESPN envelope
@@ -423,7 +444,8 @@ blocked without changing organization or assignment. The real July queue has
 nine each), fingerprint
 `sha256:0f87409017ee96e884cd4ef908c7159222fc0f9ac1b2fe2f6280bbcfd73b6eef`.
 This is the correct pre-camp state. S2 remains open on actual camp-time waiver
-results, 625 organization decisions, 98 scores, and final-rule authority.
+results, 625 organization decisions, 19 score/readiness gaps, and final-rule
+authority.
 
 ### S3 — Goalie dependency authority decision
 

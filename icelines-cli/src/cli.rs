@@ -1704,6 +1704,35 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Fit paired career translations and fill only values missing direct AHL evidence.
+    #[command(name = "affiliate-values-cross-league")]
+    AffiliateValuesCrossLeague {
+        /// A raw workboard or prior machine-application artifact containing one.
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        /// Official NHL landing career-history cache used for calibration and player evidence.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Versioned cross-league calibration and shrinkage policy.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply a sealed cross-league value ledger to its exact source workboard.
+    #[command(name = "affiliate-values-cross-league-apply")]
+    AffiliateValuesCrossLeagueApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Classify operational organizational-prospect status from official age and NHL workload.
     #[command(name = "affiliate-prospects")]
     AffiliateProspects {
@@ -4858,6 +4887,47 @@ mod tui_surface_tests {
             assert!(matches!(
                 values_apply.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateValuesApply { json: true, .. })
+            ));
+
+            let cross_league_values = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-values-cross-league",
+                "--workboard",
+                "affiliate-values-application.json",
+                "--career-history",
+                "career-history.json",
+                "--policy",
+                "cross-league-policy.json",
+                "--json",
+                "--out",
+                "cross-league-values.json",
+            ])
+            .expect("affiliate cross-league value ledger should parse");
+            assert!(matches!(
+                cross_league_values.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateValuesCrossLeague { json: true, .. })
+            ));
+
+            let cross_league_values_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-values-cross-league-apply",
+                "--workboard",
+                "affiliate-values-application.json",
+                "--ledger",
+                "cross-league-values.json",
+                "--json",
+                "--out",
+                "cross-league-application.json",
+            ])
+            .expect("affiliate cross-league value application should parse");
+            assert!(matches!(
+                cross_league_values_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateValuesCrossLeagueApply {
+                    json: true,
+                    ..
+                })
             ));
 
             let prospects = Cli::try_parse_from([

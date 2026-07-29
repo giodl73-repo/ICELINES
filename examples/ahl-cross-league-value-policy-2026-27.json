@@ -1,0 +1,22 @@
+{
+  "schema": "ahl_cross_league_value_policy.v1",
+  "method_version": "career_paired_ahl_translation.v1",
+  "maximum_source_lookback_seasons": 2,
+  "maximum_pair_season_gap": 1,
+  "minimum_calibration_pairs": 30,
+  "minimum_calibration_players": 20,
+  "minimum_calibration_workload": 200,
+  "minimum_skater_pair_games": 5,
+  "minimum_goalie_pair_shots": 100,
+  "minimum_skater_source_games": 5,
+  "minimum_goalie_source_games": 5,
+  "minimum_goalie_source_shots": 100,
+  "skater_calibration_error_scale": 0.25,
+  "goalie_calibration_error_scale": 0.02,
+  "skater_schedule_games": 72,
+  "skater_prior_games": 20,
+  "forward_prior_points_per_game": 0.45,
+  "defense_prior_points_per_game": 0.25,
+  "goalie_prior_shots": 400,
+  "goalie_prior_save_percentage": 0.9
+}

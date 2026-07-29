@@ -31,19 +31,20 @@ use icelines_core::{
     normalize_name, season_stats::SeasonType, simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
     simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
-    AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlLineUnitKind, AhlPlayerValuePolicy,
-    AhlRecallReadinessPolicy, AhlRosterPoolAuthorityKind, DevelopmentCalibrationConfig,
-    DevelopmentCalibrationView, DevelopmentPositionGroup, DevelopmentTransitionInput,
-    DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput, ForecastMovementCardInput,
-    LineCombinationForecastConfig, LineCombinationForecastView, LineCombinationPairEvidenceInput,
-    OpponentStyleEvidenceRow, OrganizationLevel, OrganizationLineupForecastInput,
-    OrganizationLineupForecastView, OrganizationPositionGroup, OrganizationUnitKind,
-    OrganizationWindowBoardView, OrganizationWindowBridgeView, OrganizationWindowCardInput,
-    OrganizationWindowManifestView, OrganizationWindowScenarioDistributionInput,
-    OrganizationWindowSourcePackageView, OrganizationalProspectPolicy, ProspectConversionBoardView,
-    ProspectConversionConfig, ProspectConversionPerformanceDocument,
-    ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
-    ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
+    AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlCrossLeagueValuePolicy,
+    AhlLineUnitKind, AhlPlayerValuePolicy, AhlRecallReadinessPolicy, AhlRosterPoolAuthorityKind,
+    DevelopmentCalibrationConfig, DevelopmentCalibrationView, DevelopmentPositionGroup,
+    DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput,
+    ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
+    LineCombinationPairEvidenceInput, OpponentStyleEvidenceRow, OrganizationLevel,
+    OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
+    OrganizationUnitKind, OrganizationWindowBoardView, OrganizationWindowBridgeView,
+    OrganizationWindowCardInput, OrganizationWindowManifestView,
+    OrganizationWindowScenarioDistributionInput, OrganizationWindowSourcePackageView,
+    OrganizationalProspectPolicy, ProspectConversionBoardView, ProspectConversionConfig,
+    ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
+    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow,
+    ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
     ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
     ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramSensitivityView,
     ScenarioScopeView, ScheduleRestProfileView, SeasonSimulationCardInput,
@@ -95,6 +96,10 @@ use icelines_fetch::{
         AhlIdentityReviewDraftOptions, AhlIdentityReviewInspectionView, AhlIdentityReviewStatus,
         AhlProjectionPlayerFacts, AhlRosterStatsSnapshot, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
         AHL_IDENTITY_CROSSWALK_SCHEMA, AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
+    },
+    ahl_cross_league_value::{
+        apply_ahl_cross_league_value_ledger, build_ahl_cross_league_value_ledger,
+        AhlCrossLeagueValueApplicationView, AhlCrossLeagueValueLedgerView,
     },
     ahl_organization_status::{
         apply_ahl_organization_status_ledger, build_ahl_organization_status_ledger,
@@ -1951,6 +1956,61 @@ pub fn run_affiliate_values_apply(
     Ok(())
 }
 
+pub fn run_affiliate_values_cross_league(
+    workboard_path: PathBuf,
+    career_history_path: PathBuf,
+    policy_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&workboard_path)?;
+    let career_store = CareerHistoryStore::load(&career_history_path)
+        .with_context(|| format!("read career history {}", career_history_path.display()))?;
+    let policy: AhlCrossLeagueValuePolicy =
+        read_icecast_json(&policy_path, "AHL cross-league value policy")?;
+    let ledger = build_ahl_cross_league_value_ledger(&workboard, &career_store, &policy)
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&ledger)?)
+    } else {
+        render_affiliate_values_cross_league(&ledger)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL cross-league value ledger")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_values_cross_league_apply(
+    workboard_path: PathBuf,
+    ledger_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&workboard_path)?;
+    let ledger: AhlCrossLeagueValueLedgerView =
+        read_icecast_json(&ledger_path, "AHL cross-league value ledger")?;
+    let application =
+        apply_ahl_cross_league_value_ledger(&workboard, &ledger).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&application)?)
+    } else {
+        render_affiliate_values_cross_league_application(&application)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "AHL cross-league value application",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_affiliate_prospects(
     workboard_path: PathBuf,
     career_history_path: PathBuf,
@@ -3558,6 +3618,34 @@ fn render_affiliate_values(view: &AhlPlayerValueLedgerView) -> String {
 fn render_affiliate_values_application(view: &AhlPlayerValueApplicationView) -> String {
     format!(
         "AHL PLAYER VALUES APPLIED\nSeason: {} -> {}\nScores filled: {}\nCandidates still missing score: {}\nWorkboard fingerprint: {}\nLedger fingerprint: {}\n",
+        view.prior_season,
+        view.target_season,
+        view.rows_applied,
+        view.candidates_without_value,
+        view.source_workboard_fingerprint,
+        view.value_ledger_fingerprint
+    )
+}
+
+fn render_affiliate_values_cross_league(view: &AhlCrossLeagueValueLedgerView) -> String {
+    format!(
+        "AHL CROSS-LEAGUE VALUE FALLBACK\nSeason: {} -> {}\nMissing candidates requested: {}\nEstimated: {} | Unavailable: {}\nSupported league/position calibrations: {}\nMethod: {}\nFingerprint: {}\nStatus: EVALUATION — paired career translation, not a universal NHLe or NHL projection\n",
+        view.prior_season,
+        view.target_season,
+        view.candidates_requested,
+        view.candidates_estimated,
+        view.candidates_unavailable,
+        view.calibrations_supported,
+        view.policy.method_version,
+        view.source_fingerprint
+    )
+}
+
+fn render_affiliate_values_cross_league_application(
+    view: &AhlCrossLeagueValueApplicationView,
+) -> String {
+    format!(
+        "AHL CROSS-LEAGUE VALUES APPLIED\nSeason: {} -> {}\nScores filled: {}\nCandidates still missing score: {}\nWorkboard fingerprint: {}\nLedger fingerprint: {}\n",
         view.prior_season,
         view.target_season,
         view.rows_applied,

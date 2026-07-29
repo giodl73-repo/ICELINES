@@ -97,6 +97,12 @@ pub use view_model::ahl_affiliate::{
     AHL_AFFILIATE_PROJECTION_SCHEMA, AHL_AFFILIATION_CATALOG_SCHEMA, AHL_AFFILIATION_SOURCE_URL,
     CURRENT_AHL_AFFILIATION_SEASON,
 };
+pub use view_model::ahl_cross_league_value::{
+    calibrate_ahl_cross_league_value, estimate_ahl_cross_league_value,
+    validate_ahl_cross_league_value_policy, AhlCrossLeagueCalibration,
+    AhlCrossLeagueCalibrationPair, AhlCrossLeagueTranslationKind, AhlCrossLeagueValueEstimate,
+    AhlCrossLeagueValuePolicy, AHL_CROSS_LEAGUE_VALUE_METHOD, AHL_CROSS_LEAGUE_VALUE_POLICY_SCHEMA,
+};
 pub use view_model::ahl_player_value::{
     estimate_ahl_goalie_value, estimate_ahl_skater_value, AhlPlayerValueEstimate,
     AhlPlayerValuePolicy, AhlPlayerValuePositionGroup, AHL_PLAYER_VALUE_METHOD,

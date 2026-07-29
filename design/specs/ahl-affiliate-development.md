@@ -375,6 +375,21 @@ eligibility, or implies assignment. The real 1,323-player refresh populated
 1,323 official positions and reduced the all-32 exact-position blocker queue
 from 255 to zero.
 
+Missing direct prior-season AHL value is handled by a separate, evaluation-only
+cross-league fallback before recall readiness. IceLines does not embed a
+universal NHLe table. It fits frozen career pairs in which a player has a
+source-league season followed by same-season or next-season AHL evidence,
+partitioned by position group. Skater calibration is a workload-weighted
+multiplicative points-per-game translation; goalie calibration is a
+workload-weighted additive save-percentage delta. Policy gates cover pair and
+unique-player counts, aggregate and per-pair workload, source recency and
+sample size, and RMSE fit. Sample and fit confidence reduce effective player
+workload before position-specific prior shrinkage. The sealed ledger retains
+the career-source and workboard fingerprints, calibration diagnostics, player
+evidence, and unavailable reasons. Its application can fill only a missing
+`projected_score`; direct AHL values and every other authority lane are
+preserved.
+
 Historical replay uses season-dated catalogs rather than applying the current
 affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves
 the official 2021-22 shared Charlotte affiliation as two relationship rows

@@ -848,3 +848,35 @@ timing as separate claims.
 **Fixed point:** pass. No new role is warranted; the existing roles cover the
 defect classes. Current S2 source-completion work may continue without waiting
 for the lifecycle schema slice.
+
+### S2 paired cross-league value review
+
+HART/KEEL required method and application to remain separate, bind the exact
+workboard and career-history axes, and run before recall readiness. The value
+ledger cannot imply assignment, organization status, waiver state, or roster
+authority.
+
+TAPE/WIRE accepted only official landing career rows and sealed fingerprints.
+No external conversion table or unreviewed scrape enters the authority chain,
+and a saved JSON ledger must replay identically.
+
+PACE/SCOUT approved paired same-season or next-season AHL calibration with
+separate skater and goalie forms. Minimum pairs, unique players, aggregate and
+per-pair workload, source recency and sample, and RMSE-derived sample/fit
+confidence are explicit. This is an evaluation index input, not a promotion or
+NHL-success probability.
+
+BENCH/EDGE/FORGE cover invalid policies, weak calibrations, short player
+workload, fingerprint tampering, direct-score preservation, duplicate
+organization appearances, canonical JSON round trips, and the real all-32
+chain.
+
+GLASS/CREST/broadcast require the UI-neutral document to label the result as an
+evaluation, expose calibration and player provenance, and retain unavailable
+rows. Renderers may not describe the method as a universal NHLe model.
+
+**Verdict:** pass for paired cross-league value and narrow application. The
+real run supported 14 calibrations, estimated 78/97 unique candidates, and
+applied 79/98 appearances. Rebuilt readiness covered 1,263/1,282 candidates
+and 1,352/1,371 appearances. The remaining 19 are deliberately unavailable;
+historical outcome calibration remains a separate future authority.

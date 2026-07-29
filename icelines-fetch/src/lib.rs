@@ -2,6 +2,7 @@
 
 pub mod aggregate;
 pub mod ahl;
+pub mod ahl_cross_league_value;
 pub mod ahl_organization_status;
 pub mod ahl_player_value;
 pub mod ahl_preseason_facts;

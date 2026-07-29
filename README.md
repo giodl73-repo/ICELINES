@@ -352,9 +352,11 @@ icelines fetch career --league-crosswalk ahl-league-fully-reviewed.json
 icelines icecast affiliate-professional-games --league-crosswalk ahl-league-fully-reviewed.json --career-history ~/.icelines/career_history.json --policy examples/ahl-professional-game-policy-2026-27.json --json --out professional-games.json
 icelines icecast affiliate-values --snapshot ahl-roster-stats.json --league-crosswalk ahl-league-fully-reviewed.json --policy examples/ahl-player-value-policy-2026-27.json --json --out ahl-player-values.json
 icelines icecast affiliate-values-apply --workboard affiliate-facts-board.json --ledger ahl-player-values.json --json --out affiliate-values-application.json
-icelines fetch career --affiliate-workboard affiliate-values-application.json
-icelines icecast affiliate-prospects --workboard affiliate-values-application.json --career-history ~/.icelines/career_history.json --policy examples/organizational-prospect-policy-2026-27.json --json --out ahl-prospect-status.json
-icelines icecast affiliate-prospects-apply --workboard affiliate-values-application.json --ledger ahl-prospect-status.json --json --out affiliate-prospects-application.json
+icelines icecast affiliate-values-cross-league --workboard affiliate-values-application.json --career-history ~/.icelines/career_history.json --policy examples/ahl-cross-league-value-policy-2026-27.json --json --out ahl-cross-league-values.json
+icelines icecast affiliate-values-cross-league-apply --workboard affiliate-values-application.json --ledger ahl-cross-league-values.json --json --out affiliate-cross-league-values-application.json
+icelines fetch career --affiliate-workboard affiliate-cross-league-values-application.json
+icelines icecast affiliate-prospects --workboard affiliate-cross-league-values-application.json --career-history ~/.icelines/career_history.json --policy examples/organizational-prospect-policy-2026-27.json --json --out ahl-prospect-status.json
+icelines icecast affiliate-prospects-apply --workboard affiliate-cross-league-values-application.json --ledger ahl-prospect-status.json --json --out affiliate-prospects-application.json
 icelines icecast affiliate-readiness --workboard affiliate-prospects-application.json --career-history ~/.icelines/career_history.json --camp-forecast examples/icecast-league-training-camp-2026-27.json --policy examples/ahl-recall-readiness-policy-2026-27.json --json --out ahl-recall-readiness.json
 icelines icecast affiliate-readiness-apply --workboard affiliate-prospects-application.json --ledger ahl-recall-readiness.json --json --out affiliate-readiness-application.json
 icelines icecast affiliate-facts-board --rollover league-rollover.json --professional-games professional-games.json --json --out affiliate-facts-board.json

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub const AHL_PLAYER_VALUE_POLICY_SCHEMA: &str = "ahl_player_value_policy.v1";
 pub const AHL_PLAYER_VALUE_METHOD: &str = "ahl_prior_performance_bayesian_rate.v1";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AhlPlayerValuePositionGroup {
     Forward,
