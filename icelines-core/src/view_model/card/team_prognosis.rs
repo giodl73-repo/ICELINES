@@ -158,7 +158,7 @@ pub fn build_team_prognosis_card(
 
     let lineup_fingerprint = json_fingerprint(&input.lineup)?;
     let forecast_fingerprint = json_fingerprint(&input.forecast)?;
-    let theme = team_theme(&team);
+    let theme = nhl_team_card_theme(&team);
     let warnings = prognosis_warnings(&input.lineup);
     let scenario_name = input
         .forecast
@@ -789,25 +789,6 @@ fn prognosis_warnings(lineup: &TeamLineupProjectionView) -> Vec<ViewWarning> {
             recovery: Vec::<RecoveryAction>::new(),
         })
         .collect()
-}
-
-fn team_theme(team: &str) -> CardThemeView {
-    let (primary, secondary, accent) = match team {
-        "NYR" => ("#0038A8", "#CE1126", "#FFFFFF"),
-        "SEA" => ("#001628", "#99D9D9", "#E9072B"),
-        _ => ("#14213D", "#E5E5E5", "#FCA311"),
-    };
-    CardThemeView {
-        theme_key: format!("team_{}", team.to_ascii_lowercase()),
-        primary: Some(primary.to_string()),
-        secondary: Some(secondary.to_string()),
-        accent: Some(accent.to_string()),
-        surface: Some("#FFFFFF".to_string()),
-        text: Some("#111111".to_string()),
-        team_abbreviation: Some(team.to_string()),
-        ascii_identity: team.to_string(),
-        minimum_text_contrast_x100: 450,
-    }
 }
 
 fn format_season(season: u32) -> String {

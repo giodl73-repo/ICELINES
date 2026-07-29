@@ -107,6 +107,62 @@ pub struct CardThemeView {
     pub minimum_text_contrast_x100: u16,
 }
 
+/// Build the canonical UI-neutral card theme for an NHL team.
+///
+/// Card builders own these semantic colors so every renderer and card family
+/// receives the same identity. Unknown abbreviations deliberately retain a
+/// neutral fallback rather than borrowing another team's colors.
+pub fn nhl_team_card_theme(team: &str) -> CardThemeView {
+    let team = team.trim().to_ascii_uppercase();
+    let (primary, secondary, accent) = match team.as_str() {
+        "ANA" => ("#F47A38", "#B9975B", "#B9975B"),
+        "BOS" => ("#FFB81C", "#000000", "#000000"),
+        "BUF" => ("#002654", "#FCB514", "#FCB514"),
+        "CAR" => ("#CC0000", "#000000", "#000000"),
+        "CBJ" => ("#002654", "#CE1126", "#CE1126"),
+        "CGY" => ("#C8102E", "#F1BE48", "#F1BE48"),
+        "CHI" => ("#CF0A2C", "#000000", "#000000"),
+        "COL" => ("#6F263D", "#236192", "#236192"),
+        "DAL" => ("#006847", "#8F8F8C", "#8F8F8C"),
+        "DET" => ("#CE1126", "#FFFFFF", "#FFFFFF"),
+        "EDM" => ("#041E42", "#FF4C00", "#FF4C00"),
+        "FLA" => ("#041E42", "#C8102E", "#C8102E"),
+        "LAK" => ("#111111", "#A2AAAD", "#A2AAAD"),
+        "MIN" => ("#154734", "#A6192E", "#A6192E"),
+        "MTL" => ("#AF1E2D", "#192168", "#192168"),
+        "NJD" => ("#CE1126", "#000000", "#000000"),
+        "NSH" => ("#FFB81C", "#041E42", "#041E42"),
+        "NYI" => ("#00539B", "#F47D30", "#F47D30"),
+        // Preserve the released NYR and SEA document values exactly.
+        "NYR" => ("#0038A8", "#CE1126", "#FFFFFF"),
+        "OTT" => ("#C52032", "#C2912C", "#C2912C"),
+        "PHI" => ("#F74902", "#000000", "#000000"),
+        "PIT" => ("#FCB514", "#000000", "#000000"),
+        "SEA" => ("#001628", "#99D9D9", "#E9072B"),
+        "SJS" => ("#006D75", "#EA7200", "#EA7200"),
+        "STL" => ("#002F87", "#FCB514", "#FCB514"),
+        "TBL" => ("#002868", "#FFFFFF", "#FFFFFF"),
+        "TOR" => ("#00205B", "#FFFFFF", "#FFFFFF"),
+        "UTA" => ("#71AFE5", "#000000", "#000000"),
+        "VAN" => ("#00205B", "#00843D", "#00843D"),
+        "VGK" => ("#B4975A", "#333F42", "#333F42"),
+        "WPG" => ("#041E42", "#AC162C", "#AC162C"),
+        "WSH" => ("#041E42", "#C8102E", "#C8102E"),
+        _ => ("#14213D", "#E5E5E5", "#FCA311"),
+    };
+    CardThemeView {
+        theme_key: format!("team_{}", team.to_ascii_lowercase()),
+        primary: Some(primary.to_owned()),
+        secondary: Some(secondary.to_owned()),
+        accent: Some(accent.to_owned()),
+        surface: Some("#FFFFFF".to_owned()),
+        text: Some("#111111".to_owned()),
+        team_abbreviation: Some(team.clone()),
+        ascii_identity: team,
+        minimum_text_contrast_x100: 450,
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CardProvenanceView {
     pub id: String,
@@ -1125,10 +1181,46 @@ mod tests {
     use crate::{
         model::Season,
         season_stats::SeasonType,
+        teams::CANONICAL_TEAMS,
         view_model::{EmptyKind, MetricUnit, StatKey, ValuePrecision, ViewWindow},
     };
 
     use super::*;
+
+    #[test]
+    fn canonical_nhl_teams_have_non_fallback_card_themes() {
+        let fallback = nhl_team_card_theme("UNKNOWN");
+
+        for (abbreviation, _) in CANONICAL_TEAMS {
+            let theme = nhl_team_card_theme(abbreviation);
+            assert_eq!(
+                theme.theme_key,
+                format!("team_{}", abbreviation.to_ascii_lowercase())
+            );
+            assert_eq!(theme.team_abbreviation.as_deref(), Some(*abbreviation));
+            assert_eq!(theme.ascii_identity, *abbreviation);
+            assert_ne!(
+                (&theme.primary, &theme.secondary, &theme.accent),
+                (&fallback.primary, &fallback.secondary, &fallback.accent),
+                "{abbreviation} must not receive the unknown-team fallback"
+            );
+        }
+    }
+
+    #[test]
+    fn team_theme_normalizes_input_and_preserves_released_card_colors() {
+        assert_eq!(nhl_team_card_theme(" nyr "), nhl_team_card_theme("NYR"));
+
+        let rangers = nhl_team_card_theme("NYR");
+        assert_eq!(rangers.primary.as_deref(), Some("#0038A8"));
+        assert_eq!(rangers.secondary.as_deref(), Some("#CE1126"));
+        assert_eq!(rangers.accent.as_deref(), Some("#FFFFFF"));
+
+        let kraken = nhl_team_card_theme("SEA");
+        assert_eq!(kraken.primary.as_deref(), Some("#001628"));
+        assert_eq!(kraken.secondary.as_deref(), Some("#99D9D9"));
+        assert_eq!(kraken.accent.as_deref(), Some("#E9072B"));
+    }
 
     fn sample_document() -> CardDocumentView {
         let generated_at = Utc.with_ymd_and_hms(2026, 7, 21, 18, 0, 0).unwrap();

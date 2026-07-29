@@ -322,7 +322,7 @@ pub fn build_organization_window_card(
                 trials: None,
             },
         },
-        theme: team_theme(&team),
+        theme: nhl_team_card_theme(&team),
         required_capabilities: Vec::new(),
         pages: vec![
             CardPageView {
@@ -440,25 +440,6 @@ fn text_metric(
         accessible_text: format!("{label} {value}"),
         comparison: None,
         evidence_label,
-    }
-}
-
-fn team_theme(team: &str) -> CardThemeView {
-    let (primary, secondary, accent) = match team {
-        "NYR" => ("#0038A8", "#CE1126", "#FFFFFF"),
-        "SEA" => ("#001628", "#99D9D9", "#E9072B"),
-        _ => ("#14213D", "#E5E5E5", "#FCA311"),
-    };
-    CardThemeView {
-        theme_key: format!("team_{}", team.to_ascii_lowercase()),
-        primary: Some(primary.to_owned()),
-        secondary: Some(secondary.to_owned()),
-        accent: Some(accent.to_owned()),
-        surface: Some("#FFFFFF".to_owned()),
-        text: Some("#111111".to_owned()),
-        team_abbreviation: Some(team.to_owned()),
-        ascii_identity: team.to_owned(),
-        minimum_text_contrast_x100: 450,
     }
 }
 

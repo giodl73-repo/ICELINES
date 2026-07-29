@@ -393,7 +393,7 @@ pub fn build_forecast_history_card(
                 trials: Some(u64::from(input.history.trials)),
             },
         },
-        theme: team_theme(&team),
+        theme: nhl_team_card_theme(&team),
         required_capabilities: Vec::new(),
         pages: vec![
             CardPageView {
@@ -822,25 +822,6 @@ fn json_fingerprint<T: Serialize>(value: &T) -> Result<String, ForecastHistoryCa
     serde_json::to_vec(value)
         .map(|bytes| format!("{:x}", Sha256::digest(bytes)))
         .map_err(|error| ForecastHistoryCardError::Serialize(error.to_string()))
-}
-
-fn team_theme(team: &str) -> CardThemeView {
-    let (primary, secondary, accent) = match team {
-        "NYR" => ("#0038A8", "#CE1126", "#FFFFFF"),
-        "SEA" => ("#001628", "#99D9D9", "#E9072B"),
-        _ => ("#14213D", "#E5E5E5", "#FCA311"),
-    };
-    CardThemeView {
-        theme_key: format!("team_{}", team.to_ascii_lowercase()),
-        primary: Some(primary.to_string()),
-        secondary: Some(secondary.to_string()),
-        accent: Some(accent.to_string()),
-        surface: Some("#FFFFFF".to_string()),
-        text: Some("#111111".to_string()),
-        team_abbreviation: Some(team.to_string()),
-        ascii_identity: team.to_string(),
-        minimum_text_contrast_x100: 450,
-    }
 }
 
 #[cfg(test)]
