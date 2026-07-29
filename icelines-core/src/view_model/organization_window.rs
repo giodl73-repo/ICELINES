@@ -348,6 +348,18 @@ pub struct WindowOverallView {
     pub classification: WindowClassification,
 }
 
+impl WindowOverallView {
+    /// Return the descriptive Window classification only when its league row
+    /// passed the complete comparability gate.
+    ///
+    /// Sealed evaluation boards retain their raw classification for replay,
+    /// but public surfaces must not publish it beside a withheld rank.
+    pub fn published_classification(&self) -> Option<WindowClassification> {
+        (self.rank_status.state == WindowRankState::Ranked && self.rank.is_some())
+            .then_some(self.classification)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WindowOrganizationView {
     pub organization: String,
@@ -2047,6 +2059,10 @@ mod tests {
             .organizations
             .iter()
             .all(|row| row.overall.rank.is_some()));
+        assert!(first
+            .organizations
+            .iter()
+            .all(|row| row.overall.published_classification().is_some()));
         let display = first.organizations_in_display_order();
         assert_eq!(display.first().and_then(|row| row.overall.rank), Some(1));
         assert!(display.windows(2).all(|rows| {
@@ -2085,6 +2101,10 @@ mod tests {
             .organizations
             .iter()
             .all(|row| row.overall.rank.is_none()));
+        assert!(board
+            .organizations
+            .iter()
+            .all(|row| row.overall.published_classification().is_none()));
         assert_eq!(
             board
                 .organizations_in_display_order()

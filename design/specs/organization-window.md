@@ -415,6 +415,12 @@ projection to every renderer: rows with official ranks use rank order, while
 rank-withheld rows use canonical organization order. A renderer must not sort
 `NR` rows by partial score, because that would create an unlabeled shadow rank.
 
+Classification publication uses the same core gate. A sealed evaluation board
+may retain the raw descriptive classification produced from its available
+panes for replay compatibility, but `published_classification()` withholds it
+unless the row is officially ranked. Cards and renderers display `Under review`
+in that state and must not reproduce this decision locally.
+
 ### Default views
 
 The first release should ship small, reviewable presets rather than one

@@ -60,11 +60,11 @@ pub async fn get_window(
             .rank
             .map(|value| value.to_string())
             .unwrap_or_else(|| "NR".to_owned());
-        let classification = if row.overall.rank.is_some() {
-            format!("{:?}", row.overall.classification)
-        } else {
-            "Under review".to_owned()
-        };
+        let classification = row
+            .overall
+            .published_classification()
+            .map(|classification| format!("{classification:?}"))
+            .unwrap_or_else(|| "Under review".to_owned());
         rows.push_str(&format!(
             "<tr><th scope=\"row\"><a href=\"/icecast/{season}/{}/window\">{}</a></th><td>{score}</td><td>{rank}</td><td>{:.0}%</td><td>{:.0}%</td><td>{classification}</td></tr>",
             row.organization,

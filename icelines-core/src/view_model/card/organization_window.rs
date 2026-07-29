@@ -173,11 +173,11 @@ pub fn build_organization_window_card(
         .rank
         .map(|rank| format!("#{rank} of {}", input.board.organizations.len()))
         .unwrap_or_else(|| "NR".to_owned());
-    let classification_text = if organization.overall.rank_status.state == WindowRankState::Ranked {
-        format!("{:?}", organization.overall.classification)
-    } else {
-        "Under review".to_owned()
-    };
+    let classification_text = organization
+        .overall
+        .published_classification()
+        .map(|classification| format!("{classification:?}"))
+        .unwrap_or_else(|| "Under review".to_owned());
     let mut first_sections = vec![
         CardSectionView::IdentityHeader(IdentityHeaderSectionView {
             id: "window-identity".to_owned(),

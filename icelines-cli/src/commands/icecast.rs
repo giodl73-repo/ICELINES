@@ -5139,8 +5139,8 @@ fn render_window_markdown(board: &OrganizationWindowBoardView, focus: Option<&st
             .unwrap_or_else(|| "NR".to_owned());
         let classification = row
             .overall
-            .rank
-            .map(|_| format!("{:?}", row.overall.classification))
+            .published_classification()
+            .map(|classification| format!("{classification:?}"))
             .unwrap_or_else(|| "Under review".to_owned());
         let _ = writeln!(
             out,
@@ -5584,8 +5584,8 @@ fn render_window(board: &OrganizationWindowBoardView, focus: Option<&str>) -> St
             .unwrap_or_else(|| "NR".to_owned());
         let classification = row
             .overall
-            .rank
-            .map(|_| format!("{:?}", row.overall.classification))
+            .published_classification()
+            .map(|classification| format!("{classification:?}"))
             .unwrap_or_else(|| "Under review".to_owned());
         let _ = writeln!(
             out,

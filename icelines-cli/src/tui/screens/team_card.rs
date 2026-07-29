@@ -308,11 +308,11 @@ pub(crate) fn organization_window_board_lines(
             .map(|score| format!("{score:>5.1}"))
             .unwrap_or_else(|| "   NR".to_owned());
         let state = format!("{:?}", row.overall.rank_status.state);
-        let classification = if row.overall.rank.is_some() {
-            format!("{:?}", row.overall.classification)
-        } else {
-            "Under review".to_owned()
-        };
+        let classification = row
+            .overall
+            .published_classification()
+            .map(|classification| format!("{classification:?}"))
+            .unwrap_or_else(|| "Under review".to_owned());
         if width >= 72 {
             lines.push(format!(
                 "{rank:<2}  {:<4}  {score}  {:>3.0}%  {:>3.0}%  {:<11}  {classification}",
