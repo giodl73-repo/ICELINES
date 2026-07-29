@@ -1670,6 +1670,9 @@ pub enum IceCastSubcommand {
         /// Reviewed league-inclusion policy for the target AHL season.
         #[arg(long, value_name = "PATH")]
         policy: PathBuf,
+        /// Complete target-season camp pool used to add canonical candidates absent from prior AHL rosters.
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: Option<PathBuf>,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -1804,6 +1807,20 @@ pub enum IceCastSubcommand {
         /// Matching `ahl_professional_game_ledger.v2` artifact.
         #[arg(long, value_name = "PATH")]
         professional_games: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Inspect any raw or nested preseason facts workboard and optionally gate readiness.
+    #[command(name = "affiliate-facts-status")]
+    AffiliateFactsStatus {
+        /// Raw workboard or any machine application containing `workboard`.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Fail unless every remaining candidate is facts-ready with no blockers.
+        #[arg(long)]
+        require_ready: bool,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -4946,6 +4963,8 @@ mod tui_surface_tests {
                 "career-history.json",
                 "--policy",
                 "professional-game-policy.json",
+                "--camp-forecast",
+                "league-camp.json",
                 "--json",
                 "--out",
                 "professional-game-ledger.json",
@@ -4953,7 +4972,11 @@ mod tui_surface_tests {
             .expect("affiliate professional-game ledger should parse");
             assert!(matches!(
                 professional_games.command,
-                Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGames { json: true, .. })
+                Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGames {
+                    camp_forecast: Some(_),
+                    json: true,
+                    ..
+                })
             ));
 
             let values = Cli::try_parse_from([
@@ -5129,6 +5152,25 @@ mod tui_surface_tests {
             assert!(matches!(
                 facts_board.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateFactsBoard { json: true, .. })
+            ));
+
+            let facts_status = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-facts-status",
+                "--input",
+                "affiliate-readiness-application.json",
+                "--require-ready",
+                "--json",
+            ])
+            .expect("affiliate preseason facts status should parse");
+            assert!(matches!(
+                facts_status.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateFactsStatus {
+                    require_ready: true,
+                    json: true,
+                    ..
+                })
             ));
 
             let facts_draft = Cli::try_parse_from([

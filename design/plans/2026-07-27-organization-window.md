@@ -513,6 +513,31 @@ separate, both goalie profiles are 32/32, the old full package validates before
 refresh, and the refreshed package reseals and audits at 14/16 required
 profiles without changing existing goalie assignments.
 
+### S2 source-authority audit — 2026-07-29
+
+`affiliate-facts-status --require-ready` now validates raw or nested workboards,
+emits the current machine-readable state, and fails with exact blocker counts
+until the canonical 32-team candidate cohort is ready. This gives scheduled
+automation a stable trigger for the final affiliate refresh.
+
+The pre-camp-completion cumulative evaluation had 1,371 candidates and zero facts-ready
+players. Remaining blocker appearances are: 15 identity review, 1,174
+organization status, 144 waiver clearance, 19 projected score, 19 recall
+readiness, 52 professional games, 1,202 final development-rule qualification,
+and 1,371 assignment authority. The official 2026-27 AHL transaction refresh
+on July 29 contains zero events, so it cannot clear an assignment. The official
+FAQ confirms the 12-of-18 and 260-game base rule, while the public rule-book
+surface still exposes only 2025-26 exception clauses. No missing fact is
+promoted from silence.
+
+The professional-game ledger now composes the complete canonical camp pool
+with reviewed prior-AHL identities before career evaluation. After refreshing
+the career cache from the exact workboard cohort, the real replay added 685
+camp-only identities and cleared all 52 professional-game blockers. The
+cumulative latest workboard therefore retains the same other queues but no
+longer lists `professional_games`; camp identity still makes no assignment or
+rule-qualification claim.
+
 ### S4 — Production-rank gate and evidence package
 
 Rebuild from a clean configured cache with no network, audit the package, run

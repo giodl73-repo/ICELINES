@@ -184,6 +184,38 @@ blocked for insufficient evidence. The Window recall-depth adapter no longer
 substitutes a 0..100 player score when its required 0..1 readiness input is
 missing.
 
+Professional-game evaluation can include the complete target camp pool in
+addition to reviewed prior-AHL identities:
+
+```powershell
+icelines icecast affiliate-professional-games `
+  --league-crosswalk reviewed-ahl-identities.json `
+  --career-history career-history.json `
+  --policy ahl-professional-game-policy.json `
+  --camp-forecast camp.json `
+  --json `
+  --out professional-games.json
+```
+
+The camp option adds only canonical identities absent from the prior-AHL
+crosswalk. It does not establish assignment. The July 29 replay added 685 such
+identities and reduced the professional-game blocker queue from 52 to zero.
+
+Inspect the cumulative workboard embedded in any machine application and make
+automation fail until the canonical cohort is ready:
+
+```powershell
+icelines icecast affiliate-facts-status `
+  --input affiliate-readiness-application.json `
+  --require-ready `
+  --json `
+  --out affiliate-facts-status.json
+```
+
+The gate requires 32 teams, a non-empty candidate cohort, every candidate
+facts-ready, and zero blocker counts. A failing run still writes or prints the
+validated status before returning the exact blocker summary.
+
 Markdown reports retain season, cutoff, Frame, manifest/board fingerprints,
 league coverage, rank status, confidence, coverage, pane state, focused-team
 profile evidence, blockers, and disclosures. `--json` and `--markdown` are

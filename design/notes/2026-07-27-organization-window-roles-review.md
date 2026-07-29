@@ -993,3 +993,18 @@ The resumable refresh path meets the same verdict: it first validates the old
 package seal, changes only the affiliate collection, rejects an explicit
 organization-lineup competitor, and reseals. This keeps late preseason facts
 cheap to apply without weakening provenance or recomputing unrelated Lines.
+
+BENCH/WIRE also requested a stable operational gate instead of scripts that
+infer readiness from filenames. `affiliate-facts-status --require-ready`
+validates either the raw workboard or a nested application, preserves its exact
+JSON, and names every remaining blocker on failure. TAPE/SCOUT approved the
+July 29 result: a zero-event target-season transaction stream is evidence of no
+explicit transaction assignments, not evidence that candidates were assigned
+or cut.
+
+TAPE/HART then found a cohort-axis defect: the professional-game ledger began
+only from prior-AHL identities, leaving 52 current-camp-only players outside
+career evaluation. The camp-completed builder now adds only canonical IDs
+absent from the reviewed crosswalk and explicitly preserves zero prior-AHL
+appearances. The all-32 replay added 685 identities and cleared all 52 affected
+workboard rows. Camp inclusion remains identity scope, never AHL assignment.

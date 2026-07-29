@@ -100,6 +100,15 @@ pub struct AhlProfessionalGameLeagueTotal {
     pub games: u32,
 }
 
+/// Canonical target-season candidate absent from the prior-AHL identity
+/// crosswalk. Training-camp pools can supply these identities without making
+/// any AHL assignment claim.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlProfessionalGameCandidate {
+    pub nhl_player_id: u32,
+    pub display_name: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AhlProfessionalGamePlayerRow {
     pub nhl_player_id: u32,
@@ -297,6 +306,18 @@ pub fn build_ahl_professional_game_ledger(
     career_store: &CareerHistoryStore,
     policy: &AhlProfessionalGamePolicy,
 ) -> Result<AhlProfessionalGameLedgerView, AhlFeedError> {
+    build_ahl_professional_game_ledger_with_candidates(crosswalk, career_store, policy, &[])
+}
+
+/// Extend the prior-AHL identity cohort with canonical target-season
+/// candidates. Existing reviewed crosswalk identities retain precedence and
+/// additional candidates only fill identities absent from that cohort.
+pub fn build_ahl_professional_game_ledger_with_candidates(
+    crosswalk: &AhlIdentityLeagueCrosswalkView,
+    career_store: &CareerHistoryStore,
+    policy: &AhlProfessionalGamePolicy,
+    additional_candidates: &[AhlProfessionalGameCandidate],
+) -> Result<AhlProfessionalGameLedgerView, AhlFeedError> {
     validate_policy(crosswalk, career_store, policy)?;
 
     let mut identities = BTreeMap::<u32, (String, usize)>::new();
@@ -328,6 +349,25 @@ pub fn build_ahl_professional_game_ledger(
                     identities.insert(player_id, (display_name, 1));
                 }
             }
+        }
+    }
+    let mut candidate_ids = BTreeSet::new();
+    let mut additional_identities_added = 0usize;
+    for candidate in additional_candidates {
+        if candidate.nhl_player_id == 0
+            || candidate.display_name.trim().is_empty()
+            || !candidate_ids.insert(candidate.nhl_player_id)
+        {
+            return Err(AhlFeedError::Validation(
+                "additional professional-game candidates require unique canonical identities"
+                    .to_owned(),
+            ));
+        }
+        if let std::collections::btree_map::Entry::Vacant(entry) =
+            identities.entry(candidate.nhl_player_id)
+        {
+            entry.insert((candidate.display_name.trim().to_owned(), 0));
+            additional_identities_added += 1;
         }
     }
 
@@ -495,6 +535,10 @@ pub fn build_ahl_professional_game_ledger(
         disclosures: vec![
             "Totals include only preceding regular-season stints in leagues explicitly included by the reviewed policy.".to_owned(),
             "A known professional league without an explicit policy treatment withholds that player's total; playoff and target-season games never count.".to_owned(),
+            format!(
+                "The ledger includes {} canonical target-season candidates in addition to reviewed prior-AHL identities; those identities do not establish affiliate assignment.",
+                additional_identities_added
+            ),
             "This ledger classifies development-rule game experience only. It does not establish contract, assignment, waiver, recall, or lineup authority.".to_owned(),
             "Final development-rule qualification is emitted only when the policy supplies the age rule and every applicable European elite youth exemption can be evaluated.".to_owned(),
         ],
@@ -812,6 +856,41 @@ mod tests {
         assert_eq!(ledger.players[0].within_game_threshold, Some(false));
         assert_eq!(ledger.players[0].official_position, Some(Position::Center));
         assert!(ledger.players[0].blockers.is_empty());
+    }
+
+    #[test]
+    fn target_camp_candidate_can_supply_a_non_ahl_professional_history() {
+        let mut store = CareerHistoryStore::new();
+        store.fetched_at = Some("2026-07-28T00:00:00Z".to_owned());
+        store.upsert(CareerHistory {
+            player_id: 2,
+            stints: vec![stint(20252026, "NHL", CareerGameType::Regular, 82)],
+        });
+        store.upsert_position(2, "D");
+        let ledger = build_ahl_professional_game_ledger_with_candidates(
+            &crosswalk(),
+            &store,
+            &policy(),
+            &[AhlProfessionalGameCandidate {
+                nhl_player_id: 2,
+                display_name: "Camp Defender".to_owned(),
+            }],
+        )
+        .expect("camp-completed ledger");
+
+        let player = ledger
+            .players
+            .iter()
+            .find(|player| player.nhl_player_id == 2)
+            .expect("camp candidate row");
+        assert_eq!(player.affiliate_appearances, 0);
+        assert_eq!(player.professional_games_at_season_start, Some(82));
+        assert_eq!(player.official_position, Some(Position::Defense));
+        assert_eq!(ledger.canonical_players, 2);
+        assert!(ledger
+            .disclosures
+            .iter()
+            .any(|disclosure| disclosure.contains("includes 1 canonical target-season")));
     }
 
     #[test]

@@ -2325,12 +2325,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             league_crosswalk,
             career_history,
             policy,
+            camp_forecast,
             json,
             out,
         }) => commands::icecast::run_affiliate_professional_games(
             league_crosswalk,
             career_history,
             policy,
+            camp_forecast,
             json,
             out,
         )?,
@@ -2418,6 +2420,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         }) => {
             commands::icecast::run_affiliate_facts_board(rollover, professional_games, json, out)?
         }
+        Commands::Icecast(IceCastSubcommand::AffiliateFactsStatus {
+            input,
+            require_ready,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_facts_status(input, require_ready, json, out)?,
         Commands::Icecast(IceCastSubcommand::AffiliateFactsDraft { workboard, out }) => {
             commands::icecast::run_affiliate_facts_draft(workboard, out)?
         }

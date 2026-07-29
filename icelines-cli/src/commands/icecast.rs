@@ -118,6 +118,7 @@ use icelines_fetch::{
     },
     ahl_professional_games::{
         apply_ahl_professional_game_ledger_to_facts, build_ahl_professional_game_ledger,
+        build_ahl_professional_game_ledger_with_candidates, AhlProfessionalGameCandidate,
         AhlProfessionalGameFactsApplicationView, AhlProfessionalGameLedgerView,
         AhlProfessionalGamePolicy, AHL_PROFESSIONAL_GAME_FACTS_SCHEMA,
     },
@@ -1878,6 +1879,7 @@ pub fn run_affiliate_professional_games(
     league_crosswalk_path: PathBuf,
     career_history_path: PathBuf,
     policy_path: PathBuf,
+    camp_forecast_path: Option<PathBuf>,
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
@@ -1889,8 +1891,52 @@ pub fn run_affiliate_professional_games(
         .with_context(|| format!("read career history {}", career_history_path.display()))?;
     let policy: AhlProfessionalGamePolicy =
         read_icecast_json(&policy_path, "AHL professional-game policy")?;
-    let ledger = build_ahl_professional_game_ledger(&league_crosswalk, &career_store, &policy)
-        .map_err(anyhow::Error::msg)?;
+    let ledger = if let Some(path) = camp_forecast_path.as_deref() {
+        let camp: TrainingCampLeagueForecastView =
+            read_icecast_json(path, "league training camp forecast")?;
+        if camp.schema != icelines_core::TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA
+            || camp.season != policy.target_season
+            || camp.teams_requested != CANONICAL_TEAMS.len()
+            || camp.teams.len() != camp.teams_requested
+            || camp.teams_failed != 0
+        {
+            bail!(
+                "professional-game camp completion requires a complete canonical target-season forecast"
+            );
+        }
+        let mut candidates = BTreeMap::<u32, String>::new();
+        for player in camp
+            .teams
+            .iter()
+            .filter_map(|team| team.forecast.as_ref())
+            .flat_map(|forecast| &forecast.players)
+        {
+            if let Some(existing) = candidates.insert(player.player_id, player.display_name.clone()) {
+                if !existing.eq_ignore_ascii_case(&player.display_name) {
+                    bail!(
+                        "training camp player {} has conflicting canonical names",
+                        player.player_id
+                    );
+                }
+            }
+        }
+        let candidates = candidates
+            .into_iter()
+            .map(|(nhl_player_id, display_name)| AhlProfessionalGameCandidate {
+                nhl_player_id,
+                display_name,
+            })
+            .collect::<Vec<_>>();
+        build_ahl_professional_game_ledger_with_candidates(
+            &league_crosswalk,
+            &career_store,
+            &policy,
+            &candidates,
+        )
+    } else {
+        build_ahl_professional_game_ledger(&league_crosswalk, &career_store, &policy)
+    }
+    .map_err(anyhow::Error::msg)?;
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&ledger)?)
     } else {
@@ -2141,6 +2187,58 @@ pub fn run_affiliate_facts_board(
         print!("{output}");
     }
     Ok(())
+}
+
+pub fn run_affiliate_facts_status(
+    input_path: PathBuf,
+    require_ready: bool,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&input_path)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&workboard)?)
+    } else {
+        render_affiliate_facts_board(&workboard)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL preseason facts status")?;
+    } else {
+        print!("{output}");
+    }
+    if require_ready {
+        require_affiliate_facts_ready(&workboard)?;
+    }
+    Ok(())
+}
+
+fn require_affiliate_facts_ready(
+    workboard: &AhlPreseasonLeagueFactsWorkboardView,
+) -> anyhow::Result<()> {
+    if workboard.teams == CANONICAL_TEAMS.len()
+        && workboard.candidates > 0
+        && workboard.facts_ready_candidates == workboard.candidates
+        && workboard.blocker_counts.is_empty()
+    {
+        return Ok(());
+    }
+    let blockers = workboard
+        .blocker_counts
+        .iter()
+        .map(|(blocker, count)| format!("{blocker:?}={count}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    bail!(
+        "AHL preseason facts are not ready: {} teams, {}/{} candidates ready; blockers: {}",
+        workboard.teams,
+        workboard.facts_ready_candidates,
+        workboard.candidates,
+        if blockers.is_empty() {
+            "none reported"
+        } else {
+            &blockers
+        }
+    )
 }
 
 pub fn run_affiliate_facts_apply(
@@ -10338,6 +10436,34 @@ mod tests {
         let error = super::build_window_affiliates_from_league_inputs(&league, 20262027)
             .expect_err("partial league input must fail closed");
         assert!(error.to_string().contains("must be complete"));
+    }
+
+    #[test]
+    fn affiliate_facts_ready_gate_names_exact_blockers() {
+        let workboard = super::AhlPreseasonLeagueFactsWorkboardView {
+            schema:
+                icelines_fetch::ahl_preseason_facts::AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA
+                    .to_owned(),
+            prior_season: 20252026,
+            target_season: 20262027,
+            professional_game_policy_id: "policy.v1".to_owned(),
+            professional_game_policy_authority: "provisional".to_owned(),
+            professional_game_threshold: 260,
+            source_fingerprint: "sha256:test".to_owned(),
+            teams: 32,
+            candidates: 3,
+            facts_ready_candidates: 0,
+            blocker_counts: BTreeMap::from([(
+                icelines_fetch::ahl_preseason_facts::AhlPreseasonFactBlocker::AssignmentAuthority,
+                3,
+            )]),
+            team_workboards: Vec::new(),
+            disclosures: Vec::new(),
+        };
+
+        let error = super::require_affiliate_facts_ready(&workboard)
+            .expect_err("blocked workboard must fail the ready gate");
+        assert!(error.to_string().contains("AssignmentAuthority=3"));
     }
 
     #[test]
