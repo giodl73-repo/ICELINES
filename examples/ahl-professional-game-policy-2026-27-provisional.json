@@ -1,8 +1,9 @@
 {
-  "schema": "ahl_professional_game_policy.v1",
-  "policy_id": "ahl-development-2026-27.provisional.v1",
+  "schema": "ahl_professional_game_policy.v2",
+  "policy_id": "ahl-development-2026-27.provisional.v2",
   "authority_status": "provisional",
   "target_season": 20262027,
+  "development_rule_effective_season": 20262027,
   "as_of": "2026-07-28",
   "threshold": 260,
   "source_urls": [
@@ -86,12 +87,14 @@
     }
   ],
   "age_qualification": {
+    "effective_season": 20252026,
     "cutoff_date": "2026-07-01",
     "automatically_qualifies_under_age": 25,
     "evidence_urls": ["https://www.amerks.com/assets/doc/2025-26_AHLRuleBook-7cdc4508dc.pdf"],
     "note": "The preceding rule book automatically qualifies players who have not turned 25 before July 1; retained provisionally pending the 2026-27 rule book."
   },
   "european_elite_youth_exemption": {
+    "effective_season": 20252026,
     "maximum_non_overage_age": 19,
     "evidence_urls": ["https://www.amerks.com/assets/doc/2025-26_AHLRuleBook-7cdc4508dc.pdf"],
     "note": "European Elite games played while CHL-eligible, excluding the over-age year, are exempt; age 19 is the provisional birth-year implementation boundary."

@@ -275,10 +275,10 @@ Official affiliation authority: <https://theahl.com/nhl-affiliations>.
 
 ### Professional-game ledger
 
-`ahl_professional_game_ledger.v1` is the cache-native evidence bridge from a
+`ahl_professional_game_ledger.v2` is the cache-native evidence bridge from a
 reviewed all-league identity envelope and official NHL landing career histories
 to start-of-season game totals. Its league semantics are data in
-`ahl_professional_game_policy.v1`: every observed known-professional league must
+`ahl_professional_game_policy.v2`: every observed known-professional league must
 be explicitly included or excluded with sources. Unknown treatments and
 missing histories fail closed per player; playoffs and target-season stints are
 always excluded.
@@ -305,6 +305,13 @@ players have 8,780 European youth-season games separated from the count. It
 emits zero final qualification values because the 2026-27 rule book has not yet
 confirmed the inherited age and youth-exemption clauses.
 
+Version 2 makes that calendar boundary structural. The base dressed-skater
+rule, age qualification, and European-youth exemption each carry their own
+effective season. A final policy and its application are accepted only when all
+three authority seasons equal the target season. Prior-season clauses remain
+usable for provisional analysis, but changing the authority label cannot
+silently carry them forward.
+
 Affiliate player input now carries `development_rule_qualified` independently
 from `professional_games_at_season_start`. A final reviewed policy may classify
 an under-age player as development-qualified even above 260 raw counted games;
@@ -313,7 +320,7 @@ new field retain threshold-only behavior for compatibility, but the production
 Window composition path must require final policy authority rather than rely on
 the fallback.
 
-`ahl_professional_game_facts_application.v1` is that production boundary for
+`ahl_professional_game_facts_application.v2` is that production boundary for
 an official affiliate snapshot. It binds one reviewed team crosswalk to a final
 league ledger, verifies any pre-existing totals/classifications, and enriches
 only those two fields in the separate projection-facts rows. Draft or

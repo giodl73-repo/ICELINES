@@ -21,9 +21,9 @@ use crate::{
     career_landing::CareerHistoryStore,
 };
 
-pub const AHL_PROFESSIONAL_GAME_POLICY_SCHEMA: &str = "ahl_professional_game_policy.v1";
-pub const AHL_PROFESSIONAL_GAME_LEDGER_SCHEMA: &str = "ahl_professional_game_ledger.v1";
-pub const AHL_PROFESSIONAL_GAME_FACTS_SCHEMA: &str = "ahl_professional_game_facts_application.v1";
+pub const AHL_PROFESSIONAL_GAME_POLICY_SCHEMA: &str = "ahl_professional_game_policy.v2";
+pub const AHL_PROFESSIONAL_GAME_LEDGER_SCHEMA: &str = "ahl_professional_game_ledger.v2";
+pub const AHL_PROFESSIONAL_GAME_FACTS_SCHEMA: &str = "ahl_professional_game_facts_application.v2";
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -58,6 +58,8 @@ pub struct AhlProfessionalGamePolicy {
     #[serde(default)]
     pub authority_status: AhlProfessionalGamePolicyAuthority,
     pub target_season: u32,
+    /// Season for which the base dressed-skater threshold authority is effective.
+    pub development_rule_effective_season: u32,
     pub as_of: String,
     pub threshold: u32,
     pub source_urls: Vec<String>,
@@ -71,6 +73,8 @@ pub struct AhlProfessionalGamePolicy {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AhlDevelopmentAgeQualification {
+    /// Season for which this exception authority is effective.
+    pub effective_season: u32,
     /// ISO date on which age is tested for the target season.
     pub cutoff_date: String,
     /// A player younger than this age on the cutoff automatically qualifies.
@@ -81,6 +85,8 @@ pub struct AhlDevelopmentAgeQualification {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AhlEuropeanEliteYouthExemption {
+    /// Season for which this exception authority is effective.
+    pub effective_season: u32,
     /// Maximum age during the season's opening calendar year whose European
     /// elite games are exempt. This excludes the CHL over-age year.
     pub maximum_non_overage_age: u8,
@@ -131,6 +137,11 @@ pub struct AhlProfessionalGameLedgerView {
     pub policy_authority_status: AhlProfessionalGamePolicyAuthority,
     pub prior_season: u32,
     pub target_season: u32,
+    pub development_rule_effective_season: u32,
+    #[serde(default)]
+    pub age_qualification_effective_season: Option<u32>,
+    #[serde(default)]
+    pub european_elite_youth_exemption_effective_season: Option<u32>,
     pub as_of: String,
     pub threshold: u32,
     pub career_store_fetched_at: String,
@@ -176,6 +187,9 @@ pub fn apply_ahl_professional_game_ledger_to_facts(
             .is_some_and(|affiliate| affiliate != nhl_team)
         || ledger.schema != AHL_PROFESSIONAL_GAME_LEDGER_SCHEMA
         || ledger.policy_authority_status != AhlProfessionalGamePolicyAuthority::Final
+        || ledger.development_rule_effective_season != ledger.target_season
+        || ledger.age_qualification_effective_season != Some(ledger.target_season)
+        || ledger.european_elite_youth_exemption_effective_season != Some(ledger.target_season)
         || ledger.source_fingerprint.trim().is_empty()
         || facts.is_empty()
     {
@@ -460,6 +474,15 @@ pub fn build_ahl_professional_game_ledger(
         policy_authority_status: policy.authority_status,
         prior_season: crosswalk.season,
         target_season: policy.target_season,
+        development_rule_effective_season: policy.development_rule_effective_season,
+        age_qualification_effective_season: policy
+            .age_qualification
+            .as_ref()
+            .map(|authority| authority.effective_season),
+        european_elite_youth_exemption_effective_season: policy
+            .european_elite_youth_exemption
+            .as_ref()
+            .map(|authority| authority.effective_season),
         as_of: policy.as_of.clone(),
         threshold: policy.threshold,
         career_store_fetched_at: career_store.fetched_at.clone().unwrap_or_default(),
@@ -498,6 +521,8 @@ fn validate_policy(
         || policy.schema != AHL_PROFESSIONAL_GAME_POLICY_SCHEMA
         || policy.policy_id.trim().is_empty()
         || policy.target_season <= crosswalk.season
+        || policy.development_rule_effective_season == 0
+        || policy.development_rule_effective_season > policy.target_season
         || policy.as_of.trim().is_empty()
         || policy.threshold == 0
         || policy.source_urls.is_empty()
@@ -515,7 +540,9 @@ fn validate_policy(
         ));
     }
     if let Some(age) = &policy.age_qualification {
-        if age.automatically_qualifies_under_age == 0
+        if age.effective_season == 0
+            || age.effective_season > policy.target_season
+            || age.automatically_qualifies_under_age == 0
             || parse_date(&age.cutoff_date).is_none()
             || age.note.trim().is_empty()
             || age.evidence_urls.is_empty()
@@ -527,15 +554,24 @@ fn validate_policy(
         }
     }
     if policy.authority_status == AhlProfessionalGamePolicyAuthority::Final
-        && (policy.age_qualification.is_none() || policy.european_elite_youth_exemption.is_none())
+        && (policy.development_rule_effective_season != policy.target_season
+            || policy
+                .age_qualification
+                .as_ref()
+                .is_none_or(|authority| authority.effective_season != policy.target_season)
+            || policy
+                .european_elite_youth_exemption
+                .as_ref()
+                .is_none_or(|authority| authority.effective_season != policy.target_season))
     {
         return Err(AhlFeedError::Validation(
-            "final professional-game policy requires age and European elite exemption authority"
-                .to_owned(),
+            "final professional-game policy requires target-season base-rule, age, and European elite exemption authority".to_owned(),
         ));
     }
     if let Some(exemption) = &policy.european_elite_youth_exemption {
-        if exemption.maximum_non_overage_age == 0
+        if exemption.effective_season == 0
+            || exemption.effective_season > policy.target_season
+            || exemption.maximum_non_overage_age == 0
             || exemption.note.trim().is_empty()
             || exemption.evidence_urls.is_empty()
             || exemption.evidence_urls.iter().any(|url| !absolute_url(url))
@@ -729,9 +765,10 @@ mod tests {
     fn policy() -> AhlProfessionalGamePolicy {
         AhlProfessionalGamePolicy {
             schema: AHL_PROFESSIONAL_GAME_POLICY_SCHEMA.to_owned(),
-            policy_id: "ahl-development-2026-27.reviewed.v1".to_owned(),
+            policy_id: "ahl-development-2026-27.reviewed.v2".to_owned(),
             authority_status: AhlProfessionalGamePolicyAuthority::Draft,
             target_season: 20262027,
+            development_rule_effective_season: 20262027,
             as_of: "2026-07-28".to_owned(),
             threshold: 260,
             source_urls: vec!["https://theahl.com/faq".to_owned()],
@@ -842,12 +879,14 @@ mod tests {
                 note: "Reviewed European elite treatment.".to_owned(),
             });
         reviewed_policy.age_qualification = Some(AhlDevelopmentAgeQualification {
+            effective_season: 20262027,
             cutoff_date: "2026-07-01".to_owned(),
             automatically_qualifies_under_age: 25,
             evidence_urls: vec!["https://example.com/rulebook".to_owned()],
             note: "Players under 25 at the cutoff qualify.".to_owned(),
         });
         reviewed_policy.european_elite_youth_exemption = Some(AhlEuropeanEliteYouthExemption {
+            effective_season: 20262027,
             maximum_non_overage_age: 19,
             evidence_urls: vec!["https://example.com/rulebook".to_owned()],
             note: "European elite games while CHL-eligible, excluding the over-age year."
@@ -896,6 +935,7 @@ mod tests {
                 note: "Reviewed European elite treatment.".to_owned(),
             });
         reviewed_policy.european_elite_youth_exemption = Some(AhlEuropeanEliteYouthExemption {
+            effective_season: 20262027,
             maximum_non_overage_age: 19,
             evidence_urls: vec!["https://example.com/rulebook".to_owned()],
             note: "European youth exemption.".to_owned(),
@@ -920,12 +960,14 @@ mod tests {
         let mut final_policy = policy();
         final_policy.authority_status = AhlProfessionalGamePolicyAuthority::Final;
         final_policy.age_qualification = Some(AhlDevelopmentAgeQualification {
+            effective_season: 20262027,
             cutoff_date: "2026-07-01".to_owned(),
             automatically_qualifies_under_age: 25,
             evidence_urls: vec!["https://example.com/rulebook".to_owned()],
             note: "Age rule.".to_owned(),
         });
         final_policy.european_elite_youth_exemption = Some(AhlEuropeanEliteYouthExemption {
+            effective_season: 20262027,
             maximum_non_overage_age: 19,
             evidence_urls: vec!["https://example.com/rulebook".to_owned()],
             note: "Youth exemption.".to_owned(),
@@ -939,6 +981,15 @@ mod tests {
             player_id: 1,
             stints: vec![stint(20252026, "AHL", CareerGameType::Regular, 261)],
         });
+        let mut stale_policy = final_policy.clone();
+        stale_policy
+            .age_qualification
+            .as_mut()
+            .expect("age authority")
+            .effective_season = 20252026;
+        assert!(
+            build_ahl_professional_game_ledger(&league_crosswalk, &store, &stale_policy).is_err()
+        );
         let ledger =
             build_ahl_professional_game_ledger(&league_crosswalk, &store, &final_policy).unwrap();
         let facts = vec![AhlProjectionPlayerFacts {

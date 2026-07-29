@@ -849,6 +849,26 @@ timing as separate claims.
 defect classes. Current S2 source-completion work may continue without waiting
 for the lifecycle schema slice.
 
+### S2 development-rule effective-season review
+
+TAPE/WIRE found that URL provenance alone did not prevent a prior-season
+exception clause from being relabeled `final`. HART/KEEL required the base
+composition rule, age exception, and European-youth exception to remain
+separate authority axes.
+
+BENCH/EDGE/FORGE required explicit refusal when any final clause is absent,
+future-dated, or effective for a season other than the target. Application
+rechecks those seasons instead of trusting the authority enum alone.
+
+SCOUT/GLASS/CREST accepted provisional use of the 2025-26 exception clauses
+for planning only. The official 2026 announcement confirms the 260-game
+composition rule and unrestricted six veteran slots, but the public rules page
+still exposes only the 2025-26 book; surfaces must keep final classifications
+withheld.
+
+**Verdict:** pass for the v2 calendar gate. The 2026-27 exception authority is
+still source-gated and cannot be closed by changing a label.
+
 ### S2 paired cross-league value review
 
 HART/KEEL required method and application to remain separate, bind the exact

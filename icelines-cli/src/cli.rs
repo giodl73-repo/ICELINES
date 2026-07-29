@@ -1801,7 +1801,7 @@ pub enum IceCastSubcommand {
         /// Complete `ahl_preseason_league_rollover.v1` artifact.
         #[arg(long, value_name = "PATH")]
         rollover: PathBuf,
-        /// Matching `ahl_professional_game_ledger.v1` artifact.
+        /// Matching `ahl_professional_game_ledger.v2` artifact.
         #[arg(long, value_name = "PATH")]
         professional_games: PathBuf,
         #[arg(long)]

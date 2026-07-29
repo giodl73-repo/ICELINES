@@ -292,6 +292,21 @@ work is source acquisition/review, followed by building affiliate projections
 and the existing organization-lineup documents from the resulting complete
 inputs.
 
+**Development-rule authority audit — 2026-07-28:** the official AHL FAQ and
+Scott Howson's 2026 CBA announcement confirm that 2026-27 retains twelve of
+eighteen skaters at 260 or fewer NHL/AHL/European-Elite regular-season games
+and removes the former 261-320 slot restriction. The public AHL rules page
+still publishes only the 2025-26 book. That book contains the under-25 and
+European-youth exceptions, but no target-season source yet confirms those two
+inherited notes.
+
+The professional-game policy, ledger, and facts-application contracts are now
+explicit v2 documents. Base-rule, age-clause, and youth-exemption authorities
+carry independent effective seasons; final build/application requires all
+three to equal the target season. The real 2025-26-backed policy therefore
+remains provisional by construction. This is a calendar-gated source gap, not
+permission to promote 1,202 pending skater classifications.
+
 **Official-position cache checkpoint — 2026-07-28:** the same NHL landing
 payload already used for career totals now persists its official primary
 position beside birth date. All 1,323 canonical histories refreshed with zero
