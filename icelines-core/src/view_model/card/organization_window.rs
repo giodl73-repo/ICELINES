@@ -12,7 +12,7 @@ use crate::view_model::{
     load_organization_window_profile_inventory, validate_organization_window_board, Completeness,
     EvidenceLabel, MetricCell, MetricUnit, MetricValue, OrganizationWindowBoardView,
     OrganizationWindowError, SemanticToken, SourceKind, StatKey, ValuePrecision, ViewContext,
-    WindowRankState, ORGANIZATION_WINDOW_BOARD_SCHEMA,
+    ViewWindow, WindowRankState, ORGANIZATION_WINDOW_BOARD_SCHEMA,
 };
 
 pub const ORGANIZATION_WINDOW_CARD_VERSION: &str = "organization_window_card.v1";
@@ -44,6 +44,35 @@ pub enum OrganizationWindowCardError {
     InvalidBoard(String),
     #[error("card document validation failed: {0}")]
     Document(String),
+}
+
+/// Project one canonical team from a sealed league Window board using the
+/// shared card context and canonical team identity. Renderers should call this
+/// helper instead of carrying their own team-name or completeness logic.
+pub fn project_organization_window_card(
+    board: OrganizationWindowBoardView,
+    focus_team: &str,
+    team_name: Option<&str>,
+    evidence_at: Option<DateTime<Utc>>,
+) -> Result<CardDocumentView, OrganizationWindowCardError> {
+    let team = focus_team.trim().to_ascii_uppercase();
+    let canonical_name = CANONICAL_TEAMS
+        .iter()
+        .find(|(abbreviation, _)| *abbreviation == team)
+        .map(|(_, name)| *name)
+        .ok_or_else(|| OrganizationWindowCardError::InvalidTeam(team.clone()))?;
+    let mut view = ViewContext::new(ViewWindow::new(
+        crate::model::Season(board.season),
+        crate::season_stats::SeasonType::Regular,
+    ));
+    view.generated_at = evidence_at;
+    build_organization_window_card(OrganizationWindowCardInput {
+        board,
+        focus_team: team,
+        team_name: team_name.unwrap_or(canonical_name).to_owned(),
+        view,
+        evidence_at,
+    })
 }
 
 pub fn build_organization_window_card(
@@ -95,6 +124,8 @@ pub fn build_organization_window_card(
     } else {
         Completeness::Unavailable
     };
+    let mut view = input.view.clone();
+    view.completeness = completeness;
     let mut methodology_versions = BTreeMap::new();
     methodology_versions.insert(
         "organization_window".to_owned(),
@@ -142,6 +173,11 @@ pub fn build_organization_window_card(
         .rank
         .map(|rank| format!("#{rank} of {}", input.board.organizations.len()))
         .unwrap_or_else(|| "NR".to_owned());
+    let classification_text = if organization.overall.rank_status.state == WindowRankState::Ranked {
+        format!("{:?}", organization.overall.classification)
+    } else {
+        "Under review".to_owned()
+    };
     let mut first_sections = vec![
         CardSectionView::IdentityHeader(IdentityHeaderSectionView {
             id: "window-identity".to_owned(),
@@ -158,10 +194,7 @@ pub fn build_organization_window_card(
                     .collect::<String>()
             )),
             title: input.team_name.trim().to_owned(),
-            subtitle: Some(format!(
-                "{:?} · {rank_text}",
-                organization.overall.classification
-            )),
+            subtitle: Some(format!("{classification_text} · {rank_text}")),
             identities: vec![CardIdentityView {
                 kind: CardIdentityKind::Team,
                 subject_id: team.clone(),
@@ -270,9 +303,9 @@ pub fn build_organization_window_card(
         ),
         fingerprint: String::new(),
         title: format!("{} organization Window", input.team_name.trim()),
-        subtitle: Some(format!("{rank_text} · {:.1}/100", organization.overall.score.unwrap_or(0.0))),
+        subtitle: Some(format!("{classification_text} · {rank_text} · {:.1}/100", organization.overall.score.unwrap_or(0.0))),
         context: CardContextView {
-            view: input.view,
+            view,
             evidence_at: input.evidence_at,
             evidence_label,
             builder_version: ORGANIZATION_WINDOW_CARD_VERSION.to_owned(),
@@ -426,5 +459,53 @@ fn team_theme(team: &str) -> CardThemeView {
         team_abbreviation: Some(team.to_owned()),
         ascii_identity: team.to_owned(),
         minimum_text_contrast_x100: 450,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+
+    use super::*;
+
+    fn board() -> OrganizationWindowBoardView {
+        serde_json::from_str(include_str!(
+            "../../../../examples/organization-window-board-evaluation-2026-27.json"
+        ))
+        .expect("sealed organization Window board fixture")
+    }
+
+    #[test]
+    fn all_32_window_cards_project_from_one_sealed_board() {
+        let board = board();
+        let mut fingerprints = BTreeSet::new();
+        for (team, name) in CANONICAL_TEAMS {
+            let card = project_organization_window_card(board.clone(), team, None, None)
+                .expect("canonical focused-team card");
+            assert_eq!(card.context.joins.team_ids, [*team]);
+            assert_eq!(card.title, format!("{name} organization Window"));
+            assert_eq!(card.context.view.completeness, Completeness::Partial);
+            assert!(card
+                .subtitle
+                .as_deref()
+                .is_some_and(|subtitle| { subtitle.starts_with("Under review · NR · ") }));
+            assert!(fingerprints.insert(card.fingerprint));
+        }
+        assert_eq!(fingerprints.len(), CANONICAL_TEAMS.len());
+    }
+
+    #[test]
+    fn withheld_rank_does_not_publish_a_team_classification() {
+        let card = project_organization_window_card(board(), "NYR", None, None).unwrap();
+        let identity = card.pages[0]
+            .sections
+            .iter()
+            .find_map(|section| match section {
+                CardSectionView::IdentityHeader(identity) => Some(identity),
+                _ => None,
+            })
+            .expect("identity section");
+        assert_eq!(identity.subtitle.as_deref(), Some("Under review · NR"));
+        assert!(!card.subtitle.as_deref().unwrap().contains("Rebuilding"));
     }
 }

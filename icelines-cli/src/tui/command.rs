@@ -26,6 +26,7 @@ use crate::tui::mdi::SidePane;
 use icelines_core::{
     model::Position,
     view_model::{PoachAvailabilityFilter, PoachCandidateKind, WatchRuleMutationIntent},
+    CANONICAL_TEAMS,
 };
 
 // ── Command grammar ──────────────────────────────────────────────────────────
@@ -569,9 +570,12 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
         }),
         "window-card" => {
             let team = args.trim().to_ascii_uppercase();
-            if !matches!(team.as_str(), "NYR" | "SEA") {
+            if !CANONICAL_TEAMS
+                .iter()
+                .any(|(abbreviation, _)| *abbreviation == team)
+            {
                 return Err(ParseError::BadFilter {
-                    details: format!("window-card supports NYR or SEA, got '{team}'"),
+                    details: format!("window-card requires an NHL team, got '{team}'"),
                 });
             }
             Ok(Command::TeamCard {

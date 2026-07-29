@@ -3,12 +3,12 @@
 //! This module deliberately imports document/section types only. It does not
 //! score players, run simulations, or rebuild scenario data.
 
-use std::sync::OnceLock;
+use std::{collections::BTreeMap, sync::OnceLock};
 
 use icelines_core::{
     load_organization_window_profile_inventory, parse_card_document,
-    validate_organization_window_board, CardDocumentView, CardSectionView,
-    OrganizationWindowBoardView,
+    project_organization_window_card, validate_organization_window_board, CardDocumentView,
+    CardSectionView, OrganizationWindowBoardView, CANONICAL_TEAMS,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -39,10 +39,6 @@ const NYR_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-sea-2024-25.json");
-const NYR_ORGANIZATION_WINDOW_CARD_JSON: &str =
-    include_str!("../../../../examples/organization-window-card-nyr-2026-27.json");
-const SEA_ORGANIZATION_WINDOW_CARD_JSON: &str =
-    include_str!("../../../../examples/organization-window-card-sea-2026-27.json");
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
     include_str!("../../../../examples/organization-window-board-evaluation-2026-27.json");
 const FANTASY_CARD_JSON: &str =
@@ -55,6 +51,12 @@ const FANTASY_TRADE_CARD_JSON: &str =
     include_str!("../../../../examples/fantasy-trade-card-dexters-dawgs-fox-rantanen.json");
 
 fn card(team: &str) -> &'static CardDocumentView {
+    let upper = team.to_ascii_uppercase();
+    if let Some(window_team) = upper.strip_prefix("WINDOW-") {
+        return organization_window_cards()
+            .get(window_team)
+            .expect("canonical organization Window team");
+    }
     static NYR: OnceLock<CardDocumentView> = OnceLock::new();
     static SEA: OnceLock<CardDocumentView> = OnceLock::new();
     static FANTASY: OnceLock<CardDocumentView> = OnceLock::new();
@@ -69,9 +71,7 @@ fn card(team: &str) -> &'static CardDocumentView {
     static SEA_2024_MOVEMENT: OnceLock<CardDocumentView> = OnceLock::new();
     static NYR_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
     static SEA_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
-    static NYR_ORGANIZATION_WINDOW: OnceLock<CardDocumentView> = OnceLock::new();
-    static SEA_ORGANIZATION_WINDOW: OnceLock<CardDocumentView> = OnceLock::new();
-    match team.to_ascii_uppercase().as_str() {
+    match upper.as_str() {
         "SIM-NYR" => NYR_SEASON_SIMULATION.get_or_init(|| {
             parse_card_document(NYR_SEASON_SIMULATION_CARD_JSON)
                 .expect("sealed NYR season simulation card")
@@ -101,14 +101,6 @@ fn card(team: &str) -> &'static CardDocumentView {
         "HISTORY-SEA" => SEA_2024_HISTORY.get_or_init(|| {
             parse_card_document(SEA_2024_HISTORY_CARD_JSON)
                 .expect("sealed SEA 2024-25 forecast history card")
-        }),
-        "WINDOW-NYR" => NYR_ORGANIZATION_WINDOW.get_or_init(|| {
-            parse_card_document(NYR_ORGANIZATION_WINDOW_CARD_JSON)
-                .expect("sealed NYR organization Window card")
-        }),
-        "WINDOW-SEA" => SEA_ORGANIZATION_WINDOW.get_or_init(|| {
-            parse_card_document(SEA_ORGANIZATION_WINDOW_CARD_JSON)
-                .expect("sealed SEA organization Window card")
         }),
         "SEA" => SEA.get_or_init(|| parse_card_document(SEA_CARD_JSON).expect("sealed SEA card")),
         "DEX" | "DEXTERS-DAWGS" | "FANTASY" => FANTASY.get_or_init(|| {
@@ -205,6 +197,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
             "HISTORY-NYR"
         } else if upper.starts_with("SIM-") {
             "SIM-NYR"
+        } else if upper.starts_with("WINDOW-") {
+            "WINDOW-NYR"
         } else {
             "NYR"
         };
@@ -216,6 +210,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
             "HISTORY-SEA"
         } else if upper.starts_with("SIM-") {
             "SIM-SEA"
+        } else if upper.starts_with("WINDOW-") {
+            "WINDOW-SEA"
         } else {
             "SEA"
         };
@@ -245,6 +241,25 @@ fn organization_window_board() -> &'static OrganizationWindowBoardView {
         validate_organization_window_board(&board, &inventory)
             .expect("embedded Window board must remain canonical and sealed");
         board
+    })
+}
+
+fn organization_window_cards() -> &'static BTreeMap<String, CardDocumentView> {
+    static CARDS: OnceLock<BTreeMap<String, CardDocumentView>> = OnceLock::new();
+    CARDS.get_or_init(|| {
+        CANONICAL_TEAMS
+            .iter()
+            .map(|(team, _)| {
+                let card = project_organization_window_card(
+                    organization_window_board().clone(),
+                    team,
+                    None,
+                    None,
+                )
+                .expect("canonical organization Window card");
+                ((*team).to_owned(), card)
+            })
+            .collect()
     })
 }
 
@@ -306,14 +321,18 @@ pub(crate) fn organization_window_board_lines(
             .map(|score| format!("{score:>5.1}"))
             .unwrap_or_else(|| "   NR".to_owned());
         let state = format!("{:?}", row.overall.rank_status.state);
+        let classification = if row.overall.rank.is_some() {
+            format!("{:?}", row.overall.classification)
+        } else {
+            "Under review".to_owned()
+        };
         if width >= 72 {
             lines.push(format!(
-                "{rank:<2}  {:<4}  {score}  {:>3.0}%  {:>3.0}%  {:<11}  {:?}",
+                "{rank:<2}  {:<4}  {score}  {:>3.0}%  {:>3.0}%  {:<11}  {classification}",
                 row.organization,
                 row.overall.confidence * 100.0,
                 row.overall.coverage * 100.0,
-                state,
-                row.overall.classification
+                state
             ));
         } else {
             lines.push(format!(
@@ -874,6 +893,16 @@ mod tests {
         assert!(window.contains("Coverage"));
         let insider = document_lines(nyr, 1, 80).join("\n");
         assert!(insider.contains("Profiles and evidence"));
+        assert!(nyr
+            .subtitle
+            .as_deref()
+            .unwrap()
+            .starts_with("Under review · NR"));
+
+        for (team, _) in CANONICAL_TEAMS {
+            let card = card(&format!("WINDOW-{team}"));
+            assert_eq!(card.context.joins.team_ids, [*team]);
+        }
 
         assert_eq!(
             parse_command("window-card SEA").unwrap(),
@@ -881,6 +910,13 @@ mod tests {
                 team: "WINDOW-SEA".to_owned()
             }
         );
+        assert_eq!(
+            parse_command("window-card BOS").unwrap(),
+            Command::TeamCard {
+                team: "WINDOW-BOS".to_owned()
+            }
+        );
+        assert!(parse_command("window-card XYZ").is_err());
         let mut app = App::new(true);
         execute_command(parse_command("window-card SEA").unwrap(), &mut app);
         app.handle(Action::Char('t'));
@@ -949,7 +985,7 @@ mod tests {
             board_path,
             "NYR".to_owned(),
             Some("New York Rangers".to_owned()),
-            Some("2026-07-28T03:00:00Z".to_owned()),
+            None,
             Some(cli_card_path.clone()),
         )
         .unwrap();

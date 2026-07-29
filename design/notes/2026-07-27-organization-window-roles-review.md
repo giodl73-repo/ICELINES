@@ -1008,3 +1008,12 @@ career evaluation. The camp-completed builder now adds only canonical IDs
 absent from the reviewed crosswalk and explicitly preserves zero prior-AHL
 appearances. The all-32 replay added 685 identities and cleared all 52 affected
 workboard rows. Camp inclusion remains identity scope, never AHL assignment.
+
+PRINCE/BENCH found a focused-surface confidence defect in the first Window
+cards: the board correctly withheld rank, but the card subtitle still exposed
+the scorer's provisional contender/rebuilding class. The shared card builder
+now marks its context partial and emits `Under review` while rank is withheld.
+Web and TUI board projections follow the same rule. The focused-card provider
+also moved from two embedded NYR/SEA documents to deterministic projection of
+all 32 teams from the registered sealed board; CLI, TUI, and Web parity remains
+core-owned.

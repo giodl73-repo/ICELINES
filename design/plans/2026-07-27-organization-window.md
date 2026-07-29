@@ -842,6 +842,14 @@ Color is supplemental, the selected horizon is unmistakable, and screenshot,
 80-column, narrow-browser, keyboard, and reduced-motion reviews are release
 gates.
 
+**All-32 focused-card checkpoint — 2026-07-29:** core now projects canonical
+team identity, completeness, and `card_document.v1` directly from the sealed
+league board. Web and TUI no longer load NYR/SEA-only Window-card fixtures;
+every canonical team resolves through the same builder and retains the board
+fingerprint. A withheld rank suppresses contender/rebuilding labels in card,
+Web-board, and TUI-board presentation and displays `Under review` instead.
+Cross-surface golden parity and all-32 unique-card tests cover the change.
+
 **Exit:** every renderer consumes the same sealed board, works without color,
 shows active context, and exposes recovery for partial/stale/blocked states.
 

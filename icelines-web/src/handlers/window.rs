@@ -60,13 +60,17 @@ pub async fn get_window(
             .rank
             .map(|value| value.to_string())
             .unwrap_or_else(|| "NR".to_owned());
+        let classification = if row.overall.rank.is_some() {
+            format!("{:?}", row.overall.classification)
+        } else {
+            "Under review".to_owned()
+        };
         rows.push_str(&format!(
-            "<tr><th scope=\"row\"><a href=\"/icecast/{season}/{}/window\">{}</a></th><td>{score}</td><td>{rank}</td><td>{:.0}%</td><td>{:.0}%</td><td>{:?}</td></tr>",
+            "<tr><th scope=\"row\"><a href=\"/icecast/{season}/{}/window\">{}</a></th><td>{score}</td><td>{rank}</td><td>{:.0}%</td><td>{:.0}%</td><td>{classification}</td></tr>",
             row.organization,
             row.organization,
             row.overall.confidence * 100.0,
-            row.overall.coverage * 100.0,
-            row.overall.classification
+            row.overall.coverage * 100.0
         ));
     }
     let html = format!(

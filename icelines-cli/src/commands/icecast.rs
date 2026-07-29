@@ -13,12 +13,11 @@ use icelines_core::{
     build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
     build_line_combination_forecast, build_organization_lineup_forecast,
-    build_organization_window_card, build_organization_window_history,
-    build_prospect_conversion_board, build_prospect_development_study,
-    build_prospect_discovery_board, build_prospect_nhl_performance_document,
-    build_prospect_program_board_with_goalies, build_prospect_program_history,
-    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
-    build_team_game_forecast, build_team_game_forecast_validation,
+    build_organization_window_history, build_prospect_conversion_board,
+    build_prospect_development_study, build_prospect_discovery_board,
+    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
+    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
+    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -28,7 +27,8 @@ use icelines_core::{
     compare_organization_window_snapshots, compare_organization_window_snapshots_with_bridge,
     compare_organization_window_typed_scenario, compare_team_season_forecast_scenarios,
     current_ahl_affiliation_catalog, model::Position, model::Season, model::TeamAbbr,
-    normalize_name, season_stats::SeasonType, simulate_organization_window_scenario_distribution,
+    normalize_name, project_organization_window_card, season_stats::SeasonType,
+    simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
     simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
     AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlCrossLeagueValuePolicy,
@@ -39,7 +39,7 @@ use icelines_core::{
     LineCombinationPairEvidenceInput, NhlGoalieTranslationPolicy, OpponentStyleEvidenceRow,
     OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
     OrganizationPositionGroup, OrganizationUnitKind, OrganizationWindowBoardView,
-    OrganizationWindowBridgeView, OrganizationWindowCardInput, OrganizationWindowManifestView,
+    OrganizationWindowBridgeView, OrganizationWindowManifestView,
     OrganizationWindowScenarioDistributionInput, OrganizationWindowSourcePackageView,
     OrganizationalProspectPolicy, ProspectConversionBoardView, ProspectConversionConfig,
     ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
@@ -5229,16 +5229,8 @@ pub fn run_window_card(
         .transpose()
         .context("--generated-at must be RFC 3339, for example 2026-10-01T12:00:00Z")?
         .map(|value| value.with_timezone(&Utc));
-    let mut view = ViewContext::new(ViewWindow::new(Season(board.season), SeasonType::Regular));
-    view.generated_at = evidence_at;
     let team = team.trim().to_ascii_uppercase();
-    let card = build_organization_window_card(OrganizationWindowCardInput {
-        board,
-        focus_team: team.clone(),
-        team_name: team_name.unwrap_or_else(|| team.clone()),
-        view,
-        evidence_at,
-    })?;
+    let card = project_organization_window_card(board, &team, team_name.as_deref(), evidence_at)?;
     let output = format!("{}\n", serde_json::to_string_pretty(&card)?);
     if let Some(path) = out {
         write_icecast_file(&path, output.as_bytes(), "organization Window card")?;

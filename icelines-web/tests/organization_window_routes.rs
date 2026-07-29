@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{header, Request, StatusCode},
 };
-use icelines_core::{CardKind, OrganizationWindowBoardView};
+use icelines_core::{CardKind, OrganizationWindowBoardView, CANONICAL_TEAMS};
 use icelines_web::{router, WebState};
 use tower::ServiceExt;
 
@@ -57,6 +57,8 @@ async fn focused_window_html_and_card_use_same_registered_artifact() {
     assert!(html.contains("<caption>"));
     assert!(html.contains("aria-label=\"Organization Window standings\""));
     assert!(html.contains("<th scope=\"col\">Team</th>"));
+    assert!(html.contains("Under review"));
+    assert!(!html.contains("Rebuilding"));
 
     let card_response = app
         .oneshot(
@@ -74,4 +76,34 @@ async fn focused_window_html_and_card_use_same_registered_artifact() {
     let card: icelines_core::CardDocumentView = serde_json::from_slice(&body).unwrap();
     assert_eq!(card.card_kind, CardKind::OrganizationWindow);
     assert_eq!(card.pages.len(), 2);
+    assert!(card
+        .subtitle
+        .as_deref()
+        .is_some_and(|subtitle| subtitle.starts_with("Under review · NR")));
+}
+
+#[tokio::test]
+async fn every_canonical_team_has_a_dynamic_window_card() {
+    let app = router(WebState::new());
+    let mut fingerprints = std::collections::BTreeSet::new();
+    for (team, _) in CANONICAL_TEAMS {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/v1/cards/organization-window/20262027/{team}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{team}");
+        let body = axum::body::to_bytes(response.into_body(), 4 * 1024 * 1024)
+            .await
+            .unwrap();
+        let card: icelines_core::CardDocumentView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(card.context.joins.team_ids, [*team]);
+        assert!(fingerprints.insert(card.fingerprint));
+    }
+    assert_eq!(fingerprints.len(), CANONICAL_TEAMS.len());
 }

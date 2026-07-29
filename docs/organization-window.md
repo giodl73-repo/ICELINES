@@ -440,9 +440,12 @@ registers saved Frames by stable ID:
 - `/api/v1/cards/organization-window/20262027/NYR`
 
 The TUI command `window-board` (or `window`) opens the sealed 32-team board in
-two 16-team pages; `p` changes halves. `window-card NYR` or `window-card SEA`
-opens focused detail; `t` toggles those teams and `p` changes between The
-Window and The Insider.
+two 16-team pages; `p` changes halves. `window-card TEAM` opens focused detail
+for any canonical NHL team and `p` changes between The Window and The Insider.
+Web/API focused cards use the same all-32 core projection. When a required
+profile gate withholds rank, board and card surfaces display `Under review`
+instead of publishing a contender/rebuilding classification from partial
+evidence.
 
 ## Authoring a profile
 

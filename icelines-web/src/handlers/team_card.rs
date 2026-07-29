@@ -897,6 +897,7 @@ fn card_error(error: CardStoreError, html: bool) -> Response {
         | CardStoreError::UnsupportedFantasyDraftTeam(_)
         | CardStoreError::UnsupportedFantasyMorningTeam(_)
         | CardStoreError::UnsupportedFantasyTradeTeam(_) => StatusCode::NOT_FOUND,
+        CardStoreError::InvalidOrganizationWindowCard(_) => StatusCode::INTERNAL_SERVER_ERROR,
     };
     if html {
         (
