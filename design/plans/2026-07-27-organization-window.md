@@ -30,6 +30,9 @@ JSON, and cards.
 7. Configuration can alter weights and gates; formulas require reviewed method
    versions.
 8. Blocked source claims remain visible instead of receiving proxy values.
+9. Every composite answers one named decision. Descriptive organization health,
+   forecast competitive success, and competitive-window timing may share
+   profiles, but they do not share an unlabeled master score.
 
 ## Implementation baseline (2026-07-27)
 
@@ -64,6 +67,7 @@ changing the relevant version is a compatibility defect.
 | Add or split a pane/view | New manifest structure using registered profiles | New manifest fingerprint; no source recomputation unless profile set changes | HART, KEEL, GLASS; aggregation, parity, narrow-surface review |
 | Add or replace a source | Provider dependency/version declaration and source fingerprint | Observation identity changes; method version changes if semantics change | TAPE, WIRE, EDGE; offline fixture, schema drift, freshness/fallback tests |
 | Evolve a document schema | New major schema or documented additive-compatible minor change | Old artifact stays readable or fails explicitly; never rewritten in place | KEEL, WIRE, FORGE, BENCH; compatibility and migration fixtures |
+| Deprecate, supersede, demote, or retire a Line | Registry lifecycle amendment, replacement/hold rationale, affected-Frame list | New registry revision; sealed observations and boards remain immutable; official Frames migrate only through a new manifest | HART, KEEL, TAPE, PACE, BENCH, EDGE; saved-board replay, replacement/hold behavior, comparison audit |
 
 Profile promotion is one-way only when evidence supports it:
 
@@ -75,6 +79,20 @@ Each promotion records source authority, cohort coverage, point-in-time safety,
 method version, calibration claim, limitations, and verification evidence.
 Demotion is always allowed when authority or freshness regresses and must not
 silently retain the previous rank eligibility.
+
+Readiness and lifecycle are orthogonal. Readiness says what evidence supports a
+method now; lifecycle says whether new manifests should select that method.
+The lifecycle states are `active`, `deprecated`, and `retired`. A deprecated
+method remains readable and may remain in a pinned historical/custom Frame, but
+new official Frames require its declared replacement or an explicit hold. A
+retired method remains replayable only for sealed artifacts and cannot be added
+to a newly authored Frame. Supersession is an explicit edge between immutable
+method versions, never an alias or in-place rewrite.
+
+The lifecycle fields are a planned registry amendment. They must not be added
+to the current `organization_window_registry.v1` wire contract until the schema,
+reader compatibility, registry validator, author guide, and replay fixtures land
+together.
 
 Every pull request that alters Window semantics includes a change note naming:
 
@@ -103,6 +121,18 @@ These tracks define the product labels:
   gate; and
 - **custom**: a valid user Frame, always labeled by manifest fingerprint and
   never conflated with an official Frame.
+
+They also keep three composite claims distinct:
+
+| Composite | Decision answered | Required evidence | Output language |
+|---|---|---|---|
+| **Organization health** | How strong, deep, sustainable, and resilient is the organization at this checkpoint? | Complete selected Frame, source/coverage gates, explainable pane contributions | Score, pane profile, rank when eligible |
+| **Competitive success forecast** | How likely is a named result over a named horizon? | A target-specific predictive model, probability calibration, and untouched holdout | Probability/distribution with calibration status |
+| **Window timing** | Is the organization contending, rising, plateauing, retooling, or rebuilding, and for which horizon? | Current health plus separately fingerprinted horizon Frames and classification method | Classification with drivers, horizon, and uncertainty |
+
+No renderer or marketing copy may call a health percentile a Cup probability,
+or infer window timing from one overall score without the named classification
+method.
 
 ## Current execution tranche — source completion
 
@@ -496,6 +526,11 @@ Add pure core types for:
 - registry lookup and validation; and
 - deterministic canonical fingerprints.
 
+After the current production-source tranche, add the registry-lifecycle
+amendment described above as one atomic compatibility slice. Do not overload
+`WindowProfileReadiness`: lifecycle, evidence readiness, and observation status
+are three different axes.
+
 Create JSON Schemas under `design/schemas/`. Add parse/validate helpers that
 reject unsupported versions, duplicates, cycles, incomplete axes, invalid
 weights, illegal caps, non-finite values, degenerate budgets, and unknown
@@ -719,6 +754,8 @@ Publish:
 - profile-author guide;
 - manifest customization guide and examples;
 - schema compatibility and deprecation policy;
+- profile lifecycle, supersession, demotion, and official-Frame migration
+  guidance;
 - official Frame changelog;
 - all-32 replay and surface parity fixtures;
 - performance measurements and cache policy;
@@ -794,6 +831,8 @@ history only after release and evidence closeout.
 | Missing data biases teams differently | Frozen expected set, explicit coverage, rank gates, no zero fill. |
 | Weight tuning leaks future outcomes | Freeze manifests per backtest origin; evaluate later periods untouched. |
 | Method upgrades destroy YoY meaning | Immutable method versions and explicit bridge/rebase artifacts. |
+| Retired methods disappear or silently alias to replacements | Orthogonal registry lifecycle, immutable sealed artifacts, explicit supersession edges, and new manifests for official-Frame migration. |
+| Health rank is mistaken for outcome probability or window timing | Named composite purpose, target-specific forecast/calibration artifacts, and separately versioned classification methods. |
 | Qualitative research becomes pseudo-data | Context-only default; numeric promotion requires a calibrated method. |
 | Cap/shift proxies overclaim authority | Keep panes blocked until verified sources and joins exist. |
 | One team is computed outside league context | Build/fingerprint all 32 before focus. |
@@ -825,6 +864,10 @@ which panes are production, heuristic, context-only, or blocked.
 - Scenario sensitivity reuses sealed IceLines authorities.
 - Users can alter weights without changing hockey logic.
 - Developers can add a profile without changing the scorer or renderers.
+- Maintainers can deprecate, supersede, demote, or retire a profile without
+  rewriting sealed artifacts or silently changing a saved Frame.
+- Organization health, competitive-success forecasts, and window-timing
+  classifications remain separately named, versioned, and validated claims.
 - CLI, TUI, Web/API, JSON, and cards agree on every hockey value.
 - Current boards contain all 32 organizations; historical boards contain the
   complete season-canonical league rather than fabricating 32.

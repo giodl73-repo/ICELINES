@@ -805,3 +805,46 @@ placement or eligibility “clearance.”
 
 **Verdict:** pass for camp-time waiver review/application. The July queue is
 correctly 0/144 resolved; real clearances remain calendar-gated evidence.
+
+## 2026-07-28 profile-lifecycle and composite-claim review
+
+**Reviewed:** the consolidated implementation plan's add/change lanes, the
+implemented v1 registry and saved-board contracts, and the intended use of
+multiple-dozen profiles across official and custom Frames.
+
+**Verdict: GO WITH ONE AMENDMENT.** The existing provider/manifest split is the
+right extension seam. Add an explicit registry lifecycle in a later atomic
+schema slice, and keep organization health, competitive success, and window
+timing as separate claims.
+
+| Role | Finding | Applied plan/spec response |
+|---|---|---|
+| HART | Readiness, per-observation status, and lifecycle are different axes. Reusing one enum would permit invalid states and ambiguous cache identity. | Lifecycle is orthogonal and requires a new registry revision; no v1 wire shape is silently widened. |
+| KEEL | Deprecation must behave the same in core, CLI, Web, TUI, cards, history, and replay. A renderer cannot substitute the replacement. | Sealed artifacts retain the exact old method; official-Frame migration creates a new manifest and all surfaces consume it through the shared board. |
+| TAPE | A source regression may require immediate demotion without pretending the hockey method ceased to exist. | Source readiness can demote independently; rank eligibility is withheld while historical observations remain attributable. |
+| FORGE | The current Rust enum should not be stretched until schema and compatibility semantics are ready. | Lifecycle is a planned atomic slice with typed metadata, validator changes, fixtures, and explicit unsupported-version refusal. |
+| PACE | A health percentile, an outcome probability, and a window label answer different statistical questions. | The plan now defines three composite products with separate evidence and validation language. |
+| BENCH | Add/change testing is incomplete without old-reader, pinned-Frame, deprecated-method, retired-method, and no-silent-substitution cases. | The lifecycle slice requires compatibility and sealed replay fixtures plus an official-Frame migration audit. |
+| EDGE | The dangerous cases are replacement cycles, missing replacements, retirement while an official Frame still references the method, and accidental aliases. | Supersession is an explicit immutable edge; validator/review must reject cycles and unresolved official-Frame references. |
+| WIRE | A lifecycle field added to v1 would be ignored by permissive older readers and create split behavior. | The amendment uses a new registry version and explicit reader support/refusal behavior. |
+| SCOUT | More profiles do not automatically make a better hockey judgment; official Frames need a named decision and horizon. | New Lines stay opt-in until they improve a named decision and pass authority, family-cap, ablation, and hockey-reasonableness review. |
+| GLASS | Three products need compact labels; exposing dozens of switches as the default interface would bury the decision. | Pane-first views and curated Frames remain primary; detailed Lines stay drilldown/custom-authoring material. |
+| CREST | The Window should feel like a point of view, not a profile marketplace. | Official Frames remain editorially constrained; extensibility lives in contracts and custom Frames rather than dashboard clutter. |
+| broadcast | Saved browser views must pin exact Frame and board identity across lifecycle changes. | URL state continues to carry season/as-of/Frame identity; no browser-local replacement or hidden migration is allowed. |
+
+### Fixed-point decisions
+
+1. Keep `organization_window_registry.v1` unchanged during current source
+   completion; lifecycle ships later as one compatibility-reviewed registry
+   revision.
+2. Never rewrite or alias a sealed observation, Frame, board, history, scenario,
+   or card because a profile was superseded.
+3. Require every official Frame to name one decision and primary horizon.
+4. Treat health, forecast success, and window timing as related consumers of
+   shared profiles, not synonymous outputs.
+5. Preserve the existing narrow extension path: typed provider -> descriptor ->
+   registry -> manifest opt-in -> sealed board -> shared renderers.
+
+**Fixed point:** pass. No new role is warranted; the existing roles cover the
+defect classes. Current S2 source-completion work may continue without waiting
+for the lifecycle schema slice.

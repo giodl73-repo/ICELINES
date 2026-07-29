@@ -269,6 +269,19 @@ The default production Frame may include only panes that clear source,
 coverage, and calibration gates. Blocked panes remain visible in the board's
 coverage report; they are never silently removed.
 
+The Window exposes three related but non-interchangeable composite products:
+
+- **organization health** is a descriptive checkpoint score assembled from a
+  named Frame;
+- **competitive success** is a target- and horizon-specific forecast that needs
+  its own calibration evidence; and
+- **window timing** is a separately versioned classification over current and
+  future-horizon evidence.
+
+A health score or league percentile is never relabeled as a Cup probability.
+A contender/rebuild label names its classification method and horizon rather
+than being inferred by a renderer from one number.
+
 ## Profile registry and extension contract
 
 IceLines maintains a registry of `ProfileDescriptor` records. A descriptor
@@ -306,6 +319,31 @@ board embeds its manifest and fingerprints.
 Profiles may consume existing sealed documents through adapters. They may not
 reach into renderer output, scrape terminal text, or duplicate another
 producer's formula.
+
+### Registry lifecycle amendment
+
+Evidence readiness, observation status, and registry lifecycle are separate
+axes. A future registry revision adds lifecycle metadata with these semantics:
+
+- `active`: eligible for newly authored Frames, subject to readiness and Frame
+  gates;
+- `deprecated`: still readable and replayable, but a new official Frame must
+  select the declared replacement or record an explicit hold rationale; and
+- `retired`: replayable only through an already sealed artifact/Frame and not
+  selectable by a newly authored Frame.
+
+Supersession points from one immutable `profile_key@method_version` to another.
+It is not an alias: loading an old board never substitutes the replacement.
+Demoting source readiness does not retire a method, and retiring a method does
+not rewrite its historical readiness. A lifecycle amendment records rationale,
+effective date, affected official Frames, replacement when present, and review
+evidence.
+
+This is a planned additive capability, not part of
+`organization_window_registry.v1`. It lands only with a versioned registry
+schema, validator rules, authoring docs, compatibility fixtures, and sealed
+board replay tests. Older readers must either understand the new registry
+version or refuse it explicitly.
 
 ## Normalization and scoring
 
@@ -654,6 +692,10 @@ Saved-document compatibility is explicit:
   original sealed board; and
 - profile method versions are never migrated in place.
 
+Lifecycle changes follow the same rule: deprecation, supersession, demotion, or
+retirement may change what a newly authored official Frame accepts, but cannot
+change the meaning or readability of an already sealed board.
+
 ## Acceptance criteria
 
 1. One command deterministically produces 32 organization rows from one frozen
@@ -676,3 +718,8 @@ Saved-document compatibility is explicit:
     simple baselines.
 12. The released default Frame has no silent cap, shift, injury, or qualitative
     research substitution.
+13. A lifecycle change cannot rewrite a sealed profile observation, Frame, or
+    board, and a replacement method is never silently substituted.
+14. Organization health, competitive-success forecasts, and window-timing
+    classifications remain distinctly named and cannot inherit one another's
+    validation claims.
