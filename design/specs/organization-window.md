@@ -564,7 +564,10 @@ horizontally contained on narrow screens.
 The 32-team board is a UI-neutral ViewModel. A focused team can be projected
 into `card_document.v1` only after the full board is sealed. Page one is the
 scoreboard; page two is The Insider analysis. Cards retain the board,
-manifest, and source fingerprints.
+manifest, and source fingerprints. The Insider projects the two leading and
+two lowest non-overlapping available panes as shared metric strips. A
+rank-withheld board labels these as available-pane observations; only an
+officially ranked board may call them strengths and vulnerabilities.
 
 ## Data and cache identity
 

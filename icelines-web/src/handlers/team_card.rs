@@ -561,6 +561,7 @@ fn project_fantasy_template(
         .iter()
         .map(|warning| warning.message.clone())
         .collect::<Vec<_>>();
+    let mut methodology_title = String::new();
     let mut limitations = Vec::new();
     for section in &page.sections {
         match section {
@@ -677,6 +678,7 @@ fn project_fantasy_template(
                 }
             }
             CardSectionView::Methodology(methodology) => {
+                methodology_title = methodology.title.clone();
                 limitations.extend(methodology.methods.iter().map(|method| {
                     format!("{} {} — {}", method.label, method.version, method.summary)
                 }));
@@ -823,6 +825,7 @@ fn project_fantasy_template(
         player_groups,
         timeline_groups,
         warnings,
+        methodology_title,
         limitations,
     }
 }

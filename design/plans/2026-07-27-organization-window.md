@@ -849,6 +849,10 @@ every canonical team resolves through the same builder and retains the board
 fingerprint. A withheld rank suppresses contender/rebuilding labels in card,
 Web-board, and TUI-board presentation and displays `Under review` instead.
 Cross-surface golden parity and all-32 unique-card tests cover the change.
+The shared focused-card projection also places two leading and two lowest
+non-overlapping panes on The Insider page. Partial boards label these as
+available observations, while ranked boards may publish strength and
+vulnerability language; Page 1 remains the compact organization scoreboard.
 
 **Current partial-evidence checkpoint — 2026-07-29:** the registered Web/TUI
 board and release smoke now use the dated July 28 package replay with 14/16

@@ -2066,8 +2066,7 @@ mod tests {
         let display = first.organizations_in_display_order();
         assert_eq!(display.first().and_then(|row| row.overall.rank), Some(1));
         assert!(display.windows(2).all(|rows| {
-            rows[0].overall.rank.unwrap_or(usize::MAX)
-                <= rows[1].overall.rank.unwrap_or(usize::MAX)
+            rows[0].overall.rank.unwrap_or(usize::MAX) <= rows[1].overall.rank.unwrap_or(usize::MAX)
         }));
         let nyr = first.organization("NYR").expect("Rangers row");
         assert_eq!(nyr.dimensions.len(), 2);

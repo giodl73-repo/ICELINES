@@ -90,7 +90,7 @@
         {% endfor %}
 
         {% if !warnings.is_empty() %}<aside class="team-card-notice"><h3>Evidence warnings</h3><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></aside>{% endif %}
-        {% if !limitations.is_empty() %}<details class="team-card-method"><summary>Methodology and limitations</summary><ul>{% for limitation in limitations %}<li>{{ limitation }}</li>{% endfor %}</ul></details>{% endif %}
+        {% if !limitations.is_empty() %}<details class="team-card-method"><summary>{% if methodology_title.is_empty() %}Methodology and limitations{% else %}{{ methodology_title }}{% endif %}</summary><ul>{% for limitation in limitations %}<li>{{ limitation }}</li>{% endfor %}</ul></details>{% endif %}
         <p class="team-card-deck">Document fingerprint: <code>{{ fingerprint }}</code></p>
     </section>
 </article>

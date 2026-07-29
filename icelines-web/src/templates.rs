@@ -846,6 +846,7 @@ pub struct FantasyRosterCardTemplate {
     pub player_groups: Vec<GenericCardPlayerGroup>,
     pub timeline_groups: Vec<GenericCardTimelineGroup>,
     pub warnings: Vec<String>,
+    pub methodology_title: String,
     pub limitations: Vec<String>,
 }
 

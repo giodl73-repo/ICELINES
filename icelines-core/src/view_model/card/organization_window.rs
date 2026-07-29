@@ -1,6 +1,6 @@
 //! UI-neutral focused-team projection of a sealed organization Window board.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -290,6 +290,82 @@ pub fn build_organization_window_card(
         .flat_map(|profile| profile.limitations.iter().cloned())
         .chain(input.board.disclosures.iter().cloned())
         .collect::<Vec<_>>();
+    let publishes_rank = organization.overall.published_classification().is_some();
+    let leading_drivers = organization.strengths.iter().take(2).collect::<Vec<_>>();
+    let leading_keys = leading_drivers
+        .iter()
+        .map(|driver| driver.dimension_key.as_str())
+        .collect::<BTreeSet<_>>();
+    let trailing_drivers = organization
+        .vulnerabilities
+        .iter()
+        .filter(|driver| !leading_keys.contains(driver.dimension_key.as_str()))
+        .take(2)
+        .collect::<Vec<_>>();
+    let mut insider_sections = Vec::new();
+    if !leading_drivers.is_empty() {
+        insider_sections.push(CardSectionView::MetricStrip(MetricStripSectionView {
+            id: "window-leading-drivers".to_owned(),
+            title: Some(
+                if publishes_rank {
+                    "Primary strengths"
+                } else {
+                    "Leading available panes"
+                }
+                .to_owned(),
+            ),
+            metrics: leading_drivers
+                .into_iter()
+                .map(|driver| {
+                    optional_metric(
+                        &format!("window.driver.strength.{}", driver.dimension_key),
+                        &driver.label,
+                        Some(driver.score),
+                        MetricUnit::Score,
+                        evidence_label,
+                    )
+                })
+                .collect(),
+        }));
+    }
+    if !trailing_drivers.is_empty() {
+        insider_sections.push(CardSectionView::MetricStrip(MetricStripSectionView {
+            id: "window-trailing-drivers".to_owned(),
+            title: Some(
+                if publishes_rank {
+                    "Primary vulnerabilities"
+                } else {
+                    "Lowest available panes"
+                }
+                .to_owned(),
+            ),
+            metrics: trailing_drivers
+                .into_iter()
+                .map(|driver| {
+                    optional_metric(
+                        &format!("window.driver.vulnerability.{}", driver.dimension_key),
+                        &driver.label,
+                        Some(driver.score),
+                        MetricUnit::Score,
+                        evidence_label,
+                    )
+                })
+                .collect(),
+        }));
+    }
+    insider_sections.extend([
+        CardSectionView::Methodology(MethodologySectionView {
+            id: "window-methodology".to_owned(),
+            title: "Profiles and evidence".to_owned(),
+            methods: profile_methods,
+            limitations,
+        }),
+        CardSectionView::Provenance(ProvenanceSectionView {
+            id: "window-provenance".to_owned(),
+            title: "Sealed board".to_owned(),
+            provenance_ids: vec!["window-board".to_owned()],
+        }),
+    ]);
 
     CardDocumentView {
         schema: CARD_DOCUMENT_SCHEMA.to_owned(),
@@ -338,20 +414,8 @@ pub fn build_organization_window_card(
                 literal_label: "Window evidence and methodology".to_owned(),
                 display_label: Some("The Insider".to_owned()),
                 order: 2,
-                accessible_summary: "Raw inputs, normalized profile scores, method versions, limitations, and sealed source identity.".to_owned(),
-                sections: vec![
-                    CardSectionView::Methodology(MethodologySectionView {
-                        id: "window-methodology".to_owned(),
-                        title: "Profiles and evidence".to_owned(),
-                        methods: profile_methods,
-                        limitations,
-                    }),
-                    CardSectionView::Provenance(ProvenanceSectionView {
-                        id: "window-provenance".to_owned(),
-                        title: "Sealed board".to_owned(),
-                        provenance_ids: vec!["window-board".to_owned()],
-                    }),
-                ],
+                accessible_summary: "Leading and lowest available panes, raw inputs, normalized profile scores, method versions, limitations, and sealed source identity.".to_owned(),
+                sections: insider_sections,
             },
         ],
         assets: Vec::new(),
@@ -525,5 +589,47 @@ mod tests {
             .expect("identity section");
         assert_eq!(identity.subtitle.as_deref(), Some("Under review · NR"));
         assert!(!card.subtitle.as_deref().unwrap().contains("Rebuilding"));
+    }
+
+    #[test]
+    fn partial_insider_publishes_non_overlapping_available_drivers() {
+        let card = project_organization_window_card(board(), "NYR", None, None).unwrap();
+        let page_one_ids = card.pages[0]
+            .sections
+            .iter()
+            .map(CardSectionView::id)
+            .collect::<BTreeSet<_>>();
+        assert!(!page_one_ids.contains("window-leading-drivers"));
+        assert!(!page_one_ids.contains("window-trailing-drivers"));
+
+        let strips = card.pages[1]
+            .sections
+            .iter()
+            .filter_map(|section| match section {
+                CardSectionView::MetricStrip(strip) => Some(strip),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(strips.len(), 2);
+        assert_eq!(strips[0].title.as_deref(), Some("Leading available panes"));
+        assert_eq!(strips[1].title.as_deref(), Some("Lowest available panes"));
+        assert_eq!(strips[0].metrics.len(), 2);
+        assert_eq!(strips[1].metrics.len(), 2);
+
+        let leading_labels = strips[0]
+            .metrics
+            .iter()
+            .map(|metric| metric.metric.label.as_str())
+            .collect::<BTreeSet<_>>();
+        let trailing_labels = strips[1]
+            .metrics
+            .iter()
+            .map(|metric| metric.metric.label.as_str())
+            .collect::<BTreeSet<_>>();
+        assert!(leading_labels.is_disjoint(&trailing_labels));
+        assert!(strips
+            .iter()
+            .flat_map(|strip| &strip.metrics)
+            .all(|metric| metric.evidence_label == EvidenceLabel::UnderReview));
     }
 }

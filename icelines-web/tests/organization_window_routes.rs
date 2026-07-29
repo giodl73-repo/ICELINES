@@ -135,6 +135,29 @@ async fn every_canonical_team_has_a_dynamic_window_card() {
 }
 
 #[tokio::test]
+async fn focused_partial_window_insider_renders_available_drivers() {
+    let response = router(WebState::new())
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/NYR/window?page=insider")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = axum::body::to_bytes(response.into_body(), 2 * 1024 * 1024)
+        .await
+        .unwrap();
+    let html = String::from_utf8(body.to_vec()).unwrap();
+    assert!(html.contains("Leading available panes"));
+    assert!(html.contains("Lowest available panes"));
+    assert!(html.contains("Profiles and evidence"));
+    assert!(!html.contains("Primary strengths"));
+    assert!(!html.contains("Primary vulnerabilities"));
+}
+
+#[tokio::test]
 async fn withheld_window_html_uses_canonical_order_not_partial_score_order() {
     let response = router(WebState::new())
         .oneshot(
@@ -155,7 +178,10 @@ async fn withheld_window_html_uses_canonical_order_not_partial_score_order() {
     for (team, _) in CANONICAL_TEAMS {
         let marker = format!(">{team}</a>");
         let position = html.find(&marker).expect("canonical team row");
-        assert!(position >= prior_position, "{team} is out of canonical order");
+        assert!(
+            position >= prior_position,
+            "{team} is out of canonical order"
+        );
         prior_position = position;
     }
     assert_eq!(html.matches("Under review").count(), CANONICAL_TEAMS.len());

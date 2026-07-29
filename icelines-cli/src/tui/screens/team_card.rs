@@ -906,6 +906,8 @@ mod tests {
         assert!(window.contains("Confidence"));
         assert!(window.contains("Coverage"));
         let insider = document_lines(nyr, 1, 80).join("\n");
+        assert!(insider.contains("Leading available panes"));
+        assert!(insider.contains("Lowest available panes"));
         assert!(insider.contains("Profiles and evidence"));
         assert!(nyr
             .subtitle
