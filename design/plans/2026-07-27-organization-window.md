@@ -853,6 +853,9 @@ The shared focused-card projection also places two leading and two lowest
 non-overlapping panes on The Insider page. Partial boards label these as
 available observations, while ranked boards may publish strength and
 vulnerability language; Page 1 remains the compact organization scoreboard.
+The generic Web and TUI card renderers resolve The Insider's provenance IDs
+against the sealed card rows, exposing authority, completeness, observation
+time, fingerprint, and source notes without Window-specific reconstruction.
 
 **Current partial-evidence checkpoint — 2026-07-29:** the registered Web/TUI
 board and release smoke now use the dated July 28 package replay with 14/16

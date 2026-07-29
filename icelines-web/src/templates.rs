@@ -848,6 +848,7 @@ pub struct FantasyRosterCardTemplate {
     pub warnings: Vec<String>,
     pub methodology_title: String,
     pub limitations: Vec<String>,
+    pub provenance_groups: Vec<GenericCardProvenanceGroup>,
 }
 
 pub struct GenericCardPlayerGroup {
@@ -864,6 +865,19 @@ pub struct GenericCardTimelineItem {
     pub label: String,
     pub effective_at: String,
     pub detail: String,
+}
+
+pub struct GenericCardProvenanceGroup {
+    pub title: String,
+    pub items: Vec<GenericCardProvenanceItem>,
+}
+
+pub struct GenericCardProvenanceItem {
+    pub label: String,
+    pub authority: String,
+    pub observed_at: String,
+    pub fingerprint: String,
+    pub note: String,
 }
 
 #[derive(Debug, Clone)]

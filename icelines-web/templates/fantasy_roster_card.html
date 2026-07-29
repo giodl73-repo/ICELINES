@@ -91,6 +91,20 @@
 
         {% if !warnings.is_empty() %}<aside class="team-card-notice"><h3>Evidence warnings</h3><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></aside>{% endif %}
         {% if !limitations.is_empty() %}<details class="team-card-method"><summary>{% if methodology_title.is_empty() %}Methodology and limitations{% else %}{{ methodology_title }}{% endif %}</summary><ul>{% for limitation in limitations %}<li>{{ limitation }}</li>{% endfor %}</ul></details>{% endif %}
+        {% for group in provenance_groups %}
+        <section class="team-card-bridge team-card-provenance">
+            <h3>{{ group.title }}</h3>
+            {% for item in group.items %}
+            <article>
+                <strong>{{ item.label }}</strong>
+                <span>{{ item.authority }}</span>
+                {% if !item.observed_at.is_empty() %}<small>Observed {{ item.observed_at }}</small>{% endif %}
+                {% if !item.fingerprint.is_empty() %}<small>Fingerprint <code>{{ item.fingerprint }}</code></small>{% endif %}
+                {% if !item.note.is_empty() %}<small>{{ item.note }}</small>{% endif %}
+            </article>
+            {% endfor %}
+        </section>
+        {% endfor %}
         <p class="team-card-deck">Document fingerprint: <code>{{ fingerprint }}</code></p>
     </section>
 </article>

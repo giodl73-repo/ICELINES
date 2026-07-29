@@ -489,11 +489,28 @@ pub(crate) fn document_lines(document: &CardDocumentView, page: usize, width: u1
                 }
             }
             CardSectionView::Provenance(section) => {
-                lines.push(format!(
-                    "-- {}: {} --",
-                    section.title,
-                    section.provenance_ids.join(", ")
-                ));
+                lines.push(format!("-- {} --", section.title));
+                for provenance_id in &section.provenance_ids {
+                    if let Some(provenance) = document
+                        .provenance
+                        .iter()
+                        .find(|item| item.id == *provenance_id)
+                    {
+                        lines.push(format!(
+                            "{}: {:?} · {:?}",
+                            provenance.label, provenance.source, provenance.state
+                        ));
+                        if let Some(observed_at) = provenance.observed_at {
+                            lines.push(format!("Observed: {}", observed_at.to_rfc3339()));
+                        }
+                        if let Some(fingerprint) = &provenance.fingerprint {
+                            lines.push(format!("Fingerprint: {fingerprint}"));
+                        }
+                        if let Some(note) = &provenance.note {
+                            lines.push(note.clone());
+                        }
+                    }
+                }
             }
             CardSectionView::Decision(section) => {
                 lines.push(format!("-- {} --", section.title));
@@ -909,6 +926,11 @@ mod tests {
         assert!(insider.contains("Leading available panes"));
         assert!(insider.contains("Lowest available panes"));
         assert!(insider.contains("Profiles and evidence"));
+        assert!(insider.contains("Sealed board"));
+        assert!(insider.contains("Balanced organization Window · 2026-07-28"));
+        assert!(
+            insider.contains("30083b67d6ac6a8bd185cc8a21f074c6cc00301e415cd60b954dcf68ff79a920")
+        );
         assert!(nyr
             .subtitle
             .as_deref()

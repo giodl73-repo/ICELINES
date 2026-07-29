@@ -153,6 +153,9 @@ async fn focused_partial_window_insider_renders_available_drivers() {
     assert!(html.contains("Leading available panes"));
     assert!(html.contains("Lowest available panes"));
     assert!(html.contains("Profiles and evidence"));
+    assert!(html.contains("Sealed board"));
+    assert!(html.contains("Balanced organization Window · 2026-07-28"));
+    assert!(html.contains("30083b67d6ac6a8bd185cc8a21f074c6cc00301e415cd60b954dcf68ff79a920"));
     assert!(!html.contains("Primary strengths"));
     assert!(!html.contains("Primary vulnerabilities"));
 }

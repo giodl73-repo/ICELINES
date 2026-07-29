@@ -19,8 +19,9 @@ use crate::card_store::{
 use crate::state::WebState;
 use crate::templates::{
     FantasyRosterCardTemplate, GenericCardAlternative, GenericCardDecision, GenericCardMetricGroup,
-    GenericCardPlayerGroup, GenericCardTimelineGroup, GenericCardTimelineItem, TeamCardLineupGroup,
-    TeamCardLineupSlot, TeamCardMetric, TeamCardPlayer, TeamCardTemplate,
+    GenericCardPlayerGroup, GenericCardProvenanceGroup, GenericCardProvenanceItem,
+    GenericCardTimelineGroup, GenericCardTimelineItem, TeamCardLineupGroup, TeamCardLineupSlot,
+    TeamCardMetric, TeamCardPlayer, TeamCardTemplate,
 };
 
 #[derive(Debug, Default, Deserialize)]
@@ -563,6 +564,7 @@ fn project_fantasy_template(
         .collect::<Vec<_>>();
     let mut methodology_title = String::new();
     let mut limitations = Vec::new();
+    let mut provenance_groups = Vec::new();
     for section in &page.sections {
         match section {
             CardSectionView::Lineup(lineup) => {
@@ -683,6 +685,26 @@ fn project_fantasy_template(
                     format!("{} {} — {}", method.label, method.version, method.summary)
                 }));
                 limitations.extend(methodology.limitations.iter().cloned());
+            }
+            CardSectionView::Provenance(provenance) => {
+                provenance_groups.push(GenericCardProvenanceGroup {
+                    title: provenance.title.clone(),
+                    items: provenance
+                        .provenance_ids
+                        .iter()
+                        .filter_map(|id| card.provenance.iter().find(|item| item.id == *id))
+                        .map(|item| GenericCardProvenanceItem {
+                            label: item.label.clone(),
+                            authority: format!("{:?} · {:?}", item.source, item.state),
+                            observed_at: item
+                                .observed_at
+                                .map(|value| value.to_rfc3339())
+                                .unwrap_or_default(),
+                            fingerprint: item.fingerprint.clone().unwrap_or_default(),
+                            note: item.note.clone().unwrap_or_default(),
+                        })
+                        .collect(),
+                });
             }
             _ => {}
         }
@@ -827,6 +849,7 @@ fn project_fantasy_template(
         warnings,
         methodology_title,
         limitations,
+        provenance_groups,
     }
 }
 

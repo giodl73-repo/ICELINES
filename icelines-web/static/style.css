@@ -1738,6 +1738,9 @@ a.team-link:hover {
 .team-card-insider-player dd { margin: 0; font-weight: 800; }
 .team-card-notice { margin-top: 1rem; padding: .8rem 1rem; background: #fff5d8; border-left: 4px solid #d49a00; }
 .team-card-method { margin-top: 1rem; padding: .8rem; border: 1px solid #d9e0e9; }
+.team-card-provenance article { display: grid; gap: .25rem; padding: .75rem 0; }
+.team-card-provenance article + article { border-top: 1px solid #d9e0e9; }
+.team-card-provenance small { overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   .team-card-hero { align-items: start; flex-direction: column; }
   .team-card-slots, .team-card-scenarios { grid-template-columns: 1fr; }

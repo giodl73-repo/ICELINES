@@ -568,6 +568,10 @@ manifest, and source fingerprints. The Insider projects the two leading and
 two lowest non-overlapping available panes as shared metric strips. A
 rank-withheld board labels these as available-pane observations; only an
 officially ranked board may call them strengths and vulnerabilities.
+Renderers resolve every Insider provenance reference against the card's sealed
+source rows and expose its authority kind, completeness, observation time,
+fingerprint, and note; a renderer must not replace these with local source
+claims.
 
 ## Data and cache identity
 
