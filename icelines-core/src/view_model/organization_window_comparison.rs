@@ -1751,7 +1751,11 @@ fn is_source_fingerprint(value: &str) -> bool {
 fn validate_sources(
     board: &OrganizationWindowBoardView,
 ) -> Result<(), OrganizationWindowComparisonError> {
-    if board.source_fingerprints.is_empty() {
+    if !board
+        .source_fingerprints
+        .iter()
+        .any(|fingerprint| is_source_fingerprint(fingerprint))
+    {
         return Err(
             OrganizationWindowComparisonError::MissingSourceFingerprints(board.fingerprint.clone()),
         );

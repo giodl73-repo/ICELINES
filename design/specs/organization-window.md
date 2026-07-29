@@ -323,7 +323,9 @@ producer's formula.
 ### Registry lifecycle amendment
 
 Evidence readiness, observation status, and registry lifecycle are separate
-axes. A future registry revision adds lifecycle metadata with these semantics:
+axes. The sealed `organization_window_registry_lifecycle.v1` amendment adds
+lifecycle metadata over the immutable v1 descriptor inventory with these
+semantics:
 
 - `active`: eligible for newly authored Frames, subject to readiness and Frame
   gates;
@@ -337,13 +339,22 @@ It is not an alias: loading an old board never substitutes the replacement.
 Demoting source readiness does not retire a method, and retiring a method does
 not rewrite its historical readiness. A lifecycle amendment records rationale,
 effective date, affected official Frames, replacement when present, and review
-evidence.
+evidence. A deprecated-method hold is part of that sealed amendment and names
+the exact official Frame ID and manifest fingerprint, rationale, approver, and
+review date; an unsealed runtime exception is not authority.
 
-This is a planned additive capability, not part of
-`organization_window_registry.v1`. It lands only with a versioned registry
-schema, validator rules, authoring docs, compatibility fixtures, and sealed
-board replay tests. Older readers must either understand the new registry
-version or refuse it explicitly.
+The amendment is separate from `organization_window_registry.v1`, so replaying
+an old board continues to use its embedded Frame and original descriptors.
+New official builders and custom rebases seal and bind the lifecycle
+fingerprint. Retired methods fail new authoring; deprecated methods require an
+explicit reviewed hold in an official Frame; readiness overrides may only
+demote. A production official Frame may select only methods whose effective
+readiness is `ready_for_adapter`; an IceLines evaluation Frame may also select
+`evaluation` methods, and a custom Frame may inspect evaluation/context
+methods. No new Frame may select a blocked method, and both production and
+evaluation IceLines Frames require sealed deprecated-method holds. The validator rejects
+unknown/self/retired/cyclic replacements and never substitutes a replacement
+into a saved artifact.
 
 ## Normalization and scoring
 
@@ -683,7 +694,10 @@ A rolling-origin artifact exposes every origin and board fingerprint, a
 baseline frozen independently for each origin, pooled and per-origin metrics,
 leave-one-pane-out ablations, organization stability, and between-origin
 uncertainty. Trial noise and season variation remain separate; absent
-trial-level inputs are labeled unavailable. Mixed Frame fingerprints,
+trial-level inputs are labeled `not_provided`, deterministic origins are
+`not_applicable`, and complete sealed per-origin MAE standard errors produce a
+separate propagated interval. Mixed or malformed trial evidence never produces
+a partial interval. Mixed Frame fingerprints,
 incomplete pane scores, invalid outcome cohorts, and incomplete leakage audits
 fail closed rather than being pooled.
 

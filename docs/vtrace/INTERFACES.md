@@ -642,6 +642,13 @@ baselines, invalid or duplicate shocks, disabled profile scenario support,
 authority-scope mismatches, non-finite values, and insufficient trials fail
 closed.
 
+Rolling calibration origins optionally carry a typed trial-noise state.
+Deterministic origins declare `not_applicable`; simulations may provide trial
+count, MAE standard error, and a source fingerprint. A trial-noise confidence
+interval is emitted only when every origin supplies valid estimates. Partial
+estimates remain visible but the aggregate state is `not_provided`, separate
+from the between-origin season-variation interval.
+
 Versioning: bridge mappings and fingerprints are immutable. Movement fields
 for source manifest, bridge, and rebased checkpoint are additive within v1.
 
@@ -650,6 +657,22 @@ for source manifest, bridge, and rebased checkpoint are additive within v1.
 CLI/TUI/Web/API/report/card adapters accept sealed core documents. Web state is
 bookmarkable by season, as-of, horizon, view, and registered Frame ID. No
 surface calculates hockey values.
+
+## IF-WINDOW-005 — registry lifecycle amendment
+
+Inputs: `organization_window_registry_lifecycle.v1`, the immutable v1 profile
+inventory, a candidate manifest, and production/evaluation/custom authoring
+policy.
+
+Outputs: a canonical lifecycle fingerprint and a lifecycle-approved sealed
+manifest. Official builders and custom rebases bind the lifecycle fingerprint
+into newly written board source identity. Replay continues through the original
+manifest validator and never substitutes a declared replacement.
+
+Errors: unsupported/base-registry schema, duplicate or unknown entries,
+readiness promotion, unknown/self/retired/cyclic replacement, empty rationale
+or review evidence, retired selection, blocked selection, non-ready official
+selection, and missing/mismatched/duplicate sealed official deprecated holds.
 
 ## Open Questions
 

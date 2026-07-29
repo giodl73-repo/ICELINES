@@ -50,6 +50,7 @@ pub mod organization_window;
 pub mod organization_window_adapters;
 pub mod organization_window_calibration;
 pub mod organization_window_comparison;
+pub mod organization_window_registry;
 pub mod organization_window_scenario_distribution;
 pub mod organizational_prospect;
 pub mod player_card;
@@ -360,9 +361,9 @@ pub use organization_window_calibration::{
     WindowCalibrationMetricView, WindowCalibrationOriginInput, WindowCalibrationOriginRole,
     WindowCalibrationOriginView, WindowCalibrationSplitView, WindowCalibrationUncertaintyView,
     WindowLeakageAuditRow, WindowOrganizationStabilityView, WindowOutcomeRow,
-    WindowTrialNoiseStatus, ORGANIZATION_WINDOW_CALIBRATION_SCHEMA,
-    ORGANIZATION_WINDOW_EVALUATION_JSON_SCHEMA, ORGANIZATION_WINDOW_EVALUATION_SCHEMA,
-    ORGANIZATION_WINDOW_ROLLING_CALIBRATION_JSON_SCHEMA,
+    WindowTrialNoiseInput, WindowTrialNoiseOriginView, WindowTrialNoiseStatus,
+    ORGANIZATION_WINDOW_CALIBRATION_SCHEMA, ORGANIZATION_WINDOW_EVALUATION_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_EVALUATION_SCHEMA, ORGANIZATION_WINDOW_ROLLING_CALIBRATION_JSON_SCHEMA,
     ORGANIZATION_WINDOW_ROLLING_CALIBRATION_SCHEMA,
 };
 pub use organization_window_comparison::{
@@ -390,6 +391,16 @@ pub use organization_window_comparison::{
     ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_JSON_SCHEMA,
     ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_SCHEMA,
     ORGANIZATION_WINDOW_SCENARIO_IMPACT_SCHEMA,
+};
+pub use organization_window_registry::{
+    load_organization_window_registry_lifecycle, seal_new_organization_window_manifest,
+    seal_organization_window_registry_lifecycle, OrganizationWindowRegistryLifecycleError,
+    OrganizationWindowRegistryLifecycleView, WindowDeprecatedProfileHold,
+    WindowManifestAuthoringKind, WindowManifestLifecyclePolicy, WindowProfileLifecycle,
+    WindowProfileLifecycleEntry, WindowProfileMethodRef,
+    ORGANIZATION_WINDOW_REGISTRY_LIFECYCLE_JSON,
+    ORGANIZATION_WINDOW_REGISTRY_LIFECYCLE_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_REGISTRY_LIFECYCLE_SCHEMA,
 };
 pub use organization_window_scenario_distribution::{
     simulate_organization_window_scenario_distribution,

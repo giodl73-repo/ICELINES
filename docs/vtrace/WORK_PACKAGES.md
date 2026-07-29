@@ -946,10 +946,10 @@ Status: partial.
 
 ## WP-011: The Window organization-health system
 
-Parent requirements: REQ-WINDOW-001..008; REQ-DATA-001; REQ-PARITY-001;
+Parent requirements: REQ-WINDOW-001..009; REQ-DATA-001; REQ-PARITY-001;
 REQ-CODE-001.
 
-Interfaces/design: IF-WINDOW-001..004; DES-WINDOW-001..006.
+Interfaces/design: IF-WINDOW-001..005; DES-WINDOW-001..007.
 
 Scope: profile inventory, registry/contracts, manifest validation, canonical
 fingerprints, normalization and hierarchical scoring, production adapters,

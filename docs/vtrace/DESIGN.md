@@ -442,6 +442,7 @@ formalize before production changes are made.
 | DES-WINDOW-004 | Build one sealed league board before team focus; history and scenario documents reference board fingerprints. | REQ-WINDOW-001; REQ-WINDOW-005 | Focused NYR/SEA results retain original rank and board identity. |
 | DES-WINDOW-005 | Keep profile/scoring logic in `icelines-core`, source/artifact assembly in `icelines-fetch`, and rendering in thin adapters. | REQ-WINDOW-002; REQ-WINDOW-006 | Cross-surface fixtures compare one canonical document. |
 | DES-WINDOW-006 | Treat current 32-team execution and historical season-canonical execution as separate cohort gates. | REQ-WINDOW-001; REQ-WINDOW-007 | Historical replay never fabricates organizations absent from that season. |
+| DES-WINDOW-007 | Apply lifecycle as a separately sealed amendment over the immutable descriptor inventory; new authoring binds the amendment while replay ignores later policy changes. | REQ-WINDOW-003; REQ-WINDOW-009 | Deprecated/retired/demoted methods fail the appropriate new-authoring paths, supersession never aliases, and old boards replay unchanged. |
 
 ## Open Design Risks
 

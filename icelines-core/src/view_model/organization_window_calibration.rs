@@ -75,6 +75,11 @@ pub struct WindowCalibrationOriginInput {
     /// Frozen point-in-time constant or simple-model prediction for this
     /// origin, repeated across its cohort.
     pub baseline_value: f64,
+    #[serde(
+        default,
+        skip_serializing_if = "WindowTrialNoiseInput::is_not_provided"
+    )]
+    pub trial_noise: WindowTrialNoiseInput,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -109,6 +114,27 @@ pub struct WindowOrganizationStabilityView {
 #[serde(rename_all = "snake_case")]
 pub enum WindowTrialNoiseStatus {
     NotProvided,
+    NotApplicable,
+    Estimated,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum WindowTrialNoiseInput {
+    #[default]
+    NotProvided,
+    NotApplicable,
+    Estimated {
+        trials: u64,
+        mae_standard_error: f64,
+        source_fingerprint: String,
+    },
+}
+
+impl WindowTrialNoiseInput {
+    fn is_not_provided(&self) -> bool {
+        matches!(self, Self::NotProvided)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -118,6 +144,22 @@ pub struct WindowCalibrationUncertaintyView {
     pub mean_mae_confidence_interval_low: f64,
     pub mean_mae_confidence_interval_high: f64,
     pub trial_noise_status: WindowTrialNoiseStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trial_noise_mae_standard_error: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trial_noise_mean_mae_confidence_interval_low: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trial_noise_mean_mae_confidence_interval_high: Option<f64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub trial_noise_origins: Vec<WindowTrialNoiseOriginView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WindowTrialNoiseOriginView {
+    pub origin_id: String,
+    pub trials: u64,
+    pub mae_standard_error: f64,
+    pub source_fingerprint: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -198,6 +240,8 @@ pub enum OrganizationWindowCalibrationError {
     MixedManifest,
     #[error("rolling Window calibration baseline is invalid for {0}")]
     InvalidBaseline(String),
+    #[error("rolling Window calibration trial-noise evidence is invalid for {0}")]
+    InvalidTrialNoise(String),
     #[error("rolling Window calibration board fingerprint is invalid for {0}")]
     InvalidBoardFingerprint(String),
     #[error("rolling Window calibration is missing dimension {dimension} for {organization}")]
@@ -344,6 +388,7 @@ pub fn calibrate_organization_window_rolling_origins(
         .collect::<BTreeMap<_, _>>();
     let mut organization_samples = BTreeMap::<String, (Vec<f64>, Vec<f64>)>::new();
     let mut origin_maes = Vec::with_capacity(ordered.len());
+    let mut trial_noise = Vec::with_capacity(ordered.len());
     let mut leakage_blocked = false;
 
     for origin in ordered {
@@ -357,6 +402,8 @@ pub fn calibrate_organization_window_rolling_origins(
                 origin.origin_id.clone(),
             ));
         }
+        validate_trial_noise(&origin.origin_id, &origin.trial_noise)?;
+        trial_noise.push((origin.origin_id.clone(), origin.trial_noise.clone()));
         if origin.board.manifest.fingerprint != manifest_fingerprint {
             return Err(OrganizationWindowCalibrationError::MixedManifest);
         }
@@ -484,7 +531,7 @@ pub fn calibrate_organization_window_rolling_origins(
             },
         )
         .collect::<Vec<_>>();
-    let uncertainty = between_origin_uncertainty(&origin_maes);
+    let uncertainty = between_origin_uncertainty(&origin_maes, &trial_noise);
     let claim_status = if leakage_blocked {
         WindowCalibrationClaimStatus::Blocked
     } else if origins.len() >= required
@@ -494,6 +541,11 @@ pub fn calibrate_organization_window_rolling_origins(
         WindowCalibrationClaimStatus::Calibrated
     } else {
         WindowCalibrationClaimStatus::Inconclusive
+    };
+    let trial_noise_disclosure = match uncertainty.trial_noise_status {
+        WindowTrialNoiseStatus::NotProvided => "Trial-noise evidence is incomplete or mixed across origins; no trial-noise interval is published.",
+        WindowTrialNoiseStatus::NotApplicable => "Every origin is deterministic, so trial noise is not applicable; between-origin season variation remains separate.",
+        WindowTrialNoiseStatus::Estimated => "The trial-noise interval propagates sealed per-origin MAE standard errors and remains separate from between-origin season variation.",
     };
     let mut result = OrganizationWindowRollingCalibrationView {
         schema: ORGANIZATION_WINDOW_ROLLING_CALIBRATION_SCHEMA.to_owned(),
@@ -513,8 +565,7 @@ pub fn calibrate_organization_window_rolling_origins(
                 .to_owned(),
             "Ablations remove one dimension and renormalize the remaining manifest weights."
                 .to_owned(),
-            "The confidence interval measures between-origin variation; trial noise is not available in the Window board contract."
-                .to_owned(),
+            trial_noise_disclosure.to_owned(),
         ],
         fingerprint: String::new(),
     };
@@ -542,6 +593,7 @@ pub fn evaluate_organization_window_origins(
                 labeled.origin.origin_id.clone(),
             ));
         }
+        validate_trial_noise(&labeled.origin.origin_id, &labeled.origin.trial_noise)?;
     }
     let required_training = minimum_training_origins.max(2);
     let training_count = origins
@@ -774,7 +826,10 @@ fn build_dimension_ablations(
         .collect()
 }
 
-fn between_origin_uncertainty(origin_maes: &[f64]) -> WindowCalibrationUncertaintyView {
+fn between_origin_uncertainty(
+    origin_maes: &[f64],
+    trial_noise: &[(String, WindowTrialNoiseInput)],
+) -> WindowCalibrationUncertaintyView {
     let count = origin_maes.len();
     let mean = origin_maes.iter().sum::<f64>() / count as f64;
     let variance = if count > 1 {
@@ -788,13 +843,95 @@ fn between_origin_uncertainty(origin_maes: &[f64]) -> WindowCalibrationUncertain
     };
     let standard_deviation = variance.sqrt();
     let margin = 1.96 * standard_deviation / (count as f64).sqrt();
+    let trial_noise_origins = trial_noise
+        .iter()
+        .filter_map(|(origin_id, noise)| match noise {
+            WindowTrialNoiseInput::Estimated {
+                trials,
+                mae_standard_error,
+                source_fingerprint,
+            } => Some(WindowTrialNoiseOriginView {
+                origin_id: origin_id.clone(),
+                trials: *trials,
+                mae_standard_error: *mae_standard_error,
+                source_fingerprint: source_fingerprint.clone(),
+            }),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let (trial_noise_status, trial_standard_error, trial_low, trial_high) = if trial_noise
+        .iter()
+        .all(|(_, noise)| matches!(noise, WindowTrialNoiseInput::NotApplicable))
+    {
+        (WindowTrialNoiseStatus::NotApplicable, None, None, None)
+    } else if trial_noise
+        .iter()
+        .all(|(_, noise)| matches!(noise, WindowTrialNoiseInput::Estimated { .. }))
+    {
+        let standard_error = trial_noise
+            .iter()
+            .map(|(_, noise)| match noise {
+                WindowTrialNoiseInput::Estimated {
+                    mae_standard_error, ..
+                } => mae_standard_error.powi(2),
+                _ => unreachable!("all trial-noise rows are estimated"),
+            })
+            .sum::<f64>()
+            .sqrt()
+            / count as f64;
+        let trial_margin = 1.96 * standard_error;
+        (
+            WindowTrialNoiseStatus::Estimated,
+            Some(standard_error),
+            Some((mean - trial_margin).max(0.0)),
+            Some((mean + trial_margin).min(100.0)),
+        )
+    } else {
+        (WindowTrialNoiseStatus::NotProvided, None, None, None)
+    };
     WindowCalibrationUncertaintyView {
         origin_count: count,
         between_origin_mae_standard_deviation: standard_deviation,
         mean_mae_confidence_interval_low: (mean - margin).max(0.0),
         mean_mae_confidence_interval_high: (mean + margin).min(100.0),
-        trial_noise_status: WindowTrialNoiseStatus::NotProvided,
+        trial_noise_status,
+        trial_noise_mae_standard_error: trial_standard_error,
+        trial_noise_mean_mae_confidence_interval_low: trial_low,
+        trial_noise_mean_mae_confidence_interval_high: trial_high,
+        trial_noise_origins,
     }
+}
+
+fn validate_trial_noise(
+    origin_id: &str,
+    trial_noise: &WindowTrialNoiseInput,
+) -> Result<(), OrganizationWindowCalibrationError> {
+    if let WindowTrialNoiseInput::Estimated {
+        trials,
+        mae_standard_error,
+        source_fingerprint,
+    } = trial_noise
+    {
+        if *trials < 2
+            || !mae_standard_error.is_finite()
+            || *mae_standard_error < 0.0
+            || !is_source_fingerprint(source_fingerprint)
+        {
+            return Err(OrganizationWindowCalibrationError::InvalidTrialNoise(
+                origin_id.to_owned(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn is_source_fingerprint(value: &str) -> bool {
+    value.strip_prefix("sha256:").is_some_and(|hash| {
+        hash.len() == 64
+            && hash
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    })
 }
 
 fn rolling_calibration_fingerprint(
@@ -812,6 +949,10 @@ fn rolling_calibration_fingerprint(
     canonical
         .organization_stability
         .sort_by(|a, b| a.organization.cmp(&b.organization));
+    canonical
+        .uncertainty
+        .trial_noise_origins
+        .sort_by(|a, b| a.origin_id.cmp(&b.origin_id));
     canonical.disclosures.sort();
     let bytes = serde_json::to_vec(&canonical)
         .map_err(|error| OrganizationWindowCalibrationError::Serialization(error.to_string()))?;
@@ -1045,6 +1186,30 @@ mod tests {
     }
 
     #[test]
+    fn additive_trial_noise_fields_preserve_saved_evaluation_readability() {
+        let evaluation: OrganizationWindowEvaluationView = serde_json::from_str(include_str!(
+            "../../../examples/window-history/evaluation-2022-23-through-2025-26.json"
+        ))
+        .unwrap();
+        let serialized = serde_json::to_string(&evaluation).unwrap();
+        assert!(!serialized.contains("trial_noise_origins"));
+        let replayed: OrganizationWindowEvaluationView = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(replayed, evaluation);
+        assert_eq!(
+            evaluation
+                .development_calibration
+                .uncertainty
+                .trial_noise_status,
+            WindowTrialNoiseStatus::NotProvided
+        );
+        assert!(evaluation
+            .development_calibration
+            .uncertainty
+            .trial_noise_origins
+            .is_empty());
+    }
+
+    #[test]
     fn metric_never_claims_calibration_when_leakage_is_blocked() {
         let result = metric("overall", &[10.0, 50.0, 90.0], &[10.0, 50.0, 90.0], true);
         assert_eq!(result.claim_status, WindowCalibrationClaimStatus::Blocked);
@@ -1093,6 +1258,7 @@ mod tests {
             board,
             outcomes,
             baseline_value: 50.0,
+            trial_noise: WindowTrialNoiseInput::NotApplicable,
         }
     }
 
@@ -1131,8 +1297,10 @@ mod tests {
         assert!(result.uncertainty.between_origin_mae_standard_deviation > 0.0);
         assert_eq!(
             result.uncertainty.trial_noise_status,
-            WindowTrialNoiseStatus::NotProvided
+            WindowTrialNoiseStatus::NotApplicable
         );
+        assert_eq!(result.uncertainty.trial_noise_mae_standard_error, None);
+        assert!(result.uncertainty.trial_noise_origins.is_empty());
         assert_eq!(
             result.claim_status,
             WindowCalibrationClaimStatus::Calibrated
@@ -1158,6 +1326,81 @@ mod tests {
         )
         .unwrap();
         assert_eq!(blocked.claim_status, WindowCalibrationClaimStatus::Blocked);
+    }
+
+    #[test]
+    fn rolling_origins_propagate_trial_noise_separately_from_season_variation() {
+        let mut origins = vec![
+            rolling_origin(
+                "2023-origin",
+                20232024,
+                NaiveDate::from_ymd_opt(2023, 7, 27).unwrap(),
+                1.0,
+            ),
+            rolling_origin(
+                "2024-origin",
+                20242025,
+                NaiveDate::from_ymd_opt(2024, 7, 27).unwrap(),
+                2.0,
+            ),
+            rolling_origin(
+                "2025-origin",
+                20252026,
+                NaiveDate::from_ymd_opt(2025, 7, 27).unwrap(),
+                3.0,
+            ),
+        ];
+        for (origin, standard_error) in origins.iter_mut().zip([0.1, 0.2, 0.3]) {
+            origin.trial_noise = WindowTrialNoiseInput::Estimated {
+                trials: 1_000,
+                mae_standard_error: standard_error,
+                source_fingerprint: format!("sha256:{}", "c".repeat(64)),
+            };
+        }
+        let result = calibrate_organization_window_rolling_origins("target", &origins, 3).unwrap();
+        assert_eq!(
+            result.uncertainty.trial_noise_status,
+            WindowTrialNoiseStatus::Estimated
+        );
+        let expected = (0.1_f64.powi(2) + 0.2_f64.powi(2) + 0.3_f64.powi(2)).sqrt() / 3.0;
+        assert!(
+            (result.uncertainty.trial_noise_mae_standard_error.unwrap() - expected).abs() < 1e-12
+        );
+        assert_eq!(result.uncertainty.trial_noise_origins.len(), 3);
+        assert!(result
+            .disclosures
+            .iter()
+            .any(|line| line.contains("separate from between-origin")));
+        let mut different_authority = origins.clone();
+        if let WindowTrialNoiseInput::Estimated {
+            source_fingerprint, ..
+        } = &mut different_authority[0].trial_noise
+        {
+            *source_fingerprint = format!("sha256:{}", "d".repeat(64));
+        }
+        let different =
+            calibrate_organization_window_rolling_origins("target", &different_authority, 3)
+                .unwrap();
+        assert_ne!(different.fingerprint, result.fingerprint);
+
+        origins[0].trial_noise = WindowTrialNoiseInput::NotProvided;
+        let mixed = calibrate_organization_window_rolling_origins("target", &origins, 3).unwrap();
+        assert_eq!(
+            mixed.uncertainty.trial_noise_status,
+            WindowTrialNoiseStatus::NotProvided
+        );
+        assert_eq!(mixed.uncertainty.trial_noise_mae_standard_error, None);
+        assert_eq!(mixed.uncertainty.trial_noise_origins.len(), 2);
+
+        origins[0].trial_noise = WindowTrialNoiseInput::Estimated {
+            trials: 1,
+            mae_standard_error: -1.0,
+            source_fingerprint: "invalid".to_owned(),
+        };
+        assert!(matches!(
+            calibrate_organization_window_rolling_origins("target", &origins, 3),
+            Err(OrganizationWindowCalibrationError::InvalidTrialNoise(id)) if id == "2023-origin"
+        ));
     }
 
     #[test]
@@ -1221,6 +1464,21 @@ mod tests {
             WindowCalibrationClaimStatus::Inconclusive
         );
         assert_eq!(result.fingerprint.len(), 64);
+
+        let mut invalid_noise = origins.clone();
+        invalid_noise[3].origin.trial_noise = WindowTrialNoiseInput::Estimated {
+            trials: 1,
+            mae_standard_error: 0.1,
+            source_fingerprint: format!("sha256:{}", "e".repeat(64)),
+        };
+        assert!(matches!(
+            evaluate_organization_window_origins(
+                "next-season organization value",
+                &invalid_noise,
+                2,
+            ),
+            Err(OrganizationWindowCalibrationError::InvalidTrialNoise(id)) if id == "2025-holdout"
+        ));
 
         let mut reversed = origins.clone();
         reversed.reverse();

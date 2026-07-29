@@ -427,9 +427,31 @@ error/rank correlation, pane metrics, leave-one-pane-out ablations,
 organization stability, and a between-origin MAE confidence interval. It
 refuses mixed Frames, duplicate origins, invalid board fingerprints,
 incomplete dimensions/outcomes/audits, and invalid baselines. A leakage failure
-blocks the claim. Trial noise remains explicitly `not_provided` until an
-upstream board carries trial-level uncertainty; it is not conflated with
-between-season variation.
+blocks the claim. Per-origin trial noise is explicitly `not_provided`,
+`not_applicable`, or a sealed estimate containing its trial count, MAE standard
+error, and authority fingerprint. Only a complete set of estimates produces a
+propagated trial-noise interval; mixed evidence publishes no interval, and
+trial noise is never conflated with between-season variation. The retained
+2022-23 through 2025-26 evaluation predates that input and honestly remains
+`not_provided`; newly built deterministic historical origins are
+`not_applicable`.
+
+An upstream simulation origin supplies trial noise inside its frozen origin:
+
+```json
+{
+  "trial_noise": {
+    "status": "estimated",
+    "trials": 1000,
+    "mae_standard_error": 0.42,
+    "source_fingerprint": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  }
+}
+```
+
+The source fingerprint and every contributing origin remain in the sealed
+rolling-calibration uncertainty block; changing authority changes artifact
+identity even when the estimate is numerically unchanged.
 
 JSON retains the full cohort. A team filter affects text projection only. Web
 registers saved Frames by stable ID:
@@ -467,6 +489,35 @@ evidence.
 
 Adding a registered profile does not require changing the normalization,
 aggregation, comparison, card, CLI, TUI, or Web renderers.
+
+## Registry lifecycle and supersession
+
+The immutable profile inventory remains
+`organization_window_registry.v1`. Current authoring policy is a separate,
+fingerprinted
+`design/data/organization-window-registry-lifecycle.v1.json` document validated
+against
+`design/schemas/organization_window_registry_lifecycle.v1.schema.json`.
+
+- `active` methods may be selected by new Frames.
+- `deprecated` methods remain replayable and custom-selectable; a new official
+  Frame needs a profile-specific reviewed hold if it still selects one. The
+  hold is stored in the sealed lifecycle amendment and names the exact manifest
+  ID/fingerprint, rationale, approver, and review date; callers cannot create a
+  transient exception.
+- `retired` methods remain replayable only and fail all new Frame authoring.
+- `readiness_override` may only demote the inventory readiness. Promotion
+  requires a reviewed immutable descriptor/method revision. Production
+  official Frames require effective `ready_for_adapter` readiness; IceLines
+  evaluation Frames may also select `evaluation`, and custom Frames may select
+  evaluation/context methods. No new Frame may select a blocked method.
+- `replacement` is an audited supersession edge, never an alias. Unknown,
+  self-replacing, retired, and cyclic chains fail closed.
+
+Official balanced and historical builders and `window-rebase` validate the
+current lifecycle before writing. New boards bind the lifecycle fingerprint in
+their source fingerprints. Existing sealed boards do not acquire that
+fingerprint retroactively and continue to validate through the replay path.
 
 ## Custom Frames
 

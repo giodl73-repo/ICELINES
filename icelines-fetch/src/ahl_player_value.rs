@@ -596,8 +596,10 @@ mod tests {
 
     #[test]
     fn invalid_policy_fails_before_publishing_ledger() {
-        let mut policy = AhlPlayerValuePolicy::default();
-        policy.method_version = "unknown".to_owned();
+        let policy = AhlPlayerValuePolicy {
+            method_version: "unknown".to_owned(),
+            ..AhlPlayerValuePolicy::default()
+        };
         assert!(build_ahl_player_value_ledger(&snapshot(), &crosswalk(), &policy).is_err());
     }
 

@@ -104,25 +104,29 @@ below.
    and publish calibrated/heuristic/inconclusive/blocked status per pane.
 8. Reconcile CLI, TUI, Web/API, JSON, report, and card values from the same
    sealed documents.
+9. Deprecate, retire, and readiness-demote selected methods; prove new official
+   and custom authoring gates, explicit deprecated holds, invalid supersession
+   refusal, lifecycle fingerprint binding, and unchanged saved-board replay.
 
-Status: partial 2026-07-27. Scenarios 1-5, including canonical loaded-board
-replay and core bridge/rebase
-tamper/completeness/change-attribution evidence, and selected scenario-6/parity-8
-fixtures pass with an explicitly partial saved evaluation board. Scenario 6
-now has typed authority adapters and direct/cohort/unchanged attribution with
-unattributed-change refusal; real isolated/combined multi-source boards,
-and rolling-origin calibration now has frozen baselines, ablations, stability,
-between-origin uncertainty, and deterministic sealing. Real point-in-time
-seasons, trial-noise propagation, untouched holdouts, and automated full
-cross-surface golden parity remain open; owned by WP-011 and
-REQ-WINDOW-001..008.
+Status: partial 2026-07-29. Canonical loaded-board replay, core bridge/rebase
+tamper/completeness/change attribution, real isolated/combined multi-source
+scenario boards and seeded distributions, and parity/lifecycle fixtures pass
+with an explicitly partial saved evaluation board. Rolling-origin calibration
+has frozen baselines, ablations, stability, between-origin uncertainty,
+deterministic sealing, and four real point-in-time origins. Calibration trial
+noise now has validated `not_provided`, `not_applicable`, and sealed-estimate
+propagation paths separate from between-origin variation; the retained real
+artifact remains honestly `not_provided`. Production source completion and a
+genuinely future untouched holdout remain open. These gates are owned by WP-011
+and REQ-WINDOW-001..009.
 
 Selected browser evidence now exists for the all-32 board, focused NYR board,
 and both NYR card pages at desktop/tablet/mobile widths. The reusable gate also
 checks skip navigation, main focus target, semantic captions/headers, rank-gate
 copy, focused-team isolation, and nonblank exact-dimension captures. Full
-golden parity and real historical evidence keep VAL-013 partial. PR #23 passed
-the fixed-hash canonical replay gate on Windows, Linux, and macOS. A local
+golden parity and real historical evidence pass; production source completion
+and the future holdout keep VAL-013 partial. PR #23 passed the fixed-hash
+canonical replay gate on Windows, Linux, and macOS. A local
 explicit keyboard walkthrough verified first-Tab
 skip links and Enter focus transfer to `main` on both routes; reduced-motion
 emulation and 390px computed containment also passed.

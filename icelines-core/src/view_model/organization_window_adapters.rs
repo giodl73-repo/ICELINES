@@ -25,6 +25,10 @@ use super::organization_window::{
     WindowProfileWeight, WindowRankState, WindowSignalFamilyCap,
     ORGANIZATION_WINDOW_CLASSIFICATION_METHOD, ORGANIZATION_WINDOW_MANIFEST_SCHEMA,
 };
+use super::organization_window_registry::{
+    load_organization_window_registry_lifecycle, seal_new_organization_window_manifest,
+    WindowManifestLifecyclePolicy,
+};
 use super::prospect_conversion::{ProspectConversionBoardView, PROSPECT_CONVERSION_BOARD_SCHEMA};
 use super::prospect_study::{ProspectProgramBoardView, PROSPECT_PROGRAM_BOARD_SCHEMA};
 use super::team_game_forecast::{TeamGameForecastView, TEAM_GAME_FORECAST_SCHEMA};
@@ -662,17 +666,27 @@ pub fn build_balanced_organization_window_board(
     let generated_at = generated_at.into();
     let inventory = load_organization_window_profile_inventory()?;
     let profile_inputs = adapt_balanced_organization_window_sources(&context, sources)?;
-    let source_fingerprints = profile_inputs
+    let mut source_fingerprints = profile_inputs
         .iter()
         .flat_map(|row| row.source_fingerprints.iter().cloned())
-        .collect();
+        .collect::<Vec<_>>();
+    let lifecycle = load_organization_window_registry_lifecycle(&inventory)
+        .map_err(|error| OrganizationWindowError::InvalidManifest(error.to_string()))?;
+    let manifest = seal_new_organization_window_manifest(
+        balanced_organization_window_manifest(BALANCED_MANIFEST_CREATED_AT),
+        &inventory,
+        &lifecycle,
+        &WindowManifestLifecyclePolicy::official(),
+    )
+    .map_err(|error| OrganizationWindowError::InvalidManifest(error.to_string()))?;
+    source_fingerprints.push(format!("registry-lifecycle:{}", lifecycle.fingerprint));
     build_organization_window_board(
         OrganizationWindowBoardInput {
             season: context.season,
             season_type: context.season_type,
             as_of: context.as_of,
             generated_at: generated_at.clone(),
-            manifest: balanced_organization_window_manifest(BALANCED_MANIFEST_CREATED_AT),
+            manifest,
             profile_inputs,
             source_fingerprints,
         },
@@ -760,6 +774,15 @@ pub fn build_forecast_history_organization_window_boards(
         fingerprint: String::new(),
     };
     let inventory = load_organization_window_profile_inventory()?;
+    let lifecycle = load_organization_window_registry_lifecycle(&inventory)
+        .map_err(|error| OrganizationWindowError::InvalidManifest(error.to_string()))?;
+    let manifest = seal_new_organization_window_manifest(
+        manifest,
+        &inventory,
+        &lifecycle,
+        &WindowManifestLifecyclePolicy::evaluation(),
+    )
+    .map_err(|error| OrganizationWindowError::InvalidManifest(error.to_string()))?;
     let mut boards = Vec::with_capacity(history.checkpoints.len());
     for checkpoint in &history.checkpoints {
         let context = OrganizationWindowAdapterContext {
@@ -809,7 +832,10 @@ pub fn build_forecast_history_organization_window_boards(
                 generated_at: generated_at.clone(),
                 manifest: manifest.clone(),
                 profile_inputs,
-                source_fingerprints: vec![source_fingerprint.clone()],
+                source_fingerprints: vec![
+                    source_fingerprint.clone(),
+                    format!("registry-lifecycle:{}", lifecycle.fingerprint),
+                ],
             },
             &inventory,
         )?);
@@ -1834,6 +1860,11 @@ mod tests {
             .organizations
             .iter()
             .all(|row| !row.blockers.is_empty()));
+        assert!(board
+            .source_fingerprints
+            .iter()
+            .any(|fingerprint| fingerprint.starts_with("registry-lifecycle:")
+                && fingerprint.len() == "registry-lifecycle:".len() + 64));
     }
 
     #[test]
@@ -2290,6 +2321,11 @@ mod tests {
         assert!(boards
             .windows(2)
             .all(|pair| pair[0].manifest.fingerprint == pair[1].manifest.fingerprint));
+        assert!(boards.iter().all(|board| board
+            .source_fingerprints
+            .iter()
+            .any(|fingerprint| fingerprint.starts_with("registry-lifecycle:")
+                && fingerprint.len() == "registry-lifecycle:".len() + 64)));
         assert!(boards.iter().all(|board| {
             board.organizations.iter().all(|team| {
                 team.dimensions.len() == 1

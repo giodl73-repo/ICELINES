@@ -26,8 +26,9 @@ use icelines_core::{
     build_training_camp_opening_roster_policy, compare_organization_window_scenario,
     compare_organization_window_snapshots, compare_organization_window_snapshots_with_bridge,
     compare_organization_window_typed_scenario, compare_team_season_forecast_scenarios,
-    current_ahl_affiliation_catalog, model::Position, model::Season, model::TeamAbbr,
-    normalize_name, project_organization_window_card, season_stats::SeasonType,
+    current_ahl_affiliation_catalog, load_organization_window_registry_lifecycle, model::Position,
+    model::Season, model::TeamAbbr, normalize_name, project_organization_window_card,
+    seal_new_organization_window_manifest, season_stats::SeasonType,
     simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
     simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
@@ -62,8 +63,9 @@ use icelines_core::{
     TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
     TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
     TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
-    ViewWindow, WindowScenarioAuthorityView, CANONICAL_TEAMS, CURRENT_SEASON,
-    ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA, PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
+    ViewWindow, WindowManifestLifecyclePolicy, WindowScenarioAuthorityView, CANONICAL_TEAMS,
+    CURRENT_SEASON, ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA,
+    PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };
 use icelines_core::{
     attribute_organization_window_personnel_movement,
@@ -5342,7 +5344,20 @@ pub fn run_window_rebase(
     let bridge: OrganizationWindowBridgeView =
         read_icecast_json(&bridge, "organization Window bridge")?;
     let inventory = load_organization_window_profile_inventory()?;
-    let rebased = rebase_organization_window_board(&source, &target, &bridge, &inventory)?;
+    let lifecycle = load_organization_window_registry_lifecycle(&inventory)?;
+    let target = seal_new_organization_window_manifest(
+        target,
+        &inventory,
+        &lifecycle,
+        &WindowManifestLifecyclePolicy::custom(),
+    )?;
+    let mut rebased = rebase_organization_window_board(&source, &target, &bridge, &inventory)?;
+    rebased
+        .source_fingerprints
+        .push(format!("registry-lifecycle:{}", lifecycle.fingerprint));
+    rebased.source_fingerprints.sort();
+    rebased.source_fingerprints.dedup();
+    rebased.fingerprint = rebased.calculate_fingerprint()?;
     write_window_json(&rebased, out.as_deref(), "rebased organization Window")
 }
 

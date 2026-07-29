@@ -9,6 +9,7 @@
 - [ ] Historical/scenario comparisons reject incompatible manifests or incomplete sources.
 - [ ] Calibration claims include leakage audit, baseline, ablation, and multi-season evidence.
 - [ ] Profile-author, custom-Frame, compatibility, cache, and changelog docs match the release.
+- [x] Registry lifecycle fingerprint is sealed; retired/deprecated/demoted methods pass new-authoring and saved-board replay checks.
 
 W9 evidence recorded 2026-07-27: fixed-hash replay passes on Windows, Linux,
 and macOS in PR CI;

@@ -5,13 +5,15 @@ use std::collections::{BTreeMap, BTreeSet};
 use chrono::{Datelike, NaiveDate};
 use icelines_core::{
     build_organization_window_board, load_organization_window_profile_inventory,
-    seal_organization_window_manifest, OrganizationProfileInput, OrganizationWindowBoardInput,
-    OrganizationWindowManifestView, WindowCalibrationEvaluationOriginInput,
-    WindowCalibrationOriginInput, WindowCalibrationOriginRole, WindowCohortKind,
-    WindowCohortManifest, WindowDimensionManifest, WindowEvidenceView, WindowFreshness,
-    WindowHorizon, WindowLeakageAuditRow, WindowMissingPolicy, WindowNormalizationMethod,
-    WindowOutcomeRow, WindowProfileStatus, WindowProfileWeight, CANONICAL_TEAMS,
-    ORGANIZATION_WINDOW_CLASSIFICATION_METHOD, ORGANIZATION_WINDOW_MANIFEST_SCHEMA,
+    load_organization_window_registry_lifecycle, seal_new_organization_window_manifest,
+    OrganizationProfileInput, OrganizationWindowBoardInput, OrganizationWindowManifestView,
+    WindowCalibrationEvaluationOriginInput, WindowCalibrationOriginInput,
+    WindowCalibrationOriginRole, WindowCohortKind, WindowCohortManifest, WindowDimensionManifest,
+    WindowEvidenceView, WindowFreshness, WindowHorizon, WindowLeakageAuditRow,
+    WindowManifestLifecyclePolicy, WindowMissingPolicy, WindowNormalizationMethod,
+    WindowOutcomeRow, WindowProfileStatus, WindowProfileWeight, WindowTrialNoiseInput,
+    CANONICAL_TEAMS, ORGANIZATION_WINDOW_CLASSIFICATION_METHOD,
+    ORGANIZATION_WINDOW_MANIFEST_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -336,8 +338,15 @@ pub fn historical_organization_window_manifest(
         created_at: created_at.to_owned(),
         fingerprint: String::new(),
     };
-    seal_organization_window_manifest(manifest, &inventory)
-        .map_err(|error| OrganizationWindowHistoryError::Board(error.to_string()))
+    let lifecycle = load_organization_window_registry_lifecycle(&inventory)
+        .map_err(|error| OrganizationWindowHistoryError::Board(error.to_string()))?;
+    seal_new_organization_window_manifest(
+        manifest,
+        &inventory,
+        &lifecycle,
+        &WindowManifestLifecyclePolicy::evaluation(),
+    )
+    .map_err(|error| OrganizationWindowHistoryError::Board(error.to_string()))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -573,7 +582,16 @@ pub fn build_historical_organization_window_origin(
             generated_at: generated_at.to_owned(),
             manifest,
             profile_inputs,
-            source_fingerprints: vec![stats_fingerprint.clone(), bios_fingerprint.clone()],
+            source_fingerprints: vec![
+                stats_fingerprint.clone(),
+                bios_fingerprint.clone(),
+                format!(
+                    "registry-lifecycle:{}",
+                    load_organization_window_registry_lifecycle(&inventory)
+                        .map_err(|error| OrganizationWindowHistoryError::Board(error.to_string()))?
+                        .fingerprint
+                ),
+            ],
         },
         &inventory,
     )
@@ -598,6 +616,7 @@ pub fn build_historical_organization_window_origin(
         outcomes: outcomes.outcomes(),
         leakage_audit,
         baseline_value: 50.0,
+        trial_noise: WindowTrialNoiseInput::NotApplicable,
     };
     let mut artifact = OrganizationWindowHistoricalOriginArtifact {
         schema: ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA.to_owned(),
@@ -917,7 +936,18 @@ mod tests {
                 .organizations
                 .iter()
                 .all(|team| team.overall.rank.is_some()));
+            assert!(artifact
+                .origin
+                .board
+                .source_fingerprints
+                .iter()
+                .any(|fingerprint| fingerprint.starts_with("registry-lifecycle:")
+                    && fingerprint.len() == "registry-lifecycle:".len() + 64));
             assert_eq!(artifact.origin.leakage_audit.len(), 5);
+            assert_eq!(
+                artifact.origin.trial_noise,
+                WindowTrialNoiseInput::NotApplicable
+            );
             assert_eq!(artifact.fingerprint.len(), 64);
             let wire: OrganizationWindowHistoricalOriginArtifact =
                 serde_json::from_str(&serde_json::to_string(&artifact).unwrap()).unwrap();
