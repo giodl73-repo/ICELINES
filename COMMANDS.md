@@ -1103,6 +1103,7 @@ icelines icecast season --season 20262027 --game-forecast-out games.json --json 
 icelines icecast window-source-package --season 20262027 --as-of 2026-10-01 --team-season-forecast season.json --team-game-forecast games.json --cache-team-lineups --stats-season 20252026 --ahl-projection-inputs ahl-league-inputs.json --training-camp camp.json --cache-prospect-program --out window-sources.json
 icelines icecast window-source-refresh-lineups --input window-sources.json --stats-season 20252026 --training-camp camp.json --out window-sources-refreshed.json
 icelines icecast window-source-refresh-affiliates --input window-sources-refreshed.json --ahl-projection-inputs ahl-league-inputs.json --out window-sources-ranked.json
+icelines icecast window-source-refresh-affiliates --input window-sources-refreshed.json --ahl-facts-application affiliate-facts.json --ahl-development-rule ahl-rule.json --out window-sources-ranked.json
 icelines icecast affiliate-facts-status --input affiliate-readiness-application.json --require-ready --json --out affiliate-facts-status.json
 icelines icecast affiliate-professional-games --league-crosswalk reviewed-ahl-identities.json --career-history career-history.json --policy ahl-professional-game-policy.json --camp-forecast camp.json --json --out professional-games.json
 icelines icecast window-source-audit --input window-sources.json --generated-at 2026-10-01T12:00:00Z --out window-source-coverage.json

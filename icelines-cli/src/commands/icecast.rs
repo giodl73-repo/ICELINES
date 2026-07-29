@@ -4700,7 +4700,9 @@ pub struct WindowSourceRefreshLineupsArgs {
 
 pub struct WindowSourceRefreshAffiliatesArgs {
     pub input: PathBuf,
-    pub ahl_projection_inputs: PathBuf,
+    pub ahl_projection_inputs: Option<PathBuf>,
+    pub ahl_facts_application: Option<PathBuf>,
+    pub ahl_development_rule: Option<PathBuf>,
     pub out: PathBuf,
 }
 
@@ -4967,10 +4969,26 @@ pub fn run_window_source_refresh_affiliates(
             "affiliate refresh refuses a package with explicit organization lineups; rebuild with one organization-lineup authority"
         );
     }
-    let league: AhlPreseasonLeagueProjectionInputsView = read_icecast_json(
-        &args.ahl_projection_inputs,
-        "AHL preseason league projection inputs",
-    )?;
+    let league = match (
+        args.ahl_projection_inputs.as_deref(),
+        args.ahl_facts_application.as_deref(),
+        args.ahl_development_rule.as_deref(),
+    ) {
+        (Some(path), None, None) => {
+            read_icecast_json(path, "AHL preseason league projection inputs")?
+        }
+        (None, Some(application_path), Some(rule_path)) => {
+            let application: AhlPreseasonLeagueFactsApplicationView =
+                read_icecast_json(application_path, "AHL preseason facts application")?;
+            let rule: icelines_core::AhlDevelopmentRuleInput =
+                read_icecast_json(rule_path, "AHL development rule")?;
+            build_ahl_preseason_league_projection_inputs(&application, &rule)
+                .map_err(anyhow::Error::msg)?
+        }
+        _ => bail!(
+            "affiliate refresh requires either --ahl-projection-inputs or both --ahl-facts-application and --ahl-development-rule"
+        ),
+    };
     package.ahl_affiliates = build_window_affiliates_from_league_inputs(&league, package.season)?;
     package.fingerprint.clear();
     package = seal_organization_window_source_package(package)?;

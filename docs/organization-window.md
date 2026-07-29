@@ -161,6 +161,23 @@ canonical 32-team cohort with zero lowering failures, refuses packages carrying
 explicit organization-lineup authorities, and reseals the result. Organization
 and recall profiles remain core-derived from the refreshed affiliates.
 
+The intermediate projection-input file is optional. Once the reviewed facts
+and final target-season rule are available, the same refresh can lower and
+apply them atomically:
+
+```powershell
+icelines icecast window-source-refresh-affiliates `
+  --input window-sources-refreshed.json `
+  --ahl-facts-application affiliate-facts.json `
+  --ahl-development-rule ahl-rule.json `
+  --out window-sources-ranked.json
+```
+
+This direct path uses the same fetch lowering and core affiliate builders as
+the inspectable intermediate path. Any team blocker, incomplete 12F/6D/2G
+pool, provisional rule, season mismatch, or package conflict prevents the
+refreshed package from being written.
+
 The affiliate acquisition chain now also has a player-global operational
 prospect-status authority. It derives exact cutoff age and observed NHL
 regular-season workload from the official career cache under a versioned

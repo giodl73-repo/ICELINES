@@ -198,6 +198,9 @@ no new scorer, adapter, or renderer work is required.
 without recomputing unrelated authorities. It validates the old seal, requires
 the complete canonical cohort, refuses competing explicit organization-lineup
 authority, replaces only affiliates, and reseals.
+It may consume either the retained league projection-input artifact or the
+reviewed facts application plus final development rule directly; the direct
+path runs the identical lowering and affiliate builders atomically.
 
 **Identity checkpoint — 2026-07-28:** official 2025-26 AHL roster evidence
 contains 1,425 team appearances across 32 clubs. The exact, sourced-alias, and

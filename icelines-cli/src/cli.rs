@@ -2240,8 +2240,24 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         input: PathBuf,
         /// Complete league artifact emitted by `affiliate-preseason-projection-inputs`.
-        #[arg(long, value_name = "PATH")]
-        ahl_projection_inputs: PathBuf,
+        #[arg(
+            long,
+            value_name = "PATH",
+            conflicts_with = "ahl_facts_application",
+            required_unless_present = "ahl_facts_application"
+        )]
+        ahl_projection_inputs: Option<PathBuf>,
+        /// Final reviewed facts application to lower and refresh atomically.
+        #[arg(
+            long,
+            value_name = "PATH",
+            conflicts_with = "ahl_projection_inputs",
+            requires = "ahl_development_rule"
+        )]
+        ahl_facts_application: Option<PathBuf>,
+        /// Final target-season AHL development rule used to lower reviewed facts.
+        #[arg(long, value_name = "PATH", requires = "ahl_facts_application")]
+        ahl_development_rule: Option<PathBuf>,
         #[arg(long, value_name = "PATH")]
         out: PathBuf,
     },
@@ -2986,8 +3002,64 @@ mod tui_surface_tests {
             .expect("Window affiliate refresh should parse");
             assert!(matches!(
                 refresh_affiliates.command,
-                Commands::Icecast(IceCastSubcommand::WindowSourceRefreshAffiliates { .. })
+                Commands::Icecast(IceCastSubcommand::WindowSourceRefreshAffiliates {
+                    ahl_projection_inputs: Some(_),
+                    ahl_facts_application: None,
+                    ..
+                })
             ));
+
+            let refresh_affiliates_from_facts = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-affiliates",
+                "--input",
+                "window-sources.json",
+                "--ahl-facts-application",
+                "ahl-facts.json",
+                "--ahl-development-rule",
+                "ahl-rule.json",
+                "--out",
+                "window-affiliates.json",
+            ])
+            .expect("direct Window affiliate facts refresh should parse");
+            assert!(matches!(
+                refresh_affiliates_from_facts.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourceRefreshAffiliates {
+                    ahl_projection_inputs: None,
+                    ahl_facts_application: Some(_),
+                    ahl_development_rule: Some(_),
+                    ..
+                })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-affiliates",
+                "--input",
+                "window-sources.json",
+                "--ahl-facts-application",
+                "ahl-facts.json",
+                "--out",
+                "window-affiliates.json",
+            ])
+            .is_err());
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-affiliates",
+                "--input",
+                "window-sources.json",
+                "--ahl-projection-inputs",
+                "ahl-league-inputs.json",
+                "--ahl-facts-application",
+                "ahl-facts.json",
+                "--ahl-development-rule",
+                "ahl-rule.json",
+                "--out",
+                "window-affiliates.json",
+            ])
+            .is_err());
 
             let cache_prospects = Cli::try_parse_from([
                 "icelines",

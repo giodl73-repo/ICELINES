@@ -2705,11 +2705,15 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::WindowSourceRefreshAffiliates {
             input,
             ahl_projection_inputs,
+            ahl_facts_application,
+            ahl_development_rule,
             out,
         }) => commands::icecast::run_window_source_refresh_affiliates(
             commands::icecast::WindowSourceRefreshAffiliatesArgs {
                 input,
                 ahl_projection_inputs,
+                ahl_facts_application,
+                ahl_development_rule,
                 out,
             },
         )?,
