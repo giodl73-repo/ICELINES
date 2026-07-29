@@ -43,7 +43,7 @@ preserved while the remaining work is completed:
 |---|---|---|---|
 | W0 | complete | 37-profile machine-readable inventory: 17 ready, 13 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
 | W1-W2 | complete | Versioned observations/manifests/boards, deterministic fingerprints, validation, normalization, aggregation, confidence/coverage, rank gates | Cross-platform fingerprint matrix in W9. |
-| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate. The July 28 real package completes 13/16 required profiles. | Automate the proven prospect assembly path; complete reviewed all-league AHL identity/assignment facts for organization and recall depth; define an honest non-NHL goalie evidence method or retain the BOS/UTA gap; then pass `--require-ranked`. |
+| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate. The July 29 real package completes 13/16 required profiles. | Complete reviewed all-league AHL identity/assignment facts for organization and recall depth; compose dated camp/organization-pool authority for Boston's missing backup assignment; then pass `--require-ranked`. |
 | W5 | complete | Comparable movement/history contracts, refusal tests, immutable bridge/rebase, a real three-checkpoint 2024-25 IceCast history, both earlier-scenario and later-counterfactual attribution bases, and a real Jan. 31 -> Feb. 28 paired rolling-replay personnel artifact with 219 dated events | Preserve raw profile effects when percentile normalization yields zero aggregate movement; keep the paired estimate explicitly non-causal and uncalibrated. |
 | W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
 | W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed claim status, frozen training/validation/retrospective-holdout roles, and four real point-in-time observed-history origins | Trial-noise propagation and future untouched-holdout evidence; the current retrospective holdout is explicitly inconclusive. |
@@ -464,21 +464,35 @@ authority.
 
 ### S3 — Goalie dependency authority decision
 
-The current official snapshot yields one scored goalie for BOS and no scored
-2025-26 NHL sample for UTA's second goalie. Choose method semantics before
-filling those values.
+The July 29 live roster replay exposed two different gaps: UTA lists a second
+goalie with no 2025-26 NHL sample, while BOS lists only Jeremy Swayman. Those
+are not the same missing-data problem and must not share a shortcut.
 
-- Preferred extension: introduce a newly versioned dependency method that can
-  translate a typed non-NHL or projection authority onto the goalie-quality
-  scale with explicit uncertainty.
-- Conservative option: keep `lineup_goalie_dependency.v1` missing for BOS/UTA
-  until qualifying NHL evidence exists.
-- Forbidden option: inject stale former-team goalies, zero, league average, or
-  an unlabeled camp score to make the audit green.
+The value half is now implemented. `career_paired_ahl_to_nhl_goalie.v1` fits a
+shot-weighted additive save-percentage delta from same/next-season AHL/NHL
+career pairs, measures RMSE and sample confidence, discounts candidate
+workload by calibration confidence, shrinks to an explicit NHL prior, and only
+fills a missing NHL goalie-quality score. A sealed
+`nhl_goalie_translation_ledger.v1` retains the cohort, policy, candidate
+estimate, unavailable rows, disclosures, and fingerprint. The lineup marks the
+score `estimated` and carries the method in a warning; observed NHL values win.
 
-**Acceptance:** PACE/TAPE review approves the method and evidence, or the Frame
-is deliberately versioned to make goalie dependency non-required. Existing
-saved boards retain their original semantics either way.
+The real all-32 replay estimates Jaxson Stauber at 46.3 on the NHL lineup scale
+from 13 confidence-adjusted games of evidence. UTA's goalie dependency is now
+complete, and `nhl.goalie_quality` is 32/32. BOS remains the sole missing
+`resilience.goalie_dependency` organization because the official current-roster
+endpoint lists no backup. Reported signings and organization membership cannot
+be silently promoted to NHL assignment.
+
+Next, compose the existing training-camp/organization-pool authorities into a
+dated goalie assignment scenario. It may select DiPietro, Patera, or another
+candidate only when the sealed evidence supports that assignment. The
+forbidden options remain stale former-team goalies, zero, league average,
+direct AHL score copying, or an unlabeled camp score.
+
+**Acceptance:** the paired value method remains green under PACE/TAPE/BENCH
+review, the dated BOS assignment authority completes 32/32 dependency values,
+and existing saved boards retain their original semantics.
 
 ### S4 — Production-rank gate and evidence package
 
@@ -831,7 +845,7 @@ completes 13/16 required profiles after cache-aligned schedule, frozen team
 strength, official NHL special-teams TOI, and the explicit 32-team prospect
 program path. Rankings remain withheld at 0/32. The missing required methods
 are organization depth (0/32), recall depth (0/32), and goalie dependency
-(30/32; BOS and UTA missing). S1 automates prospect composition without changing
+(31/32; BOS missing). S1 automates prospect composition without changing
 its hockey semantics; S2-S3 own the remaining source decisions. W7 remains a
 genuinely future untouched holdout.
 

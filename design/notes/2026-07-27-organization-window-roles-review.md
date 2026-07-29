@@ -900,3 +900,35 @@ real run supported 14 calibrations, estimated 78/97 unique candidates, and
 applied 79/98 appearances. Rebuilt readiness covered 1,263/1,282 candidates
 and 1,352/1,371 appearances. The remaining 19 are deliberately unavailable;
 historical outcome calibration remains a separate future authority.
+
+### S3 AHL-to-NHL goalie-value review
+
+HART/KEEL separated missing player value from missing lineup assignment. The
+new ledger estimates only goalie quality; it cannot add a goalie to a roster,
+select a backup, or resolve organization depth.
+
+TAPE/WIRE retained official landing career rows, a dated store, exact player
+IDs, same/next-season pair rules, and a sealed fingerprint. The live roster
+refresh demonstrated resumable 429 handling: 24/32 teams were cached, the
+partial snapshot was refused, and the second pass sealed all 32.
+
+PACE/SCOUT approved a shot-weighted additive save-percentage translation only
+with minimum pair/player/shot gates, RMSE fit confidence, sample confidence,
+confidence-discounted workload, and an explicit NHL prior. The result is an
+evaluation score, not NHL equivalency, roster probability, or direct reuse of
+the AHL value scale.
+
+BENCH/EDGE/FORGE cover known delta, weak cohort, short candidate workload,
+prior shrinkage, bounded confidence, unavailable candidates, canonical sealing,
+and tamper rejection. Observed NHL quality retains precedence; the lineup
+labels fallback values `estimated` and names the method.
+
+GLASS/CREST/broadcast accepted the existing compact score with an estimated
+evidence label and method warning. Rich calibration detail stays in the
+UI-neutral ledger rather than being recomputed by renderers.
+
+**Verdict:** pass for missing-value translation. The live all-32 source audit
+now has `nhl.goalie_quality` at 32/32 and goalie dependency at 31/32. UTA is
+resolved through an estimated Stauber score; BOS remains correctly blocked
+because the official roster has no backup. A dated organization-pool/camp
+assignment authority is the next separate slice.

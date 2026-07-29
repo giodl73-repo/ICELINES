@@ -44,6 +44,7 @@ pub mod line_combination;
 pub mod management_behavior;
 pub mod matchup_evidence;
 pub mod mutation;
+pub mod nhl_goalie_translation;
 pub mod organization_lineup;
 pub mod organization_window;
 pub mod organization_window_adapters;
@@ -303,6 +304,12 @@ pub use matchup_evidence::{
     TEAM_PLAYER_MATCHUP_ROLE_EVIDENCE_SCHEMA,
 };
 pub use mutation::{MutationResultView, MutationStatus};
+pub use nhl_goalie_translation::{
+    calibrate_nhl_goalie_translation, estimate_nhl_goalie_quality,
+    validate_nhl_goalie_translation_policy, NhlGoalieTranslationCalibration,
+    NhlGoalieTranslationEstimate, NhlGoalieTranslationPair, NhlGoalieTranslationPolicy,
+    NHL_GOALIE_TRANSLATION_METHOD, NHL_GOALIE_TRANSLATION_POLICY_SCHEMA,
+};
 pub use organization_lineup::{
     build_organization_lineup_forecast, OrganizationBlockedPlayerView, OrganizationLevel,
     OrganizationLineupCountsView, OrganizationLineupForecastInput, OrganizationLineupForecastView,
