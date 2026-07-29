@@ -382,6 +382,22 @@ impl OrganizationWindowBoardView {
             .find(|row| row.organization == team)
     }
 
+    /// Return rows in the one presentation order shared by every renderer.
+    ///
+    /// Official ranks lead when present. Rank-withheld rows remain in canonical
+    /// organization order so a partial score cannot become a shadow ranking.
+    pub fn organizations_in_display_order(&self) -> Vec<&WindowOrganizationView> {
+        let mut rows = self.organizations.iter().collect::<Vec<_>>();
+        rows.sort_by(|left, right| {
+            left.overall
+                .rank
+                .unwrap_or(usize::MAX)
+                .cmp(&right.overall.rank.unwrap_or(usize::MAX))
+                .then_with(|| left.organization.cmp(&right.organization))
+        });
+        rows
+    }
+
     pub fn calculate_fingerprint(&self) -> Result<String, OrganizationWindowError> {
         let mut canonical = self.clone();
         canonical.fingerprint.clear();
@@ -2031,6 +2047,12 @@ mod tests {
             .organizations
             .iter()
             .all(|row| row.overall.rank.is_some()));
+        let display = first.organizations_in_display_order();
+        assert_eq!(display.first().and_then(|row| row.overall.rank), Some(1));
+        assert!(display.windows(2).all(|rows| {
+            rows[0].overall.rank.unwrap_or(usize::MAX)
+                <= rows[1].overall.rank.unwrap_or(usize::MAX)
+        }));
         let nyr = first.organization("NYR").expect("Rangers row");
         assert_eq!(nyr.dimensions.len(), 2);
         assert!(nyr.overall.score.is_some());
@@ -2063,6 +2085,14 @@ mod tests {
             .organizations
             .iter()
             .all(|row| row.overall.rank.is_none()));
+        assert_eq!(
+            board
+                .organizations_in_display_order()
+                .iter()
+                .map(|row| row.organization.clone())
+                .collect::<Vec<_>>(),
+            current_teams()
+        );
         let nyr = board.organization("NYR").expect("Rangers row");
         assert!(nyr.overall.score.is_some(), "missing is not zero-filled");
         assert!(nyr.overall.coverage < 1.0);

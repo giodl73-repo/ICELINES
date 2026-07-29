@@ -410,6 +410,11 @@ The rank status must state the reason. Renormalization across available inputs
 is never presented as fully comparable when material configured weight is
 missing.
 
+Board presentation order is also rank-gated. Core supplies one display-order
+projection to every renderer: rows with official ranks use rank order, while
+rank-withheld rows use canonical organization order. A renderer must not sort
+`NR` rows by partial score, because that would create an unlabeled shadow rank.
+
 ### Default views
 
 The first release should ship small, reviewable presets rather than one

@@ -133,3 +133,30 @@ async fn every_canonical_team_has_a_dynamic_window_card() {
     }
     assert_eq!(fingerprints.len(), CANONICAL_TEAMS.len());
 }
+
+#[tokio::test]
+async fn withheld_window_html_uses_canonical_order_not_partial_score_order() {
+    let response = router(WebState::new())
+        .oneshot(
+            Request::builder()
+                .uri("/window/balanced.v1/20262027")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = axum::body::to_bytes(response.into_body(), 2 * 1024 * 1024)
+        .await
+        .unwrap();
+    let html = String::from_utf8(body.to_vec()).unwrap();
+
+    let mut prior_position = 0;
+    for (team, _) in CANONICAL_TEAMS {
+        let marker = format!(">{team}</a>");
+        let position = html.find(&marker).expect("canonical team row");
+        assert!(position >= prior_position, "{team} is out of canonical order");
+        prior_position = position;
+    }
+    assert_eq!(html.matches("Under review").count(), CANONICAL_TEAMS.len());
+}

@@ -46,8 +46,8 @@ pub async fn get_window(
     }
     let mut rows = String::new();
     for row in board
-        .organizations
-        .iter()
+        .organizations_in_display_order()
+        .into_iter()
         .filter(|row| focus.as_ref().is_none_or(|team| row.organization == *team))
     {
         let score = row

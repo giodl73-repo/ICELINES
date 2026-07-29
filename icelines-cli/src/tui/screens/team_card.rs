@@ -285,21 +285,7 @@ pub(crate) fn organization_window_board_lines(
     page: usize,
     width: u16,
 ) -> Vec<String> {
-    let mut rows = board.organizations.iter().collect::<Vec<_>>();
-    rows.sort_by(|left, right| {
-        left.overall
-            .rank
-            .unwrap_or(usize::MAX)
-            .cmp(&right.overall.rank.unwrap_or(usize::MAX))
-            .then_with(|| {
-                right
-                    .overall
-                    .score
-                    .unwrap_or(f64::NEG_INFINITY)
-                    .total_cmp(&left.overall.score.unwrap_or(f64::NEG_INFINITY))
-            })
-            .then_with(|| left.organization.cmp(&right.organization))
-    });
+    let rows = board.organizations_in_display_order();
     let start = page.min(1) * 16;
     let mut lines = vec![format!(
         "32 teams · coverage {:.0}% · ranks may be withheld when evidence gates fail",
@@ -972,6 +958,8 @@ mod tests {
         assert_eq!(first.len(), 18);
         assert_eq!(second.len(), 18);
         assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
+        assert_eq!(first[2].split_whitespace().nth(1), Some("ANA"));
+        assert_eq!(second[2].split_whitespace().nth(1), Some("NSH"));
         let teams = first
             .iter()
             .skip(2)

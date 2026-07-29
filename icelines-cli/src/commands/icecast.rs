@@ -5123,8 +5123,8 @@ fn render_window_markdown(board: &OrganizationWindowBoardView, focus: Option<&st
     );
     let _ = writeln!(out, "|---:|:---|---:|---:|---:|:---|:---|");
     for row in board
-        .organizations
-        .iter()
+        .organizations_in_display_order()
+        .into_iter()
         .filter(|row| focus.is_none_or(|team| row.organization == team))
     {
         let rank = row
@@ -5152,8 +5152,8 @@ fn render_window_markdown(board: &OrganizationWindowBoardView, focus: Option<&st
         );
     }
     for row in board
-        .organizations
-        .iter()
+        .organizations_in_display_order()
+        .into_iter()
         .filter(|row| focus.is_some_and(|team| row.organization == team))
     {
         let _ = writeln!(out, "\n## {} detail\n", row.organization);
@@ -5568,8 +5568,8 @@ fn render_window(board: &OrganizationWindowBoardView, focus: Option<&str>) -> St
         board.organizations.len()
     );
     let rows = board
-        .organizations
-        .iter()
+        .organizations_in_display_order()
+        .into_iter()
         .filter(|row| focus.is_none_or(|team| row.organization == team));
     for row in rows {
         let score = row
