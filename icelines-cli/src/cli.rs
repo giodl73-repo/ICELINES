@@ -2178,6 +2178,9 @@ pub enum IceCastSubcommand {
         /// Compose organization lineups in core from sealed AHL projections.
         #[arg(long = "ahl-affiliate", value_name = "PATH")]
         ahl_affiliates: Vec<PathBuf>,
+        /// Build all affiliates from one fully reviewed league projection-input artifact.
+        #[arg(long, value_name = "PATH", conflicts_with = "ahl_affiliates")]
+        ahl_projection_inputs: Option<PathBuf>,
         #[arg(long = "organization-lineup", value_name = "PATH")]
         organization_lineups: Vec<PathBuf>,
         #[arg(long, value_name = "PATH")]
@@ -2883,6 +2886,42 @@ mod tui_surface_tests {
                 source_package.command,
                 Commands::Icecast(IceCastSubcommand::WindowSourcePackage { .. })
             ));
+
+            let league_affiliates = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--season",
+                "20262027",
+                "--as-of",
+                "2026-10-01",
+                "--ahl-projection-inputs",
+                "ahl-league-inputs.json",
+                "--out",
+                "window-sources.json",
+            ])
+            .expect("league AHL projection inputs should parse");
+            assert!(matches!(
+                league_affiliates.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourcePackage {
+                    ahl_projection_inputs: Some(_),
+                    ..
+                })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--as-of",
+                "2026-10-01",
+                "--ahl-affiliate",
+                "hartford.json",
+                "--ahl-projection-inputs",
+                "ahl-league-inputs.json",
+                "--out",
+                "window-sources.json",
+            ])
+            .is_err());
 
             let refresh_lineups = Cli::try_parse_from([
                 "icelines",

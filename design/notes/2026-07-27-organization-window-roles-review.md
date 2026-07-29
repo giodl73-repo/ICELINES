@@ -964,3 +964,27 @@ renderers do not join the camp and value authorities themselves.
 **Verdict:** pass. Both goalie profiles are 32/32 and the refreshed full package
 is now 14/16 required profiles complete. Organization depth and recall depth
 are the only required source gaps.
+
+### S2 league-to-Window composition review
+
+HART/KEEL required the reviewed league projection-input artifact to remain the
+authority boundary. The package command builds canonical affiliate projections
+from that artifact and core continues to compose the NHL/AHL System and both
+Window profiles.
+
+TAPE/WIRE required exact schema and season matching, a non-empty complete
+cohort, matching input counts, and zero named failures. Loose per-team inputs
+conflict with the league artifact instead of creating precedence ambiguity.
+
+FORGE/BENCH/EDGE approved one narrow loader seam, parser and conflict coverage,
+and fail-closed validation. The feature does not invent assignments or turn a
+preseason candidate into an AHL roster fact.
+
+PACE/SCOUT retained the existing organization-depth and recall-depth methods;
+this change supplies their reviewed source shape but does not reweight or
+reinterpret them. GLASS/CREST/broadcast require no surface fork because the
+sealed package and downstream UI-neutral views are unchanged.
+
+**Verdict:** pass for extensible composition. The remaining 14/16 state is a
+dated source-authority gate, not missing Window plumbing. A complete reviewed
+league artifact will flow to 16/16 through the existing adapters.

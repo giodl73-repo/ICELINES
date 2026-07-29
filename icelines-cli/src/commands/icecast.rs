@@ -114,6 +114,7 @@ use icelines_fetch::{
         build_ahl_preseason_league_facts_workboard, build_ahl_preseason_league_projection_inputs,
         AhlPreseasonLeagueFactsApplicationView, AhlPreseasonLeagueFactsOverlay,
         AhlPreseasonLeagueFactsWorkboardView, AhlPreseasonLeagueProjectionInputsView,
+        AHL_PRESEASON_LEAGUE_PROJECTION_INPUTS_SCHEMA,
     },
     ahl_professional_games::{
         apply_ahl_professional_game_ledger_to_facts, build_ahl_professional_game_ledger,
@@ -4580,6 +4581,7 @@ pub struct WindowSourcePackageArgs {
     pub stats_season: String,
     pub team_lineups: Vec<PathBuf>,
     pub ahl_affiliates: Vec<PathBuf>,
+    pub ahl_projection_inputs: Option<PathBuf>,
     pub organization_lineups: Vec<PathBuf>,
     pub prospect_program: Option<PathBuf>,
     pub cache_prospect_program: bool,
@@ -4605,6 +4607,7 @@ struct WindowSourcePaths<'a> {
     team_game_forecast: Option<&'a Path>,
     team_lineups: &'a [PathBuf],
     ahl_affiliates: &'a [PathBuf],
+    ahl_projection_inputs: Option<&'a Path>,
     organization_lineups: &'a [PathBuf],
     prospect_program: Option<&'a Path>,
     prospect_conversion: Option<&'a Path>,
@@ -4628,11 +4631,16 @@ fn load_window_source_package(
         .iter()
         .map(|path| read_icecast_json(path, "team lineup"))
         .collect::<anyhow::Result<Vec<TeamLineupProjectionView>>>()?;
-    let ahl_affiliates = paths
+    let mut ahl_affiliates = paths
         .ahl_affiliates
         .iter()
         .map(|path| read_icecast_json(path, "AHL affiliate projection"))
         .collect::<anyhow::Result<Vec<AhlAffiliateProjectionView>>>()?;
+    if let Some(path) = paths.ahl_projection_inputs {
+        let league: AhlPreseasonLeagueProjectionInputsView =
+            read_icecast_json(path, "AHL preseason league projection inputs")?;
+        ahl_affiliates = build_window_affiliates_from_league_inputs(&league, paths.season)?;
+    }
     let organization_lineups = paths
         .organization_lineups
         .iter()
@@ -4676,6 +4684,34 @@ fn load_window_source_package(
     )?)
 }
 
+fn build_window_affiliates_from_league_inputs(
+    league: &AhlPreseasonLeagueProjectionInputsView,
+    season: u32,
+) -> anyhow::Result<Vec<AhlAffiliateProjectionView>> {
+    if league.schema != AHL_PRESEASON_LEAGUE_PROJECTION_INPUTS_SCHEMA
+        || league.target_season != season
+        || league.teams_requested == 0
+        || league.teams_built != league.teams_requested
+        || league.inputs.len() != league.teams_built
+        || !league.failures.is_empty()
+    {
+        bail!(
+            "AHL league projection inputs must be complete for Window season {} (schema {}, requested {}, built {}, failures {})",
+            season,
+            league.schema,
+            league.teams_requested,
+            league.teams_built,
+            league.failures.len()
+        );
+    }
+    league
+        .inputs
+        .iter()
+        .map(build_ahl_affiliate_projection)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|reason| anyhow::anyhow!("build reviewed AHL league projection: {reason}"))
+}
+
 pub fn run_window_source_package(args: WindowSourcePackageArgs) -> anyhow::Result<()> {
     let mut package = load_window_source_package(WindowSourcePaths {
         season: args.season,
@@ -4684,6 +4720,7 @@ pub fn run_window_source_package(args: WindowSourcePackageArgs) -> anyhow::Resul
         team_game_forecast: args.team_game_forecast.as_deref(),
         team_lineups: &args.team_lineups,
         ahl_affiliates: &args.ahl_affiliates,
+        ahl_projection_inputs: args.ahl_projection_inputs.as_deref(),
         organization_lineups: &args.organization_lineups,
         prospect_program: args.prospect_program.as_deref(),
         prospect_conversion: args.prospect_conversion.as_deref(),
@@ -4849,6 +4886,7 @@ pub fn run_window_build(args: WindowBuildArgs) -> anyhow::Result<()> {
             team_game_forecast: args.team_game_forecast.as_deref(),
             team_lineups: &args.team_lineups,
             ahl_affiliates: &args.ahl_affiliates,
+            ahl_projection_inputs: None,
             organization_lineups: &args.organization_lineups,
             prospect_program: args.prospect_program.as_deref(),
             prospect_conversion: args.prospect_conversion.as_deref(),
@@ -10251,6 +10289,24 @@ mod tests {
         AhlPreseasonOrganizationReview, AhlPreseasonOrganizationReviewRow,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     };
+
+    #[test]
+    fn window_package_refuses_partial_league_affiliate_inputs() {
+        let league = super::AhlPreseasonLeagueProjectionInputsView {
+            schema: super::AHL_PRESEASON_LEAGUE_PROJECTION_INPUTS_SCHEMA.to_owned(),
+            target_season: 20262027,
+            facts_application_fingerprint: "sha256:test".to_owned(),
+            teams_requested: 32,
+            teams_built: 0,
+            inputs: Vec::new(),
+            failures: Vec::new(),
+            disclosures: Vec::new(),
+        };
+
+        let error = super::build_window_affiliates_from_league_inputs(&league, 20262027)
+            .expect_err("partial league input must fail closed");
+        assert!(error.to_string().contains("must be complete"));
+    }
 
     #[test]
     fn window_markdown_report_preserves_sealed_context_and_partial_state() {

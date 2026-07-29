@@ -187,6 +187,14 @@ organization-lineup primitive.
 ambiguous identities remain typed review failures; affiliation and assignment
 fixtures cover relocation, shared affiliates, trades, loans, and missing clubs.
 
+**Package-composition checkpoint — 2026-07-29:** the final lowering seam now
+feeds `ahl_preseason_league_projection_inputs.v1` directly into
+`window-source-package`. It refuses wrong-season, partial, or failing league
+artifacts, builds affiliates through the canonical core projection, and
+conflicts with loose per-team affiliate files. When reviewed assignment facts
+populate the artifact, the same command completes both remaining profiles;
+no new scorer, adapter, or renderer work is required.
+
 **Identity checkpoint — 2026-07-28:** official 2025-26 AHL roster evidence
 contains 1,425 team appearances across 32 clubs. The exact, sourced-alias, and
 ordinary conflict lanes reviewed 1,410 appearances; the league rejection lane

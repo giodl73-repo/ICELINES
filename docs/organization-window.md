@@ -43,7 +43,7 @@ icelines icecast window-source-package \
   --team-game-forecast games.json \
   --cache-team-lineups \
   --stats-season 20252026 \
-  --ahl-affiliate hartford.json \
+  --ahl-projection-inputs ahl-league-inputs.json \
   --training-camp camp.json \
   --cache-prospect-program \
   --out window-sources.json
@@ -78,11 +78,16 @@ snapshot/statistics cache pass. `--team-game-forecast` retains the sealed game
 authority and lets core derive each represented club's back-to-back,
 three-in-four, travel, and venue exposure; a partial schedule remains partial.
 Repeated `--ahl-affiliate` documents are joined to matching NHL lineups by
-core's existing System builder. This derives organization depth and recall
-depth without duplicating lineup logic in the CLI. Unmatched teams remain
-missing, and an explicit organization lineup for the same derived team is an
-authority conflict. Official AHL provider IDs still require reviewed canonical
-identity and assignment facts before they can enter an affiliate projection.
+core's existing System builder. The preferred all-league boundary is
+`--ahl-projection-inputs`: it consumes the single typed artifact emitted by
+`affiliate-preseason-projection-inputs`, refuses a partial/failing or
+wrong-season cohort, and builds every canonical affiliate projection before
+packaging. The two inputs conflict so one authority cannot silently override
+the other. Both paths derive organization depth and recall depth without
+duplicating lineup logic in the CLI. Unmatched teams remain missing, and an
+explicit organization lineup for the same derived team is an authority
+conflict. Official AHL provider IDs still require reviewed canonical identity
+and assignment facts before they can enter an affiliate projection.
 `--cache-prospect-program` composes the sealed training-camp pool with the
 configured official NHL landing career-history cache through the same typed
 context, career-discovery, goalie-study, and prospect-program builders used by
