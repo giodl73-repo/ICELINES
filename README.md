@@ -17,6 +17,16 @@ and JSON contracts remain compatible as this language reaches the surfaces.
 
 **[→ View the site](https://giodl73-repo.github.io/ICELINES/)**
 
+## Show someone
+
+Hand a fantasy manager/analyst or a systems implementer a dual-audience path
+without a maintainer tour:
+
+- [SHOWCASE.md](SHOWCASE.md) — 15–40 minute hub (lab posture; not NHL-official)
+- [docs/show/analyst-brief.md](docs/show/analyst-brief.md)
+- [docs/show/implementer-brief.md](docs/show/implementer-brief.md)
+
+
 **Review roles:** This repo uses
 [ROLES](https://github.com/giodl73-repo/ROLES), the `.roles` convention for
 repository-local review panels.
