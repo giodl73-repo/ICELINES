@@ -344,6 +344,7 @@ icelines icecast affiliate-status-evidence --review league-status-review.json --
 icelines icecast affiliate-status-evidence-apply --review league-status-review.json --ledger organization-status-evidence.json --json --out organization-status-review-prefilled.json
 icelines icecast affiliate-status-apply-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --review league-status-review-final.json --config league-rollover-config.json --out league-rollover-reviewed.json
 icelines icecast affiliate-transaction-state --transactions target/window-ahl-transactions-2026-27.json --league-crosswalk ahl-league-fully-reviewed.json --affiliations examples/ahl-affiliations-2026-27.json --cutoff 2026-07-28 --json --out ahl-transaction-state.json
+icelines icecast affiliate-transaction-state-apply --workboard affiliate-readiness-application.json --ledger ahl-transaction-state.json --json --out affiliate-assignment-application.json
 icelines fetch career --league-crosswalk ahl-league-fully-reviewed.json
 icelines icecast affiliate-professional-games --league-crosswalk ahl-league-fully-reviewed.json --career-history ~/.icelines/career_history.json --policy examples/ahl-professional-game-policy-2026-27.json --json --out professional-games.json
 icelines icecast affiliate-values --snapshot ahl-roster-stats.json --league-crosswalk ahl-league-fully-reviewed.json --policy examples/ahl-player-value-policy-2026-27.json --json --out ahl-player-values.json

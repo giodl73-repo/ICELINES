@@ -537,6 +537,7 @@ mod tests {
                     recall_readiness_coverage: None,
                     recall_readiness_source_fingerprint: None,
                     assigned_to_affiliate: None,
+                    assignment_authority: None,
                     waiver_cleared: None,
                     review_source_urls: Vec::new(),
                     review_note: None,

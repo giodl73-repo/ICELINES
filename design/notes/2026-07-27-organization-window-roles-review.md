@@ -765,6 +765,13 @@ GLASS/CREST/broadcast retain method, cutoff, counts, source fingerprint, raw
 descriptions, and ambiguity in the UI-neutral document. They may summarize but
 cannot reinterpret same-day order or call the output waiver/contract evidence.
 
-**Verdict:** pass for cutoff-aware transaction state. Workboard assignment
-application remains open and must be exact-organization, fingerprint-bound,
-and no-op for the current empty 2026-27 ledger.
+The application review then confirmed exact-organization semantics: assigned
+state is true only for its destination organization and false for other
+candidate appearances; removed state is false; ambiguity and provider-only
+state do not write. Each written row retains method, cutoff, provider identity,
+source URL, state, and ledger fingerprint. Existing facts must agree.
+
+**Verdict:** pass for cutoff-aware transaction state and narrow workboard
+application. The real empty 2026-27 ledger applied zero positive and zero
+negative facts and left all 1,371 assignment blockers intact; actual
+target-season transactions remain the evidence gate.

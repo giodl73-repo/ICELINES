@@ -1568,6 +1568,18 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Apply only canonical, unambiguous transaction state to an exact workboard.
+    #[command(name = "affiliate-transaction-state-apply")]
+    AffiliateTransactionStateApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Inspect an existing affiliate organization-status review artifact.
     #[command(name = "affiliate-status-show")]
     AffiliateStatusShow {
@@ -4621,6 +4633,27 @@ mod tui_surface_tests {
             assert!(matches!(
                 transaction_state.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateTransactionState { json: true, .. })
+            ));
+
+            let transaction_state_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-transaction-state-apply",
+                "--workboard",
+                "workboard.json",
+                "--ledger",
+                "transaction-state.json",
+                "--json",
+                "--out",
+                "transaction-state-application.json",
+            ])
+            .expect("affiliate transaction-state application should parse");
+            assert!(matches!(
+                transaction_state_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateTransactionStateApply {
+                    json: true,
+                    ..
+                })
             ));
 
             let status_show = Cli::try_parse_from([

@@ -441,6 +441,9 @@ provider team through the dated affiliation catalog, then binds every input
 and its own output by SHA-256 fingerprint. It remains separate from preseason
 facts so transaction evidence cannot silently clear waivers, contracts,
 organization status, or target assignment.
+The companion fingerprinted application writes only unambiguous canonical
+assignment state into the preseason workboard and retains row-level authority
+provenance. An empty ledger is a verified no-op rather than negative evidence.
 
 `affiliate_projection_input_from_snapshot` is the fail-closed bridge into the
 core projection contract. Its enrichment set must exactly cover the selected

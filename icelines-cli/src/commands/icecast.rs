@@ -133,7 +133,10 @@ use icelines_fetch::{
         AhlPreseasonRolloverConfig, AhlPreseasonRolloverView,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     },
-    ahl_transaction_state::{build_ahl_transaction_state_ledger, AhlTransactionStateLedgerView},
+    ahl_transaction_state::{
+        apply_ahl_transaction_state_ledger, build_ahl_transaction_state_ledger,
+        AhlTransactionStateApplicationView, AhlTransactionStateLedgerView,
+    },
     ahl_transactions::AhlTransactionSnapshot,
     build_historical_organization_window_origin, build_organization_window_standings_snapshot,
     build_prospect_career_context_draft, build_prospect_career_discovery,
@@ -1688,6 +1691,30 @@ pub fn run_affiliate_transaction_state(
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL transaction-state ledger")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_transaction_state_apply(
+    workboard_path: PathBuf,
+    ledger_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&workboard_path)?;
+    let ledger: AhlTransactionStateLedgerView =
+        read_icecast_json(&ledger_path, "AHL transaction-state ledger")?;
+    let application =
+        apply_ahl_transaction_state_ledger(&workboard, &ledger).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&application)?)
+    } else {
+        render_affiliate_transaction_state_application(&application)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL transaction-state application")?;
     } else {
         print!("{output}");
     }
@@ -3396,6 +3423,22 @@ fn render_affiliate_transaction_state(view: &AhlTransactionStateLedgerView) -> S
         view.counts.identity_unavailable,
         view.method,
         view.source_fingerprint
+    )
+}
+
+fn render_affiliate_transaction_state_application(
+    view: &AhlTransactionStateApplicationView,
+) -> String {
+    format!(
+        "AHL TRANSACTION STATE APPLIED — {}\nAssigned true: {} | Assigned false: {}\nAmbiguous skipped: {} | Provider-only skipped: {} | Without candidate: {}\nCandidates still missing assignment: {}\nLedger: {}\n",
+        view.target_season,
+        view.assigned_true_applied,
+        view.assigned_false_applied,
+        view.ambiguous_states_skipped,
+        view.provider_only_states_skipped,
+        view.canonical_states_without_candidate,
+        view.candidates_missing_assignment_authority,
+        view.transaction_state_fingerprint
     )
 }
 

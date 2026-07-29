@@ -2265,6 +2265,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::AffiliateTransactionStateApply {
+            workboard,
+            ledger,
+            json,
+            out,
+        }) => {
+            commands::icecast::run_affiliate_transaction_state_apply(workboard, ledger, json, out)?
+        }
         Commands::Icecast(IceCastSubcommand::AffiliateStatusApply {
             prior_snapshot,
             crosswalk,

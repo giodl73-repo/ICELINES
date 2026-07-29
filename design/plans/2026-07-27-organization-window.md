@@ -371,10 +371,13 @@ tampering or rebinding.
 The 2025-26 historical replay resolves 1,161 player states from 4,011 events:
 695 assigned, 403 removed, and 63 ambiguous. Reviewed identity covers 1,149;
 12 remain provider-only. The current 2026-27 feed contains zero events, so the
-target ledger correctly contains zero states and clears no blockers. S2 now
-needs a narrow exact-workboard application plus actual target-season source
-events; waiver clearance, 98 score gaps, 625 organization decisions, and final
-rule authority remain separate work.
+target ledger correctly contains zero states and clears no blockers. The new
+fingerprinted application writes only unambiguous canonical state, preserves
+row-level method/cutoff/source provenance, and refuses existing conflicts. Its
+real target run applied zero true and zero false facts and retained all 1,371
+assignment blockers. S2 now needs actual target-season source events; waiver
+clearance, 98 score gaps, 625 organization decisions, and final rule authority
+remain separate work.
 
 ### S3 — Goalie dependency authority decision
 

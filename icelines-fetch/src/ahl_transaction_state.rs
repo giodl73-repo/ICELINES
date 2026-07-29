@@ -16,6 +16,11 @@ use crate::{
         AhlFeedError, AhlIdentityLeagueCrosswalkView, AhlIdentityReviewStatus,
         AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA,
     },
+    ahl_preseason_facts::{
+        fingerprint_workboard, recompute_workboard, validate_workboard,
+        AhlPreseasonAssignmentAuthority, AhlPreseasonFactBlocker, AhlPreseasonFactsCandidateStatus,
+        AhlPreseasonLeagueFactsWorkboardView,
+    },
     ahl_transactions::{
         AhlTransactionKind, AhlTransactionRow, AhlTransactionSnapshot,
         AHL_TRANSACTION_SNAPSHOT_SCHEMA,
@@ -24,6 +29,7 @@ use crate::{
 
 pub const AHL_TRANSACTION_STATE_LEDGER_SCHEMA: &str = "ahl_transaction_state_ledger.v1";
 pub const AHL_TRANSACTION_STATE_METHOD: &str = "latest_dated_explicit_event_set.v1";
+pub const AHL_TRANSACTION_STATE_APPLICATION_SCHEMA: &str = "ahl_transaction_state_application.v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -98,6 +104,154 @@ pub struct AhlTransactionStateLedgerView {
     pub source_fingerprint: String,
     pub players: Vec<AhlTransactionStateRow>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AhlTransactionStateApplicationView {
+    pub schema: String,
+    pub prior_season: u32,
+    pub target_season: u32,
+    pub source_workboard_fingerprint: String,
+    pub transaction_state_fingerprint: String,
+    pub assigned_true_applied: usize,
+    pub assigned_false_applied: usize,
+    pub ambiguous_states_skipped: usize,
+    pub provider_only_states_skipped: usize,
+    pub canonical_states_without_candidate: usize,
+    pub candidates_missing_assignment_authority: usize,
+    pub workboard: AhlPreseasonLeagueFactsWorkboardView,
+    pub disclosures: Vec<String>,
+}
+
+pub fn apply_ahl_transaction_state_ledger(
+    workboard: &AhlPreseasonLeagueFactsWorkboardView,
+    ledger: &AhlTransactionStateLedgerView,
+) -> Result<AhlTransactionStateApplicationView, AhlFeedError> {
+    validate_workboard(workboard)?;
+    validate_ledger_envelope(ledger)?;
+    if ledger.season != workboard.target_season {
+        return Err(AhlFeedError::Validation(
+            "transaction-state application requires the target workboard season".into(),
+        ));
+    }
+    let source_workboard_fingerprint = workboard.source_fingerprint.clone();
+    let mut applied = workboard.clone();
+    let mut assigned_true_applied = 0usize;
+    let mut assigned_false_applied = 0usize;
+    let mut ambiguous_states_skipped = 0usize;
+    let mut provider_only_states_skipped = 0usize;
+    let mut canonical_states_without_candidate = 0usize;
+    for state in &ledger.players {
+        if state.state == AhlTransactionRosterState::Ambiguous {
+            ambiguous_states_skipped += 1;
+            continue;
+        }
+        let Some(player_id) = state.nhl_player_id else {
+            provider_only_states_skipped += 1;
+            continue;
+        };
+        let mut matched = 0usize;
+        for team in &mut applied.team_workboards {
+            for player in &mut team.players {
+                if player.status != AhlPreseasonFactsCandidateStatus::Candidate
+                    || player.nhl_player_id != Some(player_id)
+                {
+                    continue;
+                }
+                matched += 1;
+                let assigned = state.state == AhlTransactionRosterState::Assigned
+                    && state.assigned_nhl_team.as_deref() == Some(team.nhl_team.as_str());
+                if player
+                    .assigned_to_affiliate
+                    .is_some_and(|existing| existing != assigned)
+                {
+                    return Err(AhlFeedError::Validation(format!(
+                        "transaction state conflicts with existing assignment for NHL player {player_id} in {}",
+                        team.nhl_team
+                    )));
+                }
+                if player.assigned_to_affiliate.is_some() {
+                    continue;
+                }
+                player.assigned_to_affiliate = Some(assigned);
+                player.assignment_authority = Some(AhlPreseasonAssignmentAuthority {
+                    method: ledger.method.clone(),
+                    as_of: ledger.cutoff.clone(),
+                    source_fingerprint: ledger.source_fingerprint.clone(),
+                    source_url: ledger.source_url.clone(),
+                    provider_player_id: state.provider_player_id.clone(),
+                    evidence_state: roster_state_name(state.state).into(),
+                    evidence_reason: state_reason_name(state.reason).into(),
+                });
+                if assigned {
+                    player
+                        .blockers
+                        .retain(|blocker| *blocker != AhlPreseasonFactBlocker::AssignmentAuthority);
+                    assigned_true_applied += 1;
+                } else {
+                    player.status = AhlPreseasonFactsCandidateStatus::NotAssigned;
+                    player.blockers.clear();
+                    assigned_false_applied += 1;
+                }
+            }
+        }
+        if matched == 0 {
+            canonical_states_without_candidate += 1;
+        }
+    }
+    recompute_workboard(&mut applied)?;
+    applied.disclosures.push(format!(
+        "Transaction-state ledger {} applied {} positive and {} negative assignment facts through {}; ambiguous, provider-only, and unmatched states remained non-authoritative.",
+        ledger.source_fingerprint,
+        assigned_true_applied,
+        assigned_false_applied,
+        ledger.cutoff
+    ));
+    applied.source_fingerprint = fingerprint_workboard(&applied)?;
+    let candidates_missing_assignment_authority = applied
+        .blocker_counts
+        .get(&AhlPreseasonFactBlocker::AssignmentAuthority)
+        .copied()
+        .unwrap_or_default();
+    Ok(AhlTransactionStateApplicationView {
+        schema: AHL_TRANSACTION_STATE_APPLICATION_SCHEMA.into(),
+        prior_season: applied.prior_season,
+        target_season: applied.target_season,
+        source_workboard_fingerprint,
+        transaction_state_fingerprint: ledger.source_fingerprint.clone(),
+        assigned_true_applied,
+        assigned_false_applied,
+        ambiguous_states_skipped,
+        provider_only_states_skipped,
+        canonical_states_without_candidate,
+        candidates_missing_assignment_authority,
+        workboard: applied,
+        disclosures: vec![
+            "Only unambiguous canonical transaction states are applied. Positive destination assignment applies true only to that NHL organization's affiliate; removed or other-organization appearances apply false.".into(),
+            "Waiver, contract, organization status, score, prospect, readiness, professional-game, and development-rule authorities are unchanged.".into(),
+        ],
+    })
+}
+
+fn roster_state_name(state: AhlTransactionRosterState) -> &'static str {
+    match state {
+        AhlTransactionRosterState::Assigned => "assigned",
+        AhlTransactionRosterState::Removed => "removed",
+        AhlTransactionRosterState::Ambiguous => "ambiguous",
+    }
+}
+
+fn state_reason_name(reason: AhlTransactionStateReason) -> &'static str {
+    match reason {
+        AhlTransactionStateReason::SingleLatestAdd => "single_latest_add",
+        AhlTransactionStateReason::LatestAddAfterDeleteFromOtherTeam => {
+            "latest_add_after_delete_from_other_team"
+        }
+        AhlTransactionStateReason::LatestDeleteWithoutAdd => "latest_delete_without_add",
+        AhlTransactionStateReason::MultipleLatestAdds => "multiple_latest_adds",
+        AhlTransactionStateReason::SameTeamAddAndDelete => "same_team_add_and_delete",
+        AhlTransactionStateReason::UnknownLatestEventKind => "unknown_latest_event_kind",
+    }
 }
 
 pub fn build_ahl_transaction_state_ledger(
@@ -230,6 +384,7 @@ pub fn validate_ahl_transaction_state_ledger(
     identities: &AhlIdentityLeagueCrosswalkView,
     affiliations: &AhlAffiliationCatalogView,
 ) -> Result<(), AhlFeedError> {
+    validate_ledger_envelope(ledger)?;
     let cutoff = NaiveDate::parse_from_str(&ledger.cutoff, "%Y-%m-%d")
         .map_err(|_| AhlFeedError::Validation("transaction-state cutoff is invalid".into()))?;
     let expected_events = snapshot
@@ -301,6 +456,46 @@ pub fn validate_ahl_transaction_state_ledger(
         return Err(AhlFeedError::Validation(
             "transaction-state ledger is inconsistent, tampered, or bound to different authorities"
                 .into(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_ledger_envelope(ledger: &AhlTransactionStateLedgerView) -> Result<(), AhlFeedError> {
+    let assigned = ledger
+        .players
+        .iter()
+        .filter(|row| row.state == AhlTransactionRosterState::Assigned)
+        .count();
+    let removed = ledger
+        .players
+        .iter()
+        .filter(|row| row.state == AhlTransactionRosterState::Removed)
+        .count();
+    let ambiguous = ledger
+        .players
+        .iter()
+        .filter(|row| row.state == AhlTransactionRosterState::Ambiguous)
+        .count();
+    let identified = ledger
+        .players
+        .iter()
+        .filter(|row| row.nhl_player_id.is_some())
+        .count();
+    if ledger.schema != AHL_TRANSACTION_STATE_LEDGER_SCHEMA
+        || ledger.method != AHL_TRANSACTION_STATE_METHOD
+        || NaiveDate::parse_from_str(&ledger.cutoff, "%Y-%m-%d").is_err()
+        || ledger.source_fingerprint != fingerprint_without_ledger_fingerprint(ledger)?
+        || ledger.counts.players_with_events != ledger.players.len()
+        || ledger.counts.assigned != assigned
+        || ledger.counts.removed != removed
+        || ledger.counts.ambiguous != ambiguous
+        || assigned + removed + ambiguous != ledger.players.len()
+        || ledger.counts.canonically_identified != identified
+        || ledger.counts.identity_unavailable != ledger.players.len() - identified
+    {
+        return Err(AhlFeedError::Validation(
+            "transaction-state ledger envelope is inconsistent or tampered".into(),
         ));
     }
     Ok(())
@@ -463,11 +658,16 @@ mod tests {
     use super::*;
     use crate::{
         ahl::{AhlIdentityCrosswalkCounts, AhlIdentityCrosswalkRow, AhlIdentityCrosswalkView},
+        ahl_preseason_facts::{
+            AhlPreseasonFactsPlayerRow, AhlPreseasonFactsTeamCounts, AhlPreseasonFactsTeamView,
+            AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA,
+        },
+        ahl_rollover::AhlPreseasonPositionGroup,
         ahl_transactions::{
             AhlTransactionPageEvidence, AhlTransactionTeamIdentity, AHL_TRANSACTION_SOURCE_URL,
         },
     };
-    use icelines_core::AhlAffiliationView;
+    use icelines_core::{AhlAffiliationView, Position};
 
     fn event(team: &str, kind: AhlTransactionKind, date: &str) -> AhlTransactionRow {
         AhlTransactionRow {
@@ -593,6 +793,81 @@ mod tests {
         )
     }
 
+    fn workboard() -> AhlPreseasonLeagueFactsWorkboardView {
+        let mut view = AhlPreseasonLeagueFactsWorkboardView {
+            schema: AHL_PRESEASON_LEAGUE_FACTS_WORKBOARD_SCHEMA.into(),
+            prior_season: 20252026,
+            target_season: 20262027,
+            professional_game_policy_id: "test".into(),
+            professional_game_policy_authority: "final".into(),
+            professional_game_threshold: 260,
+            source_fingerprint: String::new(),
+            teams: 1,
+            candidates: 0,
+            facts_ready_candidates: 0,
+            blocker_counts: BTreeMap::new(),
+            team_workboards: vec![AhlPreseasonFactsTeamView {
+                nhl_team: "AAA".into(),
+                ahl_team: "Alpha".into(),
+                source_urls: Vec::new(),
+                counts: AhlPreseasonFactsTeamCounts {
+                    players: 0,
+                    candidates: 0,
+                    facts_ready_candidates: 0,
+                    not_assigned: 0,
+                    projected_nhl_roster: 0,
+                    explicit_departures: 0,
+                    identity_blocked: 0,
+                    missing_assignment_authority: 0,
+                    missing_organization_status: 0,
+                    missing_waiver_clearance: 0,
+                    missing_exact_position: 0,
+                    missing_projected_score: 0,
+                    missing_prospect_status: 0,
+                    missing_recall_readiness: 0,
+                    missing_professional_games: 0,
+                    missing_development_rule_qualification: 0,
+                },
+                players: vec![AhlPreseasonFactsPlayerRow {
+                    nhl_player_id: Some(8470001),
+                    display_name: "Player One".into(),
+                    status: AhlPreseasonFactsCandidateStatus::Candidate,
+                    origins: Vec::new(),
+                    position_group: AhlPreseasonPositionGroup::Forward,
+                    primary_position: Some(Position::Center),
+                    eligible_positions: vec![Position::Center],
+                    projected_score: Some(50.0),
+                    projected_score_method: Some("test".into()),
+                    projected_score_confidence: Some(1.0),
+                    projected_score_sample_games: Some(50),
+                    projected_score_source_fingerprint: Some("sha256:test".into()),
+                    prospect: Some(true),
+                    prospect_method: Some("test".into()),
+                    prospect_source_fingerprint: Some("sha256:test".into()),
+                    recall_readiness: Some(0.8),
+                    recall_readiness_method: Some("test".into()),
+                    recall_readiness_confidence: Some(1.0),
+                    recall_readiness_coverage: Some(1.0),
+                    recall_readiness_source_fingerprint: Some("sha256:test".into()),
+                    assigned_to_affiliate: None,
+                    assignment_authority: None,
+                    waiver_cleared: Some(true),
+                    review_source_urls: Vec::new(),
+                    review_note: None,
+                    reviewer: None,
+                    reviewed_at: None,
+                    professional_games_at_season_start: Some(20),
+                    development_rule_qualified: Some(true),
+                    blockers: vec![AhlPreseasonFactBlocker::AssignmentAuthority],
+                }],
+            }],
+            disclosures: vec!["fixture".into()],
+        };
+        recompute_workboard(&mut view).unwrap();
+        view.source_fingerprint = fingerprint_workboard(&view).unwrap();
+        view
+    }
+
     #[test]
     fn latest_add_after_other_team_delete_assigns_destination() {
         let (snapshot, identities, affiliations) = inputs(vec![
@@ -653,5 +928,38 @@ mod tests {
             &affiliations
         )
         .is_err());
+    }
+
+    #[test]
+    fn application_clears_only_exact_positive_assignment() {
+        let (snapshot, identities, affiliations) =
+            inputs(vec![event("1", AhlTransactionKind::Add, "2026-07-20")]);
+        let ledger =
+            build_ahl_transaction_state_ledger(&snapshot, &identities, &affiliations, "2026-07-28")
+                .unwrap();
+        let application = apply_ahl_transaction_state_ledger(&workboard(), &ledger).unwrap();
+        let player = &application.workboard.team_workboards[0].players[0];
+        assert_eq!(application.assigned_true_applied, 1);
+        assert_eq!(player.assigned_to_affiliate, Some(true));
+        assert!(player.assignment_authority.is_some());
+        assert!(!player
+            .blockers
+            .contains(&AhlPreseasonFactBlocker::AssignmentAuthority));
+    }
+
+    #[test]
+    fn empty_target_ledger_is_a_verified_no_op() {
+        let (snapshot, identities, affiliations) = inputs(Vec::new());
+        let ledger =
+            build_ahl_transaction_state_ledger(&snapshot, &identities, &affiliations, "2026-07-28")
+                .unwrap();
+        let application = apply_ahl_transaction_state_ledger(&workboard(), &ledger).unwrap();
+        assert_eq!(application.assigned_true_applied, 0);
+        assert_eq!(application.assigned_false_applied, 0);
+        assert_eq!(application.candidates_missing_assignment_authority, 1);
+        assert_eq!(
+            application.workboard.team_workboards[0].players[0].assigned_to_affiliate,
+            None
+        );
     }
 }

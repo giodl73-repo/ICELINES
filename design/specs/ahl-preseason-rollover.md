@@ -183,8 +183,14 @@ states: 695 assigned, 403 removed, and 63 ambiguous; 1,149 join to reviewed
 NHL identities and 12 retain only provider identity. The 2026-27 snapshot has
 zero source rows as of July 28, so its ledger contains zero players and clears
 no assignment blockers. Absence remains a no-read. A separate narrow
-application must prove that a ledger row corresponds to the exact target
-workboard organization before it may clear `AssignmentAuthority`.
+`ahl_transaction_state_application.v1` supplies that narrow application. It
+records both input fingerprints and per-player method, cutoff, provider ID,
+source URL, state, and ledger fingerprint. An assigned state writes true only
+for the destination NHL organization's affiliate and false for other candidate
+appearances of the same canonical player; a removed state writes false.
+Ambiguous and provider-only rows are no-reads, existing conflicts fail, and no
+waiver or organization field changes. The real empty target ledger applies
+zero true and zero false facts, leaving all 1,371 assignment blockers intact.
 
 The real July 28 league run rebuilt the camp seal with 933/933 exact position
 lists, including 26 multi-position players, then composed all 32 affiliates.
