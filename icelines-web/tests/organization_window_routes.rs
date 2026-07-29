@@ -104,6 +104,32 @@ async fn every_canonical_team_has_a_dynamic_window_card() {
         let card: icelines_core::CardDocumentView = serde_json::from_slice(&body).unwrap();
         assert_eq!(card.context.joins.team_ids, [*team]);
         assert!(fingerprints.insert(card.fingerprint));
+
+        let html_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/icecast/20262027/{team}/window"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(html_response.status(), StatusCode::OK, "{team}");
+        let body = axum::body::to_bytes(html_response.into_body(), 2 * 1024 * 1024)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body.to_vec()).unwrap();
+        for color in [
+            card.theme.primary.as_deref().unwrap(),
+            card.theme.secondary.as_deref().unwrap(),
+            card.theme.accent.as_deref().unwrap(),
+        ] {
+            assert!(
+                html.contains(color),
+                "{team} HTML must consume the card theme token {color}"
+            );
+        }
     }
     assert_eq!(fingerprints.len(), CANONICAL_TEAMS.len());
 }
