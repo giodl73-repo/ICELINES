@@ -1,0 +1,10 @@
+{
+  "schema": "ahl_player_value_policy.v1",
+  "method_version": "ahl_prior_performance_bayesian_rate.v1",
+  "skater_schedule_games": 72,
+  "skater_prior_games": 20,
+  "forward_prior_points_per_game": 0.45,
+  "defense_prior_points_per_game": 0.25,
+  "goalie_prior_shots": 400,
+  "goalie_prior_save_percentage": 0.9
+}

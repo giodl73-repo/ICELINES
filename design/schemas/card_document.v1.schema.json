@@ -28,7 +28,8 @@
         "fantasy_roster",
         "fantasy_draft",
         "fantasy_morning",
-        "fantasy_trade"
+        "fantasy_trade",
+        "organization_window"
       ]
     },
     "document_id": { "type": "string", "minLength": 1 },

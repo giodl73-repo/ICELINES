@@ -1,0 +1,9 @@
+{
+  "schema": "organization_window_registry_lifecycle.v1",
+  "base_registry_version": "organization_window_registry.v1",
+  "revision": "window_registry_lifecycle.2026-07-29",
+  "generated_at": "2026-07-29T00:00:00Z",
+  "default_lifecycle": "active",
+  "entries": [],
+  "fingerprint": "85d22ce75bf05ff404b17b5a6fd0404325da2315332e2cf33b78b381cfaad101"
+}

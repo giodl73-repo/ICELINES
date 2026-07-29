@@ -586,6 +586,94 @@ replacement, refusal, or rollback notes.
 
 Evidence: CON-009; REQ-DEP-001; REQ-LEAN-001.
 
+## IF-WINDOW-001 — profile observation and registry
+
+Inputs: typed upstream IceLines authorities plus a registered profile descriptor.
+
+Outputs: `organization_profile_observation.v1` with raw value/unit, method,
+organization/time axes, normalized score/rank, confidence, coverage, evidence,
+limitations, and fingerprints.
+
+Errors: unknown method, duplicate observation, non-finite value, identity or
+season mismatch, unsupported source schema, and insufficient cohort.
+
+Versioning: profile key plus method version is immutable.
+
+## IF-WINDOW-002 — Frame manifest
+
+Inputs: `organization_window_manifest.v1` JSON/TOML using registered profiles.
+
+Outputs: a validated canonical manifest and SHA-256 fingerprint.
+
+Errors: cycles, duplicates, unknown profiles, mismatched methods, negative or
+non-finite weights, weights outside tolerance, all-zero budgets, and family-cap
+violations.
+
+## IF-WINDOW-003 — board, history, and scenario documents
+
+Outputs: `organization_window_board.v1`,
+`organization_window_history.v1`, `organization_window_movement.v1`,
+`organization_window_scenario_impact.v1`,
+`organization_window_scenario_distribution.v1`, and
+`organization_window_bridge.v1`. Focused output retains the complete-board
+fingerprint. History rejects incomparable contexts; scenarios retain baseline
+and upstream scenario identity. A bridge seals exact source/target manifests,
+complete one-to-one profile mappings, affine raw transforms, rationale, and
+evidence. Rebase reruns the canonical scorer and never rewrites the source.
+
+Errors: bridge schema or fingerprint mismatch, incomplete/duplicate mappings,
+non-finite or zero-scale transforms, unknown source/target methods, cohort or
+horizon mismatch, and tampered source/target boards fail closed.
+
+Typed scenario authorities carry kind, source schema/fingerprint,
+organization scope, profile methods, and rationale. First-party adapters cover
+team-season trade/injury/return/goalie/form events, training camp, and line
+combinations. Direct raw/evidence changes require organization-scoped
+attribution; normalized cohort effects require same-profile authority; an
+overall-only or otherwise unattributed change fails closed.
+
+`organization_window_scenario_distribution_input.v1` adds seeded, bounded raw
+profile shocks to those typed authorities. Every trial rebuilds the complete
+cohort; output includes central typed attribution and organization/pane/shock
+distributions. Active and inactive raw deltas support mean-centered discrete
+outcomes; every numeric estimate has its own source fingerprint. Unscored panes
+remain omitted rather than coerced to zero. Unsupported schemas, unsealed
+baselines, invalid or duplicate shocks, disabled profile scenario support,
+authority-scope mismatches, non-finite values, and insufficient trials fail
+closed.
+
+Rolling calibration origins optionally carry a typed trial-noise state.
+Deterministic origins declare `not_applicable`; simulations may provide trial
+count, MAE standard error, and a source fingerprint. A trial-noise confidence
+interval is emitted only when every origin supplies valid estimates. Partial
+estimates remain visible but the aggregate state is `not_provided`, separate
+from the between-origin season-variation interval.
+
+Versioning: bridge mappings and fingerprints are immutable. Movement fields
+for source manifest, bridge, and rebased checkpoint are additive within v1.
+
+## IF-WINDOW-004 — user surfaces
+
+CLI/TUI/Web/API/report/card adapters accept sealed core documents. Web state is
+bookmarkable by season, as-of, horizon, view, and registered Frame ID. No
+surface calculates hockey values.
+
+## IF-WINDOW-005 — registry lifecycle amendment
+
+Inputs: `organization_window_registry_lifecycle.v1`, the immutable v1 profile
+inventory, a candidate manifest, and production/evaluation/custom authoring
+policy.
+
+Outputs: a canonical lifecycle fingerprint and a lifecycle-approved sealed
+manifest. Official builders and custom rebases bind the lifecycle fingerprint
+into newly written board source identity. Replay continues through the original
+manifest validator and never substitutes a declared replacement.
+
+Errors: unsupported/base-registry schema, duplicate or unknown entries,
+readiness promotion, unknown/self/retired/cyclic replacement, empty rationale
+or review evidence, retired selection, blocked selection, non-ready official
+selection, and missing/mismatched/duplicate sealed official deprecated holds.
+
 ## Open Questions
 
 - Storage location and migration policy for named workbench layouts.

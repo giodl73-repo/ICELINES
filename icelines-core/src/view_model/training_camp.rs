@@ -12,8 +12,8 @@ use super::line_combination::{
 };
 use super::management_behavior::TeamDecisionProfile;
 use super::team_lineup::{
-    build_team_lineup_projection, LineupAssignmentEvidence, TeamLineupPlayerInput,
-    TeamLineupProjectionView, TeamLineupRequestedSlot,
+    build_team_lineup_projection, LineupAssignmentEvidence, LineupForwardPosition,
+    TeamLineupPlayerInput, TeamLineupPlayerView, TeamLineupProjectionView, TeamLineupRequestedSlot,
 };
 use super::team_season_forecast::{TeamSeasonOpeningRosterChoice, TeamSeasonOpeningRosterPolicy};
 use super::{EvidenceLabel, TeamCeilingLens};
@@ -396,6 +396,10 @@ pub struct TrainingCampPlayerView {
     pub player_id: u32,
     pub display_name: String,
     pub primary_position: Position,
+    /// Retained in the sealed forecast so downstream roster/affiliate
+    /// composition never has to reconstruct multi-position eligibility.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub eligible_positions: Vec<Position>,
     pub source_league: String,
     pub incumbent: bool,
     #[serde(default)]
@@ -509,6 +513,18 @@ pub struct TrainingCampLineupSetView {
     pub retained_probability: f64,
     pub branches: Vec<TrainingCampLineupBranchView>,
     pub disclosures: Vec<String>,
+}
+
+/// Independent player-value authority used when a camp assignment fills an
+/// otherwise empty NHL goalie slot. The camp decides assignment; this input
+/// decides display value, and the two authorities remain explicit.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TrainingCampGoalieValueInput {
+    pub player_id: u32,
+    pub goalie_quality_score: f64,
+    pub sample_games: u32,
+    pub evidence_label: EvidenceLabel,
+    pub source_method: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -783,6 +799,243 @@ pub fn build_training_camp_lineup_set(
             "Only the most common retained branches are represented; retained_probability may be less than 1.0.".into(),
         ],
     })
+}
+
+/// Fill only empty goalie slots in an existing NHL lineup from the most
+/// probable sealed camp roster branch. Existing assigned goalies and all
+/// skater assignments remain fixed. A separate value input is required for
+/// every inserted goalie, preventing the camp score from becoming an
+/// unlabeled NHL-quality proxy.
+pub fn complete_lineup_goalies_from_training_camp(
+    baseline: &TeamLineupProjectionView,
+    forecast: &TrainingCampForecastView,
+    goalie_values: &[TrainingCampGoalieValueInput],
+) -> Result<TeamLineupProjectionView, String> {
+    if baseline.schema != super::team_lineup::TEAM_LINEUP_PROJECTION_SCHEMA
+        || forecast.schema != TRAINING_CAMP_FORECAST_SCHEMA
+        || !baseline.team.eq_ignore_ascii_case(&forecast.team)
+        || baseline.roster_season != forecast.season
+    {
+        return Err("camp goalie completion requires aligned lineup and forecast axes".to_owned());
+    }
+    if baseline.goalies.starter.is_some() && baseline.goalies.backup.is_some() {
+        return Ok(baseline.clone());
+    }
+    let branch = forecast
+        .most_common_rosters
+        .first()
+        .ok_or_else(|| "camp goalie completion requires a modal roster branch".to_owned())?;
+    if branch.goalie_ids.len() != 2 {
+        return Err("camp modal roster must contain exactly two goalies".to_owned());
+    }
+    let value_index = goalie_values
+        .iter()
+        .map(|value| (value.player_id, value))
+        .collect::<BTreeMap<_, _>>();
+    if value_index.len() != goalie_values.len()
+        || goalie_values.iter().any(|value| {
+            value.player_id == 0
+                || value.sample_games == 0
+                || !value.goalie_quality_score.is_finite()
+                || !(0.0..=100.0).contains(&value.goalie_quality_score)
+                || value.source_method.trim().is_empty()
+        })
+    {
+        return Err("camp goalie completion received invalid value authority".to_owned());
+    }
+    let mut inputs = lineup_inputs_preserving_assignments(baseline);
+    let existing_ids = inputs
+        .iter()
+        .map(|player| player.player_id)
+        .collect::<BTreeSet<_>>();
+    let missing_slots = usize::from(baseline.goalies.starter.is_none())
+        + usize::from(baseline.goalies.backup.is_none());
+    let mut inserted = Vec::new();
+    for player_id in branch
+        .goalie_ids
+        .iter()
+        .filter(|player_id| !existing_ids.contains(player_id))
+        .take(missing_slots)
+    {
+        let player = forecast
+            .players
+            .iter()
+            .find(|player| player.player_id == *player_id)
+            .ok_or_else(|| format!("camp branch references unknown goalie {player_id}"))?;
+        if player.primary_position != Position::Goalie {
+            return Err(format!("camp branch player {player_id} is not a goalie"));
+        }
+        let value = value_index.get(player_id).ok_or_else(|| {
+            format!("camp-assigned goalie {player_id} lacks independent value authority")
+        })?;
+        let requested_slot = if baseline.goalies.starter.is_none() && inserted.is_empty() {
+            TeamLineupRequestedSlot::Goalie { starter: true }
+        } else {
+            TeamLineupRequestedSlot::Goalie { starter: false }
+        };
+        inputs.push(TeamLineupPlayerInput {
+            player_id: player.player_id,
+            display_name: player.display_name.clone(),
+            team: baseline.team.clone(),
+            prior_team: None,
+            primary_position: Position::Goalie,
+            eligible_positions: vec![Position::Goalie],
+            headshot_canonical_url: Some(format!(
+                "https://assets.nhle.com/mugs/nhl/{}/{}/{}.png",
+                baseline.roster_season, baseline.team, player.player_id
+            )),
+            games_played: value.sample_games,
+            lens_scores: TeamCeilingLens::ALL
+                .into_iter()
+                .map(|lens| (lens, Some(value.goalie_quality_score)))
+                .collect(),
+            score_evidence: value.evidence_label,
+            power_play_role_score: None,
+            penalty_kill_role_score: None,
+            special_teams_evidence: None,
+            requested_slot: Some(requested_slot),
+            assignment_evidence: LineupAssignmentEvidence::Scenario,
+        });
+        inserted.push((player.player_id, value.source_method.clone()));
+    }
+    if inserted.len() != missing_slots {
+        return Err(format!(
+            "camp goalie completion filled {}/{} empty slots",
+            inserted.len(),
+            missing_slots
+        ));
+    }
+    let mut completed =
+        build_team_lineup_projection(&baseline.team, baseline.roster_season, inputs)
+            .map_err(|error| format!("rebuild camp-completed lineup: {error}"))?;
+    for warning in baseline.warnings.iter().filter(|warning| {
+        !matches!(
+            warning.code.as_str(),
+            "incomplete_roster_shape" | "unrated_players"
+        )
+    }) {
+        if !completed
+            .warnings
+            .iter()
+            .any(|existing| existing.code == warning.code)
+        {
+            completed.warnings.push(warning.clone());
+        }
+    }
+    completed
+        .warnings
+        .push(super::team_lineup::TeamLineupWarningView {
+            code: "training_camp_goalie_assignment".to_owned(),
+            message: format!(
+                "Camp modal assignment added {} using independent value method(s): {}.",
+                inserted
+                    .iter()
+                    .map(|(player_id, _)| player_id.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                inserted
+                    .iter()
+                    .map(|(_, method)| method.as_str())
+                    .collect::<BTreeSet<_>>()
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        });
+    Ok(completed)
+}
+
+fn lineup_inputs_preserving_assignments(
+    lineup: &TeamLineupProjectionView,
+) -> Vec<TeamLineupPlayerInput> {
+    let mut inputs = Vec::new();
+    for line in &lineup.forward_lines {
+        for (player, position) in [
+            (line.left_wing.as_ref(), LineupForwardPosition::LeftWing),
+            (line.center.as_ref(), LineupForwardPosition::Center),
+            (line.right_wing.as_ref(), LineupForwardPosition::RightWing),
+        ] {
+            if let Some(player) = player {
+                let slot_position = match position {
+                    LineupForwardPosition::LeftWing => Position::LeftWing,
+                    LineupForwardPosition::Center => Position::Center,
+                    LineupForwardPosition::RightWing => Position::RightWing,
+                };
+                let requested_slot = if player.eligible_positions.contains(&slot_position) {
+                    TeamLineupRequestedSlot::Forward {
+                        line: line.line,
+                        position,
+                    }
+                } else {
+                    TeamLineupRequestedSlot::FlexibleForward {
+                        line: line.line,
+                        position,
+                    }
+                };
+                inputs.push(lineup_player_input(player, requested_slot));
+            }
+        }
+    }
+    for pair in &lineup.defense_pairs {
+        for (player, right_side) in [(pair.left.as_ref(), false), (pair.right.as_ref(), true)] {
+            if let Some(player) = player {
+                inputs.push(lineup_player_input(
+                    player,
+                    TeamLineupRequestedSlot::Defense {
+                        pair: pair.pair,
+                        right_side,
+                    },
+                ));
+            }
+        }
+    }
+    if let Some(player) = lineup.goalies.starter.as_ref() {
+        inputs.push(lineup_player_input(
+            player,
+            TeamLineupRequestedSlot::Goalie { starter: true },
+        ));
+    }
+    if let Some(player) = lineup.goalies.backup.as_ref() {
+        inputs.push(lineup_player_input(
+            player,
+            TeamLineupRequestedSlot::Goalie { starter: false },
+        ));
+    }
+    inputs.extend(
+        lineup
+            .extras
+            .iter()
+            .map(|player| lineup_player_input(player, TeamLineupRequestedSlot::Extra)),
+    );
+    inputs
+}
+
+fn lineup_player_input(
+    player: &TeamLineupPlayerView,
+    requested_slot: TeamLineupRequestedSlot,
+) -> TeamLineupPlayerInput {
+    TeamLineupPlayerInput {
+        player_id: player.player_id,
+        display_name: player.display_name.clone(),
+        team: player.team.clone(),
+        prior_team: player.prior_team.clone(),
+        primary_position: player.primary_position,
+        eligible_positions: player.eligible_positions.clone(),
+        headshot_canonical_url: player.portrait.headshot_canonical_url.clone(),
+        games_played: player.score.sample_games,
+        lens_scores: player
+            .score
+            .components
+            .iter()
+            .map(|component| (component.lens, component.raw_value))
+            .collect(),
+        score_evidence: player.score.evidence_label,
+        power_play_role_score: player.power_play_role_score,
+        penalty_kill_role_score: player.penalty_kill_role_score,
+        special_teams_evidence: player.special_teams_evidence,
+        requested_slot: Some(requested_slot),
+        assignment_evidence: player.assignment_evidence,
+    }
 }
 
 pub fn simulate_training_camp_league(
@@ -1401,6 +1654,7 @@ pub fn simulate_training_camp(
                 player_id: player.player_id,
                 display_name: player.display_name.clone(),
                 primary_position: player.primary_position,
+                eligible_positions: player.eligible_positions.clone(),
                 source_league: player.source_league.clone(),
                 incumbent: player.incumbent,
                 rookie_eligible: player.rookie_eligible,
@@ -2012,6 +2266,14 @@ mod tests {
     }
 
     #[test]
+    fn legacy_empty_eligibility_stays_absent_from_v1_wire_shape() {
+        let mut forecast = simulate_training_camp(&input()).unwrap();
+        forecast.players[0].eligible_positions.clear();
+        let value = serde_json::to_value(&forecast).unwrap();
+        assert!(value["players"][0].get("eligible_positions").is_none());
+    }
+
+    #[test]
     fn incomplete_trials_do_not_count_as_player_cuts() {
         let mut input = input();
         for goalie in input
@@ -2608,5 +2870,68 @@ mod tests {
         )
         .unwrap();
         assert_eq!(compact, blender.opening_roster_policy);
+    }
+
+    #[test]
+    fn camp_goalie_completion_preserves_lineup_and_requires_independent_value() {
+        let input = input();
+        let forecast = simulate_training_camp(&input).unwrap();
+        let set = build_training_camp_lineup_set(&input, &forecast, 1).unwrap();
+        let mut baseline = set.branches[0].lineup.clone();
+        let removed = baseline.goalies.backup.take().unwrap();
+        baseline
+            .warnings
+            .push(super::super::team_lineup::TeamLineupWarningView {
+                code: "incomplete_roster_shape".to_owned(),
+                message: "missing backup".to_owned(),
+            });
+        let forward_ids = baseline
+            .forward_lines
+            .iter()
+            .flat_map(|line| [&line.left_wing, &line.center, &line.right_wing])
+            .filter_map(Option::as_ref)
+            .map(|player| player.player_id)
+            .collect::<Vec<_>>();
+
+        assert!(complete_lineup_goalies_from_training_camp(&baseline, &forecast, &[]).is_err());
+        let completed = complete_lineup_goalies_from_training_camp(
+            &baseline,
+            &forecast,
+            &[TrainingCampGoalieValueInput {
+                player_id: removed.player_id,
+                goalie_quality_score: 42.0,
+                sample_games: 12,
+                evidence_label: EvidenceLabel::Estimated,
+                source_method: "career_paired_ahl_to_nhl_goalie.v1".to_owned(),
+            }],
+        )
+        .unwrap();
+        let backup = completed.goalies.backup.as_ref().unwrap();
+        assert_eq!(backup.player_id, removed.player_id);
+        assert_eq!(backup.score.value, Some(42.0));
+        assert_eq!(backup.score.sample_games, 12);
+        assert_eq!(backup.score.evidence_label, EvidenceLabel::Estimated);
+        assert_eq!(
+            backup.assignment_evidence,
+            LineupAssignmentEvidence::Scenario
+        );
+        assert_eq!(
+            completed
+                .forward_lines
+                .iter()
+                .flat_map(|line| [&line.left_wing, &line.center, &line.right_wing])
+                .filter_map(Option::as_ref)
+                .map(|player| player.player_id)
+                .collect::<Vec<_>>(),
+            forward_ids
+        );
+        assert!(!completed
+            .warnings
+            .iter()
+            .any(|warning| warning.code == "incomplete_roster_shape"));
+        assert!(completed
+            .warnings
+            .iter()
+            .any(|warning| warning.code == "training_camp_goalie_assignment"));
     }
 }

@@ -143,6 +143,11 @@ pub struct AhlAffiliatePlayerInput {
     /// start of the season, following the supplied AHL rule authority.
     #[serde(default)]
     pub professional_games_at_season_start: Option<u32>,
+    /// Final age/exemption-aware rule qualification from a reviewed policy.
+    /// `true` means development-qualified; `false` means veteran. When absent,
+    /// legacy inputs retain the raw professional-game threshold behavior.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub development_rule_qualified: Option<bool>,
     /// Whether this scenario assigns the player to the affiliate. NHL roster
     /// branches set this explicitly; IceLines never equates a camp cut with a
     /// successful AHL assignment.
@@ -188,6 +193,8 @@ pub struct AhlAffiliatePlayerView {
     pub prospect: bool,
     pub recall_readiness: Option<f64>,
     pub professional_games_at_season_start: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub development_rule_qualified: Option<bool>,
     pub classification: Option<AhlDevelopmentClassification>,
     pub assigned_to_affiliate: bool,
     pub waiver_required: bool,
@@ -253,9 +260,20 @@ pub fn build_ahl_affiliate_projection(
 ) -> Result<AhlAffiliateProjectionView, String> {
     validate(input)?;
     let classify = |player: &AhlAffiliatePlayerInput| {
-        player.professional_games_at_season_start.map(|games| {
-            classify_ahl_development_player(games, input.rule.professional_game_threshold)
-        })
+        player.development_rule_qualified.map_or_else(
+            || {
+                player.professional_games_at_season_start.map(|games| {
+                    classify_ahl_development_player(games, input.rule.professional_game_threshold)
+                })
+            },
+            |qualified| {
+                Some(if qualified {
+                    AhlDevelopmentClassification::Development
+                } else {
+                    AhlDevelopmentClassification::Veteran
+                })
+            },
+        )
     };
     let available = input
         .players
@@ -426,6 +444,7 @@ pub fn build_ahl_affiliate_projection(
                 prospect: player.prospect,
                 recall_readiness: player.recall_readiness,
                 professional_games_at_season_start: player.professional_games_at_season_start,
+                development_rule_qualified: player.development_rule_qualified,
                 classification,
                 assigned_to_affiliate: player.assigned_to_affiliate,
                 waiver_required: player.waiver_required,
@@ -776,6 +795,7 @@ mod tests {
             prospect: games <= 260,
             recall_readiness: Some((score / 100.0).clamp(0.0, 1.0)),
             professional_games_at_season_start: Some(games),
+            development_rule_qualified: None,
             assigned_to_affiliate: true,
             waiver_required: games > 260,
             source_league: "test".to_owned(),
@@ -881,6 +901,74 @@ mod tests {
             classify_ahl_development_player(261, 260),
             AhlDevelopmentClassification::Veteran
         );
+    }
+
+    #[test]
+    fn reviewed_rule_qualification_overrides_raw_game_threshold() {
+        let mut players = (1..=12)
+            .map(|id| player(id, Position::Center, 100.0 - f64::from(id), 100))
+            .chain((20..=25).map(|id| player(id, Position::Defense, 100.0 - f64::from(id), 100)))
+            .chain([
+                player(30, Position::Goalie, 60.0, 500),
+                player(31, Position::Goalie, 55.0, 500),
+            ])
+            .collect::<Vec<_>>();
+        players[0].professional_games_at_season_start = Some(400);
+        players[0].development_rule_qualified = Some(true);
+        let view = build_ahl_affiliate_projection(&AhlAffiliateProjectionInput {
+            nhl_team: "NYR".to_owned(),
+            ahl_team: "Hartford Wolf Pack".to_owned(),
+            season: CURRENT_AHL_AFFILIATION_SEASON,
+            rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: AhlRosterPoolAuthority {
+                kind: AhlRosterPoolAuthorityKind::AuthoredScenario,
+                as_of: Some("2026-07-28".to_owned()),
+                source_urls: vec!["https://example.com/rule-review".to_owned()],
+                note: Some("Reviewed age qualification scenario.".to_owned()),
+            },
+            players,
+        })
+        .unwrap();
+        let player = view
+            .players
+            .iter()
+            .find(|player| player.player_id == 1)
+            .unwrap();
+        assert_eq!(
+            player.classification,
+            Some(AhlDevelopmentClassification::Development)
+        );
+        assert_eq!(player.development_rule_qualified, Some(true));
+    }
+
+    #[test]
+    fn legacy_missing_rule_qualification_stays_absent_from_v1_wire_shape() {
+        let players = (1..=12)
+            .map(|id| player(id, Position::Center, 100.0 - f64::from(id), 100))
+            .chain((20..=25).map(|id| player(id, Position::Defense, 100.0 - f64::from(id), 100)))
+            .chain([
+                player(30, Position::Goalie, 60.0, 100),
+                player(31, Position::Goalie, 55.0, 100),
+            ])
+            .collect::<Vec<_>>();
+        let view = build_ahl_affiliate_projection(&AhlAffiliateProjectionInput {
+            nhl_team: "NYR".to_owned(),
+            ahl_team: "Hartford Wolf Pack".to_owned(),
+            season: CURRENT_AHL_AFFILIATION_SEASON,
+            rule: AhlDevelopmentRuleInput::default(),
+            pool_authority: AhlRosterPoolAuthority {
+                kind: AhlRosterPoolAuthorityKind::AuthoredScenario,
+                as_of: Some("2026-07-29".to_owned()),
+                source_urls: vec!["https://example.com/legacy".to_owned()],
+                note: Some("Legacy compatibility fixture".to_owned()),
+            },
+            players,
+        })
+        .unwrap();
+        let value = serde_json::to_value(&view).unwrap();
+        assert!(value["players"][0]
+            .get("development_rule_qualified")
+            .is_none());
     }
 
     #[test]

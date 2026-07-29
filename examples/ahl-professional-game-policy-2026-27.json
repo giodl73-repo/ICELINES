@@ -1,0 +1,28 @@
+{
+  "schema": "ahl_professional_game_policy.v2",
+  "policy_id": "ahl-development-2026-27.partial.v2",
+  "authority_status": "draft",
+  "target_season": 20262027,
+  "development_rule_effective_season": 20262027,
+  "as_of": "2026-07-28",
+  "threshold": 260,
+  "source_urls": [
+    "https://theahl.com/faq",
+    "https://theahl.com/news/notes-from-scott-howsons-annual-media-conference"
+  ],
+  "league_treatments": [
+    {
+      "league": "NHL",
+      "kind": "included",
+      "evidence_urls": ["https://theahl.com/faq"],
+      "note": "The official AHL development-rule description explicitly includes NHL regular-season games."
+    },
+    {
+      "league": "AHL",
+      "kind": "included",
+      "evidence_urls": ["https://theahl.com/faq"],
+      "note": "The official AHL development-rule description explicitly includes AHL regular-season games."
+    }
+  ],
+  "methodology": "Count regular-season games completed before 2026-27. NHL and AHL are explicitly included. Observed European or other professional leagues remain unresolved until each exact provider abbreviation receives a sourced treatment."
+}

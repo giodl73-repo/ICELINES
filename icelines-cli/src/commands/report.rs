@@ -9,12 +9,13 @@ use icelines_core::{
     CapProjectionPlayerInput, CapProjectionView, Completeness, LineupAssignmentEvidence,
     SalaryBasis, SourceKind, SourceState, TeamCeilingLens, TeamCeilingPlayerInput, TeamCeilingView,
     TeamLineupPlayerInput, TeamLineupPlayerView, TeamLineupProjectionView, TeamPrognosisCardInput,
-    ViewContext, ViewWindow,
+    ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
 use icelines_fetch::schema::{RosterPlayer, RosterResponse};
 use icelines_fetch::snapshot::SnapshotStore;
 use icelines_fetch::snapshot::SnapshotTier;
 use icelines_fetch::stats_loader::load_into_repo;
+use icelines_fetch::{build_nhl_goalie_translation_ledger, career_landing::CareerHistoryStore};
 use serde::Serialize;
 use std::fmt::Write as _;
 use std::path::PathBuf;
@@ -242,6 +243,7 @@ pub async fn run_team_card(args: TeamCardArgs) -> anyhow::Result<()> {
         auto_personnel: false,
         trade_mode: "off".to_string(),
         replay_mode: "frozen".to_string(),
+        ignore_replay_personnel_after: None,
         through: None,
         retrospective_opening_lineups: false,
         all_games: false,
@@ -321,6 +323,43 @@ pub(crate) fn load_team_lineup_view(
             stats_season.0
         )
     })?;
+    load_team_lineup_view_from_store(roster_season, stats_season, team, &store, &outcome.repo)
+}
+
+pub(crate) fn load_league_team_lineup_views(
+    roster_season: Season,
+    stats_season: Season,
+) -> anyhow::Result<Vec<TeamLineupProjectionView>> {
+    let cfg = Config::load()?;
+    let store = SnapshotStore::new(cfg.snapshot_dir());
+    let outcome = load_into_repo(stats_season, SeasonType::Regular, &store).map_err(|error| {
+        anyhow::anyhow!(
+            "{error}\n  Try: icelines fetch all --season {}",
+            stats_season.0
+        )
+    })?;
+    CANONICAL_TEAMS
+        .iter()
+        .map(|(team, _)| {
+            let team = TeamAbbr::parse(team).map_err(|error| anyhow::anyhow!(error))?;
+            load_team_lineup_view_from_store(
+                roster_season,
+                stats_season,
+                &team,
+                &store,
+                &outcome.repo,
+            )
+        })
+        .collect()
+}
+
+fn load_team_lineup_view_from_store(
+    roster_season: Season,
+    stats_season: Season,
+    team: &TeamAbbr,
+    store: &SnapshotStore,
+    repo: &icelines_core::stats_repository::StatsRepository,
+) -> anyhow::Result<TeamLineupProjectionView> {
     let roster = store
         .read_tier_file_any_for_season::<RosterResponse>(
             &SnapshotTier::Rosters,
@@ -335,6 +374,8 @@ pub(crate) fn load_team_lineup_view(
                 roster_season.0
             )
         })?;
+    let goalie_fallbacks =
+        load_goalie_translation_fallbacks(&roster, roster_season, stats_season, repo);
     let players = roster
         .forwards
         .iter()
@@ -346,12 +387,30 @@ pub(crate) fn load_team_lineup_view(
                 team.as_str(),
                 roster_season,
                 stats_season,
-                &outcome.repo,
+                repo,
+                goalie_fallbacks.values.get(&player.id),
             )
         })
         .collect();
-    build_team_lineup_projection(team.as_str(), roster_season.0, players)
-        .map_err(anyhow::Error::new)
+    let mut view = build_team_lineup_projection(team.as_str(), roster_season.0, players)
+        .map_err(anyhow::Error::new)?;
+    if !goalie_fallbacks.values.is_empty() {
+        view.warnings.push(icelines_core::TeamLineupWarningView {
+            code: "estimated_ahl_to_nhl_goalie_quality".to_owned(),
+            message: format!(
+                "{} goalie score(s) use the confidence-shrunk {} evaluation fallback because no prior-season NHL sample was available.",
+                goalie_fallbacks.values.len(),
+                icelines_core::NHL_GOALIE_TRANSLATION_METHOD
+            ),
+        });
+    }
+    if let Some(message) = goalie_fallbacks.warning {
+        view.warnings.push(icelines_core::TeamLineupWarningView {
+            code: "goalie_translation_unavailable".to_owned(),
+            message,
+        });
+    }
+    Ok(view)
 }
 
 fn lineup_input(
@@ -360,8 +419,15 @@ fn lineup_input(
     roster_season: Season,
     stats_season: Season,
     repo: &icelines_core::stats_repository::StatsRepository,
+    goalie_fallback: Option<&icelines_core::NhlGoalieTranslationEstimate>,
 ) -> Option<TeamLineupPlayerInput> {
-    let ceiling = roster_input(player, team, roster_season, stats_season, repo)?;
+    let mut ceiling = roster_input(player, team, roster_season, stats_season, repo)?;
+    let used_goalie_fallback = ceiling.position == icelines_core::Position::Goalie
+        && ceiling.goalie_quality.is_none()
+        && goalie_fallback.is_some();
+    if used_goalie_fallback {
+        ceiling.goalie_quality = goalie_fallback.map(|estimate| estimate.goalie_quality_score);
+    }
     let deployment = repo
         .view(
             icelines_core::identity::PlayerId(player.id),
@@ -384,18 +450,105 @@ fn lineup_input(
         primary_position: ceiling.position,
         eligible_positions: vec![ceiling.position],
         headshot_canonical_url: player.headshot.clone(),
-        games_played: ceiling.games_played,
+        games_played: goalie_fallback
+            .filter(|_| used_goalie_fallback)
+            .map_or(ceiling.games_played, |estimate| estimate.effective_games),
         lens_scores: TeamCeilingLens::ALL
             .into_iter()
             .map(|lens| (lens, team_ceiling_player_lens_score(&ceiling, lens)))
             .collect(),
-        score_evidence: icelines_core::EvidenceLabel::Confirmed,
+        score_evidence: if used_goalie_fallback {
+            icelines_core::EvidenceLabel::Estimated
+        } else {
+            icelines_core::EvidenceLabel::Confirmed
+        },
         power_play_role_score: deployment.map(|value| value.0),
         penalty_kill_role_score: deployment.map(|value| value.1),
         special_teams_evidence: deployment.map(|_| icelines_core::EvidenceLabel::Confirmed),
         requested_slot: None,
         assignment_evidence: LineupAssignmentEvidence::Estimated,
     })
+}
+
+#[derive(Debug, Default)]
+struct GoalieTranslationFallbacks {
+    values: std::collections::BTreeMap<u32, icelines_core::NhlGoalieTranslationEstimate>,
+    warning: Option<String>,
+}
+
+fn load_goalie_translation_fallbacks(
+    roster: &RosterResponse,
+    roster_season: Season,
+    stats_season: Season,
+    repo: &icelines_core::stats_repository::StatsRepository,
+) -> GoalieTranslationFallbacks {
+    let candidate_ids = roster
+        .goalies
+        .iter()
+        .filter(|player| {
+            repo.view(
+                icelines_core::identity::PlayerId(player.id),
+                stats_season,
+                SeasonType::Regular,
+            )
+            .and_then(|view| {
+                view.stats
+                    .goalie
+                    .as_ref()
+                    .and_then(|goalie| goalie.save_pct)
+            })
+            .is_none()
+        })
+        .map(|player| player.id)
+        .collect::<Vec<_>>();
+    if candidate_ids.is_empty() {
+        return GoalieTranslationFallbacks::default();
+    }
+    let Ok(config) = Config::load() else {
+        return GoalieTranslationFallbacks {
+            warning: Some("Goalie translation could not load IceLines configuration.".to_owned()),
+            ..GoalieTranslationFallbacks::default()
+        };
+    };
+    let Ok(career_store) = CareerHistoryStore::load(&config.career_history_path()) else {
+        return GoalieTranslationFallbacks {
+            warning: Some(format!(
+                "Goalie translation could not read the official career cache at {}.",
+                config.career_history_path().display()
+            )),
+            ..GoalieTranslationFallbacks::default()
+        };
+    };
+    let ledger = match build_nhl_goalie_translation_ledger(
+        &career_store,
+        roster_season.0,
+        stats_season.0,
+        candidate_ids,
+        &icelines_core::NhlGoalieTranslationPolicy::default(),
+    ) {
+        Ok(ledger) => ledger,
+        Err(error) => {
+            return GoalieTranslationFallbacks {
+                warning: Some(format!(
+                    "Goalie translation stayed unavailable: {error}. Run `icelines fetch career` to refresh the official career cohort."
+                )),
+                ..GoalieTranslationFallbacks::default()
+            };
+        }
+    };
+    let values = ledger
+        .players
+        .into_iter()
+        .map(|row| (row.player_id, row.estimate))
+        .collect();
+    let warning = (!ledger.unavailable.is_empty()).then(|| {
+        format!(
+            "{} goalie candidate(s) remain unrated after {} because their AHL evidence did not pass the workload/source gates.",
+            ledger.unavailable.len(),
+            icelines_core::NHL_GOALIE_TRANSLATION_METHOD
+        )
+    });
+    GoalieTranslationFallbacks { values, warning }
 }
 
 pub fn run_team_ceiling(args: TeamCeilingArgs) -> anyhow::Result<()> {

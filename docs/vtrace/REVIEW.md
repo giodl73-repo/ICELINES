@@ -4093,6 +4093,32 @@ passed for leaders CLI/Web JSON result-state parity. Broad `WP-001`, `VAL-004`,
 `EVID-VAL-004`, `EVID-CR-003`, `EVID-CR-018`, `EVID-CODE-001`, and WP-008
 integration rehearsal remain open.
 
+## The Window implementation entry review — 2026-07-27
+
+Decision: **go** for WP-011.
+
+The merged 12-role review resolved its initial blockers. Implementation remains
+conditional on the machine-readable readiness inventory, immutable profile
+methods, complete cohort gates, no zero-filled missing evidence, and thin
+surface adapters. Cap projection may enter only as modeled/evaluation evidence;
+confirmed cap space, shift chemistry, and injury concentration remain blocked
+until their source authorities exist.
+
+Required close review: all roles after real all-team calibration and surface
+parity evidence. Planning or synthetic scorer tests alone cannot close WP-011.
+
+Final engineering close review (2026-07-29): **pass for the evaluation
+release; product gates remain open**. The canonical scorer, lifecycle amendment,
+four observed-history origins, scenario/movement contracts, all-surface parity,
+and outcome-free future-holdout registration/scorer are implemented and sealed.
+PR #23 run 30488170619 passes all 26 jobs on audited implementation head
+`1b4ff230`; the final role disposition is recorded in
+`design/notes/2026-07-27-organization-window-roles-review.md`. WP-011 remains
+partial only because the production Frame is 14/16 required profiles with 0/32
+rank-eligible organizations and because the registered 2026-27 outcome cannot
+be scored before April 11, 2027. Neither gate may be satisfied with inferred or
+proxy evidence.
+
 ## 2026-06-19 Phase Hurricane 5a/5b Close Review
 
 ### Scope reviewed

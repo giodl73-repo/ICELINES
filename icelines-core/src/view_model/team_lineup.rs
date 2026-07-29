@@ -95,6 +95,13 @@ pub enum TeamLineupRequestedSlot {
         line: u8,
         position: LineupForwardPosition,
     },
+    /// Explicit manager/scenario decision to deploy a forward away from the
+    /// player's natural eligibility while retaining the natural positions in
+    /// the player record.
+    FlexibleForward {
+        line: u8,
+        position: LineupForwardPosition,
+    },
     Defense {
         pair: u8,
         right_side: bool,
@@ -289,7 +296,10 @@ pub fn build_team_lineup_projection(
 
     for player in views {
         match player.requested_slot() {
-            Some(TeamLineupRequestedSlot::Forward { line, position }) => {
+            Some(
+                TeamLineupRequestedSlot::Forward { line, position }
+                | TeamLineupRequestedSlot::FlexibleForward { line, position },
+            ) => {
                 let target = &mut forwards[(line - 1) as usize][forward_index(position)];
                 if target.replace(player).is_some() {
                     return Err(TeamLineupProjectionError::DuplicateRequestedSlot);
@@ -936,6 +946,9 @@ fn validate_requested_slot(
         TeamLineupRequestedSlot::Forward { line, position } => {
             (1..=4).contains(&line) && player.eligible_positions.contains(&position.position())
         }
+        TeamLineupRequestedSlot::FlexibleForward { line, .. } => {
+            (1..=4).contains(&line) && player.primary_position.is_forward()
+        }
         TeamLineupRequestedSlot::Defense { pair, .. } => {
             (1..=3).contains(&pair) && player.eligible_positions.contains(&Position::Defense)
         }
@@ -947,7 +960,8 @@ fn validate_requested_slot(
     if valid {
         Ok(())
     } else if match slot {
-        TeamLineupRequestedSlot::Forward { line, .. } => !(1..=4).contains(&line),
+        TeamLineupRequestedSlot::Forward { line, .. }
+        | TeamLineupRequestedSlot::FlexibleForward { line, .. } => !(1..=4).contains(&line),
         TeamLineupRequestedSlot::Defense { pair, .. } => !(1..=3).contains(&pair),
         _ => false,
     } {
@@ -1163,6 +1177,26 @@ mod tests {
             .warnings
             .iter()
             .any(|warning| warning.code == "unrated_players"));
+    }
+
+    #[test]
+    fn flexible_forward_replays_an_off_natural_side_assignment() {
+        let mut center = player(8480002, "Flexible Center", Position::Center);
+        center.requested_slot = Some(TeamLineupRequestedSlot::FlexibleForward {
+            line: 1,
+            position: LineupForwardPosition::LeftWing,
+        });
+        center.assignment_evidence = LineupAssignmentEvidence::Scenario;
+
+        let view = build_team_lineup_projection("NYR", 20262027, vec![center]).unwrap();
+        let assigned = view.forward_lines[0].left_wing.as_ref().unwrap();
+        assert_eq!(assigned.player_id, 8480002);
+        assert_eq!(assigned.primary_position, Position::Center);
+        assert_eq!(assigned.eligible_positions, vec![Position::Center]);
+        assert_eq!(
+            assigned.assignment_evidence,
+            LineupAssignmentEvidence::Scenario
+        );
     }
 
     #[test]

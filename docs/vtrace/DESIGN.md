@@ -432,6 +432,18 @@ formalize before production changes are made.
 | Visual tokens | Color is the only state carrier. | Token adapters include text/glyph/aria/report labels and ASCII fallback where applicable. |
 | Evidence ledger | Reviews stay prose-only. | Verification rows link command output, fixture names, route tests, demos, or explicit target-not-met evidence. |
 
+## The Window design baseline
+
+| ID | Decision | Parent requirements | Verification consequence |
+|---|---|---|---|
+| DES-WINDOW-001 | Use immutable typed profile methods plus declarative fingerprinted Frames; do not load runtime code plugins. | REQ-WINDOW-002; REQ-WINDOW-003 | Unknown methods, cycles, invalid weights, and non-finite values fail closed. |
+| DES-WINDOW-002 | Normalize within one complete season-canonical cohort, then aggregate profiles into panes and panes into a selected view. | REQ-WINDOW-001; REQ-WINDOW-004 | Input ordering, ties, zero variance, incomplete cohorts, and family caps require deterministic tests. |
+| DES-WINDOW-003 | Keep score, confidence, and coverage independent; missing evidence never becomes zero performance. | REQ-WINDOW-002; REQ-WINDOW-004; REQ-WINDOW-008 | Required-profile and minimum-coverage failures withhold rank with typed reasons. |
+| DES-WINDOW-004 | Build one sealed league board before team focus; history and scenario documents reference board fingerprints. | REQ-WINDOW-001; REQ-WINDOW-005 | Focused NYR/SEA results retain original rank and board identity. |
+| DES-WINDOW-005 | Keep profile/scoring logic in `icelines-core`, source/artifact assembly in `icelines-fetch`, and rendering in thin adapters. | REQ-WINDOW-002; REQ-WINDOW-006 | Cross-surface fixtures compare one canonical document. |
+| DES-WINDOW-006 | Treat current 32-team execution and historical season-canonical execution as separate cohort gates. | REQ-WINDOW-001; REQ-WINDOW-007 | Historical replay never fabricates organizations absent from that season. |
+| DES-WINDOW-007 | Apply lifecycle as a separately sealed amendment over the immutable descriptor inventory; new authoring binds the amendment while replay ignores later policy changes. | REQ-WINDOW-003; REQ-WINDOW-009 | Deprecated/retired/demoted methods fail the appropriate new-authoring paths, supersession never aliases, and old boards replay unchanged. |
+
 ## Open Design Risks
 
 | Risk | Disposition |

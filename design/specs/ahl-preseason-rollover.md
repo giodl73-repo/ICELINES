@@ -44,7 +44,10 @@ label is not treated as contradictory evidence.
 Reviewed prior identities and camp candidates reconcile only by canonical NHL
 player ID. Name similarity never merges identities. Each output row preserves
 its origins, camp make/cut probabilities, modal NHL-roster status, waiver
-status, and blockers.
+status, exact primary and multi-position eligibility, projected score, and
+blockers. A sealed league camp forecast missing its primary-position
+eligibility is rejected as position-incomplete instead of being reconstructed
+from a coarse forward/defense/goalie group.
 
 Camp players outside the modal NHL roster count toward the projected affiliate
 pool only when waiver-exempt. Non-exempt players remain waiver-gated. Prior-only
@@ -58,6 +61,36 @@ and two goalies, with no unresolved prior identities or prior-player
 organization-status reviews. This is candidate-pool readiness only. The next
 adapter must still provide professional-game totals, development-rule facts,
 contracts, injuries, final assignment rights, and player projections.
+
+`ahl_preseason_league_facts_workboard.v1` is the NHL-ID-keyed composition
+boundary for that next adapter. It joins a complete league rollover to a
+matching professional-game ledger, retains every team/player row, and names
+missing identity review, organization status, waiver clearance, exact
+position, projected score, prospect status, recall readiness, professional
+games, final development-rule qualification, and assignment authority. It is
+a workboard, not an assignment model: even a fully measured candidate remains
+blocked until explicit assignment, prospect, and recall authorities exist.
+Goalies do not receive the dressed-skater development-rule blocker.
+
+The workboard carries a canonical SHA-256 fingerprint. A generated
+`ahl_preseason_league_facts_overlay.v1` draft exactly lists every canonical
+candidate but contains no facts and cannot be applied. A finalized overlay
+requires reviewer, RFC3339 timestamp, absolute evidence URLs, notes, and the
+exact source fingerprint. Each optional field clears only its corresponding
+blocker. Explicit `assigned_to_affiliate: false` changes the row to
+`not_assigned` and removes it from the candidate pool without relabeling it as
+departed or assigned to another league. Conflicting sealed facts fail closed.
+The application retains both source and result fingerprints.
+
+`ahl_preseason_league_projection_inputs.v1` lowers the reviewed application
+into the existing `AhlAffiliateProjectionInput` contract. Lowering requires a
+final professional-game policy, a matching threshold, and explicit dated AHL
+dressed-roster rule authority. A team is emitted only when it has no identity
+or player-fact blockers and the canonical affiliate builder can dress 12F/6D/2G
+while satisfying the development minimum. Every other organization remains a
+named failure with its blocker counts or optimizer reason; partial league
+success never shrinks the requested cohort silently. Team rollover sources and
+per-player review evidence survive in the preseason pool authority.
 
 ## Surface
 
@@ -87,6 +120,25 @@ icelines icecast affiliate-rollover `
   --camp-forecast camp-forecast.json `
   --config rollover-config.json `
   --json --out rollover.json
+
+icelines icecast affiliate-facts-board `
+  --rollover league-rollover.json `
+  --professional-games professional-games.json `
+  --json --out affiliate-facts-board.json
+
+icelines icecast affiliate-facts-draft `
+  --workboard affiliate-facts-board.json `
+  --out affiliate-facts-overlay-draft.json
+
+icelines icecast affiliate-facts-apply `
+  --workboard affiliate-facts-board.json `
+  --overlay affiliate-facts-overlay-final.json `
+  --json --out affiliate-facts-application.json
+
+icelines icecast affiliate-inputs-league `
+  --application affiliate-facts-application.json `
+  --rule ahl-development-rule-final.json `
+  --json --out affiliate-inputs-league.json
 ```
 
 The apply command emits a sourced `AhlPreseasonRolloverConfig`; it does not
@@ -94,3 +146,87 @@ produce a roster. The UI-neutral review and rollover documents are
 authoritative. `affiliate-status-show` is a read-only inspection renderer and
 recomputes blocker counts from the rows, warning when declared counts are
 stale. TUI and web review queues remain planned.
+
+`ahl_organization_status_ledger.v1` may prefill that review from dated official
+NHL landing current-team facts. Equality with the reviewed organization proves
+`retained`; a different team in the sealed target NHL cohort proves
+`departed`. Missing teams, stale facts, and teams outside the cohort remain
+unresolved. The ledger cannot emit `other_league`, infer status from camp
+absence, establish target NHL/AHL assignment, or finalize the review. Its
+application is fingerprint-bound to the exact league draft and preserves the
+human reviewer/timestamp gate.
+
+The official assignment evidence path begins with
+`ahl_transaction_snapshot.v1`. It captures the complete target-season AHL
+`ADD`/`DEL` stream, provider team catalog, page totals, URLs, and verified cache
+acquisition times. Provider identities remain outside canonical NHL identity
+until joined through the reviewed crosswalk. The source snapshot itself does
+not interpret a deletion as a destination, an addition as opening-night
+assignment, or absence as any status; those semantics belong to a separately
+versioned, cutoff-aware state ledger.
+
+`ahl_transaction_state_ledger.v1` supplies that interpretation without
+changing the workboard. It groups each provider player at a caller-selected
+cutoff and evaluates only the latest calendar-date event set. One latest ADD
+establishes assignment when there is no same-team ADD/DEL or multiple-ADD
+conflict; an ADD paired with a DEL from another club establishes the explicit
+destination. DEL-only latest sets establish removal from the observed AHL
+transaction state. Unknown event kinds, multiple ADD destinations, and
+same-team ADD/DEL sets remain typed ambiguity because the source does not
+provide a trusted intraday order. Canonical player identity comes only from
+the reviewed crosswalk, and organization comes only from the target-season
+affiliation catalog. Source, identity, affiliation, cutoff, method, result,
+and counts are fingerprint-bound and tamper-validated.
+
+The completed 2025-26 replay reduces 4,011 events to 1,161 latest player
+states: 695 assigned, 403 removed, and 63 ambiguous; 1,149 join to reviewed
+NHL identities and 12 retain only provider identity. The 2026-27 snapshot has
+zero source rows as of July 28, so its ledger contains zero players and clears
+no assignment blockers. Absence remains a no-read. A separate narrow
+`ahl_transaction_state_application.v1` supplies that narrow application. It
+records both input fingerprints and per-player method, cutoff, provider ID,
+source URL, state, and ledger fingerprint. An assigned state writes true only
+for the destination NHL organization's affiliate and false for other candidate
+appearances of the same canonical player; a removed state writes false.
+Ambiguous and provider-only rows are no-reads, existing conflicts fail, and no
+waiver or organization field changes. The real empty target ledger applies
+zero true and zero false facts, leaving all 1,371 assignment blockers intact.
+
+The real July 28 league run rebuilt the camp seal with 933/933 exact position
+lists, including 26 multi-position players, then composed all 32 affiliates.
+It exposes 1,371 viable candidates and zero facts-ready candidates. The
+remaining queues include 1,371 assignment, prospect-status, and recall-
+readiness authorities; 1,174 organization-status and projected-score facts;
+144 waiver clearances; zero exact-position gaps after official NHL landing
+position composition; 52 missing professional-game histories; and 1,202
+skaters awaiting final development-rule
+qualification. These counts describe missing authority and are not roster
+predictions.
+
+`ahl_waiver_clearance_review.v1` owns the distinct non-exempt assignment gate.
+The generated document is an exact-workboard queue and is deliberately
+non-applicable while `draft=true`. Finalization accepts only unique candidate
+keys with an explicit target-season `cleared` or `claimed` result, waiver date
+at or before cutoff, absolute evidence URL, note, reviewer, and RFC 3339 review
+time. A claim records false and retains the blocker; it never chooses the new
+organization or rewrites assignment. A clearance records true and clears only
+`WaiverClearance`. Every written player retains result, date, cutoff, review
+fingerprint, sources, and reviewer provenance.
+
+The existing ESPN transaction archive is insufficient as a clearance source:
+its completed 2025-26 envelope contains 109 placements and 10 claims but zero
+explicit `WaiverClear` rows, and the official AHL transaction snapshot contains
+no waiver descriptions. Placement followed by source silence therefore cannot
+be promoted. PuckPedia's waiver wire exposes explicit cleared/claimed history
+and its Capology page documents the 10-game/30-day re-waiver boundary, but its
+data API is private; IceLines uses a reviewed evidence import rather than an
+unsupported scraper. The July 28 target queue contains 144 candidates, zero
+resolutions, and 144 pending rows. Those decisions become available during
+camp cuts, not during the July offseason.
+
+The July 28 run used verified official landing acquisitions from July 25-26
+and covered all 1,282 canonical candidates.
+The organization-status ledger resolved 549 of 1,174 prior-only appearances:
+425 retained and 124 departed. The other 625 landing documents had no current
+NHL team and remain explicit review work; none were inferred as departed or as
+playing in another league.

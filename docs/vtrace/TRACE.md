@@ -309,6 +309,20 @@ pending implementation behavior is already shipped or proven.
 | R1-FOUND-02 | Layout local-state safety now traces through CR-020, EVID-CR-008, IF-LAYOUT-001, and VAL-010. |
 | R1-FOUND-03 | Named layout target posture remains pending through Verification target-claim rules and the Gap Trace instead of being treated as implemented. |
 
+## The Window trace
+
+| Requirement | Design / Interface | Work package | Verification | Validation | Status |
+|---|---|---|---|---|---|
+| REQ-WINDOW-001 | DES-WINDOW-002; DES-WINDOW-004; DES-WINDOW-006; IF-WINDOW-003 | WP-011 | EVID-WINDOW-SCORER; EVID-WINDOW-BOARD | VAL-013 | partial |
+| REQ-WINDOW-002 | DES-WINDOW-001; DES-WINDOW-003; DES-WINDOW-005; IF-WINDOW-001 | WP-011 | EVID-WINDOW-INVENTORY; EVID-WINDOW-CONTRACT; EVID-WINDOW-BOARD | VAL-013 | partial |
+| REQ-WINDOW-003 | DES-WINDOW-001; IF-WINDOW-002 | WP-011 | EVID-WINDOW-CONTRACT | VAL-013 | passed_with_risk |
+| REQ-WINDOW-004 | DES-WINDOW-002; DES-WINDOW-003; IF-WINDOW-002; IF-WINDOW-003 | WP-011 | EVID-WINDOW-SCORER | VAL-013 | passed |
+| REQ-WINDOW-005 | DES-WINDOW-004; IF-WINDOW-003 | WP-011 | EVID-WINDOW-HISTORY; EVID-WINDOW-SCENARIO | VAL-013 | passed_with_risk |
+| REQ-WINDOW-006 | DES-WINDOW-005; IF-WINDOW-004 | WP-011 | EVID-WINDOW-PARITY | VAL-013 | passed |
+| REQ-WINDOW-007 | DES-WINDOW-006; IF-WINDOW-003 | WP-011 | EVID-WINDOW-CALIBRATION | VAL-013 | partial |
+| REQ-WINDOW-008 | DES-WINDOW-003; IF-WINDOW-001 | WP-011 | EVID-WINDOW-INVENTORY; EVID-WINDOW-BOARD | VAL-013 | partial |
+| REQ-WINDOW-009 | DES-WINDOW-001; DES-WINDOW-007; IF-WINDOW-002; IF-WINDOW-005 | WP-011 | EVID-WINDOW-LIFECYCLE | VAL-013 | passed |
+
 ## Gap Trace
 
 | Gap | Affected Rows | Status / Disposition |

@@ -13,14 +13,15 @@ use icelines_core::{
 
 use crate::card_store::{
     default_scenario, fantasy_draft_card, fantasy_morning_card, fantasy_roster_card,
-    fantasy_trade_card, forecast_history_card, forecast_movement_card, season_simulation_card,
-    team_prognosis_card, CardStoreError,
+    fantasy_trade_card, forecast_history_card, forecast_movement_card, organization_window_card,
+    season_simulation_card, team_prognosis_card, CardStoreError,
 };
 use crate::state::WebState;
 use crate::templates::{
     FantasyRosterCardTemplate, GenericCardAlternative, GenericCardDecision, GenericCardMetricGroup,
-    GenericCardPlayerGroup, GenericCardTimelineGroup, GenericCardTimelineItem, TeamCardLineupGroup,
-    TeamCardLineupSlot, TeamCardMetric, TeamCardPlayer, TeamCardTemplate,
+    GenericCardPlayerGroup, GenericCardProvenanceGroup, GenericCardProvenanceItem,
+    GenericCardTimelineGroup, GenericCardTimelineItem, TeamCardLineupGroup, TeamCardLineupSlot,
+    TeamCardMetric, TeamCardPlayer, TeamCardTemplate,
 };
 
 #[derive(Debug, Default, Deserialize)]
@@ -70,6 +71,43 @@ pub async fn get_forecast_history_card_json(
             cached_response(axum::Json(card).into_response(), &fingerprint, &headers)
         }
         Err(error) => card_error(error, false),
+    }
+}
+
+pub async fn get_organization_window_card_json(
+    Path((season, team)): Path<(u32, String)>,
+    headers: HeaderMap,
+) -> Response {
+    match organization_window_card(season, &team) {
+        Ok(card) => {
+            let fingerprint = card.fingerprint.clone();
+            cached_response(axum::Json(card).into_response(), &fingerprint, &headers)
+        }
+        Err(error) => card_error(error, false),
+    }
+}
+
+pub async fn get_organization_window_card(
+    State(state): State<WebState>,
+    Path((season, team)): Path<(u32, String)>,
+    Query(query): Query<FantasyRosterCardQuery>,
+    headers: HeaderMap,
+) -> Response {
+    let card = match organization_window_card(season, &team) {
+        Ok(card) => card,
+        Err(error) => return card_error(error, true),
+    };
+    let active_label = state.config.read().await.active_label.clone();
+    let show_first = !matches!(query.page.as_deref(), Some("insider"));
+    let fingerprint = card.fingerprint.clone();
+    let template = project_fantasy_template(active_label, &card, show_first);
+    match template.render() {
+        Ok(html) => cached_response(Html(html).into_response(), &fingerprint, &headers),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {error}")),
+        )
+            .into_response(),
     }
 }
 
@@ -329,7 +367,7 @@ pub async fn get_team_card(
     }
 }
 
-fn cached_response(
+pub(crate) fn cached_response(
     mut response: Response,
     fingerprint: &str,
     request_headers: &HeaderMap,
@@ -524,7 +562,9 @@ fn project_fantasy_template(
         .iter()
         .map(|warning| warning.message.clone())
         .collect::<Vec<_>>();
+    let mut methodology_title = String::new();
     let mut limitations = Vec::new();
+    let mut provenance_groups = Vec::new();
     for section in &page.sections {
         match section {
             CardSectionView::Lineup(lineup) => {
@@ -628,17 +668,43 @@ fn project_fantasy_template(
                         .collect(),
                 });
             }
-            CardSectionView::StateNotice(notice) => warnings.extend(
-                notice
-                    .warnings
-                    .iter()
-                    .map(|warning| warning.message.clone()),
-            ),
+            CardSectionView::StateNotice(notice) => {
+                warnings.extend(
+                    notice
+                        .warnings
+                        .iter()
+                        .map(|warning| warning.message.clone()),
+                );
+                if let Some(detail) = &notice.detail {
+                    warnings.push(detail.clone());
+                }
+            }
             CardSectionView::Methodology(methodology) => {
+                methodology_title = methodology.title.clone();
                 limitations.extend(methodology.methods.iter().map(|method| {
                     format!("{} {} — {}", method.label, method.version, method.summary)
                 }));
                 limitations.extend(methodology.limitations.iter().cloned());
+            }
+            CardSectionView::Provenance(provenance) => {
+                provenance_groups.push(GenericCardProvenanceGroup {
+                    title: provenance.title.clone(),
+                    items: provenance
+                        .provenance_ids
+                        .iter()
+                        .filter_map(|id| card.provenance.iter().find(|item| item.id == *id))
+                        .map(|item| GenericCardProvenanceItem {
+                            label: item.label.clone(),
+                            authority: format!("{:?} · {:?}", item.source, item.state),
+                            observed_at: item
+                                .observed_at
+                                .map(|value| value.to_rfc3339())
+                                .unwrap_or_default(),
+                            fingerprint: item.fingerprint.clone().unwrap_or_default(),
+                            note: item.note.clone().unwrap_or_default(),
+                        })
+                        .collect(),
+                });
             }
             _ => {}
         }
@@ -705,6 +771,23 @@ fn project_fantasy_template(
             ),
             "The Tape",
         ),
+        CardKind::OrganizationWindow => (
+            "THE RINK · ORGANIZATION WINDOW",
+            "Organization Window card pages",
+            format!(
+                "/api/v1/cards/organization-window/{}/{team}",
+                card.context.view.window.season.0
+            ),
+            format!(
+                "/icecast/{}/{team}/window?page=window",
+                card.context.view.window.season.0
+            ),
+            format!(
+                "/icecast/{}/{team}/window?page=insider",
+                card.context.view.window.season.0
+            ),
+            "The Window",
+        ),
         CardKind::FantasyDraft => (
             "THE BENCH · FANTASY DRAFT",
             "Fantasy draft card pages",
@@ -764,7 +847,9 @@ fn project_fantasy_template(
         player_groups,
         timeline_groups,
         warnings,
+        methodology_title,
         limitations,
+        provenance_groups,
     }
 }
 
@@ -832,10 +917,13 @@ fn card_error(error: CardStoreError, html: bool) -> Response {
         | CardStoreError::UnsupportedSeasonSimulationTeam(_)
         | CardStoreError::UnsupportedForecastMovementTeam(_)
         | CardStoreError::UnsupportedForecastHistoryTeam(_)
+        | CardStoreError::UnsupportedOrganizationWindowTeam(_)
+        | CardStoreError::UnsupportedOrganizationWindowFrame(_)
         | CardStoreError::UnsupportedFantasyTeam(_)
         | CardStoreError::UnsupportedFantasyDraftTeam(_)
         | CardStoreError::UnsupportedFantasyMorningTeam(_)
         | CardStoreError::UnsupportedFantasyTradeTeam(_) => StatusCode::NOT_FOUND,
+        CardStoreError::InvalidOrganizationWindowCard(_) => StatusCode::INTERNAL_SERVER_ERROR,
     };
     if html {
         (

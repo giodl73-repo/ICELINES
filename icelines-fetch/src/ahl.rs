@@ -116,6 +116,8 @@ pub struct AhlProjectionPlayerEnrichment {
     pub recall_readiness: Option<f64>,
     #[serde(default)]
     pub professional_games_at_season_start: Option<u32>,
+    #[serde(default)]
+    pub development_rule_qualified: Option<bool>,
     #[serde(default = "default_true")]
     pub assigned_to_affiliate: bool,
     #[serde(default)]
@@ -501,6 +503,7 @@ pub enum AhlIdentityLeagueRoutineReviewKind {
     Conflicts,
     BirthDateCorrections,
     CollisionRemaps,
+    Rejections,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1449,7 +1452,8 @@ pub fn apply_ahl_identity_league_routine_review(
                     }
                     AhlIdentityLeagueRoutineReviewKind::Conflicts
                     | AhlIdentityLeagueRoutineReviewKind::BirthDateCorrections
-                    | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps => false,
+                    | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps
+                    | AhlIdentityLeagueRoutineReviewKind::Rejections => false,
                 }
         });
         if !eligible {
@@ -1465,7 +1469,8 @@ pub fn apply_ahl_identity_league_routine_review(
             }
             AhlIdentityLeagueRoutineReviewKind::Conflicts
             | AhlIdentityLeagueRoutineReviewKind::BirthDateCorrections
-            | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps => {
+            | AhlIdentityLeagueRoutineReviewKind::CollisionRemaps
+            | AhlIdentityLeagueRoutineReviewKind::Rejections => {
                 unreachable!("conflict reviews are rejected before routine league review")
             }
         };
@@ -2007,6 +2012,108 @@ pub fn build_ahl_identity_rejection_review(
     })
 }
 
+/// Atomically reject selected pending NHL identity mappings across a league
+/// envelope. Provider IDs may occur on multiple team rows after a trade; every
+/// occurrence is closed while the AHL player and season facts remain intact.
+pub fn apply_ahl_identity_league_rejection_review(
+    league: &AhlIdentityLeagueCrosswalkView,
+    provider_player_ids: &[String],
+    evidence_urls: &[String],
+    reviewer: impl Into<String>,
+    reviewed_at: impl Into<String>,
+    note: impl Into<String>,
+) -> Result<
+    (
+        AhlIdentityLeagueCrosswalkView,
+        AhlIdentityLeagueReviewDecisionsView,
+    ),
+    AhlFeedError,
+> {
+    validate_ahl_identity_league_crosswalk(league)?;
+    let reviewer = reviewer.into();
+    let reviewed_at = reviewed_at.into();
+    let note = note.into();
+    let requested_ids = provider_player_ids.iter().cloned().collect::<BTreeSet<_>>();
+    if provider_player_ids.is_empty()
+        || requested_ids.len() != provider_player_ids.len()
+        || requested_ids.iter().any(|id| id.trim().is_empty())
+    {
+        return Err(AhlFeedError::Validation(
+            "league identity rejection requires unique non-empty provider player IDs".to_owned(),
+        ));
+    }
+    let mut output = league.clone();
+    let mut matched_ids = BTreeSet::new();
+    let mut batches = Vec::new();
+    let mut skipped_teams = Vec::new();
+    let mut applied_decisions = 0usize;
+    for crosswalk in &mut output.crosswalks {
+        let team_ids = crosswalk
+            .rows
+            .iter()
+            .filter(|row| row.review_status == AhlIdentityReviewStatus::Pending)
+            .map(|row| row.provider_player_id.clone())
+            .filter(|id| requested_ids.contains(id))
+            .collect::<BTreeSet<_>>();
+        if team_ids.is_empty() {
+            skipped_teams.push(crosswalk.ahl_team.clone());
+            continue;
+        }
+        let team_ids = team_ids.into_iter().collect::<Vec<_>>();
+        let decisions = build_ahl_identity_rejection_review(
+            crosswalk,
+            &team_ids,
+            evidence_urls,
+            reviewer.clone(),
+            reviewed_at.clone(),
+            note.clone(),
+        )?;
+        matched_ids.extend(team_ids);
+        applied_decisions += decisions.decisions.len();
+        *crosswalk = apply_ahl_identity_review_decisions(crosswalk, &decisions)?;
+        batches.push(decisions);
+    }
+    if matched_ids != requested_ids {
+        let missing = requested_ids
+            .difference(&matched_ids)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(AhlFeedError::Validation(format!(
+            "league identity rejection found no pending row for provider player(s) {missing}"
+        )));
+    }
+    let eligible_teams = batches.len();
+    output.disclosures.push(format!(
+        "Applied targeted league rejection review: {} decision(s) across {} eligible team(s) by {} at {}; {} team(s) had no selected pending row.",
+        applied_decisions,
+        eligible_teams,
+        reviewer,
+        reviewed_at,
+        skipped_teams.len()
+    ));
+    Ok((
+        output,
+        AhlIdentityLeagueReviewDecisionsView {
+            schema: AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA.to_owned(),
+            season: league.season,
+            provider: league.provider.clone(),
+            roster_fetched_at: league.roster_fetched_at.clone(),
+            kind: AhlIdentityLeagueRoutineReviewKind::Rejections,
+            reviewer,
+            reviewed_at,
+            eligible_teams,
+            skipped_teams,
+            applied_decisions,
+            batches,
+            disclosures: vec![
+                "A rejection closes only the NHL identity mapping; it never removes the AHL player or season facts.".to_owned(),
+                "League rejection review is atomic: every requested provider ID must have a pending occurrence, or no updated envelope is returned.".to_owned(),
+            ],
+        },
+    ))
+}
+
 /// Generate a deliberately non-applicable decision draft. Optional lanes are
 /// proposals only and retain their distinct review semantics.
 pub fn build_ahl_identity_review_draft_with_options(
@@ -2409,6 +2516,8 @@ pub struct AhlProjectionPlayerFacts {
     pub recall_readiness: Option<f64>,
     #[serde(default)]
     pub professional_games_at_season_start: Option<u32>,
+    #[serde(default)]
+    pub development_rule_qualified: Option<bool>,
     #[serde(default = "default_true")]
     pub assigned_to_affiliate: bool,
     #[serde(default)]
@@ -2748,6 +2857,142 @@ impl AhlFeedClient {
             .into_iter()
             .find(|row| row.name == target)
             .ok_or(AhlFeedError::SeasonNotFound(target))
+    }
+
+    pub(crate) async fn regular_season_identity(
+        &self,
+        season: u32,
+    ) -> Result<(String, String), AhlFeedError> {
+        let resolved = self.resolve_regular_season(season).await?;
+        Ok((resolved.id, resolved.name))
+    }
+
+    pub(crate) async fn official_team_identities(
+        &self,
+        season: u32,
+        provider_season_id: &str,
+    ) -> Result<Vec<(String, String, String)>, AhlFeedError> {
+        Ok(self
+            .fetch_teams(season, provider_season_id)
+            .await?
+            .into_iter()
+            .map(|team| (team.id, team.team_code, team.name))
+            .collect())
+    }
+
+    pub(crate) async fn official_feed_value(
+        &self,
+        dataset_id: &str,
+        params: &[(&str, &str)],
+    ) -> Result<Value, AhlFeedError> {
+        self.get_feed(dataset_id, params).await
+    }
+
+    pub(crate) fn official_feed_url(&self, params: &[(&str, &str)]) -> String {
+        self.feed_url(params)
+    }
+
+    pub(crate) async fn official_feed_batch_values(
+        &self,
+        requests: Vec<(String, String)>,
+        max_concurrency: usize,
+    ) -> Result<Vec<(String, Value, String)>, AhlFeedError> {
+        if let Some((cache_root, force)) = &self.cache {
+            let source_by_dataset = requests
+                .iter()
+                .map(|(dataset_id, url)| (dataset_id.as_str(), url.as_str()))
+                .collect::<BTreeMap<_, _>>();
+            let outcomes = crate::fletch::fetch_generic_http_batch_async(
+                requests.clone(),
+                cache_root.clone(),
+                *force,
+                max_concurrency,
+            )
+            .await;
+            let manifest = crate::fletch::read_fletch_cache_manifest(
+                &crate::fletch::fletch_cache_manifest_path(cache_root),
+            )
+            .map_err(|error| AhlFeedError::Schema(format!("FLETCH AHL manifest: {error:#}")))?;
+            let verified_entries = manifest
+                .entries
+                .iter()
+                .filter(|entry| {
+                    entry.verified && source_by_dataset.contains_key(entry.dataset_id.as_str())
+                })
+                .collect::<Vec<_>>();
+            let fetched_at = verified_entries
+                .iter()
+                .map(|entry| (entry.dataset_id.as_str(), entry.fetched_at_ms))
+                .collect::<BTreeMap<_, _>>();
+            if fetched_at.len() != verified_entries.len() {
+                return Err(AhlFeedError::Schema(
+                    "duplicate verified FLETCH acquisition metadata in AHL transaction batch"
+                        .into(),
+                ));
+            }
+            let mut values = Vec::with_capacity(outcomes.len());
+            for (dataset_id, outcome) in outcomes {
+                let bytes = outcome.map_err(|error| AhlFeedError::Request {
+                    url: source_by_dataset
+                        .get(dataset_id.as_str())
+                        .copied()
+                        .unwrap_or(dataset_id.as_str())
+                        .to_owned(),
+                    detail: format!("FLETCH batch acquisition failed: {error:#}"),
+                })?;
+                let body = std::str::from_utf8(&bytes).map_err(|error| {
+                    AhlFeedError::Schema(format!("{dataset_id} returned non-UTF-8 bytes: {error}"))
+                })?;
+                let milliseconds = fetched_at.get(dataset_id.as_str()).ok_or_else(|| {
+                    AhlFeedError::Schema(format!(
+                        "verified FLETCH acquisition metadata missing for {dataset_id}"
+                    ))
+                })?;
+                let milliseconds = i64::try_from(*milliseconds).map_err(|_| {
+                    AhlFeedError::Schema(format!(
+                        "invalid FLETCH acquisition time for {dataset_id}"
+                    ))
+                })?;
+                let timestamp =
+                    chrono::DateTime::from_timestamp_millis(milliseconds).ok_or_else(|| {
+                        AhlFeedError::Schema(format!(
+                            "invalid FLETCH acquisition time for {dataset_id}"
+                        ))
+                    })?;
+                values.push((dataset_id, parse_jsonp(body)?, timestamp.to_rfc3339()));
+            }
+            values.sort_by(|left, right| left.0.cmp(&right.0));
+            return Ok(values);
+        }
+
+        let mut values = Vec::with_capacity(requests.len());
+        for (dataset_id, url) in requests {
+            let response =
+                self.client
+                    .get(&url)
+                    .send()
+                    .await
+                    .map_err(|error| AhlFeedError::Request {
+                        url: url.clone(),
+                        detail: error.to_string(),
+                    })?;
+            let status = response.status();
+            if !status.is_success() {
+                return Err(AhlFeedError::Http {
+                    status: status.as_u16(),
+                    url,
+                });
+            }
+            let body = response
+                .text()
+                .await
+                .map_err(|error| AhlFeedError::Request {
+                    url: url.clone(),
+                    detail: error.to_string(),
+                })?;
+            values.push((dataset_id, parse_jsonp(&body)?, Utc::now().to_rfc3339()));
+        }
+        Ok(values)
     }
 
     async fn fetch_teams(
@@ -3091,6 +3336,7 @@ pub fn affiliate_projection_input_from_snapshot(
                 prospect: enrichment.prospect,
                 recall_readiness: enrichment.recall_readiness,
                 professional_games_at_season_start: enrichment.professional_games_at_season_start,
+                development_rule_qualified: enrichment.development_rule_qualified,
                 assigned_to_affiliate: enrichment.assigned_to_affiliate,
                 waiver_required: enrichment.waiver_required,
                 source_league: "AHL".to_owned(),
@@ -3233,6 +3479,7 @@ pub fn affiliate_projection_input_from_reviewed_crosswalk(
                 prospect: fact.prospect,
                 recall_readiness: fact.recall_readiness,
                 professional_games_at_season_start: fact.professional_games_at_season_start,
+                development_rule_qualified: fact.development_rule_qualified,
                 assigned_to_affiliate: fact.assigned_to_affiliate,
                 waiver_required: fact.waiver_required,
             })
@@ -4145,6 +4392,7 @@ mod tests {
             prospect: true,
             recall_readiness: Some(0.65),
             professional_games_at_season_start: Some(80),
+            development_rule_qualified: Some(true),
             assigned_to_affiliate: true,
             waiver_required: false,
         };
@@ -4771,6 +5019,7 @@ mod tests {
             prospect: true,
             recall_readiness: Some(0.65),
             professional_games_at_season_start: Some(80),
+            development_rule_qualified: Some(true),
             assigned_to_affiliate: true,
             waiver_required: false,
         };
@@ -4952,6 +5201,51 @@ mod tests {
             league.crosswalks[0].rows[0].review_status,
             AhlIdentityReviewStatus::Pending
         );
+    }
+
+    #[test]
+    fn league_rejection_review_closes_mapping_without_removing_ahl_player() {
+        let mut snapshot = identity_snapshot();
+        let mut traded_appearance = snapshot.teams[0].clone();
+        traded_appearance.provider_team_id = "308".to_owned();
+        traded_appearance.team_code = "BRI".to_owned();
+        traded_appearance.team_name = "Bridgeport Islanders".to_owned();
+        traded_appearance.nickname = "Islanders".to_owned();
+        traded_appearance.nhl_affiliate = Some("NYI".to_owned());
+        snapshot.teams.push(traded_appearance);
+        let mut catalog = identity_catalog();
+        catalog.candidates.clear();
+        let league = build_ahl_identity_league_crosswalk(&snapshot, &catalog).unwrap();
+        let evidence = vec!["https://example.test/ahl/player-10618".to_owned()];
+        let (reviewed, audit) = apply_ahl_identity_league_rejection_review(
+            &league,
+            &["10618".to_owned()],
+            &evidence,
+            "League Exception Reviewer",
+            "2026-07-28T23:00:00Z",
+            "Official AHL evidence retains the player but no unique canonical NHL identity is available.",
+        )
+        .unwrap();
+        assert_eq!(audit.kind, AhlIdentityLeagueRoutineReviewKind::Rejections);
+        assert_eq!(audit.eligible_teams, 2);
+        assert_eq!(audit.applied_decisions, 2);
+        assert!(reviewed.crosswalks.iter().all(|crosswalk| {
+            crosswalk.rows.len() == 1
+                && crosswalk.rows[0].review_status == AhlIdentityReviewStatus::Rejected
+                && crosswalk.rows[0].nhl_player_id.is_none()
+        }));
+        assert!(apply_ahl_identity_league_rejection_review(
+            &league,
+            &["missing".to_owned()],
+            &evidence,
+            "League Exception Reviewer",
+            "2026-07-28T23:00:00Z",
+            "Unknown rows must fail atomically.",
+        )
+        .is_err());
+        assert!(league.crosswalks.iter().all(|crosswalk| {
+            crosswalk.rows[0].review_status == AhlIdentityReviewStatus::Pending
+        }));
     }
 
     #[test]

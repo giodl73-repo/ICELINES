@@ -1408,6 +1408,30 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Reject selected pending mappings across a league identity envelope.
+    #[command(name = "affiliate-review-reject-league")]
+    AffiliateReviewRejectLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// AHL provider player ID to reject; repeat for multiple identities.
+        #[arg(long, value_name = "ID", required = true)]
+        provider_player_id: Vec<String>,
+        #[arg(long = "evidence-url", value_name = "URL")]
+        evidence_urls: Vec<String>,
+        #[arg(long)]
+        reviewer: String,
+        #[arg(long)]
+        reviewed_at: String,
+        /// Evidence-backed explanation; AHL player facts remain retained.
+        #[arg(long)]
+        note: String,
+        #[arg(long, value_name = "PATH")]
+        decisions_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Aggregate team-season crosswalks into league coverage and exception groups.
     #[command(name = "affiliate-review-league")]
     AffiliateReviewLeague {
@@ -1470,8 +1494,125 @@ pub enum IceCastSubcommand {
         camp: PathBuf,
         #[arg(long, value_name = "NHL_TEAM")]
         nhl_team: String,
-        #[arg(long, value_name = "AHL_TEAM")]
+        /// Prior-snapshot AHL team; target affiliate is supplied by rollover config.
+        #[arg(long, value_name = "PRIOR_AHL_TEAM")]
         ahl_team: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Generate the non-applicable organization-status draft for every camp team.
+    #[command(name = "affiliate-status-draft-league")]
+    AffiliateStatusDraftLeague {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Resolve organization status from dated official NHL current-team facts.
+    #[command(name = "affiliate-status-evidence")]
+    AffiliateStatusEvidence {
+        /// Exact all-team organization-status review draft.
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        /// Official NHL landing career-history cache with organization facts.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Evaluation cutoff in RFC 3339 form.
+        #[arg(long, value_name = "RFC3339")]
+        as_of: String,
+        /// Maximum accepted age of each official landing fact.
+        #[arg(long, default_value_t = 14)]
+        maximum_fact_age_days: u32,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Prefill a draft review with exact resolved organization-status evidence.
+    #[command(name = "affiliate-status-evidence-apply")]
+    AffiliateStatusEvidenceApply {
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Interpret explicit official AHL ADD/DEL events as cutoff roster state.
+    #[command(name = "affiliate-transaction-state")]
+    AffiliateTransactionState {
+        /// Sealed `ahl_transaction_snapshot.v1` for the target season.
+        #[arg(long, value_name = "PATH")]
+        transactions: PathBuf,
+        /// Reviewed current or prior AHL provider-to-NHL identity envelope.
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Dated target-season NHL-to-AHL affiliation catalog.
+        #[arg(long, value_name = "PATH")]
+        affiliations: PathBuf,
+        /// Include only source events on or before this YYYY-MM-DD date.
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        cutoff: String,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply only canonical, unambiguous transaction state to an exact workboard.
+    #[command(name = "affiliate-transaction-state-apply")]
+    AffiliateTransactionStateApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Generate the exact pending waiver-result queue for a preseason workboard.
+    #[command(name = "affiliate-waivers-draft")]
+    AffiliateWaiversDraft {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        cutoff: String,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Finalize sourced cleared/claimed decisions against an exact waiver draft.
+    #[command(name = "affiliate-waivers-finalize")]
+    AffiliateWaiversFinalize {
+        #[arg(long, value_name = "PATH")]
+        draft: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        decisions: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply a finalized exact waiver review to its source workboard.
+    #[command(name = "affiliate-waivers-apply")]
+    AffiliateWaiversApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long)]
+        json: bool,
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
@@ -1501,6 +1642,240 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Atomically apply finalized league organization-status review children.
+    #[command(name = "affiliate-status-apply-league")]
+    AffiliateStatusApplyLeague {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build a fail-closed start-of-season professional-game ledger.
+    #[command(name = "affiliate-professional-games")]
+    AffiliateProfessionalGames {
+        /// Fully reviewed all-league AHL identity envelope.
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Official NHL landing career-history cache.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Reviewed league-inclusion policy for the target AHL season.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        /// Complete target-season camp pool used to add canonical candidates absent from prior AHL rosters.
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build confidence-weighted prior-season AHL player values.
+    #[command(name = "affiliate-values")]
+    AffiliateValues {
+        /// Official prior-season all-league AHL roster/stats snapshot.
+        #[arg(long, value_name = "PATH")]
+        snapshot: PathBuf,
+        /// Fully reviewed all-league AHL identity envelope.
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        /// Versioned AHL player-value policy.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Fill only missing workboard scores from an exact AHL value ledger.
+    #[command(name = "affiliate-values-apply")]
+    AffiliateValuesApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Fit paired career translations and fill only values missing direct AHL evidence.
+    #[command(name = "affiliate-values-cross-league")]
+    AffiliateValuesCrossLeague {
+        /// A raw workboard or prior machine-application artifact containing one.
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        /// Official NHL landing career-history cache used for calibration and player evidence.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Versioned cross-league calibration and shrinkage policy.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply a sealed cross-league value ledger to its exact source workboard.
+    #[command(name = "affiliate-values-cross-league-apply")]
+    AffiliateValuesCrossLeagueApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Classify operational organizational-prospect status from official age and NHL workload.
+    #[command(name = "affiliate-prospects")]
+    AffiliateProspects {
+        /// A raw workboard or a prior machine-application artifact containing one.
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        /// Official NHL landing career-history cache.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Versioned organizational-prospect population policy.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Fill only missing prospect-status facts from an exact prospect ledger.
+    #[command(name = "affiliate-prospects-apply")]
+    AffiliateProspectsApply {
+        /// The exact workboard used to construct the prospect ledger.
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Estimate confidence-aware AHL-to-NHL recall readiness.
+    #[command(name = "affiliate-readiness")]
+    AffiliateReadiness {
+        /// A raw workboard or a prior machine-application artifact containing one.
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        /// Official NHL landing career-history cache.
+        #[arg(long, value_name = "PATH")]
+        career_history: PathBuf,
+        /// Sealed all-32 training-camp league forecast.
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        /// Versioned recall-readiness evaluation policy.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Fill only missing recall-readiness facts from an exact readiness ledger.
+    #[command(name = "affiliate-readiness-apply")]
+    AffiliateReadinessApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compose a league-wide preseason affiliate facts-readiness workboard.
+    #[command(name = "affiliate-facts-board")]
+    AffiliateFactsBoard {
+        /// Complete `ahl_preseason_league_rollover.v1` artifact.
+        #[arg(long, value_name = "PATH")]
+        rollover: PathBuf,
+        /// Matching `ahl_professional_game_ledger.v2` artifact.
+        #[arg(long, value_name = "PATH")]
+        professional_games: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Inspect any raw or nested preseason facts workboard and optionally gate readiness.
+    #[command(name = "affiliate-facts-status")]
+    AffiliateFactsStatus {
+        /// Raw workboard or any machine application containing `workboard`.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Fail unless every remaining candidate is facts-ready with no blockers.
+        #[arg(long)]
+        require_ready: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Generate a non-applicable player-facts review draft from a sealed workboard.
+    #[command(name = "affiliate-facts-draft")]
+    AffiliateFactsDraft {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply finalized, source-backed player facts to an exact preseason workboard.
+    #[command(name = "affiliate-facts-apply")]
+    AffiliateFactsApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        overlay: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Lower facts-ready teams into canonical preseason affiliate projection inputs.
+    #[command(name = "affiliate-inputs-league")]
+    AffiliateInputsLeague {
+        #[arg(long, value_name = "PATH")]
+        application: PathBuf,
+        /// Final target-season dressed-roster development rule authority.
+        #[arg(long, value_name = "PATH")]
+        rule: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply a final professional-game ledger to separate team projection facts.
+    #[command(name = "affiliate-professional-games-apply")]
+    AffiliateProfessionalGamesApply {
+        #[arg(long, value_name = "PATH")]
+        crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ledger: PathBuf,
+        /// JSON array of projection facts keyed by AHL provider player ID.
+        #[arg(long, value_name = "PATH")]
+        facts: PathBuf,
+        #[arg(long, value_name = "NHL_TEAM")]
+        nhl_team: String,
+        #[arg(long, value_name = "AHL_TEAM")]
+        ahl_team: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Join reviewed AHL identities to separate projection facts.
     #[command(name = "affiliate-input")]
     AffiliateInput {
@@ -1510,7 +1885,7 @@ pub enum IceCastSubcommand {
         /// Fully reviewed `ahl_identity_crosswalk.v1` document.
         #[arg(long, value_name = "PATH")]
         crosswalk: PathBuf,
-        /// JSON array of projection facts keyed by AHL provider player ID.
+        /// JSON array of projection facts, or a final professional-game facts application.
         #[arg(long, value_name = "PATH")]
         facts: PathBuf,
         #[arg(long, value_name = "NHL_TEAM")]
@@ -1536,6 +1911,41 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         camp_forecast: PathBuf,
         /// Target-season rollover authority, sources, and prior-player decisions.
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Draft exact prior/target affiliate bindings for every camp team.
+    #[command(name = "affiliate-rollover-config-league")]
+    AffiliateRolloverConfigLeague {
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        prior_affiliations: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        affiliations: PathBuf,
+        #[arg(long)]
+        as_of: String,
+        #[arg(long = "source-url", value_name = "URL", required = true)]
+        source_urls: Vec<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Reconcile every sealed league camp forecast with reviewed prior affiliates.
+    #[command(name = "affiliate-rollover-league")]
+    AffiliateRolloverLeague {
+        #[arg(long, value_name = "PATH")]
+        prior_snapshot: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        league_crosswalk: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        camp_forecast: PathBuf,
+        /// League config with one explicit target/prior affiliation per camp team.
         #[arg(long, value_name = "PATH")]
         config: PathBuf,
         #[arg(long)]
@@ -1653,6 +2063,9 @@ pub enum IceCastSubcommand {
         /// Forecast evidence mode: off freezes roster strength; rolling uses only earlier results.
         #[arg(long, default_value = "off", value_parser = ["off", "rolling"])]
         replay_mode: String,
+        /// Evaluation counterfactual: omit personnel evidence strictly after this date.
+        #[arg(long)]
+        ignore_replay_personnel_after: Option<chrono::NaiveDate>,
         /// Condition a rolling replay on final results through this date, then simulate the remainder.
         #[arg(long)]
         through: Option<chrono::NaiveDate>,
@@ -1683,6 +2096,382 @@ pub enum IceCastSubcommand {
         /// Evidence timestamp for deterministic output.
         #[arg(long)]
         generated_at: Option<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Inspect a sealed all-team organization Window board or one team detail.
+    Window {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Focus one team while retaining the sealed league artifact as authority.
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        json: bool,
+        /// Export a durable Markdown report from the sealed board.
+        #[arg(long, conflicts_with = "json")]
+        markdown: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build the official balanced Window from sealed IceLines source documents.
+    #[command(name = "window-build")]
+    WindowBuild {
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long)]
+        as_of: chrono::NaiveDate,
+        #[arg(long)]
+        generated_at: String,
+        /// Read one sealed, portable Window source package instead of loose documents.
+        #[arg(long, value_name = "PATH", conflicts_with_all = ["team_season_forecast", "team_game_forecast", "team_lineups", "ahl_affiliates", "organization_lineups", "prospect_program", "prospect_conversion", "training_camp", "schedule_rest"])]
+        source_package: Option<PathBuf>,
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        team_season_forecast: Option<PathBuf>,
+        /// Derive league schedule-fatigue profiles from a sealed game forecast.
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        team_game_forecast: Option<PathBuf>,
+        #[arg(
+            long = "team-lineup",
+            value_name = "PATH",
+            conflicts_with = "source_package"
+        )]
+        team_lineups: Vec<PathBuf>,
+        /// Compose organization lineups in core from sealed AHL projections.
+        #[arg(
+            long = "ahl-affiliate",
+            value_name = "PATH",
+            conflicts_with = "source_package"
+        )]
+        ahl_affiliates: Vec<PathBuf>,
+        #[arg(
+            long = "organization-lineup",
+            value_name = "PATH",
+            conflicts_with = "source_package"
+        )]
+        organization_lineups: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        prospect_program: Option<PathBuf>,
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        prospect_conversion: Option<PathBuf>,
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        training_camp: Option<PathBuf>,
+        #[arg(
+            long = "schedule-rest",
+            value_name = "PATH",
+            conflicts_with = "source_package"
+        )]
+        schedule_rest: Vec<PathBuf>,
+        /// Refuse to write unless every organization has an eligible rank.
+        #[arg(long)]
+        require_ranked: bool,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Seal loose Window authorities into one replayable, cache-friendly package.
+    #[command(name = "window-source-package")]
+    WindowSourcePackage {
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long)]
+        as_of: chrono::NaiveDate,
+        #[arg(long, value_name = "PATH")]
+        team_season_forecast: Option<PathBuf>,
+        /// Derive league schedule-fatigue profiles from a sealed game forecast.
+        #[arg(long, value_name = "PATH")]
+        team_game_forecast: Option<PathBuf>,
+        /// Build all 32 team lineups from the configured snapshot cache.
+        #[arg(long, conflicts_with = "team_lineups")]
+        cache_team_lineups: bool,
+        /// Completed production season used by cache-built player scores.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(
+            long = "team-lineup",
+            value_name = "PATH",
+            conflicts_with = "cache_team_lineups"
+        )]
+        team_lineups: Vec<PathBuf>,
+        /// Compose organization lineups in core from sealed AHL projections.
+        #[arg(long = "ahl-affiliate", value_name = "PATH")]
+        ahl_affiliates: Vec<PathBuf>,
+        /// Build all affiliates from one fully reviewed league projection-input artifact.
+        #[arg(long, value_name = "PATH", conflicts_with = "ahl_affiliates")]
+        ahl_projection_inputs: Option<PathBuf>,
+        #[arg(long = "organization-lineup", value_name = "PATH")]
+        organization_lineups: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        prospect_program: Option<PathBuf>,
+        /// Build the prospect program from training camp and the configured career cache.
+        #[arg(long, conflicts_with = "prospect_program", requires = "training_camp")]
+        cache_prospect_program: bool,
+        /// Override the official career cache for camp-completed goalies or prospects.
+        #[arg(long, value_name = "PATH")]
+        career_history: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        prospect_conversion: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        training_camp: Option<PathBuf>,
+        #[arg(long = "schedule-rest", value_name = "PATH")]
+        schedule_rest: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Refresh cache-built NHL lineups inside an existing sealed Window package.
+    #[command(name = "window-source-refresh-lineups")]
+    WindowSourceRefreshLineups {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Completed production season used by cache-built player scores.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// Override the package's training-camp authority.
+        #[arg(long, value_name = "PATH")]
+        training_camp: Option<PathBuf>,
+        /// Override the configured official NHL landing career cache.
+        #[arg(long, value_name = "PATH")]
+        career_history: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Refresh reviewed AHL affiliates inside an existing sealed Window package.
+    #[command(name = "window-source-refresh-affiliates")]
+    WindowSourceRefreshAffiliates {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Complete league artifact emitted by `affiliate-preseason-projection-inputs`.
+        #[arg(
+            long,
+            value_name = "PATH",
+            conflicts_with = "ahl_facts_application",
+            required_unless_present = "ahl_facts_application"
+        )]
+        ahl_projection_inputs: Option<PathBuf>,
+        /// Final reviewed facts application to lower and refresh atomically.
+        #[arg(
+            long,
+            value_name = "PATH",
+            conflicts_with = "ahl_projection_inputs",
+            requires = "ahl_development_rule"
+        )]
+        ahl_facts_application: Option<PathBuf>,
+        /// Final target-season AHL development rule used to lower reviewed facts.
+        #[arg(long, value_name = "PATH", requires = "ahl_facts_application")]
+        ahl_development_rule: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Audit all 17 balanced profiles across the canonical league source package.
+    #[command(name = "window-source-audit")]
+    WindowSourceAudit {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        generated_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Project one team from a sealed Window board into `card_document.v1`.
+    #[command(name = "window-card")]
+    WindowCard {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        team_name: Option<String>,
+        #[arg(long)]
+        generated_at: Option<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compare two sealed, method-compatible Window checkpoints.
+    #[command(name = "window-movement")]
+    WindowMovement {
+        #[arg(long, value_name = "PATH")]
+        earlier: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        later: PathBuf,
+        /// Reviewed bridge for an intentional manifest or method upgrade.
+        #[arg(long, value_name = "PATH")]
+        bridge: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Attribute checkpoint movement to dated personnel evidence through a sealed scenario.
+    #[command(name = "window-personnel-attribution")]
+    WindowPersonnelAttribution {
+        #[arg(long, value_name = "PATH")]
+        earlier: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        later: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        movement: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build a later-checkpoint personnel counterfactual input from paired IceReplay evidence.
+    #[command(name = "window-personnel-input-build")]
+    WindowPersonnelInputBuild {
+        #[arg(long, value_name = "PATH")]
+        actual_forecast: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        counterfactual_board: PathBuf,
+        #[arg(long)]
+        earlier_as_of: chrono::NaiveDate,
+        #[arg(long)]
+        later_as_of: chrono::NaiveDate,
+        #[arg(long)]
+        attribution_id: String,
+        #[arg(long)]
+        scenario_id: String,
+        #[arg(long)]
+        rationale: String,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Summarize a typed personnel movement artifact for durable evidence review.
+    #[command(name = "window-personnel-summary")]
+    WindowPersonnelSummary {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rebuild a sealed Window board under a reviewed target manifest.
+    #[command(name = "window-rebase")]
+    WindowRebase {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        target_manifest: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        bridge: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build Window history from two or more comparable checkpoints.
+    #[command(name = "window-history")]
+    WindowHistory {
+        #[arg(long = "input", required = true, value_name = "PATH")]
+        inputs: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compare a same-context baseline and scenario Window board.
+    #[command(name = "window-scenario")]
+    WindowScenario {
+        #[arg(long, value_name = "PATH")]
+        baseline: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        scenario: PathBuf,
+        #[arg(long)]
+        scenario_id: String,
+        /// Typed upstream authority document; repeat for combined scenarios.
+        #[arg(long = "authority", value_name = "PATH")]
+        authorities: Vec<PathBuf>,
+        /// Derive typed authorities from a team-season forecast; repeat as needed.
+        #[arg(long = "team-season-authority", value_name = "PATH")]
+        team_season_authorities: Vec<PathBuf>,
+        /// Derive typed authorities from a training-camp league forecast.
+        #[arg(long = "training-camp-authority", value_name = "PATH")]
+        training_camp_authorities: Vec<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Run a seeded raw-profile scenario distribution through the full Window scorer.
+    #[command(name = "window-scenario-distribute")]
+    WindowScenarioDistribute {
+        #[arg(long, value_name = "PATH")]
+        baseline: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Calibrate one Frame across frozen rolling-origin inputs.
+    #[command(name = "window-calibrate")]
+    WindowCalibrate {
+        #[arg(long)]
+        target: String,
+        #[arg(long = "origin", required = true, value_name = "PATH")]
+        origins: Vec<PathBuf>,
+        #[arg(long, default_value_t = 3)]
+        minimum_origins: usize,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Evaluate frozen training, validation, and retrospective-holdout origins.
+    #[command(name = "window-evaluate")]
+    WindowEvaluate {
+        #[arg(long)]
+        target: String,
+        /// Labeled origin document; repeat in any order.
+        #[arg(long = "origin", required = true, value_name = "PATH")]
+        origins: Vec<PathBuf>,
+        #[arg(long, default_value_t = 2)]
+        minimum_training_origins: usize,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Fetch and seal an official final-standings outcome snapshot.
+    #[command(name = "window-standings")]
+    WindowStandings {
+        #[arg(long)]
+        target_season: u32,
+        #[arg(long)]
+        date: String,
+        #[arg(long)]
+        captured_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build one point-in-time historical Window origin from bundled facts.
+    #[command(name = "window-origin-build")]
+    WindowOriginBuild {
+        #[arg(long)]
+        source_season: u32,
+        #[arg(long)]
+        target_season: u32,
+        #[arg(long)]
+        as_of: String,
+        #[arg(long)]
+        generated_at: String,
+        /// One of: training, validation, retrospective_holdout.
+        #[arg(long)]
+        role: String,
+        #[arg(long, value_name = "PATH")]
+        standings: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Freeze an outcome-free future Window holdout before results are observable.
+    #[command(name = "window-holdout-register")]
+    WindowHoldoutRegister {
+        #[arg(long)]
+        source_season: u32,
+        #[arg(long)]
+        target_season: u32,
+        #[arg(long)]
+        feature_cutoff: String,
+        #[arg(long)]
+        outcome_not_before: String,
+        #[arg(long)]
+        registered_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Score the exact registered future Window holdout after outcomes are eligible.
+    #[command(name = "window-holdout-score")]
+    WindowHoldoutScore {
+        #[arg(long, value_name = "PATH")]
+        registration: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        standings: PathBuf,
+        #[arg(long)]
+        scored_at: String,
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
@@ -2143,6 +2932,570 @@ mod tui_surface_tests {
             .expect("clap surface test");
     }
 
+    #[test]
+    fn l0_window_bridge_commands_parse() {
+        with_large_stack(|| {
+            let source_package = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--season",
+                "20262027",
+                "--as-of",
+                "2026-10-01",
+                "--team-game-forecast",
+                "games.json",
+                "--cache-team-lineups",
+                "--stats-season",
+                "20252026",
+                "--ahl-affiliate",
+                "hartford.json",
+                "--out",
+                "window-sources.json",
+            ])
+            .expect("Window source package should parse");
+            assert!(matches!(
+                source_package.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourcePackage { .. })
+            ));
+
+            let league_affiliates = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--season",
+                "20262027",
+                "--as-of",
+                "2026-10-01",
+                "--ahl-projection-inputs",
+                "ahl-league-inputs.json",
+                "--out",
+                "window-sources.json",
+            ])
+            .expect("league AHL projection inputs should parse");
+            assert!(matches!(
+                league_affiliates.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourcePackage {
+                    ahl_projection_inputs: Some(_),
+                    ..
+                })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--as-of",
+                "2026-10-01",
+                "--ahl-affiliate",
+                "hartford.json",
+                "--ahl-projection-inputs",
+                "ahl-league-inputs.json",
+                "--out",
+                "window-sources.json",
+            ])
+            .is_err());
+
+            let refresh_lineups = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-lineups",
+                "--input",
+                "window-sources.json",
+                "--stats-season",
+                "20252026",
+                "--training-camp",
+                "camp.json",
+                "--career-history",
+                "career.json",
+                "--out",
+                "window-refreshed.json",
+            ])
+            .expect("Window lineup refresh should parse");
+            assert!(matches!(
+                refresh_lineups.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourceRefreshLineups { .. })
+            ));
+
+            let refresh_affiliates = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-affiliates",
+                "--input",
+                "window-sources.json",
+                "--ahl-projection-inputs",
+                "ahl-league-inputs.json",
+                "--out",
+                "window-affiliates.json",
+            ])
+            .expect("Window affiliate refresh should parse");
+            assert!(matches!(
+                refresh_affiliates.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourceRefreshAffiliates {
+                    ahl_projection_inputs: Some(_),
+                    ahl_facts_application: None,
+                    ..
+                })
+            ));
+
+            let refresh_affiliates_from_facts = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-affiliates",
+                "--input",
+                "window-sources.json",
+                "--ahl-facts-application",
+                "ahl-facts.json",
+                "--ahl-development-rule",
+                "ahl-rule.json",
+                "--out",
+                "window-affiliates.json",
+            ])
+            .expect("direct Window affiliate facts refresh should parse");
+            assert!(matches!(
+                refresh_affiliates_from_facts.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourceRefreshAffiliates {
+                    ahl_projection_inputs: None,
+                    ahl_facts_application: Some(_),
+                    ahl_development_rule: Some(_),
+                    ..
+                })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-affiliates",
+                "--input",
+                "window-sources.json",
+                "--ahl-facts-application",
+                "ahl-facts.json",
+                "--out",
+                "window-affiliates.json",
+            ])
+            .is_err());
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-affiliates",
+                "--input",
+                "window-sources.json",
+                "--ahl-projection-inputs",
+                "ahl-league-inputs.json",
+                "--ahl-facts-application",
+                "ahl-facts.json",
+                "--ahl-development-rule",
+                "ahl-rule.json",
+                "--out",
+                "window-affiliates.json",
+            ])
+            .is_err());
+
+            let cache_prospects = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--season",
+                "20262027",
+                "--as-of",
+                "2026-07-28",
+                "--training-camp",
+                "camp.json",
+                "--cache-prospect-program",
+                "--career-history",
+                "career.json",
+                "--out",
+                "window-sources.json",
+            ])
+            .expect("cache-native prospect package should parse");
+            assert!(matches!(
+                cache_prospects.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourcePackage {
+                    cache_prospect_program: true,
+                    career_history: Some(_),
+                    ..
+                })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--as-of",
+                "2026-07-28",
+                "--cache-prospect-program",
+                "--out",
+                "window-sources.json",
+            ])
+            .is_err());
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-package",
+                "--as-of",
+                "2026-07-28",
+                "--training-camp",
+                "camp.json",
+                "--cache-prospect-program",
+                "--prospect-program",
+                "program.json",
+                "--out",
+                "window-sources.json",
+            ])
+            .is_err());
+
+            let source_audit = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-audit",
+                "--input",
+                "window-sources.json",
+                "--generated-at",
+                "2026-10-01T12:00:00Z",
+            ])
+            .expect("Window source audit should parse");
+            assert!(matches!(
+                source_audit.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourceAudit { .. })
+            ));
+
+            let package_build = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-build",
+                "--season",
+                "20262027",
+                "--as-of",
+                "2026-10-01",
+                "--generated-at",
+                "2026-10-01T12:00:00Z",
+                "--source-package",
+                "window-sources.json",
+                "--require-ranked",
+                "--out",
+                "window.json",
+            ])
+            .expect("packaged ranked Window build should parse");
+            assert!(matches!(
+                package_build.command,
+                Commands::Icecast(IceCastSubcommand::WindowBuild {
+                    source_package: Some(_),
+                    require_ranked: true,
+                    ..
+                })
+            ));
+
+            let movement = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-movement",
+                "--earlier",
+                "october.json",
+                "--later",
+                "january.json",
+                "--bridge",
+                "v1-to-v2.json",
+            ])
+            .expect("bridged Window movement should parse");
+            assert!(matches!(
+                movement.command,
+                Commands::Icecast(IceCastSubcommand::WindowMovement {
+                    bridge: Some(_),
+                    ..
+                })
+            ));
+
+            let attribution = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-personnel-attribution",
+                "--earlier",
+                "october.json",
+                "--later",
+                "january.json",
+                "--movement",
+                "movement.json",
+                "--input",
+                "personnel.json",
+            ])
+            .expect("Window personnel attribution should parse");
+            assert!(matches!(
+                attribution.command,
+                Commands::Icecast(IceCastSubcommand::WindowPersonnelAttribution { .. })
+            ));
+
+            let personnel_input = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-personnel-input-build",
+                "--actual-forecast",
+                "actual.json",
+                "--counterfactual-board",
+                "counterfactual.json",
+                "--earlier-as-of",
+                "2025-01-31",
+                "--later-as-of",
+                "2025-02-28",
+                "--attribution-id",
+                "january-february",
+                "--scenario-id",
+                "paired-replay",
+                "--rationale",
+                "Paired replay evidence",
+                "--out",
+                "personnel-input.json",
+            ])
+            .expect("Window personnel input builder should parse");
+            assert!(matches!(
+                personnel_input.command,
+                Commands::Icecast(IceCastSubcommand::WindowPersonnelInputBuild { .. })
+            ));
+
+            let personnel_summary = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-personnel-summary",
+                "--input",
+                "attributed-movement.json",
+            ])
+            .expect("Window personnel summary should parse");
+            assert!(matches!(
+                personnel_summary.command,
+                Commands::Icecast(IceCastSubcommand::WindowPersonnelSummary { .. })
+            ));
+
+            let rebase = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-rebase",
+                "--input",
+                "october.json",
+                "--target-manifest",
+                "balanced-v2.json",
+                "--bridge",
+                "v1-to-v2.json",
+            ])
+            .expect("Window rebase should parse");
+            assert!(matches!(
+                rebase.command,
+                Commands::Icecast(IceCastSubcommand::WindowRebase { .. })
+            ));
+
+            let scenario = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-scenario",
+                "--baseline",
+                "baseline.json",
+                "--scenario",
+                "trade.json",
+                "--scenario-id",
+                "deadline-addition",
+                "--authority",
+                "trade-authority.json",
+                "--team-season-authority",
+                "season-scenario.json",
+                "--training-camp-authority",
+                "camp-scenario.json",
+            ])
+            .expect("typed Window scenario should parse");
+            assert!(matches!(
+                scenario.command,
+                Commands::Icecast(IceCastSubcommand::WindowScenario {
+                    authorities,
+                    team_season_authorities,
+                    training_camp_authorities,
+                    ..
+                }) if authorities.len() == 1
+                    && team_season_authorities.len() == 1
+                    && training_camp_authorities.len() == 1
+            ));
+
+            let distribution = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-scenario-distribute",
+                "--baseline",
+                "baseline.json",
+                "--input",
+                "distribution.json",
+                "--out",
+                "result.json",
+            ])
+            .expect("Window scenario distribution should parse");
+            assert!(matches!(
+                distribution.command,
+                Commands::Icecast(IceCastSubcommand::WindowScenarioDistribute { .. })
+            ));
+
+            let calibration = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-calibrate",
+                "--target",
+                "next-season-value",
+                "--origin",
+                "2023.json",
+                "--origin",
+                "2024.json",
+                "--origin",
+                "2025.json",
+            ])
+            .expect("rolling Window calibration should parse");
+            assert!(matches!(
+                calibration.command,
+                Commands::Icecast(IceCastSubcommand::WindowCalibrate {
+                    origins,
+                    minimum_origins: 3,
+                    ..
+                }) if origins.len() == 3
+            ));
+
+            let evaluation = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-evaluate",
+                "--target",
+                "next-season-value",
+                "--origin",
+                "2022-train.json",
+                "--origin",
+                "2023-train.json",
+                "--origin",
+                "2024-validation.json",
+                "--origin",
+                "2025-holdout.json",
+            ])
+            .expect("split Window evaluation should parse");
+            assert!(matches!(
+                evaluation.command,
+                Commands::Icecast(IceCastSubcommand::WindowEvaluate {
+                    origins,
+                    minimum_training_origins: 2,
+                    ..
+                }) if origins.len() == 4
+            ));
+
+            let standings = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-standings",
+                "--target-season",
+                "20252026",
+                "--date",
+                "2026-04-17",
+                "--captured-at",
+                "2026-07-28T08:00:00Z",
+                "--out",
+                "standings.json",
+            ])
+            .expect("historical Window standings should parse");
+            assert!(matches!(
+                standings.command,
+                Commands::Icecast(IceCastSubcommand::WindowStandings {
+                    target_season: 20252026,
+                    ..
+                })
+            ));
+
+            let origin = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-origin-build",
+                "--source-season",
+                "20242025",
+                "--target-season",
+                "20252026",
+                "--as-of",
+                "2025-06-30",
+                "--generated-at",
+                "2026-07-28T08:00:00Z",
+                "--role",
+                "retrospective_holdout",
+                "--standings",
+                "standings.json",
+            ])
+            .expect("historical Window origin should parse");
+            assert!(matches!(
+                origin.command,
+                Commands::Icecast(IceCastSubcommand::WindowOriginBuild {
+                    source_season: 20242025,
+                    target_season: 20252026,
+                    ..
+                })
+            ));
+
+            let holdout = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-holdout-register",
+                "--source-season",
+                "20252026",
+                "--target-season",
+                "20262027",
+                "--feature-cutoff",
+                "2026-06-30",
+                "--outcome-not-before",
+                "2027-04-11",
+                "--registered-at",
+                "2026-07-29T12:00:00Z",
+                "--out",
+                "future-holdout.json",
+            ])
+            .expect("future Window holdout registration should parse");
+            assert!(matches!(
+                holdout.command,
+                Commands::Icecast(IceCastSubcommand::WindowHoldoutRegister {
+                    source_season: 20252026,
+                    target_season: 20262027,
+                    ..
+                })
+            ));
+
+            let holdout_score = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-holdout-score",
+                "--registration",
+                "future-holdout.json",
+                "--standings",
+                "standings-2026-27.json",
+                "--scored-at",
+                "2027-04-11T13:00:00Z",
+                "--out",
+                "future-holdout-result.json",
+            ])
+            .expect("future Window holdout scoring should parse");
+            assert!(matches!(
+                holdout_score.command,
+                Commands::Icecast(IceCastSubcommand::WindowHoldoutScore { .. })
+            ));
+
+            let report = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window",
+                "--input",
+                "window.json",
+                "--team",
+                "NYR",
+                "--markdown",
+            ])
+            .expect("Window Markdown report should parse");
+            assert!(matches!(
+                report.command,
+                Commands::Icecast(IceCastSubcommand::Window { markdown: true, .. })
+            ));
+            assert!(Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window",
+                "--input",
+                "window.json",
+                "--json",
+                "--markdown",
+            ])
+            .is_err());
+        });
+    }
+
     /// LB.2 / l0_sugar_each_nav_tab_parses
     /// — Every TuiSurface variant parses cleanly via clap and resolves
     ///   to the same ScreenSpec as the corresponding `--start <slug>`.
@@ -2373,6 +3726,8 @@ mod tui_surface_tests {
                 "plausible",
                 "--replay-mode",
                 "rolling",
+                "--ignore-replay-personnel-after",
+                "2026-12-31",
                 "--through",
                 "2027-01-15",
                 "--retrospective-opening-lineups",
@@ -2396,6 +3751,7 @@ mod tui_surface_tests {
                     auto_personnel,
                     trade_mode,
                     replay_mode,
+                    ignore_replay_personnel_after,
                     through,
                     retrospective_opening_lineups,
                     all_games,
@@ -2414,6 +3770,10 @@ mod tui_surface_tests {
                     assert!(auto_personnel);
                     assert_eq!(trade_mode, "plausible");
                     assert_eq!(replay_mode, "rolling");
+                    assert_eq!(
+                        ignore_replay_personnel_after.unwrap().to_string(),
+                        "2026-12-31"
+                    );
                     assert_eq!(through.unwrap().to_string(), "2027-01-15");
                     assert!(retrospective_opening_lineups);
                     assert!(all_games);
@@ -3334,6 +4694,67 @@ mod tui_surface_tests {
                     && reviewer == "exception-pilot"
             ));
 
+            let reject_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-review-reject-league",
+                "--league-crosswalk",
+                "ahl-league.json",
+                "--provider-player-id",
+                "11069",
+                "--provider-player-id",
+                "10646",
+                "--evidence-url",
+                "https://example.test/ahl-exceptions",
+                "--reviewer",
+                "league-exception-pilot",
+                "--reviewed-at",
+                "2026-07-28T23:00:00Z",
+                "--note",
+                "AHL facts retained; no unique canonical NHL mapping",
+                "--decisions-out",
+                "league-reject-decisions.json",
+                "--json",
+                "--out",
+                "league-rejection-reviewed.json",
+            ])
+            .expect("league affiliate identity rejection review should parse");
+            assert!(matches!(
+                reject_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReviewRejectLeague {
+                    provider_player_id,
+                    reviewer,
+                    json: true,
+                    ..
+                }) if provider_player_id == ["11069", "10646"]
+                    && reviewer == "league-exception-pilot"
+            ));
+
+            let config = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-rollover-config-league",
+                "--league-crosswalk",
+                "league-identities.json",
+                "--camp-forecast",
+                "league-camp.json",
+                "--prior-affiliations",
+                "ahl-affiliations-2025-26.json",
+                "--affiliations",
+                "ahl-affiliations.json",
+                "--as-of",
+                "2026-07-28",
+                "--source-url",
+                "https://theahl.com/nhl-affiliations",
+                "--out",
+                "league-rollover-config.json",
+            ])
+            .expect("league affiliate rollover config command should parse");
+            assert!(matches!(
+                config.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateRolloverConfigLeague { .. })
+            ));
+
             let league = Cli::try_parse_from([
                 "icelines",
                 "icecast",
@@ -3460,6 +4881,162 @@ mod tui_surface_tests {
                 Commands::Icecast(IceCastSubcommand::AffiliateStatusDraft { .. })
             ));
 
+            let status_draft_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-draft-league",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--camp-forecast",
+                "league-camp.json",
+                "--config",
+                "league-rollover-config.json",
+                "--json",
+                "--out",
+                "league-status-draft.json",
+            ])
+            .expect("league organization-status review draft should parse");
+            assert!(matches!(
+                status_draft_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusDraftLeague { json: true, .. })
+            ));
+
+            let status_evidence = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-evidence",
+                "--review",
+                "league-status-draft.json",
+                "--career-history",
+                "career.json",
+                "--as-of",
+                "2026-07-28T12:00:00Z",
+                "--maximum-fact-age-days",
+                "21",
+                "--json",
+            ])
+            .expect("official organization-status evidence should parse");
+            assert!(matches!(
+                status_evidence.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusEvidence {
+                    maximum_fact_age_days: 21,
+                    json: true,
+                    ..
+                })
+            ));
+
+            let status_evidence_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-evidence-apply",
+                "--review",
+                "league-status-draft.json",
+                "--ledger",
+                "status-evidence.json",
+                "--json",
+            ])
+            .expect("organization-status evidence application should parse");
+            assert!(matches!(
+                status_evidence_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusEvidenceApply {
+                    json: true,
+                    ..
+                })
+            ));
+
+            let transaction_state = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-transaction-state",
+                "--transactions",
+                "transactions.json",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--affiliations",
+                "affiliations.json",
+                "--cutoff",
+                "2026-07-28",
+                "--json",
+                "--out",
+                "transaction-state.json",
+            ])
+            .expect("affiliate transaction-state ledger should parse");
+            assert!(matches!(
+                transaction_state.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateTransactionState { json: true, .. })
+            ));
+
+            let transaction_state_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-transaction-state-apply",
+                "--workboard",
+                "workboard.json",
+                "--ledger",
+                "transaction-state.json",
+                "--json",
+                "--out",
+                "transaction-state-application.json",
+            ])
+            .expect("affiliate transaction-state application should parse");
+            assert!(matches!(
+                transaction_state_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateTransactionStateApply {
+                    json: true,
+                    ..
+                })
+            ));
+
+            let waivers_draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-waivers-draft",
+                "--workboard",
+                "workboard.json",
+                "--cutoff",
+                "2026-09-30",
+                "--json",
+            ])
+            .expect("affiliate waiver draft should parse");
+            assert!(matches!(
+                waivers_draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateWaiversDraft { json: true, .. })
+            ));
+
+            let waivers_finalize = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-waivers-finalize",
+                "--draft",
+                "waiver-draft.json",
+                "--decisions",
+                "waiver-decisions.json",
+                "--json",
+            ])
+            .expect("affiliate waiver finalization should parse");
+            assert!(matches!(
+                waivers_finalize.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateWaiversFinalize { json: true, .. })
+            ));
+
+            let waivers_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-waivers-apply",
+                "--workboard",
+                "workboard.json",
+                "--review",
+                "waiver-review.json",
+                "--json",
+            ])
+            .expect("affiliate waiver application should parse");
+            assert!(matches!(
+                waivers_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateWaiversApply { json: true, .. })
+            ));
+
             let status_show = Cli::try_parse_from([
                 "icelines",
                 "icecast",
@@ -3497,6 +5074,323 @@ mod tui_surface_tests {
             assert!(matches!(
                 status_apply.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateStatusApply { .. })
+            ));
+
+            let status_apply_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-status-apply-league",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--camp-forecast",
+                "league-camp.json",
+                "--review",
+                "league-status-review.json",
+                "--config",
+                "league-rollover-base.json",
+                "--out",
+                "league-rollover-reviewed.json",
+            ])
+            .expect("league organization-status review application should parse");
+            assert!(matches!(
+                status_apply_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateStatusApplyLeague { .. })
+            ));
+
+            let professional_games = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-professional-games",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--career-history",
+                "career-history.json",
+                "--policy",
+                "professional-game-policy.json",
+                "--camp-forecast",
+                "league-camp.json",
+                "--json",
+                "--out",
+                "professional-game-ledger.json",
+            ])
+            .expect("affiliate professional-game ledger should parse");
+            assert!(matches!(
+                professional_games.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGames {
+                    camp_forecast: Some(_),
+                    json: true,
+                    ..
+                })
+            ));
+
+            let values = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-values",
+                "--snapshot",
+                "ahl.json",
+                "--league-crosswalk",
+                "league-reviewed.json",
+                "--policy",
+                "ahl-value-policy.json",
+                "--json",
+                "--out",
+                "ahl-values.json",
+            ])
+            .expect("affiliate player-value ledger should parse");
+            assert!(matches!(
+                values.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateValues { json: true, .. })
+            ));
+
+            let values_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-values-apply",
+                "--workboard",
+                "affiliate-facts-board.json",
+                "--ledger",
+                "ahl-values.json",
+                "--json",
+                "--out",
+                "affiliate-values-application.json",
+            ])
+            .expect("affiliate player-value application should parse");
+            assert!(matches!(
+                values_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateValuesApply { json: true, .. })
+            ));
+
+            let cross_league_values = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-values-cross-league",
+                "--workboard",
+                "affiliate-values-application.json",
+                "--career-history",
+                "career-history.json",
+                "--policy",
+                "cross-league-policy.json",
+                "--json",
+                "--out",
+                "cross-league-values.json",
+            ])
+            .expect("affiliate cross-league value ledger should parse");
+            assert!(matches!(
+                cross_league_values.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateValuesCrossLeague { json: true, .. })
+            ));
+
+            let cross_league_values_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-values-cross-league-apply",
+                "--workboard",
+                "affiliate-values-application.json",
+                "--ledger",
+                "cross-league-values.json",
+                "--json",
+                "--out",
+                "cross-league-application.json",
+            ])
+            .expect("affiliate cross-league value application should parse");
+            assert!(matches!(
+                cross_league_values_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateValuesCrossLeagueApply {
+                    json: true,
+                    ..
+                })
+            ));
+
+            let prospects = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-prospects",
+                "--workboard",
+                "affiliate-values-application.json",
+                "--career-history",
+                "career-history.json",
+                "--policy",
+                "organizational-prospect-policy.json",
+                "--json",
+                "--out",
+                "ahl-prospects.json",
+            ])
+            .expect("affiliate prospect-status ledger should parse");
+            assert!(matches!(
+                prospects.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateProspects { json: true, .. })
+            ));
+
+            let prospects_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-prospects-apply",
+                "--workboard",
+                "affiliate-values-application.json",
+                "--ledger",
+                "ahl-prospects.json",
+                "--json",
+                "--out",
+                "affiliate-prospects-application.json",
+            ])
+            .expect("affiliate prospect-status application should parse");
+            assert!(matches!(
+                prospects_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateProspectsApply { json: true, .. })
+            ));
+
+            let readiness = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-readiness",
+                "--workboard",
+                "affiliate-prospects-application.json",
+                "--career-history",
+                "career-history.json",
+                "--camp-forecast",
+                "camp.json",
+                "--policy",
+                "readiness-policy.json",
+                "--json",
+                "--out",
+                "readiness.json",
+            ])
+            .expect("affiliate recall-readiness ledger should parse");
+            assert!(matches!(
+                readiness.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReadiness { json: true, .. })
+            ));
+
+            let readiness_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-readiness-apply",
+                "--workboard",
+                "affiliate-prospects-application.json",
+                "--ledger",
+                "readiness.json",
+                "--json",
+                "--out",
+                "affiliate-readiness-application.json",
+            ])
+            .expect("affiliate recall-readiness application should parse");
+            assert!(matches!(
+                readiness_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateReadinessApply { json: true, .. })
+            ));
+
+            let facts_board = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-facts-board",
+                "--rollover",
+                "league-rollover.json",
+                "--professional-games",
+                "professional-game-ledger.json",
+                "--json",
+                "--out",
+                "affiliate-facts-board.json",
+            ])
+            .expect("affiliate preseason facts workboard should parse");
+            assert!(matches!(
+                facts_board.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateFactsBoard { json: true, .. })
+            ));
+
+            let facts_status = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-facts-status",
+                "--input",
+                "affiliate-readiness-application.json",
+                "--require-ready",
+                "--json",
+            ])
+            .expect("affiliate preseason facts status should parse");
+            assert!(matches!(
+                facts_status.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateFactsStatus {
+                    require_ready: true,
+                    json: true,
+                    ..
+                })
+            ));
+
+            let facts_draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-facts-draft",
+                "--workboard",
+                "affiliate-facts-board.json",
+                "--out",
+                "affiliate-facts-overlay-draft.json",
+            ])
+            .expect("affiliate preseason facts draft should parse");
+            assert!(matches!(
+                facts_draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateFactsDraft { .. })
+            ));
+
+            let facts_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-facts-apply",
+                "--workboard",
+                "affiliate-facts-board.json",
+                "--overlay",
+                "affiliate-facts-overlay.json",
+                "--json",
+                "--out",
+                "affiliate-facts-application.json",
+            ])
+            .expect("affiliate preseason facts application should parse");
+            assert!(matches!(
+                facts_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateFactsApply { json: true, .. })
+            ));
+
+            let inputs_league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-inputs-league",
+                "--application",
+                "affiliate-facts-application.json",
+                "--rule",
+                "ahl-development-rule.json",
+                "--json",
+                "--out",
+                "affiliate-inputs-league.json",
+            ])
+            .expect("affiliate preseason league inputs should parse");
+            assert!(matches!(
+                inputs_league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateInputsLeague { json: true, .. })
+            ));
+
+            let professional_games_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-professional-games-apply",
+                "--crosswalk",
+                "hartford-reviewed.json",
+                "--ledger",
+                "professional-game-ledger.json",
+                "--facts",
+                "hartford-facts.json",
+                "--nhl-team",
+                "NYR",
+                "--ahl-team",
+                "Hartford Wolf Pack",
+                "--out",
+                "hartford-final-facts.json",
+            ])
+            .expect("affiliate professional-game facts application should parse");
+            assert!(matches!(
+                professional_games_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateProfessionalGamesApply { .. })
             ));
 
             let input = Cli::try_parse_from([
@@ -3549,6 +5443,28 @@ mod tui_surface_tests {
             assert!(matches!(
                 cli.command,
                 Commands::Icecast(IceCastSubcommand::AffiliateRollover { json: true, .. })
+            ));
+
+            let league = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-rollover-league",
+                "--prior-snapshot",
+                "prior-ahl.json",
+                "--league-crosswalk",
+                "league-identities.json",
+                "--camp-forecast",
+                "league-camp.json",
+                "--config",
+                "league-rollover-config.json",
+                "--json",
+                "--out",
+                "league-rollover.json",
+            ])
+            .expect("league affiliate rollover command should parse");
+            assert!(matches!(
+                league.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateRolloverLeague { json: true, .. })
             ));
         });
     }
@@ -4023,7 +5939,77 @@ mod tui_surface_tests {
                     bundled_seasons: 0,
                     prospect_context: None,
                     camp_forecast: Some(path),
+                    league_crosswalk: None,
+                    affiliate_workboard: None,
                 }) if path == PathBuf::from("camp.json")
+            ));
+
+            let league = Cli::try_parse_from([
+                "icelines",
+                "fetch",
+                "career",
+                "--league-crosswalk",
+                "ahl-identities.json",
+                "--dry-run",
+            ])
+            .expect("fetch career league crosswalk target should parse");
+            assert!(matches!(
+                league.command,
+                Commands::Fetch(FetchSubcommand::Career {
+                    dry_run: true,
+                    bundled_seasons: 0,
+                    prospect_context: None,
+                    camp_forecast: None,
+                    league_crosswalk: Some(path),
+                    affiliate_workboard: None,
+                }) if path == PathBuf::from("ahl-identities.json")
+            ));
+
+            let workboard = Cli::try_parse_from([
+                "icelines",
+                "fetch",
+                "career",
+                "--affiliate-workboard",
+                "affiliate-prospects-application.json",
+                "--dry-run",
+            ])
+            .expect("fetch career affiliate workboard target should parse");
+            assert!(matches!(
+                workboard.command,
+                Commands::Fetch(FetchSubcommand::Career {
+                    dry_run: true,
+                    bundled_seasons: 0,
+                    prospect_context: None,
+                    camp_forecast: None,
+                    league_crosswalk: None,
+                    affiliate_workboard: Some(path),
+                }) if path == PathBuf::from("affiliate-prospects-application.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fetch_ahl_transactions_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fetch",
+                "ahl-transactions",
+                "--season",
+                "20252026",
+                "--refresh",
+                "--out",
+                "ahl-transactions.json",
+            ])
+            .expect("AHL transaction acquisition should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fetch(FetchSubcommand::AhlTransactions {
+                    season,
+                    out: Some(path),
+                    refresh: true,
+                    dry_run: false,
+                }) if season == "20252026" && path == PathBuf::from("ahl-transactions.json")
             ));
         });
     }
@@ -5499,6 +7485,12 @@ pub enum FetchSubcommand {
         /// Restrict acquisition to prospects in a `training_camp_league_forecast.v1` file.
         #[arg(long = "camp-forecast", value_name = "PATH")]
         camp_forecast: Option<PathBuf>,
+        /// Restrict acquisition to canonical players in a reviewed all-league AHL crosswalk.
+        #[arg(long = "league-crosswalk", value_name = "PATH")]
+        league_crosswalk: Option<PathBuf>,
+        /// Restrict acquisition to canonical candidates in an AHL preseason workboard or application.
+        #[arg(long = "affiliate-workboard", value_name = "PATH")]
+        affiliate_workboard: Option<PathBuf>,
     },
     /// Fetch boxscores for one date and write score events to the
     /// EventStream (Phase Foster.3). With --for-favorites, only
@@ -5573,6 +7565,21 @@ pub enum FetchSubcommand {
         #[arg(long)]
         refresh: bool,
         /// Print the planned fetch without making network requests or writing.
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Fetch the complete official AHL ADD/DEL transaction stream for a season.
+    #[command(name = "ahl-transactions")]
+    AhlTransactions {
+        #[arg(long, default_value = icelines_core::CURRENT_SEASON_STR)]
+        season: String,
+        /// Also export the UI-neutral transaction snapshot to this path.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Revalidate source pages instead of accepting verified FLETCH cachelines.
+        #[arg(long)]
+        refresh: bool,
+        /// Print the planned fetch without network requests or writes.
         #[arg(long)]
         dry_run: bool,
     },

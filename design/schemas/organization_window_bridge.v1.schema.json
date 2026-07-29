@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_window_bridge.v1.schema.json",
+  "title": "IceLines Organization Window Bridge v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "bridge_id",
+    "created_at",
+    "from_manifest_fingerprint",
+    "to_manifest_fingerprint",
+    "profile_mappings",
+    "disclosures",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "organization_window_bridge.v1" },
+    "bridge_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "from_manifest_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "to_manifest_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "profile_mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/profile_mapping" }
+    },
+    "disclosures": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "profile_mapping": {
+      "type": "object",
+      "required": [
+        "from_profile_key",
+        "from_method_version",
+        "to_profile_key",
+        "to_method_version",
+        "raw_scale",
+        "raw_offset",
+        "rationale",
+        "evidence_fingerprints"
+      ],
+      "properties": {
+        "from_profile_key": { "type": "string", "minLength": 1 },
+        "from_method_version": { "type": "string", "minLength": 1 },
+        "to_profile_key": { "type": "string", "minLength": 1 },
+        "to_method_version": { "type": "string", "minLength": 1 },
+        "raw_scale": { "type": "number" },
+        "raw_offset": { "type": "number" },
+        "rationale": { "type": "string", "minLength": 1 },
+        "evidence_fingerprints": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/fingerprint" }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

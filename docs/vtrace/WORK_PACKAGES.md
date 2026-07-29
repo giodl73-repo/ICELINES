@@ -944,6 +944,35 @@ Git execution:
 
 Status: partial.
 
+## WP-011: The Window organization-health system
+
+Parent requirements: REQ-WINDOW-001..009; REQ-DATA-001; REQ-PARITY-001;
+REQ-CODE-001.
+
+Interfaces/design: IF-WINDOW-001..005; DES-WINDOW-001..007.
+
+Scope: profile inventory, registry/contracts, manifest validation, canonical
+fingerprints, normalization and hierarchical scoring, production adapters,
+all-team board/detail/classification, history, scenarios, calibration, all user
+surfaces, cards/reports, extension docs, and release evidence.
+
+Entry criteria:
+
+- The role-reviewed Window spec and plan are merged.
+- Candidate authorities are inventoried before scoring promotion.
+- Cap, shift, injury, and qualitative-research limitations remain explicit.
+
+Exit criteria:
+
+- Definition of done in the Window plan is proven by EVID-WINDOW-* and VAL-013.
+- Full CI, release smoke, and package verification pass.
+- Surface parity and historical leakage audits are closed.
+
+Verification: focused L0/L1/L2 per slice, then the canonical workspace CI and
+release gates.
+
+Status: active.
+
 ## Orphan Check
 
 Before implementation starts, confirm:

@@ -5,6 +5,9 @@
 //! recomputing hockey logic.
 
 pub mod ahl_affiliate;
+pub mod ahl_cross_league_value;
+pub mod ahl_player_value;
+pub mod ahl_recall_readiness;
 pub mod analytics_cache_consumer;
 pub mod awards;
 pub mod cap_projection;
@@ -41,7 +44,15 @@ pub mod line_combination;
 pub mod management_behavior;
 pub mod matchup_evidence;
 pub mod mutation;
+pub mod nhl_goalie_translation;
 pub mod organization_lineup;
+pub mod organization_window;
+pub mod organization_window_adapters;
+pub mod organization_window_calibration;
+pub mod organization_window_comparison;
+pub mod organization_window_registry;
+pub mod organization_window_scenario_distribution;
+pub mod organizational_prospect;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
@@ -76,6 +87,22 @@ pub use ahl_affiliate::{
     AHL_AFFILIATE_PROJECTION_SCHEMA, AHL_AFFILIATION_CATALOG_SCHEMA, AHL_AFFILIATION_SOURCE_URL,
     CURRENT_AHL_AFFILIATION_SEASON,
 };
+pub use ahl_cross_league_value::{
+    calibrate_ahl_cross_league_value, estimate_ahl_cross_league_value,
+    validate_ahl_cross_league_value_policy, AhlCrossLeagueCalibration,
+    AhlCrossLeagueCalibrationPair, AhlCrossLeagueTranslationKind, AhlCrossLeagueValueEstimate,
+    AhlCrossLeagueValuePolicy, AHL_CROSS_LEAGUE_VALUE_METHOD, AHL_CROSS_LEAGUE_VALUE_POLICY_SCHEMA,
+};
+pub use ahl_player_value::{
+    estimate_ahl_goalie_value, estimate_ahl_skater_value, AhlPlayerValueEstimate,
+    AhlPlayerValuePolicy, AhlPlayerValuePositionGroup, AHL_PLAYER_VALUE_METHOD,
+    AHL_PLAYER_VALUE_POLICY_SCHEMA,
+};
+pub use ahl_recall_readiness::{
+    empirical_midrank_percentiles, estimate_ahl_recall_readiness, AhlRecallReadinessEstimate,
+    AhlRecallReadinessInput, AhlRecallReadinessPolicy, AHL_RECALL_READINESS_METHOD,
+    AHL_RECALL_READINESS_POLICY_SCHEMA,
+};
 pub use analytics_cache_consumer::{
     analytics_cache_consumer_title, AnalyticsCacheConsumerMetricRow, AnalyticsCacheConsumerView,
 };
@@ -90,8 +117,9 @@ pub use cap_projection::{
 pub use card::{
     build_card_comparison_set, build_fantasy_draft_card, build_fantasy_morning_card,
     build_fantasy_roster_card, build_fantasy_trade_card, build_forecast_history_card,
-    build_forecast_movement_card, build_season_simulation_card, build_team_prognosis_card,
-    parse_card_document, CardAlignedMetricRow, CardAssetFallback, CardAssetKind,
+    build_forecast_movement_card, build_organization_window_card, build_season_simulation_card,
+    build_team_prognosis_card, nhl_team_card_theme, parse_card_document,
+    project_organization_window_card, CardAlignedMetricRow, CardAssetFallback, CardAssetKind,
     CardAssetReference, CardAssetState, CardAssetView, CardComparisonError, CardComparisonSetView,
     CardComparisonWarning, CardComparisonWarningKind, CardContextView, CardDecisionAlternativeView,
     CardDocumentError, CardDocumentView, CardIdentityJoinsView, CardIdentityKind, CardIdentityView,
@@ -103,14 +131,16 @@ pub use card::{
     FantasyMorningCardInput, FantasyRosterCardError, FantasyRosterCardInput, FantasyTradeCardError,
     FantasyTradeCardInput, ForecastHistoryCardError, ForecastHistoryCardInput,
     ForecastMovementCardError, ForecastMovementCardInput, IdentityHeaderSectionView,
-    LineupSectionView, MethodologySectionView, MetricStripSectionView, PlayerListSectionView,
-    ProbabilityRangeSectionView, ProvenanceSectionView, ScenarioBridgeSectionView,
-    SeasonSimulationCardError, SeasonSimulationCardInput, StateNoticeSectionView,
-    TeamPrognosisCardError, TeamPrognosisCardInput, TeamPrognosisEventProjection,
-    TimelineSectionView, CARD_COMPARISON_SET_SCHEMA, CARD_DOCUMENT_JSON_SCHEMA,
-    CARD_DOCUMENT_SCHEMA, FANTASY_DRAFT_CARD_BUILDER_VERSION, FANTASY_MORNING_CARD_BUILDER_VERSION,
+    LineupSectionView, MethodologySectionView, MetricStripSectionView, OrganizationWindowCardError,
+    OrganizationWindowCardInput, PlayerListSectionView, ProbabilityRangeSectionView,
+    ProvenanceSectionView, ScenarioBridgeSectionView, SeasonSimulationCardError,
+    SeasonSimulationCardInput, StateNoticeSectionView, TeamPrognosisCardError,
+    TeamPrognosisCardInput, TeamPrognosisEventProjection, TimelineSectionView,
+    CARD_COMPARISON_SET_SCHEMA, CARD_DOCUMENT_JSON_SCHEMA, CARD_DOCUMENT_SCHEMA,
+    FANTASY_DRAFT_CARD_BUILDER_VERSION, FANTASY_MORNING_CARD_BUILDER_VERSION,
     FANTASY_ROSTER_CARD_BUILDER_VERSION, FANTASY_TRADE_CARD_BUILDER_VERSION,
-    FORECAST_HISTORY_CARD_VERSION, FORECAST_MOVEMENT_CARD_VERSION, SEASON_SIMULATION_CARD_VERSION,
+    FORECAST_HISTORY_CARD_VERSION, FORECAST_MOVEMENT_CARD_VERSION,
+    ORGANIZATION_WINDOW_CARD_VERSION, SEASON_SIMULATION_CARD_VERSION,
     TEAM_PROGNOSIS_BUILDER_VERSION,
 };
 pub use career::{
@@ -276,11 +306,117 @@ pub use matchup_evidence::{
     TEAM_PLAYER_MATCHUP_ROLE_EVIDENCE_SCHEMA,
 };
 pub use mutation::{MutationResultView, MutationStatus};
+pub use nhl_goalie_translation::{
+    calibrate_nhl_goalie_translation, estimate_nhl_goalie_quality,
+    validate_nhl_goalie_translation_policy, NhlGoalieTranslationCalibration,
+    NhlGoalieTranslationEstimate, NhlGoalieTranslationPair, NhlGoalieTranslationPolicy,
+    NHL_GOALIE_TRANSLATION_METHOD, NHL_GOALIE_TRANSLATION_POLICY_SCHEMA,
+};
 pub use organization_lineup::{
     build_organization_lineup_forecast, OrganizationBlockedPlayerView, OrganizationLevel,
     OrganizationLineupCountsView, OrganizationLineupForecastInput, OrganizationLineupForecastView,
     OrganizationPositionGroup, OrganizationRecallCandidateView, OrganizationRecallPlanView,
     OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
+};
+pub use organization_window::{
+    build_organization_window_board, load_organization_window_profile_inventory,
+    parse_organization_window_manifest, seal_organization_window_manifest,
+    validate_organization_window_board, validate_profile_inventory, OrganizationProfileInput,
+    OrganizationProfileObservationView, OrganizationWindowBoardInput, OrganizationWindowBoardView,
+    OrganizationWindowError, OrganizationWindowManifestView, OrganizationWindowProfileInventory,
+    WindowAggregateStatus, WindowClassification, WindowCohortKind, WindowCohortManifest,
+    WindowDimensionManifest, WindowDimensionView, WindowDriverView, WindowEvidenceView,
+    WindowFreshness, WindowHorizon, WindowMissingPolicy, WindowNormalizationMethod,
+    WindowOrganizationView, WindowOverallView, WindowProfileDescriptor, WindowProfileDirection,
+    WindowProfileInventoryCounts, WindowProfileReadiness, WindowProfileStatus, WindowProfileWeight,
+    WindowRankState, WindowRankStatusView, WindowSignalFamilyCap,
+    ORGANIZATION_PROFILE_OBSERVATION_JSON_SCHEMA, ORGANIZATION_PROFILE_OBSERVATION_SCHEMA,
+    ORGANIZATION_WINDOW_BOARD_JSON_SCHEMA, ORGANIZATION_WINDOW_BOARD_SCHEMA,
+    ORGANIZATION_WINDOW_CLASSIFICATION_METHOD, ORGANIZATION_WINDOW_MANIFEST_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_MANIFEST_SCHEMA, ORGANIZATION_WINDOW_PROFILE_INVENTORY_JSON,
+    ORGANIZATION_WINDOW_PROFILE_INVENTORY_SCHEMA, ORGANIZATION_WINDOW_REGISTRY_VERSION,
+};
+pub use organization_window_adapters::{
+    adapt_balanced_organization_window_sources, adapt_line_combination_window_profile,
+    audit_organization_window_source_package, balanced_organization_window_manifest,
+    build_balanced_organization_window_board,
+    build_balanced_organization_window_board_from_package,
+    build_forecast_history_organization_window_boards,
+    build_organization_lineup_forecasts_from_affiliates,
+    build_schedule_rest_profiles_from_game_forecast,
+    require_ranked_balanced_organization_window_board, seal_organization_window_source_package,
+    OrganizationWindowAdapterContext, OrganizationWindowSourceCoverageView,
+    OrganizationWindowSourcePackageView, OrganizationWindowSourceSet,
+    WindowSourceProfileCoverageView, ORGANIZATION_WINDOW_BALANCED_MANIFEST_ID,
+    ORGANIZATION_WINDOW_FORECAST_HISTORY_MANIFEST_ID,
+    ORGANIZATION_WINDOW_SOURCE_COVERAGE_JSON_SCHEMA, ORGANIZATION_WINDOW_SOURCE_COVERAGE_SCHEMA,
+    ORGANIZATION_WINDOW_SOURCE_PACKAGE_JSON_SCHEMA, ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA,
+};
+pub use organization_window_calibration::{
+    calibrate_organization_window, calibrate_organization_window_rolling_origins,
+    evaluate_organization_window_origins, OrganizationWindowCalibrationError,
+    OrganizationWindowCalibrationView, OrganizationWindowEvaluationView,
+    OrganizationWindowRollingCalibrationView, WindowCalibrationAblationView,
+    WindowCalibrationClaimStatus, WindowCalibrationEvaluationOriginInput,
+    WindowCalibrationMetricView, WindowCalibrationOriginInput, WindowCalibrationOriginRole,
+    WindowCalibrationOriginView, WindowCalibrationSplitView, WindowCalibrationUncertaintyView,
+    WindowLeakageAuditRow, WindowOrganizationStabilityView, WindowOutcomeRow,
+    WindowTrialNoiseInput, WindowTrialNoiseOriginView, WindowTrialNoiseStatus,
+    ORGANIZATION_WINDOW_CALIBRATION_SCHEMA, ORGANIZATION_WINDOW_EVALUATION_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_EVALUATION_SCHEMA, ORGANIZATION_WINDOW_ROLLING_CALIBRATION_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_ROLLING_CALIBRATION_SCHEMA,
+};
+pub use organization_window_comparison::{
+    adapt_line_combination_window_scenario_authority, adapt_team_game_window_personnel_events,
+    adapt_team_season_window_personnel_events, adapt_team_season_window_scenario_authorities,
+    adapt_training_camp_window_scenario_authorities,
+    attribute_organization_window_personnel_movement,
+    build_later_counterfactual_personnel_attribution_input, build_organization_window_history,
+    compare_organization_window_scenario, compare_organization_window_snapshots,
+    compare_organization_window_snapshots_with_bridge, compare_organization_window_typed_scenario,
+    rebase_organization_window_board, seal_organization_window_bridge,
+    summarize_organization_window_personnel_evidence, OrganizationWindowBridgeView,
+    OrganizationWindowComparisonError, OrganizationWindowHistoryView,
+    OrganizationWindowMovementView, OrganizationWindowPersonnelAttributionInputView,
+    OrganizationWindowPersonnelEvidenceSummaryView, OrganizationWindowScenarioImpactView,
+    WindowDimensionDeltaView, WindowOrganizationDeltaView, WindowPersonnelAttributionView,
+    WindowPersonnelEstimateBasis, WindowPersonnelEventKind, WindowPersonnelEventView,
+    WindowPersonnelEvidenceImpactSummaryView, WindowProfileBridgeView, WindowProfileDeltaView,
+    WindowScenarioAuthorityKind, WindowScenarioAuthorityView, WindowScenarioProfileImpactKind,
+    WindowScenarioProfileImpactView, WindowScenarioProfileMethodView,
+    ORGANIZATION_WINDOW_BRIDGE_JSON_SCHEMA, ORGANIZATION_WINDOW_BRIDGE_SCHEMA,
+    ORGANIZATION_WINDOW_HISTORY_SCHEMA, ORGANIZATION_WINDOW_MOVEMENT_SCHEMA,
+    ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_PERSONNEL_ATTRIBUTION_INPUT_SCHEMA,
+    ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_PERSONNEL_EVIDENCE_SUMMARY_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_IMPACT_SCHEMA,
+};
+pub use organization_window_registry::{
+    load_organization_window_registry_lifecycle, seal_new_organization_window_manifest,
+    seal_organization_window_registry_lifecycle, OrganizationWindowRegistryLifecycleError,
+    OrganizationWindowRegistryLifecycleView, WindowDeprecatedProfileHold,
+    WindowManifestAuthoringKind, WindowManifestLifecyclePolicy, WindowProfileLifecycle,
+    WindowProfileLifecycleEntry, WindowProfileMethodRef,
+    ORGANIZATION_WINDOW_REGISTRY_LIFECYCLE_JSON,
+    ORGANIZATION_WINDOW_REGISTRY_LIFECYCLE_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_REGISTRY_LIFECYCLE_SCHEMA,
+};
+pub use organization_window_scenario_distribution::{
+    simulate_organization_window_scenario_distribution,
+    OrganizationWindowScenarioDistributionError, OrganizationWindowScenarioDistributionInput,
+    OrganizationWindowScenarioDistributionView, WindowScenarioDimensionDistributionView,
+    WindowScenarioDistributionSummaryView, WindowScenarioOrganizationDistributionView,
+    WindowScenarioProfileShockInput, WindowScenarioShockDistributionView,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_INPUT_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_INPUT_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_SCENARIO_DISTRIBUTION_SCHEMA,
+};
+pub use organizational_prospect::{
+    classify_organizational_prospect, evaluate_organizational_prospect,
+    OrganizationalProspectBasis, OrganizationalProspectPolicy, OrganizationalProspectStatusView,
+    ORGANIZATIONAL_PROSPECT_METHOD, ORGANIZATIONAL_PROSPECT_POLICY_SCHEMA,
 };
 pub use player_card::{
     PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow, PlayerSeasonSummary,
@@ -450,21 +586,22 @@ pub use tokens::{
 pub use training_camp::{
     build_training_camp_blender_set, build_training_camp_exposure_board,
     build_training_camp_exposure_board_with_context, build_training_camp_lineup_set,
-    build_training_camp_opening_roster_policy, simulate_training_camp,
-    simulate_training_camp_league, TrainingCampAuthorityStatus, TrainingCampBlenderBranchView,
-    TrainingCampBlenderSetView, TrainingCampCompetitionPoolStatus, TrainingCampConfig,
-    TrainingCampDisplacementView, TrainingCampExposureBoardView, TrainingCampExposureLane,
-    TrainingCampExposurePlayerView, TrainingCampExposurePressureView, TrainingCampExposureTeamView,
-    TrainingCampForecastView, TrainingCampLeagueForecastView, TrainingCampLeagueSimulationInput,
-    TrainingCampLeagueTeamInput, TrainingCampLeagueTeamView, TrainingCampLineupBranchView,
-    TrainingCampLineupSetView, TrainingCampPlayerInput, TrainingCampPlayerView,
-    TrainingCampRosterBranchView, TrainingCampRosterStatus, TrainingCampSalaryCapStatus,
-    TrainingCampSimulationInput, TrainingCampTradeProtection,
-    TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput,
-    TrainingCampTransactionPlayerInput, TRAINING_CAMP_BLENDER_SET_SCHEMA,
-    TRAINING_CAMP_EXPOSURE_BOARD_SCHEMA, TRAINING_CAMP_FORECAST_METHOD,
-    TRAINING_CAMP_FORECAST_SCHEMA, TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA,
-    TRAINING_CAMP_LINEUP_SET_SCHEMA, TRAINING_CAMP_TRANSACTION_CONTEXT_SCHEMA,
+    build_training_camp_opening_roster_policy, complete_lineup_goalies_from_training_camp,
+    simulate_training_camp, simulate_training_camp_league, TrainingCampAuthorityStatus,
+    TrainingCampBlenderBranchView, TrainingCampBlenderSetView, TrainingCampCompetitionPoolStatus,
+    TrainingCampConfig, TrainingCampDisplacementView, TrainingCampExposureBoardView,
+    TrainingCampExposureLane, TrainingCampExposurePlayerView, TrainingCampExposurePressureView,
+    TrainingCampExposureTeamView, TrainingCampForecastView, TrainingCampGoalieValueInput,
+    TrainingCampLeagueForecastView, TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput,
+    TrainingCampLeagueTeamView, TrainingCampLineupBranchView, TrainingCampLineupSetView,
+    TrainingCampPlayerInput, TrainingCampPlayerView, TrainingCampRosterBranchView,
+    TrainingCampRosterStatus, TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
+    TrainingCampTradeProtection, TrainingCampTransactionAuthorityStatus,
+    TrainingCampTransactionContextInput, TrainingCampTransactionPlayerInput,
+    TRAINING_CAMP_BLENDER_SET_SCHEMA, TRAINING_CAMP_EXPOSURE_BOARD_SCHEMA,
+    TRAINING_CAMP_FORECAST_METHOD, TRAINING_CAMP_FORECAST_SCHEMA,
+    TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA, TRAINING_CAMP_LINEUP_SET_SCHEMA,
+    TRAINING_CAMP_TRANSACTION_CONTEXT_SCHEMA,
 };
 pub use transactions::{TransactionViewRow, TransactionsView};
 

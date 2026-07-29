@@ -1,5 +1,32 @@
 # IceLines release checklist
 
+## Organization Window
+
+- [x] Inventory readiness totals and blocked authorities match the shipped registry.
+- [x] Official Frame fingerprint and all-32 cohort are stable across input order/platforms.
+- [x] Missing or uneven evidence withholds rank and is not zero-filled.
+- [x] Saved board, CLI/TUI/Web projections, API JSON, and cards agree.
+- [x] Historical/scenario comparisons reject incompatible manifests or incomplete sources.
+- [x] Calibration claims include leakage audit, baseline, ablation, and multi-season evidence.
+- [x] Profile-author, custom-Frame, compatibility, cache, and changelog docs match the release.
+- [x] Registry lifecycle fingerprint is sealed; retired/deprecated/demoted methods pass new-authoring and saved-board replay checks.
+- [x] The next future holdout freezes its board, target, baseline, leakage audit, eligibility date, and acceptance rule without outcomes.
+- [ ] The production balanced Frame completes 16/16 required profiles and ranks all 32 teams without proxies.
+- [ ] The registered 2025-26 -> 2026-27 future holdout is scored once after April 11, 2027 and retained regardless of result.
+
+W9 evidence reconciled 2026-07-29: PR #23 run 30488170619 passes all 26 jobs on
+audited implementation head `1b4ff230`, including fixed-hash replay on Windows,
+Linux, and
+macOS; focused core/fetch/CLI Window tests pass at 56/5/22, the full CLI/TUI
+binary partition passes 1,396 tests, and schema checks pass; `cargo audit` has no
+blocking vulnerability; offline release smoke includes The Window; the Windows
+ZIP/checksum/package manifest verify; and the live desktop/tablet/mobile Window
+browser-review script passes. Full package, multi-season retrospective evidence,
+and cross-surface golden parity now pass. The future holdout is preregistered
+without outcomes; production source completeness and its eventual score remain
+the two open product gates. The local keyboard/reduced-motion and 390px
+containment review passes.
+
 **Owner phase**: Jim Gregory - release and operations hardening
 **Applies to**: tagged GitHub releases and local release candidate builds
 

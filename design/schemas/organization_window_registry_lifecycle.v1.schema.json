@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.dev/schemas/organization_window_registry_lifecycle.v1.schema.json",
+  "title": "IceLines Organization Window Registry Lifecycle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "base_registry_version", "revision", "generated_at", "default_lifecycle", "entries", "fingerprint"],
+  "properties": {
+    "schema": { "const": "organization_window_registry_lifecycle.v1" },
+    "base_registry_version": { "const": "organization_window_registry.v1" },
+    "revision": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "default_lifecycle": { "const": "active" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    },
+    "fingerprint": { "type": "string", "pattern": "^$|^[0-9a-f]{64}$" }
+  },
+  "$defs": {
+    "method_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_key", "method_version"],
+      "properties": {
+        "profile_key": { "type": "string", "minLength": 1 },
+        "method_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "official_frame_hold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_id", "manifest_fingerprint", "rationale", "approved_by", "reviewed_at"],
+      "properties": {
+        "manifest_id": { "type": "string", "minLength": 1 },
+        "manifest_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "rationale": { "type": "string", "minLength": 1 },
+        "approved_by": { "type": "string", "minLength": 1 },
+        "reviewed_at": { "type": "string", "format": "date" }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_key", "method_version", "lifecycle", "effective_date", "rationale", "affected_official_frames", "official_frame_holds", "review_evidence"],
+      "properties": {
+        "profile_key": { "type": "string", "minLength": 1 },
+        "method_version": { "type": "string", "minLength": 1 },
+        "lifecycle": { "enum": ["active", "deprecated", "retired"] },
+        "effective_date": { "type": "string", "format": "date" },
+        "rationale": { "type": "string", "minLength": 1 },
+        "readiness_override": { "enum": ["ready_for_adapter", "evaluation", "context_only", "blocked"] },
+        "replacement": { "$ref": "#/$defs/method_ref" },
+        "affected_official_frames": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "official_frame_holds": { "type": "array", "items": { "$ref": "#/$defs/official_frame_hold" }, "uniqueItems": true },
+        "review_evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+      }
+    }
+  }
+}

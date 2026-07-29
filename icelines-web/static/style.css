@@ -116,6 +116,8 @@ code {
     padding: 0.05rem 0.3rem;
     border-radius: 3px;
     font-size: 0.92em;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 /* Skip-to-content link. */
@@ -1487,6 +1489,10 @@ td.winner {
     -webkit-overflow-scrolling: touch;
     border-radius: 6px;
 }
+.table-scroll:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+}
 
 /* ── Forms ──────────────────────────────────────────────────────── */
 input, select, button {
@@ -1732,6 +1738,9 @@ a.team-link:hover {
 .team-card-insider-player dd { margin: 0; font-weight: 800; }
 .team-card-notice { margin-top: 1rem; padding: .8rem 1rem; background: #fff5d8; border-left: 4px solid #d49a00; }
 .team-card-method { margin-top: 1rem; padding: .8rem; border: 1px solid #d9e0e9; }
+.team-card-provenance article { display: grid; gap: .25rem; padding: .75rem 0; }
+.team-card-provenance article + article { border-top: 1px solid #d9e0e9; }
+.team-card-provenance small { overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   .team-card-hero { align-items: start; flex-direction: column; }
   .team-card-slots, .team-card-scenarios { grid-template-columns: 1fr; }
@@ -1739,6 +1748,10 @@ a.team-link:hover {
 }
 @media (max-width: 420px) {
   .team-prognosis-card { margin-top: .5rem; padding-inline: .4rem; }
+  .team-card-hero, .team-prognosis-card > section { min-width: 0; }
+  .team-card-kicker, .team-card-hero h1 { overflow-wrap: anywhere; }
+  .team-card-tabs { flex-wrap: wrap; }
+  .team-card-tabs a { min-width: 0; }
   .team-card-player-tile { grid-template-columns: 50px 1fr auto; }
   .team-card-player-tile img, .team-card-fallback { width: 46px; height: 46px; }
 }

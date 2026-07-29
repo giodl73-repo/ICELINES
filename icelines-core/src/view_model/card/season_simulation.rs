@@ -158,7 +158,7 @@ pub fn build_season_simulation_card(
                 trials: Some(u64::from(input.forecast.trials)),
             },
         },
-        theme: team_theme(&team),
+        theme: nhl_team_card_theme(&team),
         required_capabilities: vec![CardRendererCapability::Timelines],
         pages: vec![
             CardPageView {
@@ -922,22 +922,4 @@ fn fingerprint<T: Serialize>(value: &T) -> Result<String, SeasonSimulationCardEr
 }
 fn season_label(season: u32) -> String {
     format!("{}-{:02}", season / 10_000, season % 100)
-}
-fn team_theme(team: &str) -> CardThemeView {
-    let (p, s, a) = match team {
-        "NYR" => ("#0038A8", "#CE1126", "#FFFFFF"),
-        "SEA" => ("#001628", "#99D9D9", "#E9072B"),
-        _ => ("#14213D", "#E5E5E5", "#FCA311"),
-    };
-    CardThemeView {
-        theme_key: format!("team_{}", team.to_ascii_lowercase()),
-        primary: Some(p.into()),
-        secondary: Some(s.into()),
-        accent: Some(a.into()),
-        surface: Some("#FFFFFF".into()),
-        text: Some("#111111".into()),
-        team_abbreviation: Some(team.into()),
-        ascii_identity: team.into(),
-        minimum_text_contrast_x100: 450,
-    }
 }

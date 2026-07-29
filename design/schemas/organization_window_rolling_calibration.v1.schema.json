@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_window_rolling_calibration.v1.schema.json",
+  "title": "IceLines Organization Window Rolling Calibration v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "target",
+    "manifest_fingerprint",
+    "origins",
+    "overall",
+    "dimensions",
+    "ablations",
+    "organization_stability",
+    "uncertainty",
+    "claim_status",
+    "disclosures",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "organization_window_rolling_calibration.v1" },
+    "target": { "type": "string", "minLength": 1 },
+    "manifest_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "origins": { "type": "array", "minItems": 2, "items": { "type": "object" } },
+    "overall": { "type": "object" },
+    "dimensions": { "type": "array", "minItems": 1, "items": { "type": "object" } },
+    "ablations": { "type": "array", "minItems": 1, "items": { "type": "object" } },
+    "organization_stability": { "type": "array", "minItems": 1, "items": { "type": "object" } },
+    "uncertainty": {
+      "type": "object",
+      "required": ["origin_count", "between_origin_mae_standard_deviation", "mean_mae_confidence_interval_low", "mean_mae_confidence_interval_high", "trial_noise_status"],
+      "properties": {
+        "origin_count": { "type": "integer", "minimum": 2 },
+        "between_origin_mae_standard_deviation": { "type": "number", "minimum": 0 },
+        "mean_mae_confidence_interval_low": { "type": "number", "minimum": 0, "maximum": 100 },
+        "mean_mae_confidence_interval_high": { "type": "number", "minimum": 0, "maximum": 100 },
+        "trial_noise_status": { "enum": ["not_provided", "not_applicable", "estimated"] },
+        "trial_noise_mae_standard_error": { "type": "number", "minimum": 0 },
+        "trial_noise_mean_mae_confidence_interval_low": { "type": "number", "minimum": 0, "maximum": 100 },
+        "trial_noise_mean_mae_confidence_interval_high": { "type": "number", "minimum": 0, "maximum": 100 },
+        "trial_noise_origins": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["origin_id", "trials", "mae_standard_error", "source_fingerprint"],
+            "properties": {
+              "origin_id": { "type": "string", "minLength": 1 },
+              "trials": { "type": "integer", "minimum": 2 },
+              "mae_standard_error": { "type": "number", "minimum": 0 },
+              "source_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "trial_noise_status": { "const": "estimated" } } },
+          "then": { "required": ["trial_noise_mae_standard_error", "trial_noise_mean_mae_confidence_interval_low", "trial_noise_mean_mae_confidence_interval_high", "trial_noise_origins"] },
+          "else": {
+            "not": {
+              "anyOf": [
+                { "required": ["trial_noise_mae_standard_error"] },
+                { "required": ["trial_noise_mean_mae_confidence_interval_low"] },
+                { "required": ["trial_noise_mean_mae_confidence_interval_high"] }
+              ]
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "claim_status": { "enum": ["calibrated", "inconclusive", "blocked"] },
+    "disclosures": { "type": "array", "items": { "type": "string" } },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

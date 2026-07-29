@@ -3,11 +3,16 @@
 //! This module deliberately imports document/section types only. It does not
 //! score players, run simulations, or rebuild scenario data.
 
-use std::sync::OnceLock;
+use std::{collections::BTreeMap, sync::OnceLock};
 
-use icelines_core::{parse_card_document, CardDocumentView, CardSectionView};
+use icelines_core::{
+    load_organization_window_profile_inventory, parse_card_document,
+    project_organization_window_card, validate_organization_window_board, CardDocumentView,
+    CardSectionView, OrganizationWindowBoardView, CANONICAL_TEAMS,
+};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
     text::Line,
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
@@ -35,6 +40,8 @@ const NYR_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-sea-2024-25.json");
+const ORGANIZATION_WINDOW_BOARD_JSON: &str =
+    include_str!("../../../../examples/organization-window-board-partial-2026-07-28.json");
 const FANTASY_CARD_JSON: &str =
     include_str!("../../../../examples/fantasy-roster-card-dexters-dawgs-2026-10-05.json");
 const FANTASY_DRAFT_CARD_JSON: &str =
@@ -45,6 +52,12 @@ const FANTASY_TRADE_CARD_JSON: &str =
     include_str!("../../../../examples/fantasy-trade-card-dexters-dawgs-fox-rantanen.json");
 
 fn card(team: &str) -> &'static CardDocumentView {
+    let upper = team.to_ascii_uppercase();
+    if let Some(window_team) = upper.strip_prefix("WINDOW-") {
+        return organization_window_cards()
+            .get(window_team)
+            .expect("canonical organization Window team");
+    }
     static NYR: OnceLock<CardDocumentView> = OnceLock::new();
     static SEA: OnceLock<CardDocumentView> = OnceLock::new();
     static FANTASY: OnceLock<CardDocumentView> = OnceLock::new();
@@ -59,7 +72,7 @@ fn card(team: &str) -> &'static CardDocumentView {
     static SEA_2024_MOVEMENT: OnceLock<CardDocumentView> = OnceLock::new();
     static NYR_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
     static SEA_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
-    match team.to_ascii_uppercase().as_str() {
+    match upper.as_str() {
         "SIM-NYR" => NYR_SEASON_SIMULATION.get_or_init(|| {
             parse_card_document(NYR_SEASON_SIMULATION_CARD_JSON)
                 .expect("sealed NYR season simulation card")
@@ -112,6 +125,15 @@ fn card(team: &str) -> &'static CardDocumentView {
 
 pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
+    if team.eq_ignore_ascii_case("WINDOW-BOARD") {
+        return ScreenChrome {
+            title: format!("The Window - 32-team board - page {}", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
     let fantasy = matches!(
         team.to_ascii_uppercase().as_str(),
         "DEX" | "DRAFT" | "MORNING" | "TRADE"
@@ -135,6 +157,8 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
             "NYR vs SEA Forecast History"
         } else if team.to_ascii_uppercase().starts_with("SIM-") {
             "NYR vs SEA Season Simulation"
+        } else if team.to_ascii_uppercase().starts_with("WINDOW-") {
+            "NYR vs SEA Organization Window"
         } else {
             "NYR vs SEA"
         }
@@ -155,6 +179,10 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
 
 pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
     let page = app.selected.min(1);
+    if team.eq_ignore_ascii_case("WINDOW-BOARD") {
+        render_organization_window_board(f, area, page);
+        return;
+    }
     if compare
         && !matches!(
             team.to_ascii_uppercase().as_str(),
@@ -170,6 +198,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
             "HISTORY-NYR"
         } else if upper.starts_with("SIM-") {
             "SIM-NYR"
+        } else if upper.starts_with("WINDOW-") {
+            "WINDOW-NYR"
         } else {
             "NYR"
         };
@@ -181,6 +211,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
             "HISTORY-SEA"
         } else if upper.starts_with("SIM-") {
             "SIM-SEA"
+        } else if upper.starts_with("WINDOW-") {
+            "WINDOW-SEA"
         } else {
             "SEA"
         };
@@ -200,6 +232,108 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
     }
 }
 
+fn organization_window_board() -> &'static OrganizationWindowBoardView {
+    static BOARD: OnceLock<OrganizationWindowBoardView> = OnceLock::new();
+    BOARD.get_or_init(|| {
+        let board = serde_json::from_str(ORGANIZATION_WINDOW_BOARD_JSON)
+            .expect("sealed 32-team organization Window board");
+        let inventory = load_organization_window_profile_inventory()
+            .expect("embedded organization Window profile inventory");
+        validate_organization_window_board(&board, &inventory)
+            .expect("embedded Window board must remain canonical and sealed");
+        board
+    })
+}
+
+fn organization_window_cards() -> &'static BTreeMap<String, CardDocumentView> {
+    static CARDS: OnceLock<BTreeMap<String, CardDocumentView>> = OnceLock::new();
+    CARDS.get_or_init(|| {
+        CANONICAL_TEAMS
+            .iter()
+            .map(|(team, _)| {
+                let card = project_organization_window_card(
+                    organization_window_board().clone(),
+                    team,
+                    None,
+                    None,
+                )
+                .expect("canonical organization Window card");
+                ((*team).to_owned(), card)
+            })
+            .collect()
+    })
+}
+
+fn render_organization_window_board(f: &mut Frame, area: Rect, page: usize) {
+    let board = organization_window_board();
+    let title = format!(
+        " THE WINDOW | {} | {} | {} ",
+        board.as_of,
+        board.manifest.manifest_id,
+        &board.fingerprint[..8]
+    );
+    let lines = organization_window_board_lines(board, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+/// Pure compact projection of one half of the sealed 32-team board.
+pub(crate) fn organization_window_board_lines(
+    board: &OrganizationWindowBoardView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let rows = board.organizations_in_display_order();
+    let start = page.min(1) * 16;
+    let mut lines = vec![format!(
+        "32 teams · coverage {:.0}% · ranks may be withheld when evidence gates fail",
+        board.league_coverage * 100.0
+    )];
+    if width >= 72 {
+        lines.push("RK  TEAM  SCORE  CONF  COV   STATE        CLASS".to_owned());
+    } else {
+        lines.push("RK  TEAM  SCORE  CONF  COV   STATE".to_owned());
+    }
+    for row in rows.into_iter().skip(start).take(16) {
+        let rank = row
+            .overall
+            .rank
+            .map(|rank| format!("{rank:>2}"))
+            .unwrap_or_else(|| "NR".to_owned());
+        let score = row
+            .overall
+            .score
+            .map(|score| format!("{score:>5.1}"))
+            .unwrap_or_else(|| "   NR".to_owned());
+        let state = format!("{:?}", row.overall.rank_status.state);
+        let classification = row
+            .overall
+            .published_classification()
+            .map(|classification| format!("{classification:?}"))
+            .unwrap_or_else(|| "Under review".to_owned());
+        if width >= 72 {
+            lines.push(format!(
+                "{rank:<2}  {:<4}  {score}  {:>3.0}%  {:>3.0}%  {:<11}  {classification}",
+                row.organization,
+                row.overall.confidence * 100.0,
+                row.overall.coverage * 100.0,
+                state
+            ));
+        } else {
+            lines.push(format!(
+                "{rank:<2}  {:<4}  {score}  {:>3.0}%  {:>3.0}%  {}",
+                row.organization,
+                row.overall.confidence * 100.0,
+                row.overall.coverage * 100.0,
+                state
+            ));
+        }
+    }
+    lines
+}
+
 fn render_document(f: &mut Frame, area: Rect, document: &CardDocumentView, page: usize) {
     let team = document
         .theme
@@ -212,10 +346,37 @@ fn render_document(f: &mut Frame, area: Rect, document: &CardDocumentView, page:
         .unwrap_or(&document.pages[page].literal_label);
     let title = format!(" {team} | {page_label} ");
     let lines = document_lines(document, page, area.width.saturating_sub(2));
+    let theme_style = card_theme_style(document);
     let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
-        .block(Block::default().title(title).borders(Borders::ALL))
+        .block(
+            Block::default()
+                .title(title)
+                .title_style(theme_style.add_modifier(Modifier::BOLD))
+                .border_style(theme_style)
+                .borders(Borders::ALL),
+        )
         .wrap(Wrap { trim: false });
     f.render_widget(paragraph, area);
+}
+
+fn card_theme_style(document: &CardDocumentView) -> Style {
+    document
+        .theme
+        .primary
+        .as_deref()
+        .and_then(parse_hex_color)
+        .map_or_else(Style::default, |color| Style::default().fg(color))
+}
+
+fn parse_hex_color(value: &str) -> Option<Color> {
+    let hex = value.strip_prefix('#')?;
+    if hex.len() != 6 {
+        return None;
+    }
+    let red = u8::from_str_radix(&hex[0..2], 16).ok()?;
+    let green = u8::from_str_radix(&hex[2..4], 16).ok()?;
+    let blue = u8::from_str_radix(&hex[4..6], 16).ok()?;
+    Some(Color::Rgb(red, green, blue))
 }
 
 /// Pure text projection used by the terminal renderer and density tests.
@@ -328,11 +489,28 @@ pub(crate) fn document_lines(document: &CardDocumentView, page: usize, width: u1
                 }
             }
             CardSectionView::Provenance(section) => {
-                lines.push(format!(
-                    "-- {}: {} --",
-                    section.title,
-                    section.provenance_ids.join(", ")
-                ));
+                lines.push(format!("-- {} --", section.title));
+                for provenance_id in &section.provenance_ids {
+                    if let Some(provenance) = document
+                        .provenance
+                        .iter()
+                        .find(|item| item.id == *provenance_id)
+                    {
+                        lines.push(format!(
+                            "{}: {:?} · {:?}",
+                            provenance.label, provenance.source, provenance.state
+                        ));
+                        if let Some(observed_at) = provenance.observed_at {
+                            lines.push(format!("Observed: {}", observed_at.to_rfc3339()));
+                        }
+                        if let Some(fingerprint) = &provenance.fingerprint {
+                            lines.push(format!("Fingerprint: {fingerprint}"));
+                        }
+                        if let Some(note) = &provenance.note {
+                            lines.push(note.clone());
+                        }
+                    }
+                }
             }
             CardSectionView::Decision(section) => {
                 lines.push(format!("-- {} --", section.title));
@@ -368,7 +546,12 @@ mod tests {
         command::{execute_command, parse_command, Command},
         event::Action,
     };
+    use axum::{
+        body::Body,
+        http::{Request, StatusCode},
+    };
     use ratatui::{backend::TestBackend, Terminal};
+    use tower::ServiceExt;
 
     fn render_app(app: &App, width: u16, height: u16) -> String {
         let backend = TestBackend::new(width, height);
@@ -654,7 +837,14 @@ mod tests {
         assert!(shift.contains("Observed standings points: +10.00"));
         let insider = document_lines(nyr, 1, 100).join("\n");
         assert!(insider.contains("Sealed checkpoint delta"));
-        assert!(insider.contains("earlier-run, later-run"));
+        assert!(insider.contains("Earlier sealed IceCast league run"));
+        assert!(insider.contains("Later sealed IceCast league run"));
+        assert!(
+            insider.contains("11cdcfcf9c10338a0384454803ca0aa67abdcb1ddce371c7f0b71c7faf320fef")
+        );
+        assert!(
+            insider.contains("5f14d35e417c6ca1897e9ebccfbe773fb92452b1b23282b9cc868460db3ac20a")
+        );
         assert_eq!(
             parse_command("movement-card SEA").unwrap(),
             Command::TeamCard {
@@ -725,5 +915,212 @@ mod tests {
             app.screen,
             Screen::TeamCard { ref team, .. } if team == "HISTORY-NYR"
         ));
+    }
+
+    #[test]
+    fn l1_organization_window_projects_shared_values_and_toggles() {
+        let nyr = card("WINDOW-NYR");
+        let sea = card("WINDOW-SEA");
+        assert_eq!(nyr.card_kind, icelines_core::CardKind::OrganizationWindow);
+        assert_eq!(sea.card_kind, icelines_core::CardKind::OrganizationWindow);
+        assert_eq!(nyr.provenance[0].fingerprint, sea.provenance[0].fingerprint);
+        let window = document_lines(nyr, 0, 80).join("\n");
+        assert!(window.contains("Organization Window"));
+        assert!(window.contains("League rank"));
+        assert!(window.contains("Confidence"));
+        assert!(window.contains("Coverage"));
+        let insider = document_lines(nyr, 1, 80).join("\n");
+        assert!(insider.contains("Leading available panes"));
+        assert!(insider.contains("Lowest available panes"));
+        assert!(insider.contains("Profiles and evidence"));
+        assert!(insider.contains("Sealed board"));
+        assert!(insider.contains("Balanced organization Window · 2026-07-28"));
+        assert!(
+            insider.contains("30083b67d6ac6a8bd185cc8a21f074c6cc00301e415cd60b954dcf68ff79a920")
+        );
+        assert!(nyr
+            .subtitle
+            .as_deref()
+            .unwrap()
+            .starts_with("Under review · NR"));
+
+        for (team, _) in CANONICAL_TEAMS {
+            let card = card(&format!("WINDOW-{team}"));
+            assert_eq!(card.context.joins.team_ids, [*team]);
+            assert!(
+                card_theme_style(card).fg.is_some(),
+                "{team} card must project its core theme into the TUI"
+            );
+        }
+
+        assert_eq!(
+            card_theme_style(card("WINDOW-BOS")).fg,
+            Some(Color::Rgb(255, 184, 28))
+        );
+        assert_eq!(parse_hex_color("not-a-color"), None);
+
+        assert_eq!(
+            parse_command("window-card SEA").unwrap(),
+            Command::TeamCard {
+                team: "WINDOW-SEA".to_owned()
+            }
+        );
+        assert_eq!(
+            parse_command("window-card BOS").unwrap(),
+            Command::TeamCard {
+                team: "WINDOW-BOS".to_owned()
+            }
+        );
+        assert!(parse_command("window-card XYZ").is_err());
+        let mut app = App::new(true);
+        execute_command(parse_command("window-card SEA").unwrap(), &mut app);
+        app.handle(Action::Char('t'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard { ref team, .. } if team == "WINDOW-NYR"
+        ));
+    }
+
+    #[test]
+    fn l1_organization_window_board_pages_cover_all_32_teams_at_80_columns() {
+        let board = organization_window_board();
+        let first = organization_window_board_lines(board, 0, 80);
+        let second = organization_window_board_lines(board, 1, 80);
+        assert_eq!(first.len(), 18);
+        assert_eq!(second.len(), 18);
+        assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
+        assert_eq!(first[2].split_whitespace().nth(1), Some("ANA"));
+        assert_eq!(second[2].split_whitespace().nth(1), Some("NSH"));
+        let teams = first
+            .iter()
+            .skip(2)
+            .chain(second.iter().skip(2))
+            .filter_map(|line| line.split_whitespace().nth(1))
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(teams.len(), 32);
+        assert_eq!(
+            parse_command("window-board").unwrap(),
+            Command::TeamCard {
+                team: "WINDOW-BOARD".to_owned()
+            }
+        );
+        let mut app = App::new(true);
+        execute_command(parse_command("window-board").unwrap(), &mut app);
+        app.handle(Action::Char('t'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard { ref team, .. } if team == "WINDOW-BOARD"
+        ));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
+    }
+
+    #[tokio::test]
+    async fn l2_organization_window_golden_parity_across_cli_tui_and_web() {
+        let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let board_path =
+            manifest_dir.join("../examples/organization-window-board-partial-2026-07-28.json");
+        let expected_board = organization_window_board().clone();
+        let expected_card = card("WINDOW-NYR").clone();
+        let temp = tempfile::tempdir().unwrap();
+
+        let cli_board_path = temp.path().join("window.json");
+        crate::commands::icecast::run_window(
+            board_path.clone(),
+            None,
+            true,
+            false,
+            Some(cli_board_path.clone()),
+        )
+        .unwrap();
+        let cli_board: OrganizationWindowBoardView =
+            serde_json::from_slice(&std::fs::read(cli_board_path).unwrap()).unwrap();
+        assert_eq!(cli_board, expected_board);
+
+        let cli_card_path = temp.path().join("window-card.json");
+        crate::commands::icecast::run_window_card(
+            board_path,
+            "NYR".to_owned(),
+            Some("New York Rangers".to_owned()),
+            None,
+            Some(cli_card_path.clone()),
+        )
+        .unwrap();
+        let cli_card: CardDocumentView =
+            serde_json::from_slice(&std::fs::read(cli_card_path).unwrap()).unwrap();
+        assert_eq!(cli_card.document_id, expected_card.document_id);
+        assert_eq!(cli_card.fingerprint, expected_card.fingerprint);
+
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let board_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/window/balanced.v1/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(board_response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(board_response.into_body(), 8 * 1024 * 1024)
+            .await
+            .unwrap();
+        let web_board: OrganizationWindowBoardView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_board, expected_board);
+
+        let card_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/cards/organization-window/20262027/NYR")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(card_response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(card_response.into_body(), 4 * 1024 * 1024)
+            .await
+            .unwrap();
+        let web_card: CardDocumentView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_card.document_id, expected_card.document_id);
+        assert_eq!(web_card.fingerprint, expected_card.fingerprint);
+
+        let html_response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/window/balanced.v1/20262027?team=NYR")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(html_response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(html_response.into_body(), 2 * 1024 * 1024)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body.to_vec()).unwrap();
+
+        let tui_card = document_lines(&expected_card, 0, 80).join("\n");
+        for expected in [
+            "Score: 59.7",
+            "League rank: NR",
+            "Confidence: 64%",
+            "Coverage: 85%",
+        ] {
+            assert!(tui_card.contains(expected), "TUI missing {expected}");
+            let value = expected.split_once(": ").unwrap().1;
+            assert!(html.contains(value), "Web HTML missing {value}");
+        }
+        let first_page = organization_window_board_lines(&expected_board, 0, 80);
+        let second_page = organization_window_board_lines(&expected_board, 1, 80);
+        let nyr_row = first_page
+            .iter()
+            .chain(&second_page)
+            .find(|line| line.split_whitespace().any(|cell| cell == "NYR"))
+            .unwrap();
+        let cells = nyr_row.split_whitespace().collect::<Vec<_>>();
+        assert_eq!(&cells[..5], &["NR", "NYR", "59.7", "64%", "85%"]);
     }
 }

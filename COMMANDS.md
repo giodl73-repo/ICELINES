@@ -1028,6 +1028,7 @@ icelines icecast affiliate-review-conflicts-league --league-crosswalk ahl-league
 icelines icecast affiliate-review-birth-date-league --league-crosswalk ahl-league-conflict-reviewed.json --nhl-player-id 8484115 --canonical-birth-date 1999-04-17 --evidence-url https://www.iowawild.com/players/detail/zmolek-1 --evidence-url https://bsubeavers.com/sports/mens-ice-hockey/roster/will-zmolek/15025 --reviewer "league-date-pilot" --reviewed-at 2026-07-26T22:50:00Z --note "official AHL club and college records agree with the provider date" --decisions-out ahl-league-date-decisions.json --json --out ahl-league-date-reviewed.json
 icelines icecast affiliate-review-collision-league --league-crosswalk ahl-league-conflict-reviewed.json --proposed-nhl-player-id 8475366 --canonical-nhl-player-id 8484302 --canonical-name "Matt Brown" --canonical-birth-date 1999-08-09 --evidence-url https://api-web.nhle.com/v1/player/8484302/landing --evidence-url https://www.phantomshockey.com/wp-content/uploads/2023/10/2023-Phantoms-Training-Camp-Roster.pdf --reviewer "league-collision-pilot" --reviewed-at 2026-07-26T21:10:00Z --note "official records identify the younger same-name player" --decisions-out ahl-league-collision-decisions.json --json --out ahl-league-collision-reviewed.json
 icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "exception-pilot" --reviewed-at 2026-07-25T14:00:00Z --note "official club evidence identifies an AHL-only player without a canonical NHL identity" --decisions-out hartford-reject-decisions.json --json --out hartford-exception-reviewed.json
+icelines icecast affiliate-review-reject-league --league-crosswalk ahl-league-conflict-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer "league-exception-pilot" --reviewed-at 2026-07-28T23:00:00Z --note "AHL player retained; no unique canonical NHL mapping" --decisions-out ahl-league-reject-decisions.json --json --out ahl-league-fully-reviewed.json
 icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
 icelines icecast affiliate-review-league --league-crosswalk ahl-2023-reviewed.json --league-crosswalk ahl-2024-reviewed.json --league-crosswalk ahl-2025-reviewed.json --json --out ahl-three-season-identity-review.json
 icelines icecast affiliate-review-board --review ahl-three-season-identity-review.json --json --out ahl-identity-exception-board.json
@@ -1041,6 +1042,15 @@ icelines icecast affiliate-status-show --review hartford-status-review-draft.jso
 icelines icecast affiliate-status-apply --prior-snapshot prior-ahl.json --crosswalk hartford-reviewed-identities.json --camp camp.json --review hartford-status-review.json --config rollover-base.json --out rollover-config.json
 icelines icecast affiliate-input --snapshot ahl-roster-stats.json --crosswalk hartford-identity-reviewed.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-affiliate-input.json
 icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk prior-identities.json --camp camp.json --camp-forecast camp-forecast.json --config rollover-config.json --json --out rollover.json
+icelines icecast affiliate-rollover-config-league --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --prior-affiliations examples/ahl-affiliations-2025-26.json --affiliations examples/ahl-affiliations-2026-27.json --as-of 2026-07-28 --source-url https://theahl.com/mediaguide --source-url https://theahl.com/nhl-affiliations --out league-rollover-config.json
+icelines icecast affiliate-status-draft-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-status-review.json
+icelines icecast affiliate-status-apply-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --review league-status-review-final.json --config league-rollover-config.json --out league-rollover-reviewed.json
+icelines fetch career --league-crosswalk ahl-league-fully-reviewed.json
+icelines icecast affiliate-professional-games --league-crosswalk ahl-league-fully-reviewed.json --career-history ~/.icelines/career_history.json --policy examples/ahl-professional-game-policy-2026-27.json --json --out professional-games.json
+icelines icecast affiliate-values --snapshot ahl-roster-stats.json --league-crosswalk ahl-league-fully-reviewed.json --policy examples/ahl-player-value-policy-2026-27.json --json --out ahl-player-values.json
+icelines icecast affiliate-values-apply --workboard affiliate-facts-board.json --ledger ahl-player-values.json --json --out affiliate-values-application.json
+icelines icecast affiliate-professional-games-apply --crosswalk hartford-identity-reviewed.json --ledger professional-games-final.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-projection-facts-reviewed.json
+icelines icecast affiliate-rollover-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json
 icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-study.json --json --out firkus-study.json
@@ -1088,6 +1098,41 @@ icelines icecast movement-card --input movement.json --team NYR --team-name "New
 icelines icecast history --input january.json --input february.json --input march.json --team NYR --team SEA
 icelines icecast history --input january.json --input february.json --json --out history.json
 icelines icecast history-card --input history.json --team NYR --team-name "New York Rangers" --out nyr-history-card.json
+icelines icecast window-build --season 20262027 --as-of 2026-07-27 --generated-at 2026-07-27T20:00:00-07:00 --prospect-program prospect-program.json --out window.json
+icelines icecast season --season 20262027 --game-forecast-out games.json --json --out season.json
+icelines icecast window-source-package --season 20262027 --as-of 2026-10-01 --team-season-forecast season.json --team-game-forecast games.json --cache-team-lineups --stats-season 20252026 --ahl-projection-inputs ahl-league-inputs.json --training-camp camp.json --cache-prospect-program --out window-sources.json
+icelines icecast window-source-refresh-lineups --input window-sources.json --stats-season 20252026 --training-camp camp.json --out window-sources-refreshed.json
+icelines icecast window-source-refresh-affiliates --input window-sources-refreshed.json --ahl-projection-inputs ahl-league-inputs.json --out window-sources-ranked.json
+icelines icecast window-source-refresh-affiliates --input window-sources-refreshed.json --ahl-facts-application affiliate-facts.json --ahl-development-rule ahl-rule.json --out window-sources-ranked.json
+icelines icecast affiliate-facts-status --input affiliate-readiness-application.json --require-ready --json --out affiliate-facts-status.json
+icelines icecast affiliate-professional-games --league-crosswalk reviewed-ahl-identities.json --career-history career-history.json --policy ahl-professional-game-policy.json --camp-forecast camp.json --json --out professional-games.json
+icelines icecast window-source-audit --input window-sources.json --generated-at 2026-10-01T12:00:00Z --out window-source-coverage.json
+icelines icecast window-build --season 20262027 --as-of 2026-10-01 --generated-at 2026-10-01T12:00:00Z --source-package window-sources.json --require-ranked --out production-window.json
+icelines icecast window --input window.json
+icelines icecast window --input window.json --team NYR
+icelines icecast window --input window.json --markdown --out window-report.md
+icelines icecast window --input window.json --team NYR --markdown --out nyr-window-report.md
+icelines icecast window-card --input window.json --team NYR --team-name "New York Rangers" --out nyr-window-card.json
+icelines icecast window-movement --earlier october.json --later january.json --out window-movement.json
+icelines icecast window-personnel-attribution --earlier october.json --later january.json --movement window-movement.json --input personnel-attribution.json --out attributed-movement.json
+icelines icecast window-personnel-input-build --actual-forecast actual-february.json --counterfactual-board counterfactual-february-window.json --earlier-as-of 2025-01-31 --later-as-of 2025-02-28 --attribution-id january-february --scenario-id paired-replay --rationale "Paired rolling replay" --out personnel-attribution.json
+icelines icecast window-personnel-summary --input attributed-movement.json --out personnel-evidence-summary.json
+icelines icecast window-rebase --input october.json --target-manifest balanced-v2.json --bridge balanced-v1-to-v2-bridge.json --out october-rebased.json
+icelines icecast window-movement --earlier october.json --later january-v2.json --bridge balanced-v1-to-v2-bridge.json --out bridged-movement.json
+icelines icecast window-history --input october.json --input january.json --input march.json --out window-history.json
+icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --out window-impact.json
+icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --authority trade-authority.json --out attributed-window-impact.json
+icelines icecast window-scenario --baseline baseline.json --scenario modeled.json --scenario-id sourced-scenario --team-season-authority season-scenario.json --training-camp-authority camp-scenario.json --out sourced-window-impact.json
+icelines icecast window-scenario-distribute --baseline baseline.json --input scenario-distribution-input.json --out scenario-distribution.json
+icelines icecast window-calibrate --target next-season-organization-value --origin 2023-origin.json --origin 2024-origin.json --origin 2025-origin.json --minimum-origins 3 --out rolling-calibration.json
+icelines icecast window-evaluate --target next-season-organization-value --origin 2022-train.json --origin 2023-train.json --origin 2024-validation.json --origin 2025-retrospective-holdout.json --minimum-training-origins 2 --out split-evaluation.json
+icelines icecast window-standings --target-season 20252026 --date 2026-04-17 --captured-at 2026-07-28T08:00:00Z --out standings-2025-26.json
+icelines icecast window-origin-build --source-season 20242025 --target-season 20252026 --as-of 2025-06-30 --generated-at 2026-07-28T08:00:00Z --role retrospective_holdout --standings standings-2025-26.json --out origin-2025-26.json
+icelines icecast window-holdout-register --source-season 20252026 --target-season 20262027 --feature-cutoff 2026-06-30 --outcome-not-before 2027-04-11 --registered-at 2026-07-29T12:00:00Z --out future-holdout-registration.json
+icelines icecast window-holdout-score --registration future-holdout-registration.json --standings standings-2026-27.json --scored-at 2027-04-11T13:00:00Z --out future-holdout-result.json
+powershell -ExecutionPolicy Bypass -File scripts/window-browser-review.ps1
+powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1
+powershell -ExecutionPolicy Bypass -File scripts/verify-release-artifact.ps1 -ArtifactPath dist/release/icelines-windows-x86_64.zip
 icelines icecast backtest --input 2021-22.json --input 2022-23.json --input 2023-24.json
 icelines icecast backtest --input 2021.json --input 2022.json --input 2023.json --json --out validation.json
 icelines icecast calibrate-development --start-season 20052006 --end-season 20252026
@@ -1250,6 +1295,14 @@ non-player personnel remain distinguishable in the retained note. Repeatable
 `--evidence-url` values are validated as absolute URLs and retained as
 structured row evidence instead of being buried only in prose.
 
+`icecast affiliate-review-reject-league` applies the same mapping-only
+rejection semantics atomically to a league envelope. A provider ID that appears
+for multiple clubs after a trade is closed on every pending occurrence. Every
+requested ID must have at least one pending occurrence or the operation returns
+no updated envelope. The separate league decisions artifact records all
+team-bound batches, skips, evidence, reviewer authority, and the explicit fact
+that AHL player and season records remain retained for a future sourced remap.
+
 `icecast affiliate-review-exact-league`,
 `icecast affiliate-review-aliases-league`, and the targeted conflict command
 apply narrow evidence rules atomically across an
@@ -1275,6 +1328,14 @@ published score is deterministic and read-only; rank never grants review
 authority. Conflict pairs expose their absolute day delta; a delta of at least
 1,460 days recommends identity-collision investigation rather than a date
 override.
+
+Preseason rollover keeps prior evidence separate from target affiliation. In
+`ahl_preseason_rollover.v1` config, `ahl_team` is the target-season affiliate;
+optional `prior_ahl_team` names the club in the prior official snapshot. When
+`prior_ahl_team` is absent it defaults to `ahl_team`, preserving existing
+same-affiliate inputs. `affiliate-status-draft --ahl-team` continues to select
+the prior-snapshot club. This distinction supports relocation and affiliation
+changes without relabeling historical roster evidence.
 
 `icecast affiliate-review-show` is the read-only text/JSON inspection surface
 for an existing crosswalk. IceLines projects the authoritative crosswalk into
@@ -1327,6 +1388,44 @@ automatic merge key. It reports projectable F/D/G coverage plus identity,
 organization-status, and waiver review lanes. It never emits an affiliate
 projection: readiness still requires downstream professional-game,
 development-rule, contract, injury, assignment-rights, and player-value facts.
+
+`icecast affiliate-rollover-config-league` composes one explicit team config
+for every sealed camp team from separate season-dated prior and target
+affiliation catalogs. It never derives a historical relationship from the
+current catalog and emits no prior-player decisions. `icecast
+affiliate-rollover-league` then applies the forecast-native rollover adapter to
+the exact league cohort and emits `ahl_preseason_league_rollover.v1`. Missing
+team forecasts or source bindings are typed failures; built-but-not-ready teams
+retain their identity, organization-status, position-shape, and waiver queues.
+The sealed forecast path is semantically identical to the original explicit
+camp-input path for every field used by rollover.
+
+`icecast affiliate-status-draft-league` creates the corresponding
+`ahl_preseason_league_organization_review.v1` envelope directly from the sealed
+league forecast. Each child is the existing crosswalk-fingerprint-bound review
+contract; the league layer adds exact team coverage and recomputed aggregate
+counts but no decisions. After every required child row has sourced status,
+reviewer, timestamp, and note evidence, set the league and child `draft` fields
+to false and use `affiliate-status-apply-league`. Application is atomic across
+the cohort. Mapping-rejected identities remain projection blockers but do not
+invalidate unrelated, otherwise-complete status decisions.
+
+`fetch career --league-crosswalk` acquires official NHL landing career rows for
+the unique canonical IDs in a reviewed AHL league envelope. The resulting
+cache feeds `affiliate-professional-games`, which counts only prior regular
+seasons under a versioned league-treatment policy. Missing histories and known
+professional leagues without an explicit include/exclude decision withhold
+that player's total. The ledger reports the 260-game threshold test but does
+not infer age exemptions, contracts, assignments, waivers, recalls, or lineups.
+Policies declare `draft`, `provisional`, or `final` authority. Draft and
+provisional runs may calculate threshold, age, and youth-exemption facts for
+review, but only a final policy can certify `development_rule_qualified`.
+Affiliate projection input preserves that certified value separately from its
+raw total; when present, it controls development/veteran classification.
+`affiliate-professional-games-apply` is the fail-closed bridge: it accepts only
+a final ledger, rejects identity/team/fact conflicts, changes only the two rule
+facts, and emits a fingerprint-bound application that `affiliate-input` can
+consume directly.
 
 `icecast affiliate-map` emits the dated `ahl_affiliation_catalog.v1` authority
 used to connect all 32 NHL organizations to their current AHL affiliates. For
@@ -1704,6 +1803,12 @@ remainder to the projected final averages.
 can be combined with `--isolated-impacts`; its baseline, natural scenario,
 single-event, and forced-ceiling runs all share the identical fixed-result
 boundary, trials, and seed.
+
+`--ignore-replay-personnel-after YYYY-MM-DD` is a paired-counterfactual tool
+and requires rolling replay. It keeps all personnel evidence through the date
+and omits only later events while leaving the game-results checkpoint intact.
+Use it with the same `--through`, trials, seed, and other inputs as the actual
+later checkpoint; it is not a general-purpose alternate-history switch.
 
 `icecast movement --earlier ... --later ...` builds
 `team_season_forecast_movement.v1` from two complete league artifacts. **The
@@ -3057,6 +3162,106 @@ seasons aren't aligned with NHL week boundaries) — use `--season`.
 - `Shift+D` — open the date picker overlay on Tonight (jumps to a
   past date) / Schedule (snaps to that week's Monday) / Playoffs
   (opens the season picker since playoffs is season-anchored).
+
+---
+
+## AHL preseason evidence workboard
+
+```bash
+# Compose the complete league rollover and professional-game evidence without
+# inventing assignments, prospect labels, recall readiness, or waiver clearance.
+icelines icecast affiliate-facts-board \
+  --rollover league-rollover.json \
+  --professional-games professional-games.json \
+  --json --out affiliate-facts-board.json
+
+# Create the exact candidate review envelope; edit sourced fields, reviewer,
+# timestamp, and draft status before application.
+icelines icecast affiliate-facts-draft \
+  --workboard affiliate-facts-board.json \
+  --out affiliate-facts-overlay-draft.json
+
+# Apply only finalized facts bound to that exact workboard fingerprint.
+icelines icecast affiliate-facts-apply \
+  --workboard affiliate-facts-board.json \
+  --overlay affiliate-facts-overlay-final.json \
+  --json --out affiliate-facts-application.json
+
+# Fetch exact official birth-date and NHL-workload evidence for every canonical
+# candidate in a raw workboard or any chained application artifact.
+icelines fetch career \
+  --affiliate-workboard affiliate-values-application.json
+
+# Classify the organization-independent reserve-system population, then apply
+# that status to every unresolved organization appearance for the player.
+icelines icecast affiliate-prospects \
+  --workboard affiliate-values-application.json \
+  --career-history ~/.icelines/career_history.json \
+  --policy examples/organizational-prospect-policy-2026-27.json \
+  --json --out ahl-prospect-status.json
+icelines icecast affiliate-prospects-apply \
+  --workboard affiliate-values-application.json \
+  --ledger ahl-prospect-status.json \
+  --json --out affiliate-prospects-application.json
+
+# Build a confidence-aware evaluation index from within-position value,
+# observed NHL workload, and non-duplicated camp proximity evidence.
+icelines icecast affiliate-readiness \
+  --workboard affiliate-prospects-application.json \
+  --career-history ~/.icelines/career_history.json \
+  --camp-forecast examples/icecast-league-training-camp-2026-27.json \
+  --policy examples/ahl-recall-readiness-policy-2026-27.json \
+  --json --out ahl-recall-readiness.json
+icelines icecast affiliate-readiness-apply \
+  --workboard affiliate-prospects-application.json \
+  --ledger ahl-recall-readiness.json \
+  --json --out affiliate-readiness-application.json
+
+# Lower only complete teams through the canonical AHL lineup optimizer.
+icelines icecast affiliate-inputs-league \
+  --application affiliate-facts-application.json \
+  --rule ahl-development-rule-final.json \
+  --json --out affiliate-inputs-league.json
+```
+
+The JSON artifact is keyed by canonical NHL player ID where identity is
+available, preserves exact eligible positions, and lists every remaining
+authority blocker by player and team. Text output is a compact 32-team review
+queue. A provisional professional-game policy can populate raw totals but
+cannot certify final AHL development-rule qualification.
+
+Overlay rows are partial by design. Omitted values stay blocked; `false` is an
+explicit reviewed value for prospect status or assignment, not a synonym for
+missing. Conflicts with sealed position/score facts, duplicate player rows,
+non-HTTP evidence, invalid readiness, stale fingerprints, and draft overlays
+fail before output.
+
+League input lowering also requires `professional_game_policy_authority=final`,
+a matching 260-game threshold, and explicit 18-dressed/12-development rule
+authority. Every emitted team has already passed the canonical 12F/6D/2G and
+development-rule projection builder. Incomplete teams remain named failures in
+the league document.
+
+`fetch career --league-crosswalk ...` stores official NHL landing birth dates
+and primary positions beside career stints. The position is a fallback for a
+generic AHL `F` row only; it is not fantasy eligibility or assignment evidence.
+
+`organizational_prospect_policy.v1` is an operational IceLines population rule,
+not NHL rookie eligibility or a scouting grade. The 2026-27 policy retains a
+player through age 24 and 50 observed NHL regular-season games. Either observed
+graduation axis is enough to classify `false`; `true` requires both exact age
+and workload evidence. The classification is keyed by canonical NHL player ID,
+so one player appearing in multiple rollover organizations is classified once
+and applied to every appearance without resolving assignment, waiver, recall,
+or organization status.
+
+`ahl_recall_readiness_policy.v1` produces a 0..1 evaluation index, not a
+calibrated probability of recall or NHL success. Its default method weights
+within-position player value at 0.50, observed NHL regular-season workload at
+0.30, and camp proximity at 0.20. It publishes an index only at 0.70 evidence
+coverage and carries confidence separately. Prior-AHL value takes precedence
+over camp value; when camp supplies the value fallback, camp proximity is
+omitted so one camp model is not counted twice.
 
 ---
 

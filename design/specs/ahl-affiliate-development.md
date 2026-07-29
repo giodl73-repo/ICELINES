@@ -167,6 +167,14 @@ evidence-backed AHL-only, non-player, or other exclusion rationale into the
 crosswalk, while repeatable absolute evidence URLs remain structured on the
 rejected row for every renderer and downstream audit.
 
+`affiliate-review-reject-league` is the atomic league counterpart. It selects
+unique provider IDs, closes every pending team occurrence of each selected ID,
+and emits the same team-bound decision batches inside a league audit. A missing
+or non-pending selected ID fails the entire transformation. Rejection remains
+mapping-only: the official AHL player, club appearance, and season facts are
+preserved, so later canonical evidence can support a new reviewed remap rather
+than reconstructing deleted source data.
+
 Birth-date conflicts use a separate targeted league authority rather than the
 routine exact or alias lanes. A reviewer selects proposed NHL IDs and supplies
 new absolute evidence plus a timestamped rationale. IceLines rechecks that
@@ -223,6 +231,31 @@ season, and team leverage; a conflict with a canonical ID, date pair, and two
 retained sources receives an evidence-readiness bonus. The board never creates
 review authority.
 
+Preseason rollover binds two club identities when an affiliation changes:
+`prior_ahl_team` selects the official historical roster and its reviewed
+crosswalk, while `ahl_team` names the target-season affiliate. The prior field
+is optional and defaults to the target for backward compatibility. Outputs
+disclose both names. Historical players are never relabeled as members of a
+new or relocated club merely to make the join succeed.
+
+League rollover consumes separate prior- and target-season affiliation
+catalogs plus the sealed league camp forecast. The config draft requires exact
+NHL-team cohort coverage and creates no organization-status decisions. The
+league result retains one `ahl_preseason_rollover.v1` per successfully bound
+team and a typed failure row for any missing forecast, crosswalk, or source
+binding. Forecast-native and explicit-input team adapters must produce
+identical artifacts. Neither surface converts candidate-pool readiness into an
+AHL assignment or lineup claim.
+
+The league organization-status envelope composes those team artifacts without
+creating a second decision format. Aggregate blocker and required-decision
+counts are recomputed from the children. League application requires exact
+team coverage, no failed children, finalized child reviewer authority, and all
+required evidence; it returns no updated config if any child fails. An explicit
+identity-mapping rejection remains visible in rollover and prevents projection
+readiness, but it does not prevent valid retained/departed/other-league
+decisions for different players from being applied.
+
 ## Data work remaining
 
 - continue resolving the three-season historical evidence queue; retain Conor McCollum as
@@ -239,6 +272,130 @@ review authority.
   changes from game and shift evidence where available.
 
 Official affiliation authority: <https://theahl.com/nhl-affiliations>.
+
+### Professional-game ledger
+
+`ahl_professional_game_ledger.v2` is the cache-native evidence bridge from a
+reviewed all-league identity envelope and official NHL landing career histories
+to start-of-season game totals. Its league semantics are data in
+`ahl_professional_game_policy.v2`: every observed known-professional league must
+be explicitly included or excluded with sources. Unknown treatments and
+missing histories fail closed per player; playoffs and target-season stints are
+always excluded.
+
+The first real 2026-27 pass selected 1,323 unique canonical players. The new
+crosswalk-targeted career acquisition filled all 1,323 histories with zero
+skips. The intentionally partial NHL/AHL-only policy completes 585 players and
+leaves 738 in an exact league-policy queue: ECHL 539, SHL 87, Liiga 68, KHL 53,
+Mestis 35, Czechia 28, Slovakia 22, DEL 17, NL 11, and Allsvenskan 1 (players
+may appear in more than one queue). This is evidence progress, not a license to
+guess which European abbreviations or youth-season exemptions count.
+
+The ledger's threshold flag is deliberately not a final development-player
+classification. The age-based qualification and European elite games played
+while CHL-eligible remain separate rule facts that must be modeled before the
+ledger can author projection-ready classification.
+
+The policy authority axis is `draft`, `provisional`, or `final`. A provisional
+2026-27 policy now resolves all observed exact league abbreviations using the
+2025-26 rule book, the official 2026 CBA-change description, and a separately
+sourced top-European-league mapping. It produces 1,323/1,323 totals with zero
+unresolved players: 1,010 are at or below 260 games and 313 are above; 181
+players have 8,780 European youth-season games separated from the count. It
+emits zero final qualification values because the 2026-27 rule book has not yet
+confirmed the inherited age and youth-exemption clauses.
+
+Version 2 makes that calendar boundary structural. The base dressed-skater
+rule, age qualification, and European-youth exemption each carry their own
+effective season. A final policy and its application are accepted only when all
+three authority seasons equal the target season. Prior-season clauses remain
+usable for provisional analysis, but changing the authority label cannot
+silently carry them forward.
+
+Affiliate player input now carries `development_rule_qualified` independently
+from `professional_games_at_season_start`. A final reviewed policy may classify
+an under-age player as development-qualified even above 260 raw counted games;
+the projection optimizer honors that reviewed result. Older inputs without the
+new field retain threshold-only behavior for compatibility, but the production
+Window composition path must require final policy authority rather than rely on
+the fallback.
+
+`ahl_professional_game_facts_application.v2` is that production boundary for
+an official affiliate snapshot. It binds one reviewed team crosswalk to a final
+league ledger, verifies any pre-existing totals/classifications, and enriches
+only those two fields in the separate projection-facts rows. Draft or
+provisional ledgers, missing canonical players, and conflicting authored facts
+fail before output. The normal `affiliate-input` command accepts this envelope
+as well as its legacy bare facts array.
+
+For preseason composition,
+`ahl_preseason_league_facts_workboard.v1` joins the complete league rollover
+and matching ledger by canonical NHL player ID without requiring provider-local
+AHL IDs for camp-only candidates. It deliberately does not author projection
+facts. Instead, it preserves exact position eligibility and emits an explicit
+per-player blocker set for assignment, organization status, waiver clearance,
+score, prospect status, recall readiness, professional games, and final rule
+qualification. This makes the remaining all-32 data work measurable while
+keeping final assignments and player-quality judgments outside the join.
+The companion overlay draft/application contract is fingerprint-bound and
+partial: it can record exact position, projected score, independent prospect
+status, recall readiness, assignment, and waiver clearance, while professional
+games and rule qualification remain ledger-owned and organization status
+remains rollover-review-owned. This prevents one convenient player-facts file
+from becoming a second authority for every preseason decision.
+
+Rollover review may consume `ahl_organization_status_ledger.v1` as a narrow
+official-current-team authority. The result is organization-specific rather
+than player-global: one player can be departed relative to a prior club and
+retained relative to the current club. Its application only prefills sourced
+`retained`/`departed` rows and deliberately leaves the review in draft form.
+It does not write assignment, projected score, waivers, prospect status, or
+recall readiness into the facts workboard.
+
+Facts-ready lowering reuses `build_ahl_affiliate_projection`; it does not add a
+parallel roster selector. The league result carries successful canonical
+inputs and deterministic team failures. It refuses provisional professional-
+game authority even when raw totals are complete, requires rule-threshold
+agreement, retains source URLs and review timestamps, and proves each emitted
+pool can satisfy roster shape and the AHL development rule before downstream
+organization composition.
+
+Recall readiness is supplied by `ahl_recall_readiness_policy.v1`, not inferred
+from prospect or development-rule status. Method
+`weighted_value_experience_camp.v1` combines a within-position empirical
+midrank value signal, observed NHL regular-season workload, and camp roster
+proximity. The configured weights, minimum coverage, component signals,
+coverage, and confidence are retained in the sealed ledger. The 0..1 result is
+an evaluation index, not a calibrated recall or NHL-success probability.
+Prior-AHL value has precedence over a target-camp value. If camp supplies the
+value fallback, camp proximity is omitted to avoid counting the same camp model
+twice. Application can clear only `RecallReadiness`; assignment, organization
+status, waiver clearance, player score, prospect status, professional games,
+and final-rule qualification remain independently owned.
+
+The official NHL landing cache retains primary position beside birth date and
+career history. The professional-game ledger carries that position through the
+same fingerprinted authority, and the preseason workboard uses it only when a
+rollover row has no exact primary position (for example, the AHL feed reports
+generic `F`). It never overwrites a camp position, invents multi-position
+eligibility, or implies assignment. The real 1,323-player refresh populated
+1,323 official positions and reduced the all-32 exact-position blocker queue
+from 255 to zero.
+
+Missing direct prior-season AHL value is handled by a separate, evaluation-only
+cross-league fallback before recall readiness. IceLines does not embed a
+universal NHLe table. It fits frozen career pairs in which a player has a
+source-league season followed by same-season or next-season AHL evidence,
+partitioned by position group. Skater calibration is a workload-weighted
+multiplicative points-per-game translation; goalie calibration is a
+workload-weighted additive save-percentage delta. Policy gates cover pair and
+unique-player counts, aggregate and per-pair workload, source recency and
+sample size, and RMSE fit. Sample and fit confidence reduce effective player
+workload before position-specific prior shrinkage. The sealed ledger retains
+the career-source and workboard fingerprints, calibration diagnostics, player
+evidence, and unavailable reasons. Its application can fill only a missing
+`projected_score`; direct AHL values and every other authority lane are
+preserved.
 
 Historical replay uses season-dated catalogs rather than applying the current
 affiliate map retroactively. `examples/ahl-affiliations-2021-22.json` preserves
@@ -287,6 +444,35 @@ of six and commit their shared FLETCH manifest once. The returned verified byte
 map is parsed directly; it is not discarded and reacquired once per report.
 Team roster/skater/goalie assembly remains atomic, and the final snapshot is
 sorted by team name before validation so concurrency cannot alter the artifact.
+
+`icelines fetch ahl-transactions` resolves the same official season catalog and
+captures every paginated league transaction as
+`ahl_transaction_snapshot.v1`. Each row retains the provider player ID, team
+ID, date, raw `ADD`/`DEL` type, description, and source page; the snapshot also
+retains the season's provider team catalog and each page's verified acquisition
+time. Exact page totals must reconcile before the snapshot is sealed. This is
+source evidence rather than an assignment model: missing transactions and old
+season events never imply current assignment, contract rights, waivers, or
+organization status.
+
+`icelines icecast affiliate-transaction-state` turns that source document into
+`ahl_transaction_state_ledger.v1` at an explicit date. Latest-date ADD/DEL
+sets are evaluated without assuming intraday order; conflicts stay ambiguous.
+The ledger joins provider identity through the reviewed league crosswalk and
+provider team through the dated affiliation catalog, then binds every input
+and its own output by SHA-256 fingerprint. It remains separate from preseason
+facts so transaction evidence cannot silently clear waivers, contracts,
+organization status, or target assignment.
+The companion fingerprinted application writes only unambiguous canonical
+assignment state into the preseason workboard and retains row-level authority
+provenance. An empty ledger is a verified no-op rather than negative evidence.
+
+Waiver clearance uses a parallel reviewed boundary rather than transaction
+absence. `affiliate-waivers-draft` generates the exact queue;
+`affiliate-waivers-finalize` seals dated cleared/claimed decisions with source
+and reviewer authority; `affiliate-waivers-apply` changes only the waiver gate.
+Eligibility, placement, and prior clearance are not interchangeable with a
+valid target assignment clearance.
 
 `affiliate_projection_input_from_snapshot` is the fail-closed bridge into the
 core projection contract. Its enrichment set must exactly cover the selected

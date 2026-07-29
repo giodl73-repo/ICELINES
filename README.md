@@ -333,6 +333,7 @@ icelines icecast affiliate-review-exact-league --league-crosswalk ahl-league-ide
 icelines icecast affiliate-review-aliases --crosswalk hartford-exact-reviewed.json --reviewer alias-pilot --reviewed-at 2026-07-25T13:00:00Z --json --out hartford-alias-reviewed.json
 icelines icecast affiliate-review-aliases-league --league-crosswalk ahl-league-exact-reviewed.json --reviewer league-alias-pilot --reviewed-at 2026-07-25T13:30:00Z --json --out ahl-league-alias-reviewed.json
 icelines icecast affiliate-review-reject --crosswalk hartford-alias-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer exception-pilot --reviewed-at 2026-07-25T14:00:00Z --note "AHL-only player without a canonical NHL identity" --json --out hartford-exception-reviewed.json
+icelines icecast affiliate-review-reject-league --league-crosswalk ahl-league-conflict-reviewed.json --provider-player-id 8789 --evidence-url https://www.hartfordwolfpack.com/players/detail/ortiz --reviewer league-exception-pilot --reviewed-at 2026-07-28T23:00:00Z --note "AHL player retained; no unique canonical NHL mapping" --json --out ahl-league-fully-reviewed.json
 icelines icecast affiliate-review-league --crosswalk hartford-exception-reviewed.json --crosswalk coachella-reviewed.json --json --out ahl-league-identity-review.json
 icelines icecast affiliate-review-league --league-crosswalk ahl-2023-reviewed.json --league-crosswalk ahl-2024-reviewed.json --league-crosswalk ahl-2025-reviewed.json --json --out ahl-three-season-identity-review.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --include-aliases --out hartford-review-with-aliases-draft.json
@@ -346,6 +347,34 @@ icelines icecast affiliate-status-show --review hartford-status-review-draft.jso
 icelines icecast affiliate-status-apply --prior-snapshot prior-ahl.json --crosswalk hartford-reviewed-identities.json --camp camp.json --review hartford-status-review.json --config rollover-base.json --out rollover-config.json
 icelines icecast affiliate-input --snapshot ahl-roster-stats.json --crosswalk hartford-identity-reviewed.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-affiliate-input.json
 icelines icecast affiliate-rollover --prior-snapshot prior-ahl.json --crosswalk prior-identities.json --camp camp.json --camp-forecast camp-forecast.json --config rollover-config.json --json --out rollover.json
+icelines icecast affiliate-rollover-config-league --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --prior-affiliations examples/ahl-affiliations-2025-26.json --affiliations examples/ahl-affiliations-2026-27.json --as-of 2026-07-28 --source-url https://theahl.com/mediaguide --source-url https://theahl.com/nhl-affiliations --out league-rollover-config.json
+icelines icecast affiliate-status-draft-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-status-review.json
+icelines fetch career --affiliate-workboard affiliate-readiness-application.json
+icelines icecast affiliate-status-evidence --review league-status-review.json --career-history ~/.icelines/career_history.json --as-of 2026-07-28T23:59:59-07:00 --maximum-fact-age-days 14 --json --out organization-status-evidence.json
+icelines icecast affiliate-status-evidence-apply --review league-status-review.json --ledger organization-status-evidence.json --json --out organization-status-review-prefilled.json
+icelines icecast affiliate-status-apply-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --review league-status-review-final.json --config league-rollover-config.json --out league-rollover-reviewed.json
+icelines icecast affiliate-transaction-state --transactions target/window-ahl-transactions-2026-27.json --league-crosswalk ahl-league-fully-reviewed.json --affiliations examples/ahl-affiliations-2026-27.json --cutoff 2026-07-28 --json --out ahl-transaction-state.json
+icelines icecast affiliate-transaction-state-apply --workboard affiliate-readiness-application.json --ledger ahl-transaction-state.json --json --out affiliate-assignment-application.json
+icelines icecast affiliate-waivers-draft --workboard affiliate-assignment-application.json --cutoff 2026-09-30 --json --out waiver-review-draft.json
+icelines icecast affiliate-waivers-finalize --draft waiver-review-draft.json --decisions sourced-waiver-decisions.json --json --out waiver-review-final.json
+icelines icecast affiliate-waivers-apply --workboard affiliate-assignment-application.json --review waiver-review-final.json --json --out affiliate-waiver-application.json
+icelines fetch career --league-crosswalk ahl-league-fully-reviewed.json
+icelines icecast affiliate-professional-games --league-crosswalk ahl-league-fully-reviewed.json --career-history ~/.icelines/career_history.json --policy examples/ahl-professional-game-policy-2026-27.json --json --out professional-games.json
+icelines icecast affiliate-values --snapshot ahl-roster-stats.json --league-crosswalk ahl-league-fully-reviewed.json --policy examples/ahl-player-value-policy-2026-27.json --json --out ahl-player-values.json
+icelines icecast affiliate-values-apply --workboard affiliate-facts-board.json --ledger ahl-player-values.json --json --out affiliate-values-application.json
+icelines icecast affiliate-values-cross-league --workboard affiliate-values-application.json --career-history ~/.icelines/career_history.json --policy examples/ahl-cross-league-value-policy-2026-27.json --json --out ahl-cross-league-values.json
+icelines icecast affiliate-values-cross-league-apply --workboard affiliate-values-application.json --ledger ahl-cross-league-values.json --json --out affiliate-cross-league-values-application.json
+icelines fetch career --affiliate-workboard affiliate-cross-league-values-application.json
+icelines icecast affiliate-prospects --workboard affiliate-cross-league-values-application.json --career-history ~/.icelines/career_history.json --policy examples/organizational-prospect-policy-2026-27.json --json --out ahl-prospect-status.json
+icelines icecast affiliate-prospects-apply --workboard affiliate-cross-league-values-application.json --ledger ahl-prospect-status.json --json --out affiliate-prospects-application.json
+icelines icecast affiliate-readiness --workboard affiliate-prospects-application.json --career-history ~/.icelines/career_history.json --camp-forecast examples/icecast-league-training-camp-2026-27.json --policy examples/ahl-recall-readiness-policy-2026-27.json --json --out ahl-recall-readiness.json
+icelines icecast affiliate-readiness-apply --workboard affiliate-prospects-application.json --ledger ahl-recall-readiness.json --json --out affiliate-readiness-application.json
+icelines icecast affiliate-facts-board --rollover league-rollover.json --professional-games professional-games.json --json --out affiliate-facts-board.json
+icelines icecast affiliate-facts-draft --workboard affiliate-facts-board.json --out affiliate-facts-overlay-draft.json
+icelines icecast affiliate-facts-apply --workboard affiliate-facts-board.json --overlay affiliate-facts-overlay-final.json --json --out affiliate-facts-application.json
+icelines icecast affiliate-inputs-league --application affiliate-facts-application.json --rule ahl-development-rule-final.json --json --out affiliate-inputs-league.json
+icelines icecast affiliate-professional-games-apply --crosswalk hartford-identity-reviewed.json --ledger professional-games-final.json --facts hartford-projection-facts.json --nhl-team NYR --ahl-team "Hartford Wolf Pack" --out hartford-projection-facts-reviewed.json
+icelines icecast affiliate-rollover-league --prior-snapshot prior-ahl.json --league-crosswalk ahl-league-fully-reviewed.json --camp-forecast league-camp.json --config league-rollover-config.json --json --out league-rollover.json
 icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast organization --input organization.json --json --out the-system.json
 icelines icecast season --team NYR --scenario nyr-camp-season.json --trials 10000 --json --out nyr-camp-season-forecast.json
@@ -372,6 +401,25 @@ icelines icecast movement --earlier january.json --later february.json --team NY
 icelines icecast movement-card --input movement.json --team NYR --team-name "New York Rangers" --out nyr-movement-card.json
 icelines icecast history --input january.json --input february.json --input march.json --team NYR --team SEA
 icelines icecast history-card --input history.json --team NYR --team-name "New York Rangers" --out nyr-history-card.json
+icelines icecast window-build --season 20262027 --as-of 2026-07-27 --generated-at 2026-07-27T20:00:00-07:00 --prospect-program prospect-program.json --out window.json
+icelines icecast window --input window.json                       # all-32 board
+icelines icecast window --input window.json --team NYR            # focused explanation
+icelines icecast window --input window.json --markdown --out window-report.md
+icelines icecast window --input window.json --team NYR --markdown --out nyr-window-report.md
+icelines icecast window-card --input window.json --team NYR --out nyr-window-card.json
+icelines icecast window-movement --earlier october.json --later january.json --out window-movement.json
+icelines icecast window-personnel-attribution --earlier october.json --later january.json --movement window-movement.json --input personnel-attribution.json --out attributed-movement.json
+icelines icecast window-rebase --input october.json --target-manifest balanced-v2.json --bridge balanced-v1-to-v2-bridge.json --out october-rebased.json
+icelines icecast window-movement --earlier october.json --later january-v2.json --bridge balanced-v1-to-v2-bridge.json --out bridged-movement.json
+icelines icecast window-history --input october.json --input january.json --input march.json --out window-history.json
+icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --out window-impact.json
+icelines icecast window-scenario --baseline baseline.json --scenario trade.json --scenario-id deadline-addition --authority trade-authority.json --out attributed-window-impact.json
+icelines icecast window-scenario --baseline baseline.json --scenario modeled.json --scenario-id sourced-scenario --team-season-authority season-scenario.json --training-camp-authority camp-scenario.json --out sourced-window-impact.json
+icelines icecast window-scenario-distribute --baseline baseline.json --input scenario-distribution-input.json --out scenario-distribution.json
+icelines icecast window-calibrate --target next-season-organization-value --origin 2023-origin.json --origin 2024-origin.json --origin 2025-origin.json --minimum-origins 3 --out rolling-calibration.json
+icelines icecast window-evaluate --target next-season-organization-value --origin 2022-train.json --origin 2023-train.json --origin 2024-validation.json --origin 2025-retrospective-holdout.json --minimum-training-origins 2 --out split-evaluation.json
+icelines icecast window-standings --target-season 20252026 --date 2026-04-17 --captured-at 2026-07-28T08:00:00Z --out standings-2025-26.json
+icelines icecast window-origin-build --source-season 20242025 --target-season 20252026 --as-of 2025-06-30 --generated-at 2026-07-28T08:00:00Z --role retrospective_holdout --standings standings-2025-26.json --out origin-2025-26.json
 icelines icecast backtest --input 2021-22.json --input 2022-23.json --input 2023-24.json
 icelines icecast import-opening-rosters --manifest opening-rosters-2024.json --dry-run
 icelines icecast import-opening-rosters --manifest opening-rosters-2024.json
@@ -393,6 +441,30 @@ icelines icecast season --team SEA --scenario examples/icecast-sea-development-v
 icelines icecast season --team SEA --scenario examples/icecast-sea-internal-breakout-path.json --trials 10000
 icelines icecast calibrate-development --start-season 20052006 --end-season 20252026
 icelines icecast calibrate-development --json --out development-calibration.json
+```
+
+#### The Window
+
+The Window is IceLines' explainable organization-health system. It builds one
+sealed, season-canonical league board before focusing on a team, keeps score,
+confidence, and coverage separate, and shows the NHL roster, prospect pipeline,
+development system, resilience, history, scenarios, and movement through one
+versioned Frame. CLI, TUI, Web/API, Markdown, JSON, and UI-neutral cards consume
+the same core-owned document; renderers do not recalculate rankings or hockey
+values. See [The Window guide](docs/organization-window.md) for the complete
+workflow and extension contract.
+
+The bundled 2026-27 artifact is an evaluation board, not an official power
+ranking or Cup forecast. It currently has 14 of 16 required profiles, so all 32
+teams are present but production ranks remain withheld until reviewed affiliate
+organization-depth and recall-depth evidence is available. Historical
+calibration is explicitly inconclusive; the next untouched holdout is sealed
+without outcomes and cannot be scored before April 11, 2027.
+
+```bash
+icelines icecast window --input window.json
+icelines icecast window --input window.json --team NYR
+icelines icecast window-card --input window.json --team NYR --out nyr-window-card.json
 ```
 
 The Cut models the opening active roster separately from the dressed
@@ -1226,6 +1298,8 @@ icelines fetch ahl --season 20262027 \
   --out data/ahl/roster-stats.json  # official AHL catalog + rosters + stats
 icelines fetch ahl --season 20252026 --team HFD --team CV \
   --out data/ahl/nyr-sea-2025-26.json # filtered historical replay input
+icelines fetch ahl-transactions --season 20262027 \
+  --out data/ahl/transactions-2026-27.json # official paginated ADD/DEL stream
 # Omit --out to keep only the canonical sealed AHL snapshot; add --refresh
 # to force source revalidation instead of reusing verified FLETCH cachelines.
 # Licensed salary values (API key stays in the environment; values carry provenance)

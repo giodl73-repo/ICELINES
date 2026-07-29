@@ -1,0 +1,10 @@
+{
+  "schema": "ahl_recall_readiness_policy.v1",
+  "method_version": "weighted_value_experience_camp.v1",
+  "value_weight": 0.5,
+  "nhl_experience_weight": 0.3,
+  "camp_proximity_weight": 0.2,
+  "nhl_experience_games": 50,
+  "camp_evidence_confidence": 0.5,
+  "minimum_coverage": 0.7
+}

@@ -2,7 +2,11 @@
 
 use std::sync::OnceLock;
 
-use icelines_core::{parse_card_document, CardDocumentView};
+use icelines_core::{
+    load_organization_window_profile_inventory, parse_card_document,
+    project_organization_window_card, validate_organization_window_board, CardDocumentView,
+    OrganizationWindowBoardView, OrganizationWindowCardError,
+};
 use thiserror::Error;
 
 const NYR: &str = include_str!("../../examples/team-prognosis-card-nyr-2026-27.json");
@@ -23,6 +27,8 @@ const NYR_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-sea-2024-25.json");
+const BALANCED_ORGANIZATION_WINDOW: &str =
+    include_str!("../../examples/organization-window-board-partial-2026-07-28.json");
 const DEXTERS_DAWGS: &str =
     include_str!("../../examples/fantasy-roster-card-dexters-dawgs-2026-10-05.json");
 const DEXTERS_DAWGS_DRAFT: &str =
@@ -44,6 +50,12 @@ pub enum CardStoreError {
     UnsupportedForecastMovementTeam(String),
     #[error("forecast history card is not available for team {0}")]
     UnsupportedForecastHistoryTeam(String),
+    #[error("organization Window card is not available for team {0}")]
+    UnsupportedOrganizationWindowTeam(String),
+    #[error("organization Window frame is not available: {0}")]
+    UnsupportedOrganizationWindowFrame(String),
+    #[error("organization Window card projection failed: {0}")]
+    InvalidOrganizationWindowCard(String),
     #[error("fantasy roster card is not available for team {0}")]
     UnsupportedFantasyTeam(String),
     #[error("fantasy draft card is not available for team {0}")]
@@ -90,6 +102,48 @@ pub fn forecast_history_card(season: u32, team: &str) -> Result<CardDocumentView
         (20242025, _) => Err(CardStoreError::UnsupportedForecastHistoryTeam(team)),
         _ => Err(CardStoreError::UnsupportedSeason(season)),
     }
+}
+
+pub fn organization_window_card(
+    season: u32,
+    team: &str,
+) -> Result<CardDocumentView, CardStoreError> {
+    let team = team.trim().to_ascii_uppercase();
+    let board = organization_window_board("balanced.v1", season)?;
+    project_organization_window_card(board, &team, None, None).map_err(|error| match error {
+        OrganizationWindowCardError::InvalidTeam(_)
+        | OrganizationWindowCardError::MissingTeam(_) => {
+            CardStoreError::UnsupportedOrganizationWindowTeam(team)
+        }
+        error => CardStoreError::InvalidOrganizationWindowCard(error.to_string()),
+    })
+}
+
+pub fn organization_window_board(
+    frame: &str,
+    season: u32,
+) -> Result<OrganizationWindowBoardView, CardStoreError> {
+    if frame != "balanced.v1" {
+        return Err(CardStoreError::UnsupportedOrganizationWindowFrame(
+            frame.to_owned(),
+        ));
+    }
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static BOARD: OnceLock<OrganizationWindowBoardView> = OnceLock::new();
+    Ok(BOARD
+        .get_or_init(|| {
+            let board: OrganizationWindowBoardView =
+                serde_json::from_str(BALANCED_ORGANIZATION_WINDOW)
+                    .expect("sealed balanced organization Window board");
+            let inventory = load_organization_window_profile_inventory()
+                .expect("embedded organization Window profile inventory");
+            validate_organization_window_board(&board, &inventory)
+                .expect("embedded Window board must remain canonical and sealed");
+            board
+        })
+        .clone())
 }
 
 pub fn fantasy_draft_card(team: &str) -> Result<CardDocumentView, CardStoreError> {
@@ -298,6 +352,18 @@ mod tests {
             sea_history.context.simulation.parameter_fingerprint
         );
         assert_eq!(nyr_history.provenance, sea_history.provenance);
+        for (team, _) in icelines_core::CANONICAL_TEAMS {
+            let card = organization_window_card(20262027, team).unwrap();
+            assert_eq!(card.context.joins.team_ids, [*team]);
+            assert!(card
+                .subtitle
+                .as_deref()
+                .is_some_and(|subtitle| subtitle.starts_with("Under review · NR")));
+        }
+        assert!(matches!(
+            organization_window_card(20262027, "XYZ"),
+            Err(CardStoreError::UnsupportedOrganizationWindowTeam(_))
+        ));
         assert!(matches!(
             fantasy_roster_card("unknown"),
             Err(CardStoreError::UnsupportedFantasyTeam(_))

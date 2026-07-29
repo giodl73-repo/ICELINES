@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_window_personnel_attribution_input.v1.schema.json",
+  "title": "IceLines Organization Window Personnel Attribution Input v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "attribution_id",
+    "scenario_id",
+    "rationale",
+    "events",
+    "scenario_authorities"
+  ],
+  "properties": {
+    "schema": { "const": "organization_window_personnel_attribution_input.v1" },
+    "attribution_id": { "type": "string", "minLength": 1 },
+    "scenario_id": { "type": "string", "minLength": 1 },
+    "rationale": { "type": "string", "minLength": 1 },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/event" }
+    },
+    "estimate_basis": { "enum": ["earlier_scenario", "later_counterfactual"] },
+    "scenario_board": {
+      "type": "object",
+      "required": ["schema", "fingerprint"],
+      "properties": {
+        "schema": { "const": "organization_window_board.v1" },
+        "fingerprint": { "$ref": "#/$defs/fingerprint" }
+      }
+    },
+    "counterfactual_board": {
+      "type": "object",
+      "required": ["schema", "fingerprint"],
+      "properties": {
+        "schema": { "const": "organization_window_board.v1" },
+        "fingerprint": { "$ref": "#/$defs/fingerprint" }
+      }
+    },
+    "scenario_authorities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "authority_id",
+          "kind",
+          "source_schema",
+          "source_fingerprint",
+          "organizations",
+          "profile_methods",
+          "rationale"
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": { "estimate_basis": { "const": "earlier_scenario" } },
+      "required": ["scenario_board"],
+      "not": { "required": ["counterfactual_board"] }
+    },
+    {
+      "properties": { "estimate_basis": { "const": "later_counterfactual" } },
+      "required": ["estimate_basis", "counterfactual_board"],
+      "not": { "required": ["scenario_board"] }
+    }
+  ],
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^(sha256:)?[0-9a-f]{64}$" },
+    "event": {
+      "type": "object",
+      "required": [
+        "event_id",
+        "effective_date",
+        "kind",
+        "organizations",
+        "label",
+        "source_schema",
+        "source_fingerprint"
+      ],
+      "properties": {
+        "event_id": { "type": "string", "minLength": 1 },
+        "effective_date": { "type": "string", "format": "date" },
+        "kind": {
+          "enum": [
+            "trade",
+            "waiver",
+            "recall",
+            "assignment",
+            "injury",
+            "activation",
+            "signing",
+            "release",
+            "other"
+          ]
+        },
+        "organizations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 2 }
+        },
+        "label": { "type": "string", "minLength": 1 },
+        "source_schema": { "type": "string", "minLength": 1 },
+        "source_fingerprint": { "$ref": "#/$defs/fingerprint" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

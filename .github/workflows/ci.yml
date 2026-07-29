@@ -13,7 +13,12 @@ on:
       - '.github/workflows/data-bundle.yml'
       - 'scripts/test-slice.ps1'
       - 'scripts/release-smoke.ps1'
+      - 'scripts/package-release.ps1'
+      - 'scripts/verify-release-artifact.ps1'
+      - 'scripts/window-browser-review.ps1'
       - 'design/release-checklist.md'
+      - 'design/data/**'
+      - 'design/schemas/**'
       - 'design/current-season-rollover.md'
       - 'design/plans/**'
       - 'design/waves/**'
@@ -22,6 +27,8 @@ on:
       - 'design/specs/**'
       - 'design/specs/data-bundles.md'
       - 'docs/guides/04-data.md'
+      - 'docs/organization-window.md'
+      - 'examples/**'
       - 'src/guides/04-data.source.md'
       - 'CHANGELOG.md'
       - 'README.md'
@@ -38,7 +45,12 @@ on:
       - '.github/workflows/data-bundle.yml'
       - 'scripts/test-slice.ps1'
       - 'scripts/release-smoke.ps1'
+      - 'scripts/package-release.ps1'
+      - 'scripts/verify-release-artifact.ps1'
+      - 'scripts/window-browser-review.ps1'
       - 'design/release-checklist.md'
+      - 'design/data/**'
+      - 'design/schemas/**'
       - 'design/current-season-rollover.md'
       - 'design/plans/**'
       - 'design/waves/**'
@@ -47,6 +59,8 @@ on:
       - 'design/specs/**'
       - 'design/specs/data-bundles.md'
       - 'docs/guides/04-data.md'
+      - 'docs/organization-window.md'
+      - 'examples/**'
       - 'src/guides/04-data.source.md'
       - 'CHANGELOG.md'
       - 'README.md'
@@ -181,6 +195,120 @@ jobs:
 
       - name: Run release smoke
         run: powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
+
+  window-fingerprint:
+    name: Window fingerprint / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-window-fingerprint-${{ hashFiles('Cargo.lock') }}-${{ hashFiles('icelines-core/src/view_model/organization_window.rs', 'examples/organization-window-board-evaluation-2026-27.json') }}
+          restore-keys: |
+            ${{ runner.os }}-window-fingerprint-${{ hashFiles('Cargo.lock') }}-
+
+      - name: Verify canonical Window fingerprint and replay
+        run: cargo test -p icelines-core canonical_window_fingerprint_is_cross_platform_and_replay_valid --lib --locked
+
+  package-matrix:
+    name: Package / ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: icelines-linux-x86_64
+            binary: icelines
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: icelines-macos-arm64
+            binary: icelines
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: icelines-macos-x86_64
+            binary: icelines
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: icelines-windows-x86_64
+            binary: icelines.exe
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-package-${{ hashFiles('Cargo.lock') }}
+
+      - name: Build release binary
+        run: cargo build --release --locked --target ${{ matrix.target }} -p icelines-cli
+
+      - name: Package and verify release shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" dist/
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            archive_name="${{ matrix.artifact }}.zip"
+          else
+            archive_name="${{ matrix.artifact }}.tar.gz"
+          fi
+          version="$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"([^"]+)".*/icelines \1/')"
+          binary_sha256="$(sha256sum "dist/${{ matrix.binary }}" | awk '{print $1}')"
+          {
+            echo "artifact=${archive_name}"
+            echo "binary=${{ matrix.binary }}"
+            echo "version=${version}"
+            echo "source_commit=${{ github.sha }}"
+            echo "binary_sha256=${binary_sha256}"
+          } > dist/ICELINES-PACKAGE.txt
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a "${archive_name}" ./dist/*
+            sha256sum "${archive_name}" > "${archive_name}.sha256"
+            sha256sum -c "${archive_name}.sha256"
+            7z l "${archive_name}" | grep -F "${{ matrix.binary }}"
+            7z l "${archive_name}" | grep -F "ICELINES-PACKAGE.txt"
+          else
+            tar czf "${archive_name}" -C dist .
+            sha256sum "${archive_name}" > "${archive_name}.sha256"
+            sha256sum -c "${archive_name}.sha256"
+            tar tzf "${archive_name}" | grep -F "./${{ matrix.binary }}"
+            tar tzf "${archive_name}" | grep -F "./ICELINES-PACKAGE.txt"
+          fi
+
+      - name: Upload verified package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.artifact }}
+          path: |
+            ${{ matrix.artifact }}.*
+          retention-days: 1
 
   coverage:
     name: Coverage Gate (icelines-core >= 80%)

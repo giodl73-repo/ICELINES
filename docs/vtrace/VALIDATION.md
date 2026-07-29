@@ -86,6 +86,59 @@ remain the package-level evidence history; any `partial` wording there is the
 original slice limit, not an open blocker beyond the residual risks listed
 below.
 
+## VAL-013 — The Window organization-health workflow
+
+1. Build the complete current 32-team board from one frozen Frame and source set.
+2. Inspect a focused Rangers and Kraken view and reconcile both to the league
+   board fingerprint and rank.
+3. Change only Frame weights, prove a new manifest fingerprint, and preserve all
+   raw profile observations.
+4. Remove or stale a required input and prove rank is withheld without
+   zero-filling the score.
+5. Compare three matched historical checkpoints and reject one mismatched
+   method/manifest/season-phase checkpoint. Rebase one intentional Frame change
+   through a sealed bridge and attribute observed versus method/manifest change.
+6. Apply breakout, injury, trade, and lineup scenarios and identify every
+   changed and unchanged profile.
+7. Replay rolling historical origins, audit leakage, compare simple baselines,
+   and publish calibrated/heuristic/inconclusive/blocked status per pane.
+8. Reconcile CLI, TUI, Web/API, JSON, report, and card values from the same
+   sealed documents.
+9. Deprecate, retire, and readiness-demote selected methods; prove new official
+   and custom authoring gates, explicit deprecated holds, invalid supersession
+   refusal, lifecycle fingerprint binding, and unchanged saved-board replay.
+10. Register the next untouched future origin without outcomes, then prove the
+    scorer refuses early or mismatched results and derives acceptance only from
+    the frozen board, target standings, baseline, leakage audit, and rule.
+
+Status: partial 2026-07-29. Canonical loaded-board replay, core bridge/rebase
+tamper/completeness/change attribution, real isolated/combined multi-source
+scenario boards and seeded distributions, and parity/lifecycle fixtures pass
+with an explicitly partial saved evaluation board. Rolling-origin calibration
+has frozen baselines, ablations, stability, between-origin uncertainty,
+deterministic sealing, and four real point-in-time origins. Calibration trial
+noise now has validated `not_provided`, `not_applicable`, and sealed-estimate
+propagation paths separate from between-origin variation; the retained real
+artifact remains honestly `not_provided`. The next genuinely future test is
+now preregistered without outcomes: its complete feature board, neutral
+baseline, leakage audit, scoring date, and acceptance rule are sealed before
+the season, but results remain calendar-gated. Production source completion
+and the scored future holdout remain open. These gates are owned by WP-011 and
+REQ-WINDOW-001..009.
+
+Selected browser evidence now exists for the all-32 board, focused NYR board,
+and both NYR card pages at desktop/tablet/mobile widths. The reusable gate also
+checks skip navigation, main focus target, semantic captions/headers, rank-gate
+copy, focused-team isolation, and nonblank exact-dimension captures. Full
+golden parity and real historical evidence pass; production source completion
+and the future holdout keep VAL-013 partial. PR #23 run 30488170619 passed all
+26 jobs on audited implementation head `1b4ff230`, including fixed-hash
+canonical replay on
+Windows, Linux, and macOS and the full CLI/TUI binary partition. A local
+explicit keyboard walkthrough verified first-Tab
+skip links and Enter focus transfer to `main` on both routes; reduced-motion
+emulation and 390px computed containment also passed.
+
 ## Deferred Validation
 
 | Scenario | Reason Deferred | Risk | Revisit Trigger |

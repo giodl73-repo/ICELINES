@@ -1,0 +1,533 @@
+{
+  "schema": "organization_window_evaluation.v1",
+  "target": "next-season-final-standings-percentile",
+  "manifest_fingerprint": "81df0da75e38db866a4137b63fdbef2920447f927a77223b8dd504d6609e3c8f",
+  "training": {
+    "role": "training",
+    "origin_ids": [
+      "20212022-to-20222023",
+      "20222023-to-20232024"
+    ],
+    "overall": {
+      "key": "overall",
+      "sample_size": 64,
+      "mean_absolute_error": 24.86139112903225,
+      "baseline_mean_absolute_error": 25.80645161290324,
+      "rank_correlation": 0.2364328186074594,
+      "claim_status": "inconclusive"
+    },
+    "leakage_blocked": false
+  },
+  "validation": {
+    "role": "validation",
+    "origin_ids": [
+      "20232024-to-20242025"
+    ],
+    "overall": {
+      "key": "overall",
+      "sample_size": 32,
+      "mean_absolute_error": 23.694556451612907,
+      "baseline_mean_absolute_error": 25.70564516129032,
+      "rank_correlation": 0.3346176421447483,
+      "claim_status": "calibrated"
+    },
+    "leakage_blocked": false
+  },
+  "retrospective_holdout": {
+    "role": "retrospective_holdout",
+    "origin_ids": [
+      "20242025-to-20252026"
+    ],
+    "overall": {
+      "key": "overall",
+      "sample_size": 32,
+      "mean_absolute_error": 25.89213709677419,
+      "baseline_mean_absolute_error": 25.40322580645162,
+      "rank_correlation": 0.16331608982415718,
+      "claim_status": "inconclusive"
+    },
+    "leakage_blocked": false
+  },
+  "development_calibration": {
+    "schema": "organization_window_rolling_calibration.v1",
+    "target": "next-season-final-standings-percentile",
+    "manifest_fingerprint": "81df0da75e38db866a4137b63fdbef2920447f927a77223b8dd504d6609e3c8f",
+    "origins": [
+      {
+        "origin_id": "20212022-to-20222023",
+        "season": 20222023,
+        "as_of": "2022-06-30",
+        "board_fingerprint": "872049af0e7ea1e2482a1dcd4082c8a57e3da659a7def19414d16370b6b3bd10",
+        "leakage_blocked": false,
+        "overall": {
+          "key": "overall",
+          "sample_size": 32,
+          "mean_absolute_error": 24.788306451612904,
+          "baseline_mean_absolute_error": 25.80645161290323,
+          "rank_correlation": 0.2622650700802069,
+          "claim_status": "inconclusive"
+        },
+        "dimensions": [
+          {
+            "key": "deployment",
+            "sample_size": 32,
+            "mean_absolute_error": 34.47580645161291,
+            "baseline_mean_absolute_error": 25.80645161290323,
+            "rank_correlation": -0.13700140374119898,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "development_system",
+            "sample_size": 32,
+            "mean_absolute_error": 28.125,
+            "baseline_mean_absolute_error": 25.80645161290323,
+            "rank_correlation": 0.29270871555340794,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "nhl_strength",
+            "sample_size": 32,
+            "mean_absolute_error": 26.008064516129032,
+            "baseline_mean_absolute_error": 25.80645161290323,
+            "rank_correlation": 0.44071535902289316,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "pipeline",
+            "sample_size": 32,
+            "mean_absolute_error": 39.61693548387096,
+            "baseline_mean_absolute_error": 25.80645161290323,
+            "rank_correlation": -0.2629986786678438,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "resilience",
+            "sample_size": 32,
+            "mean_absolute_error": 35.68548387096773,
+            "baseline_mean_absolute_error": 25.80645161290323,
+            "rank_correlation": -0.04603393887421813,
+            "claim_status": "inconclusive"
+          }
+        ]
+      },
+      {
+        "origin_id": "20222023-to-20232024",
+        "season": 20232024,
+        "as_of": "2023-06-30",
+        "board_fingerprint": "e6f5a6d5f9fc860b7f513748b9fafb88699080cbc713a3dbe1cb64e6c640642c",
+        "leakage_blocked": false,
+        "overall": {
+          "key": "overall",
+          "sample_size": 32,
+          "mean_absolute_error": 24.93447580645161,
+          "baseline_mean_absolute_error": 25.806451612903224,
+          "rank_correlation": 0.2516970422272997,
+          "claim_status": "inconclusive"
+        },
+        "dimensions": [
+          {
+            "key": "deployment",
+            "sample_size": 32,
+            "mean_absolute_error": 41.12903225806452,
+            "baseline_mean_absolute_error": 25.806451612903224,
+            "rank_correlation": -0.29425805811413175,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "development_system",
+            "sample_size": 32,
+            "mean_absolute_error": 32.45967741935484,
+            "baseline_mean_absolute_error": 25.806451612903224,
+            "rank_correlation": -0.0064422837471373616,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "nhl_strength",
+            "sample_size": 32,
+            "mean_absolute_error": 20.262096774193548,
+            "baseline_mean_absolute_error": 25.806451612903224,
+            "rank_correlation": 0.6224548573449183,
+            "claim_status": "calibrated"
+          },
+          {
+            "key": "pipeline",
+            "sample_size": 32,
+            "mean_absolute_error": 38.810483870967744,
+            "baseline_mean_absolute_error": 25.806451612903224,
+            "rank_correlation": -0.2144561533263217,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "resilience",
+            "sample_size": 32,
+            "mean_absolute_error": 35.08064516129033,
+            "baseline_mean_absolute_error": 25.806451612903224,
+            "rank_correlation": -0.07943499947844081,
+            "claim_status": "inconclusive"
+          }
+        ]
+      },
+      {
+        "origin_id": "20232024-to-20242025",
+        "season": 20242025,
+        "as_of": "2024-06-30",
+        "board_fingerprint": "9eeeb11e489f80115205f0ce2770387ac45aa230e652da622a18a894775a614f",
+        "leakage_blocked": false,
+        "overall": {
+          "key": "overall",
+          "sample_size": 32,
+          "mean_absolute_error": 23.694556451612907,
+          "baseline_mean_absolute_error": 25.70564516129032,
+          "rank_correlation": 0.3346176421447483,
+          "claim_status": "calibrated"
+        },
+        "dimensions": [
+          {
+            "key": "deployment",
+            "sample_size": 32,
+            "mean_absolute_error": 34.17338709677419,
+            "baseline_mean_absolute_error": 25.70564516129032,
+            "rank_correlation": 0.07558249373006376,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "development_system",
+            "sample_size": 32,
+            "mean_absolute_error": 27.41935483870968,
+            "baseline_mean_absolute_error": 25.70564516129032,
+            "rank_correlation": 0.28746538061224836,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "nhl_strength",
+            "sample_size": 32,
+            "mean_absolute_error": 21.673387096774192,
+            "baseline_mean_absolute_error": 25.70564516129032,
+            "rank_correlation": 0.521005539304323,
+            "claim_status": "calibrated"
+          },
+          {
+            "key": "pipeline",
+            "sample_size": 32,
+            "mean_absolute_error": 41.02822580645161,
+            "baseline_mean_absolute_error": 25.70564516129032,
+            "rank_correlation": -0.2317219393547704,
+            "claim_status": "inconclusive"
+          },
+          {
+            "key": "resilience",
+            "sample_size": 32,
+            "mean_absolute_error": 34.2741935483871,
+            "baseline_mean_absolute_error": 25.70564516129032,
+            "rank_correlation": 0.055219249060070856,
+            "claim_status": "inconclusive"
+          }
+        ]
+      }
+    ],
+    "overall": {
+      "key": "overall",
+      "sample_size": 96,
+      "mean_absolute_error": 24.472446236559136,
+      "baseline_mean_absolute_error": 25.772849462365603,
+      "rank_correlation": 0.2685781011448814,
+      "claim_status": "inconclusive"
+    },
+    "dimensions": [
+      {
+        "key": "deployment",
+        "sample_size": 96,
+        "mean_absolute_error": 36.59274193548386,
+        "baseline_mean_absolute_error": 25.772849462365603,
+        "rank_correlation": -0.1169131348406307,
+        "claim_status": "inconclusive"
+      },
+      {
+        "key": "development_system",
+        "sample_size": 96,
+        "mean_absolute_error": 29.334677419354858,
+        "baseline_mean_absolute_error": 25.772849462365603,
+        "rank_correlation": 0.19480623657727478,
+        "claim_status": "inconclusive"
+      },
+      {
+        "key": "nhl_strength",
+        "sample_size": 96,
+        "mean_absolute_error": 22.64784946236559,
+        "baseline_mean_absolute_error": 25.772849462365603,
+        "rank_correlation": 0.5293572595449145,
+        "claim_status": "calibrated"
+      },
+      {
+        "key": "pipeline",
+        "sample_size": 96,
+        "mean_absolute_error": 39.818548387096776,
+        "baseline_mean_absolute_error": 25.772849462365603,
+        "rank_correlation": -0.23844498598260894,
+        "claim_status": "inconclusive"
+      },
+      {
+        "key": "resilience",
+        "sample_size": 96,
+        "mean_absolute_error": 35.01344086021505,
+        "baseline_mean_absolute_error": 25.772849462365603,
+        "rank_correlation": -0.023134178919867004,
+        "claim_status": "inconclusive"
+      }
+    ],
+    "ablations": [
+      {
+        "excluded_dimension": "deployment",
+        "sample_size": 96,
+        "mean_absolute_error": 23.238851992409874,
+        "delta_from_full_mae": -1.2335942441492627,
+        "rank_correlation": 0.3615381497846336
+      },
+      {
+        "excluded_dimension": "development_system",
+        "sample_size": 96,
+        "mean_absolute_error": 24.296331435800123,
+        "delta_from_full_mae": -0.17611480075901298,
+        "rank_correlation": 0.26985335337518623
+      },
+      {
+        "excluded_dimension": "nhl_strength",
+        "sample_size": 96,
+        "mean_absolute_error": 31.91945822994209,
+        "delta_from_full_mae": 7.447011993382954,
+        "rank_correlation": -0.09292590070215152
+      },
+      {
+        "excluded_dimension": "pipeline",
+        "sample_size": 96,
+        "mean_absolute_error": 22.67305107526882,
+        "delta_from_full_mae": -1.7993951612903167,
+        "rank_correlation": 0.4014568413200386
+      },
+      {
+        "excluded_dimension": "resilience",
+        "sample_size": 96,
+        "mean_absolute_error": 23.26652435167615,
+        "delta_from_full_mae": -1.2059218848829865,
+        "rank_correlation": 0.3502156343779702
+      }
+    ],
+    "organization_stability": [
+      {
+        "organization": "ANA",
+        "origins": 3,
+        "mean_absolute_error": 42.68817204301076,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "BOS",
+        "origins": 3,
+        "mean_absolute_error": 42.31182795698924,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "BUF",
+        "origins": 3,
+        "mean_absolute_error": 25.752688172043023,
+        "rank_correlation": 0.5
+      },
+      {
+        "organization": "CAR",
+        "origins": 3,
+        "mean_absolute_error": 18.037634408602155,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "CBJ",
+        "origins": 3,
+        "mean_absolute_error": 40.96774193548388,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "CGY",
+        "origins": 3,
+        "mean_absolute_error": 21.58602150537634,
+        "rank_correlation": -1.0
+      },
+      {
+        "organization": "CHI",
+        "origins": 3,
+        "mean_absolute_error": 22.876344086021508,
+        "rank_correlation": -0.8660254037844387
+      },
+      {
+        "organization": "COL",
+        "origins": 3,
+        "mean_absolute_error": 28.52150537634408,
+        "rank_correlation": 0.5
+      },
+      {
+        "organization": "DAL",
+        "origins": 3,
+        "mean_absolute_error": 21.989247311827963,
+        "rank_correlation": 0.5
+      },
+      {
+        "organization": "DET",
+        "origins": 3,
+        "mean_absolute_error": 22.33870967741937,
+        "rank_correlation": 0.5
+      },
+      {
+        "organization": "EDM",
+        "origins": 3,
+        "mean_absolute_error": 28.655913978494613,
+        "rank_correlation": 0.8660254037844387
+      },
+      {
+        "organization": "FLA",
+        "origins": 3,
+        "mean_absolute_error": 28.6021505376344,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "LAK",
+        "origins": 3,
+        "mean_absolute_error": 12.580645161290327,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "MIN",
+        "origins": 3,
+        "mean_absolute_error": 8.118279569892477,
+        "rank_correlation": 1.0
+      },
+      {
+        "organization": "MTL",
+        "origins": 3,
+        "mean_absolute_error": 29.946236559139788,
+        "rank_correlation": 0.0
+      },
+      {
+        "organization": "NJD",
+        "origins": 3,
+        "mean_absolute_error": 15.053763440860214,
+        "rank_correlation": 1.0
+      },
+      {
+        "organization": "NSH",
+        "origins": 3,
+        "mean_absolute_error": 25.241935483870964,
+        "rank_correlation": -1.0
+      },
+      {
+        "organization": "NYI",
+        "origins": 3,
+        "mean_absolute_error": 3.4408602150537617,
+        "rank_correlation": 0.5
+      },
+      {
+        "organization": "NYR",
+        "origins": 3,
+        "mean_absolute_error": 36.55913978494623,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "OTT",
+        "origins": 3,
+        "mean_absolute_error": 21.85483870967742,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "PHI",
+        "origins": 3,
+        "mean_absolute_error": 17.983870967741943,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "PIT",
+        "origins": 3,
+        "mean_absolute_error": 7.204301075268822,
+        "rank_correlation": 0.5
+      },
+      {
+        "organization": "SEA",
+        "origins": 3,
+        "mean_absolute_error": 33.5483870967742,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "SJS",
+        "origins": 3,
+        "mean_absolute_error": 26.370967741935488,
+        "rank_correlation": 0.0
+      },
+      {
+        "organization": "STL",
+        "origins": 3,
+        "mean_absolute_error": 26.935483870967744,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "TBL",
+        "origins": 3,
+        "mean_absolute_error": 27.33870967741935,
+        "rank_correlation": -0.5
+      },
+      {
+        "organization": "TOR",
+        "origins": 3,
+        "mean_absolute_error": 28.76344086021504,
+        "rank_correlation": 1.0
+      },
+      {
+        "organization": "UTA",
+        "origins": 3,
+        "mean_absolute_error": 19.9731182795699,
+        "rank_correlation": 0.8660254037844387
+      },
+      {
+        "organization": "VAN",
+        "origins": 3,
+        "mean_absolute_error": 18.5752688172043,
+        "rank_correlation": 0.5
+      },
+      {
+        "organization": "VGK",
+        "origins": 3,
+        "mean_absolute_error": 16.747311827956977,
+        "rank_correlation": 0.5
+      },
+      {
+        "organization": "WPG",
+        "origins": 3,
+        "mean_absolute_error": 34.758064516129025,
+        "rank_correlation": 1.0
+      },
+      {
+        "organization": "WSH",
+        "origins": 3,
+        "mean_absolute_error": 27.79569892473118,
+        "rank_correlation": -1.0
+      }
+    ],
+    "uncertainty": {
+      "origin_count": 3,
+      "between_origin_mae_standard_deviation": 0.6776250867672055,
+      "mean_mae_confidence_interval_low": 23.70564126509995,
+      "mean_mae_confidence_interval_high": 25.23925120801833,
+      "trial_noise_status": "not_provided"
+    },
+    "claim_status": "inconclusive",
+    "disclosures": [
+      "Each origin is scored only against its frozen point-in-time board and leakage audit.",
+      "The baseline value is supplied and frozen per origin; it is not fitted from that origin's outcomes.",
+      "Ablations remove one dimension and renormalize the remaining manifest weights.",
+      "The confidence interval measures between-origin variation; trial noise is not available in the Window board contract."
+    ],
+    "fingerprint": "79374a9d588dce24d1cb4a008f5ccd67c5bc3ad0a507ffc337239666ab737175"
+  },
+  "claim_status": "inconclusive",
+  "disclosures": [
+    "Origin roles must be frozen before target outcomes are inspected.",
+    "The headline claim status is determined only by the retrospective holdout and its frozen per-origin baseline.",
+    "A retrospective holdout tests historical generalization; it is not an untouched future-season result.",
+    "Training and validation origins are reported as development evidence and cannot rescue a failed holdout."
+  ],
+  "fingerprint": "09c1b9be4a19a5b4dcce7430bd33084717be9b8b1bdab5ffe0996635346b8059"
+}

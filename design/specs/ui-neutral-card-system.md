@@ -251,6 +251,12 @@ Theme data expresses semantic roles, not renderer layout:
 Web and image renderers may use full color values. TUI maps roles to the nearest
 supported palette. No meaning depends on color alone.
 
+Team identity is core-owned. `nhl_team_card_theme` supplies the canonical
+palette for every active NHL abbreviation, and all team-oriented card builders
+consume that one primitive. Renderers must not maintain a card-specific team
+palette or substitute a generic theme for a canonical team. Unknown identities
+remain explicit and receive the neutral fallback.
+
 ### `CardPageView`
 
 Required fields:
