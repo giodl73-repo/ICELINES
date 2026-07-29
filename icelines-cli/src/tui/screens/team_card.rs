@@ -12,6 +12,7 @@ use icelines_core::{
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
     text::Line,
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
@@ -359,10 +360,37 @@ fn render_document(f: &mut Frame, area: Rect, document: &CardDocumentView, page:
         .unwrap_or(&document.pages[page].literal_label);
     let title = format!(" {team} | {page_label} ");
     let lines = document_lines(document, page, area.width.saturating_sub(2));
+    let theme_style = card_theme_style(document);
     let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
-        .block(Block::default().title(title).borders(Borders::ALL))
+        .block(
+            Block::default()
+                .title(title)
+                .title_style(theme_style.add_modifier(Modifier::BOLD))
+                .border_style(theme_style)
+                .borders(Borders::ALL),
+        )
         .wrap(Wrap { trim: false });
     f.render_widget(paragraph, area);
+}
+
+fn card_theme_style(document: &CardDocumentView) -> Style {
+    document
+        .theme
+        .primary
+        .as_deref()
+        .and_then(parse_hex_color)
+        .map_or_else(Style::default, |color| Style::default().fg(color))
+}
+
+fn parse_hex_color(value: &str) -> Option<Color> {
+    let hex = value.strip_prefix('#')?;
+    if hex.len() != 6 {
+        return None;
+    }
+    let red = u8::from_str_radix(&hex[0..2], 16).ok()?;
+    let green = u8::from_str_radix(&hex[2..4], 16).ok()?;
+    let blue = u8::from_str_radix(&hex[4..6], 16).ok()?;
+    Some(Color::Rgb(red, green, blue))
 }
 
 /// Pure text projection used by the terminal renderer and density tests.
@@ -902,7 +930,17 @@ mod tests {
         for (team, _) in CANONICAL_TEAMS {
             let card = card(&format!("WINDOW-{team}"));
             assert_eq!(card.context.joins.team_ids, [*team]);
+            assert!(
+                card_theme_style(card).fg.is_some(),
+                "{team} card must project its core theme into the TUI"
+            );
         }
+
+        assert_eq!(
+            card_theme_style(card("WINDOW-BOS")).fg,
+            Some(Color::Rgb(255, 184, 28))
+        );
+        assert_eq!(parse_hex_color("not-a-color"), None);
 
         assert_eq!(
             parse_command("window-card SEA").unwrap(),
