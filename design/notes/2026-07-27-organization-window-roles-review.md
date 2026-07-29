@@ -775,3 +775,33 @@ source URL, state, and ledger fingerprint. Existing facts must agree.
 application. The real empty 2026-27 ledger applied zero positive and zero
 negative facts and left all 1,371 assignment blockers intact; actual
 target-season transactions remain the evidence gate.
+
+### S2 waiver-clearance authority review
+
+TAPE/WIRE audited both transaction sources before approving a new primitive.
+The completed ESPN season has 109 placements and 10 claims but zero explicit
+clearance events; the AHL feed has no waiver descriptions. Absence cannot be
+used as the next-day result. PuckPedia publishes explicit waiver history and
+the 10-game/30-day re-waiver rule, while its production API is private, so the
+boundary is a reviewed import rather than brittle Cloudflare scraping.
+
+HART/KEEL separated eligibility, placement, clearance, claim, assignment, and
+organization. The exact queue is bound to one workboard and cutoff. A finalized
+partial review carries result dates, source URLs, reviewer/timestamp, typed
+counts, and a canonical fingerprint.
+
+EDGE/SCOUT required a claim to remain assignment-blocking and prohibited the
+waiver module from selecting the claiming organization's affiliate. Clearance
+removes only `WaiverClearance`; existing assignment and every other fact lane
+remain unchanged.
+
+BENCH/FORGE cover non-applicable drafts, explicit clearance, claims, future
+dates, missing sources, tampering, and CLI parsing. The real target draft
+contains 144 pending rows and zero fabricated resolutions.
+
+GLASS/CREST/broadcast retain pending counts and row-level source/reviewer
+provenance. Renderers may call the queue a waiver gate but may not call
+placement or eligibility “clearance.”
+
+**Verdict:** pass for camp-time waiver review/application. The July queue is
+correctly 0/144 resolved; real clearances remain calendar-gated evidence.

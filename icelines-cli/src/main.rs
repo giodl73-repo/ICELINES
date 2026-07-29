@@ -2273,6 +2273,24 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         }) => {
             commands::icecast::run_affiliate_transaction_state_apply(workboard, ledger, json, out)?
         }
+        Commands::Icecast(IceCastSubcommand::AffiliateWaiversDraft {
+            workboard,
+            cutoff,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_waivers_draft(workboard, cutoff, json, out)?,
+        Commands::Icecast(IceCastSubcommand::AffiliateWaiversFinalize {
+            draft,
+            decisions,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_waivers_finalize(draft, decisions, json, out)?,
+        Commands::Icecast(IceCastSubcommand::AffiliateWaiversApply {
+            workboard,
+            review,
+            json,
+            out,
+        }) => commands::icecast::run_affiliate_waivers_apply(workboard, review, json, out)?,
         Commands::Icecast(IceCastSubcommand::AffiliateStatusApply {
             prior_snapshot,
             crosswalk,

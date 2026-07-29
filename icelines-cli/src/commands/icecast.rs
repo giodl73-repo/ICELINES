@@ -138,6 +138,11 @@ use icelines_fetch::{
         AhlTransactionStateApplicationView, AhlTransactionStateLedgerView,
     },
     ahl_transactions::AhlTransactionSnapshot,
+    ahl_waiver_clearance::{
+        apply_ahl_waiver_clearance_review, build_ahl_waiver_clearance_review_draft,
+        finalize_ahl_waiver_clearance_review, AhlWaiverClearanceApplicationView,
+        AhlWaiverClearanceDecisionsView, AhlWaiverClearanceReviewView,
+    },
     build_historical_organization_window_origin, build_organization_window_standings_snapshot,
     build_prospect_career_context_draft, build_prospect_career_discovery,
     build_prospect_league_context_draft, build_prospect_league_discovery,
@@ -1715,6 +1720,77 @@ pub fn run_affiliate_transaction_state_apply(
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "AHL transaction-state application")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_waivers_draft(
+    workboard_path: PathBuf,
+    cutoff: String,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&workboard_path)?;
+    let review =
+        build_ahl_waiver_clearance_review_draft(&workboard, cutoff).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&review)?)
+    } else {
+        render_affiliate_waiver_review(&review)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL waiver review draft")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_waivers_finalize(
+    draft_path: PathBuf,
+    decisions_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let draft: AhlWaiverClearanceReviewView =
+        read_icecast_json(&draft_path, "AHL waiver review draft")?;
+    let decisions: AhlWaiverClearanceDecisionsView =
+        read_icecast_json(&decisions_path, "AHL waiver review decisions")?;
+    let review =
+        finalize_ahl_waiver_clearance_review(&draft, &decisions).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&review)?)
+    } else {
+        render_affiliate_waiver_review(&review)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "final AHL waiver review")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_affiliate_waivers_apply(
+    workboard_path: PathBuf,
+    review_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let workboard = read_affiliate_workboard(&workboard_path)?;
+    let review: AhlWaiverClearanceReviewView =
+        read_icecast_json(&review_path, "final AHL waiver review")?;
+    let application =
+        apply_ahl_waiver_clearance_review(&workboard, &review).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&application)?)
+    } else {
+        render_affiliate_waiver_application(&application)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "AHL waiver application")?;
     } else {
         print!("{output}");
     }
@@ -3439,6 +3515,33 @@ fn render_affiliate_transaction_state_application(
         view.canonical_states_without_candidate,
         view.candidates_missing_assignment_authority,
         view.transaction_state_fingerprint
+    )
+}
+
+fn render_affiliate_waiver_review(view: &AhlWaiverClearanceReviewView) -> String {
+    format!(
+        "AHL WAIVER REVIEW — {} through {} — {}\nRequired: {} | Resolved: {} ({} cleared, {} claimed) | Pending: {}\nFingerprint: {}\n",
+        view.target_season,
+        view.cutoff,
+        if view.draft { "DRAFT" } else { "FINAL" },
+        view.counts.decisions_required,
+        view.counts.resolved,
+        view.counts.cleared,
+        view.counts.claimed,
+        view.counts.pending,
+        view.source_fingerprint
+    )
+}
+
+fn render_affiliate_waiver_application(view: &AhlWaiverClearanceApplicationView) -> String {
+    format!(
+        "AHL WAIVERS APPLIED — {}\nCleared: {} | Claimed: {} | Pending review: {}\nCandidates still missing waiver clearance: {}\nReview: {}\n",
+        view.target_season,
+        view.cleared_applied,
+        view.claimed_applied,
+        view.pending_review_rows,
+        view.candidates_missing_waiver_clearance,
+        view.waiver_review_fingerprint
     )
 }
 

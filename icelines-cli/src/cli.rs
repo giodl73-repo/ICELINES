@@ -1580,6 +1580,42 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Generate the exact pending waiver-result queue for a preseason workboard.
+    #[command(name = "affiliate-waivers-draft")]
+    AffiliateWaiversDraft {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "YYYY-MM-DD")]
+        cutoff: String,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Finalize sourced cleared/claimed decisions against an exact waiver draft.
+    #[command(name = "affiliate-waivers-finalize")]
+    AffiliateWaiversFinalize {
+        #[arg(long, value_name = "PATH")]
+        draft: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        decisions: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Apply a finalized exact waiver review to its source workboard.
+    #[command(name = "affiliate-waivers-apply")]
+    AffiliateWaiversApply {
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        review: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Inspect an existing affiliate organization-status review artifact.
     #[command(name = "affiliate-status-show")]
     AffiliateStatusShow {
@@ -4654,6 +4690,54 @@ mod tui_surface_tests {
                     json: true,
                     ..
                 })
+            ));
+
+            let waivers_draft = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-waivers-draft",
+                "--workboard",
+                "workboard.json",
+                "--cutoff",
+                "2026-09-30",
+                "--json",
+            ])
+            .expect("affiliate waiver draft should parse");
+            assert!(matches!(
+                waivers_draft.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateWaiversDraft { json: true, .. })
+            ));
+
+            let waivers_finalize = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-waivers-finalize",
+                "--draft",
+                "waiver-draft.json",
+                "--decisions",
+                "waiver-decisions.json",
+                "--json",
+            ])
+            .expect("affiliate waiver finalization should parse");
+            assert!(matches!(
+                waivers_finalize.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateWaiversFinalize { json: true, .. })
+            ));
+
+            let waivers_apply = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "affiliate-waivers-apply",
+                "--workboard",
+                "workboard.json",
+                "--review",
+                "waiver-review.json",
+                "--json",
+            ])
+            .expect("affiliate waiver application should parse");
+            assert!(matches!(
+                waivers_apply.command,
+                Commands::Icecast(IceCastSubcommand::AffiliateWaiversApply { json: true, .. })
             ));
 
             let status_show = Cli::try_parse_from([

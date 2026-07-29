@@ -379,6 +379,22 @@ assignment blockers. S2 now needs actual target-season source events; waiver
 clearance, 98 score gaps, 625 organization decisions, and final rule authority
 remain separate work.
 
+**AHL waiver-clearance checkpoint — 2026-07-28:** the completed ESPN envelope
+was audited before introducing authority. It contains 109 waiver placements
+and 10 claims but no explicit clearance rows; the AHL transaction feed contains
+no waiver descriptions. Therefore source silence cannot clear a player.
+
+`ahl_waiver_clearance_review.v1` now provides a fingerprint-bound exact queue,
+sourced partial finalization, and narrow application. Only dated target-season
+cleared/claimed results with absolute evidence URLs and reviewer authority can
+write. Cleared removes only the waiver blocker; claimed records false and stays
+blocked without changing organization or assignment. The real July queue has
+144 required decisions, zero resolved, and 144 pending (PHI and UTA lead with
+nine each), fingerprint
+`sha256:0f87409017ee96e884cd4ef908c7159222fc0f9ac1b2fe2f6280bbcfd73b6eef`.
+This is the correct pre-camp state. S2 remains open on actual camp-time waiver
+results, 625 organization decisions, 98 scores, and final-rule authority.
+
 ### S3 — Goalie dependency authority decision
 
 The current official snapshot yields one scored goalie for BOS and no scored

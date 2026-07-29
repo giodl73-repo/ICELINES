@@ -203,6 +203,27 @@ skaters awaiting final development-rule
 qualification. These counts describe missing authority and are not roster
 predictions.
 
+`ahl_waiver_clearance_review.v1` owns the distinct non-exempt assignment gate.
+The generated document is an exact-workboard queue and is deliberately
+non-applicable while `draft=true`. Finalization accepts only unique candidate
+keys with an explicit target-season `cleared` or `claimed` result, waiver date
+at or before cutoff, absolute evidence URL, note, reviewer, and RFC 3339 review
+time. A claim records false and retains the blocker; it never chooses the new
+organization or rewrites assignment. A clearance records true and clears only
+`WaiverClearance`. Every written player retains result, date, cutoff, review
+fingerprint, sources, and reviewer provenance.
+
+The existing ESPN transaction archive is insufficient as a clearance source:
+its completed 2025-26 envelope contains 109 placements and 10 claims but zero
+explicit `WaiverClear` rows, and the official AHL transaction snapshot contains
+no waiver descriptions. Placement followed by source silence therefore cannot
+be promoted. PuckPedia's waiver wire exposes explicit cleared/claimed history
+and its Capology page documents the 10-game/30-day re-waiver boundary, but its
+data API is private; IceLines uses a reviewed evidence import rather than an
+unsupported scraper. The July 28 target queue contains 144 candidates, zero
+resolutions, and 144 pending rows. Those decisions become available during
+camp cuts, not during the July offseason.
+
 The July 28 run used verified official landing acquisitions from July 25-26
 and covered all 1,282 canonical candidates.
 The organization-status ledger resolved 549 of 1,174 prior-only appearances:

@@ -11,6 +11,7 @@ pub mod ahl_recall_readiness;
 pub mod ahl_rollover;
 pub mod ahl_transaction_state;
 pub mod ahl_transactions;
+pub mod ahl_waiver_clearance;
 pub mod analytics_cache_store;
 pub mod atomic_write;
 pub mod boxscore_client;

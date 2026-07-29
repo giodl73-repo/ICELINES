@@ -68,6 +68,17 @@ pub struct AhlPreseasonAssignmentAuthority {
     pub evidence_reason: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AhlPreseasonWaiverAuthority {
+    pub result: String,
+    pub waiver_date: String,
+    pub cutoff: String,
+    pub source_fingerprint: String,
+    pub source_urls: Vec<String>,
+    pub reviewer: String,
+    pub reviewed_at: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AhlPreseasonFactsPlayerRow {
     pub nhl_player_id: Option<u32>,
@@ -108,6 +119,8 @@ pub struct AhlPreseasonFactsPlayerRow {
     pub assignment_authority: Option<AhlPreseasonAssignmentAuthority>,
     #[serde(default)]
     pub waiver_cleared: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub waiver_authority: Option<AhlPreseasonWaiverAuthority>,
     #[serde(default)]
     pub review_source_urls: Vec<String>,
     #[serde(default)]
@@ -394,6 +407,7 @@ pub fn build_ahl_preseason_league_facts_workboard(
                 assigned_to_affiliate: None,
                 assignment_authority: None,
                 waiver_cleared: player.waiver_exempt.filter(|waiver_exempt| *waiver_exempt),
+                waiver_authority: None,
                 review_source_urls: Vec::new(),
                 review_note: None,
                 reviewer: None,

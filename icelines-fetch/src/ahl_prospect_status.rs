@@ -399,6 +399,7 @@ mod tests {
                     assigned_to_affiliate: None,
                     assignment_authority: None,
                     waiver_cleared: None,
+                    waiver_authority: None,
                     review_source_urls: Vec::new(),
                     review_note: None,
                     reviewer: None,

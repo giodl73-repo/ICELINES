@@ -445,6 +445,13 @@ The companion fingerprinted application writes only unambiguous canonical
 assignment state into the preseason workboard and retains row-level authority
 provenance. An empty ledger is a verified no-op rather than negative evidence.
 
+Waiver clearance uses a parallel reviewed boundary rather than transaction
+absence. `affiliate-waivers-draft` generates the exact queue;
+`affiliate-waivers-finalize` seals dated cleared/claimed decisions with source
+and reviewer authority; `affiliate-waivers-apply` changes only the waiver gate.
+Eligibility, placement, and prior clearance are not interchangeable with a
+valid target assignment clearance.
+
 `affiliate_projection_input_from_snapshot` is the fail-closed bridge into the
 core projection contract. Its enrichment set must exactly cover the selected
 official roster and explicitly map every `provider_player_id` to a canonical
