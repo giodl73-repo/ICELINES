@@ -850,6 +850,15 @@ fingerprint. A withheld rank suppresses contender/rebuilding labels in card,
 Web-board, and TUI-board presentation and displays `Under review` instead.
 Cross-surface golden parity and all-32 unique-card tests cover the change.
 
+**Current partial-evidence checkpoint — 2026-07-29:** the registered Web/TUI
+board and release smoke now use the dated July 28 package replay with 14/16
+required profiles complete. Its matching source-coverage audit is retained
+beside the board and binds the package and board fingerprints. All 32 ranks
+remain withheld; only `development.organization_depth` and
+`development.recall_depth` are required blockers. The older low-coverage board
+remains immutable for scenario, calibration, and compatibility fixtures that
+bind its fingerprint.
+
 **Exit:** every renderer consumes the same sealed board, works without color,
 shows active context, and exposes recovery for partial/stale/blocked states.
 

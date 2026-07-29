@@ -5137,13 +5137,17 @@ fn render_window_markdown(board: &OrganizationWindowBoardView, focus: Option<&st
             .score
             .map(|score| format!("{score:.1}"))
             .unwrap_or_else(|| "NR".to_owned());
+        let classification = row
+            .overall
+            .rank
+            .map(|_| format!("{:?}", row.overall.classification))
+            .unwrap_or_else(|| "Under review".to_owned());
         let _ = writeln!(
             out,
-            "| {rank} | {} | {score} | {:.0}% | {:.0}% | {:?} | {:?} |",
+            "| {rank} | {} | {score} | {:.0}% | {:.0}% | {classification} | {:?} |",
             row.organization,
             row.overall.confidence * 100.0,
             row.overall.coverage * 100.0,
-            row.overall.classification,
             row.overall.rank_status.state
         );
     }
@@ -5578,15 +5582,20 @@ fn render_window(board: &OrganizationWindowBoardView, focus: Option<&str>) -> St
             .rank
             .map(|value| format!("#{value}"))
             .unwrap_or_else(|| "NR".to_owned());
+        let classification = row
+            .overall
+            .rank
+            .map(|_| format!("{:?}", row.overall.classification))
+            .unwrap_or_else(|| "Under review".to_owned());
         let _ = writeln!(
             out,
-            "{}  score {}  rank {:>3}  confidence {:>3.0}%  coverage {:>3.0}%  {:?}",
+            "{}  score {}  rank {:>3}  confidence {:>3.0}%  coverage {:>3.0}%  {}",
             row.organization,
             score,
             rank,
             row.overall.confidence * 100.0,
             row.overall.coverage * 100.0,
-            row.overall.classification
+            classification
         );
         if focus.is_some() {
             for dimension in &row.dimensions {
@@ -10479,7 +10488,7 @@ mod tests {
     #[test]
     fn window_markdown_report_preserves_sealed_context_and_partial_state() {
         let board: OrganizationWindowBoardView = serde_json::from_str(include_str!(
-            "../../../examples/organization-window-board-evaluation-2026-27.json"
+            "../../../examples/organization-window-board-partial-2026-07-28.json"
         ))
         .unwrap();
         let report = super::render_window_markdown(&board, Some("NYR"));
@@ -10490,7 +10499,13 @@ mod tests {
         assert!(report.contains("## NYR detail"));
         assert!(report.contains("### Lines and evidence"));
         assert!(report.contains("### Blockers"));
+        assert!(report.contains("| Under review | Withheld |"));
+        assert!(!report.contains("| Plateau | Withheld |"));
         assert!(!report.contains("| SEA |"));
+
+        let terminal = super::render_window(&board, Some("NYR"));
+        assert!(terminal.contains("coverage  85%  Under review"));
+        assert!(!terminal.contains("coverage  85%  Plateau"));
     }
 
     #[test]

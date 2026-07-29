@@ -451,7 +451,7 @@ mod tests {
 
     fn board() -> OrganizationWindowBoardView {
         serde_json::from_str(include_str!(
-            "../../../../examples/organization-window-board-evaluation-2026-27.json"
+            "../../../../examples/organization-window-board-partial-2026-07-28.json"
         ))
         .expect("sealed organization Window board fixture")
     }
@@ -473,6 +473,43 @@ mod tests {
             assert!(fingerprints.insert(card.fingerprint));
         }
         assert_eq!(fingerprints.len(), CANONICAL_TEAMS.len());
+    }
+
+    #[test]
+    fn current_partial_board_matches_its_14_of_16_source_audit() {
+        let board = board();
+        let audit: crate::view_model::OrganizationWindowSourceCoverageView =
+            serde_json::from_str(include_str!(
+                "../../../../examples/organization-window-source-audit-partial-2026-07-28.json"
+            ))
+            .expect("sealed partial source audit fixture");
+
+        assert_eq!(audit.package_fingerprint.len(), 64);
+        assert_eq!(audit.board_fingerprint, board.fingerprint);
+        assert_eq!(audit.expected_organizations, CANONICAL_TEAMS.len());
+        assert_eq!(audit.complete_required_profiles, 14);
+        assert_eq!(audit.required_profiles, 16);
+        assert_eq!(audit.rank_eligible_organizations, 0);
+        assert!(!audit.production_ranked);
+
+        let incomplete_required = audit
+            .profiles
+            .iter()
+            .filter(|profile| profile.required && !profile.complete)
+            .map(|profile| profile.profile_key.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            incomplete_required,
+            ["development.organization_depth", "development.recall_depth"]
+        );
+        assert!(board.organizations.iter().all(|organization| {
+            organization.overall.rank.is_none()
+                && organization.blockers.len() == incomplete_required.len()
+                && organization
+                    .blockers
+                    .iter()
+                    .all(|blocker| incomplete_required.iter().any(|key| blocker.contains(key)))
+        }));
     }
 
     #[test]

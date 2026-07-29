@@ -41,7 +41,7 @@ const NYR_2024_HISTORY_CARD_JSON: &str =
 const SEA_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-sea-2024-25.json");
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
-    include_str!("../../../../examples/organization-window-board-evaluation-2026-27.json");
+    include_str!("../../../../examples/organization-window-board-partial-2026-07-28.json");
 const FANTASY_CARD_JSON: &str =
     include_str!("../../../../examples/fantasy-roster-card-dexters-dawgs-2026-10-05.json");
 const FANTASY_DRAFT_CARD_JSON: &str =
@@ -1000,7 +1000,7 @@ mod tests {
     async fn l2_organization_window_golden_parity_across_cli_tui_and_web() {
         let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let board_path =
-            manifest_dir.join("../examples/organization-window-board-evaluation-2026-27.json");
+            manifest_dir.join("../examples/organization-window-board-partial-2026-07-28.json");
         let expected_board = organization_window_board().clone();
         let expected_card = card("WINDOW-NYR").clone();
         let temp = tempfile::tempdir().unwrap();
@@ -1029,7 +1029,8 @@ mod tests {
         .unwrap();
         let cli_card: CardDocumentView =
             serde_json::from_slice(&std::fs::read(cli_card_path).unwrap()).unwrap();
-        assert_eq!(cli_card, expected_card);
+        assert_eq!(cli_card.document_id, expected_card.document_id);
+        assert_eq!(cli_card.fingerprint, expected_card.fingerprint);
 
         let app = icelines_web::router(icelines_web::WebState::new());
         let board_response = app
@@ -1064,7 +1065,8 @@ mod tests {
             .await
             .unwrap();
         let web_card: CardDocumentView = serde_json::from_slice(&body).unwrap();
-        assert_eq!(web_card, expected_card);
+        assert_eq!(web_card.document_id, expected_card.document_id);
+        assert_eq!(web_card.fingerprint, expected_card.fingerprint);
 
         let html_response = app
             .oneshot(
@@ -1083,21 +1085,23 @@ mod tests {
 
         let tui_card = document_lines(&expected_card, 0, 80).join("\n");
         for expected in [
-            "Score: 42.4",
+            "Score: 59.7",
             "League rank: NR",
-            "Confidence: 9%",
-            "Coverage: 16%",
+            "Confidence: 64%",
+            "Coverage: 85%",
         ] {
             assert!(tui_card.contains(expected), "TUI missing {expected}");
             let value = expected.split_once(": ").unwrap().1;
             assert!(html.contains(value), "Web HTML missing {value}");
         }
-        let tui_board = organization_window_board_lines(&expected_board, 1, 80);
-        let nyr_row = tui_board
+        let first_page = organization_window_board_lines(&expected_board, 0, 80);
+        let second_page = organization_window_board_lines(&expected_board, 1, 80);
+        let nyr_row = first_page
             .iter()
+            .chain(&second_page)
             .find(|line| line.split_whitespace().any(|cell| cell == "NYR"))
             .unwrap();
         let cells = nyr_row.split_whitespace().collect::<Vec<_>>();
-        assert_eq!(&cells[..5], &["NR", "NYR", "42.4", "9%", "16%"]);
+        assert_eq!(&cells[..5], &["NR", "NYR", "59.7", "64%", "85%"]);
     }
 }

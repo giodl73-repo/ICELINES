@@ -28,7 +28,7 @@ const NYR_2024_HISTORY: &str =
 const SEA_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-sea-2024-25.json");
 const BALANCED_ORGANIZATION_WINDOW: &str =
-    include_str!("../../examples/organization-window-board-evaluation-2026-27.json");
+    include_str!("../../examples/organization-window-board-partial-2026-07-28.json");
 const DEXTERS_DAWGS: &str =
     include_str!("../../examples/fantasy-roster-card-dexters-dawgs-2026-10-05.json");
 const DEXTERS_DAWGS_DRAFT: &str =
