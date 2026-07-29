@@ -1017,3 +1017,33 @@ Web and TUI board projections follow the same rule. The focused-card provider
 also moved from two embedded NYR/SEA documents to deterministic projection of
 all 32 teams from the registered sealed board; CLI, TUI, and Web parity remains
 core-owned.
+
+### Final engineering close review — lifecycle and untouched holdout
+
+HART/KEEL accepted the separately sealed lifecycle amendment because it binds
+new authoring policy without rewriting the immutable v1 descriptor inventory,
+saved Frames, observations, or boards. Deprecation holds name the exact official
+manifest fingerprint; retirement, demotion, supersession, and replacement-cycle
+failures are validated before authoring, while sealed replay never substitutes a
+new method for an old one.
+
+PACE/TAPE required the next predictive test to be frozen before outcomes exist.
+The registered 2025-26 -> 2026-27 holdout seals the complete observed-history
+feature board, neutral baseline, leakage audit, target, eligibility date, and
+acceptance rule without an outcomes or claim-status field. The result contract
+refuses premature or mismatched evidence, recomputes the baseline, derives its
+own conclusion, and retains an unfavorable or inconclusive result.
+
+BENCH/EDGE/FORGE reviewed the final focused suites and GitHub matrix. Core,
+fetch, and CLI Window slices pass 56/5/22 tests; the full CLI/TUI binary
+partition passes 1,396 tests under the CI stack setting; strict affected Clippy,
+formatting, schema parsing, and artifact replay pass. PR #23 run 30488170619
+passes all 26 jobs on head `1b4ff230`, with no review threads or failed checks.
+
+**Verdict:** engineering-complete for the evaluation release. WP-011 and
+VAL-013 remain product-partial for exactly two evidence gates, neither of which
+may be closed by proxy: reviewed 2026-27 affiliate facts must complete the two
+remaining required profiles for all 32 organizations, and the preregistered
+future holdout must be scored after April 11, 2027. The draft PR remains the
+correct publication state until those gates pass or the owner expressly changes
+the product-release scope.

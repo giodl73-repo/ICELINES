@@ -6,6 +6,7 @@ within-season movement/personnel attribution, and scenario sensitivity
 implemented; production coverage and a future untouched holdout remain open
 **Specification:** [`../specs/organization-window.md`](../specs/organization-window.md)
 **Review:** [`../notes/2026-07-27-organization-window-roles-review.md`](../notes/2026-07-27-organization-window-roles-review.md)
+**Completion audit:** [`../notes/2026-07-29-organization-window-completion-audit.md`](../notes/2026-07-29-organization-window-completion-audit.md)
 **Parent workstreams:** Team Season Forecast, Line Combination Simulation,
 Fantasy War Room, and organization/prospect intelligence
 
@@ -48,7 +49,7 @@ preserved while the remaining work is completed:
 | W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
 | W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed trial-noise states/propagation, sealed claim status, frozen training/validation/retrospective-holdout roles, four real point-in-time observed-history origins, and an outcome-free 2025-26 -> 2026-27 future-holdout registration | Score the registered future holdout once final 2026-27 outcomes are eligible; the current retrospective holdout is explicitly inconclusive. |
 | W8 | complete | CLI, two-page TUI all-32 board/focused cards, Web/API, JSON, UI-neutral card, durable Markdown report, desktop/tablet/mobile live review, semantic checks, keyboard/reduced-motion/narrow review, and exact board/card plus semantic renderer golden parity across CLI/TUI/Web | Keep the shared golden test mandatory as surfaces evolve. |
-| W9 | complete | Authoring/compatibility/cache documentation, compatibility/extension fixtures, canonical replay and three-OS fingerprint gates, strict lint, schema/golden checks, offline smoke, dependency audit, performance/browser/accessibility evidence, and verified Linux x86_64, Windows x86_64, macOS ARM64, and macOS x86_64 packages; PR #23 run 30351304523 passed 26/26 checks | Keep these gates mandatory; production source completeness and a genuinely future untouched holdout remain W3-W4/W7 product gates rather than release-evidence claims. |
+| W9 | complete | Authoring/compatibility/cache documentation, compatibility/extension fixtures, canonical replay and three-OS fingerprint gates, strict lint, schema/golden checks, offline smoke, dependency audit, performance/browser/accessibility evidence, and verified Linux x86_64, Windows x86_64, macOS ARM64, and macOS x86_64 packages; PR #23 run 30488170619 passed 26/26 checks on audited implementation head `1b4ff230` | Keep these gates mandatory; production source completeness and a genuinely future untouched holdout remain W3-W4/W7 product gates rather than release-evidence claims. |
 
 “Partial” is a product state, not a failure state: saved artifacts must expose
 missing evidence and withhold ranks or claims when gates are not met.

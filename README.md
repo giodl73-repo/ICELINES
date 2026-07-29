@@ -433,6 +433,30 @@ icelines icecast calibrate-development --start-season 20052006 --end-season 2025
 icelines icecast calibrate-development --json --out development-calibration.json
 ```
 
+#### The Window
+
+The Window is IceLines' explainable organization-health system. It builds one
+sealed, season-canonical league board before focusing on a team, keeps score,
+confidence, and coverage separate, and shows the NHL roster, prospect pipeline,
+development system, resilience, history, scenarios, and movement through one
+versioned Frame. CLI, TUI, Web/API, Markdown, JSON, and UI-neutral cards consume
+the same core-owned document; renderers do not recalculate rankings or hockey
+values. See [The Window guide](docs/organization-window.md) for the complete
+workflow and extension contract.
+
+The bundled 2026-27 artifact is an evaluation board, not an official power
+ranking or Cup forecast. It currently has 14 of 16 required profiles, so all 32
+teams are present but production ranks remain withheld until reviewed affiliate
+organization-depth and recall-depth evidence is available. Historical
+calibration is explicitly inconclusive; the next untouched holdout is sealed
+without outcomes and cannot be scored before April 11, 2027.
+
+```bash
+icelines icecast window --input window.json
+icelines icecast window --input window.json --team NYR
+icelines icecast window-card --input window.json --team NYR --out nyr-window-card.json
+```
+
 The Cut models the opening active roster separately from the dressed
 12F/6D/2G lineup. Its UI-neutral result exposes active, dressed,
 healthy-scratch, and waiver-exposure probabilities. Cap enforcement requires

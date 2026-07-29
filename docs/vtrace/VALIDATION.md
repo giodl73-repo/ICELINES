@@ -107,6 +107,9 @@ below.
 9. Deprecate, retire, and readiness-demote selected methods; prove new official
    and custom authoring gates, explicit deprecated holds, invalid supersession
    refusal, lifecycle fingerprint binding, and unchanged saved-board replay.
+10. Register the next untouched future origin without outcomes, then prove the
+    scorer refuses early or mismatched results and derives acceptance only from
+    the frozen board, target standings, baseline, leakage audit, and rule.
 
 Status: partial 2026-07-29. Canonical loaded-board replay, core bridge/rebase
 tamper/completeness/change attribution, real isolated/combined multi-source
@@ -128,8 +131,10 @@ and both NYR card pages at desktop/tablet/mobile widths. The reusable gate also
 checks skip navigation, main focus target, semantic captions/headers, rank-gate
 copy, focused-team isolation, and nonblank exact-dimension captures. Full
 golden parity and real historical evidence pass; production source completion
-and the future holdout keep VAL-013 partial. PR #23 passed the fixed-hash
-canonical replay gate on Windows, Linux, and macOS. A local
+and the future holdout keep VAL-013 partial. PR #23 run 30488170619 passed all
+26 jobs on audited implementation head `1b4ff230`, including fixed-hash
+canonical replay on
+Windows, Linux, and macOS and the full CLI/TUI binary partition. A local
 explicit keyboard walkthrough verified first-Tab
 skip links and Enter focus transfer to `main` on both routes; reduced-motion
 emulation and 390px computed containment also passed.

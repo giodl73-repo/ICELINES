@@ -14,9 +14,11 @@
 - [ ] The production balanced Frame completes 16/16 required profiles and ranks all 32 teams without proxies.
 - [ ] The registered 2025-26 -> 2026-27 future holdout is scored once after April 11, 2027 and retained regardless of result.
 
-W9 evidence recorded 2026-07-27: fixed-hash replay passes on Windows, Linux,
-and macOS in PR CI;
-focused CLI/TUI/Web tests and nine schema checks pass; `cargo audit` has no
+W9 evidence reconciled 2026-07-29: PR #23 run 30488170619 passes all 26 jobs on
+audited implementation head `1b4ff230`, including fixed-hash replay on Windows,
+Linux, and
+macOS; focused core/fetch/CLI Window tests pass at 56/5/22, the full CLI/TUI
+binary partition passes 1,396 tests, and schema checks pass; `cargo audit` has no
 blocking vulnerability; offline release smoke includes The Window; the Windows
 ZIP/checksum/package manifest verify; and the live desktop/tablet/mobile Window
 browser-review script passes. Full package, multi-season retrospective evidence,
