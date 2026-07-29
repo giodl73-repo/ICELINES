@@ -146,6 +146,21 @@ The command validates the input fingerprint before mutation and reseals the
 result. Empty additive fields remain omitted so older v1 package fingerprints
 continue to replay.
 
+When the reviewed all-league AHL artifact becomes complete, refresh only the
+affiliate authority while preserving every other sealed source:
+
+```powershell
+icelines icecast window-source-refresh-affiliates `
+  --input window-sources-refreshed.json `
+  --ahl-projection-inputs ahl-league-inputs.json `
+  --out window-sources-ranked.json
+```
+
+The affiliate refresh validates the original package fingerprint, requires the
+canonical 32-team cohort with zero lowering failures, refuses packages carrying
+explicit organization-lineup authorities, and reseals the result. Organization
+and recall profiles remain core-derived from the refreshed affiliates.
+
 The affiliate acquisition chain now also has a player-global operational
 prospect-status authority. It derives exact cutoff age and observed NHL
 regular-season workload from the official career cache under a versioned

@@ -988,3 +988,8 @@ sealed package and downstream UI-neutral views are unchanged.
 **Verdict:** pass for extensible composition. The remaining 14/16 state is a
 dated source-authority gate, not missing Window plumbing. A complete reviewed
 league artifact will flow to 16/16 through the existing adapters.
+
+The resumable refresh path meets the same verdict: it first validates the old
+package seal, changes only the affiliate collection, rejects an explicit
+organization-lineup competitor, and reseals. This keeps late preseason facts
+cheap to apply without weakening provenance or recomputing unrelated Lines.

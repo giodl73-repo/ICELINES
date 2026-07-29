@@ -2217,6 +2217,17 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: PathBuf,
     },
+    /// Refresh reviewed AHL affiliates inside an existing sealed Window package.
+    #[command(name = "window-source-refresh-affiliates")]
+    WindowSourceRefreshAffiliates {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Complete league artifact emitted by `affiliate-preseason-projection-inputs`.
+        #[arg(long, value_name = "PATH")]
+        ahl_projection_inputs: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
     /// Audit all 17 balanced profiles across the canonical league source package.
     #[command(name = "window-source-audit")]
     WindowSourceAudit {
@@ -2942,6 +2953,23 @@ mod tui_surface_tests {
             assert!(matches!(
                 refresh_lineups.command,
                 Commands::Icecast(IceCastSubcommand::WindowSourceRefreshLineups { .. })
+            ));
+
+            let refresh_affiliates = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-affiliates",
+                "--input",
+                "window-sources.json",
+                "--ahl-projection-inputs",
+                "ahl-league-inputs.json",
+                "--out",
+                "window-affiliates.json",
+            ])
+            .expect("Window affiliate refresh should parse");
+            assert!(matches!(
+                refresh_affiliates.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourceRefreshAffiliates { .. })
             ));
 
             let cache_prospects = Cli::try_parse_from([

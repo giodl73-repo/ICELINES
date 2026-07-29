@@ -194,6 +194,10 @@ artifacts, builds affiliates through the canonical core projection, and
 conflicts with loose per-team affiliate files. When reviewed assignment facts
 populate the artifact, the same command completes both remaining profiles;
 no new scorer, adapter, or renderer work is required.
+`window-source-refresh-affiliates` also upgrades an already sealed package
+without recomputing unrelated authorities. It validates the old seal, requires
+the complete canonical cohort, refuses competing explicit organization-lineup
+authority, replaces only affiliates, and reseals.
 
 **Identity checkpoint — 2026-07-28:** official 2025-26 AHL roster evidence
 contains 1,425 team appearances across 32 clubs. The exact, sourced-alias, and

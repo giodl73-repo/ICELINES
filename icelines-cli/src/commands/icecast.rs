@@ -62,7 +62,7 @@ use icelines_core::{
     TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
     TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
     TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
-    ViewWindow, WindowScenarioAuthorityView, CURRENT_SEASON,
+    ViewWindow, WindowScenarioAuthorityView, CANONICAL_TEAMS, CURRENT_SEASON,
     ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA, PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };
 use icelines_core::{
@@ -4600,6 +4600,12 @@ pub struct WindowSourceRefreshLineupsArgs {
     pub out: PathBuf,
 }
 
+pub struct WindowSourceRefreshAffiliatesArgs {
+    pub input: PathBuf,
+    pub ahl_projection_inputs: PathBuf,
+    pub out: PathBuf,
+}
+
 struct WindowSourcePaths<'a> {
     season: u32,
     as_of: NaiveDate,
@@ -4690,7 +4696,7 @@ fn build_window_affiliates_from_league_inputs(
 ) -> anyhow::Result<Vec<AhlAffiliateProjectionView>> {
     if league.schema != AHL_PRESEASON_LEAGUE_PROJECTION_INPUTS_SCHEMA
         || league.target_season != season
-        || league.teams_requested == 0
+        || league.teams_requested != CANONICAL_TEAMS.len()
         || league.teams_built != league.teams_requested
         || league.inputs.len() != league.teams_built
         || !league.failures.is_empty()
@@ -4849,6 +4855,32 @@ pub fn run_window_source_refresh_lineups(
         &args.out,
         output.as_bytes(),
         "refreshed organization Window source package",
+    )
+}
+
+pub fn run_window_source_refresh_affiliates(
+    args: WindowSourceRefreshAffiliatesArgs,
+) -> anyhow::Result<()> {
+    let package: OrganizationWindowSourcePackageView =
+        read_icecast_json(&args.input, "organization Window source package")?;
+    let mut package = seal_organization_window_source_package(package)?;
+    if !package.organization_lineups.is_empty() {
+        bail!(
+            "affiliate refresh refuses a package with explicit organization lineups; rebuild with one organization-lineup authority"
+        );
+    }
+    let league: AhlPreseasonLeagueProjectionInputsView = read_icecast_json(
+        &args.ahl_projection_inputs,
+        "AHL preseason league projection inputs",
+    )?;
+    package.ahl_affiliates = build_window_affiliates_from_league_inputs(&league, package.season)?;
+    package.fingerprint.clear();
+    package = seal_organization_window_source_package(package)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&package)?);
+    write_icecast_file(
+        &args.out,
+        output.as_bytes(),
+        "affiliate-refreshed organization Window source package",
     )
 }
 
