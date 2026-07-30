@@ -2573,6 +2573,27 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Prove The Window's production-source and future-holdout closeout gates together.
+    #[command(name = "window-completion-status")]
+    WindowCompletionStatus {
+        /// Fresh output from `window-source-audit`.
+        #[arg(long, value_name = "PATH")]
+        source_audit: PathBuf,
+        /// Exact preregistered future holdout.
+        #[arg(long, value_name = "PATH")]
+        holdout_registration: PathBuf,
+        /// Scored holdout result, supplied only after the registered eligibility date.
+        #[arg(long, value_name = "PATH")]
+        holdout_result: Option<PathBuf>,
+        /// RFC 3339 instant at which completion is evaluated.
+        #[arg(long)]
+        evaluated_at: String,
+        /// Return a failing exit code after writing status unless both gates are complete.
+        #[arg(long)]
+        require_complete: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Project one team from a sealed league forecast into `card_document.v1`.
     #[command(name = "season-card")]
     SeasonCard {
@@ -3598,6 +3619,29 @@ mod tui_surface_tests {
             assert!(matches!(
                 holdout_score.command,
                 Commands::Icecast(IceCastSubcommand::WindowHoldoutScore { .. })
+            ));
+
+            let completion = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-completion-status",
+                "--source-audit",
+                "source-audit.json",
+                "--holdout-registration",
+                "future-holdout.json",
+                "--evaluated-at",
+                "2026-07-30T12:00:00Z",
+                "--require-complete",
+                "--out",
+                "window-completion.json",
+            ])
+            .expect("Window completion status should parse");
+            assert!(matches!(
+                completion.command,
+                Commands::Icecast(IceCastSubcommand::WindowCompletionStatus {
+                    require_complete: true,
+                    ..
+                })
             ));
 
             let report = Cli::try_parse_from([

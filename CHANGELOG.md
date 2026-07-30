@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added `window-completion-status` and the sealed
+  `organization_window_completion_status.v1` contract. It validates the current
+  production-source audit and exact preregistered holdout together, names both
+  remaining actions, refuses mismatched/tampered evidence, and can fail CI via
+  `--require-complete` without confusing holdout acceptance with lifecycle
+  completion.
 - Added a four-season standing-history backfill from the sealed 2022-23 through
   2025-26 Window evaluation origins: 640 point-in-time-safe observations across
   all 32 teams and five exact historical profile methods. New cross-season

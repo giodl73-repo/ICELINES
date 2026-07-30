@@ -39,6 +39,7 @@ pub mod manifest;
 pub mod moneypuck;
 pub mod nhl_api;
 pub mod nhl_goalie_translation;
+pub mod organization_window_completion;
 pub mod organization_window_history;
 pub mod playoffs_bundle;
 pub mod prospect_career;
@@ -89,6 +90,14 @@ pub use nhl_goalie_translation::{
     validate_nhl_goalie_translation_ledger, NhlGoalieTranslationLedgerRow,
     NhlGoalieTranslationLedgerView, NhlGoalieTranslationUnavailableRow,
     NHL_GOALIE_TRANSLATION_LEDGER_SCHEMA,
+};
+pub use organization_window_completion::{
+    build_organization_window_completion_status, OrganizationWindowCompletionError,
+    OrganizationWindowCompletionState, OrganizationWindowCompletionStatusView,
+    OrganizationWindowHoldoutGateState, OrganizationWindowHoldoutGateView,
+    OrganizationWindowIncompleteProfileView, OrganizationWindowSourceGateView,
+    ORGANIZATION_WINDOW_COMPLETION_STATUS_JSON_SCHEMA,
+    ORGANIZATION_WINDOW_COMPLETION_STATUS_SCHEMA,
 };
 pub use organization_window_history::{
     build_historical_organization_window_origin,

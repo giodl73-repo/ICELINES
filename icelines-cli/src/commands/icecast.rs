@@ -44,11 +44,11 @@ use icelines_core::{
     OrganizationPositionGroup, OrganizationProfileHistoryCheckpointView,
     OrganizationProfileHistoryDeltaView, OrganizationProfileHistoryView, OrganizationUnitKind,
     OrganizationWindowBoardView, OrganizationWindowBridgeView, OrganizationWindowManifestView,
-    OrganizationWindowScenarioDistributionInput, OrganizationWindowSourcePackageView,
-    OrganizationalProspectPolicy, ProspectConversionBoardView, ProspectConversionConfig,
-    ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
-    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow,
-    ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
+    OrganizationWindowScenarioDistributionInput, OrganizationWindowSourceCoverageView,
+    OrganizationWindowSourcePackageView, OrganizationalProspectPolicy, ProspectConversionBoardView,
+    ProspectConversionConfig, ProspectConversionPerformanceDocument,
+    ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
+    ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
     ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
     ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramSensitivityView,
     ScenarioScopeView, ScheduleRestProfileView, SeasonSimulationCardInput,
@@ -155,7 +155,7 @@ use icelines_fetch::{
         finalize_ahl_waiver_clearance_review, AhlWaiverClearanceApplicationView,
         AhlWaiverClearanceDecisionsView, AhlWaiverClearanceReviewView,
     },
-    build_historical_organization_window_origin,
+    build_historical_organization_window_origin, build_organization_window_completion_status,
     build_organization_window_future_holdout_registration,
     build_organization_window_standings_snapshot, build_prospect_career_context_draft,
     build_prospect_career_discovery, build_prospect_league_context_draft,
@@ -181,11 +181,11 @@ use icelines_fetch::{
     },
     stats_loader::load_into_repo,
     NhlApiClient, OfficialShiftChartRow, OrganizationWindowFutureHoldoutRegistration,
-    OrganizationWindowHistoricalOriginArtifact, OrganizationWindowStandingsSnapshot,
-    ProspectCareerContextDraftConfig, ProspectCareerContextIdentityInput,
-    ProspectCareerDiscoveryView, ProspectCareerProgramConfig, ProspectLeagueContext,
-    ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView, ScenarioRegistryStore,
-    ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
+    OrganizationWindowFutureHoldoutResult, OrganizationWindowHistoricalOriginArtifact,
+    OrganizationWindowStandingsSnapshot, ProspectCareerContextDraftConfig,
+    ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectCareerProgramConfig,
+    ProspectLeagueContext, ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView,
+    ScenarioRegistryStore, ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
     PROSPECT_CAREER_DISCOVERY_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
@@ -5837,6 +5837,48 @@ pub fn run_window_holdout_score(
         out.as_deref(),
         "future organization Window holdout result",
     )
+}
+
+pub fn run_window_completion_status(
+    source_audit: PathBuf,
+    holdout_registration: PathBuf,
+    holdout_result: Option<PathBuf>,
+    evaluated_at: String,
+    require_complete: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&evaluated_at)
+        .context("--evaluated-at must be RFC 3339, for example 2026-07-30T12:00:00Z")?;
+    let source_audit: OrganizationWindowSourceCoverageView =
+        read_icecast_json(&source_audit, "organization Window source audit")?;
+    let registration: OrganizationWindowFutureHoldoutRegistration = read_icecast_json(
+        &holdout_registration,
+        "future organization Window holdout registration",
+    )?;
+    let result: Option<OrganizationWindowFutureHoldoutResult> = holdout_result
+        .as_ref()
+        .map(|path| read_icecast_json(path, "future organization Window holdout result"))
+        .transpose()?;
+    let status = build_organization_window_completion_status(
+        &source_audit,
+        &registration,
+        result.as_ref(),
+        evaluated_at,
+    )?;
+    let complete = status.project_complete;
+    write_window_json(
+        &status,
+        out.as_deref(),
+        "organization Window completion status",
+    )?;
+    if require_complete && !complete {
+        bail!(
+            "organization Window is not complete: source gate passed={}, holdout state={:?}",
+            status.source_gate.passed,
+            status.holdout_gate.state
+        );
+    }
+    Ok(())
 }
 
 fn write_window_json(

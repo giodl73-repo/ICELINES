@@ -1047,3 +1047,13 @@ generic annual path and shared-card projection while leaving the 14 official
 historical-support gaps explicit. Subsequent tranches must add those exact
 methods from matching authorities rather than bridge the evaluation signals by
 name or statistical resemblance.
+
+## Machine-readable closeout gate (2026-07-30)
+
+`organization_window_completion_status.v1` joins the fresh production-source
+audit and exact future-holdout registration/result into one independently
+fingerprinted lifecycle artifact. `window-completion-status
+--require-complete` writes the evidence and then fails until both product gates
+are satisfied. Eligibility alone remains unscored; holdout acceptance remains
+separate from lifecycle completion. This adds no proxy source, scorer, or
+calendar shortcut.

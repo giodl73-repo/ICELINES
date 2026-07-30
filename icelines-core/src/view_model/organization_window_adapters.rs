@@ -372,6 +372,115 @@ pub fn audit_organization_window_source_package(
     })
 }
 
+/// Validate a persisted source-coverage audit before another lifecycle
+/// document relies on it. The audit is intentionally derived evidence rather
+/// than an authority of its own, so validation checks every declared count and
+/// profile against the canonical `balanced.v1` manifest.
+pub fn validate_organization_window_source_coverage(
+    coverage: &OrganizationWindowSourceCoverageView,
+) -> Result<(), OrganizationWindowError> {
+    if coverage.schema != ORGANIZATION_WINDOW_SOURCE_COVERAGE_SCHEMA {
+        return Err(OrganizationWindowError::UnsupportedSchema {
+            contract: "organization Window source coverage",
+            found: coverage.schema.clone(),
+        });
+    }
+    let expected_organizations = canonical_teams();
+    if coverage.expected_organizations != expected_organizations.len()
+        || coverage.package_fingerprint.trim().is_empty()
+        || coverage.board_fingerprint.trim().is_empty()
+        || coverage.rank_eligible_organizations > expected_organizations.len()
+        || coverage.disclosures.is_empty()
+        || coverage
+            .disclosures
+            .iter()
+            .any(|disclosure| disclosure.trim().is_empty())
+    {
+        return Err(OrganizationWindowError::InvalidBoard(
+            "source coverage has invalid cohort, fingerprints, rank count, or disclosures"
+                .to_owned(),
+        ));
+    }
+
+    let manifest = balanced_organization_window_manifest(BALANCED_MANIFEST_CREATED_AT);
+    let expected_profiles = manifest
+        .dimensions
+        .iter()
+        .flat_map(|dimension| &dimension.profiles)
+        .map(|profile| {
+            (
+                (profile.profile_key.clone(), profile.method_version.clone()),
+                profile.required,
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    if coverage.profiles.len() != expected_profiles.len() {
+        return Err(OrganizationWindowError::InvalidBoard(format!(
+            "source coverage declares {} profiles but balanced.v1 requires {}",
+            coverage.profiles.len(),
+            expected_profiles.len()
+        )));
+    }
+
+    let mut seen = BTreeSet::new();
+    let mut complete_required_profiles = 0usize;
+    for profile in &coverage.profiles {
+        let id = (profile.profile_key.clone(), profile.method_version.clone());
+        let Some(expected_required) = expected_profiles.get(&id).copied() else {
+            return Err(OrganizationWindowError::UnknownProfileMethod(format!(
+                "{}@{}",
+                profile.profile_key, profile.method_version
+            )));
+        };
+        if !seen.insert(id)
+            || profile.required != expected_required
+            || profile.organizations_with_observation > expected_organizations.len()
+            || profile.organizations_with_value > profile.organizations_with_observation
+        {
+            return Err(OrganizationWindowError::InvalidBoard(format!(
+                "source coverage row {}@{} has duplicate identity, invalid requirement, or impossible counts",
+                profile.profile_key, profile.method_version
+            )));
+        }
+        let missing = profile
+            .missing_organizations
+            .iter()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        if missing.len() != profile.missing_organizations.len()
+            || !missing.is_subset(&expected_organizations)
+            || missing.len() + profile.organizations_with_value != expected_organizations.len()
+            || profile.complete != missing.is_empty()
+        {
+            return Err(OrganizationWindowError::InvalidBoard(format!(
+                "source coverage row {}@{} has inconsistent missing-team evidence",
+                profile.profile_key, profile.method_version
+            )));
+        }
+        if profile.required && profile.complete {
+            complete_required_profiles += 1;
+        }
+    }
+
+    let required_profiles = expected_profiles
+        .values()
+        .filter(|required| **required)
+        .count();
+    let expected_production_ranked = coverage.rank_eligible_organizations
+        == expected_organizations.len()
+        && coverage.carry_forward_observations == 0
+        && complete_required_profiles == required_profiles;
+    if coverage.required_profiles != required_profiles
+        || coverage.complete_required_profiles != complete_required_profiles
+        || coverage.production_ranked != expected_production_ranked
+    {
+        return Err(OrganizationWindowError::InvalidBoard(
+            "source coverage summary does not match its canonical profile rows".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
 /// Fail closed when a caller asks to publish a production-ranked balanced
 /// board but any organization still has a withheld rank.
 pub fn require_ranked_balanced_organization_window_board(
@@ -2414,6 +2523,10 @@ mod tests {
         assert_eq!(coverage.complete_required_profiles, 0);
         assert_eq!(coverage.rank_eligible_organizations, 0);
         assert!(!coverage.production_ranked);
+        validate_organization_window_source_coverage(&coverage).unwrap();
+        let mut tampered = coverage.clone();
+        tampered.profiles[0].organizations_with_value += 1;
+        assert!(validate_organization_window_source_coverage(&tampered).is_err());
         assert!(matches!(
             require_ranked_balanced_organization_window_board(&board),
             Err(OrganizationWindowError::InvalidBoard(message))
