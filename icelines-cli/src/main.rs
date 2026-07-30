@@ -2615,6 +2615,27 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             markdown,
             out,
         }) => commands::icecast::run_window(input, team, json, markdown, out)?,
+        Commands::Icecast(IceCastSubcommand::WindowProfileHistoryBuild {
+            boards,
+            history_id,
+            created_at,
+            out,
+        }) => commands::icecast::run_window_profile_history_build(
+            boards, history_id, created_at, out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::WindowProfileHistoryBaseline {
+            source_package,
+            ahl_workboard,
+            history_id,
+            created_at,
+            out,
+        }) => commands::icecast::run_window_profile_history_baseline(
+            source_package,
+            ahl_workboard,
+            history_id,
+            created_at,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::WindowBuild {
             season,
             as_of,
@@ -2629,6 +2650,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             prospect_conversion,
             training_camp,
             schedule_rest,
+            profile_history,
             require_ranked,
             out,
         }) => commands::icecast::run_window_build(commands::icecast::WindowBuildArgs {
@@ -2645,6 +2667,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             prospect_conversion,
             training_camp,
             schedule_rest,
+            profile_history,
             require_ranked,
             out,
         })?,
@@ -2665,6 +2688,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             prospect_conversion,
             training_camp,
             schedule_rest,
+            profile_history,
             out,
         }) => commands::icecast::run_window_source_package(
             commands::icecast::WindowSourcePackageArgs {
@@ -2684,6 +2708,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 prospect_conversion,
                 training_camp,
                 schedule_rest,
+                profile_history,
                 out,
             },
         )?,
@@ -2717,6 +2742,11 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 out,
             },
         )?,
+        Commands::Icecast(IceCastSubcommand::WindowSourceRefreshHistory {
+            input,
+            profile_history,
+            out,
+        }) => commands::icecast::run_window_source_refresh_history(input, profile_history, out)?,
         Commands::Icecast(IceCastSubcommand::WindowSourceAudit {
             input,
             generated_at,

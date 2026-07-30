@@ -2114,6 +2114,32 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Build a sealed standing profile history from one or more validated Window boards.
+    #[command(name = "window-profile-history-build")]
+    WindowProfileHistoryBuild {
+        #[arg(long = "board", value_name = "PATH", required = true)]
+        boards: Vec<PathBuf>,
+        #[arg(long)]
+        history_id: String,
+        #[arg(long)]
+        created_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Derive the prior-season AHL depth baseline from observed affiliate appearances.
+    #[command(name = "window-profile-history-baseline")]
+    WindowProfileHistoryBaseline {
+        #[arg(long, value_name = "PATH")]
+        source_package: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        ahl_workboard: PathBuf,
+        #[arg(long)]
+        history_id: String,
+        #[arg(long)]
+        created_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
     /// Build the official balanced Window from sealed IceLines source documents.
     #[command(name = "window-build")]
     WindowBuild {
@@ -2124,7 +2150,7 @@ pub enum IceCastSubcommand {
         #[arg(long)]
         generated_at: String,
         /// Read one sealed, portable Window source package instead of loose documents.
-        #[arg(long, value_name = "PATH", conflicts_with_all = ["team_season_forecast", "team_game_forecast", "team_lineups", "ahl_affiliates", "organization_lineups", "prospect_program", "prospect_conversion", "training_camp", "schedule_rest"])]
+        #[arg(long, value_name = "PATH", conflicts_with_all = ["team_season_forecast", "team_game_forecast", "team_lineups", "ahl_affiliates", "organization_lineups", "prospect_program", "prospect_conversion", "training_camp", "schedule_rest", "profile_history"])]
         source_package: Option<PathBuf>,
         #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
         team_season_forecast: Option<PathBuf>,
@@ -2162,6 +2188,9 @@ pub enum IceCastSubcommand {
             conflicts_with = "source_package"
         )]
         schedule_rest: Vec<PathBuf>,
+        /// Fill only missing organization/recall profiles from the latest eligible prior season.
+        #[arg(long, value_name = "PATH", conflicts_with = "source_package")]
+        profile_history: Option<PathBuf>,
         /// Refuse to write unless every organization has an eligible rank.
         #[arg(long)]
         require_ranked: bool,
@@ -2214,6 +2243,9 @@ pub enum IceCastSubcommand {
         training_camp: Option<PathBuf>,
         #[arg(long = "schedule-rest", value_name = "PATH")]
         schedule_rest: Vec<PathBuf>,
+        /// Standing point-in-time profile history used by the preseason fallback adapter.
+        #[arg(long, value_name = "PATH")]
+        profile_history: Option<PathBuf>,
         #[arg(long, value_name = "PATH")]
         out: PathBuf,
     },
@@ -2258,6 +2290,16 @@ pub enum IceCastSubcommand {
         /// Final target-season AHL development rule used to lower reviewed facts.
         #[arg(long, value_name = "PATH", requires = "ahl_facts_application")]
         ahl_development_rule: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
+    /// Attach standing profile history to an existing sealed Window package.
+    #[command(name = "window-source-refresh-history")]
+    WindowSourceRefreshHistory {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        profile_history: PathBuf,
         #[arg(long, value_name = "PATH")]
         out: PathBuf,
     },
@@ -3014,6 +3056,23 @@ mod tui_surface_tests {
             assert!(matches!(
                 refresh_lineups.command,
                 Commands::Icecast(IceCastSubcommand::WindowSourceRefreshLineups { .. })
+            ));
+
+            let refresh_history = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-source-refresh-history",
+                "--input",
+                "window-sources.json",
+                "--profile-history",
+                "profile-history.json",
+                "--out",
+                "window-history.json",
+            ])
+            .expect("Window history refresh should parse");
+            assert!(matches!(
+                refresh_history.command,
+                Commands::Icecast(IceCastSubcommand::WindowSourceRefreshHistory { .. })
             ));
 
             let refresh_affiliates = Cli::try_parse_from([

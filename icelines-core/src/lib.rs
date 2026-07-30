@@ -161,6 +161,12 @@ pub use view_model::organization_lineup::{
     OrganizationPositionGroup, OrganizationRecallCandidateView, OrganizationRecallPlanView,
     OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
 };
+pub use view_model::organization_profile_history::{
+    build_organization_profile_history, carry_forward_organization_profiles,
+    seal_organization_profile_history, OrganizationProfileCarryForwardRule,
+    OrganizationProfileHistoryError, OrganizationProfileHistoryView,
+    ORGANIZATION_PROFILE_HISTORY_JSON_SCHEMA, ORGANIZATION_PROFILE_HISTORY_SCHEMA,
+};
 pub use view_model::organization_window::{
     build_organization_window_board, load_organization_window_profile_inventory,
     parse_organization_window_manifest, seal_organization_window_manifest,

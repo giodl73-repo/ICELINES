@@ -16,6 +16,10 @@ use super::organization_lineup::{
     build_organization_lineup_forecast, OrganizationLineupForecastInput,
     OrganizationLineupForecastView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
 };
+use super::organization_profile_history::{
+    carry_forward_organization_profiles, seal_organization_profile_history,
+    OrganizationProfileCarryForwardRule, OrganizationProfileHistoryView,
+};
 use super::organization_window::{
     build_organization_window_board, load_organization_window_profile_inventory,
     OrganizationProfileInput, OrganizationWindowBoardInput, OrganizationWindowBoardView,
@@ -77,6 +81,7 @@ pub struct OrganizationWindowSourceSet<'a> {
     pub prospect_conversion: Option<&'a ProspectConversionBoardView>,
     pub training_camp: Option<&'a TrainingCampLeagueForecastView>,
     pub schedule_rest: &'a [ScheduleRestProfileView],
+    pub profile_history: Option<&'a OrganizationProfileHistoryView>,
 }
 
 /// One portable, sealed authority package for a balanced Window board. The
@@ -107,6 +112,8 @@ pub struct OrganizationWindowSourcePackageView {
     pub training_camp: Option<TrainingCampLeagueForecastView>,
     #[serde(default)]
     pub schedule_rest: Vec<ScheduleRestProfileView>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile_history: Option<OrganizationProfileHistoryView>,
     pub fingerprint: String,
 }
 
@@ -133,6 +140,8 @@ pub struct OrganizationWindowSourceCoverageView {
     pub complete_required_profiles: usize,
     pub required_profiles: usize,
     pub rank_eligible_organizations: usize,
+    #[serde(default)]
+    pub carry_forward_observations: usize,
     pub production_ranked: bool,
     pub disclosures: Vec<String>,
 }
@@ -149,6 +158,7 @@ impl OrganizationWindowSourcePackageView {
             prospect_conversion: self.prospect_conversion.as_ref(),
             training_camp: self.training_camp.as_ref(),
             schedule_rest: &self.schedule_rest,
+            profile_history: self.profile_history.as_ref(),
         }
     }
 
@@ -167,6 +177,12 @@ impl OrganizationWindowSourcePackageView {
         canonical
             .schedule_rest
             .sort_by(|left, right| left.team.cmp(&right.team));
+        if let Some(history) = canonical.profile_history.take() {
+            canonical.profile_history = Some(
+                seal_organization_profile_history(history)
+                    .map_err(|error| OrganizationWindowError::InvalidJson(error.to_string()))?,
+            );
+        }
         let wire = serde_json::to_vec(&canonical)
             .map_err(|error| OrganizationWindowError::InvalidJson(error.to_string()))?;
         let normalized: Self = serde_json::from_slice(&wire)
@@ -213,6 +229,14 @@ pub fn seal_organization_window_source_package(
     package
         .schedule_rest
         .sort_by(|left, right| left.team.cmp(&right.team));
+    if let Some(history) = package.profile_history.take() {
+        let history = seal_organization_profile_history(history)
+            .map_err(|error| OrganizationWindowError::InvalidProfileInput(error.to_string()))?;
+        if history.organization_identity_version != package.organization_identity_version {
+            return Err(context_error("profile history organization identity"));
+        }
+        package.profile_history = Some(history);
+    }
     // Running the adapters validates every nested schema, axis, team identity,
     // and duplicate before the package receives a trusted fingerprint.
     adapt_balanced_organization_window_sources(&context, package.as_source_set())?;
@@ -312,6 +336,15 @@ pub fn audit_organization_window_source_package(
         .filter(|profile| profile.required && profile.complete)
         .count();
     let board = build_balanced_organization_window_board_from_package(&package, generated_at)?;
+    let carry_forward_observations = inputs
+        .iter()
+        .filter(|input| {
+            input
+                .source_fingerprints
+                .iter()
+                .any(|fingerprint| fingerprint.starts_with("organization-profile-history:"))
+        })
+        .count();
     let rank_eligible_organizations = board
         .organizations
         .iter()
@@ -328,10 +361,13 @@ pub fn audit_organization_window_source_package(
         complete_required_profiles,
         required_profiles,
         rank_eligible_organizations,
-        production_ranked: rank_eligible_organizations == expected.len(),
+        carry_forward_observations,
+        production_ranked: rank_eligible_organizations == expected.len()
+            && carry_forward_observations == 0,
         disclosures: vec![
             "Cohort presence is not profile completeness; each adapter-ready profile is audited independently across the canonical league.".to_owned(),
-            "Production-ranked means every organization passed the balanced.v1 rank gate; it is not a calibration or predictive claim.".to_owned(),
+            "Carry-forward observations can complete a preseason rank but cannot satisfy the confirmed-authority production gate.".to_owned(),
+            "Production-ranked means every organization passed the balanced.v1 rank gate without historical carry-forward; it is not a calibration or predictive claim.".to_owned(),
         ],
     })
 }
@@ -645,6 +681,7 @@ pub fn adapt_balanced_organization_window_sources(
         sources.organization_lineups,
         &mut output,
     )?;
+    adapt_profile_history_fallback(context, sources.profile_history, &mut output)?;
     adapt_prospect_program(context, &expected, sources.prospect_program, &mut output)?;
     adapt_prospect_conversion(context, &expected, sources.prospect_conversion, &mut output)?;
     adapt_training_camp(context, &expected, sources.training_camp, &mut output)?;
@@ -656,6 +693,51 @@ pub fn adapt_balanced_organization_window_sources(
         &mut output,
     )?;
     Ok(output)
+}
+
+fn adapt_profile_history_fallback(
+    context: &OrganizationWindowAdapterContext,
+    history: Option<&OrganizationProfileHistoryView>,
+    output: &mut Vec<OrganizationProfileInput>,
+) -> Result<(), OrganizationWindowError> {
+    let Some(history) = history else {
+        return Ok(());
+    };
+    let rules = [
+        OrganizationProfileCarryForwardRule {
+            profile_key: "development.organization_depth".to_owned(),
+            method_version: "organization_lineup_depth.v1".to_owned(),
+            maximum_season_age: 1,
+            annual_confidence_decay: 0.75,
+        },
+        OrganizationProfileCarryForwardRule {
+            profile_key: "development.recall_depth".to_owned(),
+            method_version: "organization_recall_depth.v1".to_owned(),
+            maximum_season_age: 1,
+            annual_confidence_decay: 0.70,
+        },
+    ];
+    let carried =
+        carry_forward_organization_profiles(history, context.season, context.as_of, &rules)
+            .map_err(|error| OrganizationWindowError::InvalidProfileInput(error.to_string()))?;
+    let present = output
+        .iter()
+        .map(|row| {
+            (
+                row.organization.clone(),
+                row.profile_key.clone(),
+                row.method_version.clone(),
+            )
+        })
+        .collect::<BTreeSet<_>>();
+    output.extend(carried.into_iter().filter(|row| {
+        !present.contains(&(
+            row.organization.clone(),
+            row.profile_key.clone(),
+            row.method_version.clone(),
+        ))
+    }));
+    Ok(())
 }
 
 pub fn build_balanced_organization_window_board(
@@ -1837,6 +1919,104 @@ mod tests {
     }
 
     #[test]
+    fn standing_history_fills_only_missing_ahl_profiles_for_all_32_teams() {
+        let mut observations = Vec::new();
+        for (index, (team, _)) in CANONICAL_TEAMS.iter().enumerate() {
+            for (profile_key, method_version, raw_unit, value) in [
+                (
+                    "development.organization_depth",
+                    "organization_lineup_depth.v1",
+                    "average_unit_score",
+                    40.0 + index as f64,
+                ),
+                (
+                    "development.recall_depth",
+                    "organization_recall_depth.v1",
+                    "recall_score",
+                    0.35 + index as f64 / 100.0,
+                ),
+            ] {
+                observations.push(OrganizationProfileInput {
+                    profile_key: profile_key.to_owned(),
+                    method_version: method_version.to_owned(),
+                    organization: (*team).to_owned(),
+                    organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+                    season: 20252026,
+                    season_type: "regular".to_owned(),
+                    as_of: NaiveDate::from_ymd_opt(2026, 6, 30).unwrap(),
+                    horizon: WindowHorizon::Current,
+                    raw_value: Some(value),
+                    raw_unit: raw_unit.to_owned(),
+                    sample_size: 16,
+                    confidence: 0.8,
+                    coverage: 1.0,
+                    status: WindowProfileStatus::Observed,
+                    evidence: Vec::new(),
+                    limitations: Vec::new(),
+                    source_fingerprints: vec![format!("observed:{team}:{profile_key}")],
+                });
+            }
+        }
+        let history = seal_organization_profile_history(OrganizationProfileHistoryView {
+            schema: super::super::organization_profile_history::ORGANIZATION_PROFILE_HISTORY_SCHEMA
+                .to_owned(),
+            history_id: "2025-26-standing-baseline".to_owned(),
+            created_at: "2026-07-29T12:00:00Z".to_owned(),
+            organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+            observations,
+            source_fingerprints: vec!["observed-ahl-2025-26".to_owned()],
+            disclosures: Vec::new(),
+            fingerprint: String::new(),
+        })
+        .unwrap();
+        let context = OrganizationWindowAdapterContext {
+            season: 20262027,
+            season_type: "regular".to_owned(),
+            as_of: NaiveDate::from_ymd_opt(2026, 7, 29).unwrap(),
+            horizon: WindowHorizon::Current,
+            organization_identity_version: TEAM_CATALOG_VERSION.to_owned(),
+        };
+        let inputs = adapt_balanced_organization_window_sources(
+            &context,
+            OrganizationWindowSourceSet {
+                profile_history: Some(&history),
+                ..OrganizationWindowSourceSet::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(inputs.len(), 64);
+        assert!(inputs.iter().all(|input| {
+            input.status == WindowProfileStatus::Modeled
+                && input
+                    .source_fingerprints
+                    .iter()
+                    .any(|fingerprint| fingerprint.starts_with("organization-profile-history:"))
+        }));
+
+        let mut current = vec![inputs
+            .iter()
+            .find(|input| {
+                input.organization == "NYR" && input.profile_key == "development.organization_depth"
+            })
+            .unwrap()
+            .clone()];
+        current[0].raw_value = Some(99.0);
+        current[0].source_fingerprints = vec!["current:NYR".to_owned()];
+        adapt_profile_history_fallback(&context, Some(&history), &mut current).unwrap();
+        assert_eq!(
+            current
+                .iter()
+                .filter(|input| {
+                    input.organization == "NYR"
+                        && input.profile_key == "development.organization_depth"
+                })
+                .count(),
+            1
+        );
+        assert_eq!(current[0].raw_value, Some(99.0));
+    }
+
+    #[test]
     fn empty_source_set_preserves_explicit_missingness() {
         let context = OrganizationWindowAdapterContext {
             season: 20262027,
@@ -2210,6 +2390,7 @@ mod tests {
                 prospect_conversion: None,
                 training_camp: None,
                 schedule_rest: Vec::new(),
+                profile_history: None,
                 fingerprint: String::new(),
             })
             .unwrap();
@@ -2294,6 +2475,7 @@ mod tests {
                 prospect_conversion: None,
                 training_camp: Some(camp),
                 schedule_rest: Vec::new(),
+                profile_history: None,
                 fingerprint: String::new(),
             })
             .unwrap();

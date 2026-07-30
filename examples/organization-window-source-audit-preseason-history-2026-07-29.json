@@ -1,0 +1,206 @@
+{
+  "schema": "organization_window_source_coverage.v1",
+  "season": 20262027,
+  "as_of": "2026-07-28",
+  "package_fingerprint": "34a90dfddcf1bee35431be2f81684f3a9d0894ccc53dce40c198cfc42cc3433c",
+  "board_fingerprint": "47dc8a56ca9a3869e2f8ab578acf061fd336fc0b74f14da628fe9e710572920c",
+  "expected_organizations": 32,
+  "profiles": [
+    {
+      "profile_key": "deployment.penalty_kill_depth",
+      "method_version": "lineup_penalty_kill_depth.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "deployment.power_play_depth",
+      "method_version": "lineup_power_play_depth.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "development.prospect_conversion",
+      "method_version": "prospect_conversion_efficiency.v1",
+      "required": false,
+      "organizations_with_observation": 0,
+      "organizations_with_value": 0,
+      "missing_organizations": [
+        "ANA",
+        "BOS",
+        "BUF",
+        "CAR",
+        "CBJ",
+        "CGY",
+        "CHI",
+        "COL",
+        "DAL",
+        "DET",
+        "EDM",
+        "FLA",
+        "LAK",
+        "MIN",
+        "MTL",
+        "NJD",
+        "NSH",
+        "NYI",
+        "NYR",
+        "OTT",
+        "PHI",
+        "PIT",
+        "SEA",
+        "SJS",
+        "STL",
+        "TBL",
+        "TOR",
+        "UTA",
+        "VAN",
+        "VGK",
+        "WPG",
+        "WSH"
+      ],
+      "complete": false
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "nhl.defense_depth",
+      "method_version": "lineup_defense_depth.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "nhl.expected_points",
+      "method_version": "icecast_expected_points.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "nhl.forward_depth",
+      "method_version": "lineup_forward_depth.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "nhl.goalie_quality",
+      "method_version": "lineup_goalie_quality.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "nhl.team_strength",
+      "method_version": "icecast_team_strength.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "pipeline.prospect_development",
+      "method_version": "prospect_development_score.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "pipeline.prospect_pool",
+      "method_version": "prospect_pool_score.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "pipeline.prospect_readiness",
+      "method_version": "prospect_readiness_score.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "pipeline.training_camp_arrival",
+      "method_version": "training_camp_arrival.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "resilience.goalie_dependency",
+      "method_version": "lineup_goalie_dependency.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "resilience.roster_concentration",
+      "method_version": "lineup_value_concentration.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    },
+    {
+      "profile_key": "resilience.schedule_fatigue",
+      "method_version": "schedule_fatigue_exposure.v1",
+      "required": true,
+      "organizations_with_observation": 32,
+      "organizations_with_value": 32,
+      "missing_organizations": [],
+      "complete": true
+    }
+  ],
+  "complete_required_profiles": 16,
+  "required_profiles": 16,
+  "rank_eligible_organizations": 0,
+  "carry_forward_observations": 64,
+  "production_ranked": false,
+  "disclosures": [
+    "Cohort presence is not profile completeness; each adapter-ready profile is audited independently across the canonical league.",
+    "Carry-forward observations can complete a preseason rank but cannot satisfy the confirmed-authority production gate.",
+    "Production-ranked means every organization passed the balanced.v1 rank gate without historical carry-forward; it is not a calibration or predictive claim."
+  ]
+}

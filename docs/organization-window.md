@@ -12,6 +12,9 @@ calibration artifact supports a narrower predictive claim.
 - `organization_window_manifest.v1` is the Frame: dimensions, weights, family
   caps, required profiles, cohort, normalization, and classification method.
 - `organization_window_board.v1` is the complete sealed league result.
+- `organization_profile_history.v1` is the standing point-in-time ledger of
+  raw profile observations across seasons. It may contain any registered
+  profile; normalized ranks remain properties of their original boards.
 - Movement, history, scenario-impact, bridge/rebase, and calibration documents
   compare sealed boards without rewriting them.
 - `card_document.v1` is the renderer-neutral focused-team projection.
@@ -110,14 +113,42 @@ projection, so special-teams depth remains core-derived and renderer-neutral.
 An absent report stays `None`; it is never converted to a zero-deployment
 claim.
 
-The July 29 real-source replay contains all 32 NHL lineups, the 32-team season
-and game forecasts, the sealed training-camp authority, and an explicit
-32-team prospect-program artifact. Its source audit completes 14 of 16 required
-`balanced.v1` profiles. The remaining required gaps are organization depth
-(0/32) and recall depth (0/32).
-Rankings remain correctly withheld for every organization. IceLines does not
-fill those gaps with stale affiliations, former-team goalies, zero, or
-league-average proxies.
+The initial July 29 real-source replay contained all 32 NHL lineups, the
+32-team season and game forecasts, the sealed training-camp authority, and an
+explicit 32-team prospect-program artifact. Its source audit completed 14 of
+16 required `balanced.v1` profiles. A later standing-history replay derives
+the two unavailable preseason profiles from completed 2025-26 NHL/AHL units
+for every organization. The audit therefore reports 16/16 required profile
+methods and 64 explicit carry-forward observations. It remains
+`production_ranked: false`: historical evidence can support a preseason view,
+but cannot masquerade as confirmed 2026-27 assignments. The current real board
+also remains rank-withheld where another dimension's evidence coverage is
+below its Frame threshold.
+
+Build the reusable prior-season ledger, then attach it without rebuilding the
+other package authorities:
+
+```powershell
+icelines icecast window-profile-history-baseline `
+  --source-package window-sources-2025-26.json `
+  --ahl-workboard affiliate-readiness-2026-27.json `
+  --history-id observed-ahl-depth-2025-26 `
+  --created-at 2026-07-29T12:00:00Z `
+  --out organization-profile-history-2025-26.json
+
+icelines icecast window-source-refresh-history `
+  --input window-sources-2026-27.json `
+  --profile-history organization-profile-history-2025-26.json `
+  --out window-sources-preseason.json
+```
+
+`window-profile-history-build --board ...` is the general path: it archives
+every profile present in one or more sealed boards, so annual standing data
+does not require a new schema or scorer change. Carry-forward is profile
+specific, chooses the newest eligible prior season, decays confidence, marks
+evidence stale, never overwrites a current observation, and expires after the
+configured season age. The specialized baseline command exists only to close
+organization/recall depth before final target-season assignments exist.
 
 Missing NHL goalie samples now have a distinct evaluation path.
 `career_paired_ahl_to_nhl_goalie.v1` calibrates same/next-season AHL/NHL goalie

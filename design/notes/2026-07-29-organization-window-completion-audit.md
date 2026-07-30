@@ -58,6 +58,25 @@ Neither gate has a remaining scorer, adapter, schema, renderer, CLI, or test
 harness dependency. Source silence, prior-season assignment, camp membership,
 or known outcomes cannot be substituted for the required evidence.
 
+## Standing-history addendum
+
+The same-day preseason-history slice adds `organization_profile_history.v1` as
+the reusable raw-observation ledger for every registered profile. The real
+2025-26 baseline contains 64 observations: organization depth and recall depth
+for all 32 teams, derived from completed NHL lineup scoring and observed AHL
+affiliate participants. Applying its one-season carry-forward policy changes
+the source audit from 14/16 to 16/16 complete required methods while retaining
+`production_ranked: false` and naming all 64 carried observations.
+The replayable evidence is checked in as
+`examples/organization-profile-history-observed-2025-26.json` and
+`examples/organization-window-source-audit-preseason-history-2026-07-29.json`.
+
+This does not close the first production gate. A target-season affiliate
+refresh still supersedes history when present, and the confirmed-production
+predicate explicitly requires zero carry-forward observations. The standing
+ledger also accepts full sealed boards, allowing future annual snapshots to
+store every profile without a profile-specific migration.
+
 ## Resume triggers
 
 - Run `affiliate-facts-status --require-ready` when target-season AHL
