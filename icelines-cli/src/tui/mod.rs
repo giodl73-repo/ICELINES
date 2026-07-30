@@ -146,7 +146,7 @@ pub fn render_leaders_active_filter_snapshot() -> Result<String> {
 
     Ok(crate::tui::screens::queries::render_results_snapshot_text(
         &app, 120, 40,
-    )?)
+    ))
 }
 
 #[cfg(test)]

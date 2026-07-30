@@ -57,6 +57,11 @@ evidence-aware hockey primitives.**
 
 ### Platform and evidence
 
+- Upgraded Ratatui from 0.29 to 0.30.2 and Crossterm from 0.28 to 0.29. The
+  migration replaces vulnerable `lru 0.12.5` with `lru 0.18.1`, retires the
+  transitive `paste` dependency, removes the duplicate compatibility backend,
+  and aligns the hidden TestBackend snapshot helper with Ratatui's infallible
+  backend API.
 - Expanded the MDI TUI and responsive web workbench, Signals source authority,
   analytics-cache handoffs, scoring-strength labels, records, awards, streaks,
   MoneyPuck historical xG, Stathead packs, data-status JSON, cap projections,

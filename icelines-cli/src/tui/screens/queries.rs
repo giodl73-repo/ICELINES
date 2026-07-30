@@ -1674,14 +1674,13 @@ fn render_results(f: &mut Frame, app: &crate::tui::app::App, area: Rect) {
     f.render_widget(Paragraph::new(lines), inner);
 }
 
-pub fn render_results_snapshot_text(
-    app: &crate::tui::app::App,
-    width: u16,
-    height: u16,
-) -> std::io::Result<String> {
+pub fn render_results_snapshot_text(app: &crate::tui::app::App, width: u16, height: u16) -> String {
     let backend = ratatui::backend::TestBackend::new(width, height);
-    let mut terminal = ratatui::Terminal::new(backend)?;
-    terminal.draw(|frame| render_results(frame, app, frame.area()))?;
+    let mut terminal =
+        ratatui::Terminal::new(backend).expect("Ratatui TestBackend construction is infallible");
+    terminal
+        .draw(|frame| render_results(frame, app, frame.area()))
+        .expect("Ratatui TestBackend drawing is infallible");
 
     let buffer = terminal.backend().buffer();
     let mut out = String::new();
@@ -1691,7 +1690,7 @@ pub fn render_results_snapshot_text(
         }
         out.push('\n');
     }
-    Ok(out)
+    out
 }
 
 // ── Saved query serialization ─────────────────────────────────────────────────
