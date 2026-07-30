@@ -24,11 +24,12 @@ use icelines_core::{
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
     build_team_season_plausible_trade_scenario, build_training_camp_blender_set,
     build_training_camp_exposure_board_with_context, build_training_camp_lineup_set,
-    build_training_camp_opening_roster_policy, compare_organization_window_scenario,
-    compare_organization_window_snapshots, compare_organization_window_snapshots_with_bridge,
-    compare_organization_window_typed_scenario, compare_team_season_forecast_scenarios,
-    current_ahl_affiliation_catalog, load_organization_window_registry_lifecycle, model::Position,
-    model::Season, model::TeamAbbr, normalize_name, project_organization_window_card,
+    build_training_camp_opening_roster_policy, compare_organization_profile_history,
+    compare_organization_window_scenario, compare_organization_window_snapshots,
+    compare_organization_window_snapshots_with_bridge, compare_organization_window_typed_scenario,
+    compare_team_season_forecast_scenarios, current_ahl_affiliation_catalog,
+    load_organization_window_registry_lifecycle, model::Position, model::Season, model::TeamAbbr,
+    normalize_name, project_organization_profile_history_card, project_organization_window_card,
     seal_new_organization_window_manifest, seal_organization_profile_history,
     season_stats::SeasonType, simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
@@ -40,7 +41,8 @@ use icelines_core::{
     ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
     LineCombinationPairEvidenceInput, NhlGoalieTranslationPolicy, OpponentStyleEvidenceRow,
     OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
-    OrganizationPositionGroup, OrganizationProfileHistoryView, OrganizationUnitKind,
+    OrganizationPositionGroup, OrganizationProfileHistoryCheckpointView,
+    OrganizationProfileHistoryDeltaView, OrganizationProfileHistoryView, OrganizationUnitKind,
     OrganizationWindowBoardView, OrganizationWindowBridgeView, OrganizationWindowManifestView,
     OrganizationWindowScenarioDistributionInput, OrganizationWindowSourcePackageView,
     OrganizationalProspectPolicy, ProspectConversionBoardView, ProspectConversionConfig,
@@ -64,8 +66,8 @@ use icelines_core::{
     TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
     TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
     TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
-    ViewWindow, WindowManifestLifecyclePolicy, WindowScenarioAuthorityView, CANONICAL_TEAMS,
-    CURRENT_SEASON, ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA,
+    ViewWindow, WindowHorizon, WindowManifestLifecyclePolicy, WindowScenarioAuthorityView,
+    CANONICAL_TEAMS, CURRENT_SEASON, ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA,
     PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };
 use icelines_core::{
@@ -4705,6 +4707,40 @@ pub fn run_window_profile_history_build(
     Ok(())
 }
 
+pub fn run_window_profile_history_backfill(
+    origins: Vec<PathBuf>,
+    history_id: String,
+    created_at: String,
+    out: PathBuf,
+) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&created_at)
+        .context("--created-at must be RFC 3339, for example 2026-07-30T18:00:00Z")?;
+    if origins.is_empty() {
+        bail!("at least one --origin is required");
+    }
+    let artifacts = origins
+        .iter()
+        .map(|path| {
+            let artifact: OrganizationWindowHistoricalOriginArtifact =
+                read_icecast_json(path, "organization Window historical origin")?;
+            artifact.validate()?;
+            Ok(artifact)
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let boards = artifacts
+        .into_iter()
+        .map(|artifact| artifact.origin.board)
+        .collect::<Vec<_>>();
+    let history = build_organization_profile_history(history_id, created_at, &boards)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&history)?);
+    write_icecast_file(
+        &out,
+        output.as_bytes(),
+        "organization profile history backfill",
+    )?;
+    Ok(())
+}
+
 pub fn run_window_profile_history_baseline(
     source_package: PathBuf,
     ahl_workboard: PathBuf,
@@ -4745,6 +4781,87 @@ pub fn run_window_profile_history_audit(
             &path,
             output.as_bytes(),
             "organization profile history coverage",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_window_profile_history_delta(
+    input: PathBuf,
+    earlier_season: u32,
+    earlier_as_of: NaiveDate,
+    later_season: u32,
+    later_as_of: NaiveDate,
+    horizon: String,
+    generated_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&generated_at)
+        .context("--generated-at must be RFC 3339, for example 2026-07-30T18:00:00Z")?;
+    let horizon = match horizon.trim().to_ascii_lowercase().as_str() {
+        "current" => WindowHorizon::Current,
+        "one_year" | "one-year" => WindowHorizon::OneYear,
+        "three_year" | "three-year" => WindowHorizon::ThreeYear,
+        "five_year" | "five-year" => WindowHorizon::FiveYear,
+        other => bail!(
+            "unsupported --horizon '{other}'; use current, one_year, three_year, or five_year"
+        ),
+    };
+    let history: OrganizationProfileHistoryView =
+        read_icecast_json(&input, "organization profile history")?;
+    let delta = compare_organization_profile_history(
+        &history,
+        OrganizationProfileHistoryCheckpointView {
+            season: earlier_season,
+            as_of: earlier_as_of,
+            horizon,
+        },
+        OrganizationProfileHistoryCheckpointView {
+            season: later_season,
+            as_of: later_as_of,
+            horizon,
+        },
+        generated_at,
+    )?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&delta)?);
+    if let Some(path) = out {
+        write_icecast_file(
+            &path,
+            output.as_bytes(),
+            "organization profile history delta",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_window_profile_history_card(
+    input: PathBuf,
+    team: String,
+    team_name: Option<String>,
+    generated_at: Option<String>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let evidence_at = generated_at
+        .as_deref()
+        .map(DateTime::parse_from_rfc3339)
+        .transpose()
+        .context("--generated-at must be RFC 3339, for example 2026-07-30T18:00:00Z")?
+        .map(|value| value.with_timezone(&Utc));
+    let delta: OrganizationProfileHistoryDeltaView =
+        read_icecast_json(&input, "organization profile history delta")?;
+    let card =
+        project_organization_profile_history_card(delta, &team, team_name.as_deref(), evidence_at)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&card)?);
+    if let Some(path) = out {
+        write_icecast_file(
+            &path,
+            output.as_bytes(),
+            "organization profile history card",
         )?;
     } else {
         print!("{output}");

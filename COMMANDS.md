@@ -1113,6 +1113,10 @@ icelines icecast window --input window.json --team NYR
 icelines icecast window --input window.json --markdown --out window-report.md
 icelines icecast window --input window.json --team NYR --markdown --out nyr-window-report.md
 icelines icecast window-card --input window.json --team NYR --team-name "New York Rangers" --out nyr-window-card.json
+icelines icecast window-profile-history-backfill --origin origin-2022-23.json --origin origin-2023-24.json --origin origin-2024-25.json --origin origin-2025-26.json --history-id observed-history-2022-23-through-2025-26 --created-at 2026-07-30T18:00:00Z --out organization-profile-history.json
+icelines icecast window-profile-history-audit --input organization-profile-history.json --generated-at 2026-07-30T18:00:00Z --out organization-profile-history-coverage.json
+icelines icecast window-profile-history-delta --input organization-profile-history.json --earlier-season 20242025 --earlier-as-of 2024-06-30 --later-season 20252026 --later-as-of 2025-06-30 --horizon one_year --generated-at 2026-07-30T18:00:00Z --out organization-profile-history-delta.json
+icelines icecast window-profile-history-card --input organization-profile-history-delta.json --team NYR --out nyr-window-history-card.json
 icelines icecast window-movement --earlier october.json --later january.json --out window-movement.json
 icelines icecast window-personnel-attribution --earlier october.json --later january.json --movement window-movement.json --input personnel-attribution.json --out attributed-movement.json
 icelines icecast window-personnel-input-build --actual-forecast actual-february.json --counterfactual-board counterfactual-february-window.json --earlier-as-of 2025-01-31 --later-as-of 2025-02-28 --attribution-id january-february --scenario-id paired-replay --rationale "Paired rolling replay" --out personnel-attribution.json

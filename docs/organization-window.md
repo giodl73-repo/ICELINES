@@ -172,6 +172,45 @@ those methods declare historical support and are candidates for subsequent
 source-backed backfill. `pipeline.training_camp_arrival` does not declare
 historical support and remains unavailable rather than receiving a proxy.
 
+The first multi-season backfill reuses the four sealed, point-in-time-safe
+historical evaluation origins. It archives five exact `history.*` methods for
+all 32 organizations at the 2022-23, 2023-24, 2024-25, and 2025-26
+checkpoints: 640 observations total. These evaluation methods remain distinct
+from the 17 official `balanced.v1` methods; no historical signal is silently
+aliased to a current profile.
+
+```powershell
+icelines icecast window-profile-history-backfill `
+  --origin origin-2022-23.json `
+  --origin origin-2023-24.json `
+  --origin origin-2024-25.json `
+  --origin origin-2025-26.json `
+  --history-id observed-history-2022-23-through-2025-26 `
+  --created-at 2026-07-30T18:00:00Z `
+  --out organization-profile-history.json
+
+icelines icecast window-profile-history-delta `
+  --input organization-profile-history.json `
+  --earlier-season 20242025 --earlier-as-of 2024-06-30 `
+  --later-season 20252026 --later-as-of 2025-06-30 `
+  --horizon one_year `
+  --generated-at 2026-07-30T18:00:00Z `
+  --out organization-profile-history-delta.json
+
+icelines icecast window-profile-history-card `
+  --input organization-profile-history-delta.json `
+  --team NYR `
+  --out nyr-window-history-card.json
+```
+
+`organization_profile_history_delta.v1` compares only identical profile keys
+and method versions at exact checkpoints. Its directional delta stays in each
+profile's own raw unit: positive means favorable movement after applying the
+registered higher/lower/target-range direction. The improved/declined counts
+measure breadth only and are not an Organization Window score or outcome
+forecast. The UI-neutral card presents this evidence as **The Shift**, with
+methods, limitations, and provenance on **The Insider**.
+
 Missing NHL goalie samples now have a distinct evaluation path.
 `career_paired_ahl_to_nhl_goalie.v1` calibrates same/next-season AHL/NHL goalie
 pairs by shots, discounts workload by cohort and fit confidence, and shrinks

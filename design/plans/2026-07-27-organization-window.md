@@ -1039,3 +1039,11 @@ The first coverage artifact reports 37/37 registered methods enumerated,
 explicitly unavailable. Fourteen unavailable ready methods advertise
 historical support and form the next backfill queue; training-camp arrival does
 not and must remain missing unless its registry policy changes through review.
+
+The first multi-season backfill tranche archives the five separately
+registered historical-evaluation methods from four sealed origins, producing
+640 observations and exact cross-season deltas for all 32 teams. It proves the
+generic annual path and shared-card projection while leaving the 14 official
+historical-support gaps explicit. Subsequent tranches must add those exact
+methods from matching authorities rather than bridge the evaluation signals by
+name or statistical resemblance.

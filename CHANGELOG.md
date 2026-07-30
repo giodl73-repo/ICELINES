@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added a four-season standing-history backfill from the sealed 2022-23 through
+  2025-26 Window evaluation origins: 640 point-in-time-safe observations across
+  all 32 teams and five exact historical profile methods. New cross-season
+  deltas preserve raw units and favorable direction without inventing a
+  cross-unit composite, and UI-neutral `The Shift` cards cover every team.
 - Added a sealed, replayable `organization_profile_history.v1` ledger for
   standing observations from every Window profile and season.
 - Added a completed-season NHL/AHL baseline builder plus explicit, decayed
