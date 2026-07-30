@@ -64,6 +64,10 @@ fn l2_window_completion_status_replays_current_two_gate_evidence() {
     assert_eq!(status["source_gate"]["complete_required_profiles"], 14);
     assert_eq!(status["holdout_gate"]["state"], "waiting_until_eligible");
     assert_eq!(status["next_actions"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        status["next_actions"][0],
+        "Refresh confirmed target-season authorities to reach 16/16 complete required profiles, 32/32 rank-eligible organizations, and zero carry-forward observations (current: 14/16 profiles, 0/32 organizations, 0 carry-forward observations)."
+    );
 
     let temp = tempfile::tempdir().expect("completion tempdir");
     let required_path = temp.path().join("required.json");

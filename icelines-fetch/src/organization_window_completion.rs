@@ -253,11 +253,12 @@ fn derive_status(
     let mut next_actions = Vec::new();
     if !source_gate.passed {
         next_actions.push(format!(
-            "Refresh confirmed target-season authorities until {}/{} required profiles are complete, {}/{} organizations are rank eligible, and carry-forward observations equal zero.",
-            source_gate.complete_required_profiles,
+            "Refresh confirmed target-season authorities to reach {0}/{0} complete required profiles, {1}/{1} rank-eligible organizations, and zero carry-forward observations (current: {2}/{0} profiles, {3}/{1} organizations, {4} carry-forward observations).",
             source_gate.required_profiles,
+            source_gate.expected_organizations,
+            source_gate.complete_required_profiles,
             source_gate.rank_eligible_organizations,
-            source_gate.expected_organizations
+            source_gate.carry_forward_observations
         ));
     }
     if result.is_none() {
@@ -331,6 +332,10 @@ mod tests {
             OrganizationWindowHoldoutGateState::WaitingUntilEligible
         );
         assert_eq!(status.next_actions.len(), 2);
+        assert_eq!(
+            status.next_actions[0],
+            "Refresh confirmed target-season authorities to reach 16/16 complete required profiles, 32/32 rank-eligible organizations, and zero carry-forward observations (current: 14/16 profiles, 0/32 organizations, 0 carry-forward observations)."
+        );
         status.validate().unwrap();
     }
 
