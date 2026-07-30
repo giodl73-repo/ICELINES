@@ -150,6 +150,28 @@ evidence stale, never overwrites a current observation, and expires after the
 configured season age. The specialized baseline command exists only to close
 organization/recall depth before final target-season assignments exist.
 
+Audit the ledger against the entire registered profile catalog:
+
+```powershell
+icelines icecast window-profile-history-audit `
+  --input organization-profile-history-2025-26.json `
+  --generated-at 2026-07-30T12:00:00Z `
+  --out organization-profile-history-coverage-2025-26.json
+```
+
+`organization_profile_history_coverage.v1` emits one exact
+season/cutoff/horizon checkpoint and one row for every registered profile,
+including profiles with zero stored observations. It separately reports teams
+with an observation, a value, and a score-eligible value. Unregistered legacy
+methods remain visible but cannot stand in for registered methods.
+
+The checked-in 2025-26 audit enumerates all 37 registered profiles and all 17
+adapter-ready methods. Organization depth and recall depth are complete at
+32/32; the other 15 ready methods are explicit 0/32 history gaps. Fourteen of
+those methods declare historical support and are candidates for subsequent
+source-backed backfill. `pipeline.training_camp_arrival` does not declare
+historical support and remains unavailable rather than receiving a proxy.
+
 Missing NHL goalie samples now have a distinct evaluation path.
 `career_paired_ahl_to_nhl_goalie.v1` calibrates same/next-season AHL/NHL goalie
 pairs by shots, discounts workload by cohort and fit confidence, and shrinks

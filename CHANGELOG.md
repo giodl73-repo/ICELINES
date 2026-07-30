@@ -10,6 +10,10 @@
   confirmed-production gate.
 - Added package history refresh, source-audit carry-forward counts, JSON
   round-trip-stable history fingerprints, schemas, tests, and documentation.
+- Added catalog-wide standing-history coverage audits. Every one of the 37
+  registered profiles is now listed at each checkpoint, including explicit
+  0/32 gaps, score-eligible counts, historical-support posture, and retained
+  unregistered legacy methods.
 
 ## v0.26.0 - 2026-07-27 - The Rink intelligence release
 

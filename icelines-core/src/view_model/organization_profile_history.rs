@@ -12,14 +12,19 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 use super::organization_window::{
-    OrganizationProfileInput, OrganizationWindowBoardView, WindowEvidenceView, WindowFreshness,
-    WindowProfileStatus,
+    load_organization_window_profile_inventory, OrganizationProfileInput,
+    OrganizationWindowBoardView, WindowEvidenceView, WindowFreshness, WindowHorizon,
+    WindowProfileReadiness, WindowProfileStatus,
 };
 use crate::teams::CANONICAL_TEAMS;
 
 pub const ORGANIZATION_PROFILE_HISTORY_SCHEMA: &str = "organization_profile_history.v1";
 pub const ORGANIZATION_PROFILE_HISTORY_JSON_SCHEMA: &str =
     include_str!("../../../design/schemas/organization_profile_history.v1.schema.json");
+pub const ORGANIZATION_PROFILE_HISTORY_COVERAGE_SCHEMA: &str =
+    "organization_profile_history_coverage.v1";
+pub const ORGANIZATION_PROFILE_HISTORY_COVERAGE_JSON_SCHEMA: &str =
+    include_str!("../../../design/schemas/organization_profile_history_coverage.v1.schema.json");
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OrganizationProfileHistoryView {
@@ -42,6 +47,50 @@ pub struct OrganizationProfileCarryForwardRule {
     pub method_version: String,
     pub maximum_season_age: u32,
     pub annual_confidence_decay: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationProfileHistoryCoverageView {
+    pub schema: String,
+    pub generated_at: String,
+    pub history_id: String,
+    pub history_fingerprint: String,
+    pub organization_identity_version: String,
+    pub expected_organizations: usize,
+    pub registered_profiles: usize,
+    pub ready_profiles: usize,
+    pub checkpoints: Vec<OrganizationProfileHistoryCheckpointCoverageView>,
+    pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationProfileHistoryCheckpointCoverageView {
+    pub season: u32,
+    pub as_of: NaiveDate,
+    pub horizon: WindowHorizon,
+    pub profiles_with_observation: usize,
+    pub complete_profiles: usize,
+    pub complete_ready_profiles: usize,
+    pub profiles: Vec<OrganizationProfileHistoryProfileCoverageView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationProfileHistoryProfileCoverageView {
+    pub profile_key: String,
+    pub method_version: String,
+    pub registered: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dimension: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub readiness: Option<WindowProfileReadiness>,
+    pub historical_support: bool,
+    pub organizations_with_observation: usize,
+    pub organizations_with_value: usize,
+    pub organizations_score_eligible: usize,
+    pub missing_organizations: Vec<String>,
+    pub complete: bool,
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -121,6 +170,131 @@ pub fn build_organization_profile_history(
             "Historical observations never become current silently. Carry-forward requires an explicit profile policy and emits modeled, stale evidence with confidence decay.".to_owned(),
         ],
         fingerprint: String::new(),
+    })
+}
+
+pub fn audit_organization_profile_history(
+    history: &OrganizationProfileHistoryView,
+    generated_at: impl Into<String>,
+) -> Result<OrganizationProfileHistoryCoverageView, OrganizationProfileHistoryError> {
+    let history = seal_organization_profile_history(history.clone())?;
+    let inventory = load_organization_window_profile_inventory()
+        .map_err(|error| OrganizationProfileHistoryError::Invalid(error.to_string()))?;
+    let expected = CANONICAL_TEAMS
+        .iter()
+        .map(|(team, _)| (*team).to_owned())
+        .collect::<BTreeSet<_>>();
+    let checkpoints = history
+        .observations
+        .iter()
+        .map(|row| (row.season, row.as_of, row.horizon))
+        .collect::<BTreeSet<_>>();
+    let registered = inventory
+        .profiles
+        .iter()
+        .map(|profile| {
+            (
+                (profile.key.as_str(), profile.method_version.as_str()),
+                profile,
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let ready_profiles = inventory
+        .profiles
+        .iter()
+        .filter(|profile| profile.readiness == WindowProfileReadiness::ReadyForAdapter)
+        .count();
+    let mut checkpoint_views = Vec::with_capacity(checkpoints.len());
+    for (season, as_of, horizon) in checkpoints {
+        let rows = history
+            .observations
+            .iter()
+            .filter(|row| row.season == season && row.as_of == as_of && row.horizon == horizon)
+            .collect::<Vec<_>>();
+        let mut profile_ids = inventory
+            .profiles
+            .iter()
+            .map(|profile| (profile.key.clone(), profile.method_version.clone()))
+            .collect::<BTreeSet<_>>();
+        profile_ids.extend(
+            rows.iter()
+                .map(|row| (row.profile_key.clone(), row.method_version.clone())),
+        );
+        let mut profiles = Vec::with_capacity(profile_ids.len());
+        for (profile_key, method_version) in profile_ids {
+            let matching = rows
+                .iter()
+                .filter(|row| {
+                    row.profile_key == profile_key && row.method_version == method_version
+                })
+                .collect::<Vec<_>>();
+            let observed = matching
+                .iter()
+                .map(|row| row.organization.clone())
+                .collect::<BTreeSet<_>>();
+            let valued = matching
+                .iter()
+                .filter(|row| row.raw_value.is_some())
+                .map(|row| row.organization.clone())
+                .collect::<BTreeSet<_>>();
+            let eligible = matching
+                .iter()
+                .filter(|row| score_eligible(row) && row.raw_value.is_some())
+                .map(|row| row.organization.clone())
+                .collect::<BTreeSet<_>>();
+            let descriptor = registered.get(&(profile_key.as_str(), method_version.as_str()));
+            profiles.push(OrganizationProfileHistoryProfileCoverageView {
+                profile_key: profile_key.clone(),
+                method_version: method_version.clone(),
+                registered: descriptor.is_some(),
+                label: descriptor.map(|profile| profile.label.clone()),
+                dimension: descriptor.map(|profile| profile.dimension.clone()),
+                readiness: descriptor.map(|profile| profile.readiness),
+                historical_support: descriptor.is_some_and(|profile| profile.historical_support),
+                organizations_with_observation: observed.len(),
+                organizations_with_value: valued.len(),
+                organizations_score_eligible: eligible.len(),
+                missing_organizations: expected.difference(&observed).cloned().collect(),
+                complete: eligible.len() == expected.len(),
+            });
+        }
+        let profiles_with_observation = profiles
+            .iter()
+            .filter(|profile| profile.organizations_with_observation > 0)
+            .count();
+        let complete_profiles = profiles.iter().filter(|profile| profile.complete).count();
+        let complete_ready_profiles = profiles
+            .iter()
+            .filter(|profile| {
+                profile.complete
+                    && profile.readiness == Some(WindowProfileReadiness::ReadyForAdapter)
+            })
+            .count();
+        checkpoint_views.push(OrganizationProfileHistoryCheckpointCoverageView {
+            season,
+            as_of,
+            horizon,
+            profiles_with_observation,
+            complete_profiles,
+            complete_ready_profiles,
+            profiles,
+        });
+    }
+    Ok(OrganizationProfileHistoryCoverageView {
+        schema: ORGANIZATION_PROFILE_HISTORY_COVERAGE_SCHEMA.to_owned(),
+        generated_at: generated_at.into(),
+        history_id: history.history_id,
+        history_fingerprint: history.fingerprint,
+        organization_identity_version: history.organization_identity_version,
+        expected_organizations: expected.len(),
+        registered_profiles: inventory.profiles.len(),
+        ready_profiles,
+        checkpoints: checkpoint_views,
+        disclosures: vec![
+            "Every registered profile is listed at every stored checkpoint; a missing row is an explicit availability result, not a zero value.".to_owned(),
+            "Complete means all canonical organizations have a score-eligible value for the exact season, cutoff, horizon, profile, and method.".to_owned(),
+            "Unregistered historical methods remain visible but cannot silently substitute for a registered current method.".to_owned(),
+        ],
     })
 }
 
@@ -498,5 +672,74 @@ mod tests {
                 .len(),
             32
         );
+    }
+
+    #[test]
+    fn coverage_audit_lists_the_full_registry_and_explicit_missingness() {
+        let loaded: OrganizationProfileHistoryView = serde_json::from_str(include_str!(
+            "../../../examples/organization-profile-history-observed-2025-26.json"
+        ))
+        .unwrap();
+        let coverage = audit_organization_profile_history(&loaded, "2026-07-30T12:00:00Z").unwrap();
+        assert_eq!(coverage.registered_profiles, 37);
+        assert_eq!(coverage.ready_profiles, 17);
+        assert_eq!(coverage.checkpoints.len(), 1);
+        let checkpoint = &coverage.checkpoints[0];
+        assert_eq!(checkpoint.profiles.len(), 37);
+        assert_eq!(checkpoint.profiles_with_observation, 2);
+        assert_eq!(checkpoint.complete_profiles, 2);
+        assert_eq!(checkpoint.complete_ready_profiles, 2);
+        let unavailable = checkpoint
+            .profiles
+            .iter()
+            .find(|profile| profile.profile_key == "nhl.expected_points")
+            .unwrap();
+        assert_eq!(unavailable.organizations_with_observation, 0);
+        assert_eq!(unavailable.missing_organizations.len(), 32);
+        assert!(!unavailable.complete);
+    }
+
+    #[test]
+    fn coverage_audit_retains_unregistered_historical_methods() {
+        let mut row = observation("NYR", 20252026, 50.0);
+        row.profile_key = "history.legacy_signal".to_owned();
+        row.method_version = "legacy_signal.v1".to_owned();
+        let history = history(vec![row]);
+        let coverage =
+            audit_organization_profile_history(&history, "2026-07-30T12:00:00Z").unwrap();
+        let legacy = coverage.checkpoints[0]
+            .profiles
+            .iter()
+            .find(|profile| profile.profile_key == "history.legacy_signal")
+            .unwrap();
+        assert!(!legacy.registered);
+        assert_eq!(legacy.readiness, None);
+        assert_eq!(legacy.organizations_with_observation, 1);
+    }
+
+    #[test]
+    fn profile_history_coverage_schema_is_valid_json() {
+        let schema: serde_json::Value =
+            serde_json::from_str(ORGANIZATION_PROFILE_HISTORY_COVERAGE_JSON_SCHEMA).unwrap();
+        assert_eq!(
+            schema["$id"],
+            "https://icelines.app/schemas/organization_profile_history_coverage.v1.schema.json"
+        );
+    }
+
+    #[test]
+    fn observed_2025_26_coverage_example_matches_catalog_baseline() {
+        let coverage: OrganizationProfileHistoryCoverageView = serde_json::from_str(include_str!(
+            "../../../examples/organization-profile-history-coverage-observed-2025-26.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            coverage.schema,
+            ORGANIZATION_PROFILE_HISTORY_COVERAGE_SCHEMA
+        );
+        assert_eq!(coverage.registered_profiles, 37);
+        assert_eq!(coverage.ready_profiles, 17);
+        assert_eq!(coverage.checkpoints[0].complete_ready_profiles, 2);
+        assert_eq!(coverage.checkpoints[0].profiles_with_observation, 2);
     }
 }

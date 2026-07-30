@@ -8,17 +8,17 @@ use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
 use icelines_core::{
     adapt_prospect_conversion_input, adapt_team_season_window_scenario_authorities,
     adapt_training_camp_window_scenario_authorities, apply_team_behavior_research,
-    audit_organization_window_source_package, build_adaptive_lineup_policy,
-    build_ahl_affiliate_projection, build_balanced_organization_window_board_from_package,
-    build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
-    build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
-    build_line_combination_forecast, build_organization_lineup_forecast,
-    build_organization_profile_history, build_organization_window_history,
-    build_prospect_conversion_board, build_prospect_development_study,
-    build_prospect_discovery_board, build_prospect_nhl_performance_document,
-    build_prospect_program_board_with_goalies, build_prospect_program_history,
-    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
-    build_team_game_forecast, build_team_game_forecast_validation,
+    audit_organization_profile_history, audit_organization_window_source_package,
+    build_adaptive_lineup_policy, build_ahl_affiliate_projection,
+    build_balanced_organization_window_board_from_package, build_development_calibration,
+    build_forecast_history_card, build_forecast_movement_card, build_isolated_scenario_impact,
+    build_isolated_scenario_impact_as_of, build_line_combination_forecast,
+    build_organization_lineup_forecast, build_organization_profile_history,
+    build_organization_window_history, build_prospect_conversion_board,
+    build_prospect_development_study, build_prospect_discovery_board,
+    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
+    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
+    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -4726,6 +4726,29 @@ pub fn run_window_profile_history_baseline(
         output.as_bytes(),
         "organization profile history baseline",
     )?;
+    Ok(())
+}
+
+pub fn run_window_profile_history_audit(
+    input: PathBuf,
+    generated_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&generated_at)
+        .context("--generated-at must be RFC 3339, for example 2026-07-30T12:00:00Z")?;
+    let history: OrganizationProfileHistoryView =
+        read_icecast_json(&input, "organization profile history")?;
+    let coverage = audit_organization_profile_history(&history, generated_at)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&coverage)?);
+    if let Some(path) = out {
+        write_icecast_file(
+            &path,
+            output.as_bytes(),
+            "organization profile history coverage",
+        )?;
+    } else {
+        print!("{output}");
+    }
     Ok(())
 }
 

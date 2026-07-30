@@ -77,6 +77,13 @@ predicate explicitly requires zero carry-forward observations. The standing
 ledger also accepts full sealed boards, allowing future annual snapshots to
 store every profile without a profile-specific migration.
 
+The July 30 catalog audit makes the historical migration boundary explicit.
+`examples/organization-profile-history-coverage-observed-2025-26.json` lists
+all 37 registered methods at the 2025-26 checkpoint: 2/17 adapter-ready methods
+are complete for all 32 teams, 15/17 are explicit 0/32 gaps, and 14 of those 15
+declare historical support. Training-camp arrival is the sole ready historical
+gap without historical-support authority and remains unavailable.
+
 ## Resume triggers
 
 - Run `affiliate-facts-status --require-ready` when target-season AHL
