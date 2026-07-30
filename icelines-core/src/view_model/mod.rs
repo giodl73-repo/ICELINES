@@ -320,10 +320,14 @@ pub use organization_lineup::{
     OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
 };
 pub use organization_profile_history::{
-    build_organization_profile_history, carry_forward_organization_profiles,
-    seal_organization_profile_history, OrganizationProfileCarryForwardRule,
-    OrganizationProfileHistoryError, OrganizationProfileHistoryView,
-    ORGANIZATION_PROFILE_HISTORY_JSON_SCHEMA, ORGANIZATION_PROFILE_HISTORY_SCHEMA,
+    audit_organization_profile_history, build_organization_profile_history,
+    carry_forward_organization_profiles, seal_organization_profile_history,
+    OrganizationProfileCarryForwardRule, OrganizationProfileHistoryCheckpointCoverageView,
+    OrganizationProfileHistoryCoverageView, OrganizationProfileHistoryError,
+    OrganizationProfileHistoryProfileCoverageView, OrganizationProfileHistoryView,
+    ORGANIZATION_PROFILE_HISTORY_COVERAGE_JSON_SCHEMA,
+    ORGANIZATION_PROFILE_HISTORY_COVERAGE_SCHEMA, ORGANIZATION_PROFILE_HISTORY_JSON_SCHEMA,
+    ORGANIZATION_PROFILE_HISTORY_SCHEMA,
 };
 pub use organization_window::{
     build_organization_window_board, load_organization_window_profile_inventory,

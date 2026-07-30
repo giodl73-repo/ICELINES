@@ -2140,6 +2140,16 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: PathBuf,
     },
+    /// Audit every registered profile at every standing-history checkpoint.
+    #[command(name = "window-profile-history-audit")]
+    WindowProfileHistoryAudit {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        generated_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Build the official balanced Window from sealed IceLines source documents.
     #[command(name = "window-build")]
     WindowBuild {
@@ -2977,6 +2987,23 @@ mod tui_surface_tests {
     #[test]
     fn l0_window_bridge_commands_parse() {
         with_large_stack(|| {
+            let history_audit = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-profile-history-audit",
+                "--input",
+                "profile-history.json",
+                "--generated-at",
+                "2026-07-30T12:00:00Z",
+                "--out",
+                "profile-history-coverage.json",
+            ])
+            .expect("Window profile history audit should parse");
+            assert!(matches!(
+                history_audit.command,
+                Commands::Icecast(IceCastSubcommand::WindowProfileHistoryAudit { .. })
+            ));
+
             let source_package = Cli::try_parse_from([
                 "icelines",
                 "icecast",

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_profile_history_coverage.v1.schema.json",
+  "title": "IceLines organization profile history coverage",
+  "type": "object",
+  "required": [
+    "schema",
+    "generated_at",
+    "history_id",
+    "history_fingerprint",
+    "organization_identity_version",
+    "expected_organizations",
+    "registered_profiles",
+    "ready_profiles",
+    "checkpoints",
+    "disclosures"
+  ],
+  "properties": {
+    "schema": { "const": "organization_profile_history_coverage.v1" },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "history_id": { "type": "string", "minLength": 1 },
+    "history_fingerprint": { "type": "string", "minLength": 1 },
+    "organization_identity_version": { "type": "string", "minLength": 1 },
+    "expected_organizations": { "type": "integer", "minimum": 1 },
+    "registered_profiles": { "type": "integer", "minimum": 1 },
+    "ready_profiles": { "type": "integer", "minimum": 0 },
+    "checkpoints": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "season",
+          "as_of",
+          "horizon",
+          "profiles_with_observation",
+          "complete_profiles",
+          "complete_ready_profiles",
+          "profiles"
+        ],
+        "properties": {
+          "season": { "type": "integer", "minimum": 19001901 },
+          "as_of": { "type": "string", "format": "date" },
+          "horizon": { "enum": ["current", "one_year", "three_year", "five_year"] },
+          "profiles_with_observation": { "type": "integer", "minimum": 0 },
+          "complete_profiles": { "type": "integer", "minimum": 0 },
+          "complete_ready_profiles": { "type": "integer", "minimum": 0 },
+          "profiles": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "profile_key",
+                "method_version",
+                "registered",
+                "historical_support",
+                "organizations_with_observation",
+                "organizations_with_value",
+                "organizations_score_eligible",
+                "missing_organizations",
+                "complete"
+              ],
+              "properties": {
+                "profile_key": { "type": "string", "minLength": 1 },
+                "method_version": { "type": "string", "minLength": 1 },
+                "registered": { "type": "boolean" },
+                "label": { "type": "string", "minLength": 1 },
+                "dimension": { "type": "string", "minLength": 1 },
+                "readiness": { "enum": ["ready_for_adapter", "evaluation", "context_only", "blocked"] },
+                "historical_support": { "type": "boolean" },
+                "organizations_with_observation": { "type": "integer", "minimum": 0 },
+                "organizations_with_value": { "type": "integer", "minimum": 0 },
+                "organizations_score_eligible": { "type": "integer", "minimum": 0 },
+                "missing_organizations": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 2 }
+                },
+                "complete": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "disclosures": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}

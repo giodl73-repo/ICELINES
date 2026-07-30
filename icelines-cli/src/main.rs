@@ -2636,6 +2636,11 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             created_at,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::WindowProfileHistoryAudit {
+            input,
+            generated_at,
+            out,
+        }) => commands::icecast::run_window_profile_history_audit(input, generated_at, out)?,
         Commands::Icecast(IceCastSubcommand::WindowBuild {
             season,
             as_of,

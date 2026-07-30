@@ -1025,7 +1025,17 @@ This slice is part of W3-W4 rather than a new active plan.
 5. Verify JSON round-trip fingerprint stability, duplicate rejection,
    all-32 fallback coverage, current-source precedence, CLI parsing, schemas,
    and the real 32-team replay.
+6. Audit every stored checkpoint against the complete registered catalog.
+   Preserve three separate counts—observation, value, and score-eligible
+   value—retain unregistered legacy methods, and emit explicit missing teams
+   for profiles that have not yet been backfilled.
 
 The ledger is profile-neutral: future annual jobs may archive all registered
 profiles through `window-profile-history-build` without changing the scorer,
 source package, Web/TUI renderers, or card contract.
+
+The first coverage artifact reports 37/37 registered methods enumerated,
+17 adapter-ready methods expected, 2/17 complete for 2025-26, and 15/17
+explicitly unavailable. Fourteen unavailable ready methods advertise
+historical support and form the next backfill queue; training-camp arrival does
+not and must remain missing unless its registry policy changes through review.
