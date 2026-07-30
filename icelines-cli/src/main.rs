@@ -2623,6 +2623,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         }) => commands::icecast::run_window_profile_history_build(
             boards, history_id, created_at, out,
         )?,
+        Commands::Icecast(IceCastSubcommand::WindowProfileHistoryBackfill {
+            origins,
+            history_id,
+            created_at,
+            out,
+        }) => commands::icecast::run_window_profile_history_backfill(
+            origins, history_id, created_at, out,
+        )?,
         Commands::Icecast(IceCastSubcommand::WindowProfileHistoryBaseline {
             source_package,
             ahl_workboard,
@@ -2641,6 +2649,38 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             generated_at,
             out,
         }) => commands::icecast::run_window_profile_history_audit(input, generated_at, out)?,
+        Commands::Icecast(IceCastSubcommand::WindowProfileHistoryDelta {
+            input,
+            earlier_season,
+            earlier_as_of,
+            later_season,
+            later_as_of,
+            horizon,
+            generated_at,
+            out,
+        }) => commands::icecast::run_window_profile_history_delta(
+            input,
+            earlier_season,
+            earlier_as_of,
+            later_season,
+            later_as_of,
+            horizon,
+            generated_at,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::WindowProfileHistoryCard {
+            input,
+            team,
+            team_name,
+            generated_at,
+            out,
+        }) => commands::icecast::run_window_profile_history_card(
+            input,
+            team,
+            team_name,
+            generated_at,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::WindowBuild {
             season,
             as_of,

@@ -2126,6 +2126,18 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: PathBuf,
     },
+    /// Backfill standing history from sealed point-in-time historical origins.
+    #[command(name = "window-profile-history-backfill")]
+    WindowProfileHistoryBackfill {
+        #[arg(long = "origin", value_name = "PATH", required = true)]
+        origins: Vec<PathBuf>,
+        #[arg(long)]
+        history_id: String,
+        #[arg(long)]
+        created_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: PathBuf,
+    },
     /// Derive the prior-season AHL depth baseline from observed affiliate appearances.
     #[command(name = "window-profile-history-baseline")]
     WindowProfileHistoryBaseline {
@@ -2147,6 +2159,40 @@ pub enum IceCastSubcommand {
         input: PathBuf,
         #[arg(long)]
         generated_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compare exact profile methods across two standing-history checkpoints.
+    #[command(name = "window-profile-history-delta")]
+    WindowProfileHistoryDelta {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        earlier_season: u32,
+        #[arg(long)]
+        earlier_as_of: chrono::NaiveDate,
+        #[arg(long)]
+        later_season: u32,
+        #[arg(long)]
+        later_as_of: chrono::NaiveDate,
+        #[arg(long, default_value = "one_year")]
+        horizon: String,
+        #[arg(long)]
+        generated_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Project one team's standing-history delta into a UI-neutral card.
+    #[command(name = "window-profile-history-card")]
+    WindowProfileHistoryCard {
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        team_name: Option<String>,
+        #[arg(long)]
+        generated_at: Option<String>,
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
@@ -4108,6 +4154,82 @@ mod tui_surface_tests {
                 }
                 other => panic!("expected IceCast season-card command, got {other:?}"),
             }
+        });
+    }
+
+    #[test]
+    fn l0_window_profile_history_backfill_and_delta_surfaces_parse() {
+        with_large_stack(|| {
+            let backfill = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-profile-history-backfill",
+                "--origin",
+                "origin-a.json",
+                "--origin",
+                "origin-b.json",
+                "--history-id",
+                "observed-history",
+                "--created-at",
+                "2026-07-30T18:00:00Z",
+                "--out",
+                "history.json",
+            ])
+            .expect("profile history backfill should parse");
+            assert!(matches!(
+                backfill.command,
+                Commands::Icecast(IceCastSubcommand::WindowProfileHistoryBackfill {
+                    origins,
+                    ..
+                }) if origins.len() == 2
+            ));
+
+            let delta = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-profile-history-delta",
+                "--input",
+                "history.json",
+                "--earlier-season",
+                "20242025",
+                "--earlier-as-of",
+                "2024-06-30",
+                "--later-season",
+                "20252026",
+                "--later-as-of",
+                "2025-06-30",
+                "--generated-at",
+                "2026-07-30T18:00:00Z",
+            ])
+            .expect("profile history delta should parse");
+            assert!(matches!(
+                delta.command,
+                Commands::Icecast(IceCastSubcommand::WindowProfileHistoryDelta {
+                    earlier_season: 20242025,
+                    later_season: 20252026,
+                    ..
+                })
+            ));
+
+            let card = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "window-profile-history-card",
+                "--input",
+                "delta.json",
+                "--team",
+                "NYR",
+                "--out",
+                "nyr-history-card.json",
+            ])
+            .expect("profile history card should parse");
+            assert!(matches!(
+                card.command,
+                Commands::Icecast(IceCastSubcommand::WindowProfileHistoryCard {
+                    team,
+                    ..
+                }) if team == "NYR"
+            ));
         });
     }
 

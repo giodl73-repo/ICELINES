@@ -34,6 +34,8 @@ mod forecast_history;
 pub use forecast_history::*;
 mod organization_window;
 pub use organization_window::*;
+mod organization_profile_history;
+pub use organization_profile_history::*;
 
 pub const CARD_DOCUMENT_SCHEMA: &str = "card_document.v1";
 pub const CARD_DOCUMENT_JSON_SCHEMA: &str =

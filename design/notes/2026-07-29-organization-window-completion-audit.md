@@ -84,6 +84,15 @@ are complete for all 32 teams, 15/17 are explicit 0/32 gaps, and 14 of those 15
 declare historical support. Training-camp arrival is the sole ready historical
 gap without historical-support authority and remains unavailable.
 
+The July 30 first backfill tranche adds a separate four-checkpoint evaluation
+ledger from the already sealed historical origins. Each checkpoint has five
+complete registered `history.*` methods for all 32 teams (640 observations in
+total). The matched 2024-25 to 2025-26 delta and its all-team UI-neutral card
+projection retain exact method identity, raw units, registered direction, and
+the source-history fingerprint. This reduces the general historical evidence
+gap without claiming that those evaluation methods are the 14 still-missing
+official historical adapters.
+
 ## Resume triggers
 
 - Run `affiliate-facts-status --require-ready` when target-season AHL
