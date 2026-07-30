@@ -110,6 +110,10 @@ below.
 10. Register the next untouched future origin without outcomes, then prove the
     scorer refuses early or mismatched results and derives acceptance only from
     the frozen board, target standings, baseline, leakage audit, and rule.
+11. Build one completion-status document from the current source audit and
+    preregistration; prove it names both open actions, rejects tampering, stays
+    unscored on eligibility alone, and fails `--require-complete` until both
+    gates are actually satisfied.
 
 Status: partial 2026-07-29. Canonical loaded-board replay, core bridge/rebase
 tamper/completeness/change attribution, real isolated/combined multi-source
@@ -124,7 +128,8 @@ now preregistered without outcomes: its complete feature board, neutral
 baseline, leakage audit, scoring date, and acceptance rule are sealed before
 the season, but results remain calendar-gated. Production source completion
 and the scored future holdout remain open. These gates are owned by WP-011 and
-REQ-WINDOW-001..009.
+REQ-WINDOW-001..009. The July 30 machine-readable completion status passes its
+focused fetch/CLI replay while honestly retaining both open gates.
 
 Selected browser evidence now exists for the all-32 board, focused NYR board,
 and both NYR card pages at desktop/tablet/mobile widths. The reusable gate also

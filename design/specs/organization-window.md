@@ -714,6 +714,14 @@ whether it passes, fails, or is inconclusive.
 recomputes the single-origin calibration, refuses early standings/capture/score
 dates, derives the committed acceptance result, and seals the complete replay.
 
+`organization_window_completion_status.v1` is the final lifecycle proof. It
+embeds and validates one current `organization_window_source_coverage.v1`
+audit, the exact preregistered holdout, and the optional scored result. The
+status is complete only when the source audit is production-ranked with zero
+carry-forward observations and the bound holdout result is present. Calendar
+eligibility without a result remains `holdout_eligible_unscored`. Predictive
+acceptance remains an independent field and cannot change lifecycle evidence.
+
 ## Failure policy
 
 - Unsupported schema or method version: hard error.
@@ -768,3 +776,6 @@ change the meaning or readability of an already sealed board.
 14. Organization health, competitive-success forecasts, and window-timing
     classifications remain distinctly named and cannot inherit one another's
     validation claims.
+15. One sealed completion-status document validates both final product gates,
+    names every remaining action, and can fail automation until both are
+    satisfied without treating a failed predictive threshold as missing work.

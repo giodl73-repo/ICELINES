@@ -954,7 +954,8 @@ Interfaces/design: IF-WINDOW-001..005; DES-WINDOW-001..007.
 Scope: profile inventory, registry/contracts, manifest validation, canonical
 fingerprints, normalization and hierarchical scoring, production adapters,
 all-team board/detail/classification, history, scenarios, calibration, all user
-surfaces, cards/reports, extension docs, and release evidence.
+surfaces, cards/reports, extension docs, release evidence, and one sealed
+machine-readable closeout status spanning the final source and holdout gates.
 
 Entry criteria:
 

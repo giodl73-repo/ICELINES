@@ -4119,6 +4119,12 @@ rank-eligible organizations and because the registered 2026-27 outcome cannot
 be scored before April 11, 2027. Neither gate may be satisfied with inferred or
 proxy evidence.
 
+July 30 closeout-control addendum: **pass_with_risk**. The sealed completion
+status and `--require-complete` command make both remaining gates mechanically
+auditable, retain the current 14/16 and waiting-until-2027 state, and reject
+mismatched or tampered nested evidence. This improves completion control but
+does not change the WP-011 partial product disposition.
+
 ## 2026-06-19 Phase Hurricane 5a/5b Close Review
 
 ### Scope reviewed

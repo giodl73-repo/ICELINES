@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/organization_window_completion_status.v1.schema.json",
+  "title": "IceLines Organization Window Completion Status v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "evaluated_at",
+    "state",
+    "project_complete",
+    "source_gate",
+    "holdout_gate",
+    "source_audit",
+    "holdout_registration",
+    "next_actions",
+    "disclosures",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "organization_window_completion_status.v1" },
+    "evaluated_at": { "type": "string", "format": "date-time" },
+    "state": {
+      "enum": [
+        "evaluation_complete",
+        "production_ranked_awaiting_holdout",
+        "holdout_eligible_unscored",
+        "complete"
+      ]
+    },
+    "project_complete": { "type": "boolean" },
+    "source_gate": { "$ref": "#/$defs/sourceGate" },
+    "holdout_gate": { "$ref": "#/$defs/holdoutGate" },
+    "source_audit": { "type": "object" },
+    "holdout_registration": { "type": "object" },
+    "holdout_result": { "type": "object" },
+    "next_actions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "disclosures": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  },
+  "$defs": {
+    "sourceGate": {
+      "type": "object",
+      "required": [
+        "passed",
+        "complete_required_profiles",
+        "required_profiles",
+        "rank_eligible_organizations",
+        "expected_organizations",
+        "carry_forward_observations",
+        "incomplete_required_profiles"
+      ],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "complete_required_profiles": { "type": "integer", "minimum": 0 },
+        "required_profiles": { "type": "integer", "minimum": 1 },
+        "rank_eligible_organizations": { "type": "integer", "minimum": 0 },
+        "expected_organizations": { "type": "integer", "minimum": 1 },
+        "carry_forward_observations": { "type": "integer", "minimum": 0 },
+        "incomplete_required_profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["profile_key", "method_version", "missing_organizations"],
+            "properties": {
+              "profile_key": { "type": "string", "minLength": 1 },
+              "method_version": { "type": "string", "minLength": 1 },
+              "missing_organizations": { "type": "integer", "minimum": 1 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "holdoutGate": {
+      "type": "object",
+      "required": ["state", "eligible", "outcome_not_before", "result_present"],
+      "properties": {
+        "state": { "enum": ["waiting_until_eligible", "eligible_unscored", "scored"] },
+        "eligible": { "type": "boolean" },
+        "outcome_not_before": { "type": "string", "format": "date" },
+        "result_present": { "type": "boolean" },
+        "acceptance_passed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -34,6 +34,60 @@ fn run_isolated(home: &std::path::Path, args: &[&str]) -> std::process::Output {
         .unwrap_or_else(|e| panic!("failed to run icelines binary: {e}"))
 }
 
+#[test]
+fn l2_window_completion_status_replays_current_two_gate_evidence() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let source = repo.join("examples/organization-window-source-audit-partial-2026-07-28.json");
+    let registration =
+        repo.join("examples/window-history/future-holdout-2025-26-to-2026-27-registration.json");
+    let out = run(&[
+        "icecast",
+        "window-completion-status",
+        "--source-audit",
+        source.to_str().expect("UTF-8 source path"),
+        "--holdout-registration",
+        registration.to_str().expect("UTF-8 registration path"),
+        "--evaluated-at",
+        "2026-07-30T12:00:00Z",
+    ]);
+    assert!(
+        out.status.success(),
+        "completion status should render current evidence: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let status: serde_json::Value =
+        serde_json::from_slice(&out.stdout).expect("completion status JSON");
+    assert_eq!(status["state"], "evaluation_complete");
+    assert_eq!(status["project_complete"], false);
+    assert_eq!(status["source_gate"]["complete_required_profiles"], 14);
+    assert_eq!(status["holdout_gate"]["state"], "waiting_until_eligible");
+    assert_eq!(status["next_actions"].as_array().unwrap().len(), 2);
+
+    let temp = tempfile::tempdir().expect("completion tempdir");
+    let required_path = temp.path().join("required.json");
+    let required = run(&[
+        "icecast",
+        "window-completion-status",
+        "--source-audit",
+        source.to_str().expect("UTF-8 source path"),
+        "--holdout-registration",
+        registration.to_str().expect("UTF-8 registration path"),
+        "--evaluated-at",
+        "2026-07-30T12:00:00Z",
+        "--require-complete",
+        "--out",
+        required_path.to_str().expect("UTF-8 output path"),
+    ]);
+    assert!(!required.status.success());
+    assert!(
+        required_path.exists(),
+        "status must be written before refusal"
+    );
+    assert!(String::from_utf8_lossy(&required.stderr).contains("is not complete"));
+}
+
 fn seed_daily_league(home: &std::path::Path) {
     let icelines_dir = home.join(".icelines");
     std::fs::create_dir_all(&icelines_dir).expect("create .icelines");

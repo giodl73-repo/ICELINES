@@ -2952,6 +2952,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             scored_at,
             out,
         }) => commands::icecast::run_window_holdout_score(registration, standings, scored_at, out)?,
+        Commands::Icecast(IceCastSubcommand::WindowCompletionStatus {
+            source_audit,
+            holdout_registration,
+            holdout_result,
+            evaluated_at,
+            require_complete,
+            out,
+        }) => commands::icecast::run_window_completion_status(
+            source_audit,
+            holdout_registration,
+            holdout_result,
+            evaluated_at,
+            require_complete,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::ProspectStudy { input, json, out }) => {
             commands::icecast::run_prospect_study(input, json, out)?
         }

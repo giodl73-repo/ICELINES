@@ -548,6 +548,26 @@ The scorer revalidates both seals, refuses a standings effective date before
 eligibility, recomputes the calibration from the registered board, and derives
 `acceptance_passed`; callers cannot supply that conclusion.
 
+The final lifecycle check joins the fresh source audit and the exact future
+registration without weakening either gate:
+
+```bash
+icelines icecast window-completion-status \
+  --source-audit window-source-coverage.json \
+  --holdout-registration future-holdout-registration.json \
+  --evaluated-at 2026-07-30T12:00:00Z \
+  --out window-completion.json
+```
+
+Add `--holdout-result future-holdout-result.json` only after the registered
+date. Add `--require-complete` in automation: IceLines writes the validated
+`organization_window_completion_status.v1` document first and then exits
+nonzero unless confirmed source authority is production-ranked and the exact
+holdout has been scored. Merely reaching the eligibility date yields
+`holdout_eligible_unscored`; it never fabricates a result. A retained result
+completes the evidence lifecycle whether the frozen acceptance rule passes or
+fails, while `acceptance_passed` separately controls predictive claims.
+
 `organization_window_rolling_calibration.v1` reports pooled and per-origin
 error/rank correlation, pane metrics, leave-one-pane-out ablations,
 organization stability, and a between-origin MAE confidence interval. It

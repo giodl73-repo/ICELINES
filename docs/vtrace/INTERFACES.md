@@ -615,7 +615,9 @@ Outputs: `organization_window_board.v1`,
 `organization_window_history.v1`, `organization_window_movement.v1`,
 `organization_window_scenario_impact.v1`,
 `organization_window_scenario_distribution.v1`, and
-`organization_window_bridge.v1`. Focused output retains the complete-board
+`organization_window_bridge.v1`. The lifecycle closeout also emits
+`organization_window_completion_status.v1`, which embeds the validated source
+audit, exact future-holdout registration, and optional bound result. Focused output retains the complete-board
 fingerprint. History rejects incomparable contexts; scenarios retain baseline
 and upstream scenario identity. A bridge seals exact source/target manifests,
 complete one-to-one profile mappings, affine raw transforms, rationale, and
@@ -641,6 +643,12 @@ remain omitted rather than coerced to zero. Unsupported schemas, unsealed
 baselines, invalid or duplicate shocks, disabled profile scenario support,
 authority-scope mismatches, non-finite values, and insufficient trials fail
 closed.
+
+Completion status rejects malformed source-audit counts, a source season that
+does not match the holdout target, a result bound to another registration, a
+result that postdates the evaluation instant, and any tampered nested seal.
+Eligibility without a result remains unscored; acceptance and lifecycle
+completion are separate fields.
 
 Rolling calibration origins optionally carry a typed trial-noise state.
 Deterministic origins declare `not_applicable`; simulations may provide trial

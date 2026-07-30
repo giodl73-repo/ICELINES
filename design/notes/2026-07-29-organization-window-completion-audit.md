@@ -58,6 +58,13 @@ Neither gate has a remaining scorer, adapter, schema, renderer, CLI, or test
 harness dependency. Source silence, prior-season assignment, camp membership,
 or known outcomes cannot be substituted for the required evidence.
 
+The July 30 closeout contract makes this decision executable rather than
+prose-only. `window-completion-status` validates a fresh source audit and the
+exact preregistered holdout, embeds both in
+`organization_window_completion_status.v1`, names the remaining actions, and
+supports `--require-complete` for fail-closed automation. It cannot make either
+external gate pass; it proves when both actually have.
+
 ## Standing-history addendum
 
 The same-day preseason-history slice adds `organization_profile_history.v1` as
