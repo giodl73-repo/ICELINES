@@ -8,8 +8,11 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::DateTime;
 use icelines_core::{
-    build_ahl_affiliate_projection, AhlAffiliatePlayerInput, AhlAffiliateProjectionInput,
-    AhlDevelopmentRuleInput, AhlRosterPoolAuthority, AhlRosterPoolAuthorityKind, Position,
+    build_ahl_affiliate_projection, seal_organization_profile_history,
+    seal_organization_window_source_package, AhlAffiliatePlayerInput, AhlAffiliateProjectionInput,
+    AhlDevelopmentRuleInput, AhlRosterPoolAuthority, AhlRosterPoolAuthorityKind,
+    OrganizationProfileHistoryView, OrganizationProfileInput, OrganizationWindowSourcePackageView,
+    Position, WindowEvidenceView, WindowFreshness, WindowHorizon, WindowProfileStatus,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -712,6 +715,327 @@ pub fn build_ahl_preseason_league_projection_inputs(
             "Every emitted input has already passed the canonical 12F/6D/2G and AHL development-rule projection builder.".to_owned(),
         ],
     })
+}
+
+/// Build the two AHL-dependent standing Window observations from the completed
+/// prior-season affiliate roster/stat evidence already present in a preseason
+/// workboard. Current-season assignment blockers are intentionally irrelevant:
+/// a prior-affiliate appearance is itself the historical organization fact.
+pub fn build_prior_season_organization_profile_history(
+    source_package: &OrganizationWindowSourcePackageView,
+    workboard: &AhlPreseasonLeagueFactsWorkboardView,
+    history_id: impl Into<String>,
+    created_at: impl Into<String>,
+) -> Result<OrganizationProfileHistoryView, AhlFeedError> {
+    validate_workboard(workboard)?;
+    let package = seal_organization_window_source_package(source_package.clone())
+        .map_err(|error| AhlFeedError::Validation(error.to_string()))?;
+    if package.season != workboard.prior_season
+        || package.team_lineups.len() != workboard.teams
+        || workboard.teams != 32
+    {
+        return Err(AhlFeedError::Validation(
+            "profile-history baseline requires a matching 32-team prior-season Window package"
+                .to_owned(),
+        ));
+    }
+    let rule = AhlDevelopmentRuleInput {
+        dressed_skaters: 18,
+        minimum_development_skaters: 12,
+        professional_game_threshold: workboard.professional_game_threshold,
+        source_url: "https://theahl.com/faq".to_owned(),
+        checked_at: package.as_of.to_string(),
+    };
+    let lineups = package
+        .team_lineups
+        .iter()
+        .map(|lineup| (lineup.team.as_str(), lineup))
+        .collect::<BTreeMap<_, _>>();
+    let mut affiliates = Vec::new();
+    for team in &workboard.team_workboards {
+        let lineup = lineups.get(team.nhl_team.as_str()).ok_or_else(|| {
+            AhlFeedError::Validation(format!(
+                "prior-season package is missing the {} NHL lineup",
+                team.nhl_team
+            ))
+        })?;
+        let nhl_ids = lineup
+            .forward_lines
+            .iter()
+            .flat_map(|line| [&line.left_wing, &line.center, &line.right_wing])
+            .chain(
+                lineup
+                    .defense_pairs
+                    .iter()
+                    .flat_map(|pair| [&pair.left, &pair.right]),
+            )
+            .chain([&lineup.goalies.starter, &lineup.goalies.backup])
+            .filter_map(|player| player.as_ref().map(|player| player.player_id))
+            .collect::<BTreeSet<_>>();
+        let mut seen = BTreeSet::new();
+        let players = team
+            .players
+            .iter()
+            .filter(|player| {
+                player
+                    .origins
+                    .contains(&AhlPreseasonRolloverOrigin::PriorAffiliate)
+            })
+            .filter_map(|player| {
+                let player_id = player.nhl_player_id?;
+                let primary_position = player.primary_position?;
+                let projected_score = player.projected_score?;
+                let prospect = player.prospect?;
+                if nhl_ids.contains(&player_id) || !seen.insert(player_id) {
+                    return None;
+                }
+                Some(AhlAffiliatePlayerInput {
+                    player_id,
+                    display_name: player.display_name.clone(),
+                    primary_position,
+                    eligible_positions: player.eligible_positions.clone(),
+                    projected_score,
+                    prospect,
+                    recall_readiness: player.recall_readiness,
+                    professional_games_at_season_start: player.professional_games_at_season_start,
+                    development_rule_qualified: player.development_rule_qualified,
+                    assigned_to_affiliate: true,
+                    waiver_required: false,
+                    source_league: format!("observed {} AHL affiliate", workboard.prior_season),
+                })
+            })
+            .collect::<Vec<_>>();
+        let projection = build_ahl_affiliate_projection(&AhlAffiliateProjectionInput {
+            nhl_team: team.nhl_team.clone(),
+            ahl_team: team.ahl_team.clone(),
+            season: workboard.prior_season,
+            rule: rule.clone(),
+            pool_authority: AhlRosterPoolAuthority {
+                kind: AhlRosterPoolAuthorityKind::OfficialSnapshot,
+                as_of: Some(package.as_of.to_string()),
+                source_urls: team.source_urls.clone(),
+                note: Some(
+                    "Completed-season affiliate appearances lowered as an observed historical pool"
+                        .to_owned(),
+                ),
+            },
+            players,
+        })
+        .map_err(|reason| {
+            AhlFeedError::Validation(format!(
+                "build {} prior-season affiliate baseline: {reason}",
+                team.nhl_team
+            ))
+        })?;
+        affiliates.push(projection);
+    }
+    affiliates.sort_by(|left, right| left.nhl_team.cmp(&right.nhl_team));
+    let workboards = workboard
+        .team_workboards
+        .iter()
+        .map(|team| (team.nhl_team.as_str(), team))
+        .collect::<BTreeMap<_, _>>();
+    let mut observations = Vec::with_capacity(64);
+    for affiliate in &affiliates {
+        let lineup = lineups[affiliate.nhl_team.as_str()];
+        let team_workboard = workboards[affiliate.nhl_team.as_str()];
+        let facts = team_workboard
+            .players
+            .iter()
+            .filter_map(|row| row.nhl_player_id.map(|player_id| (player_id, row)))
+            .collect::<BTreeMap<_, _>>();
+        let source_url = team_workboard.source_urls.first().cloned();
+        let evidence = vec![
+            WindowEvidenceView {
+                source_schema: package.schema.clone(),
+                source_id: package.fingerprint.clone(),
+                captured_at: None,
+                as_of: Some(package.as_of),
+                freshness: WindowFreshness::Current,
+                source_url: None,
+            },
+            WindowEvidenceView {
+                source_schema: workboard.schema.clone(),
+                source_id: workboard.source_fingerprint.clone(),
+                captured_at: None,
+                as_of: Some(package.as_of),
+                freshness: WindowFreshness::Current,
+                source_url,
+            },
+        ];
+
+        let mut unit_values = Vec::new();
+        let mut score_confidences = Vec::new();
+        for line in &lineup.forward_lines {
+            let players = [&line.left_wing, &line.center, &line.right_wing]
+                .into_iter()
+                .filter_map(|player| player.as_ref())
+                .filter_map(|player| player.score.value.map(|value| (value, &player.score)))
+                .collect::<Vec<_>>();
+            if !players.is_empty() {
+                unit_values.push(
+                    players.iter().map(|(value, _)| value).sum::<f64>() / players.len() as f64,
+                );
+                score_confidences
+                    .extend(players.iter().map(|(_, score)| score.coverage_pct / 100.0));
+            }
+        }
+        for pair in &lineup.defense_pairs {
+            let players = [&pair.left, &pair.right]
+                .into_iter()
+                .filter_map(|player| player.as_ref())
+                .filter_map(|player| player.score.value.map(|value| (value, &player.score)))
+                .collect::<Vec<_>>();
+            if !players.is_empty() {
+                unit_values.push(
+                    players.iter().map(|(value, _)| value).sum::<f64>() / players.len() as f64,
+                );
+                score_confidences
+                    .extend(players.iter().map(|(_, score)| score.coverage_pct / 100.0));
+            }
+        }
+        let goalies = [&lineup.goalies.starter, &lineup.goalies.backup]
+            .into_iter()
+            .filter_map(|player| player.as_ref())
+            .filter_map(|player| player.score.value.map(|value| (value, &player.score)))
+            .collect::<Vec<_>>();
+        if !goalies.is_empty() {
+            unit_values
+                .push(goalies.iter().map(|(value, _)| value).sum::<f64>() / goalies.len() as f64);
+            score_confidences.extend(goalies.iter().map(|(_, score)| score.coverage_pct / 100.0));
+        }
+        let affiliate_scores = affiliate
+            .players
+            .iter()
+            .map(|player| (player.player_id, player.projected_score))
+            .collect::<BTreeMap<_, _>>();
+        for unit in &affiliate.lines {
+            let values = unit
+                .player_ids
+                .iter()
+                .filter_map(|player_id| affiliate_scores.get(player_id).copied())
+                .collect::<Vec<_>>();
+            if !values.is_empty() {
+                unit_values.push(values.iter().sum::<f64>() / values.len() as f64);
+                score_confidences.extend(unit.player_ids.iter().filter_map(|player_id| {
+                    facts
+                        .get(player_id)
+                        .and_then(|row| row.projected_score_confidence)
+                }));
+            }
+        }
+        let unit_coverage = (unit_values.len() as f64 / 16.0).min(1.0);
+        let score_confidence =
+            mean_values(&score_confidences).unwrap_or(unit_coverage) * unit_coverage;
+        observations.push(OrganizationProfileInput {
+            profile_key: "development.organization_depth".to_owned(),
+            method_version: "organization_lineup_depth.v1".to_owned(),
+            organization: affiliate.nhl_team.clone(),
+            organization_identity_version: package.organization_identity_version.clone(),
+            season: package.season,
+            season_type: package.season_type.clone(),
+            as_of: package.as_of,
+            horizon: WindowHorizon::Current,
+            raw_value: mean_values(&unit_values),
+            raw_unit: "average_unit_score".to_owned(),
+            sample_size: unit_values.len() as u64,
+            confidence: score_confidence.clamp(0.0, 1.0),
+            coverage: unit_coverage,
+            status: WindowProfileStatus::Modeled,
+            evidence: evidence.clone(),
+            limitations: vec![
+                "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.".to_owned(),
+                "AHL line arrangement is modeled from observed affiliate participants under the documented development rule.".to_owned(),
+            ],
+            source_fingerprints: vec![package.fingerprint.clone(), workboard.source_fingerprint.clone()],
+        });
+
+        let mut recall_groups = [Vec::new(), Vec::new(), Vec::new()];
+        for player in affiliate
+            .players
+            .iter()
+            .filter(|player| player.assigned_to_affiliate)
+        {
+            let Some(readiness) = player.recall_readiness else {
+                continue;
+            };
+            let group = match player.primary_position {
+                Position::Center | Position::LeftWing | Position::RightWing => 0,
+                Position::Defense => 1,
+                Position::Goalie => 2,
+            };
+            let confidence = facts
+                .get(&player.player_id)
+                .and_then(|row| row.recall_readiness_confidence)
+                .unwrap_or(0.0);
+            recall_groups[group].push((readiness, confidence));
+        }
+        let recall_coverage = recall_groups
+            .iter()
+            .filter(|group| !group.is_empty())
+            .count() as f64
+            / 3.0;
+        let mut recall_values = Vec::new();
+        let mut recall_confidences = Vec::new();
+        for group in &mut recall_groups {
+            group.sort_by(|left, right| right.0.total_cmp(&left.0));
+            for (readiness, confidence) in group.iter().take(2) {
+                recall_values.push(*readiness);
+                recall_confidences.push(*confidence);
+            }
+        }
+        let recall_confidence =
+            mean_values(&recall_confidences).unwrap_or(recall_coverage) * recall_coverage;
+        observations.push(OrganizationProfileInput {
+            profile_key: "development.recall_depth".to_owned(),
+            method_version: "organization_recall_depth.v1".to_owned(),
+            organization: affiliate.nhl_team.clone(),
+            organization_identity_version: package.organization_identity_version.clone(),
+            season: package.season,
+            season_type: package.season_type.clone(),
+            as_of: package.as_of,
+            horizon: WindowHorizon::Current,
+            raw_value: mean_values(&recall_values),
+            raw_unit: "recall_score".to_owned(),
+            sample_size: recall_values.len() as u64,
+            confidence: recall_confidence.clamp(0.0, 1.0),
+            coverage: recall_coverage,
+            status: WindowProfileStatus::Modeled,
+            evidence,
+            limitations: vec![
+                "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage.".to_owned(),
+            ],
+            source_fingerprints: vec![package.fingerprint.clone(), workboard.source_fingerprint.clone()],
+        });
+    }
+    if observations.len() != 64 {
+        return Err(AhlFeedError::Validation(format!(
+            "profile-history baseline produced {} of 64 required AHL observations",
+            observations.len()
+        )));
+    }
+    seal_organization_profile_history(OrganizationProfileHistoryView {
+        schema: icelines_core::ORGANIZATION_PROFILE_HISTORY_SCHEMA.to_owned(),
+        history_id: history_id.into(),
+        created_at: created_at.into(),
+        organization_identity_version: package.organization_identity_version,
+        observations,
+        source_fingerprints: vec![
+            format!("organization-window-source-package:{}", package.fingerprint),
+            format!("ahl-preseason-workboard:{}", workboard.source_fingerprint),
+        ],
+        disclosures: vec![
+            "The baseline combines completed-season NHL lineup scoring with observed prior-affiliate appearances; AHL line arrangement remains modeled under the documented development rule.".to_owned(),
+            "Players dressed in the NHL snapshot are excluded from the affiliate pool; observed AHL participants are represented once in affiliate units.".to_owned(),
+            "Target-season assignment, waiver, and organization-status blockers are excluded because they do not alter completed prior-season appearances.".to_owned(),
+        ],
+        fingerprint: String::new(),
+    })
+    .map_err(|error| AhlFeedError::Validation(error.to_string()))
+}
+
+fn mean_values(values: &[f64]) -> Option<f64> {
+    (!values.is_empty()).then(|| values.iter().sum::<f64>() / values.len() as f64)
 }
 
 fn validate_facts_application(

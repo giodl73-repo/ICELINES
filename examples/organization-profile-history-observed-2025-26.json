@@ -1,0 +1,2482 @@
+{
+  "schema": "organization_profile_history.v1",
+  "history_id": "observed-ahl-depth-2025-26",
+  "created_at": "2026-07-29T12:00:00Z",
+  "organization_identity_version": "nhl_32.v1",
+  "observations": [
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "ANA",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 36.817603728033994,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7503281513529294,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "ANA",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6102846810322277,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6333569192288662,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "BOS",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 42.42654079816141,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7830590079220251,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "BOS",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.8159801404761341,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5928435019839752,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "BUF",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 41.63860898983979,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.8203724651520133,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "BUF",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.8697712490966939,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6409424755404131,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "CAR",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 41.08083773992688,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7902843299084958,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "CAR",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7602109875451862,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6140037981920682,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "CBJ",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 37.48130979624935,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7819381750201018,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "CBJ",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6858177210045203,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.614075489975802,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "CGY",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 35.26629726053687,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7750392014874276,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "CGY",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7240849924454764,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6334829792415024,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "CHI",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 36.74686827372338,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7697079477238915,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "CHI",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.8276291723907684,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6543854433273489,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "COL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 45.348016887784595,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7348920469439453,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "COL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.8191727295107224,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.574989927481066,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "DAL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 41.89551349232846,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.8197663791668421,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "DAL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6040367386090354,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.659538918097759,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "DET",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 39.23013947864172,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7724642206972749,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "DET",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.836400581727914,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5821687165831474,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "EDM",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 41.97579389096437,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7676120150377705,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "EDM",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7603295901661355,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.656059380537349,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "FLA",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 42.22947317434169,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7935765181546688,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "FLA",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7506862184855136,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.530583779446982,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "LAK",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 40.65524773471055,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.8044696559668691,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "LAK",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.8366065652400424,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6082110850566783,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "MIN",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 39.10437807678363,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7422278640626614,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "MIN",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6927007035286225,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5928500451582499,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "MTL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 42.27845509059003,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7310722496401852,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "MTL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7573623940914577,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6005654977333742,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "NJD",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 37.089503613530134,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7901781994380884,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "NJD",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6803656129020154,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.588248807212706,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "NSH",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 37.20554408569521,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7141484997261608,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "NSH",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6958376000686791,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6137801725209682,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "NYI",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 37.77704695944349,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7381046344350929,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "NYI",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7642179516159232,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6085898500140848,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "NYR",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 39.98340549615459,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7779801678588886,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "NYR",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7451564052705382,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5922564476879679,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "OTT",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 37.703856985326546,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7492873506504198,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "OTT",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6771279880723778,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5989244448858462,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "PHI",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 39.27792486427751,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7428471611731552,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "PHI",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7403617410069779,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5702465280810406,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "PIT",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 42.06002569611501,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.8084811138695732,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "PIT",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.859951483035377,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5911372501126463,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "SEA",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 36.39781574271999,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7548987007688214,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "SEA",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6472647999427277,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5819273595746745,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "SJS",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 40.253575726205014,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7948478621476652,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "SJS",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7876279726272171,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6674519221054552,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "STL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 37.26788088571345,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7724211596778953,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "STL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7643923457640286,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6270172672020918,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "TBL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 41.52208006546507,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7599172897417956,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "TBL",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7924688224392923,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5855744956142174,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "TOR",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 40.073755304028595,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7404880369047264,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "TOR",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.8038803298115429,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6410035864308808,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "UTA",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 36.8573001159306,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7688027644275285,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "UTA",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.5667674642175125,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5746603327990593,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "VAN",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 35.535837834126525,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7427692208620035,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "VAN",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.702809084831626,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5442994224684464,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "VGK",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 40.69813729281586,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7805979410014898,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "VGK",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6637776335804265,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.5848163506799889,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "WPG",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 35.765821001649435,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7222828514320089,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "WPG",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.7555417058148928,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6225311296649115,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.organization_depth",
+      "method_version": "organization_lineup_depth.v1",
+      "organization": "WSH",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 42.80517375356785,
+      "raw_unit": "average_unit_score",
+      "sample_size": 16,
+      "confidence": 0.7704698396565498,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Completed-season NHL snapshots may contain partial units; missing units reduce coverage instead of being imputed.",
+        "AHL line arrangement is modeled from observed affiliate participants under the documented development rule."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    },
+    {
+      "profile_key": "development.recall_depth",
+      "method_version": "organization_recall_depth.v1",
+      "organization": "WSH",
+      "organization_identity_version": "nhl_32.v1",
+      "season": 20252026,
+      "season_type": "regular",
+      "as_of": "2026-06-30",
+      "horizon": "current",
+      "raw_value": 0.6952108400164576,
+      "raw_unit": "recall_score",
+      "sample_size": 6,
+      "confidence": 0.6397102092157035,
+      "coverage": 1.0,
+      "status": "modeled",
+      "evidence": [
+        {
+          "source_schema": "organization_window_source_package.v1",
+          "source_id": "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+          "as_of": "2026-06-30",
+          "freshness": "current"
+        },
+        {
+          "source_schema": "ahl_preseason_league_facts_workboard.v1",
+          "source_id": "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+          "as_of": "2026-06-30",
+          "freshness": "current",
+          "source_url": "https://theahl.com/mediaguide"
+        }
+      ],
+      "limitations": [
+        "Recall depth uses the top two completed-season affiliate candidates in each position group; missing groups reduce coverage."
+      ],
+      "source_fingerprints": [
+        "d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c",
+        "sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065"
+      ]
+    }
+  ],
+  "source_fingerprints": [
+    "ahl-preseason-workboard:sha256:2ae7906250cbb48ed471b0c58aeccdea93db1fac476f13569bbc48fc17040065",
+    "organization-window-source-package:d3a593193995dc960851073c0fce84f5944323d7aeb2b70854681657bd23948c"
+  ],
+  "disclosures": [
+    "Players dressed in the NHL snapshot are excluded from the affiliate pool; observed AHL participants are represented once in affiliate units.",
+    "Target-season assignment, waiver, and organization-status blockers are excluded because they do not alter completed prior-season appearances.",
+    "The baseline combines completed-season NHL lineup scoring with observed prior-affiliate appearances; AHL line arrangement remains modeled under the documented development rule."
+  ],
+  "fingerprint": "da44b2e23527803bb10ef0f177f067732203174d58aec1b3b0161a1650c1c315"
+}

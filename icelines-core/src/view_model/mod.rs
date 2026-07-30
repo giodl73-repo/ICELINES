@@ -46,6 +46,7 @@ pub mod matchup_evidence;
 pub mod mutation;
 pub mod nhl_goalie_translation;
 pub mod organization_lineup;
+pub mod organization_profile_history;
 pub mod organization_window;
 pub mod organization_window_adapters;
 pub mod organization_window_calibration;
@@ -317,6 +318,12 @@ pub use organization_lineup::{
     OrganizationLineupCountsView, OrganizationLineupForecastInput, OrganizationLineupForecastView,
     OrganizationPositionGroup, OrganizationRecallCandidateView, OrganizationRecallPlanView,
     OrganizationUnitKind, OrganizationUnitView, ORGANIZATION_LINEUP_FORECAST_SCHEMA,
+};
+pub use organization_profile_history::{
+    build_organization_profile_history, carry_forward_organization_profiles,
+    seal_organization_profile_history, OrganizationProfileCarryForwardRule,
+    OrganizationProfileHistoryError, OrganizationProfileHistoryView,
+    ORGANIZATION_PROFILE_HISTORY_JSON_SCHEMA, ORGANIZATION_PROFILE_HISTORY_SCHEMA,
 };
 pub use organization_window::{
     build_organization_window_board, load_organization_window_profile_inventory,

@@ -13,11 +13,12 @@ use icelines_core::{
     build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
     build_line_combination_forecast, build_organization_lineup_forecast,
-    build_organization_window_history, build_prospect_conversion_board,
-    build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
-    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
-    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
+    build_organization_profile_history, build_organization_window_history,
+    build_prospect_conversion_board, build_prospect_development_study,
+    build_prospect_discovery_board, build_prospect_nhl_performance_document,
+    build_prospect_program_board_with_goalies, build_prospect_program_history,
+    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
+    build_team_game_forecast, build_team_game_forecast_validation,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -28,8 +29,8 @@ use icelines_core::{
     compare_organization_window_typed_scenario, compare_team_season_forecast_scenarios,
     current_ahl_affiliation_catalog, load_organization_window_registry_lifecycle, model::Position,
     model::Season, model::TeamAbbr, normalize_name, project_organization_window_card,
-    seal_new_organization_window_manifest, season_stats::SeasonType,
-    simulate_organization_window_scenario_distribution,
+    seal_new_organization_window_manifest, seal_organization_profile_history,
+    season_stats::SeasonType, simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
     simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
     AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlCrossLeagueValuePolicy,
@@ -39,8 +40,8 @@ use icelines_core::{
     ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
     LineCombinationPairEvidenceInput, NhlGoalieTranslationPolicy, OpponentStyleEvidenceRow,
     OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
-    OrganizationPositionGroup, OrganizationUnitKind, OrganizationWindowBoardView,
-    OrganizationWindowBridgeView, OrganizationWindowManifestView,
+    OrganizationPositionGroup, OrganizationProfileHistoryView, OrganizationUnitKind,
+    OrganizationWindowBoardView, OrganizationWindowBridgeView, OrganizationWindowManifestView,
     OrganizationWindowScenarioDistributionInput, OrganizationWindowSourcePackageView,
     OrganizationalProspectPolicy, ProspectConversionBoardView, ProspectConversionConfig,
     ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
@@ -114,9 +115,9 @@ use icelines_fetch::{
     ahl_preseason_facts::{
         apply_ahl_preseason_league_facts_overlay, build_ahl_preseason_league_facts_overlay_draft,
         build_ahl_preseason_league_facts_workboard, build_ahl_preseason_league_projection_inputs,
-        AhlPreseasonLeagueFactsApplicationView, AhlPreseasonLeagueFactsOverlay,
-        AhlPreseasonLeagueFactsWorkboardView, AhlPreseasonLeagueProjectionInputsView,
-        AHL_PRESEASON_LEAGUE_PROJECTION_INPUTS_SCHEMA,
+        build_prior_season_organization_profile_history, AhlPreseasonLeagueFactsApplicationView,
+        AhlPreseasonLeagueFactsOverlay, AhlPreseasonLeagueFactsWorkboardView,
+        AhlPreseasonLeagueProjectionInputsView, AHL_PRESEASON_LEAGUE_PROJECTION_INPUTS_SCHEMA,
     },
     ahl_professional_games::{
         apply_ahl_professional_game_ledger_to_facts, build_ahl_professional_game_ledger,
@@ -4672,8 +4673,60 @@ pub struct WindowBuildArgs {
     pub prospect_conversion: Option<PathBuf>,
     pub training_camp: Option<PathBuf>,
     pub schedule_rest: Vec<PathBuf>,
+    pub profile_history: Option<PathBuf>,
     pub require_ranked: bool,
     pub out: PathBuf,
+}
+
+pub fn run_window_profile_history_build(
+    boards: Vec<PathBuf>,
+    history_id: String,
+    created_at: String,
+    out: PathBuf,
+) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&created_at)
+        .context("--created-at must be RFC 3339, for example 2026-07-29T12:00:00Z")?;
+    if boards.is_empty() {
+        bail!("at least one --board is required");
+    }
+    let inventory = load_organization_window_profile_inventory()?;
+    let boards = boards
+        .iter()
+        .map(|path| {
+            let board: OrganizationWindowBoardView =
+                read_icecast_json(path, "organization Window board")?;
+            validate_organization_window_board(&board, &inventory)?;
+            Ok(board)
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let history = build_organization_profile_history(history_id, created_at, &boards)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&history)?);
+    write_icecast_file(&out, output.as_bytes(), "organization profile history")?;
+    Ok(())
+}
+
+pub fn run_window_profile_history_baseline(
+    source_package: PathBuf,
+    ahl_workboard: PathBuf,
+    history_id: String,
+    created_at: String,
+    out: PathBuf,
+) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&created_at)
+        .context("--created-at must be RFC 3339, for example 2026-07-29T12:00:00Z")?;
+    let package: OrganizationWindowSourcePackageView =
+        read_icecast_json(&source_package, "prior-season Window source package")?;
+    let workboard = read_affiliate_workboard(&ahl_workboard)?;
+    let history = build_prior_season_organization_profile_history(
+        &package, &workboard, history_id, created_at,
+    )?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&history)?);
+    write_icecast_file(
+        &out,
+        output.as_bytes(),
+        "organization profile history baseline",
+    )?;
+    Ok(())
 }
 
 pub struct WindowSourcePackageArgs {
@@ -4693,6 +4746,7 @@ pub struct WindowSourcePackageArgs {
     pub prospect_conversion: Option<PathBuf>,
     pub training_camp: Option<PathBuf>,
     pub schedule_rest: Vec<PathBuf>,
+    pub profile_history: Option<PathBuf>,
     pub out: PathBuf,
 }
 
@@ -4725,6 +4779,7 @@ struct WindowSourcePaths<'a> {
     prospect_conversion: Option<&'a Path>,
     training_camp: Option<&'a Path>,
     schedule_rest: &'a [PathBuf],
+    profile_history: Option<&'a Path>,
 }
 
 fn load_window_source_package(
@@ -4775,6 +4830,10 @@ fn load_window_source_package(
         .iter()
         .map(|path| read_icecast_json(path, "schedule rest profile"))
         .collect::<anyhow::Result<Vec<ScheduleRestProfileView>>>()?;
+    let profile_history = paths
+        .profile_history
+        .map(|path| read_icecast_json(path, "organization profile history"))
+        .transpose()?;
     Ok(seal_organization_window_source_package(
         OrganizationWindowSourcePackageView {
             schema: ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA.to_owned(),
@@ -4791,6 +4850,7 @@ fn load_window_source_package(
             prospect_conversion,
             training_camp,
             schedule_rest,
+            profile_history,
             fingerprint: String::new(),
         },
     )?)
@@ -4838,6 +4898,7 @@ pub fn run_window_source_package(args: WindowSourcePackageArgs) -> anyhow::Resul
         prospect_conversion: args.prospect_conversion.as_deref(),
         training_camp: args.training_camp.as_deref(),
         schedule_rest: &args.schedule_rest,
+        profile_history: args.profile_history.as_deref(),
     })?;
     if args.cache_team_lineups {
         let roster_season: Season =
@@ -5006,6 +5067,27 @@ pub fn run_window_source_refresh_affiliates(
     )
 }
 
+pub fn run_window_source_refresh_history(
+    input: PathBuf,
+    profile_history: PathBuf,
+    out: PathBuf,
+) -> anyhow::Result<()> {
+    let package: OrganizationWindowSourcePackageView =
+        read_icecast_json(&input, "organization Window source package")?;
+    let mut package = seal_organization_window_source_package(package)?;
+    let history: OrganizationProfileHistoryView =
+        read_icecast_json(&profile_history, "organization profile history")?;
+    package.profile_history = Some(seal_organization_profile_history(history)?);
+    package.fingerprint.clear();
+    package = seal_organization_window_source_package(package)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&package)?);
+    write_icecast_file(
+        &out,
+        output.as_bytes(),
+        "history-refreshed organization Window source package",
+    )
+}
+
 pub fn run_window_source_audit(
     input: PathBuf,
     generated_at: String,
@@ -5046,6 +5128,7 @@ pub fn run_window_build(args: WindowBuildArgs) -> anyhow::Result<()> {
             prospect_conversion: args.prospect_conversion.as_deref(),
             training_camp: args.training_camp.as_deref(),
             schedule_rest: &args.schedule_rest,
+            profile_history: args.profile_history.as_deref(),
         })?
     };
     if package.season != args.season || package.as_of != args.as_of {

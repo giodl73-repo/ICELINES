@@ -40,6 +40,7 @@
     "prospect_program": { "$ref": "#/$defs/document" },
     "prospect_conversion": { "$ref": "#/$defs/document" },
     "training_camp": { "$ref": "#/$defs/document" },
+    "profile_history": { "$ref": "organization_profile_history.v1.schema.json" },
     "schedule_rest": {
       "type": "array",
       "maxItems": 32,

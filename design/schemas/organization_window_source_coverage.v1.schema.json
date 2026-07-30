@@ -58,6 +58,7 @@
     "complete_required_profiles": { "type": "integer", "minimum": 0, "maximum": 16 },
     "required_profiles": { "const": 16 },
     "rank_eligible_organizations": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "carry_forward_observations": { "type": "integer", "minimum": 0 },
     "production_ranked": { "type": "boolean" },
     "disclosures": {
       "type": "array",

@@ -44,7 +44,7 @@ preserved while the remaining work is completed:
 |---|---|---|---|
 | W0 | complete | 37-profile machine-readable inventory: 17 ready, 13 evaluation, 4 context-only, 3 blocked | Reclassify only through the promotion protocol below. |
 | W1-W2 | complete | Versioned observations/manifests/boards, deterministic fingerprints, validation, normalization, aggregation, confidence/coverage, rank gates | Cross-platform fingerprint matrix in W9. |
-| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, and a fail-closed production-rank gate. The July 29 real package completes 14/16 required profiles. | Complete reviewed all-league AHL identity/assignment facts for organization and recall depth; then pass `--require-ranked`. |
+| W3-W4 | evaluation-complete | `balanced.v1`, 17 typed source adapters, a sealed portable source-package contract, one-pass all-32 cache lineup assembly, core-derived fatigue and frozen-strength profiles from sealed forecasts, official NHL TOI-backed special-teams depth, core-composed NHL/AHL organization lineups from reviewed affiliate projections, all-32 partial evaluation board, classifications, focused cards, a standing profile-history ledger, and a fail-closed production-rank gate. The July 29 current-source package completes 14/16 required profiles; its completed-season history overlay reaches 16/16 while remaining explicitly non-production. | Complete reviewed all-league target-season AHL identity/assignment facts and remaining Frame coverage; then pass `--require-ranked` with zero carry-forward observations. |
 | W5 | complete | Comparable movement/history contracts, refusal tests, immutable bridge/rebase, a real three-checkpoint 2024-25 IceCast history, both earlier-scenario and later-counterfactual attribution bases, and a real Jan. 31 -> Feb. 28 paired rolling-replay personnel artifact with 219 dated events | Preserve raw profile effects when percentile normalization yields zero aggregate movement; keep the paired estimate explicitly non-causal and uncalibrated. |
 | W6 | complete | Sealed comparison and typed authorities; real 32-team 2026-27 multi-source baseline/scenario boards; paired isolated NYR event effects; combined NYR/SEA 1,000-trial distribution; direct/cohort/unchanged attribution; fail-closed and partial-pane regression fixtures | Recalibrate scenario assumptions as stronger future evidence arrives without rewriting the sealed artifacts. |
 | W7 | evaluation-complete | Leakage gate, per-origin frozen baselines, rolling origins, pane ablations, organization stability, between-origin uncertainty, sealed trial-noise states/propagation, sealed claim status, frozen training/validation/retrospective-holdout roles, four real point-in-time observed-history origins, and an outcome-free 2025-26 -> 2026-27 future-holdout registration | Score the registered future holdout once final 2026-27 outcomes are eligible; the current retrospective holdout is explicitly inconclusive. |
@@ -111,7 +111,7 @@ track may improve without implying that either of the others is complete.
 
 | Track | Current state | Promotion target | Hard gate |
 |---|---|---|---|
-| **Source completeness** | 14/16 required `balanced.v1` profiles complete; 0/32 teams rank eligible | Reproducible all-league package with every required profile value | `window-source-audit` reports 16/16 complete and `window-build --require-ranked` succeeds without proxies |
+| **Source completeness** | 16/16 required `balanced.v1` methods available with 64 named prior-season carry-forwards; confirmed package remains 14/16 and 0/32 rank eligible | Reproducible all-league package with every required current-season profile value | `window-source-audit` reports 16/16 complete, zero carry-forward observations, and `window-build --require-ranked` succeeds without proxies |
 | **Predictive evidence** | Four frozen historical origins; retrospective holdout inconclusive; 2025-26 -> 2026-27 future test preregistered without outcomes | Claims calibrated by target and horizon | Score the sealed future holdout once eligible, retaining its leakage pass, baseline comparison, and frozen claim-specific acceptance rule |
 | **Extension maturity** | Typed registry, lifecycle amendment, manifests, bridges, scenarios, shared renderers, and authoring contract implemented | Safe addition, alteration, deprecation, demotion, supersession, or retirement of profiles, panes, Frames, sources, and schemas | Compatibility fixtures, method/version decision, role review, VTRACE mapping, and surface parity for each promoted extension |
 
@@ -1004,3 +1004,28 @@ which panes are production, heuristic, context-only, or blocked.
   complete season-canonical league rather than fabricating 32.
 - VTRACE, specs, plans, commands, surface parity, and release docs match the
   running build.
+
+## Standing profile history slice (2026-07-29)
+
+This slice is part of W3-W4 rather than a new active plan.
+
+1. Archive raw `OrganizationProfileInput` observations from any sealed Window
+   board in `organization_profile_history.v1`; retain season, cutoff, method,
+   evidence, confidence, coverage, limitations, and source fingerprints.
+2. Permit only explicitly configured profile methods to carry forward. Select
+   the newest eligible earlier season, enforce maximum age, decay confidence,
+   mark the history evidence stale, and never overwrite current authority.
+3. Build the completed 2025-26 organization-depth and recall-depth baseline
+   from available NHL units plus observed AHL affiliate participants. Treat
+   incomplete historical units as reduced coverage, not invalid current-roster
+   composition and not imputed players.
+4. Package and audit history independently of target-season sources. Report
+   carry-forward counts and require zero carried rows for the confirmed
+   production predicate.
+5. Verify JSON round-trip fingerprint stability, duplicate rejection,
+   all-32 fallback coverage, current-source precedence, CLI parsing, schemas,
+   and the real 32-team replay.
+
+The ledger is profile-neutral: future annual jobs may archive all registered
+profiles through `window-profile-history-build` without changing the scorer,
+source package, Web/TUI renderers, or card contract.

@@ -1,5 +1,16 @@
 # IceLines Changelog
 
+## Unreleased
+
+- Added a sealed, replayable `organization_profile_history.v1` ledger for
+  standing observations from every Window profile and season.
+- Added a completed-season NHL/AHL baseline builder plus explicit, decayed
+  preseason carry-forward for organization and recall depth. The real 32-team
+  audit now reaches 16/16 required methods while preserving the separate
+  confirmed-production gate.
+- Added package history refresh, source-audit carry-forward counts, JSON
+  round-trip-stable history fingerprints, schemas, tests, and documentation.
+
 ## v0.26.0 - 2026-07-27 - The Rink intelligence release
 
 Headline: **IceLines now connects real-team season simulation, fantasy roster
