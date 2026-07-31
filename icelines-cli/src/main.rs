@@ -1860,6 +1860,97 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             })
             .await?
         }
+        Commands::Icecast(IceCastSubcommand::Edge {
+            forecast,
+            evidence,
+            model,
+            json,
+            out,
+            enhanced_forecast_out,
+        }) => commands::icecast::run_edge(commands::icecast::IceCastEdgeArgs {
+            forecast,
+            evidence,
+            model,
+            json,
+            out,
+            enhanced_forecast_out,
+        })?,
+        Commands::Icecast(IceCastSubcommand::EdgeCard {
+            inputs,
+            game_id,
+            team,
+            team_name,
+            generated_at,
+            market_benchmark,
+            out,
+        }) => commands::icecast::run_edge_card(
+            inputs,
+            game_id,
+            team,
+            team_name,
+            generated_at,
+            market_benchmark,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::SeasonSimulate {
+            forecast,
+            trials,
+            seed,
+            scenario,
+            through,
+            out,
+        }) => {
+            commands::icecast::run_season_simulate(forecast, trials, seed, scenario, through, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::EdgeEvidence {
+            forecast,
+            input,
+            out,
+        }) => commands::icecast::run_edge_evidence(forecast, input, out)?,
+        Commands::Icecast(IceCastSubcommand::EdgeObserve {
+            edges,
+            outcomes,
+            created_at,
+            out,
+        }) => commands::icecast::run_edge_observe(edges, outcomes, created_at, out)?,
+        Commands::Icecast(IceCastSubcommand::EdgeOutcomes {
+            season,
+            captured_at,
+            refresh,
+            allow_partial,
+            out,
+        }) => {
+            commands::icecast::run_edge_outcomes(season, captured_at, refresh, allow_partial, out)
+                .await?
+        }
+        Commands::Icecast(IceCastSubcommand::EdgeTrain {
+            observations,
+            config,
+            registration,
+            validate,
+            model_out,
+            out,
+        }) => commands::icecast::run_edge_train(commands::icecast::IceCastEdgeTrainArgs {
+            observations,
+            config,
+            registration,
+            validate,
+            model_out,
+            out,
+        })?,
+        Commands::Icecast(IceCastSubcommand::EdgeRegisterHoldout {
+            season,
+            registered_at,
+            outcome_not_before,
+            config,
+            out,
+        }) => commands::icecast::run_edge_register_holdout(
+            season,
+            registered_at,
+            outcome_not_before,
+            config,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::BehaviorRankings {
             target_season,
             window,
@@ -1953,6 +2044,61 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 json,
                 out,
                 &cfg,
+            )
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::EdgeReplayXg {
+            forecast,
+            moneypuck_dir,
+            retrieved_at,
+            trailing_games,
+            out,
+        }) => commands::icecast::run_edge_replay_xg(
+            forecast,
+            moneypuck_dir,
+            retrieved_at,
+            trailing_games,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::EdgeReplayConfirmed {
+            forecast,
+            morning_evidence,
+            boxscore_dir,
+            retrieved_at,
+            refresh,
+            concurrency,
+            out,
+        }) => {
+            commands::icecast::run_edge_replay_confirmed(
+                forecast,
+                morning_evidence,
+                boxscore_dir,
+                retrieved_at,
+                refresh,
+                concurrency,
+                out,
+            )
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::EdgeReplayGoalies {
+            forecast,
+            confirmed_evidence,
+            goalie_dir,
+            retrieved_at,
+            trailing_appearances,
+            refresh,
+            concurrency,
+            out,
+        }) => {
+            commands::icecast::run_edge_replay_goalies(
+                forecast,
+                confirmed_evidence,
+                goalie_dir,
+                retrieved_at,
+                trailing_appearances,
+                refresh,
+                concurrency,
+                out,
             )
             .await?
         }

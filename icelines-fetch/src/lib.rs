@@ -34,9 +34,17 @@ pub mod fantasy_matchup;
 pub mod fetch_lock;
 pub mod fletch;
 pub mod game_cache;
+pub mod game_prediction_edge_assembler;
+pub mod game_prediction_edge_package;
+pub mod game_prediction_outcomes;
+pub mod historical_goalie_prediction_edge;
+pub mod historical_official_prediction_edge;
+pub mod historical_prediction_edge;
 pub mod management_behavior_source;
 pub mod manifest;
 pub mod moneypuck;
+pub mod moneypuck_goalie_game;
+pub mod moneypuck_team_game;
 pub mod nhl_api;
 pub mod nhl_goalie_translation;
 pub mod organization_window_completion;
@@ -78,12 +86,52 @@ pub use bundled::{
 pub use cache::Cache;
 pub use career::load_career;
 pub use error::FetchError;
+pub use game_prediction_edge_assembler::{
+    assemble_game_prediction_evidence, fingerprint_special_teams_scores, rank_special_teams_forms,
+    GamePredictionEvidenceAssemblerError, GamePredictionEvidenceAssembly,
+    GamePredictionGameAssemblyInput, GamePredictionGoalieCandidate,
+    GamePredictionSpecialTeamsScore, GamePredictionTeamAssemblyInput,
+};
+pub use game_prediction_edge_package::{
+    build_game_prediction_edge_evidence_package, load_game_prediction_edge_evidence_package,
+    store_game_prediction_edge_evidence_package, GamePredictionEdgeEvidencePackage,
+    GamePredictionEdgePackageError, GamePredictionEvidencePackageBuildInput,
+    GamePredictionEvidencePackageBuildResult, GamePredictionEvidenceSource,
+    GamePredictionEvidenceSourceAuthority, GAME_PREDICTION_EDGE_PACKAGE_JSON_SCHEMA,
+    GAME_PREDICTION_EDGE_PACKAGE_SCHEMA,
+};
+pub use game_prediction_outcomes::{
+    build_official_game_outcome_set, OfficialGameOutcomeError, OfficialGameOutcomeSet,
+    OFFICIAL_GAME_OUTCOME_SET_JSON_SCHEMA, OFFICIAL_GAME_OUTCOME_SET_SCHEMA,
+};
+pub use historical_goalie_prediction_edge::{
+    build_historical_goalie_edge_package, HistoricalGoalieEdgeBuildResult,
+    HistoricalGoalieEdgeError, HistoricalMoneyPuckGoalieInput,
+};
+pub use historical_official_prediction_edge::{
+    build_historical_confirmed_edge_package, HistoricalConfirmedEdgeBuildResult,
+    HistoricalOfficialBoxscoreInput, HistoricalOfficialEdgeError,
+};
+pub use historical_prediction_edge::{
+    build_historical_moneypuck_edge_package, HistoricalMoneyPuckTeamInput,
+    HistoricalPredictionEdgeBuildResult, HistoricalPredictionEdgeError,
+};
 pub use management_behavior_source::{
     fetch_team_behavior_league_evidence, BehaviorEvidenceSourceView,
     TeamBehaviorLeagueEvidenceView, TeamBehaviorSeasonEvidenceView,
     TEAM_BEHAVIOR_LEAGUE_EVIDENCE_SCHEMA,
 };
 pub use moneypuck::{parse_csv as parse_moneypuck_csv, MoneyPuckStats};
+pub use moneypuck_goalie_game::{
+    derive_trailing_goalie_form, moneypuck_goalie_game_url, parse_moneypuck_goalie_games,
+    MoneyPuckGoalieGameError, MoneyPuckGoalieGameRow, MoneyPuckTrailingGoalieForm,
+};
+pub use moneypuck_team_game::{
+    derive_opponent_adjusted_xg_form, derive_trailing_special_teams_form, derive_trailing_xg_form,
+    moneypuck_team_game_url, parse_moneypuck_team_games, MoneyPuckOpponentAdjustedXgForm,
+    MoneyPuckTeamGameError, MoneyPuckTeamGameRow, MoneyPuckTrailingSpecialTeamsForm,
+    MoneyPuckTrailingXgForm,
+};
 pub use nhl_api::NhlApiClient;
 pub use nhl_goalie_translation::{
     build_nhl_goalie_translation_ledger, complete_lineup_goalies_with_training_camp,

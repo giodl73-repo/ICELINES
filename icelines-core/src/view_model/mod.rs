@@ -73,6 +73,8 @@ pub mod streaks;
 pub mod team_ceiling;
 pub mod team_depth;
 pub mod team_game_forecast;
+pub mod team_game_prediction_edge;
+pub mod team_game_prediction_training;
 pub mod team_lineup;
 pub mod team_season_forecast;
 pub mod tokens;
@@ -119,8 +121,9 @@ pub use card::{
     build_card_comparison_set, build_fantasy_draft_card, build_fantasy_morning_card,
     build_fantasy_roster_card, build_fantasy_trade_card, build_forecast_history_card,
     build_forecast_movement_card, build_organization_profile_history_card,
-    build_organization_window_card, build_season_simulation_card, build_team_prognosis_card,
-    nhl_team_card_theme, parse_card_document, project_organization_profile_history_card,
+    build_organization_window_card, build_season_simulation_card,
+    build_team_game_prediction_edge_card, build_team_prognosis_card, nhl_team_card_theme,
+    parse_card_document, project_organization_profile_history_card,
     project_organization_window_card, CardAlignedMetricRow, CardAssetFallback, CardAssetKind,
     CardAssetReference, CardAssetState, CardAssetView, CardComparisonError, CardComparisonSetView,
     CardComparisonWarning, CardComparisonWarningKind, CardContextView, CardDecisionAlternativeView,
@@ -138,13 +141,15 @@ pub use card::{
     OrganizationWindowCardError, OrganizationWindowCardInput, PlayerListSectionView,
     ProbabilityRangeSectionView, ProvenanceSectionView, ScenarioBridgeSectionView,
     SeasonSimulationCardError, SeasonSimulationCardInput, StateNoticeSectionView,
-    TeamPrognosisCardError, TeamPrognosisCardInput, TeamPrognosisEventProjection,
-    TimelineSectionView, CARD_COMPARISON_SET_SCHEMA, CARD_DOCUMENT_JSON_SCHEMA,
-    CARD_DOCUMENT_SCHEMA, FANTASY_DRAFT_CARD_BUILDER_VERSION, FANTASY_MORNING_CARD_BUILDER_VERSION,
-    FANTASY_ROSTER_CARD_BUILDER_VERSION, FANTASY_TRADE_CARD_BUILDER_VERSION,
-    FORECAST_HISTORY_CARD_VERSION, FORECAST_MOVEMENT_CARD_VERSION,
-    ORGANIZATION_PROFILE_HISTORY_CARD_VERSION, ORGANIZATION_WINDOW_CARD_VERSION,
-    SEASON_SIMULATION_CARD_VERSION, TEAM_PROGNOSIS_BUILDER_VERSION,
+    TeamGamePredictionEdgeCardError, TeamGamePredictionEdgeCardInput,
+    TeamGamePredictionMarketBenchmarkInput, TeamPrognosisCardError, TeamPrognosisCardInput,
+    TeamPrognosisEventProjection, TimelineSectionView, CARD_COMPARISON_SET_SCHEMA,
+    CARD_DOCUMENT_JSON_SCHEMA, CARD_DOCUMENT_SCHEMA, FANTASY_DRAFT_CARD_BUILDER_VERSION,
+    FANTASY_MORNING_CARD_BUILDER_VERSION, FANTASY_ROSTER_CARD_BUILDER_VERSION,
+    FANTASY_TRADE_CARD_BUILDER_VERSION, FORECAST_HISTORY_CARD_VERSION,
+    FORECAST_MOVEMENT_CARD_VERSION, ORGANIZATION_PROFILE_HISTORY_CARD_VERSION,
+    ORGANIZATION_WINDOW_CARD_VERSION, SEASON_SIMULATION_CARD_VERSION,
+    TEAM_GAME_PREDICTION_EDGE_CARD_VERSION, TEAM_PROGNOSIS_BUILDER_VERSION,
 };
 pub use career::{
     CareerRow, CareerSortKey, CareerView, CAREER_HISTORY_FETCH_COMMAND,
@@ -560,6 +565,31 @@ pub use team_game_forecast::{
     TeamGameOpeningStrengthRow, TeamGamePairedTradeRow, TeamGamePersonnelEvidenceRow,
     TeamGamePersonnelPlayerRow, TeamGameScheduleContext, TEAM_GAME_FORECAST_SCHEMA,
     TEAM_GAME_FORECAST_VALIDATION_SCHEMA,
+};
+pub use team_game_prediction_edge::{
+    build_team_game_prediction_edge, TeamGameEvidenceState, TeamGameForecastVintage,
+    TeamGamePredictionEdgeError, TeamGamePredictionEdgeGameRow, TeamGamePredictionEdgeView,
+    TeamGamePredictionEvidenceInput, TeamGamePredictionFactorRow, TeamGamePredictionModel,
+    TeamGamePredictionModelAuthority, TeamGamePredictionTeamEvidence,
+    TEAM_GAME_PREDICTION_EDGE_JSON_SCHEMA, TEAM_GAME_PREDICTION_EDGE_METHOD,
+    TEAM_GAME_PREDICTION_EDGE_SCHEMA,
+};
+pub use team_game_prediction_training::{
+    build_team_game_prediction_observation_set, build_team_game_prediction_training_observation,
+    register_team_game_prediction_holdout, train_team_game_prediction_model,
+    validate_team_game_prediction_model, validate_team_game_prediction_model_with_registration,
+    TeamGamePredictionAblationRow, TeamGamePredictionHoldoutRegistration,
+    TeamGamePredictionHoldoutRow, TeamGamePredictionObservationSet, TeamGamePredictionOutcomeInput,
+    TeamGamePredictionPromotionCheck, TeamGamePredictionTrainingConfig,
+    TeamGamePredictionTrainingError, TeamGamePredictionTrainingObservation,
+    TeamGamePredictionTrainingView, TeamGamePredictionValidationView,
+    TEAM_GAME_PREDICTION_FEATURE_SET_V1, TEAM_GAME_PREDICTION_FEATURE_SET_V2,
+    TEAM_GAME_PREDICTION_FEATURE_SET_V3, TEAM_GAME_PREDICTION_FEATURE_SET_V4,
+    TEAM_GAME_PREDICTION_FEATURE_SET_V5, TEAM_GAME_PREDICTION_HOLDOUT_REGISTRATION_JSON_SCHEMA,
+    TEAM_GAME_PREDICTION_HOLDOUT_REGISTRATION_SCHEMA,
+    TEAM_GAME_PREDICTION_OBSERVATIONS_JSON_SCHEMA, TEAM_GAME_PREDICTION_OBSERVATIONS_SCHEMA,
+    TEAM_GAME_PREDICTION_TRAINING_JSON_SCHEMA, TEAM_GAME_PREDICTION_TRAINING_SCHEMA,
+    TEAM_GAME_PREDICTION_VALIDATION_JSON_SCHEMA, TEAM_GAME_PREDICTION_VALIDATION_SCHEMA,
 };
 pub use team_lineup::{
     build_team_lineup_projection, team_lineup_card_assets, team_lineup_card_section,

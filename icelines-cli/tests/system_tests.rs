@@ -35,6 +35,32 @@ fn run_isolated(home: &std::path::Path, args: &[&str]) -> std::process::Output {
 }
 
 #[test]
+fn l2_prediction_edge_commands_expose_replayable_surfaces() {
+    for command in [
+        "edge",
+        "edge-card",
+        "edge-evidence",
+        "edge-observe",
+        "edge-outcomes",
+        "edge-register-holdout",
+        "edge-replay-confirmed",
+        "edge-replay-goalies",
+        "edge-replay-xg",
+        "edge-train",
+        "season-simulate",
+    ] {
+        let out = run(&["icecast", command, "--help"]);
+        assert!(
+            out.status.success(),
+            "icecast {command} help failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert!(stdout.contains("--out"));
+    }
+}
+
+#[test]
 fn l2_window_completion_status_replays_current_two_gate_evidence() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()

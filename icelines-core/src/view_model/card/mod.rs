@@ -28,6 +28,8 @@ mod fantasy_trade;
 pub use fantasy_trade::*;
 mod season_simulation;
 pub use season_simulation::*;
+mod team_game_prediction_edge;
+pub use team_game_prediction_edge::*;
 mod forecast_movement;
 pub use forecast_movement::*;
 mod forecast_history;
@@ -60,6 +62,7 @@ pub enum CardKind {
     FantasyMorning,
     FantasyTrade,
     OrganizationWindow,
+    TeamGamePredictionEdge,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]

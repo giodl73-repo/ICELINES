@@ -21,6 +21,7 @@ fn game_type_id(season_type: SeasonType) -> u8 {
 
 /// Async NHL API client.
 /// `base_url_stats` and `base_url_web` are configurable to allow mocking in tests.
+#[derive(Clone)]
 pub struct NhlApiClient {
     client: reqwest::Client,
     base_stats: String, // https://api.nhle.com/stats/rest/en

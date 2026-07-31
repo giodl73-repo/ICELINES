@@ -1,0 +1,19 @@
+{
+  "model_id": "icecast-edge-trained-v4",
+  "feature_set": "edge-core-v4-goalie-schedule",
+  "vintage": "pregame_confirmed",
+  "minimum_training_seasons": 2,
+  "minimum_holdout_seasons": 5,
+  "minimum_brier_gain": 0.001,
+  "minimum_improved_holdouts": 4,
+  "l2_penalty": 0.02,
+  "learning_rate": 0.05,
+  "iterations": 2000,
+  "elo_weight_grid": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+  "coefficient_prune_threshold": 0.01,
+  "minimum_team_coverage": 16,
+  "maximum_team_game_share": 0.2,
+  "minimum_roster_coverage": 0.8,
+  "minimum_goalie_coverage": 0.6,
+  "minimum_candidate_feature_gain": 0.00005
+}

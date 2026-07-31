@@ -151,6 +151,7 @@ The checked shared-envelope artifact is
 | `team_prognosis_card.v1` | depth chart plus team forecast/ceiling |
 | `season_simulation_card.v1` | standings distribution and scenario paths |
 | `forecast_movement_card.v1` | later-minus-earlier checkpoint movement with two sealed sources |
+| `team_game_prediction_edge_card.v1` | one matchup's sealed vintage movement and factor attribution |
 | `fantasy_roster_card.v1` | legal roster shape, lineup, gaps, schedule fit |
 | `fantasy_draft_card.v1` | draft state, needs, best available, tier cliffs |
 | `fantasy_morning_card.v1` | injuries, starts, locks, pickups, daily actions |

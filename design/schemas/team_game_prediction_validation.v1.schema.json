@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/team_game_prediction_validation.v1.schema.json",
+  "title": "IceCast rolling-origin game-prediction validation",
+  "type": "object",
+  "required": ["schema", "vintage", "holdouts", "games", "candidate_brier", "elo_brier", "brier_gain", "candidate_log_loss", "elo_log_loss", "log_loss_gain", "candidate_ece", "elo_ece", "improved_holdouts", "ablations", "checks", "promotion_passed", "final_model", "input_fingerprint", "fingerprint"],
+  "properties": {
+    "schema": { "const": "team_game_prediction_validation.v1" },
+    "vintage": { "enum": ["preseason", "game_morning", "pregame_confirmed"] },
+    "holdouts": { "type": "array", "minItems": 1, "items": { "type": "object" } },
+    "games": { "type": "integer", "minimum": 1 },
+    "candidate_brier": { "type": "number" },
+    "elo_brier": { "type": "number" },
+    "brier_gain": { "type": "number" },
+    "candidate_log_loss": { "type": "number" },
+    "elo_log_loss": { "type": "number" },
+    "log_loss_gain": { "type": "number" },
+    "candidate_ece": { "type": "number" },
+    "elo_ece": { "type": "number" },
+    "improved_holdouts": { "type": "integer", "minimum": 0 },
+    "ablations": { "type": "array", "items": { "type": "object" } },
+    "checks": { "type": "array", "items": { "type": "object" } },
+    "promotion_passed": { "type": "boolean" },
+    "final_model": { "type": "object" },
+    "prospective_registration_fingerprint": {
+      "oneOf": [
+        { "$ref": "#/$defs/fingerprint" },
+        { "type": "null" }
+      ]
+    },
+    "input_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-fA-F]{64}$" }
+  },
+  "additionalProperties": false
+}
