@@ -177,6 +177,8 @@ not prevent users from inspecting challenger forecasts.
 5. `icecast season-simulate` bridge for baseline or edge-enhanced forecasts,
    without probability recomputation.
 6. `icecast edge-card` UI-neutral vintage comparison projection.
+7. `icecast edge-preseason-evidence` projection from authoritative typed
+   opening-roster strengths, with complete scheduled-team coverage required.
 
 ## Refusals
 

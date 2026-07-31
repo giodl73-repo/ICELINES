@@ -1152,6 +1152,7 @@ icelines icecast import-opening-rosters --manifest partial.json --allow-partial-
 icelines icecast season --season 20212022 --stats-season 20202021 --replay-mode rolling --retrospective-opening-lineups
 icelines icecast edge --forecast games.json --evidence morning-evidence.json --json --out morning-edge.json --enhanced-forecast-out morning-games.json
 icelines icecast edge --forecast games.json --evidence confirmed-evidence.json --model promoted-edge-model.json --json --out confirmed-edge.json
+icelines icecast edge-preseason-evidence --forecast games-2026-27.json --created-at 2026-07-31T12:00:00Z --out preseason-evidence-2026-27.json
 icelines icecast edge-evidence --forecast games.json --input dated-assembly-input.json --out morning-evidence.json
 icelines icecast edge-outcomes --season 20252026 --captured-at 2026-07-30T20:00:00Z --refresh --out outcomes-2025-26.json
 icelines icecast edge-replay-xg --forecast games-2025-26.json --moneypuck-dir moneypuck-team-games --retrieved-at 2026-07-30T20:00:00Z --out xg-evidence-2025-26.json
@@ -1166,6 +1167,7 @@ icelines icecast edge-train --observations opponent-adjusted-xg-observations.jso
 icelines icecast edge-card --input edge-preseason.json --input edge-morning.json --input edge-confirmed.json --game-id 2026020001 --team NYR --team-name "New York Rangers" --out game-card.json
 icelines icecast edge-card --input edge-confirmed.json --game-id 2026020001 --team NYR --market-benchmark closing-market.json --out benchmark-card.json
 icelines icecast season-simulate --forecast enhanced-game-forecast.json --trials 10000 --seed 20262027 --out enhanced-season.json
+icelines icecast movement --earlier baseline-season.json --later edge-season.json --earlier-label "July baseline" --later-label "Preseason edge v1 (evaluation)" --team NYR --team SEA --json --out edge-movement.json
 ```
 
 `icecast edge` applies one sealed forecast vintage (`preseason`,
@@ -1177,6 +1179,13 @@ trained production model only after `edge-train --validate` passes every
 rolling-origin promotion check. `--enhanced-forecast-out` writes the same
 per-game contract consumed by season simulation, so IceLines does not
 recompute probabilities in a UI or downstream simulator.
+
+`edge-preseason-evidence` reuses the authoritative opening-roster strength rows
+already carried by a complete preseason game forecast. It requires one typed
+row for every scheduled team, freezes before opening day, binds the exact
+forecast and selected roster snapshot, and leaves unavailable xG, goalie,
+lineup, special-teams, and matchup inputs absent. It does not synthesize those
+signals from the schedule or closing results.
 
 `icecast edge-train` fits the regularized Elo-plus-evidence ensemble from
 frozen observations. `--validate` holds out each season chronologically and

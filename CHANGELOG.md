@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Fixed the current-season preseason data stream so authoritative 32-team
+  roster/depth strengths remain typed opening evidence after they are applied
+  to game probabilities. New `icecast edge-preseason-evidence` seals that
+  source across the released 1,344-game, 84-games-per-team 2026-27 schedule and
+  refuses incomplete scheduled-team coverage. Paired 10,000-trial baseline and
+  v1 evaluation-edge movement plus UI-neutral NYR/SEA cards are checked in.
 - Added the IceCast game-prediction edge foundation: explicit preseason,
   game-morning, and confirmed-pregame vintages; sealed dated evidence packages;
   roster, availability, goalie, xG, special-teams, and matchup attribution; and

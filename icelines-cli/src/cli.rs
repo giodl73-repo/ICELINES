@@ -2143,6 +2143,18 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Seal authoritative opening-roster strengths for every preseason game.
+    #[command(name = "edge-preseason-evidence")]
+    EdgePreseasonEvidence {
+        /// Complete preseason `team_game_forecast.v1` with opening strengths.
+        #[arg(long, value_name = "PATH")]
+        forecast: PathBuf,
+        /// RFC 3339 preseason freeze time, before the first scheduled game.
+        #[arg(long)]
+        created_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Assemble and seal a dated evidence package from shared IceLines primitives.
     #[command(name = "edge-evidence")]
     EdgeEvidence {
@@ -2819,6 +2831,12 @@ pub enum IceCastSubcommand {
         earlier: PathBuf,
         #[arg(long, value_name = "PATH")]
         later: PathBuf,
+        /// Human-readable identity for the earlier sealed run.
+        #[arg(long)]
+        earlier_label: Option<String>,
+        /// Human-readable identity for the later sealed run.
+        #[arg(long)]
+        later_label: Option<String>,
         /// Repeat to focus text output; JSON always retains every team.
         #[arg(long = "team")]
         teams: Vec<String>,
@@ -4162,6 +4180,36 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_icecast_preseason_evidence_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "edge-preseason-evidence",
+                "--forecast",
+                "games.json",
+                "--created-at",
+                "2026-07-31T12:00:00Z",
+                "--out",
+                "preseason-evidence.json",
+            ])
+            .expect("IceCast preseason evidence command should parse");
+            match cli.command {
+                Commands::Icecast(IceCastSubcommand::EdgePreseasonEvidence {
+                    forecast,
+                    created_at,
+                    out,
+                }) => {
+                    assert_eq!(forecast, PathBuf::from("games.json"));
+                    assert_eq!(created_at, "2026-07-31T12:00:00Z");
+                    assert_eq!(out, Some(PathBuf::from("preseason-evidence.json")));
+                }
+                other => panic!("expected IceCast preseason evidence command, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
     fn l0_icecast_blender_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -4488,6 +4536,10 @@ mod tui_surface_tests {
                 "jan.json",
                 "--later",
                 "feb.json",
+                "--earlier-label",
+                "July baseline",
+                "--later-label",
+                "Preseason edge v1",
                 "--team",
                 "NYR",
                 "--team",
@@ -4501,12 +4553,16 @@ mod tui_surface_tests {
                 Commands::Icecast(IceCastSubcommand::Movement {
                     earlier,
                     later,
+                    earlier_label,
+                    later_label,
                     teams,
                     json,
                     out,
                 }) => {
                     assert_eq!(earlier, PathBuf::from("jan.json"));
                     assert_eq!(later, PathBuf::from("feb.json"));
+                    assert_eq!(earlier_label.as_deref(), Some("July baseline"));
+                    assert_eq!(later_label.as_deref(), Some("Preseason edge v1"));
                     assert_eq!(teams, ["NYR", "SEA"]);
                     assert!(json);
                     assert_eq!(out, Some(PathBuf::from("movement.json")));

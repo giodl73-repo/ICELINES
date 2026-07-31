@@ -835,6 +835,10 @@ pub struct TeamSeasonForecastMovementView {
     pub season: u32,
     pub trials: u32,
     pub seed: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub earlier_label: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub later_label: Option<String>,
     pub earlier_as_of_date: Option<NaiveDate>,
     pub later_as_of_date: Option<NaiveDate>,
     pub earlier_fingerprint: String,
@@ -2185,6 +2189,8 @@ pub fn build_team_season_forecast_movement(
         season: earlier.season,
         trials: earlier.trials,
         seed: earlier.seed,
+        earlier_label: None,
+        later_label: None,
         earlier_as_of_date: earlier.as_of_date,
         later_as_of_date: later.as_of_date,
         earlier_fingerprint: forecast_movement_fingerprint(earlier)?,

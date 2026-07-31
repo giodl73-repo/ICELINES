@@ -1,7 +1,7 @@
 # IceCast Game-Prediction Edge — Implementation Plan
 
 **Date:** 2026-07-30
-**Status:** Active; v1 prospectively registered, v5 opponent-adjusted xG accepted retrospectively
+**Status:** Implemented; v1 prospectively registered, v5 opponent-adjusted xG accepted retrospectively
 **Parent:** Team Season Forecast
 
 ## Objective
@@ -101,6 +101,14 @@ inside the existing all-32 season simulator.
 - Prediction cards now expose active-feature coverage, weight-adjusted
   evidence confidence, and an explicitly non-statistical evidence-stability
   range. Zero-weight research factors no longer inflate coverage.
+- The released 2026-27 schedule contains 1,344 games and exactly 84 games for
+  each of 32 teams. Authoritative opening-roster strengths now survive as
+  typed forecast evidence and feed a reusable preseason package.
+- A paired 10,000-trial v1 evaluation run moves NYR from 99.13 to 102.31
+  expected points, 66.39% to 74.74% playoff probability, and 5.09% to 5.40%
+  Cup probability. SEA moves from 89.30 to 86.43 points, 40.55% to 31.41%
+  playoffs, and 1.26% to 0.93% Cup. These are evaluation-challenger deltas,
+  not production promotion claims.
 
 ## Validation matrix
 
@@ -114,6 +122,7 @@ inside the existing all-32 season simulator.
 
 ## Completion
 
-This workstream is complete only when the source adapters, all three vintages,
-trained ensemble, rolling validation, promotion decision, CLI/season bridge,
-documentation, and regenerated all-32 forecast are implemented and verified.
+The source adapters, all three vintages, trained ensemble, rolling validation,
+promotion decision, CLI/season bridge, documentation, and regenerated all-32
+forecast are implemented and verified. Production authority remains gated only
+by the prospectively registered 2026-27 holdout after 2027-04-11.

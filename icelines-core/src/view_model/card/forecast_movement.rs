@@ -75,8 +75,16 @@ pub fn build_forecast_movement_card(
         .find(|row| row.team == team)
         .ok_or_else(|| ForecastMovementCardError::MissingMovementTeam(team.clone()))?;
     let movement_fingerprint = json_fingerprint(&input.movement)?;
-    let earlier_label = cutoff_label(input.movement.earlier_as_of_date, "Earlier run");
-    let later_label = cutoff_label(input.movement.later_as_of_date, "Later run");
+    let earlier_label = input
+        .movement
+        .earlier_label
+        .clone()
+        .unwrap_or_else(|| cutoff_label(input.movement.earlier_as_of_date, "Earlier run"));
+    let later_label = input
+        .movement
+        .later_label
+        .clone()
+        .unwrap_or_else(|| cutoff_label(input.movement.later_as_of_date, "Later run"));
     let mut methodology_versions = BTreeMap::new();
     methodology_versions.insert(
         "forecast_movement".to_string(),
@@ -364,6 +372,8 @@ mod tests {
             season: 20262027,
             trials: 1_000,
             seed: 27,
+            earlier_label: None,
+            later_label: None,
             earlier_as_of_date: Some(NaiveDate::from_ymd_opt(2027, 1, 15).unwrap()),
             later_as_of_date: Some(NaiveDate::from_ymd_opt(2027, 2, 15).unwrap()),
             earlier_fingerprint: "a".repeat(64),
@@ -423,5 +433,22 @@ mod tests {
             build_forecast_movement_card(input),
             Err(ForecastMovementCardError::InvalidSourceFingerprint("later"))
         );
+    }
+
+    #[test]
+    fn movement_card_uses_explicit_scenario_labels_without_renderer_math() {
+        let mut input = input();
+        input.movement.earlier_label = Some("July baseline".to_owned());
+        input.movement.later_label = Some("Preseason edge v1".to_owned());
+        let card = build_forecast_movement_card(input).unwrap();
+        assert_eq!(
+            card.subtitle.as_deref(),
+            Some("July baseline → Preseason edge v1 · 1000 trials · seed 27")
+        );
+        let CardSectionView::ScenarioBridge(bridge) = &card.pages[0].sections[1] else {
+            panic!("expected movement bridge");
+        };
+        assert_eq!(bridge.from_label, "July baseline");
+        assert_eq!(bridge.to_label, "Preseason edge v1");
     }
 }

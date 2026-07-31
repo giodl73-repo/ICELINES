@@ -1902,6 +1902,11 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         }) => {
             commands::icecast::run_season_simulate(forecast, trials, seed, scenario, through, out)?
         }
+        Commands::Icecast(IceCastSubcommand::EdgePreseasonEvidence {
+            forecast,
+            created_at,
+            out,
+        }) => commands::icecast::run_edge_preseason_evidence(forecast, created_at, out)?,
         Commands::Icecast(IceCastSubcommand::EdgeEvidence {
             forecast,
             input,
@@ -2730,10 +2735,20 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::Movement {
             earlier,
             later,
+            earlier_label,
+            later_label,
             teams,
             json,
             out,
-        }) => commands::icecast::run_movement(earlier, later, teams, json, out)?,
+        }) => commands::icecast::run_movement(
+            earlier,
+            later,
+            earlier_label,
+            later_label,
+            teams,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::MovementCard {
             input,
             team,

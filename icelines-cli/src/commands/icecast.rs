@@ -56,14 +56,14 @@ use icelines_core::{
     ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
     ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramSensitivityView,
     ScenarioScopeView, ScheduleRestProfileView, SeasonSimulationCardInput,
-    TeamBehaviorResearchInput, TeamDecisionProfile, TeamForecastGameInput, TeamForecastParameters,
-    TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig,
-    TeamForecastStrengthInput, TeamGameForecastCalibrationObservation, TeamGameForecastRow,
-    TeamGameForecastValidationInput, TeamGameForecastView, TeamGameOpeningPlayerRow,
-    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamGamePredictionEdgeCardInput,
-    TeamGamePredictionEdgeView, TeamGamePredictionHoldoutRegistration,
-    TeamGamePredictionMarketBenchmarkInput, TeamGamePredictionModel,
-    TeamGamePredictionObservationSet, TeamGamePredictionTrainingConfig,
+    TeamBehaviorResearchInput, TeamCeilingPlayerRow, TeamDecisionProfile, TeamForecastGameInput,
+    TeamForecastParameters, TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput,
+    TeamForecastReplayConfig, TeamForecastStrengthInput, TeamGameForecastCalibrationObservation,
+    TeamGameForecastRow, TeamGameForecastValidationInput, TeamGameForecastView,
+    TeamGameOpeningPlayerRow, TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow,
+    TeamGamePredictionEdgeCardInput, TeamGamePredictionEdgeView,
+    TeamGamePredictionHoldoutRegistration, TeamGamePredictionMarketBenchmarkInput,
+    TeamGamePredictionModel, TeamGamePredictionObservationSet, TeamGamePredictionTrainingConfig,
     TeamGamePredictionTrainingObservation, TeamLineupProjectionView, TeamSeasonAutoPersonnelConfig,
     TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
     TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
@@ -167,7 +167,8 @@ use icelines_fetch::{
     build_historical_organization_window_origin, build_official_game_outcome_set,
     build_organization_window_completion_status,
     build_organization_window_future_holdout_registration,
-    build_organization_window_standings_snapshot, build_prospect_career_context_draft,
+    build_organization_window_standings_snapshot,
+    build_preseason_game_prediction_edge_evidence_package, build_prospect_career_context_draft,
     build_prospect_career_discovery, build_prospect_league_context_draft,
     build_prospect_league_discovery, build_prospect_program_from_camp_and_career_store,
     build_shift_overlap_report,
@@ -4626,6 +4627,29 @@ pub fn run_edge_evidence(
     Ok(())
 }
 
+pub fn run_edge_preseason_evidence(
+    forecast_path: PathBuf,
+    created_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let forecast: TeamGameForecastView =
+        read_icecast_json(&forecast_path, "preseason team game forecast")?;
+    let created_at = DateTime::parse_from_rfc3339(&created_at)
+        .context("--created-at must be RFC 3339")?
+        .with_timezone(&Utc);
+    let result = build_preseason_game_prediction_edge_evidence_package(&forecast, created_at)?;
+    for warning in &result.warnings {
+        eprintln!("WARNING: {warning}");
+    }
+    let output = format!("{}\n", serde_json::to_string_pretty(&result.package)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast preseason edge evidence")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_edge_observe(
     edge_paths: Vec<PathBuf>,
     outcome_paths: Vec<PathBuf>,
@@ -5318,6 +5342,8 @@ pub fn run_season_card(
 pub fn run_movement(
     earlier: PathBuf,
     later: PathBuf,
+    earlier_label: Option<String>,
+    later_label: Option<String>,
     teams: Vec<String>,
     json: bool,
     out: Option<PathBuf>,
@@ -5328,8 +5354,10 @@ pub fn run_movement(
         serde_json::from_slice(&bytes)
             .with_context(|| format!("parse IceCast forecast {}", path.display()))
     };
-    let movement = build_team_season_forecast_movement(&load(&earlier)?, &load(&later)?)
+    let mut movement = build_team_season_forecast_movement(&load(&earlier)?, &load(&later)?)
         .map_err(anyhow::Error::msg)?;
+    movement.earlier_label = normalize_movement_label(earlier_label, "--earlier-label")?;
+    movement.later_label = normalize_movement_label(later_label, "--later-label")?;
     let focus = if teams.is_empty() {
         ["NYR", "SEA"]
             .into_iter()
@@ -5367,6 +5395,21 @@ pub fn run_movement(
         print!("{output}");
     }
     Ok(())
+}
+
+fn normalize_movement_label(
+    label: Option<String>,
+    argument: &str,
+) -> anyhow::Result<Option<String>> {
+    label
+        .map(|label| {
+            let label = label.trim();
+            if label.is_empty() || label.chars().count() > 80 {
+                bail!("{argument} must contain 1 to 80 characters");
+            }
+            Ok(label.to_owned())
+        })
+        .transpose()
 }
 
 pub fn run_movement_card(
@@ -7009,6 +7052,65 @@ fn optional_i64(value: Option<i64>) -> String {
         .unwrap_or_else(|| "—".to_owned())
 }
 
+fn preseason_opening_players(players: &[TeamCeilingPlayerRow]) -> Vec<TeamGameOpeningPlayerRow> {
+    let candidates = players
+        .iter()
+        .map(|player| {
+            let scores = player
+                .lens_scores
+                .values()
+                .flatten()
+                .copied()
+                .collect::<Vec<_>>();
+            let modeled_value = if scores.is_empty() {
+                50.0
+            } else {
+                scores.iter().sum::<f64>() / scores.len() as f64
+            };
+            let position_group = if player.position.is_forward() {
+                "forward"
+            } else if player.position.is_defense() {
+                "defense"
+            } else {
+                "goalie"
+            };
+            (player, modeled_value.clamp(0.0, 100.0), position_group)
+        })
+        .collect::<Vec<_>>();
+    let mut selected = BTreeSet::new();
+    for (position_group, slots) in [("forward", 12), ("defense", 6), ("goalie", 2)] {
+        let mut ranked = candidates
+            .iter()
+            .filter(|(_, _, group)| *group == position_group)
+            .collect::<Vec<_>>();
+        ranked.sort_by(|left, right| {
+            right
+                .1
+                .total_cmp(&left.1)
+                .then_with(|| left.0.player_id.cmp(&right.0.player_id))
+        });
+        selected.extend(
+            ranked
+                .into_iter()
+                .take(slots)
+                .map(|(player, _, _)| player.player_id),
+        );
+    }
+    candidates
+        .into_iter()
+        .map(
+            |(player, modeled_value, position_group)| TeamGameOpeningPlayerRow {
+                player_id: player.player_id,
+                full_name: player.player.clone(),
+                position_group: position_group.to_owned(),
+                prior_value: player.has_nhl_sample.then_some(modeled_value),
+                modeled_value,
+                selected_at_opening: selected.contains(&player.player_id),
+            },
+        )
+        .collect()
+}
+
 pub(crate) async fn build_season_view(
     args: &IceCastSeasonArgs,
 ) -> anyhow::Result<(TeamSeasonForecastView, Vec<String>, String)> {
@@ -7086,52 +7188,78 @@ pub(crate) async fn build_season_view(
     if args.teams.is_empty() {
         focus.retain(|team| expected_teams.contains(team));
     }
-    let (mut strengths, personnel, strength_warning) = if rolling_replay {
-        (Vec::new(), Vec::new(), None)
-    } else {
-        match load_team_ceiling_view(Season(args.season), Season(args.stats_season)) {
-            Ok(ceiling) => {
-                let mut strengths = Vec::new();
-                let mut personnel = Vec::new();
-                for team in ceiling.teams {
-                    strengths.push(TeamForecastStrengthInput {
-                        team: team.team.clone(),
-                        strength: team.ensemble_score,
-                    });
-                    personnel.extend(team.players.into_iter().filter_map(|player| {
-                        let scores = player
-                            .lens_scores
-                            .values()
-                            .flatten()
-                            .copied()
-                            .collect::<Vec<_>>();
-                        let rating = if scores.is_empty() {
-                            f64::NAN
-                        } else {
-                            scores.iter().sum::<f64>() / scores.len() as f64
-                        };
-                        (rating.is_finite() && rating > 0.0).then(|| TeamSeasonPersonnelInput {
+    let (mut strengths, personnel, mut preseason_opening_strengths, strength_warning) =
+        if rolling_replay {
+            (Vec::new(), Vec::new(), Vec::new(), None)
+        } else {
+            match load_team_ceiling_view(Season(args.season), Season(args.stats_season)) {
+                Ok(ceiling) => {
+                    let mut strengths = Vec::new();
+                    let mut personnel = Vec::new();
+                    let mut opening_strengths = Vec::new();
+                    for team in ceiling.teams {
+                        strengths.push(TeamForecastStrengthInput {
                             team: team.team.clone(),
-                            player: player.player,
-                            position: player.position.abbreviation().to_owned(),
-                            is_goalie: player.position == Position::Goalie,
-                            age: player.age,
-                            games_played: player.games_played,
-                            rating: rating.clamp(0.0, 100.0),
-                        })
-                    }));
+                            strength: team.ensemble_score,
+                        });
+                        let opening_players = preseason_opening_players(&team.players);
+                        let selected_count = |position_group: &str| {
+                            opening_players
+                                .iter()
+                                .filter(|player| {
+                                    player.selected_at_opening
+                                        && player.position_group == position_group
+                                })
+                                .count()
+                        };
+                        opening_strengths.push(TeamGameOpeningStrengthRow {
+                            team: team.team.clone(),
+                            as_of_date: None,
+                            strength: team.ensemble_score,
+                            cohort_normalization_delta: 0.0,
+                            roster_players: team.roster_players as usize,
+                            valued_players: team.rated_players as usize,
+                            value_coverage: team.coverage_pct / 100.0,
+                            forwards_used: selected_count("forward"),
+                            defensemen_used: selected_count("defense"),
+                            goalies_used: selected_count("goalie"),
+                            players: opening_players,
+                        });
+                        personnel.extend(team.players.into_iter().filter_map(|player| {
+                            let scores = player
+                                .lens_scores
+                                .values()
+                                .flatten()
+                                .copied()
+                                .collect::<Vec<_>>();
+                            let rating = if scores.is_empty() {
+                                f64::NAN
+                            } else {
+                                scores.iter().sum::<f64>() / scores.len() as f64
+                            };
+                            (rating.is_finite() && rating > 0.0).then(|| TeamSeasonPersonnelInput {
+                                team: team.team.clone(),
+                                player: player.player,
+                                position: player.position.abbreviation().to_owned(),
+                                is_goalie: player.position == Position::Goalie,
+                                age: player.age,
+                                games_played: player.games_played,
+                                rating: rating.clamp(0.0, 100.0),
+                            })
+                        }));
+                    }
+                    (strengths, personnel, opening_strengths, None)
                 }
-                (strengths, personnel, None)
+                Err(error) => (
+                    Vec::new(),
+                    Vec::new(),
+                    Vec::new(),
+                    Some(format!(
+                        "roster/depth strength unavailable ({error}); neutral strengths were used"
+                    )),
+                ),
             }
-            Err(error) => (
-                Vec::new(),
-                Vec::new(),
-                Some(format!(
-                    "roster/depth strength unavailable ({error}); neutral strengths were used"
-                )),
-            ),
-        }
-    };
+        };
     let official_shape = args.season == CURRENT_SEASON;
     let (replay_personnel, replay_personnel_warning) = if rolling_replay {
         match load_replay_personnel_evidence(args.season) {
@@ -7293,6 +7421,21 @@ pub(crate) async fn build_season_view(
                 "a dated opening roster passed the authority gate, but prior-season value coverage was insufficient for player-weighted opening strength"
                     .to_owned(),
             );
+        }
+        if !rolling_replay
+            && authority.status == "authoritative"
+            && authority.player_value_effects_enabled
+        {
+            let as_of_date = authority
+                .selected_snapshot_created_at
+                .as_deref()
+                .and_then(|captured| DateTime::parse_from_rfc3339(captured).ok())
+                .map(|captured| captured.date_naive())
+                .or(authority.personnel_events_effective_after);
+            for row in &mut preseason_opening_strengths {
+                row.as_of_date = as_of_date;
+            }
+            game_view.opening_strengths = preseason_opening_strengths;
         }
         game_view.opening_roster_authority = Some(authority);
     }
@@ -11618,14 +11761,15 @@ mod tests {
 
     use chrono::NaiveDate;
     use icelines_core::{
-        simulate_training_camp, OrganizationWindowBoardView, TeamForecastPersonnelPlayerInput,
-        TeamSeasonAdaptiveLineupChoice, TeamSeasonAdaptiveLineupPolicy,
-        TeamSeasonForecastHistoryCheckpointRow, TeamSeasonForecastHistoryMateriality,
-        TeamSeasonForecastHistoryMoverRow, TeamSeasonForecastHistoryPointRow,
-        TeamSeasonForecastHistoryTeamRow, TeamSeasonForecastHistoryTrend,
-        TeamSeasonForecastHistoryView, TeamSeasonForecastMovementRow,
-        TeamSeasonForecastMovementView, TeamSeasonForecastView, TeamSeasonReplayCheckpointTeamRow,
-        TeamSeasonReplayCheckpointView, TrainingCampSimulationInput,
+        simulate_training_camp, OrganizationWindowBoardView, Position, TeamCeilingLens,
+        TeamCeilingPlayerRow, TeamForecastPersonnelPlayerInput, TeamSeasonAdaptiveLineupChoice,
+        TeamSeasonAdaptiveLineupPolicy, TeamSeasonForecastHistoryCheckpointRow,
+        TeamSeasonForecastHistoryMateriality, TeamSeasonForecastHistoryMoverRow,
+        TeamSeasonForecastHistoryPointRow, TeamSeasonForecastHistoryTeamRow,
+        TeamSeasonForecastHistoryTrend, TeamSeasonForecastHistoryView,
+        TeamSeasonForecastMovementRow, TeamSeasonForecastMovementView, TeamSeasonForecastView,
+        TeamSeasonReplayCheckpointTeamRow, TeamSeasonReplayCheckpointView,
+        TrainingCampSimulationInput,
     };
     use icelines_fetch::ahl::{
         build_ahl_identity_review_inspection, AhlIdentityCrosswalkCounts, AhlIdentityCrosswalkRow,
@@ -11636,6 +11780,49 @@ mod tests {
         AhlPreseasonOrganizationReview, AhlPreseasonOrganizationReviewRow,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     };
+
+    #[test]
+    fn preseason_opening_players_keep_ranked_12f_6d_2g_evidence() {
+        let mut players = Vec::new();
+        for (position, count, base_id) in [
+            (Position::Center, 13_u32, 100_u32),
+            (Position::Defense, 7, 200),
+            (Position::Goalie, 3, 300),
+        ] {
+            players.extend((0..count).map(|index| TeamCeilingPlayerRow {
+                player_id: base_id + index,
+                player: format!("Player {}", base_id + index),
+                position,
+                age: 25,
+                games_played: 82,
+                prior_team: None,
+                newcomer: false,
+                has_nhl_sample: true,
+                lens_scores: BTreeMap::from([(
+                    TeamCeilingLens::PointsPace,
+                    Some(100.0 - f64::from(index)),
+                )]),
+            }));
+        }
+        let rows = super::preseason_opening_players(&players);
+        for (group, expected) in [("forward", 12), ("defense", 6), ("goalie", 2)] {
+            assert_eq!(
+                rows.iter()
+                    .filter(|row| row.position_group == group && row.selected_at_opening)
+                    .count(),
+                expected
+            );
+        }
+        for excluded in [112, 206, 302] {
+            assert!(
+                !rows
+                    .iter()
+                    .find(|row| row.player_id == excluded)
+                    .unwrap()
+                    .selected_at_opening
+            );
+        }
+    }
 
     #[test]
     fn window_package_refuses_partial_league_affiliate_inputs() {
@@ -11960,6 +12147,8 @@ mod tests {
             season: 20242025,
             trials: 1_000,
             seed: 20_242_025,
+            earlier_label: None,
+            later_label: None,
             earlier_as_of_date: Some(NaiveDate::from_ymd_opt(2025, 1, 31).unwrap()),
             later_as_of_date: Some(NaiveDate::from_ymd_opt(2025, 2, 28).unwrap()),
             earlier_fingerprint: "a".repeat(64),

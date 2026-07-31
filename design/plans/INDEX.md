@@ -30,7 +30,7 @@ Line-combination simulation is an active child workstream of Team Season
 Forecast and does not consume another top-level active-plan slot: see
 [`2026-07-23-line-combination-simulation.md`](2026-07-23-line-combination-simulation.md).
 
-Game-prediction edge is also an active child workstream of Team Season Forecast
+Game-prediction edge is an implemented child workstream of Team Season Forecast
 and does not consume another top-level slot: see
 [`2026-07-30-game-prediction-edge.md`](2026-07-30-game-prediction-edge.md).
 
