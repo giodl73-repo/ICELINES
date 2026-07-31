@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/game_prediction_edge_evidence_package.v1.schema.json",
+  "title": "IceCast dated game-prediction evidence package",
+  "type": "object",
+  "required": ["schema", "season", "vintage", "created_at", "source_forecast_fingerprint", "sources", "games", "fingerprint"],
+  "properties": {
+    "schema": { "const": "game_prediction_edge_evidence_package.v1" },
+    "season": { "type": "integer", "minimum": 20000000 },
+    "vintage": { "enum": ["preseason", "game_morning", "pregame_confirmed"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source_forecast_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_key", "evidence_cutoff_at", "retrieved_at", "authority", "source_uri", "fingerprint"],
+        "properties": {
+          "source_key": { "type": "string", "minLength": 1 },
+          "evidence_cutoff_at": { "type": "string", "format": "date-time" },
+          "retrieved_at": { "type": "string", "format": "date-time" },
+          "authority": { "enum": ["live_capture", "historical_reconstruction"] },
+          "source_uri": { "type": "string", "minLength": 1 },
+          "fingerprint": { "$ref": "#/$defs/fingerprint" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "games": { "type": "array", "items": { "type": "object" } },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-fA-F]{64}$" }
+  },
+  "additionalProperties": false
+}

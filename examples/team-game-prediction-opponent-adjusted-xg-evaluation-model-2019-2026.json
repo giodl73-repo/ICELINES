@@ -1,0 +1,20 @@
+{
+  "model_id": "icecast-edge-trained-v5",
+  "method": "elo-evidence-logit.v1",
+  "authority": "evaluation",
+  "elo_weight": 1.0,
+  "intercept": 0.09880747963489125,
+  "baseline_logit_weight": 0.3964922387625502,
+  "roster_weight": 0.10863000351052492,
+  "availability_weight": 0.14396265340982456,
+  "goalie_weight": 0.09344235087539426,
+  "xg_weight": 0.22912827212220457,
+  "opponent_adjusted_xg_weight": 0.24726930062107377,
+  "special_teams_weight": 0.04066320706442242,
+  "matchup_weight": 0.0,
+  "xg_prior_games": 10.0,
+  "special_teams_prior_games": 20.0,
+  "calibration_slope": 1.05,
+  "trained_through_season": null,
+  "training_fingerprint": null
+}

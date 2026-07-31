@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/official_game_outcome_set.v1.schema.json",
+  "title": "Official NHL game outcome snapshot",
+  "type": "object",
+  "required": ["schema", "season", "captured_at", "source_url", "complete", "scheduled_games", "final_games", "schedule_fingerprint", "outcomes", "fingerprint"],
+  "properties": {
+    "schema": { "const": "official_game_outcome_set.v1" },
+    "season": { "type": "integer", "minimum": 20000000 },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "source_url": { "type": "string", "minLength": 1 },
+    "complete": { "type": "boolean" },
+    "scheduled_games": { "type": "integer", "minimum": 1 },
+    "final_games": { "type": "integer", "minimum": 0 },
+    "schedule_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "outcomes": { "type": "array", "items": { "type": "object" } },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-fA-F]{64}$" }
+  },
+  "additionalProperties": false
+}

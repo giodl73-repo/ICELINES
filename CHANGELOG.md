@@ -2,6 +2,58 @@
 
 ## Unreleased
 
+- Added the IceCast game-prediction edge foundation: explicit preseason,
+  game-morning, and confirmed-pregame vintages; sealed dated evidence packages;
+  roster, availability, goalie, xG, special-teams, and matchup attribution; and
+  a simulation-ready enhanced game forecast.
+- Added a leakage-safe regularized ensemble trainer with chronological
+  rolling-origin scoring, Brier/log-loss/calibration metrics, feature
+  ablations and pruning, single-team/single-season stability gates, and an
+  evaluation-to-production promotion boundary. New `icecast edge` and
+  `icecast edge-train` commands expose the shared contracts.
+- Added official-result seals, multi-season frozen outcome joins, and a
+  historical MoneyPuck replay adapter for score/venue-adjusted xG and special
+  teams. A real seven-season, 8,510-game source backbone now supports five
+  forward holdouts without using postgame features; promotion still fails
+  closed when goalie coverage or calibration gates are unmet.
+- Fixed exact JSON seal replay for floating-point features and removed a
+  quadratic full-season validation pass from historical observation builds.
+- Added official pregame-confirmed reconstruction from 8,510 cached NHL
+  boxscores. The derived source contains dressed/starter identities and timing
+  only; result and performance fields cannot affect its fingerprint. Historical
+  availability is at least 98.8% complete by season and starter coverage is
+  100%, with neutral priors explicitly reliability-discounted.
+- Added chronological temperature-only calibration and a sealed prospective
+  promotion boundary. The seven-season challenger passes every retrospective
+  statistical gate (Brier gain 0.001398, log-loss gain 0.002907, ECE 0.010126
+  versus Elo 0.010369) but remains evaluation-only until the preregistered
+  2026-27 holdout is scored after April 11, 2027.
+- Precomputed immutable training design rows once per Elo candidate, reducing
+  the seven-season debug validation runtime from about 311 to 143 seconds.
+- Added a reusable seven-season evaluation-model artifact, `edge --model-out`,
+  `edge-card` forecast-vintage comparison cards, and `season-simulate` for
+  feeding an edge-enhanced game forecast into the 32-team simulator without
+  probability recomputation. Legacy sealed edge and validation documents keep
+  their fingerprints when identity calibration fields are absent.
+- Added confirmed-starter MoneyPuck career replay for leakage-safe trailing
+  GSAx form, rest, and seven-day workload, including bounded retry/backoff,
+  cache resume, NHL-ID joins, and roughly 99.5% historical side coverage. The
+  seven-season ablation rejected short-window goalie form and workload as
+  production features, so they remain sealed candidate evidence while the
+  registered six-signal default is unchanged.
+- Versioned the game-prediction feature vocabulary inside training
+  configurations and prospective registrations. Candidate feature additions
+  can no longer silently inherit an earlier model's holdout authority.
+- Added strict-prior opponent-adjusted xG with seals covering every selected
+  team game and opponent prior. The seven-season v5 evaluation improves Brier
+  by 0.001869 over Elo and contributes 0.000781 independently, while remaining
+  evaluation-only because the 2026-27 prospective registration binds v1.
+- Added a candidate-specific ablation gate so marginal features cannot pass on
+  the strength of the existing ensemble. It rejects goalie-under-schedule-load
+  at 0.000003 feature gain against a 0.000050 minimum.
+- Added UI-neutral evidence confidence and evidence-stability ranges to game
+  prediction cards, explicitly labeled as sensitivity ranges rather than
+  statistical confidence intervals. Coverage now counts active features only.
 - Added `window-completion-status` and the sealed
   `organization_window_completion_status.v1` contract. It validates the current
   production-source audit and exact preregistered holdout together, names both

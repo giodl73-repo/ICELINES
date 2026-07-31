@@ -2084,6 +2084,207 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         game_forecast_out: Option<PathBuf>,
     },
+    /// Apply dated roster, goalie, xG, special-teams, and matchup evidence to a game forecast.
+    Edge {
+        /// UI-neutral `team_game_forecast.v1` baseline.
+        #[arg(long, value_name = "PATH")]
+        forecast: PathBuf,
+        /// Sealed `game_prediction_edge_evidence_package.v1` document.
+        #[arg(long, value_name = "PATH")]
+        evidence: PathBuf,
+        /// Optional trained `TeamGamePredictionModel`; evaluation weights are used when omitted.
+        #[arg(long, value_name = "PATH")]
+        model: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Write the enhanced `team_game_forecast.v1` for direct season simulation.
+        #[arg(long, value_name = "PATH")]
+        enhanced_forecast_out: Option<PathBuf>,
+    },
+    /// Project one game's sealed forecast vintages into a UI-neutral card.
+    #[command(name = "edge-card")]
+    EdgeCard {
+        /// Repeat for preseason, game-morning, and pregame-confirmed edge documents.
+        #[arg(long = "input", required = true, value_name = "PATH")]
+        inputs: Vec<PathBuf>,
+        #[arg(long)]
+        game_id: u64,
+        /// Team perspective used for probabilities, deltas, and theme.
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        team_name: Option<String>,
+        /// Optional evidence timestamp for deterministic output.
+        #[arg(long)]
+        generated_at: Option<String>,
+        /// Optional sealed closing-market benchmark JSON; never used as a model feature.
+        #[arg(long, value_name = "PATH")]
+        market_benchmark: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Simulate a season from an existing baseline or edge-enhanced game forecast.
+    #[command(name = "season-simulate")]
+    SeasonSimulate {
+        /// UI-neutral `team_game_forecast.v1`, including `edge --enhanced-forecast-out`.
+        #[arg(long, value_name = "PATH")]
+        forecast: PathBuf,
+        #[arg(long, default_value_t = 10_000)]
+        trials: u32,
+        #[arg(long, default_value_t = 20_262_027)]
+        seed: u64,
+        #[arg(long, value_name = "PATH")]
+        scenario: Option<PathBuf>,
+        /// Fix final results through this date and simulate only the remainder.
+        #[arg(long)]
+        through: Option<chrono::NaiveDate>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Assemble and seal a dated evidence package from shared IceLines primitives.
+    #[command(name = "edge-evidence")]
+    EdgeEvidence {
+        /// Exact `team_game_forecast.v1` baseline the package will bind.
+        #[arg(long, value_name = "PATH")]
+        forecast: PathBuf,
+        /// `GamePredictionEvidencePackageBuildInput` JSON with lineup, goalie, and form inputs.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Join later final outcomes to frozen edge documents for historical training.
+    #[command(name = "edge-observe")]
+    EdgeObserve {
+        /// Repeat for each sealed `team_game_prediction_edge.v1` season document.
+        #[arg(long = "edge", required = true, value_name = "PATH")]
+        edges: Vec<PathBuf>,
+        /// Repeat for each sealed official outcome set (or raw outcome array).
+        #[arg(long = "outcomes", required = true, value_name = "PATH")]
+        outcomes: Vec<PathBuf>,
+        /// RFC 3339 time at which the observation set is sealed.
+        #[arg(long)]
+        created_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Seal official NHL final results for later outcome joining.
+    #[command(name = "edge-outcomes")]
+    EdgeOutcomes {
+        #[arg(long)]
+        season: u32,
+        /// RFC 3339 timestamp of the official result snapshot.
+        #[arg(long)]
+        captured_at: String,
+        /// Refresh official NHL schedules before sealing results.
+        #[arg(long)]
+        refresh: bool,
+        /// Allow an in-progress season instead of requiring every game final.
+        #[arg(long)]
+        allow_partial: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Reconstruct a historical xG/special-teams challenger from MoneyPuck team files.
+    #[command(name = "edge-replay-xg")]
+    EdgeReplayXg {
+        #[arg(long, value_name = "PATH")]
+        forecast: PathBuf,
+        /// Directory containing one MoneyPuck career game-by-game CSV per team (`NYR.csv`).
+        #[arg(long, value_name = "DIR")]
+        moneypuck_dir: PathBuf,
+        /// RFC 3339 retrieval time for the exact CSV bytes.
+        #[arg(long)]
+        retrieved_at: String,
+        #[arg(long, default_value_t = 10)]
+        trailing_games: usize,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Reconstruct confirmed starters and dressed lineups from official boxscores.
+    #[command(name = "edge-replay-confirmed")]
+    EdgeReplayConfirmed {
+        #[arg(long, value_name = "PATH")]
+        forecast: PathBuf,
+        /// Sealed game-morning evidence package to enrich.
+        #[arg(long, value_name = "PATH")]
+        morning_evidence: PathBuf,
+        /// Cache directory containing `{game_id}.json` official boxscores.
+        #[arg(long, value_name = "DIR")]
+        boxscore_dir: PathBuf,
+        /// RFC 3339 retrieval time assigned to the exact cached source bytes.
+        #[arg(long)]
+        retrieved_at: String,
+        /// Fetch missing boxscores (or replace cached files) from the official NHL API.
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long, default_value_t = 8)]
+        concurrency: usize,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Enrich confirmed historical starters with point-in-time goalie form and workload.
+    #[command(name = "edge-replay-goalies")]
+    EdgeReplayGoalies {
+        #[arg(long, value_name = "PATH")]
+        forecast: PathBuf,
+        /// Sealed pregame-confirmed evidence package containing starter player IDs.
+        #[arg(long, value_name = "PATH")]
+        confirmed_evidence: PathBuf,
+        /// Cache directory containing one MoneyPuck career CSV per goalie (`{player_id}.csv`).
+        #[arg(long, value_name = "DIR")]
+        goalie_dir: PathBuf,
+        /// RFC 3339 retrieval time assigned to the exact cached source bytes.
+        #[arg(long)]
+        retrieved_at: String,
+        #[arg(long, default_value_t = 5)]
+        trailing_appearances: usize,
+        /// Fetch missing goalie files (or replace cached files) from MoneyPuck.
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long, default_value_t = 1)]
+        concurrency: usize,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Preregister an untouched season before forecasts or outcomes exist.
+    #[command(name = "edge-register-holdout")]
+    EdgeRegisterHoldout {
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        registered_at: String,
+        #[arg(long)]
+        outcome_not_before: String,
+        /// Optional exact training configuration to seal; defaults to the standard config.
+        #[arg(long, value_name = "PATH")]
+        config: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Train or rolling-origin validate the leakage-safe game-prediction ensemble.
+    #[command(name = "edge-train")]
+    EdgeTrain {
+        /// JSON array of frozen `TeamGamePredictionTrainingObservation` rows.
+        #[arg(long, value_name = "PATH")]
+        observations: PathBuf,
+        /// Optional `TeamGamePredictionTrainingConfig` JSON.
+        #[arg(long, value_name = "PATH")]
+        config: Option<PathBuf>,
+        /// Sealed prospective registration required for production authority.
+        #[arg(long, value_name = "PATH")]
+        registration: Option<PathBuf>,
+        /// Run season-forward holdouts and the promotion gate.
+        #[arg(long)]
+        validate: bool,
+        /// Write the fitted model as a directly reusable model document.
+        #[arg(long, value_name = "PATH")]
+        model_out: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Project one team from a sealed forecast history into `card_document.v1`.
     #[command(name = "history-card")]
     HistoryCard {
@@ -3735,33 +3936,32 @@ mod tui_surface_tests {
     ///   dispatches that to Screen::Home (default).
     #[test]
     fn l0_bare_tui_has_no_surface_or_start() {
-        let cli = Cli::try_parse_from(["icelines", "tui"]).unwrap();
-        match cli.command {
-            Commands::Tui {
-                surface,
-                start,
-                layout,
-                standalone,
-                mdi,
-                classic,
-                render_leaders_active_filter_snapshot,
-            } => {
-                assert!(surface.is_none());
-                assert!(!standalone, "bare tui must default standalone=false");
-                assert!(!mdi, "bare tui should not require explicit --mdi");
-                assert!(!classic, "bare tui must default classic=false");
-                assert!(
-                    !render_leaders_active_filter_snapshot,
-                    "bare tui must not render a diagnostic snapshot"
-                );
-                let _ = standalone; // silence unused warning
-                let _ = mdi;
-                let _ = classic;
-                assert!(start.is_none());
-                assert!(layout.is_none());
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from(["icelines", "tui"]).unwrap();
+            match cli.command {
+                Commands::Tui {
+                    surface,
+                    start,
+                    layout,
+                    standalone,
+                    mdi,
+                    classic,
+                    render_leaders_active_filter_snapshot,
+                } => {
+                    assert!(surface.is_none());
+                    assert!(!standalone, "bare tui must default standalone=false");
+                    assert!(!mdi, "bare tui should not require explicit --mdi");
+                    assert!(!classic, "bare tui must default classic=false");
+                    assert!(
+                        !render_leaders_active_filter_snapshot,
+                        "bare tui must not render a diagnostic snapshot"
+                    );
+                    assert!(start.is_none());
+                    assert!(layout.is_none());
+                }
+                other => panic!("expected Tui, got {other:?}"),
             }
-            other => panic!("expected Tui, got {other:?}"),
-        }
+        });
     }
 
     #[test]

@@ -19,6 +19,8 @@ use icelines_core::{
     build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
     build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
     build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
+    build_team_game_prediction_edge, build_team_game_prediction_edge_card,
+    build_team_game_prediction_observation_set,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -30,10 +32,12 @@ use icelines_core::{
     compare_team_season_forecast_scenarios, current_ahl_affiliation_catalog,
     load_organization_window_registry_lifecycle, model::Position, model::Season, model::TeamAbbr,
     normalize_name, project_organization_profile_history_card, project_organization_window_card,
-    seal_new_organization_window_manifest, seal_organization_profile_history,
-    season_stats::SeasonType, simulate_organization_window_scenario_distribution,
+    register_team_game_prediction_holdout, seal_new_organization_window_manifest,
+    seal_organization_profile_history, season_stats::SeasonType,
+    simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
-    simulate_training_camp, simulate_training_camp_league, AhlAffiliateProjectionInput,
+    simulate_training_camp, simulate_training_camp_league, train_team_game_prediction_model,
+    validate_team_game_prediction_model_with_registration, AhlAffiliateProjectionInput,
     AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlCrossLeagueValuePolicy,
     AhlLineUnitKind, AhlPlayerValuePolicy, AhlRecallReadinessPolicy, AhlRosterPoolAuthorityKind,
     DevelopmentCalibrationConfig, DevelopmentCalibrationView, DevelopmentPositionGroup,
@@ -56,19 +60,22 @@ use icelines_core::{
     TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig,
     TeamForecastStrengthInput, TeamGameForecastCalibrationObservation, TeamGameForecastRow,
     TeamGameForecastValidationInput, TeamGameForecastView, TeamGameOpeningPlayerRow,
-    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamLineupProjectionView,
-    TeamSeasonAutoPersonnelConfig, TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView,
-    TeamSeasonForecastView, TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig,
-    TeamSeasonScenario, TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig,
-    TeamSeasonStretchKind, TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus,
-    TrainingCampCompetitionPoolStatus, TrainingCampConfig, TrainingCampExposureBoardView,
-    TrainingCampExposureLane, TrainingCampForecastView, TrainingCampLeagueForecastView,
-    TrainingCampLeagueSimulationInput, TrainingCampLeagueTeamInput, TrainingCampPlayerInput,
-    TrainingCampSalaryCapStatus, TrainingCampSimulationInput,
-    TrainingCampTransactionAuthorityStatus, TrainingCampTransactionContextInput, ViewContext,
-    ViewWindow, WindowHorizon, WindowManifestLifecyclePolicy, WindowScenarioAuthorityView,
-    CANONICAL_TEAMS, CURRENT_SEASON, ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA,
-    PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
+    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamGamePredictionEdgeCardInput,
+    TeamGamePredictionEdgeView, TeamGamePredictionHoldoutRegistration,
+    TeamGamePredictionMarketBenchmarkInput, TeamGamePredictionModel,
+    TeamGamePredictionObservationSet, TeamGamePredictionTrainingConfig,
+    TeamGamePredictionTrainingObservation, TeamLineupProjectionView, TeamSeasonAutoPersonnelConfig,
+    TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
+    TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
+    TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig, TeamSeasonStretchKind,
+    TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus, TrainingCampCompetitionPoolStatus,
+    TrainingCampConfig, TrainingCampExposureBoardView, TrainingCampExposureLane,
+    TrainingCampForecastView, TrainingCampLeagueForecastView, TrainingCampLeagueSimulationInput,
+    TrainingCampLeagueTeamInput, TrainingCampPlayerInput, TrainingCampSalaryCapStatus,
+    TrainingCampSimulationInput, TrainingCampTransactionAuthorityStatus,
+    TrainingCampTransactionContextInput, ViewContext, ViewWindow, WindowHorizon,
+    WindowManifestLifecyclePolicy, WindowScenarioAuthorityView, CANONICAL_TEAMS, CURRENT_SEASON,
+    ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA, PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
 };
 use icelines_core::{
     attribute_organization_window_personnel_movement,
@@ -155,7 +162,10 @@ use icelines_fetch::{
         finalize_ahl_waiver_clearance_review, AhlWaiverClearanceApplicationView,
         AhlWaiverClearanceDecisionsView, AhlWaiverClearanceReviewView,
     },
-    build_historical_organization_window_origin, build_organization_window_completion_status,
+    build_game_prediction_edge_evidence_package, build_historical_confirmed_edge_package,
+    build_historical_goalie_edge_package, build_historical_moneypuck_edge_package,
+    build_historical_organization_window_origin, build_official_game_outcome_set,
+    build_organization_window_completion_status,
     build_organization_window_future_holdout_registration,
     build_organization_window_standings_snapshot, build_prospect_career_context_draft,
     build_prospect_career_discovery, build_prospect_league_context_draft,
@@ -171,6 +181,7 @@ use icelines_fetch::{
         fetch_generic_http_batch_async, fetch_player_landing_batch_bytes_async, player_landing_url,
         roster_url, FletchPlayerLandingArtifact,
     },
+    load_game_prediction_edge_evidence_package, moneypuck_goalie_game_url, moneypuck_team_game_url,
     nhl_api::ScheduledGame,
     schema::{GoalieStats, LocalizedString, RosterPlayer, RosterResponse, SkaterBio, SkaterStats},
     score_organization_window_future_holdout,
@@ -180,7 +191,9 @@ use icelines_fetch::{
         OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
     },
     stats_loader::load_into_repo,
-    NhlApiClient, OfficialShiftChartRow, OrganizationWindowFutureHoldoutRegistration,
+    GamePredictionEvidencePackageBuildInput, HistoricalMoneyPuckGoalieInput,
+    HistoricalMoneyPuckTeamInput, HistoricalOfficialBoxscoreInput, NhlApiClient,
+    OfficialGameOutcomeSet, OfficialShiftChartRow, OrganizationWindowFutureHoldoutRegistration,
     OrganizationWindowFutureHoldoutResult, OrganizationWindowHistoricalOriginArtifact,
     OrganizationWindowStandingsSnapshot, ProspectCareerContextDraftConfig,
     ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectCareerProgramConfig,
@@ -214,6 +227,24 @@ pub struct IceCastSeasonArgs {
     pub json: bool,
     pub out: Option<PathBuf>,
     pub game_forecast_out: Option<PathBuf>,
+}
+
+pub struct IceCastEdgeArgs {
+    pub forecast: PathBuf,
+    pub evidence: PathBuf,
+    pub model: Option<PathBuf>,
+    pub json: bool,
+    pub out: Option<PathBuf>,
+    pub enhanced_forecast_out: Option<PathBuf>,
+}
+
+pub struct IceCastEdgeTrainArgs {
+    pub observations: PathBuf,
+    pub config: Option<PathBuf>,
+    pub registration: Option<PathBuf>,
+    pub validate: bool,
+    pub model_out: Option<PathBuf>,
+    pub out: Option<PathBuf>,
 }
 
 pub struct IceCastBenchArgs {
@@ -4404,6 +4435,834 @@ pub async fn run_season(args: IceCastSeasonArgs) -> anyhow::Result<()> {
         print!("{output}");
     }
     Ok(())
+}
+
+pub fn run_edge(args: IceCastEdgeArgs) -> anyhow::Result<()> {
+    let forecast_bytes = std::fs::read(&args.forecast)
+        .with_context(|| format!("read baseline forecast {}", args.forecast.display()))?;
+    let forecast: TeamGameForecastView = serde_json::from_slice(&forecast_bytes)
+        .with_context(|| format!("parse baseline forecast {}", args.forecast.display()))?;
+    let evidence = load_game_prediction_edge_evidence_package(&args.evidence)
+        .with_context(|| format!("load edge evidence {}", args.evidence.display()))?;
+    let forecast_fingerprint = format!(
+        "sha256:{:x}",
+        Sha256::digest(serde_json::to_vec(&forecast)?)
+    );
+    if evidence.source_forecast_fingerprint != forecast_fingerprint {
+        bail!(
+            "edge evidence binds forecast {}, but input forecast is {}",
+            evidence.source_forecast_fingerprint,
+            forecast_fingerprint
+        );
+    }
+    if evidence.season != forecast.season {
+        bail!(
+            "edge evidence season {} does not match forecast season {}",
+            evidence.season,
+            forecast.season
+        );
+    }
+    let model = args
+        .model
+        .as_ref()
+        .map(|path| -> anyhow::Result<TeamGamePredictionModel> {
+            let bytes = std::fs::read(path)
+                .with_context(|| format!("read edge model {}", path.display()))?;
+            serde_json::from_slice(&bytes)
+                .with_context(|| format!("parse edge model {}", path.display()))
+        })
+        .transpose()?
+        .unwrap_or_else(TeamGamePredictionModel::evaluation_challenger);
+    let edge = build_team_game_prediction_edge(
+        &forecast,
+        evidence.vintage,
+        evidence.created_at,
+        model,
+        evidence.games,
+    )?;
+    if let Some(path) = args.enhanced_forecast_out.as_ref() {
+        let bytes = serde_json::to_vec_pretty(&edge.enhanced_forecast)?;
+        write_icecast_file(path, &bytes, "enhanced game forecast")?;
+    }
+    let output = if args.json {
+        format!("{}\n", serde_json::to_string_pretty(&edge)?)
+    } else {
+        render_edge(&edge)
+    };
+    if let Some(path) = args.out.as_ref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prediction edge")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_edge_card(
+    inputs: Vec<PathBuf>,
+    game_id: u64,
+    team: String,
+    team_name: Option<String>,
+    generated_at: Option<String>,
+    market_benchmark: Option<PathBuf>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let edges = inputs
+        .iter()
+        .map(|path| -> anyhow::Result<TeamGamePredictionEdgeView> {
+            let bytes = std::fs::read(path)
+                .with_context(|| format!("read prediction edge {}", path.display()))?;
+            serde_json::from_slice(&bytes)
+                .with_context(|| format!("parse prediction edge {}", path.display()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let season = edges
+        .first()
+        .map(|edge| edge.season)
+        .context("--input requires at least one edge document")?;
+    let evidence_at = generated_at
+        .as_deref()
+        .map(DateTime::parse_from_rfc3339)
+        .transpose()
+        .context("--generated-at must be RFC 3339")?
+        .map(|value| value.with_timezone(&Utc));
+    let mut view = ViewContext::new(ViewWindow::new(Season(season), SeasonType::Regular));
+    view.generated_at = evidence_at;
+    let team = team.trim().to_ascii_uppercase();
+    let market_benchmark = market_benchmark
+        .as_deref()
+        .map(|path| {
+            read_icecast_json::<TeamGamePredictionMarketBenchmarkInput>(
+                path,
+                "closing-market benchmark",
+            )
+        })
+        .transpose()?;
+    let card = build_team_game_prediction_edge_card(TeamGamePredictionEdgeCardInput {
+        edges,
+        game_id,
+        focus_team: team.clone(),
+        team_name: team_name.unwrap_or_else(|| team.clone()),
+        view,
+        evidence_at,
+        market_benchmark,
+    })?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&card)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prediction edge card")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_season_simulate(
+    forecast_path: PathBuf,
+    trials: u32,
+    seed: u64,
+    scenario_path: Option<PathBuf>,
+    through: Option<NaiveDate>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let forecast: TeamGameForecastView = read_icecast_json(&forecast_path, "team game forecast")?;
+    let scenario = scenario_path
+        .as_deref()
+        .map(|path| load_scenario(path, forecast.season))
+        .transpose()?;
+    let config = TeamSeasonSimulationConfig { trials, seed };
+    let mut simulation = match through {
+        Some(cutoff) => {
+            simulate_team_season_forecast_as_of_with_scenario(&forecast, config, scenario, cutoff)
+        }
+        None => simulate_team_season_forecast_with_scenario(&forecast, config, scenario),
+    }
+    .map_err(anyhow::Error::msg)?;
+    simulation.disclosures.push(format!(
+        "Season simulation consumed the supplied {} game forecast without recomputing game probabilities.",
+        forecast.forecast_mode
+    ));
+    let output = format!("{}\n", serde_json::to_string_pretty(&simulation)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast season simulation")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_edge_evidence(
+    forecast_path: PathBuf,
+    input_path: PathBuf,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let forecast_bytes = std::fs::read(&forecast_path)
+        .with_context(|| format!("read baseline forecast {}", forecast_path.display()))?;
+    let forecast: TeamGameForecastView = serde_json::from_slice(&forecast_bytes)
+        .with_context(|| format!("parse baseline forecast {}", forecast_path.display()))?;
+    let input_bytes = std::fs::read(&input_path)
+        .with_context(|| format!("read edge assembly input {}", input_path.display()))?;
+    let input: GamePredictionEvidencePackageBuildInput = serde_json::from_slice(&input_bytes)
+        .with_context(|| format!("parse edge assembly input {}", input_path.display()))?;
+    if input.season != forecast.season {
+        bail!(
+            "edge assembly season {} does not match forecast season {}",
+            input.season,
+            forecast.season
+        );
+    }
+    let forecast_fingerprint = format!(
+        "sha256:{:x}",
+        Sha256::digest(serde_json::to_vec(&forecast)?)
+    );
+    let result = build_game_prediction_edge_evidence_package(forecast_fingerprint, input)?;
+    for warning in &result.warnings {
+        eprintln!("WARNING: {warning}");
+    }
+    let output = format!("{}\n", serde_json::to_string_pretty(&result.package)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast edge evidence package")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_edge_observe(
+    edge_paths: Vec<PathBuf>,
+    outcome_paths: Vec<PathBuf>,
+    created_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let created_at = DateTime::parse_from_rfc3339(&created_at)
+        .context("--created-at must be RFC 3339")?
+        .with_timezone(&Utc);
+    let edges = edge_paths
+        .iter()
+        .map(|path| -> anyhow::Result<TeamGamePredictionEdgeView> {
+            let bytes = std::fs::read(path)
+                .with_context(|| format!("read frozen edge {}", path.display()))?;
+            serde_json::from_slice(&bytes)
+                .with_context(|| format!("parse frozen edge {}", path.display()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut outcomes = Vec::new();
+    for outcomes_path in &outcome_paths {
+        let outcome_bytes = std::fs::read(outcomes_path)
+            .with_context(|| format!("read outcomes {}", outcomes_path.display()))?;
+        let mut rows = match serde_json::from_slice::<OfficialGameOutcomeSet>(&outcome_bytes) {
+            Ok(set) => {
+                set.validate().with_context(|| {
+                    format!("validate official outcomes {}", outcomes_path.display())
+                })?;
+                set.outcomes
+            }
+            Err(_) => serde_json::from_slice(&outcome_bytes)
+                .with_context(|| format!("parse outcomes {}", outcomes_path.display()))?,
+        };
+        outcomes.append(&mut rows);
+    }
+    let set = build_team_game_prediction_observation_set(&edges, &outcomes, created_at)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&set)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast edge observation set")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub async fn run_edge_outcomes(
+    season: u32,
+    captured_at: String,
+    refresh: bool,
+    allow_partial: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let captured_at = DateTime::parse_from_rfc3339(&captured_at)
+        .context("--captured-at must be RFC 3339")?
+        .with_timezone(&Utc);
+    let schedule = load_fantasy_schedule(Season(season), refresh).await?;
+    let source_url = format!("https://api-web.nhle.com/v1/club-schedule-season/{{team}}/{season}");
+    let set = build_official_game_outcome_set(
+        &schedule,
+        season,
+        captured_at,
+        source_url,
+        !allow_partial,
+    )?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&set)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(path, output.as_bytes(), "official IceCast game outcomes")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_edge_replay_xg(
+    forecast_path: PathBuf,
+    moneypuck_dir: PathBuf,
+    retrieved_at: String,
+    trailing_games: usize,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let retrieved_at = DateTime::parse_from_rfc3339(&retrieved_at)
+        .context("--retrieved-at must be RFC 3339")?
+        .with_timezone(&Utc);
+    let forecast_bytes = std::fs::read(&forecast_path)
+        .with_context(|| format!("read historical forecast {}", forecast_path.display()))?;
+    let forecast: TeamGameForecastView = serde_json::from_slice(&forecast_bytes)
+        .with_context(|| format!("parse historical forecast {}", forecast_path.display()))?;
+    let teams = forecast
+        .games
+        .iter()
+        .flat_map(|game| [game.away_team.clone(), game.home_team.clone()])
+        .collect::<BTreeSet<_>>();
+    let inputs = teams
+        .into_iter()
+        .map(|team| -> anyhow::Result<HistoricalMoneyPuckTeamInput> {
+            let path = moneypuck_dir.join(format!("{team}.csv"));
+            let csv_text = std::fs::read_to_string(&path)
+                .with_context(|| format!("read MoneyPuck team file {}", path.display()))?;
+            Ok(HistoricalMoneyPuckTeamInput {
+                team: team.clone(),
+                csv_text,
+                source_uri: moneypuck_team_game_url(&team),
+                retrieved_at,
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let result =
+        build_historical_moneypuck_edge_package(&forecast, inputs, retrieved_at, trailing_games)?;
+    eprintln!(
+        "IceCast historical edge coverage: {} games, roster {}/{}, xG {}/{}, opponent-adjusted xG {}/{}, special teams {}/{} sides",
+        result.games,
+        result.roster_sides,
+        result.games * 2,
+        result.xg_sides,
+        result.games * 2,
+        result.opponent_adjusted_xg_sides,
+        result.games * 2,
+        result.special_teams_sides,
+        result.games * 2
+    );
+    for warning in result.warnings.iter().take(20) {
+        eprintln!("WARNING: {warning}");
+    }
+    if result.warnings.len() > 20 {
+        eprintln!(
+            "WARNING: {} additional coverage warnings omitted from text",
+            result.warnings.len() - 20
+        );
+    }
+    let output = format!("{}\n", serde_json::to_string_pretty(&result.package)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(path, output.as_bytes(), "historical IceCast xG evidence")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn run_edge_replay_confirmed(
+    forecast_path: PathBuf,
+    morning_evidence_path: PathBuf,
+    boxscore_dir: PathBuf,
+    retrieved_at: String,
+    refresh: bool,
+    concurrency: usize,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    if !(1..=32).contains(&concurrency) {
+        bail!("--concurrency must be between 1 and 32");
+    }
+    let retrieved_at = DateTime::parse_from_rfc3339(&retrieved_at)
+        .context("--retrieved-at must be RFC 3339")?
+        .with_timezone(&Utc);
+    let forecast_bytes = std::fs::read(&forecast_path)
+        .with_context(|| format!("read historical forecast {}", forecast_path.display()))?;
+    let forecast: TeamGameForecastView = serde_json::from_slice(&forecast_bytes)
+        .with_context(|| format!("parse historical forecast {}", forecast_path.display()))?;
+    let morning =
+        load_game_prediction_edge_evidence_package(&morning_evidence_path).with_context(|| {
+            format!(
+                "load game-morning evidence {}",
+                morning_evidence_path.display()
+            )
+        })?;
+    std::fs::create_dir_all(&boxscore_dir)
+        .with_context(|| format!("create boxscore cache {}", boxscore_dir.display()))?;
+
+    let game_ids = forecast
+        .games
+        .iter()
+        .map(|game| game.game_id)
+        .collect::<BTreeSet<_>>();
+    let mut raw_by_game = BTreeMap::new();
+    if !refresh {
+        for game_id in &game_ids {
+            let path = boxscore_dir.join(format!("{game_id}.json"));
+            let bytes = std::fs::read(&path)
+                .with_context(|| format!("read cached official boxscore {}", path.display()))?;
+            let raw = serde_json::from_slice(&bytes)
+                .with_context(|| format!("parse cached official boxscore {}", path.display()))?;
+            raw_by_game.insert(*game_id, raw);
+        }
+    } else {
+        let client = NhlApiClient::production();
+        let mut tasks = tokio::task::JoinSet::<anyhow::Result<(u64, serde_json::Value)>>::new();
+        for game_id in game_ids.iter().copied() {
+            while tasks.len() >= concurrency {
+                let completed = tasks
+                    .join_next()
+                    .await
+                    .context("official boxscore task set closed unexpectedly")??;
+                let (completed_id, raw) = completed?;
+                raw_by_game.insert(completed_id, raw);
+                if raw_by_game.len() % 250 == 0 {
+                    eprintln!(
+                        "IceCast confirmed replay: {}/{} official boxscores cached",
+                        raw_by_game.len(),
+                        game_ids.len()
+                    );
+                }
+            }
+            let client = client.clone();
+            let path = boxscore_dir.join(format!("{game_id}.json"));
+            tasks.spawn(async move {
+                match client.fetch_boxscore_with_raw(game_id).await {
+                    Ok((_, raw)) => {
+                        let bytes = serde_json::to_vec(&raw)?;
+                        icelines_fetch::snapshot::atomic_write_bytes(&path, &bytes)
+                            .with_context(|| format!("cache official boxscore {game_id}"))?;
+                        Ok::<_, anyhow::Error>((game_id, raw))
+                    }
+                    Err(fetch_error) if path.exists() => {
+                        let bytes = std::fs::read(&path).with_context(|| {
+                            format!("read fallback cached official boxscore {game_id}")
+                        })?;
+                        let raw = serde_json::from_slice(&bytes).with_context(|| {
+                            format!("parse fallback cached official boxscore {game_id}")
+                        })?;
+                        eprintln!(
+                            "WARNING: official boxscore {game_id} refresh failed; using cache: {fetch_error}"
+                        );
+                        Ok((game_id, raw))
+                    }
+                    Err(error) => Err(anyhow::anyhow!(
+                        "fetch official boxscore {game_id}: {error}"
+                    )),
+                }
+            });
+        }
+        while let Some(result) = tasks.join_next().await {
+            let (game_id, raw) = result??;
+            raw_by_game.insert(game_id, raw);
+            if raw_by_game.len() % 250 == 0 || raw_by_game.len() == game_ids.len() {
+                eprintln!(
+                    "IceCast confirmed replay: {}/{} official boxscores cached",
+                    raw_by_game.len(),
+                    game_ids.len()
+                );
+            }
+        }
+    }
+
+    let inputs = raw_by_game
+        .into_iter()
+        .map(|(game_id, raw)| HistoricalOfficialBoxscoreInput {
+            game_id,
+            raw,
+            source_uri: format!("https://api-web.nhle.com/v1/gamecenter/{game_id}/boxscore"),
+            retrieved_at,
+        })
+        .collect();
+    let result =
+        build_historical_confirmed_edge_package(&forecast, &morning, inputs, retrieved_at)?;
+    eprintln!(
+        "IceCast confirmed edge coverage: {} games, availability {}/{}, goalies {}/{} sides",
+        result.games,
+        result.availability_sides,
+        result.games * 2,
+        result.goalie_sides,
+        result.games * 2
+    );
+    for warning in result.warnings.iter().take(20) {
+        eprintln!("WARNING: {warning}");
+    }
+    if result.warnings.len() > 20 {
+        eprintln!(
+            "WARNING: {} additional coverage warnings omitted from text",
+            result.warnings.len() - 20
+        );
+    }
+    let output = format!("{}\n", serde_json::to_string_pretty(&result.package)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "historical confirmed IceCast evidence",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn run_edge_replay_goalies(
+    forecast_path: PathBuf,
+    confirmed_evidence_path: PathBuf,
+    goalie_dir: PathBuf,
+    retrieved_at: String,
+    trailing_appearances: usize,
+    refresh: bool,
+    concurrency: usize,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    if !(1..=32).contains(&concurrency) {
+        bail!("--concurrency must be between 1 and 32");
+    }
+    if trailing_appearances == 0 {
+        bail!("--trailing-appearances must be greater than zero");
+    }
+    let retrieved_at = DateTime::parse_from_rfc3339(&retrieved_at)
+        .context("--retrieved-at must be RFC 3339")?
+        .with_timezone(&Utc);
+    let forecast_bytes = std::fs::read(&forecast_path)
+        .with_context(|| format!("read historical forecast {}", forecast_path.display()))?;
+    let forecast: TeamGameForecastView = serde_json::from_slice(&forecast_bytes)
+        .with_context(|| format!("parse historical forecast {}", forecast_path.display()))?;
+    let confirmed = load_game_prediction_edge_evidence_package(&confirmed_evidence_path)
+        .with_context(|| {
+            format!(
+                "load pregame-confirmed evidence {}",
+                confirmed_evidence_path.display()
+            )
+        })?;
+    let goalie_ids = confirmed
+        .games
+        .iter()
+        .flat_map(|game| [&game.away, &game.home])
+        .map(|team| {
+            team.goalie_player_id.ok_or_else(|| {
+                anyhow::anyhow!(
+                    "confirmed evidence for game-side {} lacks a starter player ID; rerun edge-replay-confirmed with the current IceLines build",
+                    team.team
+                )
+            })
+        })
+        .collect::<anyhow::Result<BTreeSet<_>>>()?;
+    std::fs::create_dir_all(&goalie_dir)
+        .with_context(|| format!("create goalie cache {}", goalie_dir.display()))?;
+
+    let mut csv_by_goalie = BTreeMap::new();
+    let mut ids_to_fetch = BTreeSet::new();
+    for player_id in &goalie_ids {
+        let path = goalie_dir.join(format!("{player_id}.csv"));
+        if !refresh && path.exists() {
+            let csv_text = std::fs::read_to_string(&path)
+                .with_context(|| format!("read cached MoneyPuck goalie file {}", path.display()))?;
+            csv_by_goalie.insert(*player_id, csv_text);
+        } else {
+            ids_to_fetch.insert(*player_id);
+        }
+    }
+    if !ids_to_fetch.is_empty() {
+        let client = reqwest::Client::builder()
+            .user_agent("IceLines/edge-replay-goalies")
+            .build()
+            .context("build MoneyPuck HTTP client")?;
+        let mut tasks = tokio::task::JoinSet::<anyhow::Result<(u32, String)>>::new();
+        for player_id in ids_to_fetch.iter().copied() {
+            while tasks.len() >= concurrency {
+                let (completed_id, csv_text) = tasks
+                    .join_next()
+                    .await
+                    .context("MoneyPuck goalie task set closed unexpectedly")???;
+                csv_by_goalie.insert(completed_id, csv_text);
+            }
+            let client = client.clone();
+            let path = goalie_dir.join(format!("{player_id}.csv"));
+            tasks.spawn(async move {
+                let url = moneypuck_goalie_game_url(player_id);
+                let fetched = fetch_bytes_with_backoff(&client, &url, 8).await;
+                let bytes = match fetched {
+                    Ok(bytes) => {
+                        icelines_fetch::snapshot::atomic_write_bytes(&path, &bytes)
+                            .with_context(|| format!("cache MoneyPuck goalie {player_id}"))?;
+                        bytes
+                    }
+                    Err(fetch_error) if path.exists() => {
+                        eprintln!(
+                            "WARNING: MoneyPuck goalie {player_id} refresh failed; using cache: {fetch_error}"
+                        );
+                        std::fs::read(&path).with_context(|| {
+                            format!("read fallback cached MoneyPuck goalie {player_id}")
+                        })?
+                    }
+                    Err(error) => {
+                        return Err(anyhow::anyhow!(
+                            "fetch MoneyPuck goalie {player_id} from {url}: {error}"
+                        ));
+                    }
+                };
+                let csv_text = String::from_utf8(bytes)
+                    .with_context(|| format!("MoneyPuck goalie {player_id} CSV is not UTF-8"))?;
+                Ok((player_id, csv_text))
+            });
+        }
+        while let Some(result) = tasks.join_next().await {
+            let (player_id, csv_text) = result??;
+            csv_by_goalie.insert(player_id, csv_text);
+            if csv_by_goalie.len() % 50 == 0 || csv_by_goalie.len() == goalie_ids.len() {
+                eprintln!(
+                    "IceCast goalie replay: {}/{} career files cached",
+                    csv_by_goalie.len(),
+                    goalie_ids.len()
+                );
+            }
+        }
+    }
+
+    let inputs = csv_by_goalie
+        .into_iter()
+        .map(|(player_id, csv_text)| HistoricalMoneyPuckGoalieInput {
+            player_id,
+            csv_text,
+            source_uri: moneypuck_goalie_game_url(player_id),
+            retrieved_at,
+        })
+        .collect();
+    let result = build_historical_goalie_edge_package(
+        &forecast,
+        &confirmed,
+        inputs,
+        trailing_appearances,
+        retrieved_at,
+    )?;
+    eprintln!(
+        "IceCast goalie edge coverage: {} games, {} goalies, form {}/{}, workload {}/{} sides",
+        result.games,
+        result.requested_goalies,
+        result.form_sides,
+        result.games * 2,
+        result.workload_sides,
+        result.games * 2
+    );
+    for warning in result.warnings.iter().take(20) {
+        eprintln!("WARNING: {warning}");
+    }
+    if result.warnings.len() > 20 {
+        eprintln!(
+            "WARNING: {} additional coverage warnings omitted from text",
+            result.warnings.len() - 20
+        );
+    }
+    let output = format!("{}\n", serde_json::to_string_pretty(&result.package)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "historical goalie-form IceCast evidence",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+async fn fetch_bytes_with_backoff(
+    client: &reqwest::Client,
+    url: &str,
+    attempts: usize,
+) -> anyhow::Result<Vec<u8>> {
+    let mut last_error = None;
+    for attempt in 0..attempts.max(1) {
+        match client.get(url).send().await {
+            Ok(response) if response.status().is_success() => {
+                let bytes = response.bytes().await?.to_vec();
+                // MoneyPuck career endpoints throttle bursts aggressively.
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                return Ok(bytes);
+            }
+            Ok(response)
+                if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS
+                    || response.status().is_server_error() =>
+            {
+                let status = response.status();
+                let retry_after = response
+                    .headers()
+                    .get(reqwest::header::RETRY_AFTER)
+                    .and_then(|value| value.to_str().ok())
+                    .and_then(|value| value.parse::<u64>().ok())
+                    .unwrap_or(1_u64 << attempt.min(4))
+                    .min(30);
+                last_error = Some(anyhow::anyhow!("HTTP status {status}"));
+                if attempt + 1 < attempts {
+                    tokio::time::sleep(std::time::Duration::from_secs(retry_after)).await;
+                }
+            }
+            Ok(response) => return Err(response.error_for_status().unwrap_err().into()),
+            Err(error) => {
+                last_error = Some(error.into());
+                if attempt + 1 < attempts {
+                    tokio::time::sleep(std::time::Duration::from_secs(1_u64 << attempt.min(4)))
+                        .await;
+                }
+            }
+        }
+    }
+    Err(last_error.unwrap_or_else(|| anyhow::anyhow!("HTTP fetch failed without a response")))
+}
+
+pub fn run_edge_register_holdout(
+    season: u32,
+    registered_at: String,
+    outcome_not_before: String,
+    config_path: Option<PathBuf>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let registered_at = DateTime::parse_from_rfc3339(&registered_at)
+        .context("--registered-at must be RFC 3339")?
+        .with_timezone(&Utc);
+    let outcome_not_before = DateTime::parse_from_rfc3339(&outcome_not_before)
+        .context("--outcome-not-before must be RFC 3339")?
+        .with_timezone(&Utc);
+    let config = config_path
+        .as_ref()
+        .map(|path| -> anyhow::Result<TeamGamePredictionTrainingConfig> {
+            let bytes = std::fs::read(path)
+                .with_context(|| format!("read training config {}", path.display()))?;
+            serde_json::from_slice(&bytes)
+                .with_context(|| format!("parse training config {}", path.display()))
+        })
+        .transpose()?
+        .unwrap_or_default();
+    let registration =
+        register_team_game_prediction_holdout(&config, season, registered_at, outcome_not_before)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&registration)?);
+    if let Some(path) = out.as_ref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "IceCast prospective holdout registration",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_edge_train(args: IceCastEdgeTrainArgs) -> anyhow::Result<()> {
+    let observation_bytes = std::fs::read(&args.observations)
+        .with_context(|| format!("read observations {}", args.observations.display()))?;
+    let observations: Vec<TeamGamePredictionTrainingObservation> =
+        match serde_json::from_slice::<TeamGamePredictionObservationSet>(&observation_bytes) {
+            Ok(set) => {
+                set.validate().with_context(|| {
+                    format!("validate observations {}", args.observations.display())
+                })?;
+                set.observations
+            }
+            Err(_) => serde_json::from_slice(&observation_bytes)
+                .with_context(|| format!("parse observations {}", args.observations.display()))?,
+        };
+    let supplied_config = args
+        .config
+        .as_ref()
+        .map(|path| -> anyhow::Result<TeamGamePredictionTrainingConfig> {
+            let bytes = std::fs::read(path)
+                .with_context(|| format!("read training config {}", path.display()))?;
+            serde_json::from_slice(&bytes)
+                .with_context(|| format!("parse training config {}", path.display()))
+        })
+        .transpose()?;
+    let mut config = supplied_config.clone().unwrap_or_default();
+    if supplied_config.is_none() {
+        if let Some(observation) = observations.first() {
+            config.vintage = observation.vintage;
+        }
+    }
+    let registration = args
+        .registration
+        .as_ref()
+        .map(
+            |path| -> anyhow::Result<TeamGamePredictionHoldoutRegistration> {
+                let bytes = std::fs::read(path)
+                    .with_context(|| format!("read holdout registration {}", path.display()))?;
+                serde_json::from_slice(&bytes)
+                    .with_context(|| format!("parse holdout registration {}", path.display()))
+            },
+        )
+        .transpose()?;
+    if registration.is_some() && !args.validate {
+        bail!("--registration requires --validate");
+    }
+    let (value, model) = if args.validate {
+        let view = validate_team_game_prediction_model_with_registration(
+            &observations,
+            config,
+            registration.as_ref(),
+        )?;
+        let model = view.final_model.clone();
+        (serde_json::to_value(view)?, model)
+    } else {
+        let view = train_team_game_prediction_model(&observations, config)?;
+        let model = view.model.clone();
+        (serde_json::to_value(view)?, model)
+    };
+    if let Some(path) = args.model_out.as_ref() {
+        let model_output = format!("{}\n", serde_json::to_string_pretty(&model)?);
+        write_icecast_file(path, model_output.as_bytes(), "IceCast edge model")?;
+    }
+    let output = format!("{}\n", serde_json::to_string_pretty(&value)?);
+    if let Some(path) = args.out.as_ref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast edge training result")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_edge(view: &icelines_core::TeamGamePredictionEdgeView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "IceCast prediction edge · {} · {:?}",
+        view.season, view.vintage
+    );
+    let _ = writeln!(
+        out,
+        "Model: {} ({:?}) · {} games",
+        view.model.model_id,
+        view.model.authority,
+        view.games.len()
+    );
+    for game in &view.games {
+        let _ = writeln!(
+            out,
+            "{}  {} at {}  {:>5.1}% -> {:>5.1}%  ({}/{} evidence)",
+            game.date,
+            game.away_team,
+            game.home_team,
+            game.blended_home_win_probability * 100.0,
+            game.enhanced_home_win_probability * 100.0,
+            game.available_features,
+            game.expected_features
+        );
+    }
+    for warning in view.warnings.iter().take(10) {
+        let _ = writeln!(out, "WARNING: {warning}");
+    }
+    if view.warnings.len() > 10 {
+        let _ = writeln!(
+            out,
+            "WARNING: {} additional warnings are retained in JSON",
+            view.warnings.len() - 10
+        );
+    }
+    out
 }
 
 pub fn run_season_card(

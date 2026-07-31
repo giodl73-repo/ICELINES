@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/team_game_prediction_holdout_registration.v1.schema.json",
+  "title": "IceCast prospective game-prediction holdout registration",
+  "type": "object",
+  "required": [
+    "schema",
+    "holdout_season",
+    "registered_at",
+    "outcome_not_before",
+    "config_fingerprint",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "team_game_prediction_holdout_registration.v1" },
+    "holdout_season": { "type": "integer", "minimum": 20000000 },
+    "registered_at": { "type": "string", "format": "date-time" },
+    "outcome_not_before": { "type": "string", "format": "date-time" },
+    "config_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "$defs": {
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-fA-F]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

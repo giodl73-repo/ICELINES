@@ -1,0 +1,8 @@
+{
+  "schema": "team_game_prediction_holdout_registration.v1",
+  "holdout_season": 20262027,
+  "registered_at": "2026-07-31T02:36:58Z",
+  "outcome_not_before": "2027-04-11T12:00:00Z",
+  "config_fingerprint": "sha256:e199b2c36dc6623663309ac6d81b5be44ab3031a30f34568d67fb730cae6482d",
+  "fingerprint": "sha256:a19eab91ca694d7863f95ddd3ab527fbb5cbfd81cbf998b37238ee83c1ae79f5"
+}

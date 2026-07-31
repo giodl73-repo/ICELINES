@@ -1150,7 +1150,75 @@ icelines icecast discover-opening-rosters --season 20242025 --partial-manifest-o
 icelines icecast discover-opening-rosters --season 20242025 --cache-only --partial-manifest-out partial.json
 icelines icecast import-opening-rosters --manifest partial.json --allow-partial-evaluation
 icelines icecast season --season 20212022 --stats-season 20202021 --replay-mode rolling --retrospective-opening-lineups
+icelines icecast edge --forecast games.json --evidence morning-evidence.json --json --out morning-edge.json --enhanced-forecast-out morning-games.json
+icelines icecast edge --forecast games.json --evidence confirmed-evidence.json --model promoted-edge-model.json --json --out confirmed-edge.json
+icelines icecast edge-evidence --forecast games.json --input dated-assembly-input.json --out morning-evidence.json
+icelines icecast edge-outcomes --season 20252026 --captured-at 2026-07-30T20:00:00Z --refresh --out outcomes-2025-26.json
+icelines icecast edge-replay-xg --forecast games-2025-26.json --moneypuck-dir moneypuck-team-games --retrieved-at 2026-07-30T20:00:00Z --out xg-evidence-2025-26.json
+icelines icecast edge-replay-confirmed --forecast games-2025-26.json --morning-evidence xg-evidence-2025-26.json --boxscore-dir official-boxscores/2025-26 --retrieved-at 2026-07-30T20:00:00Z --refresh --out confirmed-evidence-2025-26.json
+icelines icecast edge-replay-goalies --forecast games-2025-26.json --confirmed-evidence confirmed-evidence-2025-26.json --goalie-dir moneypuck-goalies --retrieved-at 2026-07-30T20:00:00Z --refresh --out goalie-evidence-2025-26.json
+icelines icecast edge-observe --edge edge-2024-25.json --outcomes outcomes-2024-25.json --edge edge-2025-26.json --outcomes outcomes-2025-26.json --created-at 2026-07-30T20:00:01Z --out frozen-game-observations.json
+icelines icecast edge-register-holdout --season 20262027 --registered-at 2026-07-31T02:36:58Z --outcome-not-before 2027-04-11T12:00:00Z --out holdout-2026-27.json
+icelines icecast edge-train --observations frozen-game-observations.json --out trained-edge.json
+icelines icecast edge-train --observations frozen-game-observations.json --config edge-training-config.json --validate --registration holdout-2026-27.json --model-out edge-model.json --out rolling-validation.json
+icelines icecast edge-train --observations goalie-observations.json --config examples/team-game-prediction-goalie-candidate-config.json --validate --out goalie-candidate-validation.json
+icelines icecast edge-train --observations opponent-adjusted-xg-observations.json --config examples/team-game-prediction-opponent-adjusted-xg-candidate-config.json --validate --model-out opponent-adjusted-xg-model.json --out opponent-adjusted-xg-validation.json
+icelines icecast edge-card --input edge-preseason.json --input edge-morning.json --input edge-confirmed.json --game-id 2026020001 --team NYR --team-name "New York Rangers" --out game-card.json
+icelines icecast edge-card --input edge-confirmed.json --game-id 2026020001 --team NYR --market-benchmark closing-market.json --out benchmark-card.json
+icelines icecast season-simulate --forecast enhanced-game-forecast.json --trials 10000 --seed 20262027 --out enhanced-season.json
 ```
+
+`icecast edge` applies one sealed forecast vintage (`preseason`,
+`game_morning`, or `pregame_confirmed`) to the exact
+`team_game_forecast.v1` named by the evidence package. Each source has its own
+capture time and fingerprint; undeclared, late, duplicate, or wrong-forecast
+evidence is refused. The default model remains evaluation-only. Supply a
+trained production model only after `edge-train --validate` passes every
+rolling-origin promotion check. `--enhanced-forecast-out` writes the same
+per-game contract consumed by season simulation, so IceLines does not
+recompute probabilities in a UI or downstream simulator.
+
+`icecast edge-train` fits the regularized Elo-plus-evidence ensemble from
+frozen observations. `--validate` holds out each season chronologically and
+reports Brier score, log loss, calibration, feature ablations, team/season
+stability, and the explicit promotion decision. Outcomes must postdate their
+forecast freezes, and every observation retains dated source fingerprints.
+When `--config` is omitted, training inherits the sealed observation vintage.
+`edge-observe` accepts repeated independently sealed season outcome sets, while
+`edge-replay-xg` reconstructs strictly pregame trailing MoneyPuck form for
+evaluation; later retrieval is labeled historical reconstruction and does not
+move the evidence cutoff past the game.
+`edge-replay-confirmed` projects only official dressed IDs, explicit starter
+flags, NHL game date, and start time. Scores, decisions, saves, and all other
+postgame performance fields are excluded from the projected source fingerprint.
+Unknown prior player quality receives a neutral 50 and `modeled` reliability.
+`edge-replay-goalies` then derives each confirmed starter's trailing GSAx form,
+rest, and seven-day workload strictly from appearances before that game. The
+career CSV is cached by NHL player ID; rookies without a prior appearance stay
+unavailable rather than being zero-filled.
+The xG replay also derives a separate opponent-adjusted form: each selected
+game is compared with that opponent's trailing xG form strictly before the
+selected game. Its seal binds the selected team rows and every opponent-prior
+fingerprint. Candidate configurations may require an incremental ablation gain
+through `minimum_candidate_feature_gain`; passing pooled metrics alone is not
+enough for a new feature.
+
+Passing retrospective metrics is insufficient for production authority.
+`edge-register-holdout` seals an untouched future season against the exact
+training configuration before any forecast or result in that season. The
+registration must be supplied to `edge-train --validate`; otherwise the final
+model remains `evaluation` even when every statistical gate passes.
+
+`edge-card` compares one game's independently sealed forecast vintages from a
+single model and baseline. The UI-neutral `card_document.v1` output owns the
+focused-team probability, percentage-point movement, latest factor attribution,
+coverage, authority, disclosures, and provenance; renderers do no hockey math.
+It also carries weight-adjusted active-evidence confidence and low/high
+evidence-stability sensitivity values. Those values are not statistical
+confidence intervals and do not represent outcome variance.
+`season-simulate` consumes either the baseline forecast or the exact
+`--enhanced-forecast-out` document and runs the existing all-32 simulator
+without rebuilding game probabilities.
 
 `icecast camp` selects the opening active roster before the dressed 12F/6D/2G
 lineup. Text and JSON distinguish active-roster, dressed, healthy-scratch, and

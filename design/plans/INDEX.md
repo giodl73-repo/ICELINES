@@ -30,6 +30,10 @@ Line-combination simulation is an active child workstream of Team Season
 Forecast and does not consume another top-level active-plan slot: see
 [`2026-07-23-line-combination-simulation.md`](2026-07-23-line-combination-simulation.md).
 
+Game-prediction edge is also an active child workstream of Team Season Forecast
+and does not consume another top-level slot: see
+[`2026-07-30-game-prediction-edge.md`](2026-07-30-game-prediction-edge.md).
+
 The older Fantasy Draft and Daily Assistant plan is absorbed by the Fantasy War
 Room roadmap for active navigation. Its durable league rules remain canonical
 in the linked feature specification until the consolidation migration rewrites

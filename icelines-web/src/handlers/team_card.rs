@@ -771,6 +771,14 @@ fn project_fantasy_template(
             ),
             "The Tape",
         ),
+        CardKind::TeamGamePredictionEdge => (
+            "ICECAST · GAME PREDICTION",
+            "Game prediction card pages",
+            String::new(),
+            "?page=line".to_string(),
+            "?page=insider".to_string(),
+            "The Line",
+        ),
         CardKind::OrganizationWindow => (
             "THE RINK · ORGANIZATION WINDOW",
             "Organization Window card pages",
