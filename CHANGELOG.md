@@ -16,8 +16,10 @@
   teams. A real seven-season, 8,510-game source backbone now supports five
   forward holdouts without using postgame features; promotion still fails
   closed when goalie coverage or calibration gates are unmet.
-- Fixed exact JSON seal replay for floating-point features and removed a
-  quadratic full-season validation pass from historical observation builds.
+- Fixed exact JSON seal replay by normalizing only prediction evidence-package
+  floats before sealing, without changing workspace-wide JSON parsing or
+  existing canonical fingerprints. Also removed a quadratic full-season
+  validation pass from historical observation builds.
 - Added official pregame-confirmed reconstruction from 8,510 cached NHL
   boxscores. The derived source contains dressed/starter identities and timing
   only; result and performance fields cannot affect its fingerprint. Historical

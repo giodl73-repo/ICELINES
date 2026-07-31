@@ -17,6 +17,7 @@ use crate::game_prediction_edge_assembler::{
 pub const GAME_PREDICTION_EDGE_PACKAGE_SCHEMA: &str = "game_prediction_edge_evidence_package.v1";
 pub const GAME_PREDICTION_EDGE_PACKAGE_JSON_SCHEMA: &str =
     include_str!("../../design/schemas/game_prediction_edge_evidence_package.v1.schema.json");
+const PACKAGE_FLOAT_SCALE: f64 = 1_000_000_000.0;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -112,6 +113,7 @@ impl GamePredictionEdgeEvidencePackage {
     ) -> Result<Self, GamePredictionEdgePackageError> {
         sources.sort_by(|left, right| left.source_key.cmp(&right.source_key));
         games.sort_by_key(|game| game.game_id);
+        normalize_game_floats(&mut games);
         let mut package = Self {
             schema: GAME_PREDICTION_EDGE_PACKAGE_SCHEMA.to_owned(),
             season,
@@ -179,6 +181,12 @@ impl GamePredictionEdgeEvidencePackage {
                     game.game_id
                 )));
             }
+            if !game_floats_are_canonical(game) {
+                return Err(GamePredictionEdgePackageError::Invalid(format!(
+                    "game {} contains non-canonical floating-point evidence",
+                    game.game_id
+                )));
+            }
             let fingerprints = game
                 .away
                 .source_fingerprints
@@ -230,6 +238,60 @@ fn package_fingerprint(
     Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
 }
 
+fn normalize_game_floats(games: &mut [TeamGamePredictionEvidenceInput]) {
+    for game in games {
+        normalize_team_floats(&mut game.away);
+        normalize_team_floats(&mut game.home);
+    }
+}
+
+fn normalize_team_floats(team: &mut icelines_core::TeamGamePredictionTeamEvidence) {
+    for value in [
+        &mut team.roster_strength,
+        &mut team.availability_strength,
+        &mut team.lineup_impact,
+        &mut team.goalie_quality,
+        &mut team.goalie_form_quality,
+        &mut team.goalie_workload_readiness,
+        &mut team.xg_share,
+        &mut team.opponent_adjusted_xg_share,
+        &mut team.special_teams_strength,
+        &mut team.matchup_suitability,
+    ] {
+        *value = value.map(canonical_float);
+    }
+}
+
+fn game_floats_are_canonical(game: &TeamGamePredictionEvidenceInput) -> bool {
+    [&game.away, &game.home]
+        .into_iter()
+        .flat_map(|team| {
+            [
+                team.roster_strength,
+                team.availability_strength,
+                team.lineup_impact,
+                team.goalie_quality,
+                team.goalie_form_quality,
+                team.goalie_workload_readiness,
+                team.xg_share,
+                team.opponent_adjusted_xg_share,
+                team.special_teams_strength,
+                team.matchup_suitability,
+            ]
+        })
+        .flatten()
+        .all(|value| value == canonical_float(value))
+}
+
+fn canonical_float(value: f64) -> f64 {
+    let normalized = (value * PACKAGE_FLOAT_SCALE).round() / PACKAGE_FLOAT_SCALE;
+    if normalized == 0.0 {
+        0.0
+    } else {
+        normalized
+    }
+}
+
 fn valid_sha256(value: &str) -> bool {
     value
         .strip_prefix("sha256:")
@@ -265,8 +327,8 @@ mod tests {
             goalie_form_appearances: 0,
             goalie_form_state: TeamGameEvidenceState::Unavailable,
             goalie_workload_readiness: None,
-            // Regression: serde_json without `float_roundtrip` reparsed this
-            // value one ULP lower and invalidated an otherwise intact seal.
+            // Regression input: serde_json's standard parser reparses this
+            // long decimal one ULP lower unless the package canonicalizes it.
             xg_share: Some(0.495_452_944_710_293_55),
             xg_games: 8,
             opponent_adjusted_xg_share: None,
@@ -304,6 +366,7 @@ mod tests {
     #[test]
     fn l0_package_is_canonical_and_sealed() {
         let package = package();
+        assert_eq!(package.games[0].away.xg_share, Some(0.495_452_945));
         package.validate().unwrap();
         assert!(package.fingerprint.starts_with("sha256:"));
     }

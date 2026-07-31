@@ -49,6 +49,10 @@ For each scheduled team-game side, IceLines may carry:
 Every optional value carries a sample count or evidence state where applicable.
 Unavailable values remain absent. They are not zero-filled. Small-sample form
 and special-teams values shrink toward neutral before entering the model.
+Evidence-package floating-point values are normalized to nine decimal places
+before sealing. This keeps standard `serde_json` file round trips stable without
+changing the workspace serializer or invalidating unrelated canonical artifacts;
+non-canonical package values are refused.
 
 ## Model
 
