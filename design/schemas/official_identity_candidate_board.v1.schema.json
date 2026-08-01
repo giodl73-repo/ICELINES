@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.dev/schemas/official_identity_candidate_board.v1.schema.json",
+  "title": "IceLines Official Identity Candidate Board v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "evaluation_season", "source_package_id", "source_package_fingerprint", "effective_cutoff", "knowledge_cutoff", "evidence_cutoff", "evaluated_count", "eligible_count", "status_counts", "rows", "disclosures"],
+  "properties": {
+    "schema": { "const": "official_identity_candidate_board.v1" },
+    "evaluation_season": { "type": "integer", "minimum": 1 },
+    "source_package_id": { "type": "string", "minLength": 1 },
+    "source_package_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "effective_cutoff": { "type": "string", "format": "date-time" },
+    "knowledge_cutoff": { "type": "string", "format": "date-time" },
+    "evidence_cutoff": { "type": "string", "format": "date-time" },
+    "evaluated_count": { "type": "integer", "minimum": 0 },
+    "eligible_count": { "type": "integer", "minimum": 0 },
+    "status_counts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "proposals"],
+        "properties": {
+          "status": { "$ref": "#/$defs/status" },
+          "proposals": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "proposal_id", "displayed_name", "search_query", "expected_draft", "proposal_evidence", "status", "candidates"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1 },
+          "proposal_id": { "type": "string", "minLength": 1 },
+          "displayed_name": { "type": "string", "minLength": 1 },
+          "search_query": { "type": "string", "minLength": 1 },
+          "expected_draft": { "$ref": "#/$defs/draft" },
+          "proposal_evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+          "status": { "$ref": "#/$defs/status" },
+          "eligible_player_id": { "type": "integer", "minimum": 1 },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["player_id", "display_name", "search_evidence"],
+              "properties": {
+                "player_id": { "type": "integer", "minimum": 1 },
+                "display_name": { "type": "string", "minLength": 1 },
+                "birth_date": { "type": "string", "format": "date" },
+                "draft": { "$ref": "#/$defs/draft" },
+                "search_evidence": { "$ref": "#/$defs/evidence" },
+                "landing_evidence": { "$ref": "#/$defs/evidence" }
+              }
+            }
+          },
+          "errors": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "disclosures": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "status": {
+      "enum": ["exact_coordinate_match", "ambiguous_coordinate_match", "no_exact_name", "landing_missing", "coordinate_mismatch", "provider_failure"]
+    },
+    "draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["organization", "year", "round", "overall"],
+      "properties": {
+        "organization": { "type": "string", "minLength": 2, "maxLength": 4 },
+        "year": { "type": "integer", "minimum": 1917, "maximum": 2200 },
+        "round": { "type": "integer", "minimum": 1 },
+        "overall": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "source_url", "provider", "captured_at", "content_sha256", "adapter_version"],
+      "properties": {
+        "source_id": { "type": "string", "minLength": 1 },
+        "source_url": { "type": "string", "format": "uri" },
+        "provider": { "type": "string", "minLength": 1 },
+        "captured_at": { "type": "string", "format": "date-time" },
+        "content_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "adapter_version": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

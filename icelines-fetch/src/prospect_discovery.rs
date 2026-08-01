@@ -94,6 +94,7 @@ pub enum ProspectLeagueContextExclusionReason {
     AboveMaximumAge,
     FewerThanMinimumAhlSeasons,
     MissingLatestSkaterStats,
+    UnsupportedOrganizationRelationship,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

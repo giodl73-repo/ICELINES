@@ -8799,9 +8799,10 @@ mod tests {
         rules.bench_slots = 2;
         rules.playoff_start = Some(monday);
         rules.playoff_rounds = 1;
+        let players = vec![anchor, complement, collision];
         let fits = draft_playoff_fit_metrics(
-            &[anchor.key.clone()],
-            &[anchor, complement, collision],
+            std::slice::from_ref(&players[0].key),
+            &players,
             &schedules,
             &rules,
         )
@@ -8863,7 +8864,7 @@ mod tests {
         rules.playoff_start = Some(monday);
         rules.playoff_rounds = 1;
         let values = pickup_playoff_option_values(
-            &[anchor.key.clone()],
+            std::slice::from_ref(&anchor.key),
             &[&complement, &collision],
             true,
             &pool,

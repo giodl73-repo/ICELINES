@@ -9,6 +9,7 @@ use icelines_core::{
     FantasyDraftIdentityInput, Position, Season, ViewContext, ViewWindow,
 };
 
+#[allow(clippy::too_many_arguments)]
 fn candidate(
     key: &str,
     player: &str,

@@ -1712,9 +1712,9 @@ mod tests {
             ],
         };
         let performance_document = build_prospect_nhl_performance_document(
-            &[study.clone()],
+            std::slice::from_ref(&study),
             &[],
-            &[history.clone()],
+            std::slice::from_ref(&history),
             20222023,
             20252026,
         )
@@ -1731,9 +1731,9 @@ mod tests {
             performance_document.scores[0].score < performance_document.scores[0].raw_quality_score
         );
         let input = adapt_prospect_conversion_input(
-            &[study.clone()],
+            std::slice::from_ref(&study),
             &[],
-            &[history.clone()],
+            std::slice::from_ref(&history),
             20222023,
             20252026,
             &[ProspectConversionPerformanceInput {

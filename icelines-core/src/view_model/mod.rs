@@ -38,6 +38,7 @@ pub mod favorites;
 pub mod game;
 pub mod goalies;
 pub mod home;
+pub mod identity_review_workboard;
 pub mod isolated_impact;
 pub mod leaders;
 pub mod line_combination;
@@ -45,6 +46,7 @@ pub mod management_behavior;
 pub mod matchup_evidence;
 pub mod mutation;
 pub mod nhl_goalie_translation;
+pub mod official_identity_candidates;
 pub mod organization_lineup;
 pub mod organization_profile_history;
 pub mod organization_window;
@@ -57,6 +59,7 @@ pub mod organizational_prospect;
 pub mod player_card;
 pub mod playoffs;
 pub mod poach;
+pub mod prospect_census;
 pub mod prospect_conversion;
 pub mod prospect_study;
 pub mod records;
@@ -457,6 +460,15 @@ pub use poach::{
     PoachScore, PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchAlertRow,
     WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleMutationIntent,
     WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
+};
+pub use prospect_census::{
+    build_prospect_census, require_publishable_prospect_census, ProspectCensusCandidateInput,
+    ProspectCensusCounts, ProspectCensusDimensionRow, ProspectCensusFreshnessStatus,
+    ProspectCensusInput, ProspectCensusLossReason, ProspectCensusLossRow,
+    ProspectCensusOrganizationInput, ProspectCensusOrganizationView,
+    ProspectCensusPublicationStatus, ProspectCensusStage, ProspectCensusView,
+    ProspectPopulationAuthorityStatus, ProspectRankPublicationStatus,
+    ProspectScorePublicationStatus, PROSPECT_CENSUS_SCHEMA,
 };
 pub use prospect_conversion::{
     adapt_prospect_conversion_input, build_prospect_conversion_board,

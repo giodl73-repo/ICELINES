@@ -1,5 +1,13 @@
 use crate::{IcelinesError, TeamAbbr};
 
+/// All current NHL franchise abbreviations in NHL API form, sorted
+/// alphabetically. Provider adapters and product consumers share this list.
+pub const ALL_NHL_TEAM_ABBREVIATIONS: &[&str] = &[
+    "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA", "LAK",
+    "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT", "SEA", "SJS", "STL", "TBL",
+    "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
+];
+
 /// All 32 NHL team abbreviations (NHL API format) paired with full names.
 pub const CANONICAL_TEAMS: &[(&str, &str)] = &[
     ("ANA", "Anaheim Ducks"),
@@ -100,6 +108,15 @@ mod tests {
     #[test]
     fn l0_team_all_returns_32_teams() {
         assert_eq!(TeamAbbr::all().count(), 32);
+    }
+
+    #[test]
+    fn l0_abbreviation_catalog_matches_named_team_catalog() {
+        let named = CANONICAL_TEAMS
+            .iter()
+            .map(|(abbreviation, _)| *abbreviation)
+            .collect::<Vec<_>>();
+        assert_eq!(named, ALL_NHL_TEAM_ABBREVIATIONS);
     }
 
     #[test]

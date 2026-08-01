@@ -1626,7 +1626,7 @@ mod tests {
                 game_dates: dates
                     .iter()
                     .copied()
-                    .filter(|date| (date.ordinal() as usize + index) % 2 == 0)
+                    .filter(|date| (date.ordinal() as usize + index).is_multiple_of(2))
                     .collect(),
             })
             .collect::<Vec<_>>();

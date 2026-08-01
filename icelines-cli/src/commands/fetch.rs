@@ -23,6 +23,36 @@ use sha2::{Digest, Sha256};
 
 pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
     match args {
+        FetchSubcommand::ProspectSources {
+            catalog,
+            store,
+            out,
+            captured_at,
+            ahl_roster_snapshot,
+            ahl_identity_reviews,
+            ahl_review_registry_url,
+            include_roster_player_landings,
+            contract_control_ledger,
+            camp_participation_ledger,
+            identity_review_ledgers,
+            dry_run,
+        } => {
+            do_prospect_sources(ProspectSourcesCommand {
+                catalog,
+                store,
+                out,
+                captured_at,
+                ahl_roster_snapshot,
+                ahl_identity_reviews,
+                ahl_review_registry_url,
+                include_roster_player_landings,
+                contract_control_ledger,
+                camp_participation_ledger,
+                identity_review_ledgers,
+                dry_run,
+            })
+            .await
+        }
         FetchSubcommand::Rosters {
             season,
             refresh,
@@ -187,6 +217,180 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             dry_run,
         } => do_report(kind, &season, season_type, no_lock, dry_run).await,
     }
+}
+
+struct ProspectSourcesCommand {
+    catalog: std::path::PathBuf,
+    store: Option<std::path::PathBuf>,
+    out: Option<std::path::PathBuf>,
+    captured_at: Option<String>,
+    ahl_roster_snapshot: Option<std::path::PathBuf>,
+    ahl_identity_reviews: Vec<std::path::PathBuf>,
+    ahl_review_registry_url: Option<String>,
+    include_roster_player_landings: bool,
+    contract_control_ledger: Option<std::path::PathBuf>,
+    camp_participation_ledger: Option<std::path::PathBuf>,
+    identity_review_ledgers: Vec<std::path::PathBuf>,
+    dry_run: bool,
+}
+
+async fn do_prospect_sources(command: ProspectSourcesCommand) -> anyhow::Result<()> {
+    use icelines_core::source_facts::OrganizationId;
+    use icelines_fetch::{
+        nhl_teams_for_season, run_prospect_source_audit_with_artifacts,
+        ProspectPopulationSourceFamily, ProspectSourceAuditArtifacts, ProspectSourceAuditInput,
+        ProspectSourceCatalog, SourcePackageStore,
+    };
+
+    let ProspectSourcesCommand {
+        catalog: catalog_path,
+        store: store_root,
+        out,
+        captured_at,
+        ahl_roster_snapshot,
+        ahl_identity_reviews,
+        ahl_review_registry_url,
+        include_roster_player_landings,
+        contract_control_ledger,
+        camp_participation_ledger,
+        identity_review_ledgers,
+        dry_run,
+    } = command;
+    let bytes = std::fs::read(&catalog_path)
+        .with_context(|| format!("read prospect source catalog {}", catalog_path.display()))?;
+    let catalog: ProspectSourceCatalog = serde_json::from_slice(&bytes)
+        .with_context(|| format!("parse prospect source catalog {}", catalog_path.display()))?;
+    let organizations = nhl_teams_for_season(&catalog.season.to_string())
+        .into_iter()
+        .map(OrganizationId::try_new)
+        .collect::<Result<Vec<_>, _>>()?;
+    let families = [
+        ProspectPopulationSourceFamily::Draft,
+        ProspectPopulationSourceFamily::CampPublication,
+        ProspectPopulationSourceFamily::ContractPublication,
+        ProspectPopulationSourceFamily::TransactionPublication,
+        ProspectPopulationSourceFamily::CurrentNhlAssignment,
+        ProspectPopulationSourceFamily::CurrentAhlAssignment,
+        ProspectPopulationSourceFamily::NhlPlayerLanding,
+    ];
+    let requests = catalog.expand(&organizations, &families)?;
+    let unique_urls = requests
+        .iter()
+        .map(|request| request.source_url.as_str())
+        .collect::<std::collections::BTreeSet<_>>()
+        .len();
+    let cataloged_objects = requests
+        .iter()
+        .map(|request| request.coverage_object_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>()
+        .len();
+    if dry_run {
+        println!(
+            "prospect source audit: season={} organizations={} requested_matrix={} cataloged_objects={} unique_urls={} uncataloged_objects={} ahl_snapshot={} ahl_reviews={} roster_landings={} contract_ledger={} camp_ledger={} identity_review_ledgers={}",
+            catalog.season,
+            organizations.len(),
+            organizations.len() * families.len(),
+            cataloged_objects,
+            unique_urls,
+            organizations.len() * families.len() - cataloged_objects,
+            ahl_roster_snapshot.is_some(),
+            ahl_identity_reviews.len(),
+            include_roster_player_landings,
+            contract_control_ledger.is_some(),
+            camp_participation_ledger.is_some(),
+            identity_review_ledgers.len(),
+        );
+        return Ok(());
+    }
+    let finalize_cutoffs_after_acquisition = captured_at.is_none();
+    let captured_at = captured_at
+        .as_deref()
+        .map(chrono::DateTime::parse_from_rfc3339)
+        .transpose()
+        .context("--captured-at must be RFC 3339")?
+        .map(|value| value.with_timezone(&Utc))
+        .unwrap_or_else(Utc::now);
+    let store =
+        SourcePackageStore::new(store_root.unwrap_or_else(SourcePackageStore::default_root));
+    let ahl_roster_snapshot = ahl_roster_snapshot
+        .as_deref()
+        .map(std::fs::read)
+        .transpose()
+        .context("read --ahl-roster-snapshot")?;
+    let ahl_identity_reviews = ahl_identity_reviews
+        .iter()
+        .map(|path| {
+            std::fs::read(path)
+                .with_context(|| format!("read --ahl-identity-review {}", path.display()))
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let roster_player_landing_cache_root = include_roster_player_landings
+        .then(|| Config::load().map(|config| fletch_cache_root(&config)))
+        .transpose()
+        .context("load FLETCH cache configuration for roster player landings")?;
+    let contract_control_ledger = contract_control_ledger
+        .as_deref()
+        .map(std::fs::read)
+        .transpose()
+        .context("read --contract-control-ledger")?;
+    let camp_participation_ledger = camp_participation_ledger
+        .as_deref()
+        .map(std::fs::read)
+        .transpose()
+        .context("read --camp-participation-ledger")?;
+    let identity_review_ledgers = identity_review_ledgers
+        .iter()
+        .map(|path| {
+            std::fs::read(path)
+                .with_context(|| format!("read --identity-review-ledger {}", path.display()))
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let package = run_prospect_source_audit_with_artifacts(
+        &NhlApiClient::production(),
+        &store,
+        &catalog,
+        ProspectSourceAuditInput {
+            captured_at,
+            effective_cutoff: captured_at,
+            knowledge_cutoff: captured_at,
+            finalize_cutoffs_after_acquisition,
+        },
+        ProspectSourceAuditArtifacts {
+            ahl_roster_snapshot,
+            ahl_identity_reviews,
+            ahl_review_registry_url,
+            roster_player_landing_cache_root,
+            contract_control_ledger,
+            camp_participation_ledger,
+            identity_review_ledgers,
+        },
+    )
+    .await?;
+    if let Some(path) = out {
+        icelines_fetch::atomic_write::write_json_atomic(&path, &package)
+            .with_context(|| format!("write prospect source package {}", path.display()))?;
+    }
+    let acquired = package
+        .run_manifest
+        .objects
+        .iter()
+        .filter(|object| {
+            matches!(
+                object.state,
+                icelines_core::source_facts::SourceObjectState::Acquired { .. }
+            )
+        })
+        .count();
+    println!(
+        "sealed {} fingerprint={} complete={} objects={} acquired={} disclosures={}",
+        package.package_id,
+        package.fingerprint,
+        package.run_manifest.complete,
+        package.run_manifest.objects.len(),
+        acquired,
+        package.disclosures.len(),
+    );
+    Ok(())
 }
 
 async fn do_ahl_transactions(

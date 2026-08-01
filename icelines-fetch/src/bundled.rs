@@ -26,6 +26,10 @@ use crate::{
     playoffs_bundle::PlayoffsBundle,
     schema::{GoalieStats, SkaterBio, SkaterStats},
 };
+pub use icelines_sources::bundled_artifact::TransactionsEnvelope;
+use icelines_sources::bundled_artifact::{
+    parse_bios, parse_goalie_stats, parse_playoffs_bundle, parse_stats, parse_transactions,
+};
 
 // ── Embedded season data (compiled into binary at build time) ─────────────────
 
@@ -374,13 +378,13 @@ pub fn report_for_lindsay(
 /// Deserialize bundled bios for a season. Returns None if season not bundled.
 pub fn get_bios(season: &str) -> Option<Vec<SkaterBio>> {
     let bytes = lookup(BUNDLED_BIOS, season)?;
-    serde_json::from_slice(bytes).ok()
+    parse_bios(bytes).ok()
 }
 
 /// Deserialize bundled stats for a season. Returns None if season not bundled.
 pub fn get_stats(season: &str) -> Option<Vec<SkaterStats>> {
     let bytes = lookup(BUNDLED_STATS, season)?;
-    serde_json::from_slice(bytes).ok()
+    parse_stats(bytes).ok()
 }
 
 /// Deserialize bundled goalie stats for a season (Phase G.1). Returns
@@ -389,7 +393,7 @@ pub fn get_stats(season: &str) -> Option<Vec<SkaterStats>> {
 /// pre-1987 seasons or fresher data brought in via source fetches.
 pub fn get_goalie_stats(season: &str) -> Option<Vec<GoalieStats>> {
     let bytes = lookup(BUNDLED_GOALIES, season)?;
-    serde_json::from_slice(bytes).ok()
+    parse_goalie_stats(bytes).ok()
 }
 
 /// Read goalie stats from an installed season bundle. Returns None when
@@ -398,7 +402,7 @@ pub fn get_goalie_stats(season: &str) -> Option<Vec<GoalieStats>> {
 pub fn get_goalie_stats_installed(season_id: &str) -> Option<Vec<GoalieStats>> {
     let path = season_bundle_dir(season_id)?.join("goalie-stats.json");
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&text).ok()
+    parse_goalie_stats(text.as_bytes()).ok()
 }
 
 // ── Transactions (Phase T.3) ─────────────────────────────────────────────────
@@ -406,28 +410,19 @@ pub fn get_goalie_stats_installed(season_id: &str) -> Option<Vec<GoalieStats>> {
 /// On-disk envelope for `transactions.json`. Includes provenance
 /// (`source`, `fetched_at`, `classifier_version`) so a stale snapshot
 /// can be re-classified on load without re-fetching.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct TransactionsEnvelope {
-    pub season: String,
-    pub source: String,
-    pub fetched_at: String,
-    pub classifier_version: u16,
-    pub rows: Vec<icelines_core::Transaction>,
-}
-
 /// Read embedded transactions for a bundled season. Returns None for any
 /// season not in the include_bytes! set (modern era only — pre-2021
 /// transaction logs aren't available on ESPN's site.api).
 pub fn get_transactions(season: &str) -> Option<TransactionsEnvelope> {
     let bytes = lookup(BUNDLED_TRANSACTIONS, season)?;
-    serde_json::from_slice(bytes).ok()
+    parse_transactions(bytes).ok()
 }
 
 /// Read transactions from an installed season bundle (~/.icelines/seasons/...).
 pub fn get_transactions_installed(season_id: &str) -> Option<TransactionsEnvelope> {
     let path = season_bundle_dir(season_id)?.join("transactions.json");
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&text).ok()
+    parse_transactions(text.as_bytes()).ok()
 }
 
 /// Resolve transactions: legacy snapshot → embedded → installed bundle.
@@ -529,14 +524,14 @@ pub fn is_installed(season_id: &str) -> bool {
 pub fn get_bios_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterBio>> {
     let path = season_bundle_dir(season_id)?.join("bios.json");
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&text).ok()
+    parse_bios(text.as_bytes()).ok()
 }
 
 /// Read stats from an installed season bundle. Returns None if not installed.
 pub fn get_stats_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterStats>> {
     let path = season_bundle_dir(season_id)?.join("stats.json");
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&text).ok()
+    parse_stats(text.as_bytes()).ok()
 }
 
 // ── Hart.6.2 — playoff installed-bundle accessors ───────────────────────────
@@ -552,7 +547,7 @@ pub fn get_stats_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterS
 pub fn get_playoff_bios_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterBio>> {
     let path = season_bundle_dir(season_id)?.join("playoff-bios.json");
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&text).ok()
+    parse_bios(text.as_bytes()).ok()
 }
 
 /// Read playoff stats from an installed season bundle. Returns None
@@ -560,14 +555,14 @@ pub fn get_playoff_bios_installed(season_id: &str) -> Option<Vec<crate::schema::
 pub fn get_playoff_stats_installed(season_id: &str) -> Option<Vec<crate::schema::SkaterStats>> {
     let path = season_bundle_dir(season_id)?.join("playoff-stats.json");
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&text).ok()
+    parse_stats(text.as_bytes()).ok()
 }
 
 /// Read playoff goalie stats from an installed season bundle.
 pub fn get_playoff_goalie_stats_installed(season_id: &str) -> Option<Vec<GoalieStats>> {
     let path = season_bundle_dir(season_id)?.join("playoff-goalie-stats.json");
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&text).ok()
+    parse_goalie_stats(text.as_bytes()).ok()
 }
 
 // ── Hart.6.3 — playoff embedded-bundle accessors ────────────────────────────
@@ -583,20 +578,20 @@ pub fn get_playoff_goalie_stats_installed(season_id: &str) -> Option<Vec<GoalieS
 /// be empty for current-season-not-yet-played).
 pub fn get_playoff_bios(season_id: &str) -> Option<Vec<crate::schema::SkaterBio>> {
     let bytes = lookup(BUNDLED_PLAYOFF_BIOS, season_id)?;
-    serde_json::from_slice(bytes).ok()
+    parse_bios(bytes).ok()
 }
 
 /// Playoff stats for a bundled season. See `get_playoff_bios` for
 /// semantics; same `BUNDLED_SEASONS` membership rule applies.
 pub fn get_playoff_stats(season_id: &str) -> Option<Vec<crate::schema::SkaterStats>> {
     let bytes = lookup(BUNDLED_PLAYOFF_STATS, season_id)?;
-    serde_json::from_slice(bytes).ok()
+    parse_stats(bytes).ok()
 }
 
 /// Playoff goalie stats for a bundled season.
 pub fn get_playoff_goalie_stats(season_id: &str) -> Option<Vec<GoalieStats>> {
     let bytes = lookup(BUNDLED_PLAYOFF_GOALIES, season_id)?;
-    serde_json::from_slice(bytes).ok()
+    parse_goalie_stats(bytes).ok()
 }
 
 // ── Historical playoffs (Phase 8c) ───────────────────────────────────────────
@@ -623,7 +618,7 @@ pub fn get_playoffs(season_id: &str) -> Option<PlayoffsBundle> {
     let bytes = BUNDLED_PLAYOFFS
         .iter()
         .find_map(|(s, b)| (*s == season_id).then_some(*b))?;
-    serde_json::from_slice(bytes).ok()
+    parse_playoffs_bundle(bytes).ok()
 }
 
 /// Read `playoffs.json` from an installed season bundle in the user's
@@ -634,7 +629,7 @@ pub fn get_playoffs(season_id: &str) -> Option<PlayoffsBundle> {
 pub fn get_playoffs_installed(season_id: &str) -> Option<PlayoffsBundle> {
     let path = season_bundle_dir(season_id)?.join("playoffs.json");
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&text).ok()
+    parse_playoffs_bundle(text.as_bytes()).ok()
 }
 
 /// Resolve `playoffs.json` for a season. Prefers an installed bundle (so users

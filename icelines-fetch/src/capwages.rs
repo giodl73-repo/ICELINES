@@ -4,8 +4,13 @@
 //! API key; ICELINES never persists the key in snapshots or configuration.
 
 use crate::schema::{PlayerContract, SkaterBio};
+use icelines_sources::capwages::{
+    contract_for_season, normalize_name, season_label, ApiResponse, PlayerDetail, PlayerIndex,
+};
+#[cfg(test)]
+use icelines_sources::capwages::{ContractDetail, ContractSeason};
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::collections::HashMap;
 
 const DEFAULT_BASE_URL: &str = "https://capwages.com/api/gateway/v1";
@@ -26,56 +31,6 @@ pub enum CapWagesError {
 pub struct CapWagesClient {
     client: reqwest::Client,
     base_url: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct ApiResponse<T> {
-    data: T,
-    #[serde(default)]
-    meta: ApiMeta,
-}
-
-#[derive(Debug, Default, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ApiMeta {
-    last_updated: Option<String>,
-    #[serde(default)]
-    pagination: Pagination,
-}
-
-#[derive(Debug, Default, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Pagination {
-    total_pages: Option<u32>,
-}
-
-#[derive(Debug, Deserialize)]
-struct PlayerIndex {
-    slug: String,
-    name: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PlayerDetail {
-    nhl_id: Option<u32>,
-    contracts: Vec<ContractDetail>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ContractDetail {
-    expiry_status: Option<String>,
-    seasons: Vec<ContractSeason>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ContractSeason {
-    season: String,
-    cap_hit: Option<u64>,
-    aav: Option<u64>,
-    total_salary: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -247,50 +202,6 @@ pub fn summarize_team_caps(
         .collect();
     rows.sort_by(|a, b| a.team.cmp(&b.team));
     rows
-}
-
-fn contract_for_season(
-    player_id: u32,
-    contracts: &[ContractDetail],
-    season: &str,
-    checked_at: &str,
-) -> Option<PlayerContract> {
-    contracts.iter().find_map(|contract| {
-        let row = contract.seasons.iter().find(|row| row.season == season)?;
-        let expiry_year = contract
-            .seasons
-            .iter()
-            .filter_map(|row| row.season.split('-').nth(1)?.parse::<u16>().ok())
-            .max()
-            .map(|year| 2000 + year);
-        Some(PlayerContract {
-            player_id,
-            valuation_season: None,
-            expiry_year,
-            expiry_type: contract.expiry_status.clone(),
-            salary: row.total_salary,
-            cap_hit: row.cap_hit,
-            aav: row.aav,
-            source: Some("capwages".to_owned()),
-            source_url: None,
-            source_checked_at: Some(checked_at.to_owned()),
-        })
-    })
-}
-
-fn season_label(season: &str) -> String {
-    if season.len() == 8 {
-        format!("{}-{}", &season[..4], &season[6..])
-    } else {
-        season.to_owned()
-    }
-}
-
-fn normalize_name(name: &str) -> String {
-    name.chars()
-        .filter(|c| c.is_ascii_alphanumeric())
-        .flat_map(char::to_lowercase)
-        .collect()
 }
 
 #[cfg(test)]

@@ -56,12 +56,12 @@ impl Default for ProspectCareerContextDraftConfig {
 }
 
 /// Create neutral prospect context from the league training-camp pool. Camp
-/// prospect or rookie eligibility selects the candidate pool, while the exact
-/// dated age ceiling and NHL-workload facts decide who remains. This retains
-/// 24-year-old rookie candidates that the automatic camp's conservative
-/// `prospect` flag (age 23 and under) intentionally excludes. Forecast
-/// probability never becomes authored opportunity, availability, or
-/// public-attention evidence.
+/// prospect, rookie eligibility, or waiver exemption selects a conservative
+/// candidate pool, while the exact dated age ceiling and NHL-workload facts
+/// decide who remains. Waiver exemption keeps young authored camp players from
+/// disappearing when older inputs omitted the newer prospect flags; it never
+/// makes a player eligible by itself. Forecast probability never becomes
+/// authored opportunity, availability, or public-attention evidence.
 pub fn build_prospect_career_context_draft(
     forecast: TrainingCampLeagueForecastView,
     identities: Vec<ProspectCareerContextIdentityInput>,
@@ -104,7 +104,7 @@ pub fn build_prospect_career_context_draft(
         for player in team_forecast
             .players
             .into_iter()
-            .filter(|player| player.prospect || player.rookie_eligible)
+            .filter(|player| player.prospect || player.rookie_eligible || player.waiver_exempt)
         {
             candidates
                 .entry(player.player_id)
@@ -770,6 +770,18 @@ mod tests {
             .unwrap()
             .players
             .push(rookie_only);
+        let mut waiver_only = forecast.teams[0].forecast.as_ref().unwrap().players[0].clone();
+        waiver_only.player_id = 13;
+        waiver_only.display_name = "Waiver-exempt Prospect".to_owned();
+        waiver_only.prospect = false;
+        waiver_only.rookie_eligible = false;
+        waiver_only.waiver_exempt = true;
+        forecast.teams[0]
+            .forecast
+            .as_mut()
+            .unwrap()
+            .players
+            .push(waiver_only);
 
         let view = build_prospect_career_context_draft(
             forecast,
@@ -786,6 +798,12 @@ mod tests {
                     nhl_games_played: 4,
                     evidence: vec![],
                 },
+                ProspectCareerContextIdentityInput {
+                    player_id: 13,
+                    birth_date: "2003-08-04".to_owned(),
+                    nhl_games_played: 0,
+                    evidence: vec![],
+                },
             ],
             ProspectCareerContextDraftConfig::default(),
         )
@@ -794,7 +812,7 @@ mod tests {
             view.authority,
             ProspectLeagueContextAuthority::ObservedDraft
         );
-        assert_eq!(view.players.len(), 2);
+        assert_eq!(view.players.len(), 3);
         assert_eq!(view.players[0].organization, "SEA");
         assert_eq!(view.players[0].nhl_games_played, 7);
         assert_eq!(view.players[0].opportunity, ProspectOpportunityStatus::None);
@@ -805,6 +823,7 @@ mod tests {
         assert_eq!(view.players[0].attention_score, 0.5);
         assert_eq!(view.players[1].player_id, 12);
         assert_eq!(view.players[1].age, 24);
+        assert_eq!(view.players[2].player_id, 13);
     }
 
     fn camp_with_rookie_only_candidate() -> TrainingCampLeagueForecastView {

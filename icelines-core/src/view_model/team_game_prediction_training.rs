@@ -1536,9 +1536,11 @@ mod tests {
     #[test]
     fn candidate_feature_must_clear_its_own_incremental_gain_gate() {
         let rows = observations(7, 30);
-        let mut config = TeamGamePredictionTrainingConfig::default();
-        config.feature_set = TEAM_GAME_PREDICTION_FEATURE_SET_V4.to_owned();
-        config.minimum_candidate_feature_gain = 1.0;
+        let config = TeamGamePredictionTrainingConfig {
+            feature_set: TEAM_GAME_PREDICTION_FEATURE_SET_V4.to_owned(),
+            minimum_candidate_feature_gain: 1.0,
+            ..TeamGamePredictionTrainingConfig::default()
+        };
         let view = validate_team_game_prediction_model(&rows, config).unwrap();
         let check = view
             .checks

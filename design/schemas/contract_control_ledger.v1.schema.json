@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.dev/schemas/contract_control_ledger.v1.schema.json",
+  "title": "IceLines Contract Control Ledger v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "season",
+    "provider",
+    "captured_at",
+    "source_url",
+    "coverage",
+    "contracts"
+  ],
+  "properties": {
+    "schema": { "const": "contract_control_ledger.v1" },
+    "season": { "type": "integer", "minimum": 1 },
+    "provider": { "type": "string", "minLength": 1 },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "source_url": { "type": "string", "format": "uri" },
+    "coverage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization", "terminal", "records"],
+        "properties": {
+          "organization": { "type": "string", "minLength": 1 },
+          "terminal": { "const": true },
+          "records": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player_id",
+          "organization",
+          "contract_kind",
+          "effective_at",
+          "source_url"
+        ],
+        "properties": {
+          "player_id": { "type": "integer", "minimum": 1 },
+          "organization": { "type": "string", "minLength": 1 },
+          "contract_kind": {
+            "enum": [
+              "entry_level",
+              "standard_player",
+              "amateur_tryout",
+              "professional_tryout",
+              "unknown"
+            ]
+          },
+          "effective_at": { "type": "string", "format": "date-time" },
+          "source_url": { "type": "string", "format": "uri" }
+        }
+      }
+    }
+  }
+}

@@ -1100,7 +1100,8 @@ pub enum IceCastSubcommand {
             value_name = "PATH"
         )]
         goalie_stats: PathBuf,
-        /// Sourced organizational candidates not present in the current NHL roster snapshot.
+        /// Sourced candidates not present in the current NHL roster snapshot;
+        /// typed relationships distinguish controlled prospects from invitees.
         #[arg(long, value_name = "PATH")]
         candidate_overlay: Option<PathBuf>,
         /// Authored team camp inputs that replace automatically inferred pools.
@@ -2959,6 +2960,104 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Audit sourced candidate relationships before camp or prospect use.
+    #[command(name = "prospect-population-audit")]
+    ProspectPopulationAudit {
+        /// `prospect_population_overlay.v1` keyed by canonical NHL player ID.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Fail before writing output when any relationship is legacy or unknown.
+        #[arg(long)]
+        require_fully_classified: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build the UI-neutral queue of unresolved source-package identities.
+    #[command(name = "identity-review-workboard")]
+    IdentityReviewWorkboard {
+        /// Sealed `icelines_source_package.v1` produced by the source audit.
+        #[arg(long = "source-package", value_name = "PATH")]
+        source_package: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Acquire official NHL evidence for unresolved draft identities.
+    #[command(name = "official-identity-candidates")]
+    OfficialIdentityCandidates {
+        /// UI-neutral `identity_review_workboard.v1` to evaluate.
+        #[arg(long, value_name = "PATH")]
+        workboard: PathBuf,
+        /// Revalidate official search and landing cachelines.
+        #[arg(long)]
+        refresh: bool,
+        /// Evaluate only verified FLETCH cachelines; never contact providers.
+        #[arg(long, conflicts_with = "refresh")]
+        offline: bool,
+        /// Maximum concurrent official search requests.
+        #[arg(long, default_value_t = 6, value_parser = clap::value_parser!(u8).range(1..=32))]
+        search_concurrency: u8,
+        /// Optional RFC 3339 replay boundary; omitted for live acquisition.
+        #[arg(long, value_name = "RFC3339")]
+        evidence_cutoff: Option<String>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Finalize exact official candidates into the generic identity ledger.
+    #[command(name = "official-identity-review-ledger")]
+    OfficialIdentityReviewLedger {
+        /// `official_identity_candidate_board.v1` with exact eligible rows.
+        #[arg(long, value_name = "PATH")]
+        candidates: PathBuf,
+        #[arg(long, default_value = "icelines_official_identity_review")]
+        provider: String,
+        /// Absolute URL identifying the reviewed candidate registry artifact.
+        #[arg(long, value_name = "URL")]
+        registry_url: String,
+        #[arg(long)]
+        reviewer: String,
+        #[arg(long, value_name = "RFC3339")]
+        reviewed_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Trace a sealed source package through the prospect census funnel.
+    #[command(name = "prospect-census")]
+    ProspectCensus {
+        /// Sealed `icelines_source_package.v1` produced by the source audit.
+        #[arg(long = "source-package", value_name = "PATH")]
+        source_package: PathBuf,
+        /// Optional `prospect_census_pipeline.v1` eligibility/study/rank evidence.
+        #[arg(long, value_name = "PATH")]
+        pipeline: Option<PathBuf>,
+        /// Derive pipeline evidence from each `prospect_league_discovery.v1` artifact.
+        #[arg(long = "league-discovery", value_name = "PATH")]
+        league_discoveries: Vec<PathBuf>,
+        /// Derive pipeline evidence from each `prospect_career_discovery.v1` artifact.
+        #[arg(long = "career-discovery", value_name = "PATH")]
+        career_discoveries: Vec<PathBuf>,
+        /// Existing `prospect_program_board.v2` that identifies ranked studies.
+        #[arg(long = "program-board", value_name = "PATH")]
+        program_board: Option<PathBuf>,
+        /// Optionally preserve derived `prospect_census_pipeline.v1` evidence.
+        #[arg(long = "pipeline-out", value_name = "PATH")]
+        pipeline_out: Option<PathBuf>,
+        /// Requested ordinal prospect depth for every organization.
+        #[arg(long, default_value_t = 10, value_parser = clap::value_parser!(u8).range(1..=100))]
+        prospects_per_team: u8,
+        /// Refuse output when any organization fails authority or depth gates.
+        #[arg(long)]
+        require_publishable: bool,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Generate neutral multi-league prospect context from the league camp pool.
     #[command(name = "prospect-career-context")]
     ProspectCareerContext {
@@ -2971,7 +3070,8 @@ pub enum IceCastSubcommand {
         /// Season bios used to cover camp fallback candidates.
         #[arg(long, value_name = "PATH")]
         bios: PathBuf,
-        /// Optional sourced camp-candidate overlay used by the camp forecast.
+        /// Optional sourced camp-candidate overlay. Only organization-controlled
+        /// relationship types may enter prospect ranking; invitees remain camp-only.
         #[arg(long = "candidate-overlay", value_name = "PATH")]
         candidate_overlay: Option<PathBuf>,
         /// Optional career cache whose official landing birth dates fill identity gaps.
@@ -3019,6 +3119,13 @@ pub enum IceCastSubcommand {
         /// Higher-GP players remain visible as graduates.
         #[arg(long, default_value_t = 50)]
         maximum_nhl_games: u32,
+        /// Maximum ranked prospects published for each organization.
+        #[arg(long, default_value_t = 10, value_parser = clap::value_parser!(u8).range(1..=100))]
+        prospects_per_team: u8,
+        /// Refuse publication when any organization has fewer eligible studies
+        /// than the requested prospect depth.
+        #[arg(long)]
+        require_complete_rankings: bool,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -3255,10 +3362,35 @@ impl TuiSurface {
 }
 
 #[cfg(test)]
+#[allow(clippy::cmp_owned)] // PathBuf literals keep the Clap surface assertions explicit.
 mod tui_surface_tests {
     use super::*;
     use crate::start_slug::{parse_start_slug, NavSpec, ScreenSpec};
     use clap::Parser;
+
+    #[allow(clippy::should_implement_trait)]
+    impl Cli {
+        /// Mirror the production parser's explicit Windows stack boundary for
+        /// every surface test, including newly added tests that do not call
+        /// `with_large_stack` themselves.
+        fn try_parse_from<I, T>(arguments: I) -> Result<Self, clap::Error>
+        where
+            I: IntoIterator<Item = T>,
+            T: Into<std::ffi::OsString> + Clone,
+        {
+            let arguments = arguments
+                .into_iter()
+                .map(Into::into)
+                .collect::<Vec<std::ffi::OsString>>();
+            std::thread::Builder::new()
+                .name("clap-surface-parser".to_string())
+                .stack_size(16 * 1024 * 1024)
+                .spawn(move || <Self as Parser>::try_parse_from(arguments))
+                .expect("spawn clap surface parser")
+                .join()
+                .expect("clap surface parser")
+        }
+    }
 
     fn with_large_stack(test: impl FnOnce() + Send + 'static) {
         std::thread::Builder::new()
@@ -6222,6 +6354,9 @@ mod tui_surface_tests {
                 "college-study.json",
                 "--prior-board",
                 "prior-program-board.json",
+                "--prospects-per-team",
+                "7",
+                "--require-complete-rankings",
                 "--json",
                 "--out",
                 "program-board.json",
@@ -6235,6 +6370,8 @@ mod tui_surface_tests {
                     studies,
                     prior_board: Some(prior),
                     maximum_nhl_games: 50,
+                    prospects_per_team: 7,
+                    require_complete_rankings: true,
                     json: true,
                     out: Some(out),
                 }) if league_discoveries == vec![PathBuf::from("league-discovery.json")]
@@ -6242,6 +6379,112 @@ mod tui_surface_tests {
                     && studies == vec![PathBuf::from("college-study.json")]
                     && prior == PathBuf::from("prior-program-board.json")
                     && out == PathBuf::from("program-board.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_population_audit_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-population-audit",
+                "--input",
+                "population.json",
+                "--require-fully-classified",
+                "--json",
+                "--out",
+                "audit.json",
+            ])
+            .expect("IceCast prospect population audit command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectPopulationAudit {
+                    input,
+                    require_fully_classified: true,
+                    json: true,
+                    out: Some(out),
+                }) if input == PathBuf::from("population.json")
+                    && out == PathBuf::from("audit.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_census_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-census",
+                "--source-package",
+                "sources.json",
+                "--pipeline",
+                "pipeline.json",
+                "--prospects-per-team",
+                "12",
+                "--require-publishable",
+                "--json",
+                "--out",
+                "census.json",
+            ])
+            .expect("IceCast prospect census command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectCensus {
+                    source_package,
+                    pipeline: Some(pipeline),
+                    league_discoveries,
+                    career_discoveries,
+                    program_board: None,
+                    pipeline_out: None,
+                    prospects_per_team: 12,
+                    require_publishable: true,
+                    json: true,
+                    out: Some(out),
+                }) if source_package == PathBuf::from("sources.json")
+                    && pipeline == PathBuf::from("pipeline.json")
+                    && league_discoveries.is_empty()
+                    && career_discoveries.is_empty()
+                    && out == PathBuf::from("census.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_census_derivation_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-census",
+                "--source-package",
+                "sources.json",
+                "--league-discovery",
+                "ahl.json",
+                "--career-discovery",
+                "chl.json",
+                "--program-board",
+                "program.json",
+                "--pipeline-out",
+                "pipeline.json",
+            ])
+            .expect("IceCast prospect census derivation command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectCensus {
+                    pipeline: None,
+                    league_discoveries,
+                    career_discoveries,
+                    program_board: Some(program_board),
+                    pipeline_out: Some(pipeline_out),
+                    prospects_per_team: 10,
+                    ..
+                }) if league_discoveries == vec![PathBuf::from("ahl.json")]
+                    && career_discoveries == vec![PathBuf::from("chl.json")]
+                    && program_board == PathBuf::from("program.json")
+                    && pipeline_out == PathBuf::from("pipeline.json")
             ));
         });
     }
@@ -6497,6 +6740,65 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_fetch_prospect_sources_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fetch",
+                "prospect-sources",
+                "--catalog",
+                "catalog.json",
+                "--store",
+                "source-store",
+                "--out",
+                "package.json",
+                "--captured-at",
+                "2026-07-31T12:00:00Z",
+                "--ahl-roster-snapshot",
+                "ahl.json",
+                "--ahl-identity-review",
+                "hfd-review.json",
+                "--ahl-review-registry-url",
+                "https://example.test/reviews",
+                "--include-roster-player-landings",
+                "--contract-control-ledger",
+                "contracts.json",
+                "--camp-participation-ledger",
+                "camps.json",
+                "--identity-review-ledger",
+                "draft-reviews.json",
+            ])
+            .expect("prospect source audit command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fetch(FetchSubcommand::ProspectSources {
+                    catalog,
+                    store: Some(store),
+                    out: Some(out),
+                    captured_at: Some(captured_at),
+                    ahl_roster_snapshot: Some(ahl_roster_snapshot),
+                    ahl_identity_reviews,
+                    ahl_review_registry_url: Some(ahl_review_registry_url),
+                    include_roster_player_landings: true,
+                    contract_control_ledger: Some(contract_control_ledger),
+                    camp_participation_ledger: Some(camp_participation_ledger),
+                    identity_review_ledgers,
+                    dry_run: false,
+                }) if catalog == PathBuf::from("catalog.json")
+                    && store == PathBuf::from("source-store")
+                    && out == PathBuf::from("package.json")
+                    && captured_at == "2026-07-31T12:00:00Z"
+                    && ahl_roster_snapshot == PathBuf::from("ahl.json")
+                    && ahl_identity_reviews == vec![PathBuf::from("hfd-review.json")]
+                    && ahl_review_registry_url == "https://example.test/reviews"
+                    && contract_control_ledger == PathBuf::from("contracts.json")
+                    && camp_participation_ledger == PathBuf::from("camps.json")
+                    && identity_review_ledgers == vec![PathBuf::from("draft-reviews.json")]
+            ));
+        });
+    }
+
+    #[test]
     fn l0_fetch_ahl_transactions_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -6589,67 +6891,71 @@ mod tui_surface_tests {
 
     #[test]
     fn l0_fantasy_simulate_clap_surface_parses() {
-        let cli = Cli::try_parse_from([
-            "icelines",
-            "fantasy",
-            "simulate",
-            "--weeks",
-            "6",
-            "--add",
-            "Block Helper",
-            "--drop",
-            "Bench Forward",
-            "--json",
-        ])
-        .expect("fantasy simulate should parse");
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "simulate",
+                "--weeks",
+                "6",
+                "--add",
+                "Block Helper",
+                "--drop",
+                "Bench Forward",
+                "--json",
+            ])
+            .expect("fantasy simulate should parse");
 
-        match cli.command {
-            Commands::Fantasy(FantasySubcommand::Simulate {
-                weeks,
-                add_player,
-                drop_player,
-                json,
-                ..
-            }) => {
-                assert_eq!(weeks, 6);
-                assert_eq!(add_player.as_deref(), Some("Block Helper"));
-                assert_eq!(drop_player.as_deref(), Some("Bench Forward"));
-                assert!(json);
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::Simulate {
+                    weeks,
+                    add_player,
+                    drop_player,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(weeks, 6);
+                    assert_eq!(add_player.as_deref(), Some("Block Helper"));
+                    assert_eq!(drop_player.as_deref(), Some("Bench Forward"));
+                    assert!(json);
+                }
+                other => panic!("expected fantasy simulate, got {other:?}"),
             }
-            other => panic!("expected fantasy simulate, got {other:?}"),
-        }
+        });
     }
 
     #[test]
     fn l0_fantasy_daily_clap_surface_parses() {
-        let cli = Cli::try_parse_from([
-            "icelines",
-            "fantasy",
-            "daily",
-            "--date",
-            "2026-01-15",
-            "--league",
-            "Daily League",
-            "--json",
-        ])
-        .expect("fantasy daily should parse");
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "daily",
+                "--date",
+                "2026-01-15",
+                "--league",
+                "Daily League",
+                "--json",
+            ])
+            .expect("fantasy daily should parse");
 
-        match cli.command {
-            Commands::Fantasy(FantasySubcommand::Daily {
-                date,
-                league,
-                season,
-                season_type,
-                json,
-            }) => {
-                assert_eq!(date.to_string(), "2026-01-15");
-                assert_eq!(league.as_deref(), Some("Daily League"));
-                assert_eq!(season, icelines_core::CURRENT_SEASON);
-                assert_eq!(season_type, QuerySeasonType::Regular);
-                assert!(json);
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::Daily {
+                    date,
+                    league,
+                    season,
+                    season_type,
+                    json,
+                }) => {
+                    assert_eq!(date.to_string(), "2026-01-15");
+                    assert_eq!(league.as_deref(), Some("Daily League"));
+                    assert_eq!(season, icelines_core::CURRENT_SEASON);
+                    assert_eq!(season_type, QuerySeasonType::Regular);
+                    assert!(json);
+                }
+                other => panic!("expected fantasy daily, got {other:?}"),
             }
-            other => panic!("expected fantasy daily, got {other:?}"),
-        }
+        });
     }
 
     #[test]
@@ -7808,6 +8114,54 @@ impl QuerySeasonType {
 
 #[derive(Debug, Subcommand)]
 pub enum FetchSubcommand {
+    /// Acquire and seal the provider-neutral all-organization prospect source audit.
+    #[command(name = "prospect-sources")]
+    ProspectSources {
+        /// Versioned prospect source catalog JSON.
+        #[arg(
+            long,
+            value_name = "PATH",
+            default_value = "design/data/prospect-source-catalog-2026-27.v1.json"
+        )]
+        catalog: PathBuf,
+        /// Override the source-package/capture store root.
+        #[arg(long, value_name = "PATH")]
+        store: Option<PathBuf>,
+        /// Also export the sealed source package to this path.
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Knowledge/capture time as RFC 3339. Defaults to now.
+        #[arg(long, value_name = "RFC3339")]
+        captured_at: Option<String>,
+        /// Official `ahl_roster_stats.v1` snapshot to seal through the source adapter.
+        #[arg(long, value_name = "PATH")]
+        ahl_roster_snapshot: Option<PathBuf>,
+        /// Finalized `ahl_identity_review_decisions.v1` batch; repeat per AHL team.
+        #[arg(
+            long = "ahl-identity-review",
+            value_name = "PATH",
+            requires_all = ["ahl_roster_snapshot", "ahl_review_registry_url"]
+        )]
+        ahl_identity_reviews: Vec<PathBuf>,
+        /// Stable evidence URL for the supplied finalized AHL review registry.
+        #[arg(long, value_name = "URL", requires = "ahl_identity_reviews")]
+        ahl_review_registry_url: Option<String>,
+        /// Acquire official landing documents for current NHL roster identities.
+        #[arg(long)]
+        include_roster_player_landings: bool,
+        /// Canonical `contract_control_ledger.v1` with exhaustive team coverage.
+        #[arg(long, value_name = "PATH")]
+        contract_control_ledger: Option<PathBuf>,
+        /// Canonical `camp_participation_ledger.v1` with exhaustive team coverage.
+        #[arg(long, value_name = "PATH")]
+        camp_participation_ledger: Option<PathBuf>,
+        /// Finalized provider-neutral `identity_review_ledger.v1`; repeatable.
+        #[arg(long = "identity-review-ledger", value_name = "PATH")]
+        identity_review_ledgers: Vec<PathBuf>,
+        /// Validate and expand the catalog without network requests or writes.
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Inventory ICELINES source surfaces for FLETCH handoff/gating.
     #[command(name = "fletch-sources")]
     FletchSources {

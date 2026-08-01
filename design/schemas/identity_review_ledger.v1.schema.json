@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.dev/schemas/identity_review_ledger.v1.schema.json",
+  "title": "IceLines Identity Review Ledger v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "season", "provider", "registry_url", "reviewer", "reviewed_at", "decisions"],
+  "properties": {
+    "schema": { "const": "identity_review_ledger.v1" },
+    "season": { "type": "integer", "minimum": 1 },
+    "provider": { "type": "string", "minLength": 1 },
+    "registry_url": { "type": "string", "format": "uri" },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "reviewed_at": { "type": "string", "format": "date-time" },
+    "decisions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["decision_id", "proposal_id", "action", "rationale", "evidence"],
+        "properties": {
+          "decision_id": { "type": "string", "minLength": 1 },
+          "proposal_id": { "type": "string", "minLength": 1 },
+          "action": { "enum": ["accept_proposal", "set_identity", "reject"] },
+          "player_id": { "type": ["integer", "null"], "minimum": 1 },
+          "rationale": { "type": "string", "minLength": 1 },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["source_id", "source_url", "provider", "captured_at", "content_sha256", "adapter_version"],
+              "properties": {
+                "source_id": { "type": "string", "minLength": 1 },
+                "source_url": { "type": "string", "format": "uri" },
+                "provider": { "type": "string", "minLength": 1 },
+                "captured_at": { "type": "string", "format": "date-time" },
+                "content_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                "adapter_version": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "schema": "prospect_ranking_depth_baseline.v1",
+  "as_of": "2026-07-31",
+  "requested_depth": 10,
+  "summary": {
+    "organizations": 32,
+    "complete": 23,
+    "partial": 9,
+    "total_shortfall": 17
+  },
+  "organizations": [
+    { "team": "ANA", "ranked": 10, "shortfall": 0 },
+    { "team": "BOS", "ranked": 8, "shortfall": 2 },
+    { "team": "BUF", "ranked": 9, "shortfall": 1 },
+    { "team": "CAR", "ranked": 10, "shortfall": 0 },
+    { "team": "CBJ", "ranked": 10, "shortfall": 0 },
+    { "team": "CGY", "ranked": 10, "shortfall": 0 },
+    { "team": "CHI", "ranked": 10, "shortfall": 0 },
+    { "team": "COL", "ranked": 9, "shortfall": 1 },
+    { "team": "DAL", "ranked": 10, "shortfall": 0 },
+    { "team": "DET", "ranked": 10, "shortfall": 0 },
+    { "team": "EDM", "ranked": 8, "shortfall": 2 },
+    { "team": "FLA", "ranked": 6, "shortfall": 4 },
+    { "team": "LAK", "ranked": 8, "shortfall": 2 },
+    { "team": "MIN", "ranked": 10, "shortfall": 0 },
+    { "team": "MTL", "ranked": 10, "shortfall": 0 },
+    { "team": "NJD", "ranked": 8, "shortfall": 2 },
+    { "team": "NSH", "ranked": 10, "shortfall": 0 },
+    { "team": "NYI", "ranked": 8, "shortfall": 2 },
+    { "team": "NYR", "ranked": 10, "shortfall": 0 },
+    { "team": "OTT", "ranked": 10, "shortfall": 0 },
+    { "team": "PHI", "ranked": 10, "shortfall": 0 },
+    { "team": "PIT", "ranked": 10, "shortfall": 0 },
+    { "team": "SEA", "ranked": 10, "shortfall": 0 },
+    { "team": "SJS", "ranked": 10, "shortfall": 0 },
+    { "team": "STL", "ranked": 10, "shortfall": 0 },
+    { "team": "TBL", "ranked": 10, "shortfall": 0 },
+    { "team": "TOR", "ranked": 10, "shortfall": 0 },
+    { "team": "UTA", "ranked": 10, "shortfall": 0 },
+    { "team": "VAN", "ranked": 10, "shortfall": 0 },
+    { "team": "VGK", "ranked": 10, "shortfall": 0 },
+    { "team": "WPG", "ranked": 9, "shortfall": 1 },
+    { "team": "WSH", "ranked": 10, "shortfall": 0 }
+  ],
+  "disclosures": [
+    "This freezes ranking-depth output, not complete prospect-population authority.",
+    "A complete row means ten eligible studies were available at this cutoff; it does not prove every controlled prospect was discovered.",
+    "The future icelines-sources census must preserve this baseline during extraction and replace it only with a separately versioned authority package."
+  ]
+}

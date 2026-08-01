@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "icelines-core",
     "icelines-query",
+    "icelines-sources",
     "icelines-fetch",
     "icelines-site",
     "icelines-web",
@@ -26,7 +27,9 @@ reqwest     = { version = "0.12", features = ["json", "rustls-tls"], default-fea
 clap        = { version = "4", features = ["derive", "env"] }
 anyhow      = "1"
 csv         = "1"
+url         = "2"
 encoding_rs = "0.8"
+html-escape = "0.2"
 comfy-table = "7"
 owo-colors  = "4"
 rusqlite    = { version = "0.31", features = ["bundled"] }

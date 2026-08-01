@@ -1057,7 +1057,10 @@ fn upsert_fletch_cache_manifest_entries(
     Ok(manifest)
 }
 
-fn read_verified_fletch_cache_bytes(cache_root: &Path, fletch_id: &str) -> Result<Option<Vec<u8>>> {
+pub fn read_verified_fletch_cache_bytes(
+    cache_root: &Path,
+    fletch_id: &str,
+) -> Result<Option<Vec<u8>>> {
     let manifest_path = fletch_cache_manifest_path(cache_root);
     if !manifest_path.exists() {
         return Ok(None);
@@ -1074,6 +1077,39 @@ fn read_verified_fletch_cache_bytes(cache_root: &Path, fletch_id: &str) -> Resul
     let bytes = std::fs::read(&path)
         .with_context(|| format!("reading verified FLETCH cache object {}", path.display()))?;
     Ok(Some(bytes))
+}
+
+/// Read many verified cachelines while parsing the shared manifest once.
+/// Missing dataset IDs are omitted; malformed manifests or unreadable objects
+/// fail the batch rather than silently weakening cache authority.
+pub fn read_verified_fletch_cache_batch_bytes(
+    cache_root: &Path,
+    dataset_ids: impl IntoIterator<Item = String>,
+) -> Result<BTreeMap<String, Vec<u8>>> {
+    let requested = dataset_ids.into_iter().collect::<BTreeSet<_>>();
+    if requested.is_empty() {
+        return Ok(BTreeMap::new());
+    }
+    let manifest_path = fletch_cache_manifest_path(cache_root);
+    if !manifest_path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let manifest = read_fletch_cache_manifest(&manifest_path)?;
+    let mut bytes = BTreeMap::new();
+    for entry in manifest
+        .entries
+        .into_iter()
+        .filter(|entry| entry.verified && requested.contains(&entry.dataset_id))
+    {
+        let value = std::fs::read(cache_root.join(&entry.relative_path)).with_context(|| {
+            format!(
+                "reading verified FLETCH cache object {}",
+                entry.relative_path
+            )
+        })?;
+        bytes.insert(entry.dataset_id, value);
+    }
+    Ok(bytes)
 }
 
 pub fn fetch_generic_http_bytes(
@@ -1096,6 +1132,19 @@ fn fetch_generic_http_bytes_unindexed(
     cache_root: &Path,
     force: bool,
 ) -> Result<(Vec<u8>, Option<CacheEntry>)> {
+    fetch_generic_http_bytes_unindexed_with_policy(
+        fletch_id, source_url, cache_root, force, 30_000, 5,
+    )
+}
+
+fn fetch_generic_http_bytes_unindexed_with_policy(
+    fletch_id: String,
+    source_url: String,
+    cache_root: &Path,
+    force: bool,
+    timeout_ms: u64,
+    retry_attempts: u32,
+) -> Result<(Vec<u8>, Option<CacheEntry>)> {
     if !force {
         if let Some(bytes) = read_verified_fletch_cache_bytes(cache_root, &fletch_id)
             .with_context(|| format!("reading cached FLETCH object for {fletch_id}"))?
@@ -1116,8 +1165,8 @@ fn fetch_generic_http_bytes_unindexed(
 
     let options = FetchOptions::new(cache_root)
         .with_force(force)
-        .with_timeout_ms(30_000)
-        .with_retry_attempts(5);
+        .with_timeout_ms(timeout_ms)
+        .with_retry_attempts(retry_attempts);
     let outcome = match fetch_to_cache(&plan, options) {
         Ok(outcome) => outcome,
         Err(error) if !force => {
@@ -1161,6 +1210,28 @@ pub async fn fetch_generic_http_batch_async(
     cache_root: impl Into<std::path::PathBuf>,
     force: bool,
     max_concurrency: usize,
+) -> Vec<(String, Result<Vec<u8>>)> {
+    fetch_generic_http_batch_with_policy_async(
+        requests,
+        cache_root,
+        force,
+        max_concurrency,
+        30_000,
+        5,
+    )
+    .await
+}
+
+/// Policy-configurable variant for high-cardinality provider discovery. A
+/// bounded retry window ensures one bad query cannot pin an entire checkpoint
+/// for the generic 30-second/five-attempt default.
+pub async fn fetch_generic_http_batch_with_policy_async(
+    requests: Vec<(String, String)>,
+    cache_root: impl Into<std::path::PathBuf>,
+    force: bool,
+    max_concurrency: usize,
+    timeout_ms: u64,
+    retry_attempts: u32,
 ) -> Vec<(String, Result<Vec<u8>>)> {
     let cache_root = cache_root.into();
     let mut fetched = Vec::new();
@@ -1209,7 +1280,14 @@ pub async fn fetch_generic_http_batch_async(
                 .context("acquiring generic HTTP batch permit")?;
             let outcome = tokio::task::spawn_blocking(move || {
                 let _permit = permit;
-                fetch_generic_http_bytes_unindexed(dataset_id, source_url, &root, force)
+                fetch_generic_http_bytes_unindexed_with_policy(
+                    dataset_id,
+                    source_url,
+                    &root,
+                    force,
+                    timeout_ms,
+                    retry_attempts,
+                )
             })
             .await
             .context("joining generic HTTP batch task")?;

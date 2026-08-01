@@ -80,6 +80,9 @@ For active work and backlog, see [`../plans/INDEX.md`](../plans/INDEX.md).
 
 **Data layer**: `data-sources.md` → `cache-model.md` → `data-bundles.md` → `snapshot-operations.md`
 
+**Provider normalization**: `icelines-sources.md` defines the implemented shared
+provider-parser and sourced-fact boundary between core and fetch.
+
 **Player analytics**: `player-analysis.md` → `query-engine.md` → `projection-engine.md` → `scouting-reports.md`
 
 **Fantasy stack**: `fantasy-scheme.md` → `scheme-customization.md` → `fantasy-leagues.md` → `fantasy-poacher.md` → `fantasy-draft-daily-assistant.md`

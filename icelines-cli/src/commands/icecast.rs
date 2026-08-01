@@ -177,11 +177,10 @@ use icelines_fetch::{
         get_stats_installed, load_transactions_with_fallback,
     },
     career_landing::CareerHistoryStore,
-    complete_lineup_goalies_with_training_camp, fetch_lock, fetch_team_behavior_league_evidence,
-    fletch::{
-        fetch_generic_http_batch_async, fetch_player_landing_batch_bytes_async, player_landing_url,
-        roster_url, FletchPlayerLandingArtifact,
-    },
+    complete_lineup_goalies_with_training_camp, fetch_lock,
+    fetch_official_player_landing_cachelines, fetch_official_player_search_cachelines,
+    fetch_team_behavior_league_evidence,
+    fletch::{player_landing_url, roster_url, FletchPlayerLandingArtifact},
     load_game_prediction_edge_evidence_package, moneypuck_goalie_game_url, moneypuck_team_game_url,
     nhl_api::ScheduledGame,
     schema::{GoalieStats, LocalizedString, RosterPlayer, RosterResponse, SkaterBio, SkaterStats},
@@ -198,8 +197,10 @@ use icelines_fetch::{
     OrganizationWindowFutureHoldoutResult, OrganizationWindowHistoricalOriginArtifact,
     OrganizationWindowStandingsSnapshot, ProspectCareerContextDraftConfig,
     ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectCareerProgramConfig,
-    ProspectLeagueContext, ProspectLeagueContextDraftConfig, ProspectLeagueDiscoveryView,
-    ScenarioRegistryStore, ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
+    ProspectLeagueContext, ProspectLeagueContextDraftConfig, ProspectLeagueContextExclusionReason,
+    ProspectLeagueContextExclusionView, ProspectLeagueDiscoveryView,
+    ProspectPopulationOverlay as LeagueCampCandidateOverlay, ScenarioRegistryStore,
+    ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
     PROSPECT_CAREER_DISCOVERY_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
@@ -472,24 +473,6 @@ struct LeagueRosterIdentity {
     nhl_team: String,
     position: String,
     birth_date: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct LeagueCampCandidateOverlay {
-    checked_at: String,
-    candidates: Vec<LeagueCampCandidate>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct LeagueCampCandidate {
-    player_id: u32,
-    display_name: String,
-    team: String,
-    position: String,
-    birth_date: Option<String>,
-    source_url: String,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2486,15 +2469,8 @@ async fn discover_official_affiliate_identities_for_teams(
     let mut requests = Vec::new();
     for player in &roster {
         for search_name in ahl_identity_search_name_variants(&player.name) {
-            let normalized_name = normalize_name(&search_name);
-            let mut url = reqwest::Url::parse("https://search.d3.nhle.com/api/v1/search/player")?;
-            url.query_pairs_mut()
-                .append_pair("culture", "en-us")
-                .append_pair("limit", "20")
-                .append_pair("q", &normalized_name);
-            let source_url = url.to_string();
-            let digest = format!("{:x}", Sha256::digest(normalized_name.as_bytes()));
-            let dataset_id = format!("icelines.nhl.player-search.{}", &digest[..20]);
+            let (dataset_id, source_url) =
+                icelines_fetch::official_player_search_request(&search_name)?;
             if !request_context.contains_key(&dataset_id) {
                 request_context.insert(
                     dataset_id.clone(),
@@ -2505,7 +2481,7 @@ async fn discover_official_affiliate_identities_for_teams(
         }
     }
     let search_results =
-        fetch_identity_search_cachelines(requests, cache_root.clone(), refresh).await;
+        fetch_official_player_search_cachelines(requests, cache_root.clone(), refresh, 6).await;
     let mut search_candidates = Vec::new();
     for (dataset_id, result) in search_results {
         let (name, source_url) = request_context
@@ -2549,7 +2525,8 @@ async fn discover_official_affiliate_identities_for_teams(
         }
     }
     let surname_results =
-        fetch_identity_search_cachelines(surname_requests, cache_root.clone(), refresh).await;
+        fetch_official_player_search_cachelines(surname_requests, cache_root.clone(), refresh, 6)
+            .await;
     let mut surname_search_candidates = 0;
     for (dataset_id, result) in surname_results {
         let (name, source_url) = surname_context
@@ -2576,7 +2553,8 @@ async fn discover_official_affiliate_identities_for_teams(
         .iter()
         .map(|candidate| candidate.nhl_player_id)
         .collect::<Vec<_>>();
-    let landing_bytes = fetch_identity_landing_cachelines(ids, cache_root, refresh).await?;
+    let landing_bytes =
+        fetch_official_player_landing_cachelines(ids, cache_root, refresh, 50).await?;
     let mut landing_enriched = 0;
     let mut discovered = Vec::with_capacity(search_catalog.candidates.len());
     for candidate in &search_catalog.candidates {
@@ -2605,44 +2583,6 @@ async fn discover_official_affiliate_identities_for_teams(
         surname_search_candidates,
         landing_enriched,
     ))
-}
-
-const IDENTITY_SEARCH_BATCH_SIZE: usize = 200;
-const IDENTITY_LANDING_BATCH_SIZE: usize = 100;
-
-async fn fetch_identity_search_cachelines(
-    requests: Vec<(String, String)>,
-    cache_root: PathBuf,
-    refresh: bool,
-) -> Vec<(String, anyhow::Result<Vec<u8>>)> {
-    let mut results = Vec::with_capacity(requests.len());
-    for chunk in requests.chunks(IDENTITY_SEARCH_BATCH_SIZE) {
-        results.extend(
-            fetch_generic_http_batch_async(chunk.to_vec(), cache_root.clone(), refresh, 6).await,
-        );
-    }
-    results
-}
-
-async fn fetch_identity_landing_cachelines(
-    player_ids: Vec<u32>,
-    cache_root: PathBuf,
-    refresh: bool,
-) -> anyhow::Result<BTreeMap<u32, Vec<u8>>> {
-    let mut results = BTreeMap::new();
-    for chunk in player_ids.chunks(IDENTITY_LANDING_BATCH_SIZE) {
-        results.extend(
-            fetch_player_landing_batch_bytes_async(
-                chunk.to_vec(),
-                FletchPlayerLandingArtifact::Landing,
-                cache_root.clone(),
-                refresh,
-                50,
-            )
-            .await?,
-        );
-    }
-    Ok(results)
 }
 
 pub fn run_affiliate_input(
@@ -2843,46 +2783,7 @@ pub fn run_affiliate_map(json: bool, out: Option<PathBuf>) -> anyhow::Result<()>
 fn validate_league_camp_candidate_overlay(
     overlay: &LeagueCampCandidateOverlay,
 ) -> Result<(), String> {
-    if overlay.checked_at.trim().is_empty() {
-        return Err("league camp candidate overlay checked_at must not be empty".to_owned());
-    }
-    let mut ids = std::collections::BTreeSet::new();
-    for candidate in &overlay.candidates {
-        if !ids.insert(candidate.player_id) {
-            return Err(format!(
-                "league camp candidate overlay contains duplicate player {}",
-                candidate.player_id
-            ));
-        }
-        let team = candidate.team.trim();
-        if team.len() != 3 || !team.bytes().all(|byte| byte.is_ascii_alphabetic()) {
-            return Err(format!("invalid candidate overlay team {}", candidate.team));
-        }
-        if candidate.display_name.trim().is_empty() {
-            return Err(format!(
-                "candidate {} has an empty display_name",
-                candidate.player_id
-            ));
-        }
-        if !matches!(
-            candidate.position.as_str(),
-            "C" | "L" | "R" | "LW" | "RW" | "D" | "G"
-        ) {
-            return Err(format!(
-                "candidate {} has unsupported position {}",
-                candidate.player_id, candidate.position
-            ));
-        }
-        if !(candidate.source_url.starts_with("https://")
-            || candidate.source_url.starts_with("http://"))
-        {
-            return Err(format!(
-                "candidate {} requires an absolute http(s) source_url",
-                candidate.player_id
-            ));
-        }
-    }
-    Ok(())
+    overlay.validate()
 }
 
 fn camp_shape_missing(players: &[LeagueRosterIdentity]) -> (usize, usize, usize) {
@@ -7956,6 +7857,395 @@ pub fn run_prospect_league(
     Ok(())
 }
 
+pub fn run_prospect_population_audit(
+    input_path: PathBuf,
+    require_fully_classified: bool,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let overlay: LeagueCampCandidateOverlay =
+        read_icecast_json(&input_path, "prospect population overlay")?;
+    let view = overlay.audit().map_err(anyhow::Error::msg)?;
+    if require_fully_classified && !view.fully_classified {
+        bail!(
+            "prospect population authority is incomplete: {} legacy relationship(s), {} unknown relationship(s)",
+            view.legacy_relationships,
+            view.unknown_relationships
+        );
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_population_audit(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "prospect population audit")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_identity_review_workboard(
+    source_package_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let package: icelines_core::source_facts::SourcePackage =
+        read_icecast_json(&source_package_path, "sealed source package")?;
+    let view = icelines_fetch::build_identity_review_workboard_from_source_package(&package)
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_identity_review_workboard(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "identity review workboard")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_identity_review_workboard(view: &icelines_core::IdentityReviewWorkboardView) -> String {
+    let families = view
+        .family_counts
+        .iter()
+        .map(|row| format!("{}={}", row.family, row.proposals))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let mut output = format!(
+        "IDENTITY REVIEW WORKBOARD · {} · {} unresolved\nFamilies · {}\n",
+        view.evaluation_season, view.unresolved_count, families
+    );
+    for row in &view.rows {
+        let context = row
+            .contexts
+            .first()
+            .expect("validated workboard rows have context");
+        let organization = context.organization.as_deref().unwrap_or("LEAGUE");
+        let _ = writeln!(
+            output,
+            "{:>4}. {} · {} · {} · {} · {}",
+            row.rank,
+            organization,
+            row.displayed_name,
+            context.family,
+            context.detail,
+            row.proposal_id
+        );
+    }
+    let _ = writeln!(
+        output,
+        "Package {} · known {}",
+        view.source_package_fingerprint, view.knowledge_cutoff
+    );
+    output
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn run_official_identity_candidates(
+    workboard_path: PathBuf,
+    refresh: bool,
+    offline: bool,
+    search_concurrency: u8,
+    evidence_cutoff: Option<String>,
+    json: bool,
+    out: Option<PathBuf>,
+    cfg: &Config,
+) -> anyhow::Result<()> {
+    let workboard: icelines_core::IdentityReviewWorkboardView =
+        read_icecast_json(&workboard_path, "identity review workboard")?;
+    let icelines_home = cfg
+        .snapshot_dir()
+        .parent()
+        .map(std::path::Path::to_path_buf)
+        .unwrap_or_else(|| cfg.snapshot_dir());
+    let _lock = fetch_lock::acquire(&icelines_home, std::time::Duration::from_secs(120))
+        .context("acquiring official identity evidence fetch lock")?;
+    let options = icelines_fetch::OfficialIdentityAcquisitionOptions {
+        cache_root: icelines_home.join("data").join(".fletch"),
+        refresh,
+        offline,
+        search_concurrency: usize::from(search_concurrency),
+        landing_delay_ms: 50,
+        evidence_cutoff: evidence_cutoff
+            .map(|cutoff| {
+                DateTime::parse_from_rfc3339(&cutoff)
+                    .context("--evidence-cutoff must be RFC 3339")
+                    .map(|cutoff| cutoff.with_timezone(&Utc))
+            })
+            .transpose()?,
+    };
+    let view = icelines_fetch::acquire_official_identity_candidates(&workboard, options).await?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_official_identity_candidates(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "official identity candidates")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_official_identity_candidates(
+    view: &icelines_core::OfficialIdentityCandidateBoardView,
+) -> String {
+    let statuses = view
+        .status_counts
+        .iter()
+        .map(|row| format!("{:?}={}", row.status, row.proposals))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let mut output = format!(
+        "OFFICIAL IDENTITY CANDIDATES · {} eligible / {} evaluated\nStatus · {}\n",
+        view.eligible_count, view.evaluated_count, statuses
+    );
+    for row in &view.rows {
+        let eligible = row
+            .eligible_player_id
+            .map(|player_id| player_id.to_string())
+            .unwrap_or_else(|| "—".to_owned());
+        let _ = writeln!(
+            output,
+            "{:>4}. {} · {:?} · player {} · {}",
+            row.rank, row.displayed_name, row.status, eligible, row.proposal_id
+        );
+    }
+    let _ = writeln!(
+        output,
+        "Package {} · known {}",
+        view.source_package_fingerprint, view.knowledge_cutoff
+    );
+    let _ = writeln!(output, "Evidence horizon {}", view.evidence_cutoff);
+    output
+}
+
+pub fn run_official_identity_review_ledger(
+    candidates_path: PathBuf,
+    provider: String,
+    registry_url: String,
+    reviewer: String,
+    reviewed_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let candidates: icelines_core::OfficialIdentityCandidateBoardView =
+        read_icecast_json(&candidates_path, "official identity candidate board")?;
+    let reviewed_at = DateTime::parse_from_rfc3339(&reviewed_at)
+        .context("--reviewed-at must be RFC 3339")?
+        .with_timezone(&Utc);
+    let ledger = icelines_fetch::build_official_identity_review_ledger(
+        &candidates,
+        provider,
+        registry_url,
+        reviewer,
+        reviewed_at,
+    )?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&ledger)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "official identity review ledger")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_prospect_census(
+    source_package_path: PathBuf,
+    pipeline_path: Option<PathBuf>,
+    league_discovery_paths: Vec<PathBuf>,
+    career_discovery_paths: Vec<PathBuf>,
+    program_board_path: Option<PathBuf>,
+    pipeline_out: Option<PathBuf>,
+    requested_ranking_depth: usize,
+    require_publishable: bool,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let package: icelines_core::source_facts::SourcePackage =
+        read_icecast_json(&source_package_path, "sealed prospect source package")?;
+    let supplied_pipeline = pipeline_path
+        .as_deref()
+        .map(|path| {
+            read_icecast_json::<icelines_fetch::ProspectCensusPipelineEvidence>(
+                path,
+                "prospect census pipeline evidence",
+            )
+        })
+        .transpose()?;
+    if let Some(pipeline) = &supplied_pipeline {
+        pipeline.validate().map_err(anyhow::Error::msg)?;
+    }
+    let deriving = !league_discovery_paths.is_empty()
+        || !career_discovery_paths.is_empty()
+        || program_board_path.is_some();
+    if supplied_pipeline.is_some() && deriving {
+        bail!("--pipeline cannot be combined with discovery/program derivation inputs");
+    }
+    if deriving && program_board_path.is_none() {
+        bail!("derived census pipeline evidence requires --program-board");
+    }
+    let derived_pipeline = if deriving {
+        let league_discoveries = league_discovery_paths
+            .iter()
+            .map(|path| read_icecast_json(path, "prospect league discovery"))
+            .collect::<anyhow::Result<Vec<ProspectLeagueDiscoveryView>>>()?;
+        let career_discoveries = career_discovery_paths
+            .iter()
+            .map(|path| read_icecast_json(path, "prospect career discovery"))
+            .collect::<anyhow::Result<Vec<ProspectCareerDiscoveryView>>>()?;
+        let program: ProspectProgramBoardView = read_icecast_json(
+            program_board_path
+                .as_deref()
+                .expect("derivation requires board"),
+            "prospect program board",
+        )?;
+        if program.prospects_per_team != requested_ranking_depth {
+            bail!(
+                "program board depth {} does not match requested census depth {}",
+                program.prospects_per_team,
+                requested_ranking_depth
+            );
+        }
+        Some(
+            icelines_fetch::build_prospect_census_pipeline_from_discoveries(
+                &league_discoveries,
+                &career_discoveries,
+                &program,
+                icelines_core::ORGANIZATIONAL_PROSPECT_METHOD,
+            )
+            .map_err(anyhow::Error::msg)?,
+        )
+    } else {
+        None
+    };
+    let pipeline = supplied_pipeline.as_ref().or(derived_pipeline.as_ref());
+    let eligibility_policy_version = pipeline
+        .map(|pipeline| pipeline.eligibility_policy_version.as_str())
+        .unwrap_or(icelines_core::ORGANIZATIONAL_PROSPECT_METHOD);
+    let players = pipeline
+        .map(|pipeline| pipeline.players.as_slice())
+        .unwrap_or_default();
+    let view = icelines_fetch::build_prospect_census_from_source_package(
+        &package,
+        players,
+        requested_ranking_depth,
+        eligibility_policy_version,
+    )
+    .map_err(anyhow::Error::msg)?;
+    if require_publishable {
+        icelines_core::require_publishable_prospect_census(&view).map_err(anyhow::Error::msg)?;
+    }
+    if let Some(path) = pipeline_out.as_deref() {
+        let pipeline = pipeline.ok_or_else(|| {
+            anyhow::anyhow!("--pipeline-out requires --pipeline or discovery derivation inputs")
+        })?;
+        let bytes = format!("{}\n", serde_json::to_string_pretty(pipeline)?);
+        write_icecast_file(path, bytes.as_bytes(), "prospect census pipeline evidence")?;
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_census(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "prospect census")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_prospect_census(view: &icelines_core::ProspectCensusView) -> String {
+    let mut output = format!(
+        "PROSPECT CENSUS · {} · {:?} · {} discovered · {} canonical · {} controlled · {} eligible · {} studies · {} ranked\n",
+        view.evaluation_season,
+        view.freshness_status,
+        view.league_counts.discovered,
+        view.league_counts.canonical_identity,
+        view.league_counts.controlled_relationship,
+        view.league_counts.prospect_eligible,
+        view.league_counts.study_built,
+        view.league_counts.ranked,
+    );
+    let league_losses = prospect_census_loss_summary(&view.losses);
+    if !league_losses.is_empty() {
+        let _ = writeln!(output, "League losses · {league_losses}");
+    }
+    for organization in &view.organizations {
+        let loss_summary = prospect_census_loss_summary(&organization.losses);
+        let _ = writeln!(
+            output,
+            "{} · {:?} · {:?} · {}/{} ranked · {} loss(es){}",
+            organization.organization,
+            organization.population_authority_status,
+            organization.publication_status,
+            organization.counts.ranked,
+            organization.requested_ranking_depth,
+            organization.losses.len(),
+            if loss_summary.is_empty() {
+                String::new()
+            } else {
+                format!(" · {loss_summary}")
+            },
+        );
+    }
+    let _ = writeln!(
+        output,
+        "Package {} · effective {} · known {}",
+        view.source_package_fingerprint, view.effective_cutoff, view.knowledge_cutoff
+    );
+    output
+}
+
+fn prospect_census_loss_summary(losses: &[icelines_core::ProspectCensusLossRow]) -> String {
+    let mut counts = BTreeMap::<String, usize>::new();
+    for loss in losses {
+        *counts.entry(format!("{:?}", loss.reason)).or_default() += 1;
+    }
+    counts
+        .into_iter()
+        .map(|(reason, count)| format!("{reason}={count}"))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn render_prospect_population_audit(view: &icelines_fetch::ProspectPopulationAuditView) -> String {
+    let authority = if view.fully_classified {
+        "fully classified"
+    } else {
+        "classification incomplete"
+    };
+    let mut out = format!(
+        "PROSPECT POPULATION AUDIT · {} · {authority}\n{} candidates · {} ranking eligible · {} camp only · {} legacy · {} unknown\n",
+        view.checked_at,
+        view.candidates,
+        view.ranking_eligible,
+        view.camp_only,
+        view.legacy_relationships,
+        view.unknown_relationships
+    );
+    for team in &view.teams {
+        let relationships = team
+            .relationship_counts
+            .iter()
+            .map(|(relationship, count)| format!("{relationship}={count}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let _ = writeln!(
+            out,
+            "{} · {} candidates · {} ranking · {} camp-only · {}",
+            team.team, team.candidates, team.ranking_eligible, team.camp_only, relationships
+        );
+    }
+    out
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn run_prospect_career_context(
     camp_forecast_path: PathBuf,
@@ -7981,7 +8271,12 @@ pub fn run_prospect_career_context(
     )
     .with_context(|| format!("parse prospect identity bios {}", bios_path.display()))?;
 
+    let current_roster_ids = roster_map
+        .values()
+        .map(|identity| identity.player_id)
+        .collect::<std::collections::BTreeSet<_>>();
     let mut identities = BTreeMap::<u32, ProspectCareerContextIdentityInput>::new();
+    let mut overlay_ranking_exclusions = BTreeMap::new();
     for bio in bios {
         if let Some(birth_date) = bio.birth_date {
             identities.insert(
@@ -8016,6 +8311,18 @@ pub fn run_prospect_career_context(
             .with_context(|| format!("parse league camp candidate overlay {}", path.display()))?;
         validate_league_camp_candidate_overlay(&overlay).map_err(anyhow::Error::msg)?;
         for candidate in overlay.candidates {
+            if !candidate.relationship.supports_prospect_ranking() {
+                if !current_roster_ids.contains(&candidate.player_id) {
+                    overlay_ranking_exclusions.insert(
+                        candidate.player_id,
+                        (
+                            candidate.display_name,
+                            candidate.relationship.label().to_owned(),
+                        ),
+                    );
+                }
+                continue;
+            }
             if let Some(birth_date) = candidate.birth_date {
                 identities.insert(
                     candidate.player_id,
@@ -8077,7 +8384,9 @@ pub fn run_prospect_career_context(
     }
     let as_of_date = NaiveDate::parse_from_str(&as_of, "%Y-%m-%d")
         .with_context(|| format!("invalid --as-of date {as_of}; expected YYYY-MM-DD"))?;
-    let view = build_prospect_career_context_draft(
+    let mut forecast = forecast;
+    remove_overlay_ranking_exclusions(&mut forecast, &overlay_ranking_exclusions);
+    let mut view = build_prospect_career_context_draft(
         forecast,
         identities.into_values().collect(),
         ProspectCareerContextDraftConfig {
@@ -8086,6 +8395,17 @@ pub fn run_prospect_career_context(
         },
     )
     .map_err(anyhow::Error::msg)?;
+    view.exclusions.extend(overlay_ranking_exclusions.into_iter().map(
+        |(player_id, (player, relationship))| ProspectLeagueContextExclusionView {
+            player_id,
+            player,
+            reason: ProspectLeagueContextExclusionReason::UnsupportedOrganizationRelationship,
+            detail: format!(
+                "Sourced overlay relationship `{relationship}` supports camp participation but does not establish organization control for prospect ranking"
+            ),
+        },
+    ));
+    view.exclusions.sort_by_key(|row| row.player_id);
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&view)?)
     } else {
@@ -8101,6 +8421,23 @@ pub fn run_prospect_career_context(
         print!("{output}");
     }
     Ok(())
+}
+
+fn remove_overlay_ranking_exclusions(
+    forecast: &mut TrainingCampLeagueForecastView,
+    exclusions: &BTreeMap<u32, (String, String)>,
+) -> usize {
+    let mut removed = 0;
+    for team in &mut forecast.teams {
+        if let Some(team_forecast) = team.forecast.as_mut() {
+            let before = team_forecast.players.len();
+            team_forecast
+                .players
+                .retain(|player| !exclusions.contains_key(&player.player_id));
+            removed += before - team_forecast.players.len();
+        }
+    }
+    removed
 }
 
 pub fn run_prospect_career(
@@ -8167,14 +8504,19 @@ fn read_prospect_crosswalks(paths: &[PathBuf]) -> anyhow::Result<Vec<AhlIdentity
     Ok(crosswalks)
 }
 
+pub struct ProspectProgramPublicationOptions {
+    pub require_complete_rankings: bool,
+    pub json: bool,
+    pub out: Option<PathBuf>,
+}
+
 pub fn run_prospect_program(
     league_discovery_paths: Vec<PathBuf>,
     career_discovery_paths: Vec<PathBuf>,
     study_paths: Vec<PathBuf>,
     prior_board_path: Option<PathBuf>,
-    maximum_nhl_games: u32,
-    json: bool,
-    out: Option<PathBuf>,
+    config: ProspectProgramBoardConfig,
+    publication: ProspectProgramPublicationOptions,
 ) -> anyhow::Result<()> {
     let (studies, goalie_studies) =
         load_prospect_program_inputs(league_discovery_paths, career_discovery_paths, study_paths)?;
@@ -8182,22 +8524,36 @@ pub fn run_prospect_program(
         .as_deref()
         .map(|path| read_icecast_json(path, "prior prospect program board"))
         .transpose()?;
-    let view = build_prospect_program_board_with_goalies(
-        studies,
-        goalie_studies,
-        prior.as_ref(),
-        ProspectProgramBoardConfig {
-            maximum_nhl_games_played: maximum_nhl_games,
-            ..ProspectProgramBoardConfig::default()
-        },
-    )
-    .map_err(anyhow::Error::msg)?;
-    let output = if json {
+    let view =
+        build_prospect_program_board_with_goalies(studies, goalie_studies, prior.as_ref(), config)
+            .map_err(anyhow::Error::msg)?;
+    if publication.require_complete_rankings && view.partial_organization_rankings > 0 {
+        let shortfalls = view
+            .programs
+            .iter()
+            .filter(|program| !program.top_prospect_ranking_complete)
+            .map(|program| {
+                format!(
+                    "{} ({}/{}, short {})",
+                    program.organization,
+                    program.top_prospects.len(),
+                    view.prospects_per_team,
+                    program.top_prospect_ranking_shortfall
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        bail!(
+            "prospect ranking publication is incomplete for {} organization(s): {shortfalls}",
+            view.partial_organization_rankings
+        );
+    }
+    let output = if publication.json {
         format!("{}\n", serde_json::to_string_pretty(&view)?)
     } else {
         render_prospect_program(&view)
     };
-    if let Some(path) = out.as_deref() {
+    if let Some(path) = publication.out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "IceCast prospect program board")?;
     } else {
         print!("{output}");
@@ -9090,6 +9446,44 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
                 row.unknown_nhl_games_count,
                 row.components.confidence,
                 leaders
+            );
+        }
+    }
+    let _ = writeln!(
+        out,
+        "\nTOP PROSPECTS BY ORGANIZATION · {} complete · {} partial",
+        view.complete_organization_rankings, view.partial_organization_rankings
+    );
+    let mut programs = view.programs.iter().collect::<Vec<_>>();
+    programs.sort_by_key(|row| row.pipeline_rank);
+    for program in programs {
+        let published = program.top_prospects.len();
+        let coverage = if program.top_prospect_ranking_complete {
+            "complete"
+        } else {
+            "partial"
+        };
+        let _ = writeln!(
+            out,
+            "\n{} · pipeline #{} · {} of {} requested ({coverage}, short {})",
+            program.organization,
+            program.pipeline_rank,
+            published,
+            view.prospects_per_team,
+            program.top_prospect_ranking_shortfall
+        );
+        for prospect in &program.top_prospects {
+            let _ = writeln!(
+                out,
+                "{}. {} ({}) · signal {:.2} · {:?} · {:?} · confidence {:.2} · {} NHL GP",
+                prospect.rank,
+                prospect.player,
+                prospect.position,
+                prospect.observed_signal_score,
+                prospect.trajectory,
+                prospect.opportunity,
+                prospect.workload_confidence,
+                prospect.nhl_games_played
             );
         }
     }
@@ -11769,7 +12163,7 @@ mod tests {
         TeamSeasonForecastHistoryTrend, TeamSeasonForecastHistoryView,
         TeamSeasonForecastMovementRow, TeamSeasonForecastMovementView, TeamSeasonForecastView,
         TeamSeasonReplayCheckpointTeamRow, TeamSeasonReplayCheckpointView,
-        TrainingCampSimulationInput,
+        TrainingCampLeagueForecastView, TrainingCampSimulationInput,
     };
     use icelines_fetch::ahl::{
         build_ahl_identity_review_inspection, AhlIdentityCrosswalkCounts, AhlIdentityCrosswalkRow,
@@ -11780,6 +12174,7 @@ mod tests {
         AhlPreseasonOrganizationReview, AhlPreseasonOrganizationReviewRow,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     };
+    use icelines_fetch::ProspectPopulationRelationship as LeagueCampCandidateRelationship;
 
     #[test]
     fn preseason_opening_players_keep_ranked_12f_6d_2g_evidence() {
@@ -12031,10 +12426,11 @@ mod tests {
         audit_opening_roster_authority, automatic_camp_player, camp_invite_pool_missing,
         merge_scenarios, opening_selected_indices, parse_archived_roster_payload,
         parse_official_nhl_archive_url, parse_retrospective_opening_lineup,
-        personnel_player_action, prior_season_player_value, render, render_camp, render_history,
-        render_movement, resolve_archive_discovery_response, resolve_transaction_players,
-        schedule_calendar_fingerprint, score_opening_position_group, select_latest_cdx_capture,
-        select_opening_roster_snapshot, snapshot_evidence_at_text, transaction_availability_delta,
+        personnel_player_action, prior_season_player_value, remove_overlay_ranking_exclusions,
+        render, render_camp, render_history, render_movement, resolve_archive_discovery_response,
+        resolve_transaction_players, run_prospect_population_audit, schedule_calendar_fingerprint,
+        score_opening_position_group, select_latest_cdx_capture, select_opening_roster_snapshot,
+        snapshot_evidence_at_text, transaction_availability_delta,
         validate_league_camp_candidate_overlay, validate_opening_roster_archive_manifest,
         FeatureMoments, LeagueCampCandidateOverlay, LeagueRosterIdentity,
         OfficialNhlRosterCaptureManifest, OpeningRosterArchiveCapture,
@@ -12050,6 +12446,35 @@ mod tests {
         ))
         .unwrap();
         validate_league_camp_candidate_overlay(&overlay).unwrap();
+        let audit = overlay.audit().unwrap();
+        assert!(audit.fully_classified);
+        assert_eq!(audit.legacy_relationships, 0);
+        assert_eq!(audit.unknown_relationships, 0);
+        assert_eq!(audit.ranking_eligible, 9);
+        assert_eq!(audit.camp_only, 1);
+        assert_eq!(
+            overlay
+                .candidates
+                .iter()
+                .find(|candidate| candidate.display_name == "Reid Schaefer")
+                .unwrap()
+                .relationship,
+            LeagueCampCandidateRelationship::DevelopmentCampParticipant
+        );
+
+        let mut attendee = overlay.clone();
+        attendee.candidates[0].relationship =
+            LeagueCampCandidateRelationship::DevelopmentCampParticipant;
+        validate_league_camp_candidate_overlay(&attendee).unwrap();
+        assert!(!attendee.candidates[0]
+            .relationship
+            .supports_prospect_ranking());
+
+        let mut controlled = overlay.clone();
+        controlled.candidates[0].relationship = LeagueCampCandidateRelationship::OrganizationRights;
+        assert!(controlled.candidates[0]
+            .relationship
+            .supports_prospect_ranking());
 
         let mut duplicate = overlay.clone();
         duplicate.candidates.push(duplicate.candidates[0].clone());
@@ -12062,6 +12487,55 @@ mod tests {
         assert!(validate_league_camp_candidate_overlay(&unsourced)
             .unwrap_err()
             .contains("absolute http(s)"));
+    }
+
+    #[test]
+    fn prospect_population_strict_gate_fails_before_writing_partial_authority() {
+        let dir = tempdir().unwrap();
+        let input = dir.path().join("legacy-population.json");
+        let output = dir.path().join("audit.json");
+        std::fs::write(
+            &input,
+            r#"{"schema":"prospect_population_overlay.v1","checked_at":"2026-07-31","candidates":[{"player_id":1,"display_name":"Legacy Candidate","team":"SEA","position":"C","birth_date":"2005-01-01","source_url":"https://www.nhl.com/kraken"}]}"#,
+        )
+        .unwrap();
+
+        let error = run_prospect_population_audit(input, true, true, Some(output.clone()))
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("1 legacy relationship(s)"));
+        assert!(!output.exists());
+    }
+
+    #[test]
+    fn camp_only_relationship_is_removed_from_prospect_context_forecast() {
+        let mut forecast: TrainingCampLeagueForecastView = serde_json::from_str(include_str!(
+            "../../../examples/icecast-league-training-camp-2026-27.json"
+        ))
+        .unwrap();
+        let player_id = forecast
+            .teams
+            .iter()
+            .filter_map(|team| team.forecast.as_ref())
+            .flat_map(|team| &team.players)
+            .next()
+            .unwrap()
+            .player_id;
+        let exclusions = BTreeMap::from([(
+            player_id,
+            ("Camp Invite".to_owned(), "free_agent_invite".to_owned()),
+        )]);
+
+        assert_eq!(
+            remove_overlay_ranking_exclusions(&mut forecast, &exclusions),
+            1
+        );
+        assert!(forecast
+            .teams
+            .iter()
+            .filter_map(|team| team.forecast.as_ref())
+            .flat_map(|team| &team.players)
+            .all(|player| player.player_id != player_id));
     }
 
     #[test]

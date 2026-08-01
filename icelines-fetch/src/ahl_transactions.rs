@@ -4,132 +4,21 @@
 //! evidence; later ledgers may interpret explicit ADD/DEL sequences, but an
 //! absent transaction is never an assignment or organization-status fact.
 
-use std::collections::BTreeSet;
-
-use chrono::NaiveDate;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-
 use crate::ahl::{AhlFeedClient, AhlFeedError, AHL_PROVIDER};
-
-pub const AHL_TRANSACTION_SNAPSHOT_SCHEMA: &str = "ahl_transaction_snapshot.v1";
-pub const AHL_TRANSACTION_SOURCE_URL: &str = "https://theahl.com/stats/transactions";
+pub use icelines_sources::ahl::transactions::{
+    parse_transaction_page, AhlTransactionError, AhlTransactionKind, AhlTransactionPageEvidence,
+    AhlTransactionRow, AhlTransactionSnapshot, AhlTransactionTeamIdentity, ParsedTransactionPage,
+    AHL_TRANSACTION_SNAPSHOT_SCHEMA, AHL_TRANSACTION_SOURCE_URL,
+};
 const TRANSACTION_PAGE_LIMIT: usize = 200;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum AhlTransactionKind {
-    Add,
-    Delete,
-    Other,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AhlTransactionRow {
-    pub transaction_date: String,
-    pub provider_player_id: String,
-    pub display_name: String,
-    #[serde(default)]
-    pub position: Option<String>,
-    pub provider_team_id: String,
-    pub team_display_name: String,
-    pub kind: AhlTransactionKind,
-    pub raw_type: String,
-    pub description: String,
-    pub source_page: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AhlTransactionPageEvidence {
-    pub page: usize,
-    pub first: usize,
-    pub limit: usize,
-    pub dataset_id: String,
-    pub fetched_at: String,
-    pub feed_url: String,
-    pub rows: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AhlTransactionTeamIdentity {
-    pub provider_team_id: String,
-    pub team_code: String,
-    pub team_name: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AhlTransactionSnapshot {
-    pub schema: String,
-    pub season: u32,
-    pub provider: String,
-    pub provider_season_id: String,
-    pub provider_season_name: String,
-    pub source_url: String,
-    pub total_results: usize,
-    pub teams: Vec<AhlTransactionTeamIdentity>,
-    pub pages: Vec<AhlTransactionPageEvidence>,
-    pub transactions: Vec<AhlTransactionRow>,
-    pub disclosures: Vec<String>,
-}
-
-impl AhlTransactionSnapshot {
-    pub fn validate(&self) -> Result<(), AhlFeedError> {
-        if self.schema != AHL_TRANSACTION_SNAPSHOT_SCHEMA
-            || self.provider != AHL_PROVIDER
-            || self.provider_season_id.trim().is_empty()
-            || self.provider_season_name.trim().is_empty()
-            || self.source_url != AHL_TRANSACTION_SOURCE_URL
-            || self.total_results != self.transactions.len()
-            || self.teams.is_empty()
-            || self.pages.is_empty()
-        {
-            return Err(AhlFeedError::Validation(
-                "AHL transaction snapshot envelope is incomplete or inconsistent".into(),
-            ));
+impl From<AhlTransactionError> for AhlFeedError {
+    fn from(error: AhlTransactionError) -> Self {
+        match error {
+            AhlTransactionError::Schema(detail) => Self::Schema(detail),
+            AhlTransactionError::Validation(detail) => Self::Validation(detail),
         }
-        let mut provider_team_ids = BTreeSet::new();
-        let mut page_numbers = BTreeSet::new();
-        if self.teams.iter().any(|team| {
-            team.provider_team_id.trim().is_empty()
-                || team.team_code.trim().is_empty()
-                || team.team_name.trim().is_empty()
-                || !provider_team_ids.insert(team.provider_team_id.as_str())
-        }) || self.pages.iter().any(|page| {
-            page.page == 0
-                || page.limit == 0
-                || page.dataset_id.trim().is_empty()
-                || page.feed_url.trim().is_empty()
-                || chrono::DateTime::parse_from_rfc3339(&page.fetched_at).is_err()
-                || !page_numbers.insert(page.page)
-        }) || self.transactions.iter().any(|row| {
-            NaiveDate::parse_from_str(&row.transaction_date, "%Y-%m-%d").is_err()
-                || row.provider_player_id.trim().is_empty()
-                || row.display_name.trim().is_empty()
-                || row.provider_team_id.trim().is_empty()
-                || !provider_team_ids.contains(row.provider_team_id.as_str())
-                || row.team_display_name.trim().is_empty()
-                || row.raw_type.trim().is_empty()
-                || row.description.trim().is_empty()
-                || !page_numbers.contains(&row.source_page)
-        }) {
-            return Err(AhlFeedError::Validation(
-                "AHL transaction snapshot contains invalid pages or rows".into(),
-            ));
-        }
-        let page_rows = self.pages.iter().map(|page| page.rows).sum::<usize>();
-        if page_rows != self.total_results {
-            return Err(AhlFeedError::Validation(
-                "AHL transaction page counts do not reconcile".into(),
-            ));
-        }
-        Ok(())
     }
-}
-
-#[derive(Debug)]
-struct ParsedTransactionPage {
-    total_results: usize,
-    rows: Vec<AhlTransactionRow>,
 }
 
 pub async fn fetch_ahl_transactions(
@@ -166,7 +55,9 @@ pub async fn fetch_ahl_transactions(
     let bootstrap = client
         .official_feed_value(&bootstrap_dataset, &bootstrap_params)
         .await?;
-    let expected_total = parse_transaction_page(&bootstrap, 1)?.total_results;
+    let expected_total = parse_transaction_page(&bootstrap, 1)
+        .map_err(map_transaction_error)?
+        .total_results;
     let page_count = expected_total.div_ceil(TRANSACTION_PAGE_LIMIT).max(1);
     let mut requests = Vec::with_capacity(page_count);
     let mut request_metadata = std::collections::BTreeMap::new();
@@ -202,7 +93,7 @@ pub async fn fetch_ahl_transactions(
             .get(&dataset_id)
             .cloned()
             .ok_or_else(|| AhlFeedError::Schema("unexpected AHL transaction page".into()))?;
-        let parsed = parse_transaction_page(&value, page_number)?;
+        let parsed = parse_transaction_page(&value, page_number).map_err(map_transaction_error)?;
         if parsed.total_results != expected_total {
             return Err(AhlFeedError::Schema(
                 "AHL transaction total changed during pagination".into(),
@@ -238,117 +129,18 @@ pub async fn fetch_ahl_transactions(
             "No transaction absence is treated as roster assignment, departure, contract status, waiver passage, or another-league evidence.".into(),
         ],
     };
-    snapshot.validate()?;
+    snapshot.validate().map_err(map_transaction_error)?;
     Ok(snapshot)
 }
 
-fn parse_transaction_page(
-    value: &Value,
-    source_page: usize,
-) -> Result<ParsedTransactionPage, AhlFeedError> {
-    let sections = value
-        .as_array()
-        .and_then(|items| items.first())
-        .and_then(|item| item.get("sections"))
-        .and_then(Value::as_array)
-        .ok_or_else(|| AhlFeedError::Schema("transaction sections missing".into()))?;
-    let result_section = sections
-        .iter()
-        .find(|section| section.get("title").and_then(Value::as_str) == Some("transaction_results"))
-        .ok_or_else(|| AhlFeedError::Schema("transaction_results section missing".into()))?;
-    let data = result_section
-        .get("data")
-        .and_then(Value::as_array)
-        .ok_or_else(|| AhlFeedError::Schema("transaction result data missing".into()))?;
-    let mut rows = Vec::with_capacity(data.len());
-    for item in data {
-        let row = item
-            .get("row")
-            .ok_or_else(|| AhlFeedError::Schema("transaction row missing".into()))?;
-        let props = item
-            .get("prop")
-            .ok_or_else(|| AhlFeedError::Schema("transaction properties missing".into()))?;
-        let raw_display_name = required_string(row, "player_name")?;
-        let display_name = props
-            .pointer("/player_name/seoName")
-            .and_then(Value::as_str)
-            .filter(|value| !value.trim().is_empty())
-            .unwrap_or(raw_display_name)
-            .trim()
-            .to_owned();
-        let raw_type = required_string(row, "transaction_type")?
-            .trim()
-            .to_ascii_uppercase();
-        let kind = match raw_type.as_str() {
-            "ADD" => AhlTransactionKind::Add,
-            "DEL" => AhlTransactionKind::Delete,
-            _ => AhlTransactionKind::Other,
-        };
-        rows.push(AhlTransactionRow {
-            transaction_date: required_string(row, "transaction_date")?.trim().to_owned(),
-            provider_player_id: required_pointer_string(props, "/player_name/playerLink")?
-                .trim()
-                .to_owned(),
-            display_name,
-            position: position_suffix(raw_display_name),
-            provider_team_id: required_pointer_string(props, "/team_city/teamLink")?
-                .trim()
-                .to_owned(),
-            team_display_name: required_string(row, "team_city")?.trim().to_owned(),
-            kind,
-            raw_type,
-            description: required_string(row, "transaction")?.trim().to_owned(),
-            source_page,
-        });
-    }
-    let total_results = sections
-        .iter()
-        .find(|section| section.get("title").and_then(Value::as_str) == Some("num_results"))
-        .and_then(|section| section.get("data"))
-        .and_then(Value::as_array)
-        .and_then(|rows| rows.first())
-        .and_then(|row| row.pointer("/row/num_results"))
-        .and_then(|value| {
-            value
-                .as_u64()
-                .or_else(|| value.as_str().and_then(|value| value.parse().ok()))
-        })
-        .and_then(|value| usize::try_from(value).ok())
-        .ok_or_else(|| AhlFeedError::Schema("transaction total missing".into()))?;
-    Ok(ParsedTransactionPage {
-        total_results,
-        rows,
-    })
-}
-
-fn required_string<'a>(value: &'a Value, key: &str) -> Result<&'a str, AhlFeedError> {
-    value
-        .get(key)
-        .and_then(Value::as_str)
-        .filter(|value| !value.trim().is_empty())
-        .ok_or_else(|| AhlFeedError::Schema(format!("transaction {key} missing")))
-}
-
-fn required_pointer_string<'a>(value: &'a Value, pointer: &str) -> Result<&'a str, AhlFeedError> {
-    value
-        .pointer(pointer)
-        .and_then(Value::as_str)
-        .filter(|value| !value.trim().is_empty())
-        .ok_or_else(|| AhlFeedError::Schema(format!("transaction {pointer} missing")))
-}
-
-fn position_suffix(value: &str) -> Option<String> {
-    let open = value.rfind(" (")?;
-    let suffix = value.get(open + 2..)?.strip_suffix(')')?;
-    (!suffix.is_empty()
-        && suffix.len() <= 3
-        && suffix.bytes().all(|byte| byte.is_ascii_uppercase()))
-    .then(|| suffix.to_owned())
+fn map_transaction_error(error: AhlTransactionError) -> AhlFeedError {
+    error.into()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::Value;
 
     fn page() -> Value {
         serde_json::json!([{"sections":[

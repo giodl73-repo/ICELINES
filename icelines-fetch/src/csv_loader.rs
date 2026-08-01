@@ -1,124 +1,18 @@
 use crate::error::FetchError;
-use std::io::Read;
+pub use icelines_sources::yahoo_eligibility::YahooEligibility;
+use icelines_sources::yahoo_eligibility::{parse_yahoo_eligibility_csv, YahooEligibilityCsvError};
 use std::path::Path;
-
-/// Yahoo CSV position eligibility record.
-/// Stats are NOT read from CSV — all stats come from the NHL API.
-/// Only position eligibility and photo URL are extracted.
-#[derive(Debug, Clone)]
-pub struct YahooEligibility {
-    pub full_name: String,
-    pub team: String,
-    pub eligible_pos: String, // raw string e.g. "C,LW,Util"
-    pub photo_url: Option<String>,
-}
-
-/// Required column names in the Yahoo CSV header row.
-const REQUIRED_COLS: &[&str] = &["First Name", "Last Name", "Team", "Eligible Positions"];
 
 /// Load position eligibility from a Yahoo Fantasy Hockey CSV export.
 /// Handles UTF-8 BOM. Validates required columns by name.
 /// Rejects rows with empty Team or Eligible Positions.
 pub fn load_csv_eligibility(path: &Path) -> Result<Vec<YahooEligibility>, FetchError> {
-    let raw = read_file_strip_bom(path)?;
-
-    let mut rdr = csv::ReaderBuilder::new()
-        .has_headers(true)
-        .flexible(true) // Yahoo sometimes has trailing commas
-        .from_reader(raw.as_bytes());
-
-    // Validate headers
-    let headers = rdr
-        .headers()
-        .map_err(|e| FetchError::CsvParse {
-            row: 0,
-            field: "headers".into(),
-            detail: e.to_string(),
-        })?
-        .clone();
-
-    let header_vec: Vec<&str> = headers.iter().collect();
-    for required in REQUIRED_COLS {
-        if !header_vec.contains(required) {
-            return Err(FetchError::CsvParse {
-                row: 0,
-                field: required.to_string(),
-                detail: format!("required column '{required}' not found in CSV headers"),
-            });
+    let bytes = std::fs::read(path)?;
+    parse_yahoo_eligibility_csv(&bytes).map_err(|error| match error {
+        YahooEligibilityCsvError::CsvParse { row, field, detail } => {
+            FetchError::CsvParse { row, field, detail }
         }
-    }
-
-    let col = |name: &str| -> usize {
-        header_vec
-            .iter()
-            .position(|h| *h == name)
-            .unwrap_or(usize::MAX)
-    };
-
-    let idx_first = col("First Name");
-    let idx_last = col("Last Name");
-    let idx_team = col("Team");
-    let idx_eligible = col("Eligible Positions");
-    let idx_image = col("Image");
-
-    let mut records = Vec::new();
-    for (row_num, result) in rdr.records().enumerate() {
-        let record = result.map_err(|e| FetchError::CsvParse {
-            row: row_num + 2,
-            field: "row".into(),
-            detail: e.to_string(),
-        })?;
-
-        let get = |idx: usize| -> &str {
-            if idx == usize::MAX {
-                ""
-            } else {
-                record.get(idx).unwrap_or("").trim()
-            }
-        };
-
-        let first = get(idx_first);
-        let last = get(idx_last);
-        let team = get(idx_team);
-        let eligible = get(idx_eligible);
-
-        if team.is_empty() || eligible.is_empty() {
-            continue;
-        }
-
-        let full_name = format!("{first} {last}");
-        let photo_url = {
-            let raw = get(idx_image);
-            if raw.is_empty() {
-                None
-            } else {
-                Some(raw.to_owned())
-            }
-        };
-
-        records.push(YahooEligibility {
-            full_name,
-            team: team.to_owned(),
-            eligible_pos: eligible.to_owned(),
-            photo_url,
-        });
-    }
-
-    Ok(records)
-}
-
-fn read_file_strip_bom(path: &Path) -> Result<String, FetchError> {
-    let mut file = std::fs::File::open(path)?;
-    let mut bytes = Vec::new();
-    file.read_to_end(&mut bytes)?;
-    // Strip UTF-8 BOM (EF BB BF) if present
-    let stripped = if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
-        &bytes[3..]
-    } else {
-        &bytes
-    };
-    // Decode as UTF-8, replacing invalid sequences rather than failing
-    Ok(String::from_utf8_lossy(stripped).into_owned())
+    })
 }
 
 #[cfg(test)]

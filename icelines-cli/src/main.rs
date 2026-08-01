@@ -3157,6 +3157,81 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         }) => commands::icecast::run_prospect_league(snapshots, crosswalks, context, json, out)?,
+        Commands::Icecast(IceCastSubcommand::ProspectPopulationAudit {
+            input,
+            require_fully_classified,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_population_audit(
+            input,
+            require_fully_classified,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::IdentityReviewWorkboard {
+            source_package,
+            json,
+            out,
+        }) => commands::icecast::run_identity_review_workboard(source_package, json, out)?,
+        Commands::Icecast(IceCastSubcommand::OfficialIdentityCandidates {
+            workboard,
+            refresh,
+            offline,
+            search_concurrency,
+            evidence_cutoff,
+            json,
+            out,
+        }) => {
+            commands::icecast::run_official_identity_candidates(
+                workboard,
+                refresh,
+                offline,
+                search_concurrency,
+                evidence_cutoff,
+                json,
+                out,
+                &cfg,
+            )
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::OfficialIdentityReviewLedger {
+            candidates,
+            provider,
+            registry_url,
+            reviewer,
+            reviewed_at,
+            out,
+        }) => commands::icecast::run_official_identity_review_ledger(
+            candidates,
+            provider,
+            registry_url,
+            reviewer,
+            reviewed_at,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::ProspectCensus {
+            source_package,
+            pipeline,
+            league_discoveries,
+            career_discoveries,
+            program_board,
+            pipeline_out,
+            prospects_per_team,
+            require_publishable,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_census(
+            source_package,
+            pipeline,
+            league_discoveries,
+            career_discoveries,
+            program_board,
+            pipeline_out,
+            usize::from(prospects_per_team),
+            require_publishable,
+            json,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::ProspectCareerContext {
             camp_forecast,
             rosters,
@@ -3190,6 +3265,8 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             studies,
             prior_board,
             maximum_nhl_games,
+            prospects_per_team,
+            require_complete_rankings,
             json,
             out,
         }) => commands::icecast::run_prospect_program(
@@ -3197,9 +3274,16 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             career_discoveries,
             studies,
             prior_board,
-            maximum_nhl_games,
-            json,
-            out,
+            icelines_core::ProspectProgramBoardConfig {
+                maximum_nhl_games_played: maximum_nhl_games,
+                prospects_per_team: usize::from(prospects_per_team),
+                ..icelines_core::ProspectProgramBoardConfig::default()
+            },
+            commands::icecast::ProspectProgramPublicationOptions {
+                require_complete_rankings,
+                json,
+                out,
+            },
         )?,
         Commands::Icecast(IceCastSubcommand::ProspectProgramSensitivity {
             league_discoveries,
@@ -3291,6 +3375,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
 }
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)] // Dispatch helpers intentionally follow focused main tests.
 mod tests {
     use super::*;
     use clap::error::ErrorKind;
