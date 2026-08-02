@@ -11,7 +11,9 @@ use icelines_core::view_model::prospect_census::{
     ProspectCensusInput, ProspectCensusLossReason, ProspectCensusOrganizationInput,
     ProspectCensusStage, ProspectCensusView, ProspectPopulationAuthorityStatus,
 };
-use icelines_core::ProspectProgramBoardView;
+use icelines_core::{
+    ProspectDevelopmentStudyView, ProspectGoalieDevelopmentStudyView, ProspectProgramBoardView,
+};
 use icelines_sources::current_state::{
     reconcile_staged_player_assertions, resolve_player_current_state, IdentityReplayMode,
     ReplayCutoffs, RightsStatus, CURRENT_PLAYER_STATE_POLICY_VERSION,
@@ -23,6 +25,140 @@ use crate::{ProspectCareerDiscoveryView, ProspectLeagueDiscoveryView};
 
 pub const PROSPECT_CENSUS_COMPOSER_VERSION: &str = "prospect-census-composer.v1";
 pub const PROSPECT_CENSUS_PIPELINE_SCHEMA: &str = "prospect_census_pipeline.v1";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectStudyControlExclusionReason {
+    UnsupportedControl,
+    OrganizationMismatch,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectStudyControlExclusion {
+    pub player_id: u32,
+    pub player: String,
+    pub supplied_organization: String,
+    pub controlled_organization: Option<String>,
+    pub reason: ProspectStudyControlExclusionReason,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ControlledProspectStudySelection {
+    pub source_package_fingerprint: String,
+    pub population_complete: bool,
+    pub supplied_studies: usize,
+    pub studies: Vec<ProspectDevelopmentStudyView>,
+    pub goalie_studies: Vec<ProspectGoalieDevelopmentStudyView>,
+    pub exclusions: Vec<ProspectStudyControlExclusion>,
+}
+
+/// Gate prospect studies through the same current-control resolver used by the
+/// source-backed census. An AHL affiliation or roster row can establish an
+/// assignment, but only contract/rights facts establish NHL organization
+/// control. Unsupported and mismatched rows remain explicit exclusions.
+pub fn select_controlled_prospect_studies(
+    package: &SourcePackage,
+    studies: Vec<ProspectDevelopmentStudyView>,
+    goalie_studies: Vec<ProspectGoalieDevelopmentStudyView>,
+) -> Result<ControlledProspectStudySelection, String> {
+    package.validate().map_err(|error| error.to_string())?;
+    let cutoffs = ReplayCutoffs {
+        effective_cutoff: package.effective_cutoff,
+        knowledge_cutoff: package.knowledge_cutoff,
+        identity_mode: IdentityReplayMode::AsKnown,
+    };
+    let reconciled = reconcile_staged_player_assertions(
+        &package.identity_proposals,
+        &package.staged_player_assertions,
+        &package.identity_review_decisions,
+        cutoffs,
+    )
+    .map_err(|error| error.to_string())?;
+    let mut facts = package.fact_assertions.clone();
+    facts.extend(reconciled.assertions);
+    facts.sort_by(|left, right| left.fact_id().cmp(right.fact_id()));
+
+    let supplied_studies = studies.len() + goalie_studies.len();
+    let mut retained_studies = Vec::new();
+    let mut retained_goalies = Vec::new();
+    let mut exclusions = Vec::new();
+    for study in studies {
+        if let Some(exclusion) = study_control_exclusion(
+            study.player_id,
+            &study.player,
+            &study.organization,
+            &facts,
+            cutoffs,
+        ) {
+            exclusions.push(exclusion);
+        } else {
+            retained_studies.push(study);
+        }
+    }
+    for study in goalie_studies {
+        if let Some(exclusion) = study_control_exclusion(
+            study.player_id,
+            &study.player,
+            &study.organization,
+            &facts,
+            cutoffs,
+        ) {
+            exclusions.push(exclusion);
+        } else {
+            retained_goalies.push(study);
+        }
+    }
+    exclusions.sort_by_key(|row| row.player_id);
+    Ok(ControlledProspectStudySelection {
+        source_package_fingerprint: package.fingerprint.as_str().to_owned(),
+        population_complete: package.run_manifest.complete,
+        supplied_studies,
+        studies: retained_studies,
+        goalie_studies: retained_goalies,
+        exclusions,
+    })
+}
+
+fn study_control_exclusion(
+    player_id: u32,
+    player: &str,
+    supplied_organization: &str,
+    facts: &[FactAssertion<SourceFact>],
+    cutoffs: ReplayCutoffs,
+) -> Option<ProspectStudyControlExclusion> {
+    let state = resolve_player_current_state(PlayerId(player_id), facts, cutoffs);
+    let controlled_organization = state
+        .rights
+        .organization
+        .as_ref()
+        .map(|organization| organization.as_str().to_owned());
+    if !matches!(
+        state.rights.status,
+        RightsStatus::Supported | RightsStatus::Transferred
+    ) {
+        return Some(ProspectStudyControlExclusion {
+            player_id,
+            player: player.to_owned(),
+            supplied_organization: supplied_organization.to_owned(),
+            controlled_organization,
+            reason: ProspectStudyControlExclusionReason::UnsupportedControl,
+            detail: state.rights.reason,
+        });
+    }
+    if controlled_organization.as_deref() != Some(supplied_organization) {
+        return Some(ProspectStudyControlExclusion {
+            player_id,
+            player: player.to_owned(),
+            supplied_organization: supplied_organization.to_owned(),
+            controlled_organization,
+            reason: ProspectStudyControlExclusionReason::OrganizationMismatch,
+            detail: "The supplied prospect organization differs from current sourced control."
+                .to_owned(),
+        });
+    }
+    None
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProspectCensusPlayerPipelineEvidence {
@@ -769,6 +905,104 @@ mod tests {
         assert_eq!(
             view.losses[0].reason,
             ProspectCensusLossReason::UnresolvedIdentity
+        );
+    }
+
+    #[test]
+    fn program_selection_requires_current_control_and_matching_organization() {
+        let contract = |player_id, organization: &str| {
+            FactAssertion::new(
+                FactId::try_new(format!("contract:{player_id}")).unwrap(),
+                format!("player:{player_id}:contract"),
+                FactSubject::Player(PlayerId(player_id)),
+                EffectiveTime::new(at(8), None, EffectivePrecision::Day).unwrap(),
+                FactAuthority::Contract,
+                SourceFact::PlayerOrganization(PlayerOrganizationEvent::ContractSigned {
+                    with: OrganizationId::try_new(organization).unwrap(),
+                    contract_kind: ContractKind::EntryLevel,
+                }),
+                vec![evidence("contract")],
+            )
+            .unwrap()
+        };
+        let package = build_source_package(
+            SourcePackageBuildInput {
+                package_id: PackageId::try_new("control-selection-fixture").unwrap(),
+                evaluation_season: Season(20_262_027),
+                effective_cutoff: at(12),
+                knowledge_cutoff: at(12),
+                adapter_registry_version: AdapterVersion::try_new("registry.v1").unwrap(),
+                reconciliation_policy_version: PolicyVersion::try_new("reconcile.v1").unwrap(),
+                review_registry_fingerprint: hash('f'),
+                run_manifest: SourceRunManifest {
+                    requested_scope: "league".to_owned(),
+                    source_catalog_version: "catalog.v1".to_owned(),
+                    objects: vec![SourceObjectOutcome {
+                        object_id: "SEA:contracts".to_owned(),
+                        source_family: "nhl_contract_publication".to_owned(),
+                        organization: Some(OrganizationId::try_new("SEA").unwrap()),
+                        terminal_pagination: true,
+                        state: SourceObjectState::Acquired { records: 2 },
+                    }],
+                    complete: true,
+                },
+                inputs: Vec::new(),
+                identity_review_decisions: Vec::new(),
+                conflicts: Vec::new(),
+                coverage: Vec::new(),
+                disclosures: Vec::new(),
+            },
+            [SourcePackageFragment {
+                fact_assertions: vec![contract(42, "SEA"), contract(43, "SEA")],
+                ..SourcePackageFragment::default()
+            }],
+        )
+        .unwrap();
+        let study = |player_id, organization: &str| {
+            icelines_core::build_prospect_development_study(
+                icelines_core::ProspectDevelopmentStudyInput {
+                    player_id,
+                    player: format!("Prospect {player_id}"),
+                    organization: organization.to_owned(),
+                    position: "C".to_owned(),
+                    age: 20,
+                    nhl_games_played: 0,
+                    seasons: vec![icelines_core::ProspectDevelopmentSeasonInput {
+                        season: 20_252_026,
+                        league: "AHL".to_owned(),
+                        games_played: 30,
+                        goals: 10,
+                        assists: 15,
+                    }],
+                    opportunity: icelines_core::ProspectOpportunityStatus::None,
+                    availability: icelines_core::ProspectAvailabilityStatus::Unknown,
+                    attention_score: 0.5,
+                    attention_basis: "Neutral test context".to_owned(),
+                    evidence: vec![],
+                },
+                icelines_core::ProspectDevelopmentStudyConfig::default(),
+            )
+            .unwrap()
+        };
+        let selection = select_controlled_prospect_studies(
+            &package,
+            vec![study(42, "SEA"), study(43, "NYR"), study(44, "SEA")],
+            vec![],
+        )
+        .unwrap();
+
+        assert!(selection.population_complete);
+        assert_eq!(selection.supplied_studies, 3);
+        assert_eq!(selection.studies.len(), 1);
+        assert_eq!(selection.studies[0].player_id, 42);
+        assert_eq!(selection.exclusions.len(), 2);
+        assert_eq!(
+            selection.exclusions[0].reason,
+            ProspectStudyControlExclusionReason::OrganizationMismatch
+        );
+        assert_eq!(
+            selection.exclusions[1].reason,
+            ProspectStudyControlExclusionReason::UnsupportedControl
         );
     }
 }

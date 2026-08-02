@@ -54,16 +54,17 @@ use icelines_core::{
     ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
     ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
     ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
-    ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramSensitivityView,
-    ScenarioScopeView, ScheduleRestProfileView, SeasonSimulationCardInput,
-    TeamBehaviorResearchInput, TeamCeilingPlayerRow, TeamDecisionProfile, TeamForecastGameInput,
-    TeamForecastParameters, TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput,
-    TeamForecastReplayConfig, TeamForecastStrengthInput, TeamGameForecastCalibrationObservation,
-    TeamGameForecastRow, TeamGameForecastValidationInput, TeamGameForecastView,
-    TeamGameOpeningPlayerRow, TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow,
-    TeamGamePredictionEdgeCardInput, TeamGamePredictionEdgeView,
-    TeamGamePredictionHoldoutRegistration, TeamGamePredictionMarketBenchmarkInput,
-    TeamGamePredictionModel, TeamGamePredictionObservationSet, TeamGamePredictionTrainingConfig,
+    ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramPopulationAuthorityView,
+    ProspectProgramSensitivityView, ScenarioScopeView, ScheduleRestProfileView,
+    SeasonSimulationCardInput, TeamBehaviorResearchInput, TeamCeilingPlayerRow,
+    TeamDecisionProfile, TeamForecastGameInput, TeamForecastParameters,
+    TeamForecastPersonnelEvidenceInput, TeamForecastPersonnelPlayerInput, TeamForecastReplayConfig,
+    TeamForecastStrengthInput, TeamGameForecastCalibrationObservation, TeamGameForecastRow,
+    TeamGameForecastValidationInput, TeamGameForecastView, TeamGameOpeningPlayerRow,
+    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamGamePredictionEdgeCardInput,
+    TeamGamePredictionEdgeView, TeamGamePredictionHoldoutRegistration,
+    TeamGamePredictionMarketBenchmarkInput, TeamGamePredictionModel,
+    TeamGamePredictionObservationSet, TeamGamePredictionTrainingConfig,
     TeamGamePredictionTrainingObservation, TeamLineupProjectionView, TeamSeasonAutoPersonnelConfig,
     TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
     TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
@@ -184,7 +185,7 @@ use icelines_fetch::{
     load_game_prediction_edge_evidence_package, moneypuck_goalie_game_url, moneypuck_team_game_url,
     nhl_api::ScheduledGame,
     schema::{GoalieStats, LocalizedString, RosterPlayer, RosterResponse, SkaterBio, SkaterStats},
-    score_organization_window_future_holdout,
+    score_organization_window_future_holdout, select_controlled_prospect_studies,
     snapshot::{
         OfficialNhlRosterCaptureManifest, SnapshotEntry, SnapshotStore, SnapshotTier,
         OFFICIAL_NHL_LIVE_ROSTER_MANIFEST_FILE, OFFICIAL_NHL_LIVE_ROSTER_SCHEMA,
@@ -8506,6 +8507,7 @@ fn read_prospect_crosswalks(paths: &[PathBuf]) -> anyhow::Result<Vec<AhlIdentity
 
 pub struct ProspectProgramPublicationOptions {
     pub require_complete_rankings: bool,
+    pub require_complete_population: bool,
     pub json: bool,
     pub out: Option<PathBuf>,
 }
@@ -8515,18 +8517,52 @@ pub fn run_prospect_program(
     career_discovery_paths: Vec<PathBuf>,
     study_paths: Vec<PathBuf>,
     prior_board_path: Option<PathBuf>,
+    source_package_path: Option<PathBuf>,
     config: ProspectProgramBoardConfig,
     publication: ProspectProgramPublicationOptions,
 ) -> anyhow::Result<()> {
-    let (studies, goalie_studies) =
+    let (mut studies, mut goalie_studies) =
         load_prospect_program_inputs(league_discovery_paths, career_discovery_paths, study_paths)?;
+    let mut population_authority = None;
+    if let Some(path) = source_package_path.as_deref() {
+        let package: icelines_core::source_facts::SourcePackage =
+            read_icecast_json(path, "prospect source package")?;
+        let selection = select_controlled_prospect_studies(&package, studies, goalie_studies)
+            .map_err(anyhow::Error::msg)?;
+        if publication.require_complete_population && !selection.population_complete {
+            bail!(
+                "prospect population source package is incomplete; authority-backed publication was refused"
+            );
+        }
+        let excluded_studies = selection.exclusions.len();
+        population_authority = Some(ProspectProgramPopulationAuthorityView {
+            source_package_fingerprint: selection.source_package_fingerprint,
+            population_complete: selection.population_complete,
+            supplied_studies: selection.supplied_studies,
+            controlled_studies: selection.studies.len() + selection.goalie_studies.len(),
+            excluded_studies,
+        });
+        studies = selection.studies;
+        goalie_studies = selection.goalie_studies;
+    } else if publication.require_complete_population {
+        bail!("--require-complete-population requires --source-package");
+    }
     let prior = prior_board_path
         .as_deref()
         .map(|path| read_icecast_json(path, "prior prospect program board"))
         .transpose()?;
-    let view =
+    let mut view =
         build_prospect_program_board_with_goalies(studies, goalie_studies, prior.as_ref(), config)
             .map_err(anyhow::Error::msg)?;
+    if let Some(authority) = population_authority {
+        view.disclosures.push(format!(
+            "Source-package control gating retained {} of {} supplied studies and excluded {}; AHL affiliation or roster presence alone never established NHL organization control.",
+            authority.controlled_studies,
+            authority.supplied_studies,
+            authority.excluded_studies
+        ));
+        view.population_authority = Some(authority);
+    }
     if publication.require_complete_rankings && view.partial_organization_rankings > 0 {
         let shortfalls = view
             .programs

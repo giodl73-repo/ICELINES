@@ -192,7 +192,9 @@ pub use prospect_career::{
 };
 pub use prospect_census::{
     build_prospect_census_from_source_package, build_prospect_census_pipeline_from_discoveries,
+    select_controlled_prospect_studies, ControlledProspectStudySelection,
     ProspectCensusPipelineEvidence, ProspectCensusPlayerPipelineEvidence,
+    ProspectStudyControlExclusion, ProspectStudyControlExclusionReason,
     PROSPECT_CENSUS_COMPOSER_VERSION, PROSPECT_CENSUS_PIPELINE_SCHEMA,
 };
 pub use prospect_discovery::{
