@@ -44,8 +44,7 @@ operator/developer references and should not override the VTRACE baseline.
 
 1. Click the link above and download the file for your platform:
    - Windows → `icelines-windows-x86_64.zip`
-   - Mac (Apple Silicon) → `icelines-macos-arm64.tar.gz`
-   - Mac (Intel) → `icelines-macos-x86_64.tar.gz`
+   - Mac (Intel, or Apple Silicon through Rosetta 2) → `icelines-macos-x86_64.tar.gz`
    - Linux → `icelines-linux-x86_64.tar.gz`
 2. Optional: download the matching `.sha256` file and verify the archive hash
    before extracting. Release archives also contain `ICELINES-PACKAGE.txt` with
