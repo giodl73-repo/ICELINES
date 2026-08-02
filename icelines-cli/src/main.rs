@@ -3264,9 +3264,11 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             career_discoveries,
             studies,
             prior_board,
+            source_package,
             maximum_nhl_games,
             prospects_per_team,
             require_complete_rankings,
+            require_complete_population,
             json,
             out,
         }) => commands::icecast::run_prospect_program(
@@ -3274,6 +3276,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             career_discoveries,
             studies,
             prior_board,
+            source_package,
             icelines_core::ProspectProgramBoardConfig {
                 maximum_nhl_games_played: maximum_nhl_games,
                 prospects_per_team: usize::from(prospects_per_team),
@@ -3281,6 +3284,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             },
             commands::icecast::ProspectProgramPublicationOptions {
                 require_complete_rankings,
+                require_complete_population,
                 json,
                 out,
             },

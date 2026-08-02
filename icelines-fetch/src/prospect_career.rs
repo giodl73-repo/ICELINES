@@ -212,6 +212,8 @@ fn age_on(birth_date: NaiveDate, as_of: NaiveDate) -> u32 {
 #[serde(rename_all = "snake_case")]
 pub enum ProspectCareerExclusionReason {
     MissingCareerHistory,
+    NoEligibleSeasons,
+    /// Retained for compatibility with previously sealed discovery artifacts.
     FewerThanTwoEligibleSeasons,
     MissingGoalieRateStats,
 }
@@ -373,13 +375,13 @@ pub fn build_prospect_career_discovery(
             || player.position.eq_ignore_ascii_case("Goalie")
         {
             let seasons = goalie_seasons(history);
-            if seasons.len() < 2 {
+            if seasons.is_empty() {
                 excluded.push(exclusion(
                     player.player_id,
                     player.player,
                     Some(nhl_games_played),
                     ProspectCareerExclusionReason::MissingGoalieRateStats,
-                    "Fewer than two eligible seasons supplied both save percentage and goals-against average",
+                    "No eligible season supplied both save percentage and goals-against average",
                 ));
                 continue;
             }
@@ -401,13 +403,13 @@ pub fn build_prospect_career_discovery(
             goalie_studies.push(study);
         } else {
             let seasons = skater_seasons(history);
-            if seasons.len() < 2 {
+            if seasons.is_empty() {
                 excluded.push(exclusion(
                     player.player_id,
                     player.player,
                     Some(nhl_games_played),
-                    ProspectCareerExclusionReason::FewerThanTwoEligibleSeasons,
-                    "Fewer than two recognized CHL, NCAA, junior, or European-pro regular seasons had skater totals",
+                    ProspectCareerExclusionReason::NoEligibleSeasons,
+                    "No recognized CHL, NCAA, junior, or European-pro regular season had skater totals",
                 ));
                 continue;
             }
@@ -1021,7 +1023,7 @@ mod tests {
     }
 
     #[test]
-    fn reports_official_college_goalie_history_when_save_rate_is_absent() {
+    fn retains_complete_college_goalie_season_when_another_rate_is_absent() {
         let raw: serde_json::Value = serde_json::from_str(include_str!(
             "../tests/fixtures/landing/hellebuyck_8476945.json"
         ))
@@ -1039,12 +1041,14 @@ mod tests {
         )
         .unwrap();
         assert!(view.studies.is_empty());
-        assert!(view.goalie_studies.is_empty());
+        assert_eq!(view.goalie_studies.len(), 1);
+        assert_eq!(view.goalie_studies[0].seasons.len(), 1);
         assert_eq!(
-            view.excluded[0].reason,
-            ProspectCareerExclusionReason::MissingGoalieRateStats
+            view.goalie_studies[0].trajectory,
+            ProspectTrajectory::Insufficient
         );
-        assert!(view.excluded[0].nhl_games_played.is_some());
+        assert!(view.goalie_studies[0].workload_confidence < 0.35);
+        assert!(view.excluded.is_empty());
     }
 
     #[test]

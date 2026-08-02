@@ -2935,8 +2935,9 @@ pub enum IceCastSubcommand {
         /// Oldest player retained in the observed prospect draft.
         #[arg(long, default_value_t = 24)]
         max_age: u8,
-        /// Minimum number of joined AHL seasons required.
-        #[arg(long, default_value_t = 2)]
+        /// Minimum number of joined AHL seasons required. One-season players
+        /// remain rankable with limited-history confidence.
+        #[arg(long, default_value_t = 1)]
         minimum_ahl_seasons: usize,
         #[arg(long)]
         json: bool,
@@ -3115,6 +3116,10 @@ pub enum IceCastSubcommand {
         /// Optional prior `prospect_program_board.v2` used only for rank deltas.
         #[arg(long, value_name = "PATH")]
         prior_board: Option<PathBuf>,
+        /// Optional canonical `source_package.v1` used to retain only players
+        /// with current sourced NHL organization control.
+        #[arg(long, value_name = "PATH")]
+        source_package: Option<PathBuf>,
         /// Maximum regular-season NHL GP retained in reserve-system scoring.
         /// Higher-GP players remain visible as graduates.
         #[arg(long, default_value_t = 50)]
@@ -3126,6 +3131,10 @@ pub enum IceCastSubcommand {
         /// than the requested prospect depth.
         #[arg(long)]
         require_complete_rankings: bool,
+        /// Refuse authority-backed publication when the requested source
+        /// population matrix is incomplete.
+        #[arg(long, requires = "source_package")]
+        require_complete_population: bool,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -6354,9 +6363,12 @@ mod tui_surface_tests {
                 "college-study.json",
                 "--prior-board",
                 "prior-program-board.json",
+                "--source-package",
+                "prospect-sources.json",
                 "--prospects-per-team",
                 "7",
                 "--require-complete-rankings",
+                "--require-complete-population",
                 "--json",
                 "--out",
                 "program-board.json",
@@ -6369,15 +6381,18 @@ mod tui_surface_tests {
                     career_discoveries,
                     studies,
                     prior_board: Some(prior),
+                    source_package: Some(source_package),
                     maximum_nhl_games: 50,
                     prospects_per_team: 7,
                     require_complete_rankings: true,
+                    require_complete_population: true,
                     json: true,
                     out: Some(out),
                 }) if league_discoveries == vec![PathBuf::from("league-discovery.json")]
                     && career_discoveries == vec![PathBuf::from("career-discovery.json")]
                     && studies == vec![PathBuf::from("college-study.json")]
                     && prior == PathBuf::from("prior-program-board.json")
+                    && source_package == PathBuf::from("prospect-sources.json")
                     && out == PathBuf::from("program-board.json")
             ));
         });

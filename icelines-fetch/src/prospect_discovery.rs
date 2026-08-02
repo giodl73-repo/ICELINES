@@ -78,7 +78,7 @@ impl Default for ProspectLeagueContextDraftConfig {
         Self {
             max_age: 24,
             as_of_date: NaiveDate::from_ymd_opt(2026, 9, 15).expect("valid default date"),
-            minimum_ahl_seasons: 2,
+            minimum_ahl_seasons: 1,
         }
     }
 }
@@ -155,7 +155,7 @@ pub fn build_prospect_league_context_draft(
     config: ProspectLeagueContextDraftConfig,
 ) -> Result<ProspectLeagueContext, String> {
     if snapshots.len() < config.minimum_ahl_seasons
-        || config.minimum_ahl_seasons < 2
+        || config.minimum_ahl_seasons == 0
         || config.max_age == 0
         || affiliations.schema != AHL_AFFILIATION_CATALOG_SCHEMA
         || affiliations.affiliations.is_empty()
@@ -516,7 +516,8 @@ pub fn build_prospect_league_context_draft(
             "Observed draft includes only reviewed canonical players appearing in the latest supplied AHL snapshot, at or below the configured age ceiling, with the configured minimum observed AHL seasons.".to_owned(),
             "Organization comes from the supplied dated affiliation catalog; missing or conflicting mappings are explicit exclusions.".to_owned(),
             "NHL games are not inferred by the AHL adapter and remain zero placeholders; opportunity is none, availability unknown, and attention neutral until separately sourced enrichment is applied.".to_owned(),
-            "Goalies enter the context only when two reviewed AHL seasons exist; their save-percentage, goals-against-average, and workload evidence is scored by the separate goalie adapter.".to_owned(),
+            "Players with one reviewed AHL season remain in the context with limited-history confidence; multi-season same-league evidence is still required for a trajectory claim.".to_owned(),
+            "Goalie save-percentage, goals-against-average, and workload evidence is scored by the separate goalie adapter.".to_owned(),
         ],
     })
 }
@@ -655,18 +656,6 @@ pub fn build_prospect_league_discovery(
                 });
                 continue;
             }
-            if season_totals.len() < 2 {
-                excluded.push(ProspectLeagueExclusionView {
-                    player_id: player.player_id,
-                    player: player.player,
-                    reason: ProspectLeagueExclusionReason::FewerThanTwoAhlSeasons,
-                    detail: format!(
-                        "Only {} reviewed AHL goalie season joined; the study requires at least two.",
-                        season_totals.len()
-                    ),
-                });
-                continue;
-            }
             let mut evidence = player.evidence;
             evidence.extend(
                 snapshot_evidence
@@ -763,19 +752,6 @@ pub fn build_prospect_league_discovery(
             });
             continue;
         }
-        if season_totals.len() < 2 {
-            excluded.push(ProspectLeagueExclusionView {
-                player_id: player.player_id,
-                player: player.player,
-                reason: ProspectLeagueExclusionReason::FewerThanTwoAhlSeasons,
-                detail: format!(
-                    "Only {} reviewed AHL season joined; the study requires at least two.",
-                    season_totals.len()
-                ),
-            });
-            continue;
-        }
-
         let mut evidence = player.evidence;
         evidence.extend(
             snapshot_evidence
@@ -857,7 +833,7 @@ pub fn build_prospect_league_discovery(
         disclosures: vec![
             "AHL production is joined only through reviewed season/team identity crosswalk rows; provider-local IDs are never treated as NHL IDs.".to_owned(),
             "Organization, position, age, NHL games, opportunity, availability, and public attention remain explicit authored context rather than feed-derived guesses.".to_owned(),
-            "Candidates without two joined AHL seasons are reported as exclusions. Goalie studies feed program ranking but remain outside skater-only Hidden Gems and Buyer Beware lanes.".to_owned(),
+            "Candidates with one joined AHL season remain rankable with insufficient trajectory and limited-history confidence. Goalie studies feed program ranking but remain outside skater-only Hidden Gems and Buyer Beware lanes.".to_owned(),
             "Multiple reviewed team segments in one season are summed; source snapshot and identity evidence remain attached to each study.".to_owned(),
             "Observed-draft context suppresses all discovery-board lanes until public-attention context is separately sourced; neutral placeholders cannot create Hidden Gem, Buyer Beware, or Watch recommendations.".to_owned(),
         ],
@@ -876,13 +852,13 @@ fn validate_authorities(
     crosswalks: &[AhlIdentityCrosswalkView],
     context: &ProspectLeagueContext,
 ) -> Result<(), String> {
-    if snapshots.len() < 2
+    if snapshots.is_empty()
         || crosswalks.is_empty()
         || context.schema != PROSPECT_LEAGUE_CONTEXT_SCHEMA
         || context.players.is_empty()
     {
         return Err(
-            "prospect league discovery requires two snapshots, reviewed crosswalks, and context"
+            "prospect league discovery requires snapshots, reviewed crosswalks, and context"
                 .to_owned(),
         );
     }
@@ -1048,6 +1024,47 @@ mod tests {
     }
 
     #[test]
+    fn observed_context_and_discovery_retain_first_year_ahl_prospect() {
+        let snapshots = vec![snapshot(20252026, 10, 40, 12, 20)];
+        let crosswalks = vec![crosswalk(20252026, 10, "Joined Prospect")];
+        let context = build_prospect_league_context_draft(
+            snapshots.clone(),
+            crosswalks.iter().cloned().map(league_crosswalk).collect(),
+            AhlAffiliationCatalogView {
+                schema: AHL_AFFILIATION_CATALOG_SCHEMA.to_owned(),
+                season: 20252026,
+                checked_at: "2026-07-26".to_owned(),
+                source_url: "https://theahl.com/nhl-affiliations".to_owned(),
+                affiliations: vec![icelines_core::AhlAffiliationView {
+                    nhl_team: "SEA".to_owned(),
+                    ahl_team: "Coachella Valley Firebirds".to_owned(),
+                }],
+            },
+            ProspectLeagueContextDraftConfig {
+                max_age: 24,
+                as_of_date: NaiveDate::from_ymd_opt(2026, 9, 15).unwrap(),
+                minimum_ahl_seasons: 1,
+            },
+        )
+        .unwrap();
+        let discovery = build_prospect_league_discovery(
+            snapshots,
+            crosswalks,
+            context,
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+
+        assert_eq!(discovery.studies.len(), 1);
+        assert_eq!(
+            discovery.studies[0].trajectory,
+            icelines_core::ProspectTrajectory::Insufficient
+        );
+        assert!((discovery.studies[0].workload_confidence - 0.35).abs() < 1e-9);
+        assert!(discovery.excluded.is_empty());
+    }
+
+    #[test]
     fn observed_context_draft_cannot_create_attention_sensitive_board_lanes() {
         let snapshots = vec![
             snapshot(20242025, 10, 40, 2, 3),
@@ -1131,10 +1148,10 @@ mod tests {
     }
 
     #[test]
-    fn pending_identity_does_not_join() {
+    fn pending_identity_season_is_ignored_without_dropping_reviewed_season() {
         let mut row = crosswalk(20242025, 10, "Joined Prospect");
         row.rows[0].review_status = AhlIdentityReviewStatus::Pending;
-        let error = build_prospect_league_discovery(
+        let view = build_prospect_league_discovery(
             vec![
                 snapshot(20242025, 10, 40, 10, 10),
                 snapshot(20252026, 10, 40, 20, 20),
@@ -1151,8 +1168,15 @@ mod tests {
             },
             ProspectDevelopmentStudyConfig::default(),
         )
-        .unwrap_err();
-        assert!(error.contains("no eligible prospect studies"));
+        .unwrap();
+        assert_eq!(view.studies.len(), 1);
+        assert_eq!(view.studies[0].seasons.len(), 1);
+        assert_eq!(view.studies[0].seasons[0].season, 20252026);
+        assert_eq!(
+            view.studies[0].trajectory,
+            icelines_core::ProspectTrajectory::Insufficient
+        );
+        assert!((view.studies[0].workload_confidence - 0.35).abs() < 1e-9);
     }
 
     #[test]

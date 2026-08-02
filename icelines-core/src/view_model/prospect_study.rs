@@ -8,7 +8,8 @@ pub const PROSPECT_DISCOVERY_BOARD_SCHEMA: &str = "prospect_discovery_board.v1";
 pub const PROSPECT_PROGRAM_BOARD_SCHEMA: &str = "prospect_program_board.v2";
 pub const PROSPECT_PROGRAM_SENSITIVITY_SCHEMA: &str = "prospect_program_sensitivity.v1";
 pub const PROSPECT_PROGRAM_HISTORY_SCHEMA: &str = "prospect_program_history.v1";
-pub const PROSPECT_PROGRAM_SCORING_METHOD: &str = "prospect_program_signal.v1";
+pub const PROSPECT_PROGRAM_SCORING_METHOD: &str = "prospect_program_signal.v2";
+const LIMITED_HISTORY_CONFIDENCE_FACTOR: f64 = 0.35;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -300,7 +301,7 @@ pub fn build_prospect_goalie_development_study(
     if input.player_id == 0
         || input.player.trim().is_empty()
         || input.organization.trim().is_empty()
-        || input.seasons.len() < 2
+        || input.seasons.is_empty()
         || !config.save_percentage_floor.is_finite()
         || !config.save_percentage_benchmark.is_finite()
         || config.save_percentage_floor >= config.save_percentage_benchmark
@@ -389,7 +390,7 @@ pub fn build_prospect_goalie_development_study(
         .map(|season| {
             (f64::from(season.games_played) / f64::from(config.full_confidence_games)).min(1.0)
         })
-        .unwrap_or(0.0);
+        .unwrap_or(latest_confidence * LIMITED_HISTORY_CONFIDENCE_FACTOR);
     let workload_confidence = latest_confidence.min(prior_confidence);
     let save_score = ((latest.save_percentage - config.save_percentage_floor)
         / (config.save_percentage_benchmark - config.save_percentage_floor))
@@ -457,6 +458,7 @@ pub fn build_prospect_goalie_development_study(
         disclosures: vec![
             "Goalie production combines save percentage and goals-against average, then applies latest-season workload confidence; it is not compared directly with skater points per game.".to_owned(),
             "Trajectory combines same-league save-percentage change and goals-against-average improvement only when both seasons clear the comparison workload.".to_owned(),
+            "A goalie with only one eligible season remains rankable with insufficient trajectory and a 35% limited-history confidence factor; missing history is uncertainty, not a zero-talent claim.".to_owned(),
             "Team defense and shot quality are not yet isolated; this is an AHL results-and-workload development signal, not a complete goalie talent model.".to_owned(),
         ],
     })
@@ -627,6 +629,15 @@ pub struct ProspectProgramOrganizationView {
     pub graduates: Vec<ProspectProgramGraduateView>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectProgramPopulationAuthorityView {
+    pub source_package_fingerprint: String,
+    pub population_complete: bool,
+    pub supplied_studies: usize,
+    pub controlled_studies: usize,
+    pub excluded_studies: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectProgramBoardView {
     pub schema: String,
@@ -656,6 +667,10 @@ pub struct ProspectProgramBoardView {
     /// Organizations that remain visibly short of the requested ranking depth.
     #[serde(default)]
     pub partial_organization_rankings: usize,
+    /// Present when publication was gated through the source-authority
+    /// current-control resolver rather than organization labels alone.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub population_authority: Option<ProspectProgramPopulationAuthorityView>,
     /// Sorted by `pipeline_rank`; consumers may independently sort on either
     /// other frozen rank without recomputing scores.
     pub programs: Vec<ProspectProgramOrganizationView>,
@@ -1041,7 +1056,7 @@ pub fn build_prospect_program_board_with_goalies(
     for goalie in goalie_studies {
         if goalie.schema != PROSPECT_GOALIE_DEVELOPMENT_STUDY_SCHEMA
             || goalie.position != "G"
-            || goalie.seasons.len() < 2
+            || goalie.seasons.is_empty()
         {
             return Err("invalid prospect goalie study supplied to program board".to_owned());
         }
@@ -1462,6 +1477,7 @@ pub fn build_prospect_program_board(
         prospects_per_team: config.prospects_per_team,
         complete_organization_rankings,
         partial_organization_rankings,
+        population_authority: None,
         programs,
         disclosures: vec![
             format!("This foundation ranks supplied canonical studies with no more than {} regular-season NHL games. Higher-workload young players remain visible in the graduated lane but do not inflate reserve-system scores; this operational boundary is not NHL rookie eligibility.", config.maximum_nhl_games_played),
@@ -1655,7 +1671,7 @@ pub fn build_prospect_development_study(
         || input.player.trim().is_empty()
         || input.organization.trim().is_empty()
         || input.position.trim().is_empty()
-        || input.seasons.len() < 2
+        || input.seasons.is_empty()
         || !input.attention_score.is_finite()
         || !(0.0..=1.0).contains(&input.attention_score)
         || input.attention_basis.trim().is_empty()
@@ -1740,7 +1756,7 @@ pub fn build_prospect_development_study(
         .rev()
         .find(|row| row.league.eq_ignore_ascii_case(&latest.league))
         .map(|row| (f64::from(row.games_played) / f64::from(config.full_confidence_games)).min(1.0))
-        .unwrap_or(0.0);
+        .unwrap_or(latest_confidence * LIMITED_HISTORY_CONFIDENCE_FACTOR);
     let workload_confidence = latest_confidence.min(prior_confidence);
     let production_score = (latest.points_per_game / config.production_benchmark_ppg)
         .clamp(0.0, 1.0)
@@ -1935,6 +1951,7 @@ pub fn build_prospect_development_study(
             "The hidden-value score combines latest production, same-league trajectory, documented opportunity, and an explicitly authored attention estimate; it is a discovery signal, not an NHL-equivalency projection.".to_owned(),
             "Injury explains interrupted opportunity but does not add points to the score; availability remains a separate labeled state.".to_owned(),
             "Raw scoring is compared only with an earlier season in the same league, preventing junior-to-pro league changes from masquerading as development decline.".to_owned(),
+            "A player with only one eligible season remains rankable with insufficient trajectory and a 35% limited-history confidence factor; missing history is uncertainty, not a zero-talent claim.".to_owned(),
         ],
     })
 }
@@ -2353,6 +2370,122 @@ mod tests {
             .top_prospects
             .iter()
             .any(|row| row.position == "G"));
+    }
+
+    #[test]
+    fn one_season_prospects_are_rankable_with_limited_history_confidence() {
+        let skater = build_prospect_development_study(
+            ProspectDevelopmentStudyInput {
+                player_id: 40,
+                player: "First Year Skater".to_owned(),
+                organization: "SEA".to_owned(),
+                position: "C".to_owned(),
+                age: 20,
+                nhl_games_played: 0,
+                seasons: vec![ProspectDevelopmentSeasonInput {
+                    season: 20252026,
+                    league: "AHL".to_owned(),
+                    games_played: 40,
+                    goals: 12,
+                    assists: 20,
+                }],
+                opportunity: ProspectOpportunityStatus::None,
+                availability: ProspectAvailabilityStatus::Unknown,
+                attention_score: 0.5,
+                attention_basis: "Neutral observed-draft context.".to_owned(),
+                evidence: vec![],
+            },
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+        let goalie = build_prospect_goalie_development_study(
+            ProspectGoalieDevelopmentStudyInput {
+                player_id: 41,
+                player: "First Year Goalie".to_owned(),
+                organization: "SEA".to_owned(),
+                age: 21,
+                nhl_games_played: 0,
+                seasons: vec![ProspectGoalieDevelopmentSeasonInput {
+                    season: 20252026,
+                    league: "AHL".to_owned(),
+                    games_played: 30,
+                    save_percentage: 0.910,
+                    goals_against_average: 2.70,
+                }],
+                opportunity: ProspectOpportunityStatus::None,
+                availability: ProspectAvailabilityStatus::Unknown,
+                evidence: vec![],
+            },
+            ProspectGoalieDevelopmentStudyConfig::default(),
+        )
+        .unwrap();
+
+        assert_eq!(skater.trajectory, ProspectTrajectory::Insufficient);
+        assert!((skater.workload_confidence - 0.35).abs() < 1e-9);
+        assert_eq!(goalie.trajectory, ProspectTrajectory::Insufficient);
+        assert!((goalie.workload_confidence - 0.35).abs() < 1e-9);
+        let board = build_prospect_program_board_with_goalies(
+            vec![skater],
+            vec![goalie],
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(board.ranked_studies, 2);
+        assert_eq!(board.programs[0].top_prospects.len(), 2);
+    }
+
+    #[test]
+    fn one_season_depth_can_publish_top_ten_for_all_32_teams_without_special_cases() {
+        let studies = crate::teams::CANONICAL_TEAMS
+            .iter()
+            .enumerate()
+            .flat_map(|(team_index, (team, _))| {
+                (0..10).map(move |player_index| {
+                    build_prospect_development_study(
+                        ProspectDevelopmentStudyInput {
+                            player_id: 1_000_000 + (team_index * 10 + player_index) as u32,
+                            player: format!("{team} Prospect {}", player_index + 1),
+                            organization: (*team).to_owned(),
+                            position: match player_index % 3 {
+                                0 => "C",
+                                1 => "D",
+                                _ => "RW",
+                            }
+                            .to_owned(),
+                            age: 20,
+                            nhl_games_played: 0,
+                            seasons: vec![ProspectDevelopmentSeasonInput {
+                                season: 20252026,
+                                league: "AHL".to_owned(),
+                                games_played: 20 + player_index as u32,
+                                goals: 5 + player_index as u32,
+                                assists: 8 + player_index as u32,
+                            }],
+                            opportunity: ProspectOpportunityStatus::None,
+                            availability: ProspectAvailabilityStatus::Unknown,
+                            attention_score: 0.5,
+                            attention_basis: "Neutral all-team fixture.".to_owned(),
+                            evidence: vec![],
+                        },
+                        ProspectDevelopmentStudyConfig::default(),
+                    )
+                    .unwrap()
+                })
+            })
+            .collect::<Vec<_>>();
+        let board =
+            build_prospect_program_board(studies, None, ProspectProgramBoardConfig::default())
+                .unwrap();
+
+        assert_eq!(board.organizations, 32);
+        assert_eq!(board.complete_organization_rankings, 32);
+        assert_eq!(board.partial_organization_rankings, 0);
+        assert!(board.programs.iter().all(|team| {
+            team.top_prospect_ranking_complete
+                && team.top_prospect_ranking_shortfall == 0
+                && team.top_prospects.len() == 10
+        }));
     }
 
     fn program_study(

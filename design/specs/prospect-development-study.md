@@ -256,6 +256,11 @@ before writing output when either unresolved authority class remains.
 `prospect-program --career-discovery` composes these studies with reviewed AHL
 discovery. When both adapters contain the same player, reviewed AHL facts take
 precedence and career discovery fills gaps, preventing duplicate program credit.
+One-season AHL, CHL, NCAA, junior, or European-pro players remain eligible:
+production uses their observed workload, trajectory is `insufficient`, and
+workload confidence receives the disclosed 35% limited-history factor. This
+keeps first-year professionals and newly drafted players visible without
+pretending that a development trend has been observed.
 
 ## Prospect program board
 
@@ -284,6 +289,15 @@ per-team shortfall. CLI publication may opt into `--require-complete-rankings`;
 that gate fails before writing output when any organization lacks the requested
 eligible depth. A successful all-32 publication therefore cannot silently mean
 "top ten where available."
+
+`prospect-program --source-package` additionally gates every supplied study
+through the canonical current-control resolver. AHL affiliation, roster
+presence, development-camp attendance, and free-agent invitations do not prove
+NHL organization control. Unsupported rows and organization mismatches are
+excluded, while the board publishes the source-package fingerprint, population
+completion state, and retained/excluded study counts. Automation may combine
+`--require-complete-population` and `--require-complete-rankings` to require both
+a terminal source census and ten controlled, eligible studies per organization.
 
 The observed player signal uses production, trajectory, and documented
 opportunity components. It deliberately excludes hidden-value and attention-gap
@@ -460,7 +474,9 @@ workloads.
 
 ## Guardrails
 
-- At least two seasons are required.
+- At least one eligible season is required for a rankable production study.
+- At least two comparable same-league seasons are required for a trajectory
+  claim; one-season players remain `insufficient` with limited-history confidence.
 - Both same-league seasons must meet the configured comparison workload; a
   two-game injury season cannot manufacture a recovery decline.
 - Raw scoring changes are computed only against another season in the same
