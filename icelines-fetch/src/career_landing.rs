@@ -19,207 +19,21 @@
 //!   "Erie", "Edmonton Oilers", "Canada"). Falls back to
 //!   `teamCommonName.default` when `teamName` is absent (rare).
 
-use icelines_core::career_history::{CareerGameType, CareerHistory, CareerStint, LeagueAbbrev};
+use icelines_core::career_history::CareerHistory;
+#[cfg(test)]
+use icelines_core::career_history::{CareerGameType, CareerStint, LeagueAbbrev};
+#[cfg(test)]
 use icelines_core::model::Season;
-use icelines_core::{PlayerAwardRow, PlayerAwardSeasonRow, PlayerAwardsView, ViewContext};
+use icelines_core::{PlayerAwardsView, ViewContext};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::Path;
 
-#[derive(Debug, thiserror::Error)]
-pub enum CareerParseError {
-    #[error("missing or invalid `seasonTotals` array")]
-    MissingSeasonTotals,
-    #[error("official NHL landing organization fact is invalid: {0}")]
-    InvalidOrganizationFact(String),
-}
-
-/// Dated, player-scoped organization metadata from the official NHL landing
-/// document. A missing current team is preserved as unknown/unsigned context;
-/// consumers must never infer another league or a departure from that absence.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct OfficialNhlOrganizationFact {
-    pub player_id: u32,
-    #[serde(default)]
-    pub current_team_abbrev: Option<String>,
-    #[serde(default)]
-    pub current_team_id: Option<u32>,
-    #[serde(default)]
-    pub is_active: Option<bool>,
-    pub observed_at: String,
-    pub source_url: String,
-}
-
-pub fn parse_official_nhl_organization_fact(
-    player_id: u32,
-    observed_at: impl Into<String>,
-    raw: &Value,
-) -> Result<OfficialNhlOrganizationFact, CareerParseError> {
-    let observed_at = observed_at.into();
-    if chrono::DateTime::parse_from_rfc3339(&observed_at).is_err() {
-        return Err(CareerParseError::InvalidOrganizationFact(
-            "observed_at must be RFC 3339".to_owned(),
-        ));
-    }
-    if raw
-        .get("playerId")
-        .and_then(Value::as_u64)
-        .is_some_and(|found| found != u64::from(player_id))
-    {
-        return Err(CareerParseError::InvalidOrganizationFact(format!(
-            "landing playerId does not match requested player {player_id}"
-        )));
-    }
-    let current_team_abbrev = raw
-        .get("currentTeamAbbrev")
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_ascii_uppercase);
-    if current_team_abbrev.as_deref().is_some_and(|team| {
-        !(2..=4).contains(&team.len()) || !team.bytes().all(|byte| byte.is_ascii_uppercase())
-    }) {
-        return Err(CareerParseError::InvalidOrganizationFact(
-            "currentTeamAbbrev must be a 2-4 character uppercase abbreviation".to_owned(),
-        ));
-    }
-    Ok(OfficialNhlOrganizationFact {
-        player_id,
-        current_team_abbrev,
-        current_team_id: raw
-            .get("currentTeamId")
-            .and_then(Value::as_u64)
-            .and_then(|value| u32::try_from(value).ok()),
-        is_active: raw.get("isActive").and_then(Value::as_bool),
-        observed_at,
-        source_url: format!("https://api-web.nhle.com/v1/player/{player_id}/landing"),
-    })
-}
-
-pub fn parse_career_history(
-    player_id: u32,
-    raw: &Value,
-) -> Result<CareerHistory, CareerParseError> {
-    let totals = raw
-        .get("seasonTotals")
-        .and_then(|v| v.as_array())
-        .ok_or(CareerParseError::MissingSeasonTotals)?;
-
-    // Per-entry resilience: a tournament we don't know how to bucket
-    // (gameTypeId 6 / 7 / etc — preseason, exhibition) shouldn't
-    // sink the whole player. Skip the bad entry and keep going.
-    // Missing seasonTotals at the top level is still fatal.
-    let mut stints = Vec::with_capacity(totals.len());
-    for entry in totals.iter() {
-        let Some(season) = entry.get("season").and_then(|v| v.as_u64()) else {
-            continue;
-        };
-        let season = season as u32;
-
-        let Some(game_type_id) = entry.get("gameTypeId").and_then(|v| v.as_u64()) else {
-            continue;
-        };
-        let Some(game_type) = CareerGameType::from_api_id(game_type_id as u32) else {
-            // Unknown gameTypeId (preseason, exhibition, etc) —
-            // skip this entry, keep parsing the rest.
-            continue;
-        };
-
-        let Some(league) = entry.get("leagueAbbrev").and_then(|v| v.as_str()) else {
-            continue;
-        };
-
-        let Some(gp) = entry.get("gamesPlayed").and_then(|v| v.as_u64()) else {
-            continue;
-        };
-        let gp = gp as u32;
-
-        // Optional fields — best-effort. Team name resolves via the
-        // localized `teamName.default`, falling back to common name
-        // (rare but present for international entries).
-        let team = entry
-            .get("teamName")
-            .and_then(|v| v.get("default"))
-            .and_then(|v| v.as_str())
-            .or_else(|| {
-                entry
-                    .get("teamCommonName")
-                    .and_then(|v| v.get("default"))
-                    .and_then(|v| v.as_str())
-            })
-            .unwrap_or("")
-            .to_owned();
-
-        let sequence = entry
-            .get("sequence")
-            .and_then(|v| v.as_u64())
-            .map(|n| n as u8)
-            .unwrap_or(1);
-
-        stints.push(CareerStint {
-            season: Season(season),
-            league: LeagueAbbrev::new(league),
-            team,
-            game_type,
-            sequence,
-            gp,
-            // Skater
-            goals: u32_field(entry, "goals"),
-            assists: u32_field(entry, "assists"),
-            points: u32_field(entry, "points"),
-            pim: u32_field(entry, "pim"),
-            plus_minus: i32_field(entry, "plusMinus"),
-            power_play_goals: u32_field(entry, "powerPlayGoals"),
-            power_play_points: u32_field(entry, "powerPlayPoints"),
-            shorthanded_goals: u32_field(entry, "shorthandedGoals"),
-            shorthanded_points: u32_field(entry, "shorthandedPoints"),
-            game_winning_goals: u32_field(entry, "gameWinningGoals"),
-            ot_goals: u32_field(entry, "otGoals"),
-            shots: u32_field(entry, "shots"),
-            shooting_pct: f32_field(entry, "shootingPctg"),
-            avg_toi_sec: toi_field(entry, "avgToi"),
-            faceoff_win_pct: f32_field(entry, "faceoffWinningPctg"),
-            // Goalie
-            games_started: u32_field(entry, "gamesStarted"),
-            wins: u32_field(entry, "wins"),
-            losses: u32_field(entry, "losses"),
-            ot_losses: u32_field(entry, "otLosses"),
-            goals_against: u32_field(entry, "goalsAgainst"),
-            goals_against_avg: f32_field(entry, "goalsAgainstAvg"),
-            save_pct: f32_field(entry, "savePctg"),
-            shots_against: u32_field(entry, "shotsAgainst"),
-            shutouts: u32_field(entry, "shutouts"),
-            time_on_ice_sec: toi_field(entry, "timeOnIce"),
-        });
-    }
-
-    let mut history = CareerHistory { player_id, stints };
-    history.sort_for_display();
-    Ok(history)
-}
-
-fn u32_field(v: &Value, key: &str) -> Option<u32> {
-    v.get(key).and_then(|n| n.as_u64()).map(|n| n as u32)
-}
-
-fn i32_field(v: &Value, key: &str) -> Option<i32> {
-    v.get(key).and_then(|n| n.as_i64()).map(|n| n as i32)
-}
-
-fn f32_field(v: &Value, key: &str) -> Option<f32> {
-    v.get(key).and_then(|n| n.as_f64()).map(|n| n as f32)
-}
-
-/// "MM:SS" → total seconds. Returns None on parse failure (rare but
-/// the API does occasionally send malformed strings on minor rows).
-fn toi_field(v: &Value, key: &str) -> Option<u32> {
-    let raw = v.get(key)?.as_str()?;
-    let mut parts = raw.splitn(2, ':');
-    let m: u32 = parts.next()?.parse().ok()?;
-    let s: u32 = parts.next()?.parse().ok()?;
-    Some(m * 60 + s)
-}
+pub use icelines_sources::nhl::player_landing::{
+    parse_career_history, parse_official_nhl_organization_fact, parse_player_award_rows,
+    CareerParseError, OfficialNhlOrganizationFact,
+};
 
 // ── Phase Profile.4 — awards parser + store ───────────────────────────
 
@@ -229,56 +43,12 @@ pub fn parse_player_awards(
     context: ViewContext,
     raw: &Value,
 ) -> PlayerAwardsView {
-    let awards = raw
-        .get("awards")
-        .and_then(|v| v.as_array())
-        .map(|entries| {
-            entries
-                .iter()
-                .filter_map(parse_award_row)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    PlayerAwardsView::new(context, player_id, player_name, awards)
-}
-
-fn parse_award_row(entry: &Value) -> Option<PlayerAwardRow> {
-    let trophy = entry
-        .get("trophy")
-        .and_then(|v| v.get("default"))
-        .and_then(|v| v.as_str())
-        .filter(|name| !name.is_empty())?
-        .to_string();
-    let seasons = entry
-        .get("seasons")
-        .and_then(|v| v.as_array())
-        .map(|rows| rows.iter().filter_map(parse_award_season).collect())
-        .unwrap_or_default();
-    Some(PlayerAwardRow { trophy, seasons })
-}
-
-fn parse_award_season(entry: &Value) -> Option<PlayerAwardSeasonRow> {
-    let season = entry
-        .get("seasonId")
-        .or_else(|| entry.get("season"))
-        .and_then(|v| v.as_u64())? as u32;
-    let game_type_id = entry
-        .get("gameTypeId")
-        .and_then(|v| v.as_u64())
-        .map(|v| v as u8)
-        .unwrap_or(2);
-    Some(PlayerAwardSeasonRow {
-        season: Season(season),
-        game_type_id,
-        games_played: u32_field(entry, "gamesPlayed"),
-        goals: u32_field(entry, "goals"),
-        assists: u32_field(entry, "assists"),
-        points: u32_field(entry, "points"),
-        plus_minus: i32_field(entry, "plusMinus"),
-        pim: u32_field(entry, "pim"),
-        hits: u32_field(entry, "hits"),
-        blocked_shots: u32_field(entry, "blockedShots"),
-    })
+    PlayerAwardsView::new(
+        context,
+        player_id,
+        player_name,
+        parse_player_award_rows(raw),
+    )
 }
 
 // ── Phase Calder.2 — store ───────────────────────────────────────────
@@ -854,19 +624,6 @@ mod tests {
         });
         let h = parse_career_history(1, &raw).expect("parse must succeed");
         assert_eq!(h.stints.len(), 1, "incomplete entry skipped, complete kept");
-    }
-
-    /// Calder.1 / l0_toi_parser_round_trips
-    #[test]
-    fn l0_toi_parser_round_trips() {
-        let v = serde_json::json!({"avgToi": "21:52"});
-        assert_eq!(toi_field(&v, "avgToi"), Some(21 * 60 + 52));
-        let v = serde_json::json!({"avgToi": "0:00"});
-        assert_eq!(toi_field(&v, "avgToi"), Some(0));
-        let v = serde_json::json!({"avgToi": "garbage"});
-        assert_eq!(toi_field(&v, "avgToi"), None);
-        let v = serde_json::json!({});
-        assert_eq!(toi_field(&v, "avgToi"), None);
     }
 
     /// Calder.2 / l0_store_round_trips_through_disk

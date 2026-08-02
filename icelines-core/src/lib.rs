@@ -32,6 +32,7 @@ pub mod scoring;
 pub mod season_stats;
 pub mod series_momentum;
 pub mod signal_metrics;
+pub mod source_facts;
 pub mod stats_catalog;
 pub mod stats_repository;
 pub mod teams;
@@ -83,6 +84,20 @@ pub use signal_metrics::{
     SignalEvidence, SignalEvidenceTier, SignalInput, SignalMetricDescriptor, SignalMetricId,
     SignalMetricUnit, SignalPolarity,
 };
+pub use source_facts::{
+    AdapterId as SourceAdapterId, AdapterVersion as SourceAdapterVersion, ClubRef,
+    CompatibilityProspectRelationshipFact, CompatibilityProspectRelationshipKind, ContentHash,
+    ContractKind, DecisionId, EffectivePrecision, EffectiveTime, FactAssertion, FactAuthority,
+    FactId, FactSubject, FreshnessClass as SourceFreshnessClass,
+    FreshnessStatus as SourceFreshnessStatus, IdentityReviewAction, IdentityReviewDecision,
+    LeagueCode, OrganizationId, PackageId, ParticipationAuthority, ParticipationKind,
+    PlayerOrganizationEvent, PlayerParticipationFact, PolicyVersion as SourcePolicyVersion,
+    ProposalId, ProviderId, ProviderIdentityProposal, ProviderPersonLocator, SourceConflict,
+    SourceContractError, SourceCoverageBucket, SourceDisclosure, SourceDisclosureCode,
+    SourceEvidence, SourceExclusion, SourceFact, SourceFreshness, SourceId, SourceInputRecord,
+    SourceObjectOutcome, SourceObjectState, SourcePackage, SourceRunManifest, SourceUrl,
+    StagedAssertionId, StagedPlayerAssertion, SOURCE_PACKAGE_JSON_SCHEMA, SOURCE_PACKAGE_SCHEMA,
+};
 pub use teams::CANONICAL_TEAMS;
 pub use transactions::{
     classify, other_rate, sanitize_description, trade_group_id, Transaction, TransactionKind,
@@ -112,6 +127,11 @@ pub use view_model::ahl_recall_readiness::{
     empirical_midrank_percentiles, estimate_ahl_recall_readiness, AhlRecallReadinessEstimate,
     AhlRecallReadinessInput, AhlRecallReadinessPolicy, AHL_RECALL_READINESS_METHOD,
     AHL_RECALL_READINESS_POLICY_SCHEMA,
+};
+pub use view_model::identity_review_workboard::{
+    build_identity_review_workboard, IdentityReviewContextInput, IdentityReviewDraftCoordinates,
+    IdentityReviewFamilyCount, IdentityReviewProposalInput, IdentityReviewWorkboardInput,
+    IdentityReviewWorkboardRow, IdentityReviewWorkboardView, IDENTITY_REVIEW_WORKBOARD_SCHEMA,
 };
 pub use view_model::isolated_impact::{
     build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
@@ -154,6 +174,12 @@ pub use view_model::nhl_goalie_translation::{
     validate_nhl_goalie_translation_policy, NhlGoalieTranslationCalibration,
     NhlGoalieTranslationEstimate, NhlGoalieTranslationPair, NhlGoalieTranslationPolicy,
     NHL_GOALIE_TRANSLATION_METHOD, NHL_GOALIE_TRANSLATION_POLICY_SCHEMA,
+};
+pub use view_model::official_identity_candidates::{
+    build_official_identity_candidate_board, OfficialIdentityCandidateBoardView,
+    OfficialIdentityCandidateRow, OfficialIdentityCandidateStatus,
+    OfficialIdentityCandidateStatusCount, OfficialIdentityCandidateView,
+    OfficialIdentityDraftCoordinates, OFFICIAL_IDENTITY_CANDIDATE_BOARD_SCHEMA,
 };
 pub use view_model::organization_lineup::{
     build_organization_lineup_forecast, OrganizationBlockedPlayerView, OrganizationLevel,
@@ -274,6 +300,15 @@ pub use view_model::organizational_prospect::{
     classify_organizational_prospect, evaluate_organizational_prospect,
     OrganizationalProspectBasis, OrganizationalProspectPolicy, OrganizationalProspectStatusView,
     ORGANIZATIONAL_PROSPECT_METHOD, ORGANIZATIONAL_PROSPECT_POLICY_SCHEMA,
+};
+pub use view_model::prospect_census::{
+    build_prospect_census, require_publishable_prospect_census, ProspectCensusCandidateInput,
+    ProspectCensusCounts, ProspectCensusDimensionRow, ProspectCensusFreshnessStatus,
+    ProspectCensusInput, ProspectCensusLossReason, ProspectCensusLossRow,
+    ProspectCensusOrganizationInput, ProspectCensusOrganizationView,
+    ProspectCensusPublicationStatus, ProspectCensusStage, ProspectCensusView,
+    ProspectPopulationAuthorityStatus, ProspectRankPublicationStatus,
+    ProspectScorePublicationStatus, PROSPECT_CENSUS_SCHEMA,
 };
 pub use view_model::prospect_conversion::{
     adapt_prospect_conversion_input, build_prospect_conversion_board,

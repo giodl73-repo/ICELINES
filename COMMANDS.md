@@ -1057,7 +1057,18 @@ icelines icecast prospect-study --input examples/icecast-jagger-firkus-prospect-
 icelines icecast prospect-context --snapshot ahl-2023-24.json --snapshot ahl-2024-25.json --snapshot ahl-2025-26.json --league-crosswalk reviewed-league-2023-24.json --league-crosswalk reviewed-league-2024-25.json --league-crosswalk reviewed-league-2025-26.json --affiliations ahl-affiliations-2025-26.json --as-of 2026-09-15 --max-age 24 --json --out prospect-context.json
 icelines icecast prospect-league --snapshot ahl-2024-25.json --snapshot ahl-2025-26.json --crosswalk reviewed-2024-cv.json --crosswalk reviewed-2025-cv.json --context examples/icecast-prospect-league-context.json --json --out league-discovery.json
 icelines icecast prospect-league --snapshot ahl-2023-24.json --snapshot ahl-2024-25.json --snapshot ahl-2025-26.json --crosswalk reviewed-league-2023-24.json --crosswalk reviewed-league-2024-25.json --crosswalk reviewed-league-2025-26.json --context prospect-context.json --json --out league-discovery.json
-icelines icecast prospect-program --league-discovery league-discovery.json --json --out prospect-programs.json
+icelines icecast prospect-population-audit --input examples/icecast-league-candidate-overlay-2026-27.json --require-fully-classified --json --out prospect-population-audit.json
+icelines icecast prospect-census --source-package target/prospect-sources-2026-27-final.json --json --out prospect-census.json
+icelines icecast identity-review-workboard --source-package target/prospect-sources-2026-27-landings.v2.json --json --out identity-review-workboard.json
+icelines icecast official-identity-candidates --workboard identity-review-workboard.json --json --out official-identity-candidates.json
+icelines icecast official-identity-candidates --workboard identity-review-workboard.json --refresh --json --out official-identity-candidates-refreshed.json
+icelines icecast official-identity-candidates --workboard identity-review-workboard.json --search-concurrency 12 --json --out official-identity-candidates.json
+icelines icecast official-identity-candidates --workboard identity-review-workboard.json --offline --json --out cached-identity-candidates.json
+icelines icecast official-identity-candidates --workboard identity-review-workboard.json --evidence-cutoff 2026-07-31T23:59:59Z --json --out replay-identity-candidates.json
+icelines icecast official-identity-review-ledger --candidates official-identity-candidates.json --registry-url https://reviews.example/2026-27/official-identity-candidates --reviewer "identity-reviewer" --reviewed-at 2026-08-01T18:00:00Z --out official-identity-review-ledger.json
+icelines icecast prospect-census --source-package source-package.json --pipeline prospect-census-pipeline.json --prospects-per-team 10 --require-publishable --json --out publishable-prospect-census.json
+icelines icecast prospect-census --source-package source-package.json --league-discovery ahl-discovery.json --career-discovery multi-league-discovery.json --program-board prospect-programs.json --pipeline-out prospect-census-pipeline.json --json --out prospect-census.json
+icelines icecast prospect-program --league-discovery league-discovery.json --prospects-per-team 10 --require-complete-rankings --json --out prospect-programs.json
 icelines icecast prospect-program --league-discovery league-discovery.json --study college-prospect-study.json --prior-board prior-prospect-programs.json --out prospect-programs.txt
 icelines icecast prospect-program-sensitivity --league-discovery league-discovery.json --thresholds 25,50,82 --json --out prospect-program-sensitivity.json
 icelines icecast prospect-program-history --board prospect-programs-2024.json --board prospect-programs-2025.json --board prospect-programs-2026.json --json --out prospect-program-history.json
@@ -1152,6 +1163,7 @@ icelines icecast import-opening-rosters --manifest partial.json --allow-partial-
 icelines icecast season --season 20212022 --stats-season 20202021 --replay-mode rolling --retrospective-opening-lineups
 icelines icecast edge --forecast games.json --evidence morning-evidence.json --json --out morning-edge.json --enhanced-forecast-out morning-games.json
 icelines icecast edge --forecast games.json --evidence confirmed-evidence.json --model promoted-edge-model.json --json --out confirmed-edge.json
+icelines icecast edge-preseason-evidence --forecast games-2026-27.json --created-at 2026-07-31T12:00:00Z --out preseason-evidence-2026-27.json
 icelines icecast edge-evidence --forecast games.json --input dated-assembly-input.json --out morning-evidence.json
 icelines icecast edge-outcomes --season 20252026 --captured-at 2026-07-30T20:00:00Z --refresh --out outcomes-2025-26.json
 icelines icecast edge-replay-xg --forecast games-2025-26.json --moneypuck-dir moneypuck-team-games --retrieved-at 2026-07-30T20:00:00Z --out xg-evidence-2025-26.json
@@ -1166,6 +1178,7 @@ icelines icecast edge-train --observations opponent-adjusted-xg-observations.jso
 icelines icecast edge-card --input edge-preseason.json --input edge-morning.json --input edge-confirmed.json --game-id 2026020001 --team NYR --team-name "New York Rangers" --out game-card.json
 icelines icecast edge-card --input edge-confirmed.json --game-id 2026020001 --team NYR --market-benchmark closing-market.json --out benchmark-card.json
 icelines icecast season-simulate --forecast enhanced-game-forecast.json --trials 10000 --seed 20262027 --out enhanced-season.json
+icelines icecast movement --earlier baseline-season.json --later edge-season.json --earlier-label "July baseline" --later-label "Preseason edge v1 (evaluation)" --team NYR --team SEA --json --out edge-movement.json
 ```
 
 `icecast edge` applies one sealed forecast vintage (`preseason`,
@@ -1177,6 +1190,13 @@ trained production model only after `edge-train --validate` passes every
 rolling-origin promotion check. `--enhanced-forecast-out` writes the same
 per-game contract consumed by season simulation, so IceLines does not
 recompute probabilities in a UI or downstream simulator.
+
+`edge-preseason-evidence` reuses the authoritative opening-roster strength rows
+already carried by a complete preseason game forecast. It requires one typed
+row for every scheduled team, freezes before opening day, binds the exact
+forecast and selected roster snapshot, and leaves unavailable xG, goalie,
+lineup, special-teams, and matchup inputs absent. It does not synthesize those
+signals from the schedule or closing results.
 
 `icecast edge-train` fits the regularized Elo-plus-evidence ensemble from
 frozen observations. `--validate` holds out each season chronologically and
@@ -1233,7 +1253,14 @@ team inputs override the automatic concept pool; automatic pools use current
 roster identities, merge optional explicitly sourced organizational candidates,
 add explicitly labeled prior-season organizational fallback candidates toward
 17F/9D/3G, and retain per-team authority warnings. Candidate overlays require a
-checked date, unique NHL player IDs, valid positions, and absolute evidence URLs.
+the optional `prospect_population_overlay.v1` schema tag, a checked date, unique
+NHL player IDs, valid positions, and absolute evidence URLs.
+Each row may add `relationship`: `organization_rights`, `nhl_contract`,
+`ahl_assignment`, `development_camp_participant`, `free_agent_invite`, or
+`unknown`. Camp simulation retains every sourced row. Prospect-career context
+accepts only the first three organization-controlled states and emits a typed
+`unsupported_organization_relationship` exclusion for the others. Overlays
+without the field remain explicitly labeled legacy compatibility inputs.
 Opening-
 roster authority is separate from competition-pool construction, so an optional
 fallback invite does not imply the 23-man roster itself lacks authority.
@@ -2497,6 +2524,23 @@ Built-in schemes: `yahoo-standard`, `espn-standard`, `simple-pts`,
 # Fetch fresh data (optional — bundles work immediately)
 icelines fetch all                    # rosters + stats (~5 min)
 icelines fetch rosters                # roster source bytes via FLETCH, ICELINES snapshot seal
+icelines fetch prospect-sources --catalog design/data/prospect-source-catalog-2026-27.v1.json --dry-run
+icelines fetch prospect-sources --catalog design/data/prospect-source-catalog-2026-27.v1.json \
+  --out prospect-sources-2026-27.json # sealed audit; missing families remain explicit
+icelines fetch prospect-sources --include-roster-player-landings \
+  --out prospect-sources-with-landings.json # exact official draft-coordinate identity joins
+icelines fetch prospect-sources --catalog design/data/prospect-source-catalog-2026-27.v1.json \
+  --ahl-roster-snapshot data/ahl/roster-stats.json --out prospect-sources-with-ahl.json
+icelines fetch prospect-sources --ahl-roster-snapshot data/ahl/roster-stats.json \
+  --ahl-identity-review reviews/hfd.json --ahl-identity-review reviews/cv.json \
+  --ahl-review-registry-url https://example.org/icelines/review-registry/2026-27 \
+  --out prospect-sources-with-reviewed-ahl.json
+icelines fetch prospect-sources --contract-control-ledger data/contracts/2026-27.json \
+  --out prospect-sources-with-control.json # exhaustive canonical contract/control import
+icelines fetch prospect-sources --camp-participation-ledger data/camps/2026-27.json \
+  --out prospect-sources-with-camps.json # exhaustive canonical camp census
+icelines fetch prospect-sources --identity-review-ledger reviews/draft.json \
+  --identity-review-ledger reviews/camp.json --out prospect-sources-reviewed.json
 icelines fetch realtime               # hits, blocks, giveaways, takeaways
 icelines fetch money-puck             # MoneyPuck CSV via FLETCH, ICELINES parses xG/CF/FF/xGF/xGA
 icelines fetch money-puck --seasons 5 # current season plus 4 prior regular seasons
@@ -2532,6 +2576,28 @@ league-neutral until a historical affiliation catalog is supplied.
 Mixed other-team rows in a provider-filtered report and goalie scoring rows in
 the skater report are excluded from typed team stats with reasons retained in
 `source_warnings`; a report containing only other-team players fails closed.
+
+`--contract-control-ledger` accepts the provider-neutral
+`contract_control_ledger.v1` boundary. It requires canonical NHL player IDs,
+row-level evidence, exact record-count reconciliation, and terminal coverage
+for every organization in the audit scope. Missing, extra, duplicated, or
+nonterminal team coverage fails the whole import. IceLines does not infer
+contract control from draft history, NHL/AHL roster membership, or a current
+team label. A real all-32 ledger still requires an authorized upstream
+contract source; no bundled sample is represented as current authority.
+
+`--camp-participation-ledger` accepts the parallel
+`camp_participation_ledger.v1` boundary for development camp, rookie camp,
+training camp, and prospect-tournament attendance. It has the same exact
+all-scope coverage and count-reconciliation rules. Its rows emit attendance
+facts only: even `controlled_player` is the publication's attendee
+classification and cannot substitute for independent contract/control proof.
+
+Repeatable `--identity-review-ledger` inputs admit finalized
+`identity_review_ledger.v1` batches for any staged proposal family. Decisions
+require unique proposal/decision IDs, reviewer, review time, rationale, and
+content-hashed source evidence. Unknown proposals, duplicate decisions across batches, and
+set/accept decisions without canonical player IDs fail during package sealing.
 Compatible duplicate roster rows that differ only by jersey history or forward
 position collapse to one player with the ambiguous number omitted and forward
 side generalized to `F`; those changes are audited and identity conflicts still

@@ -14,7 +14,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::error::FetchError;
-use crate::schema::{RawTransaction, RawTransactionTeam};
+use crate::schema::RawTransaction;
 
 use super::FetchOutcome;
 
@@ -28,76 +28,11 @@ const CIRCUIT_BREAK_AFTER_FAILS: usize = 3;
 #[allow(dead_code)]
 const PAGE_LIMIT: usize = 200;
 
-/// Convert an 8-digit NHL season ID (e.g. "20252026") into the ESPN
-/// `?dates=YYYYMMDD-YYYYMMDD` range that covers the full hockey calendar
-/// for that season — preseason camp through the Stanley Cup. Pre/post
-/// boundary is forgiving (Sept 1 → July 31 next year) so cup-final rows
-/// in late June/early July still land in the right season.
-#[allow(dead_code)]
-fn season_to_date_range(season: &str) -> Option<String> {
-    if season.len() != 8 || !season.chars().all(|c| c.is_ascii_digit()) {
-        return None;
-    }
-    let start_year: u32 = season[..4].parse().ok()?;
-    let end_year: u32 = season[4..].parse().ok()?;
-    if end_year != start_year + 1 {
-        return None;
-    }
-    Some(format!("{start_year}0901-{end_year}0731"))
-}
-
-/// Split an NHL season into monthly date-range strings ESPN can accept.
-/// Each string is `YYYYMMDD-YYYYMMDD` covering one calendar month.
-/// 11 months total: Sept of the start year through July of the end year.
-///
-/// Workaround for ESPN's broken pageIndex pagination — see fetch_season.
-pub(crate) fn season_month_windows(season: &str) -> Option<Vec<String>> {
-    if season.len() != 8 || !season.chars().all(|c| c.is_ascii_digit()) {
-        return None;
-    }
-    let start_year: u32 = season[..4].parse().ok()?;
-    let end_year: u32 = season[4..].parse().ok()?;
-    if end_year != start_year + 1 {
-        return None;
-    }
-
-    // (year, month) tuples — 11 months: Sept(start) → July(end).
-    let months = [
-        (start_year, 9),
-        (start_year, 10),
-        (start_year, 11),
-        (start_year, 12),
-        (end_year, 1),
-        (end_year, 2),
-        (end_year, 3),
-        (end_year, 4),
-        (end_year, 5),
-        (end_year, 6),
-        (end_year, 7),
-    ];
-    let mut out = Vec::with_capacity(months.len());
-    for (y, m) in months {
-        let last = days_in_month(y, m);
-        out.push(format!("{y}{m:02}01-{y}{m:02}{last:02}"));
-    }
-    Some(out)
-}
-
-/// Last day of a given month. Handles February in leap years.
-fn days_in_month(year: u32, month: u32) -> u32 {
-    match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => {
-            if (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400) {
-                29
-            } else {
-                28
-            }
-        }
-        _ => 30,
-    }
-}
+#[cfg(test)]
+use icelines_sources::transactions::espn::season_to_date_range;
+pub(crate) use icelines_sources::transactions::espn::{
+    parse_page_with_fallback, season_month_windows,
+};
 
 /// Configurable HTTP source. Concrete in v1 (no trait per FORGE).
 pub struct EspnSource {
@@ -302,83 +237,6 @@ struct RawPage {
     body: serde_json::Value,
     #[allow(dead_code)]
     page_count: Option<usize>,
-}
-
-/// Parse an ESPN page body into rows + a list of dropped (unknown) field
-/// paths. Single permissive walk over the JSON Value — explicit drift
-/// accounting per row, never throws away the page on a new ESPN field.
-pub(crate) fn parse_page_with_fallback(
-    body: &serde_json::Value,
-) -> (Vec<RawTransaction>, Vec<String>) {
-    let mut rows = Vec::new();
-    let mut dropped: Vec<String> = Vec::new();
-
-    let Some(arr) = body.get("transactions").and_then(|v| v.as_array()) else {
-        // Body has no `transactions` array at all — surface as a drift
-        // marker rather than a hard error so caller sees the path was
-        // exercised but yielded zero rows.
-        dropped.push("(missing top-level 'transactions' array)".to_owned());
-        return (rows, dropped);
-    };
-
-    for raw in arr {
-        // Record any unexpected top-level fields on the row.
-        for (k, _) in raw.as_object().into_iter().flat_map(|m| m.iter()) {
-            if !matches!(k.as_str(), "date" | "description" | "team") {
-                let path = format!("transactions[].{k}");
-                if !dropped.contains(&path) {
-                    dropped.push(path);
-                }
-            }
-        }
-        // Best-effort row extraction.
-        let date = raw
-            .get("date")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_owned();
-        let description = raw
-            .get("description")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_owned();
-        let team = raw.get("team").and_then(|tv| {
-            let id = tv.get("id").and_then(|v| v.as_str()).unwrap_or("");
-            let abbreviation = tv
-                .get("abbreviation")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            let display_name = tv.get("displayName").and_then(|v| v.as_str()).unwrap_or("");
-            // Surface unknown team fields too.
-            for (k, _) in tv.as_object().into_iter().flat_map(|m| m.iter()) {
-                if !matches!(k.as_str(), "id" | "abbreviation" | "displayName") {
-                    let path = format!("transactions[].team.{k}");
-                    if !dropped.contains(&path) {
-                        dropped.push(path);
-                    }
-                }
-            }
-            if id.is_empty() && abbreviation.is_empty() && display_name.is_empty() {
-                None
-            } else {
-                Some(RawTransactionTeam {
-                    id: id.to_owned(),
-                    abbreviation: abbreviation.to_owned(),
-                    display_name: display_name.to_owned(),
-                })
-            }
-        });
-        // Skip rows with neither date nor description — they're unrenderable.
-        if date.is_empty() && description.is_empty() {
-            continue;
-        }
-        rows.push(RawTransaction {
-            date,
-            description,
-            team,
-        });
-    }
-    (rows, dropped)
 }
 
 /// Exponential backoff with jitter. Bounds: `[base, 2*base]` for each

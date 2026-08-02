@@ -22,6 +22,7 @@ use icelines_core::season_stats::{
 };
 use icelines_core::stats_catalog::{ReportKind, Tier1ReportFile, Tier1Row, TIER1_REPORTS};
 use icelines_core::stats_repository::{RepoError, StatsRepository};
+use icelines_sources::bundled_artifact::parse_tier1_report;
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 
@@ -618,12 +619,6 @@ pub fn load_into_repo(
     })
 }
 
-impl Tier1Row for SkaterTimeOnIce {
-    fn season_id(&self) -> Option<u32> {
-        self.season_id
-    }
-}
-
 // ── Phase Lindsay L.1.4 — Tier-1 per-report loader ──────────────────────────
 //
 // `load_report_with_fallback<R>` reads a Tier-1 per-report file for one
@@ -636,18 +631,6 @@ impl Tier1Row for SkaterTimeOnIce {
 //      stays `None` (DI-09 distinction between "not loaded" and "real zero").
 //
 // Per-row seasonId fence (DI-29) fires before any rows reach the caller.
-
-/// API response wrapper used by every NHL stats endpoint:
-/// `{ "data": [...rows], "total": N }`. Re-declared here as a local
-/// helper rather than re-exported from `crate::schema::PagedResponse`
-/// to keep the loader's per-report helpers self-contained.
-#[derive(Debug, serde::Deserialize)]
-struct PagedResponseLocal<R> {
-    data: Vec<R>,
-    #[serde(default)]
-    #[allow(dead_code)] // shape pin: the API emits it but we don't consume it
-    total: u32,
-}
 
 /// Per-(season, season_type) Tier-1 report loader.
 ///
@@ -710,11 +693,10 @@ where
     };
 
     // Parse the standard `{ "data": [...], "total": N }` envelope.
-    let parsed: PagedResponseLocal<R> =
-        serde_json::from_slice(&bytes).map_err(|e| LoadError::ReportLoad {
-            kind: format!("{} ({} {})", file.filename, season.0, season_type.label()),
-            cause: format!("JSON parse: {e}"),
-        })?;
+    let parsed = parse_tier1_report::<R>(&bytes).map_err(|e| LoadError::ReportLoad {
+        kind: format!("{} ({} {})", file.filename, season.0, season_type.label()),
+        cause: format!("JSON parse: {e}"),
+    })?;
 
     // DI-29 — per-row seasonId fence. Trust rows with `None` (bundled
     // / hand-edited compat); reject any row with a `Some(x)` that

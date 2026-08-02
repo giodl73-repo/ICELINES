@@ -1,0 +1,28 @@
+{
+  "schema": "ahl_roster_stats.v1",
+  "season": 20262027,
+  "provider": "ahl_hockeytech_statview",
+  "provider_season_id": "90",
+  "provider_season_name": "2026-27",
+  "fetched_at": "2026-07-31T12:00:00Z",
+  "source_url": "https://theahl.com/stats/player-stats",
+  "roster_source_url": "https://theahl.com/stats/roster",
+  "identity_note": "Provider IDs are not NHL IDs.",
+  "teams": [{
+    "provider": "ahl_hockeytech_statview",
+    "provider_team_id": "307",
+    "team_code": "HFD",
+    "team_name": "Hartford Wolf Pack",
+    "nickname": "Wolf Pack",
+    "division_id": "1",
+    "logo_url": "https://example.com/hfd.png",
+    "nhl_affiliate": "NYR",
+    "roster": [
+      {"provider":"ahl_hockeytech_statview","provider_player_id":"1001","name":"Reviewed Prospect","position_group":"forwards","position":"C","jersey_number":"19","handedness":"L","height":"72","weight_pounds":"190","birthdate":"2004-01-02","birthplace":"New York, NY"},
+      {"provider":"ahl_hockeytech_statview","provider_player_id":"1002","name":"Rejected Namesake","position_group":"goalies","position":"G","jersey_number":"30","handedness":"L","height":"74","weight_pounds":"200","birthdate":"2003-02-03","birthplace":"Boston, MA"}
+    ],
+    "skaters": [],
+    "goalies": [],
+    "source_warnings": []
+  }]
+}

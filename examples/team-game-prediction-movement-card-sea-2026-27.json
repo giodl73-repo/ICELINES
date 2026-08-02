@@ -1,0 +1,250 @@
+{
+  "schema": "card_document.v1",
+  "card_kind": "forecast_movement",
+  "document_id": "forecast-movement:SEA:20262027:earlier:later",
+  "fingerprint": "9cb21b703fbb33f019c11bfa5168a7e95b0ee46f200aa7040a68d9ead439e1f5",
+  "title": "Seattle Kraken outlook movement",
+  "subtitle": "July baseline → Preseason edge v1 (evaluation) · 10000 trials · seed 20262027",
+  "context": {
+    "view": {
+      "window": {
+        "season": 20262027,
+        "season_type": "regular"
+      },
+      "generated_at": "2026-07-31T12:00:00Z",
+      "source_state": [],
+      "completeness": "complete",
+      "data_generation": null
+    },
+    "evidence_at": "2026-07-31T12:00:00Z",
+    "evidence_label": "simulated",
+    "builder_version": "forecast_movement_card.v1",
+    "methodology_versions": {
+      "card_projection": "forecast_movement_card.v1",
+      "forecast_movement": "team_season_forecast_movement.v1"
+    },
+    "joins": {
+      "league_id": null,
+      "roster_snapshot_id": null,
+      "calendar_fingerprint": null,
+      "scoring_scheme_id": null,
+      "scenario_id": null,
+      "scenario_comparison_key": "40b57247d065e517277873ef03f3278137ccadad4ee89159e88038e546569aac:4e298d2818224d20391dad3f33ac70723567b2f199251068ef65dbcdb7adb880",
+      "team_ids": [
+        "SEA"
+      ],
+      "player_ids": [],
+      "game_ids": []
+    },
+    "simulation": {
+      "model_id": "icecast-movement",
+      "model_version": "team_season_forecast_movement.v1",
+      "parameter_fingerprint": "528eaddbd8db3f384e8cdd486a05f3b6a88dedb5ac62442a59de98e99dab9d26",
+      "seed": 20262027,
+      "trials": 10000
+    }
+  },
+  "theme": {
+    "theme_key": "team_sea",
+    "primary": "#001628",
+    "secondary": "#99D9D9",
+    "accent": "#E9072B",
+    "surface": "#FFFFFF",
+    "text": "#111111",
+    "team_abbreviation": "SEA",
+    "ascii_identity": "SEA",
+    "minimum_text_contrast_x100": 450
+  },
+  "required_capabilities": [],
+  "pages": [
+    {
+      "id": "shift",
+      "literal_label": "Forecast movement between sealed checkpoints",
+      "display_label": "The Shift",
+      "order": 1,
+      "accessible_summary": "Seattle Kraken projected points, playoff odds, Cup odds, observed standings, and remaining-season movement.",
+      "sections": [
+        {
+          "section_type": "identity_header",
+          "id": "movement-team",
+          "eyebrow": "IceCast forecast movement",
+          "title": "Seattle Kraken",
+          "subtitle": "July baseline → Preseason edge v1 (evaluation)",
+          "identities": [
+            {
+              "kind": "team",
+              "subject_id": "SEA",
+              "label": "Seattle Kraken",
+              "asset_id": null
+            }
+          ]
+        },
+        {
+          "section_type": "scenario_bridge",
+          "id": "forecast-shift",
+          "title": "What changed",
+          "from_label": "July baseline",
+          "to_label": "Preseason edge v1 (evaluation)",
+          "metrics": [
+            {
+              "metric": {
+                "key": "projected_points_delta",
+                "label": "Projected points",
+                "value": {
+                  "decimal": -2.8748000000000076
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-2.87",
+              "accessible_text": "Projected points changed by -2.87",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -2.8748000000000076
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "playoff_probability_delta",
+                "label": "Playoff odds",
+                "value": {
+                  "decimal": -9.140000000000004
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-9.14 pp",
+              "accessible_text": "Playoff odds changed by -9.14 pp",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -9.140000000000004
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "cup_probability_delta",
+                "label": "Stanley Cup odds",
+                "value": {
+                  "decimal": -0.33000000000000007
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-0.33 pp",
+              "accessible_text": "Stanley Cup odds changed by -0.33 pp",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -0.33000000000000007
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "longest_streak_delta",
+                "label": "Longest win streak",
+                "value": {
+                  "decimal": -0.26980000000000004
+                },
+                "unit": "games",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-0.27",
+              "accessible_text": "Longest win streak changed by -0.27",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -0.26980000000000004
+                }
+              },
+              "evidence_label": "simulated"
+            }
+          ],
+          "evidence_label": "simulated"
+        }
+      ]
+    },
+    {
+      "id": "insider",
+      "literal_label": "Movement methodology and source authority",
+      "display_label": "The Insider",
+      "order": 2,
+      "accessible_summary": "How the two checkpoint runs were compared and which complete artifacts support the deltas.",
+      "sections": [
+        {
+          "section_type": "methodology",
+          "id": "movement-methodology",
+          "title": "How to read the movement",
+          "methods": [
+            {
+              "key": "sealed-checkpoint-delta",
+              "label": "Sealed checkpoint delta",
+              "version": "team_season_forecast_movement.v1",
+              "summary": "Every value is later minus earlier. Both complete league artifacts are fingerprinted before this team is selected."
+            }
+          ],
+          "limitations": [
+            "Movement is later minus earlier. Both league runs must share season, schedule size, trials, seed, and teams.",
+            "Observed and expected-remainder deltas are present only when both runs contain typed replay checkpoints.",
+            "Fingerprints cover each complete league artifact before any team is selected for display."
+          ]
+        },
+        {
+          "section_type": "provenance",
+          "id": "movement-sources",
+          "title": "Source authority",
+          "provenance_ids": [
+            "earlier-run",
+            "later-run"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "provenance": [
+    {
+      "id": "earlier-run",
+      "source": "schedule",
+      "label": "Earlier sealed IceCast league run",
+      "state": "complete",
+      "observed_at": null,
+      "fingerprint": "40b57247d065e517277873ef03f3278137ccadad4ee89159e88038e546569aac",
+      "note": "July baseline"
+    },
+    {
+      "id": "later-run",
+      "source": "schedule",
+      "label": "Later sealed IceCast league run",
+      "state": "complete",
+      "observed_at": "2026-07-31T12:00:00Z",
+      "fingerprint": "4e298d2818224d20391dad3f33ac70723567b2f199251068ef65dbcdb7adb880",
+      "note": "Preseason edge v1 (evaluation)"
+    }
+  ],
+  "warnings": [],
+  "empty_state": null
+}

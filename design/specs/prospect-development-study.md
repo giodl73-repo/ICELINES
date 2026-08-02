@@ -233,9 +233,25 @@ Window source assembly may run this chain directly with
 fetch-owned composer uses the configured official landing career cache (or an
 explicit `--career-history` override), exact package cutoff, and the canonical
 context/discovery/program builders. It does not consult repository-relative
-rosters, bios, or overlays. A camp candidate enters the draft when marked as a
-prospect or rookie-eligible, but exact age, career evidence, NHL workload, and
-the normal program graduation boundary still govern the resulting study.
+rosters, bios, or overlays. A camp candidate enters the conservative draft pool
+when marked as a prospect, rookie-eligible, or waiver-exempt, but exact age,
+career evidence, NHL workload, and the normal program graduation boundary still
+govern the resulting study. Waiver exemption is a compatibility lane for
+authored camp inputs that predate the typed prospect flags; it does not add
+player value or independently establish prospect status.
+Candidate overlays additionally carry a source-bound relationship. Draft
+rights, NHL contracts, and AHL assignments may enter career context;
+development-camp participants, free-agent invitees, and unknown relationships
+remain available to camp simulation but are removed before prospect ranking.
+Legacy overlays retain their previous behavior through an explicitly named
+compatibility state rather than an unlabeled inference.
+`prospect-population-audit` projects the same fetch-owned overlay into a
+UI-neutral authority workboard. It reports ranking-eligible, camp-only, legacy,
+and unknown counts globally and by organization without resolving or mutating
+canonical `PlayerIdentity`. Legacy and unknown relationships prevent
+`fully_classified` authority even though legacy rows retain compatibility
+behavior. Publication automation may use `--require-fully-classified` to fail
+before writing output when either unresolved authority class remains.
 
 `prospect-program --career-discovery` composes these studies with reviewed AHL
 discovery. When both adapters contain the same player, reviewed AHL facts take
@@ -252,6 +268,22 @@ organization into three independent frozen ranks:
   workload confidence and observed program breadth; and
 - **Pipeline / The Pipeline** combines Pool, Development, documented
   readiness, and confidence.
+
+Each organization also publishes an ordinal player ranking in `top_prospects`.
+The default and CLI-selectable publication depth is ten players per team. The
+publication depth is deliberately independent from `expected_depth`, so asking
+for fewer or more displayed players cannot change Pool, Development, or
+Pipeline scores. A team with fewer eligible supplied studies returns every
+eligible player and remains visibly short of the requested depth; IceLines does
+not fabricate or impute missing prospects. Player rows retain position,
+observed signal, trajectory, documented opportunity, workload confidence, and
+NHL games played so JSON, text, web, TUI, card, fantasy, and simulation clients
+can render the same ranking without recreating scoring logic.
+The board publishes complete and partial organization counts plus an exact
+per-team shortfall. CLI publication may opt into `--require-complete-rankings`;
+that gate fails before writing output when any organization lacks the requested
+eligible depth. A successful all-32 publication therefore cannot silently mean
+"top ten where available."
 
 The observed player signal uses production, trajectory, and documented
 opportunity components. It deliberately excludes hidden-value and attention-gap

@@ -1,0 +1,32 @@
+{
+  "schema": "icelines_prospect_source_catalog.v1",
+  "season": 20262027,
+  "catalog_version": "2026-07-31.v2",
+  "organization_aliases": {
+    "Montreal Canadiens": "MTL",
+    "Utah Mammoth": "UTA"
+  },
+  "template_variants": {
+    "nhl_draft": ["2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026"]
+  },
+  "templates": [
+    {
+      "source_family": "nhl_draft",
+      "target": { "scope": "all_organizations" },
+      "url": "https://api-web.nhle.com/v1/draft/picks/{variant}/all",
+      "terminal_pagination": true
+    },
+    {
+      "source_family": "nhl_transaction_publication",
+      "target": { "scope": "all_organizations" },
+      "url": "https://www.nhl.com/news/topic/trade-coverage/2026-27-nhl-trades",
+      "terminal_pagination": true
+    },
+    {
+      "source_family": "nhl_current_assignment",
+      "target": { "scope": "all_organizations" },
+      "url": "https://api-web.nhle.com/v1/roster/{organization}/current",
+      "terminal_pagination": true
+    }
+  ]
+}

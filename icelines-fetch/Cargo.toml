@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 icelines-core = { path = "../icelines-core" }
 icelines-query = { path = "../icelines-query" }
+icelines-sources = { path = "../icelines-sources" }
 thiserror.workspace   = true
 anyhow.workspace      = true
 serde.workspace       = true

@@ -38,6 +38,7 @@ fn player(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn goalie(
     key: &str,
     name: &str,

@@ -2414,10 +2414,10 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
     }
 
     println!(
-        "{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6} {:<6} {:<6}",
+        "{:<4} {:<20} {:<4} {:>2} {:<8} {:>5} {:>5} {:>2} {:>5} {:>5} {:>5}",
         "Rank", "Goalie", "Team", "GP", "W-L-OT", "SV%", "GAA", "SO", "Saves", "QS%", "SA/60"
     );
-    println!("{}", "─".repeat(94));
+    println!("{}", "─".repeat(75));
     for (i, row) in rows.iter().enumerate() {
         let record = match row.ot_losses {
             Some(otl) => format!("{}-{}-{}", row.wins, row.losses, otl),
@@ -2440,9 +2440,9 @@ pub async fn run_goalies(args: GoaliesArgs) -> anyhow::Result<()> {
             .map(|v| format!("{v:.1}"))
             .unwrap_or_else(|| "—".to_owned());
         println!(
-            "{:<4} {:<24} {:<5} {:<4} {:<10} {:<6} {:<6} {:<3} {:<6} {:<6} {:<6}",
+            "{:<4} {:<20} {:<4} {:>2} {:<8} {:>5} {:>5} {:>2} {:>5} {:>5} {:>5}",
             i + 1,
-            row.full_name.chars().take(24).collect::<String>(),
+            row.full_name.chars().take(20).collect::<String>(),
             row.team,
             row.games_played,
             record,

@@ -218,12 +218,11 @@ fn l2_a5_explain_no_filter_arg_succeeds_with_note() {
 
 #[test]
 fn l2_a5_explain_doesnt_load_player_data() {
-    // Sanity: --explain runs fast (no manifest scan / no
-    // boxscore parse). 36-filter corpus all in well under a
-    // second on cold cache.
-    use std::time::Instant;
+    // A wall-clock threshold is not a reliable proxy here: all-target test
+    // runs can saturate Windows with concurrent linkers and subprocesses.
+    // Prove the actual invariant instead: explain must not initialize or
+    // populate the isolated IceLines home directory.
     let h = fresh();
-    let start = Instant::now();
     let _ = ok_in(
         h.path(),
         &[
@@ -234,13 +233,13 @@ fn l2_a5_explain_doesnt_load_player_data() {
             "--explain",
         ],
     );
-    let elapsed = start.elapsed();
-    // Generous bound — test parallelism + cold release-binary
-    // startup can take a few seconds. The point is "no data
-    // load" (subprocess spawn dominates), not microbenchmarks.
+    let created = std::fs::read_dir(h.path())
+        .expect("read isolated explain home")
+        .collect::<Result<Vec<_>, _>>()
+        .expect("inspect isolated explain home");
     assert!(
-        elapsed.as_secs() < 30,
-        "--explain should be fast (no data load); took {elapsed:?}"
+        created.is_empty(),
+        "--explain must not initialize or load player-data state; created {created:?}"
     );
 }
 

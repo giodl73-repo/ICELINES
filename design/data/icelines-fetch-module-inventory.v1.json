@@ -1,0 +1,250 @@
+{
+  "schema": "icelines_fetch_module_inventory.v1",
+  "as_of": "2026-08-01",
+  "crate": "icelines-fetch",
+  "responsibility_classes": [
+    "acquisition_transport",
+    "cache_snapshot_persistence",
+    "provider_dto_parser",
+    "source_normalization_reconciliation",
+    "feature_domain_composition",
+    "ui_command_orchestration"
+  ],
+  "migration_dispositions": [
+    "stay_fetch",
+    "move_sources",
+    "split_transport_parser",
+    "split_source_domain",
+    "domain_extraction_deferred"
+  ],
+  "completed_migrations": [
+    {
+      "module": "contracts_csv",
+      "source_owner": "icelines-sources",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-contracts-csv.md"
+    },
+    {
+      "module": "teams",
+      "source_owner": "icelines-core + icelines-sources",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-teams.md"
+    },
+    {
+      "module": "csv_loader",
+      "source_owner": "icelines-sources",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-yahoo-eligibility.md"
+    },
+    {
+      "module": "moneypuck",
+      "source_owner": "icelines-sources",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-moneypuck.md"
+    },
+    {
+      "module": "ahl_transactions",
+      "source_owner": "icelines-sources",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-ahl-transactions.md"
+    },
+    {
+      "module": "schema",
+      "source_owner": "icelines-sources",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-schema.md"
+    },
+    {
+      "module": "nhl_api",
+      "source_owner": "icelines-sources",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-nhl-gamecenter.md"
+    },
+    {
+      "module": "shift_chart",
+      "source_owner": "icelines-sources DTO + icelines-fetch feature aggregation",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-nhl-shift-chart.md"
+    },
+    {
+      "module": "boxscore_client",
+      "source_owner": "icelines-sources DTO + icelines-fetch transport/domain",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-position-boxscore.md"
+    },
+    {
+      "module": "moneypuck_team_game",
+      "source_owner": "icelines-sources parser + icelines-fetch feature derivation",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-moneypuck-games.md"
+    },
+    {
+      "module": "moneypuck_goalie_game",
+      "source_owner": "icelines-sources parser + icelines-fetch feature derivation",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-moneypuck-games.md"
+    },
+    {
+      "module": "capwages",
+      "source_owner": "icelines-sources parser + icelines-fetch licensed transport/domain",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-capwages.md"
+    },
+    {
+      "module": "playoffs_bundle",
+      "source_owner": "icelines-sources",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-bundled-artifacts.md"
+    },
+    {
+      "module": "bundled",
+      "source_owner": "icelines-sources decoders + icelines-fetch artifact selection/persistence",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-bundled-artifacts.md"
+    },
+    {
+      "module": "transactions",
+      "source_owner": "icelines-sources parser/normalization + icelines-fetch transport/cache/persistence",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-transactions.md"
+    },
+    {
+      "module": "stats_loader",
+      "source_owner": "icelines-sources DTO/decoder + icelines-fetch loading/domain composition",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-stats-loader.md"
+    },
+    {
+      "module": "official_identity_acquisition",
+      "source_owner": "icelines-sources search/landing parsers + icelines-fetch acquisition/review orchestration",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-official-identity.md"
+    },
+    {
+      "module": "ahl",
+      "source_owner": "icelines-sources HockeyTech DTO/parser + identity normalization; icelines-fetch transport/review/domain",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-ahl-hockeytech.md"
+    },
+    {
+      "module": "career_landing",
+      "source_owner": "icelines-sources career/organization/award parsing + icelines-fetch persistence/view assembly",
+      "compatibility_owner": "icelines-fetch",
+      "completion_note": "design/notes/2026-08-01-icelines-sources-s7-career-landing.md"
+    }
+  ],
+  "modules": [
+    { "module": "aggregate", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "ahl", "responsibilities": ["acquisition_transport", "provider_dto_parser", "source_normalization_reconciliation"], "disposition": "split_transport_parser" },
+    { "module": "ahl_cross_league_value", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "ahl_organization_status", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "ahl_player_value", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "ahl_preseason_facts", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "ahl_professional_games", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "ahl_prospect_status", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "ahl_recall_readiness", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "ahl_rollover", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "ahl_transaction_state", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "ahl_transactions", "responsibilities": ["provider_dto_parser", "source_normalization_reconciliation"], "disposition": "move_sources" },
+    { "module": "ahl_waiver_clearance", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "analytics_cache_store", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "atomic_write", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "boxscore_client", "responsibilities": ["acquisition_transport", "provider_dto_parser", "source_normalization_reconciliation"], "disposition": "split_transport_parser" },
+    { "module": "boxscore_to_night_line", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "bundled", "responsibilities": ["cache_snapshot_persistence", "provider_dto_parser"], "disposition": "split_transport_parser" },
+    { "module": "cache", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "capwages", "responsibilities": ["acquisition_transport", "provider_dto_parser", "source_normalization_reconciliation"], "disposition": "split_transport_parser" },
+    { "module": "career", "responsibilities": ["cache_snapshot_persistence", "feature_domain_composition"], "disposition": "stay_fetch" },
+    { "module": "career_landing", "responsibilities": ["acquisition_transport", "provider_dto_parser", "source_normalization_reconciliation"], "disposition": "split_transport_parser" },
+    { "module": "chunkstore", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "contracts_csv", "responsibilities": ["provider_dto_parser", "source_normalization_reconciliation"], "disposition": "move_sources" },
+    { "module": "csv_loader", "responsibilities": ["provider_dto_parser", "source_normalization_reconciliation"], "disposition": "move_sources" },
+    { "module": "datastore", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "error", "responsibilities": ["acquisition_transport", "cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "fantasy_daily", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "fantasy_db", "responsibilities": ["cache_snapshot_persistence", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "fantasy_import", "responsibilities": ["provider_dto_parser", "source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "fantasy_matchup", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "fetch_lock", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "fletch", "responsibilities": ["acquisition_transport", "cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "game_cache", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "game_prediction_edge_assembler", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "game_prediction_edge_package", "responsibilities": ["cache_snapshot_persistence", "feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "game_prediction_outcomes", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "historical_goalie_prediction_edge", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "historical_official_prediction_edge", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "historical_prediction_edge", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "identity_review_workboard", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "management_behavior_source", "responsibilities": ["acquisition_transport", "feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "manifest", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "moneypuck", "responsibilities": ["provider_dto_parser", "source_normalization_reconciliation"], "disposition": "move_sources" },
+    { "module": "moneypuck_goalie_game", "responsibilities": ["acquisition_transport", "provider_dto_parser", "source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_transport_parser" },
+    { "module": "moneypuck_team_game", "responsibilities": ["acquisition_transport", "provider_dto_parser", "source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_transport_parser" },
+    { "module": "nhl_api", "responsibilities": ["acquisition_transport", "provider_dto_parser", "source_normalization_reconciliation"], "disposition": "split_transport_parser" },
+    { "module": "nhl_goalie_translation", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "official_identity_acquisition", "responsibilities": ["acquisition_transport", "provider_dto_parser", "source_normalization_reconciliation"], "disposition": "split_transport_parser" },
+    { "module": "organization_window_completion", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "organization_window_history", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "playoffs_bundle", "responsibilities": ["cache_snapshot_persistence", "provider_dto_parser"], "disposition": "split_transport_parser" },
+    { "module": "prospect_career", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "prospect_census", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "prospect_discovery", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "prospect_population", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "prospect_source_audit", "responsibilities": ["acquisition_transport", "cache_snapshot_persistence", "feature_domain_composition"], "disposition": "stay_fetch" },
+    { "module": "query_provider", "responsibilities": ["feature_domain_composition", "ui_command_orchestration"], "disposition": "domain_extraction_deferred" },
+    { "module": "records_provider", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "resolver", "responsibilities": ["source_normalization_reconciliation"], "disposition": "split_source_domain" },
+    { "module": "scenario_registry", "responsibilities": ["cache_snapshot_persistence", "feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "schedule_remaining", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "schema", "responsibilities": ["provider_dto_parser", "source_normalization_reconciliation"], "disposition": "move_sources" },
+    { "module": "scoring_outlook_provider", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "scoring_provider", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "series_momentum_builder", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "shift_chart", "responsibilities": ["provider_dto_parser", "source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "shift_profile", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "snapshot", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "source_acquisition", "responsibilities": ["acquisition_transport", "cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "source_catalog", "responsibilities": ["acquisition_transport", "source_normalization_reconciliation"], "disposition": "split_source_domain" },
+    { "module": "source_package_builder", "responsibilities": ["source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
+    { "module": "source_package_store", "responsibilities": ["cache_snapshot_persistence"], "disposition": "stay_fetch" },
+    { "module": "stats_loader", "responsibilities": ["cache_snapshot_persistence", "provider_dto_parser", "source_normalization_reconciliation"], "disposition": "split_transport_parser" },
+    { "module": "streaks_provider", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
+    { "module": "sync_engine", "responsibilities": ["acquisition_transport", "cache_snapshot_persistence", "ui_command_orchestration"], "disposition": "stay_fetch" },
+    { "module": "teams", "responsibilities": ["source_normalization_reconciliation"], "disposition": "move_sources" },
+    { "module": "transactions", "responsibilities": ["acquisition_transport", "provider_dto_parser", "cache_snapshot_persistence", "source_normalization_reconciliation"], "disposition": "split_transport_parser" }
+  ],
+  "compatibility_baseline": {
+    "public_facade": "icelines-fetch/src/lib.rs",
+    "artifact_schemas": [
+      "ahl_roster_stats.v1",
+      "ahl_identity_crosswalk.v1",
+      "ahl_identity_league_crosswalk.v1",
+      "icelines.official_roster_capture.v1",
+      "prospect_population_overlay.v1",
+      "prospect_population_audit.v1",
+      "prospect_league_context.v1",
+      "prospect_league_discovery.v1",
+      "prospect_career_discovery.v1"
+    ],
+    "commands": [
+      "icelines fetch career",
+      "icelines icecast affiliate-identities",
+      "icelines icecast prospect-context",
+      "icelines icecast prospect-career",
+      "icelines icecast prospect-program"
+    ],
+    "persistence_keys": [
+      "~/.icelines/career_history.json",
+      "~/.icelines/data/.fletch",
+      "~/.icelines/snapshots/<snapshot>/snapshot.json",
+      "~/.icelines/snapshots/manifest.toml"
+    ],
+    "fixtures": [
+      { "path": "icelines-fetch/tests/fixtures/landing/mcdavid_8478402.json", "role": "player_landing", "sha256": "7d8089bca59ea757ffe012f8e0eb10f0716c210935784816c0ae590d8c6aaafd" },
+        { "path": "tests/fixtures/api/roster_SEA.json", "role": "official_nhl_roster", "sha256": "d7dc7a6fc2d3f44a41d8e6182b91f9f5e50fef14cb5cf28538fa80a0ba0464b6" },
+        { "path": "examples/ahl-affiliations-2026-27.json", "role": "ahl_affiliation", "sha256": "99c0c01e95e1ae4c3c47c81a00e516a2f470874ccc07fd0870a1e7cee68e3eab" },
+        { "path": "examples/icecast-league-candidate-overlay-2026-27.json", "role": "prospect_population", "sha256": "cd42224d3a37975b6629cfb5f3fb04dc52c656258485f225e4c40fa8218450ac" },
+      { "path": "design/data/prospect-ranking-depth-baseline-2026-07-31.v1.json", "role": "prospect_ranking_depth", "sha256": "9927ad4746e3f0e85b3d58a394006e3b109de866f9a5b666d93c3d79b528102c" }
+    ]
+  }
+}

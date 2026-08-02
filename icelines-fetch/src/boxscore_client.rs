@@ -6,58 +6,12 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use icelines_core::{Position, PositionProfile};
-use serde::Deserialize;
+use icelines_sources::nhl::position_boxscore::{BoxscoreResponse, GameLogResponse, SkaterEntry};
 
 use crate::error::FetchError;
 use crate::shift_profile::{
     build_profile_from_boxscores, parse_toi_mmss, BoxscoreData, BoxscorePlayerEntry, ShiftProfile,
 };
-
-// ── Internal response shapes ──────────────────────────────────────────────────
-
-#[derive(Debug, Deserialize)]
-struct GameLogResponse {
-    #[serde(rename = "gameLog")]
-    game_log: Vec<GameLogEntry>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct GameLogEntry {
-    game_id: u64,
-}
-
-/// Minimal boxscore shape — we only need the skaters section.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct BoxscoreResponse {
-    player_by_game_stats: PlayerByGameStats,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PlayerByGameStats {
-    home_team: TeamStatsResponse,
-    away_team: TeamStatsResponse,
-}
-
-#[derive(Debug, Deserialize)]
-struct TeamStatsResponse {
-    forwards: Vec<SkaterEntry>,
-    defense: Vec<SkaterEntry>,
-}
-
-/// Full skater entry with TOI and shifts for boxscore mapping.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SkaterEntry {
-    player_id: u32,
-    position: String, // "C", "L", "R", "D"
-    #[serde(default)]
-    toi: Option<String>, // "MM:SS" even-strength TOI
-    #[serde(default)]
-    shifts: Option<u32>,
-}
 
 // ── BoxscoreClient ────────────────────────────────────────────────────────────
 

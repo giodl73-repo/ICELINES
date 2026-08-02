@@ -30,9 +30,14 @@ Line-combination simulation is an active child workstream of Team Season
 Forecast and does not consume another top-level active-plan slot: see
 [`2026-07-23-line-combination-simulation.md`](2026-07-23-line-combination-simulation.md).
 
-Game-prediction edge is also an active child workstream of Team Season Forecast
+Game-prediction edge is an implemented child workstream of Team Season Forecast
 and does not consume another top-level slot: see
 [`2026-07-30-game-prediction-edge.md`](2026-07-30-game-prediction-edge.md).
+
+IceLines Sources is an active authority-closure child workstream of Documentation Consolidation,
+organization/prospect intelligence, Team Season Forecast, and Fantasy War Room;
+it does not consume another top-level slot: see
+[`2026-07-31-icelines-sources.md`](2026-07-31-icelines-sources.md).
 
 The older Fantasy Draft and Daily Assistant plan is absorbed by the Fantasy War
 Room roadmap for active navigation. Its durable league rules remain canonical
@@ -54,6 +59,7 @@ editorial/stathead workflows, and data freshness authority.
 
 | Plan | Status | Summary |
 |------|--------|---------|
+| [IceLines Sources](2026-07-31-icelines-sources.md) | Active (architecture implemented; authority inputs pending) | Reusable provider normalization, dated source packages, and honest all-32 prospect census gates are implemented; strict publication still awaits authorized identity, contract-control, and camp ledgers. |
 | [Prospect Conversion Performance Authority](2026-07-27-prospect-conversion-performance.md) | Complete | Derives position-aware, confidence-weighted NHL outcomes from official history and publishes hit/breakout/miss/developing comparison classes for frozen prospect cohorts. |
 | [The Window — Organization Health](2026-07-27-organization-window.md) | Active (evaluation implemented) | Standardizes reusable profiles, configurable Frames, and explainable 32-team organization-health, movement, and scenario boards; current work closes production sources and a future untouched holdout. |
 | [UI-Neutral Card System](2026-07-21-ui-neutral-card-system.md) | Complete | One versioned IceLines-owned document drives prognosis, fantasy, prospective simulation, and historical replay cards across JSON/Web/TUI/reference renderers. |

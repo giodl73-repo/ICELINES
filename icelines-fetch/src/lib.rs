@@ -40,6 +40,7 @@ pub mod game_prediction_outcomes;
 pub mod historical_goalie_prediction_edge;
 pub mod historical_official_prediction_edge;
 pub mod historical_prediction_edge;
+pub mod identity_review_workboard;
 pub mod management_behavior_source;
 pub mod manifest;
 pub mod moneypuck;
@@ -47,11 +48,15 @@ pub mod moneypuck_goalie_game;
 pub mod moneypuck_team_game;
 pub mod nhl_api;
 pub mod nhl_goalie_translation;
+pub mod official_identity_acquisition;
 pub mod organization_window_completion;
 pub mod organization_window_history;
 pub mod playoffs_bundle;
 pub mod prospect_career;
+pub mod prospect_census;
 pub mod prospect_discovery;
+pub mod prospect_population;
+pub mod prospect_source_audit;
 pub mod query_provider;
 pub mod records_provider;
 pub mod resolver;
@@ -64,6 +69,10 @@ pub mod series_momentum_builder;
 pub mod shift_chart;
 pub mod shift_profile;
 pub mod snapshot;
+pub mod source_acquisition;
+pub mod source_catalog;
+pub mod source_package_builder;
+pub mod source_package_store;
 pub mod stats_loader;
 pub mod streaks_provider;
 pub mod sync_engine;
@@ -93,12 +102,13 @@ pub use game_prediction_edge_assembler::{
     GamePredictionSpecialTeamsScore, GamePredictionTeamAssemblyInput,
 };
 pub use game_prediction_edge_package::{
-    build_game_prediction_edge_evidence_package, load_game_prediction_edge_evidence_package,
-    store_game_prediction_edge_evidence_package, GamePredictionEdgeEvidencePackage,
-    GamePredictionEdgePackageError, GamePredictionEvidencePackageBuildInput,
-    GamePredictionEvidencePackageBuildResult, GamePredictionEvidenceSource,
-    GamePredictionEvidenceSourceAuthority, GAME_PREDICTION_EDGE_PACKAGE_JSON_SCHEMA,
-    GAME_PREDICTION_EDGE_PACKAGE_SCHEMA,
+    build_game_prediction_edge_evidence_package,
+    build_preseason_game_prediction_edge_evidence_package,
+    load_game_prediction_edge_evidence_package, store_game_prediction_edge_evidence_package,
+    GamePredictionEdgeEvidencePackage, GamePredictionEdgePackageError,
+    GamePredictionEvidencePackageBuildInput, GamePredictionEvidencePackageBuildResult,
+    GamePredictionEvidenceSource, GamePredictionEvidenceSourceAuthority,
+    GAME_PREDICTION_EDGE_PACKAGE_JSON_SCHEMA, GAME_PREDICTION_EDGE_PACKAGE_SCHEMA,
 };
 pub use game_prediction_outcomes::{
     build_official_game_outcome_set, OfficialGameOutcomeError, OfficialGameOutcomeSet,
@@ -116,6 +126,8 @@ pub use historical_prediction_edge::{
     build_historical_moneypuck_edge_package, HistoricalMoneyPuckTeamInput,
     HistoricalPredictionEdgeBuildResult, HistoricalPredictionEdgeError,
 };
+pub use icelines_sources::prospect_population::ProspectPopulationSourceFamily;
+pub use identity_review_workboard::build_identity_review_workboard_from_source_package;
 pub use management_behavior_source::{
     fetch_team_behavior_league_evidence, BehaviorEvidenceSourceView,
     TeamBehaviorLeagueEvidenceView, TeamBehaviorSeasonEvidenceView,
@@ -138,6 +150,11 @@ pub use nhl_goalie_translation::{
     validate_nhl_goalie_translation_ledger, NhlGoalieTranslationLedgerRow,
     NhlGoalieTranslationLedgerView, NhlGoalieTranslationUnavailableRow,
     NHL_GOALIE_TRANSLATION_LEDGER_SCHEMA,
+};
+pub use official_identity_acquisition::{
+    acquire_official_identity_candidates, build_official_identity_review_ledger,
+    fetch_official_player_landing_cachelines, fetch_official_player_search_cachelines,
+    official_player_search_request, OfficialIdentityAcquisitionOptions,
 };
 pub use organization_window_completion::{
     build_organization_window_completion_status, OrganizationWindowCompletionError,
@@ -173,12 +190,26 @@ pub use prospect_career::{
     ProspectCareerExclusionView, ProspectCareerProgramComposition, ProspectCareerProgramConfig,
     PROSPECT_CAREER_DISCOVERY_SCHEMA,
 };
+pub use prospect_census::{
+    build_prospect_census_from_source_package, build_prospect_census_pipeline_from_discoveries,
+    ProspectCensusPipelineEvidence, ProspectCensusPlayerPipelineEvidence,
+    PROSPECT_CENSUS_COMPOSER_VERSION, PROSPECT_CENSUS_PIPELINE_SCHEMA,
+};
 pub use prospect_discovery::{
     build_prospect_league_context_draft, build_prospect_league_discovery, ProspectLeagueContext,
     ProspectLeagueContextAuthority, ProspectLeagueContextDraftConfig,
     ProspectLeagueContextExclusionReason, ProspectLeagueContextExclusionView,
     ProspectLeagueDiscoveryView, ProspectLeagueExclusionReason, ProspectLeagueExclusionView,
     ProspectLeaguePlayerContext, PROSPECT_LEAGUE_CONTEXT_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
+};
+pub use prospect_population::{
+    ProspectPopulationAuditView, ProspectPopulationCandidate, ProspectPopulationOverlay,
+    ProspectPopulationRelationship, ProspectPopulationTeamAuditView,
+    PROSPECT_POPULATION_AUDIT_SCHEMA, PROSPECT_POPULATION_OVERLAY_SCHEMA,
+};
+pub use prospect_source_audit::{
+    run_prospect_source_audit, run_prospect_source_audit_with_artifacts,
+    ProspectSourceAuditArtifacts, ProspectSourceAuditError, ProspectSourceAuditInput,
 };
 pub use resolver::PlayerResolver;
 pub use scenario_registry::{
@@ -191,4 +222,14 @@ pub use shift_chart::{
     SHIFT_CHART_SOURCE, SHIFT_OVERLAP_SCHEMA,
 };
 pub use shift_profile::{LinematePair, ShiftProfile};
+pub use source_acquisition::{
+    acquire_source_objects, AcquiredSourceObject, SourceAcquisitionError, SourceAcquisitionReport,
+    SourceAcquisitionRequest,
+};
+pub use source_catalog::{
+    ProspectSourceCatalog, ProspectSourceCatalogError, ProspectSourceCatalogTarget,
+    ProspectSourceCatalogTemplate, PROSPECT_SOURCE_CATALOG_SCHEMA,
+};
+pub use source_package_builder::{build_source_package, SourcePackageBuildInput};
+pub use source_package_store::{SourcePackageStore, SourcePackageStoreError};
 pub use teams::{nhl_teams_for_season, ALL_NHL_TEAMS};

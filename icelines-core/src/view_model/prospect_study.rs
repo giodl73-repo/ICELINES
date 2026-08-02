@@ -505,6 +505,9 @@ pub struct ProspectProgramBoardConfig {
     pub readiness_weight: f64,
     pub confidence_weight: f64,
     pub expected_depth: usize,
+    /// Maximum ranked prospects published for each organization. This affects
+    /// presentation only and does not change program scoring.
+    pub prospects_per_team: usize,
     /// Operational graduation boundary for reserve-system ranking. This is a
     /// transparent IceLines population rule, not NHL rookie eligibility.
     pub maximum_nhl_games_played: u32,
@@ -518,6 +521,7 @@ impl Default for ProspectProgramBoardConfig {
             readiness_weight: 0.15,
             confidence_weight: 0.10,
             expected_depth: 10,
+            prospects_per_team: 10,
             maximum_nhl_games_played: 50,
         }
     }
@@ -548,6 +552,8 @@ impl ProspectProgramMethodologyView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectProgramTopProspectView {
+    #[serde(default)]
+    pub rank: usize,
     pub player_id: u32,
     pub player: String,
     pub position: String,
@@ -610,6 +616,14 @@ pub struct ProspectProgramOrganizationView {
     pub development_score_delta: Option<f64>,
     pub pipeline_score_delta: Option<f64>,
     pub top_prospects: Vec<ProspectProgramTopProspectView>,
+    /// True only when the organization supplied at least the requested number
+    /// of eligible ranked studies.
+    #[serde(default)]
+    pub top_prospect_ranking_complete: bool,
+    /// Number of additional eligible studies required to publish the requested
+    /// ranking depth. Zero means the ranking is complete.
+    #[serde(default)]
+    pub top_prospect_ranking_shortfall: usize,
     pub graduates: Vec<ProspectProgramGraduateView>,
 }
 
@@ -632,10 +646,24 @@ pub struct ProspectProgramBoardView {
     #[serde(default)]
     pub unknown_nhl_games_studies: usize,
     pub maximum_nhl_games_played: u32,
+    /// Maximum number of ranked prospects published for each organization.
+    #[serde(default = "default_prospects_per_team")]
+    pub prospects_per_team: usize,
+    /// Organizations with enough eligible supplied studies to publish the
+    /// requested ranking depth.
+    #[serde(default)]
+    pub complete_organization_rankings: usize,
+    /// Organizations that remain visibly short of the requested ranking depth.
+    #[serde(default)]
+    pub partial_organization_rankings: usize,
     /// Sorted by `pipeline_rank`; consumers may independently sort on either
     /// other frozen rank without recomputing scores.
     pub programs: Vec<ProspectProgramOrganizationView>,
     pub disclosures: Vec<String>,
+}
+
+fn default_prospects_per_team() -> usize {
+    10
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1075,6 +1103,7 @@ pub fn build_prospect_program_board(
         + config.confidence_weight;
     if studies.is_empty()
         || config.expected_depth == 0
+        || config.prospects_per_team == 0
         || [
             config.pool_weight,
             config.development_weight,
@@ -1317,8 +1346,10 @@ pub fn build_prospect_program_board(
             + config.confidence_weight * confidence;
         let top_prospects = observed
             .iter()
-            .take(5)
-            .map(|row| ProspectProgramTopProspectView {
+            .take(config.prospects_per_team)
+            .enumerate()
+            .map(|(index, row)| ProspectProgramTopProspectView {
+                rank: index + 1,
                 player_id: row.0.player_id,
                 player: row.0.player.clone(),
                 position: row.0.position.clone(),
@@ -1357,6 +1388,10 @@ pub fn build_prospect_program_board(
             development_score_delta: None,
             pipeline_score_delta: None,
             top_prospects,
+            top_prospect_ranking_complete: eligible_studies.len() >= config.prospects_per_team,
+            top_prospect_ranking_shortfall: config
+                .prospects_per_team
+                .saturating_sub(eligible_studies.len()),
             graduates,
         });
     }
@@ -1402,6 +1437,12 @@ pub fn build_prospect_program_board(
     }
     programs.sort_by_key(|row| row.pipeline_rank);
 
+    let complete_organization_rankings = programs
+        .iter()
+        .filter(|program| program.top_prospect_ranking_complete)
+        .count();
+    let partial_organization_rankings = programs.len() - complete_organization_rankings;
+
     Ok(ProspectProgramBoardView {
         schema: PROSPECT_PROGRAM_BOARD_SCHEMA.to_owned(),
         scope: scope.to_owned(),
@@ -1418,6 +1459,9 @@ pub fn build_prospect_program_board(
             .map(|row| row.unknown_nhl_games_count)
             .sum(),
         maximum_nhl_games_played: config.maximum_nhl_games_played,
+        prospects_per_team: config.prospects_per_team,
+        complete_organization_rankings,
+        partial_organization_rankings,
         programs,
         disclosures: vec![
             format!("This foundation ranks supplied canonical studies with no more than {} regular-season NHL games. Higher-workload young players remain visible in the graduated lane but do not inflate reserve-system scores; this operational boundary is not NHL rookie eligibility.", config.maximum_nhl_games_played),
@@ -1425,6 +1469,7 @@ pub fn build_prospect_program_board(
             "Pool score combines top-three observed signal, quality depth, and positional balance. Development score workload-weights same-league trajectory, then applies evidence coverage so uncertainty is not treated as failure.".to_owned(),
             "Pipeline score combines Pool, Development, documented readiness, and confidence. Missing depth lowers depth and confidence rather than being silently imputed.".to_owned(),
             "Hidden-value and public-attention scores are excluded because underrecognition is not prospect quality or ceiling.".to_owned(),
+            format!("Each organization publishes up to {} ordinal prospect rows. A false top_prospect_ranking_complete value means fewer eligible studies were supplied; missing players are never imputed.", config.prospects_per_team),
             "Supplied goalie studies use a separate save-percentage, goals-against-average, and workload adapter. Multi-league input does not by itself claim complete organizational coverage; every eligible player must still be supplied through a typed fact adapter.".to_owned(),
             "Positive rank or score delta means improvement from the explicitly dated prior board; comparison requires an earlier season with identical scope, source leagues, graduation threshold, scoring method, weights, and expected depth. Organizations absent from that board retain null deltas.".to_owned(),
         ],
@@ -1943,6 +1988,66 @@ mod tests {
         assert!(current.programs[0].pool_score > current.programs[1].pool_score);
         assert_eq!(current.programs[0].positions.forwards, 1);
         assert_eq!(current.programs[1].positions.defensemen, 1);
+        assert!(!current.programs[0].top_prospect_ranking_complete);
+        assert_eq!(current.programs[0].top_prospect_ranking_shortfall, 9);
+        assert_eq!(current.complete_organization_rankings, 0);
+        assert_eq!(current.partial_organization_rankings, 2);
+    }
+
+    #[test]
+    fn program_board_publishes_ranked_top_ten_without_changing_program_score() {
+        let studies = (1..=12)
+            .map(|player_id| {
+                program_study(
+                    player_id,
+                    "SEA",
+                    if player_id % 3 == 0 { "D" } else { "C" },
+                    10 + player_id,
+                    0.2,
+                )
+            })
+            .collect::<Vec<_>>();
+        let top_ten = build_prospect_program_board(
+            studies.clone(),
+            None,
+            ProspectProgramBoardConfig::default(),
+        )
+        .unwrap();
+        let top_three = build_prospect_program_board(
+            studies,
+            None,
+            ProspectProgramBoardConfig {
+                prospects_per_team: 3,
+                ..ProspectProgramBoardConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(top_ten.prospects_per_team, 10);
+        assert_eq!(top_ten.complete_organization_rankings, 1);
+        assert_eq!(top_ten.partial_organization_rankings, 0);
+        assert_eq!(top_ten.programs[0].top_prospects.len(), 10);
+        assert!(top_ten.programs[0].top_prospect_ranking_complete);
+        assert_eq!(top_ten.programs[0].top_prospect_ranking_shortfall, 0);
+        assert_eq!(
+            top_ten.programs[0]
+                .top_prospects
+                .iter()
+                .map(|prospect| prospect.rank)
+                .collect::<Vec<_>>(),
+            (1..=10).collect::<Vec<_>>()
+        );
+        assert_eq!(top_three.programs[0].top_prospects.len(), 3);
+        assert!(top_three.programs[0].top_prospect_ranking_complete);
+        assert_eq!(top_three.programs[0].top_prospect_ranking_shortfall, 0);
+        assert_eq!(
+            top_ten.programs[0].pipeline_score,
+            top_three.programs[0].pipeline_score
+        );
+        assert_eq!(
+            top_ten.programs[0].pool_score,
+            top_three.programs[0].pool_score
+        );
     }
 
     #[test]

@@ -1,0 +1,12 @@
+{
+  "broadcastStartTimeUTC": "2026-06-26T23:00:00Z",
+  "draftYear": 2026,
+  "draftYears": [2025, 2026],
+  "selectableRounds": [1, 2, 3, 4, 5, 6, 7],
+  "state": "over",
+  "picks": [
+    {"round":1,"pickInRound":5,"overallPick":5,"teamId":3,"teamAbbrev":"NYR","firstName":{"default":"Alberts"},"lastName":{"default":"Smits"},"positionCode":"D","countryCode":"LVA"},
+    {"round":1,"pickInRound":7,"overallPick":7,"teamId":55,"teamAbbrev":"SEA","firstName":{"default":"Chase"},"lastName":{"default":"Reid"},"positionCode":"D","countryCode":"USA"},
+    {"round":7,"pickInRound":20,"overallPick":212,"teamId":22,"teamAbbrev":"EDM","firstName":{"default":"Ryan"},"lastName":{"default":"Cameron"},"positionCode":"G","countryCode":"USA"}
+  ]
+}

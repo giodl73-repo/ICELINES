@@ -2,11 +2,11 @@
 //!
 //! Per DI-25: every pre-Lindsay scheme TOML loads byte-identical to its
 //! frozen golden via the legacy-key alias map. This test covers the
-//! 3 built-in schemes (yahoo-standard, espn-standard, simple-pts) as
-//! the L.5.5 minimum corpus. The full 5-named legacy-fixture corpus
-//! (`yahoo-standard`, `espn-standard`, `custom-points-only`,
-//! `head-to-head-9cat`, `rotisserie-with-goalie` per FORGE-R3 / BENCH-R2
-//! L2-B24) is a carry-forward.
+//! complete built-in corpus (currently yahoo-standard, espn-standard,
+//! simple-pts, and dexters-dawgs). Three supplemental hand-authored fixtures
+//! (`custom-points-only`, `head-to-head-9cat`, and
+//! `rotisserie-with-goalie`) retain the broader FORGE-R3 / BENCH-R2 L2-B24
+//! loader coverage.
 //!
 //! ## Bootstrap mode
 //!
@@ -100,8 +100,8 @@ fn l1_legacy_schemes_load_byte_identical() {
     }
 }
 
-/// L.5.5 (gap-fill) — extends DI-25 coverage from the 3 built-in
-/// schemes to the 5-named legacy corpus per FORGE-R3 / BENCH-R2 L2-B24.
+/// L.5.5 (gap-fill) — extends DI-25 beyond the complete built-in corpus with
+/// the three supplemental legacy shapes from FORGE-R3 / BENCH-R2 L2-B24.
 /// The 3 hand-written fixtures (`custom-points-only`,
 /// `head-to-head-9cat`, `rotisserie-with-goalie`) represent realistic
 /// third-party fantasy schemes that aren't reachable from

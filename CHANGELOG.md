@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Added the reusable `icelines-sources` crate and moved deterministic NHL,
+  AHL, MoneyPuck, CapWages, Yahoo, transaction, bundled-artifact, and identity
+  parsing behind compatibility facades. Source-neutral fact/package contracts,
+  explicit identity review, honest all-32 prospect census gates, and fantasy
+  eligibility reuse now share the same transport-free boundary; authorized
+  identity, contract-control, and camp ledgers remain required before strict
+  population authority can publish.
+- Improved official draft-identity discovery for provider nicknames,
+  parentheticals, diacritics, and transliterations. Surname fallback remains
+  discovery-only and requires one exact official landing/draft-coordinate
+  match; the measured board now resolves 1,683 of 1,685 proposals while
+  retaining two explicit exceptions for review.
+- Fixed Windows Clap surface tests to use the production-sized parser stack,
+  replaced a load-sensitive `--explain` timing test with a direct no-data-state
+  invariant, and restored the no-color goalie table's 80-column contract.
+- Fixed the current-season preseason data stream so authoritative 32-team
+  roster/depth strengths remain typed opening evidence after they are applied
+  to game probabilities. New `icecast edge-preseason-evidence` seals that
+  source across the released 1,344-game, 84-games-per-team 2026-27 schedule and
+  refuses incomplete scheduled-team coverage. Paired 10,000-trial baseline and
+  v1 evaluation-edge movement plus UI-neutral NYR/SEA cards are checked in.
 - Added the IceCast game-prediction edge foundation: explicit preseason,
   game-morning, and confirmed-pregame vintages; sealed dated evidence packages;
   roster, availability, goalie, xG, special-teams, and matchup attribution; and

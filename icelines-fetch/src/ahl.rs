@@ -13,8 +13,25 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 
-pub const AHL_ROSTER_STATS_SCHEMA: &str = "ahl_roster_stats.v1";
-pub const AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA: &str = "ahl_canonical_identity_catalog.v1";
+use icelines_sources::ahl::hockeytech::{
+    build_team_roster_stats as build_team_roster_stats_source, parse_team_catalog,
+    resolve_regular_season, ProviderSeason, ProviderTeam,
+};
+#[cfg(test)]
+use icelines_sources::ahl::hockeytech::{
+    deduplicate_roster_players, parse_skater, report_rows, string_field, team_report_rows,
+};
+pub use icelines_sources::ahl::hockeytech::{
+    AhlGoalieSeasonRow, AhlRosterPlayer, AhlRosterStatsSnapshot, AhlSkaterSeasonRow,
+    AhlTeamRosterStats, AHL_PROVIDER, AHL_ROSTER_SOURCE_URL, AHL_ROSTER_STATS_SCHEMA,
+    AHL_STATS_SOURCE_URL,
+};
+pub use icelines_sources::ahl::identity::{
+    ahl_identity_search_name_variants, normalize_ahl_identity_name,
+    normalized_ahl_identity_surname as normalized_surname, AhlCanonicalIdentityCandidate,
+    AhlCanonicalIdentityCatalog, AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA,
+};
+
 pub const AHL_IDENTITY_CROSSWALK_SCHEMA: &str = "ahl_identity_crosswalk.v1";
 pub const AHL_IDENTITY_LEAGUE_CROSSWALK_SCHEMA: &str = "ahl_identity_league_crosswalk.v1";
 pub const AHL_IDENTITY_LEAGUE_REVIEW_DECISIONS_SCHEMA: &str =
@@ -25,9 +42,6 @@ pub const AHL_IDENTITY_REVIEW_DECISIONS_SCHEMA: &str = "ahl_identity_review_deci
 pub const AHL_IDENTITY_LEAGUE_REVIEW_SCHEMA: &str = "ahl_identity_league_review.v1";
 pub const AHL_IDENTITY_EXCEPTION_BOARD_SCHEMA: &str = "ahl_identity_exception_board.v1";
 pub const AHL_IDENTITY_COLLISION_DELTA_DAYS: u32 = 1_460;
-pub const AHL_PROVIDER: &str = "ahl_hockeytech_statview";
-pub const AHL_STATS_SOURCE_URL: &str = "https://theahl.com/stats/player-stats";
-pub const AHL_ROSTER_SOURCE_URL: &str = "https://theahl.com/stats/roster";
 pub const AHL_FEED_BASE_URL: &str = "https://lscluster.hockeytech.com/feed/index.php";
 const AHL_FEED_KEY: &str = "ccb91f29d6744675";
 const AHL_CLIENT_CODE: &str = "ahl";
@@ -50,54 +64,20 @@ pub enum AhlFeedError {
     Validation(String),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AhlRosterStatsSnapshot {
-    pub schema: String,
-    pub season: u32,
-    pub provider: String,
-    pub provider_season_id: String,
-    pub provider_season_name: String,
-    pub fetched_at: String,
-    pub source_url: String,
-    pub roster_source_url: String,
-    pub identity_note: String,
-    pub teams: Vec<AhlTeamRosterStats>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AhlTeamRosterStats {
-    pub provider: String,
-    pub provider_team_id: String,
-    pub team_code: String,
-    pub team_name: String,
-    pub nickname: String,
-    pub division_id: String,
-    pub logo_url: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nhl_affiliate: Option<String>,
-    /// Official season roster. It may be empty before the AHL publishes the
-    /// club roster and can include players who appeared earlier in-season.
-    pub roster: Vec<AhlRosterPlayer>,
-    pub skaters: Vec<AhlSkaterSeasonRow>,
-    pub goalies: Vec<AhlGoalieSeasonRow>,
-    /// Provider rows excluded from typed team stats with an auditable reason.
-    #[serde(default)]
-    pub source_warnings: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AhlRosterPlayer {
-    pub provider: String,
-    pub provider_player_id: String,
-    pub name: String,
-    pub position_group: String,
-    pub position: String,
-    pub jersey_number: String,
-    pub handedness: String,
-    pub height: String,
-    pub weight_pounds: String,
-    pub birthdate: String,
-    pub birthplace: String,
+impl From<icelines_sources::ahl::hockeytech::AhlHockeytechError> for AhlFeedError {
+    fn from(error: icelines_sources::ahl::hockeytech::AhlHockeytechError) -> Self {
+        match error {
+            icelines_sources::ahl::hockeytech::AhlHockeytechError::Schema(message) => {
+                Self::Schema(message)
+            }
+            icelines_sources::ahl::hockeytech::AhlHockeytechError::SeasonNotFound(message) => {
+                Self::SeasonNotFound(message)
+            }
+            icelines_sources::ahl::hockeytech::AhlHockeytechError::Validation(message) => {
+                Self::Validation(message)
+            }
+        }
+    }
 }
 
 /// Explicit bridge from one provider-scoped AHL roster identity to the
@@ -127,253 +107,75 @@ pub struct AhlProjectionPlayerEnrichment {
 /// Canonical NHL identity candidates from reviewed NHL roster, draft, or
 /// player-profile authorities. This catalog proposes links; it never approves
 /// them automatically.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AhlCanonicalIdentityCatalog {
-    pub schema: String,
-    pub checked_at: String,
-    pub candidates: Vec<AhlCanonicalIdentityCandidate>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AhlCanonicalIdentityCandidate {
-    pub nhl_player_id: u32,
-    pub display_name: String,
-    #[serde(default)]
-    pub birth_date: Option<String>,
-    pub evidence_urls: Vec<String>,
-}
-
-/// Canonicalize provider formatting differences for identity comparison.
-/// Hyphens become word boundaries while apostrophes and periods are ignored,
-/// so provider punctuation variants compare equally without changing global
-/// name search.
-pub fn normalize_ahl_identity_name(name: &str) -> String {
-    let normalized = icelines_core::normalize_name(name);
-    let mut identity = String::with_capacity(normalized.len());
-    let mut pending_boundary = false;
-    for character in normalized.chars() {
-        if character.is_alphanumeric() {
-            if pending_boundary && !identity.is_empty() {
-                identity.push(' ');
-            }
-            identity.push(character);
-            pending_boundary = false;
-        } else if character.is_whitespace() || character == '-' {
-            pending_boundary = true;
-        }
-    }
-    identity
-}
-
-/// Return provider search spellings without discarding the supplied form.
-/// Some official search indexes distinguish curly and straight apostrophes
-/// even though the resulting identities compare equally.
-pub fn ahl_identity_search_name_variants(name: &str) -> Vec<String> {
-    let straight_apostrophes = name
-        .chars()
-        .map(|character| match character {
-            '‘' | '’' => '\'',
-            _ => character,
-        })
-        .collect::<String>();
-    if straight_apostrophes == name {
-        vec![name.to_owned()]
-    } else {
-        vec![name.to_owned(), straight_apostrophes]
-    }
-}
-
-/// Parse exact-name candidates from the official NHL player-search response.
-/// Search results establish a player ID/name proposal only; birth-date
-/// corroboration comes from the matching NHL player landing document.
 pub fn parse_official_nhl_search_candidates(
     expected_name: &str,
     source_url: &str,
     bytes: &[u8],
 ) -> Result<Vec<AhlCanonicalIdentityCandidate>, AhlFeedError> {
-    let expected = normalize_ahl_identity_name(expected_name);
-    parse_official_nhl_search_candidates_matching(expected_name, source_url, bytes, |name| {
-        normalize_ahl_identity_name(name) == expected
-    })
+    icelines_sources::ahl::identity::parse_official_nhl_search_candidates(
+        expected_name,
+        source_url,
+        bytes,
+    )
+    .map_err(map_ahl_identity_error)
 }
 
-/// Parse official search candidates sharing the expected surname. This is a
-/// discovery expansion only; the crosswalk still requires exact birth-date
-/// corroboration and explicit alias review.
 pub fn parse_official_nhl_search_candidates_by_surname(
     expected_name: &str,
     source_url: &str,
     bytes: &[u8],
 ) -> Result<Vec<AhlCanonicalIdentityCandidate>, AhlFeedError> {
-    let expected_surname = normalized_surname(expected_name).ok_or_else(|| {
-        AhlFeedError::Validation(format!("cannot derive surname from `{expected_name}`"))
-    })?;
-    parse_official_nhl_search_candidates_matching(expected_name, source_url, bytes, |name| {
-        normalized_surname(name).as_deref() == Some(expected_surname.as_str())
-    })
+    icelines_sources::ahl::identity::parse_official_nhl_search_candidates_by_surname(
+        expected_name,
+        source_url,
+        bytes,
+    )
+    .map_err(map_ahl_identity_error)
 }
 
-fn parse_official_nhl_search_candidates_matching(
+pub fn parse_official_nhl_draft_search_candidates(
     expected_name: &str,
     source_url: &str,
     bytes: &[u8],
-    matches: impl Fn(&str) -> bool,
 ) -> Result<Vec<AhlCanonicalIdentityCandidate>, AhlFeedError> {
-    let rows: Vec<Value> = serde_json::from_slice(bytes).map_err(|error| {
-        AhlFeedError::Schema(format!("invalid NHL player-search JSON: {error}"))
-    })?;
-    let mut candidates = Vec::new();
-    let mut ids = BTreeSet::new();
-    for row in rows {
-        let Some(name) = row.get("name").and_then(Value::as_str) else {
-            continue;
-        };
-        if !matches(name) {
-            continue;
-        }
-        let player_id = row
-            .get("playerId")
-            .and_then(|value| {
-                value
-                    .as_u64()
-                    .or_else(|| value.as_str().and_then(|text| text.parse().ok()))
-            })
-            .and_then(|value| u32::try_from(value).ok())
-            .filter(|value| *value != 0)
-            .ok_or_else(|| {
-                AhlFeedError::Schema(format!(
-                    "matching NHL player-search result for `{expected_name}` has no valid playerId"
-                ))
-            })?;
-        if ids.insert(player_id) {
-            candidates.push(AhlCanonicalIdentityCandidate {
-                nhl_player_id: player_id,
-                display_name: name.to_owned(),
-                birth_date: None,
-                evidence_urls: vec![source_url.to_owned()],
-            });
-        }
-    }
-    candidates.sort_by_key(|candidate| candidate.nhl_player_id);
-    Ok(candidates)
+    icelines_sources::ahl::identity::parse_official_nhl_draft_search_candidates(
+        expected_name,
+        source_url,
+        bytes,
+    )
+    .map_err(map_ahl_identity_error)
 }
 
-fn normalized_surname(name: &str) -> Option<String> {
-    normalize_ahl_identity_name(name)
-        .split_whitespace()
-        .last()
-        .map(str::to_owned)
-}
-
-/// Enrich a search proposal from the official NHL player landing response.
 pub fn enrich_official_nhl_landing_candidate(
     candidate: &AhlCanonicalIdentityCandidate,
     source_url: &str,
     bytes: &[u8],
 ) -> Result<AhlCanonicalIdentityCandidate, AhlFeedError> {
-    let row: Value = serde_json::from_slice(bytes)
-        .map_err(|error| AhlFeedError::Schema(format!("invalid NHL landing JSON: {error}")))?;
-    let player_id = row
-        .get("playerId")
-        .and_then(Value::as_u64)
-        .and_then(|value| u32::try_from(value).ok());
-    let first_name = localized_default(row.get("firstName"));
-    let last_name = localized_default(row.get("lastName"));
-    let display_name = format!("{first_name} {last_name}").trim().to_owned();
-    if player_id != Some(candidate.nhl_player_id)
-        || display_name.is_empty()
-        || normalize_ahl_identity_name(&display_name)
-            != normalize_ahl_identity_name(&candidate.display_name)
-    {
-        return Err(AhlFeedError::Validation(format!(
-            "NHL landing identity conflicts with search proposal {} ({})",
-            candidate.nhl_player_id, candidate.display_name
-        )));
-    }
-    let birth_date = row
-        .get("birthDate")
-        .and_then(Value::as_str)
-        .map(str::to_owned);
-    if birth_date
-        .as_deref()
-        .is_some_and(|date| chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").is_err())
-    {
-        return Err(AhlFeedError::Schema(format!(
-            "NHL landing identity {} has an invalid birthDate",
-            candidate.nhl_player_id
-        )));
-    }
-    let mut evidence_urls = candidate.evidence_urls.clone();
-    evidence_urls.push(source_url.to_owned());
-    evidence_urls.sort();
-    evidence_urls.dedup();
-    Ok(AhlCanonicalIdentityCandidate {
-        nhl_player_id: candidate.nhl_player_id,
-        display_name,
-        birth_date,
-        evidence_urls,
-    })
+    icelines_sources::ahl::identity::enrich_official_nhl_landing_candidate(
+        candidate, source_url, bytes,
+    )
+    .map_err(map_ahl_identity_error)
 }
 
-/// Merge independently sourced NHL identity catalogs by canonical player ID.
-/// Conflicting names or birth dates fail closed.
 pub fn merge_ahl_canonical_identity_catalogs(
     checked_at: impl Into<String>,
     catalogs: &[AhlCanonicalIdentityCatalog],
 ) -> Result<AhlCanonicalIdentityCatalog, AhlFeedError> {
-    let checked_at = checked_at.into();
-    let mut merged = BTreeMap::<u32, AhlCanonicalIdentityCandidate>::new();
-    for catalog in catalogs {
-        validate_identity_catalog_authority(catalog)?;
-        for candidate in &catalog.candidates {
-            validate_identity_candidate(candidate)?;
-            match merged.entry(candidate.nhl_player_id) {
-                std::collections::btree_map::Entry::Vacant(entry) => {
-                    entry.insert(candidate.clone());
-                }
-                std::collections::btree_map::Entry::Occupied(mut entry) => {
-                    let current = entry.get_mut();
-                    if normalize_ahl_identity_name(&current.display_name)
-                        != normalize_ahl_identity_name(&candidate.display_name)
-                        || matches!(
-                            (&current.birth_date, &candidate.birth_date),
-                            (Some(left), Some(right)) if left != right
-                        )
-                    {
-                        return Err(AhlFeedError::Validation(format!(
-                            "canonical NHL identity sources conflict for player {}",
-                            candidate.nhl_player_id
-                        )));
-                    }
-                    if current.birth_date.is_none() {
-                        current.birth_date.clone_from(&candidate.birth_date);
-                    }
-                    current
-                        .evidence_urls
-                        .extend(candidate.evidence_urls.clone());
-                    current.evidence_urls.sort();
-                    current.evidence_urls.dedup();
-                }
-            }
-        }
-    }
-    let catalog = AhlCanonicalIdentityCatalog {
-        schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),
-        checked_at,
-        candidates: merged.into_values().collect(),
-    };
-    validate_identity_catalog(&catalog)?;
-    Ok(catalog)
+    icelines_sources::ahl::identity::merge_ahl_canonical_identity_catalogs(checked_at, catalogs)
+        .map_err(map_ahl_identity_error)
 }
 
-fn localized_default(value: Option<&Value>) -> &str {
-    value
-        .and_then(|value| {
-            value
-                .as_str()
-                .or_else(|| value.get("default").and_then(Value::as_str))
-        })
-        .unwrap_or("")
+fn map_ahl_identity_error(
+    error: icelines_sources::ahl::identity::AhlIdentityError,
+) -> AhlFeedError {
+    match error {
+        icelines_sources::ahl::identity::AhlIdentityError::Schema(message) => {
+            AhlFeedError::Schema(message)
+        }
+        icelines_sources::ahl::identity::AhlIdentityError::Validation(message) => {
+            AhlFeedError::Validation(message)
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -2528,77 +2330,6 @@ fn default_true() -> bool {
     true
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AhlSkaterSeasonRow {
-    pub provider: String,
-    pub provider_player_id: String,
-    pub name: String,
-    pub team_code: String,
-    pub position: String,
-    pub active: bool,
-    pub rookie: bool,
-    pub games_played: u32,
-    pub goals: u32,
-    pub assists: u32,
-    pub points: u32,
-    pub plus_minus: i32,
-    pub penalty_minutes: u32,
-    pub power_play_goals: u32,
-    pub short_handed_goals: u32,
-    pub shots: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AhlGoalieSeasonRow {
-    pub provider: String,
-    pub provider_player_id: String,
-    pub name: String,
-    pub team_code: String,
-    pub active: bool,
-    pub rookie: bool,
-    pub games_played: u32,
-    pub minutes_played: String,
-    pub wins: u32,
-    pub losses: u32,
-    pub overtime_losses: u32,
-    pub shots_against: u32,
-    pub saves: u32,
-    pub goals_against: u32,
-    pub shutouts: u32,
-    pub save_percentage: f64,
-    pub goals_against_average: f64,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct ProviderSeason {
-    id: String,
-    name: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct SeasonsEnvelope {
-    seasons: Vec<ProviderSeason>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct ProviderTeam {
-    id: String,
-    name: String,
-    #[serde(default)]
-    nickname: String,
-    team_code: String,
-    #[serde(default)]
-    division_id: String,
-    #[serde(default)]
-    logo: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct TeamsEnvelope {
-    teams_no_all: Vec<ProviderTeam>,
-}
-
 /// Client for the feed behind the official AHL statistics pages.
 #[derive(Debug, Clone)]
 pub struct AhlFeedClient {
@@ -2850,13 +2581,7 @@ impl AhlFeedClient {
                 &[("view", "seasonsForLeague"), ("league", "4")],
             )
             .await?;
-        let envelope: SeasonsEnvelope = serde_json::from_value(value)
-            .map_err(|e| AhlFeedError::Schema(format!("season catalog: {e}")))?;
-        envelope
-            .seasons
-            .into_iter()
-            .find(|row| row.name == target)
-            .ok_or(AhlFeedError::SeasonNotFound(target))
+        resolve_regular_season(value, &target).map_err(Into::into)
     }
 
     pub(crate) async fn regular_season_identity(
@@ -3007,12 +2732,7 @@ impl AhlFeedClient {
                 &[("view", "teamsForSeason"), ("season", provider_season_id)],
             )
             .await?;
-        let envelope: TeamsEnvelope = serde_json::from_value(value)
-            .map_err(|e| AhlFeedError::Schema(format!("team catalog: {e}")))?;
-        if envelope.teams_no_all.is_empty() {
-            return Err(AhlFeedError::Schema("team catalog was empty".to_owned()));
-        }
-        Ok(envelope.teams_no_all)
+        parse_team_catalog(value).map_err(Into::into)
     }
 
     async fn fetch_player_report(
@@ -3127,116 +2847,14 @@ fn build_team_roster_stats(
     skater_value: Value,
     goalie_value: Value,
 ) -> Result<AhlTeamRosterStats, AhlFeedError> {
-    let players = roster_rows(&roster_value)?
-        .into_iter()
-        .map(|(group, row)| parse_roster_player(group, row))
-        .collect::<Result<Vec<_>, _>>()?;
-    let (mut roster, mut source_warnings) = deduplicate_roster_players(players, &team.team_code)?;
-    let (skater_rows, skater_warnings) =
-        team_report_rows(&skater_value, &team.team_code, "skater", true)?;
-    let mut skaters = skater_rows
-        .into_iter()
-        .map(|row| parse_skater(row, &team.team_code))
-        .collect::<Result<Vec<_>, _>>()?;
-    source_warnings.extend(skater_warnings);
-    let (goalie_rows, goalie_warnings) =
-        team_report_rows(&goalie_value, &team.team_code, "goalie", false)?;
-    let mut goalies = goalie_rows
-        .into_iter()
-        .map(|row| parse_goalie(row, &team.team_code))
-        .collect::<Result<Vec<_>, _>>()?;
-    source_warnings.extend(goalie_warnings);
-    roster.sort_by(|a, b| {
-        a.position_group
-            .cmp(&b.position_group)
-            .then(a.name.cmp(&b.name))
-            .then(a.provider_player_id.cmp(&b.provider_player_id))
-    });
-    skaters.sort_by(|a, b| {
-        a.name
-            .cmp(&b.name)
-            .then(a.provider_player_id.cmp(&b.provider_player_id))
-    });
-    goalies.sort_by(|a, b| {
-        a.name
-            .cmp(&b.name)
-            .then(a.provider_player_id.cmp(&b.provider_player_id))
-    });
-    Ok(AhlTeamRosterStats {
-        provider: AHL_PROVIDER.to_owned(),
-        provider_team_id: team.id,
-        team_code: team.team_code,
+    build_team_roster_stats_source(
+        team,
         nhl_affiliate,
-        team_name: team.name,
-        nickname: team.nickname,
-        division_id: team.division_id,
-        logo_url: team.logo,
-        roster,
-        skaters,
-        goalies,
-        source_warnings,
-    })
-}
-
-impl AhlRosterStatsSnapshot {
-    pub fn validate(&self) -> Result<(), AhlFeedError> {
-        if self.schema != AHL_ROSTER_STATS_SCHEMA {
-            return Err(AhlFeedError::Validation(format!(
-                "unexpected schema {}",
-                self.schema
-            )));
-        }
-        let mut team_ids = BTreeSet::new();
-        let mut team_codes = BTreeSet::new();
-        for team in &self.teams {
-            if !team_ids.insert(team.provider_team_id.as_str()) {
-                return Err(AhlFeedError::Validation(format!(
-                    "duplicate provider team id {}",
-                    team.provider_team_id
-                )));
-            }
-            if !team_codes.insert(team.team_code.as_str()) {
-                return Err(AhlFeedError::Validation(format!(
-                    "duplicate AHL team code {}",
-                    team.team_code
-                )));
-            }
-            validate_player_ids(
-                team,
-                &team
-                    .skaters
-                    .iter()
-                    .map(|p| (p.provider_player_id.as_str(), p.team_code.as_str()))
-                    .collect::<Vec<_>>(),
-            )?;
-            validate_player_ids(
-                team,
-                &team
-                    .goalies
-                    .iter()
-                    .map(|p| (p.provider_player_id.as_str(), p.team_code.as_str()))
-                    .collect::<Vec<_>>(),
-            )?;
-            let mut roster_ids = BTreeSet::new();
-            for player in &team.roster {
-                if !roster_ids.insert(player.provider_player_id.as_str()) {
-                    return Err(AhlFeedError::Validation(format!(
-                        "duplicate roster provider player id {} on {}",
-                        player.provider_player_id, team.team_code
-                    )));
-                }
-            }
-            for player in &team.skaters {
-                if player.goals + player.assists != player.points {
-                    return Err(AhlFeedError::Validation(format!(
-                        "{} points do not equal goals plus assists",
-                        player.name
-                    )));
-                }
-            }
-        }
-        Ok(())
-    }
+        roster_value,
+        skater_value,
+        goalie_value,
+    )
+    .map_err(Into::into)
 }
 
 /// Adapt one official AHL team roster into the core affiliate projection
@@ -3774,28 +3392,6 @@ fn absolute_http_url(value: &str) -> bool {
     value.starts_with("https://") || value.starts_with("http://")
 }
 
-fn validate_player_ids(
-    team: &AhlTeamRosterStats,
-    players: &[(&str, &str)],
-) -> Result<(), AhlFeedError> {
-    let mut ids = BTreeSet::new();
-    for (id, code) in players {
-        if !ids.insert(*id) {
-            return Err(AhlFeedError::Validation(format!(
-                "duplicate provider player id {id} on {}",
-                team.team_code
-            )));
-        }
-        if *code != team.team_code {
-            return Err(AhlFeedError::Validation(format!(
-                "player team code {code} does not match {}",
-                team.team_code
-            )));
-        }
-    }
-    Ok(())
-}
-
 fn filter_teams(
     teams: Vec<ProviderTeam>,
     filters: &[String],
@@ -3831,17 +3427,7 @@ fn filter_teams(
 }
 
 fn season_label(season: u32) -> Result<String, AhlFeedError> {
-    let text = format!("{season:08}");
-    let start: u32 = text[..4]
-        .parse()
-        .map_err(|_| AhlFeedError::SeasonNotFound(text.clone()))?;
-    let end: u32 = text[4..]
-        .parse()
-        .map_err(|_| AhlFeedError::SeasonNotFound(text.clone()))?;
-    if end != start + 1 {
-        return Err(AhlFeedError::SeasonNotFound(text));
-    }
-    Ok(format!("{start}-{:02} Regular Season", end % 100))
+    icelines_sources::ahl::hockeytech::season_label(season).map_err(Into::into)
 }
 
 fn current_affiliates_for(season: u32) -> BTreeMap<String, String> {
@@ -3857,325 +3443,7 @@ fn current_affiliates_for(season: u32) -> BTreeMap<String, String> {
 
 /// Parse the JSONP wrappers used by Statview (`({...})` and `([...])`).
 pub fn parse_jsonp(body: &str) -> Result<Value, AhlFeedError> {
-    let trimmed = body.trim();
-    let json = trimmed
-        .strip_prefix('(')
-        .and_then(|s| s.strip_suffix(')'))
-        .ok_or_else(|| AhlFeedError::Schema("expected parenthesized JSONP body".to_owned()))?;
-    serde_json::from_str(json)
-        .map_err(|e| AhlFeedError::Schema(format!("invalid JSONP payload: {e}")))
-}
-
-fn report_rows(value: &Value) -> Result<Vec<&Value>, AhlFeedError> {
-    let reports = value
-        .as_array()
-        .ok_or_else(|| AhlFeedError::Schema("player report root was not an array".to_owned()))?;
-    let mut rows = Vec::new();
-    for report in reports {
-        let sections = report
-            .get("sections")
-            .and_then(Value::as_array)
-            .ok_or_else(|| AhlFeedError::Schema("player report sections missing".to_owned()))?;
-        for section in sections {
-            let data = section
-                .get("data")
-                .and_then(Value::as_array)
-                .ok_or_else(|| AhlFeedError::Schema("player report data missing".to_owned()))?;
-            for item in data {
-                let row = item
-                    .get("row")
-                    .ok_or_else(|| AhlFeedError::Schema("player report row missing".to_owned()))?;
-                if row.get("player_id").is_some() {
-                    rows.push(row);
-                    continue;
-                }
-                let label = row
-                    .get("name")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .trim();
-                if !matches!(label, "Empty Net" | "Totals") {
-                    return Err(AhlFeedError::Schema(format!(
-                        "player report row `{label}` had no player_id"
-                    )));
-                }
-            }
-        }
-    }
-    Ok(rows)
-}
-
-fn team_report_rows<'a>(
-    value: &'a Value,
-    expected_team: &str,
-    report_kind: &str,
-    exclude_goalies: bool,
-) -> Result<(Vec<&'a Value>, Vec<String>), AhlFeedError> {
-    let rows = report_rows(value)?;
-    let mut retained = Vec::new();
-    let mut wrong_team = Vec::new();
-    let mut goalie_scoring_rows = Vec::new();
-    for row in rows {
-        let actual_team = string_field(row, "team_code")?;
-        let identity = format!(
-            "{} #{}",
-            string_field(row, "name")?,
-            string_field(row, "player_id")?
-        );
-        if actual_team != expected_team {
-            wrong_team.push(format!("{identity} ({actual_team})"));
-        } else if exclude_goalies && string_field(row, "position")? == "G" {
-            goalie_scoring_rows.push(identity);
-        } else {
-            retained.push(row);
-        }
-    }
-    if retained.is_empty() && !wrong_team.is_empty() {
-        return Err(AhlFeedError::Validation(format!(
-            "{report_kind} report for {expected_team} contained only other-team rows: {}",
-            wrong_team.join(", ")
-        )));
-    }
-    let mut warnings = Vec::new();
-    if !wrong_team.is_empty() {
-        warnings.push(format!(
-            "Excluded {} other-team row(s) from the {report_kind} report for {expected_team}: {}.",
-            wrong_team.len(),
-            wrong_team.join(", ")
-        ));
-    }
-    if !goalie_scoring_rows.is_empty() {
-        warnings.push(format!(
-            "Excluded {} goalie scoring row(s) from the skater report for {expected_team}; typed goalie totals come from the separate goalie report: {}.",
-            goalie_scoring_rows.len(),
-            goalie_scoring_rows.join(", ")
-        ));
-    }
-    Ok((retained, warnings))
-}
-
-fn roster_rows(value: &Value) -> Result<Vec<(&str, &Value)>, AhlFeedError> {
-    let reports = value
-        .get("roster")
-        .and_then(Value::as_array)
-        .ok_or_else(|| AhlFeedError::Schema("roster report missing".to_owned()))?;
-    let mut rows = Vec::new();
-    for report in reports {
-        let sections = report
-            .get("sections")
-            .and_then(Value::as_array)
-            .ok_or_else(|| AhlFeedError::Schema("roster sections missing".to_owned()))?;
-        for section in sections {
-            let title = section
-                .get("title")
-                .and_then(Value::as_str)
-                .ok_or_else(|| AhlFeedError::Schema("roster section title missing".to_owned()))?;
-            if title == "Team Personnel" {
-                continue;
-            }
-            let data = section
-                .get("data")
-                .and_then(Value::as_array)
-                .ok_or_else(|| AhlFeedError::Schema("roster section data missing".to_owned()))?;
-            for item in data {
-                let row = item
-                    .get("row")
-                    .ok_or_else(|| AhlFeedError::Schema("roster player row missing".to_owned()))?;
-                rows.push((title, row));
-            }
-        }
-    }
-    Ok(rows)
-}
-
-fn deduplicate_roster_players(
-    players: Vec<AhlRosterPlayer>,
-    team_code: &str,
-) -> Result<(Vec<AhlRosterPlayer>, Vec<String>), AhlFeedError> {
-    let mut retained: Vec<AhlRosterPlayer> = Vec::new();
-    let mut index_by_id = BTreeMap::new();
-    let mut warnings = Vec::new();
-    for player in players {
-        let Some(existing_index) = index_by_id.get(&player.provider_player_id).copied() else {
-            index_by_id.insert(player.provider_player_id.clone(), retained.len());
-            retained.push(player);
-            continue;
-        };
-        let existing = &mut retained[existing_index];
-        let existing_jersey = existing.jersey_number.clone();
-        let duplicate_jersey = player.jersey_number.clone();
-        let existing_position = existing.position.clone();
-        let duplicate_position = player.position.clone();
-        let mut comparable_existing = existing.clone();
-        let mut comparable_duplicate = player.clone();
-        comparable_existing.jersey_number.clear();
-        comparable_duplicate.jersey_number.clear();
-        comparable_existing.position.clear();
-        comparable_duplicate.position.clear();
-        if comparable_existing != comparable_duplicate {
-            return Err(AhlFeedError::Validation(format!(
-                "conflicting duplicate roster rows for {} #{} on {team_code}",
-                player.name, player.provider_player_id
-            )));
-        }
-        let position_changed = existing_position != duplicate_position;
-        if position_changed
-            && !(is_forward_roster_position(&existing_position)
-                && is_forward_roster_position(&duplicate_position))
-        {
-            return Err(AhlFeedError::Validation(format!(
-                "conflicting duplicate roster positions `{existing_position}` and `{duplicate_position}` for {} #{} on {team_code}",
-                player.name, player.provider_player_id
-            )));
-        }
-        let jersey_changed = existing_jersey != duplicate_jersey;
-        if position_changed || jersey_changed {
-            let mut changes = Vec::new();
-            if position_changed {
-                existing.position = "F".to_owned();
-                changes.push(format!(
-                    "forward positions `{existing_position}` and `{duplicate_position}` were generalized to `F`"
-                ));
-            }
-            if jersey_changed {
-                existing.jersey_number.clear();
-                changes.push(format!(
-                    "jersey numbers `{existing_jersey}` and `{duplicate_jersey}` were omitted"
-                ));
-            }
-            warnings.push(format!(
-                "Collapsed compatible duplicate roster rows for {} #{} on {team_code}; {}.",
-                player.name,
-                player.provider_player_id,
-                changes.join(" and ")
-            ));
-        } else {
-            warnings.push(format!(
-                "Collapsed an exact duplicate roster row for {} #{} on {team_code}.",
-                player.name, player.provider_player_id
-            ));
-        }
-    }
-    Ok((retained, warnings))
-}
-
-fn is_forward_roster_position(position: &str) -> bool {
-    matches!(position, "F" | "C" | "LW" | "RW")
-}
-
-fn parse_roster_player(group: &str, row: &Value) -> Result<AhlRosterPlayer, AhlFeedError> {
-    let mut handedness = optional_string_field(row, "shoots");
-    if handedness.is_empty() {
-        handedness = optional_string_field(row, "catches");
-    }
-    Ok(AhlRosterPlayer {
-        provider: AHL_PROVIDER.to_owned(),
-        provider_player_id: string_field(row, "player_id")?,
-        name: string_field(row, "name")?,
-        position_group: group.to_owned(),
-        position: string_field(row, "position")?,
-        jersey_number: optional_string_field(row, "tp_jersey_number"),
-        handedness,
-        height: optional_string_field(row, "height_hyphenated"),
-        weight_pounds: optional_string_field(row, "w"),
-        birthdate: optional_string_field(row, "birthdate"),
-        birthplace: optional_string_field(row, "birthplace"),
-    })
-}
-
-fn parse_skater(row: &Value, expected_team: &str) -> Result<AhlSkaterSeasonRow, AhlFeedError> {
-    Ok(AhlSkaterSeasonRow {
-        provider: AHL_PROVIDER.to_owned(),
-        provider_player_id: string_field(row, "player_id")?,
-        name: string_field(row, "name")?,
-        team_code: checked_team_code(row, expected_team)?,
-        position: string_field(row, "position")?,
-        active: bool_field(row, "active")?,
-        rookie: bool_field(row, "rookie")?,
-        games_played: u32_field(row, "games_played")?,
-        goals: u32_field(row, "goals")?,
-        assists: u32_field(row, "assists")?,
-        points: u32_field(row, "points")?,
-        plus_minus: i32_field(row, "plus_minus")?,
-        penalty_minutes: u32_field(row, "penalty_minutes")?,
-        power_play_goals: u32_field(row, "power_play_goals")?,
-        short_handed_goals: u32_field(row, "short_handed_goals")?,
-        shots: u32_field(row, "shots")?,
-    })
-}
-
-fn parse_goalie(row: &Value, expected_team: &str) -> Result<AhlGoalieSeasonRow, AhlFeedError> {
-    Ok(AhlGoalieSeasonRow {
-        provider: AHL_PROVIDER.to_owned(),
-        provider_player_id: string_field(row, "player_id")?,
-        name: string_field(row, "name")?,
-        team_code: checked_team_code(row, expected_team)?,
-        active: bool_field(row, "active")?,
-        rookie: bool_field(row, "rookie")?,
-        games_played: u32_field(row, "games_played")?,
-        minutes_played: string_field(row, "minutes_played")?,
-        wins: u32_field(row, "wins")?,
-        losses: u32_field(row, "losses")?,
-        overtime_losses: u32_field(row, "ot_losses")?,
-        shots_against: u32_field(row, "shots")?,
-        saves: u32_field(row, "saves")?,
-        goals_against: u32_field(row, "goals_against")?,
-        shutouts: u32_field(row, "shutouts")?,
-        save_percentage: f64_field(row, "save_percentage")?,
-        goals_against_average: f64_field(row, "goals_against_average")?,
-    })
-}
-
-fn checked_team_code(row: &Value, expected: &str) -> Result<String, AhlFeedError> {
-    let actual = string_field(row, "team_code")?;
-    if actual != expected {
-        return Err(AhlFeedError::Validation(format!(
-            "feed returned team code {actual} while fetching {expected}"
-        )));
-    }
-    Ok(actual)
-}
-
-fn string_field(row: &Value, field: &str) -> Result<String, AhlFeedError> {
-    row.get(field)
-        .and_then(Value::as_str)
-        .map(str::to_owned)
-        .ok_or_else(|| AhlFeedError::Schema(format!("missing string field `{field}`")))
-}
-
-fn optional_string_field(row: &Value, field: &str) -> String {
-    row.get(field)
-        .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_owned()
-}
-
-fn bool_field(row: &Value, field: &str) -> Result<bool, AhlFeedError> {
-    match string_field(row, field)?.as_str() {
-        "1" => Ok(true),
-        "0" => Ok(false),
-        value => Err(AhlFeedError::Schema(format!(
-            "invalid boolean `{field}` value {value}"
-        ))),
-    }
-}
-
-fn u32_field(row: &Value, field: &str) -> Result<u32, AhlFeedError> {
-    string_field(row, field)?
-        .parse()
-        .map_err(|e| AhlFeedError::Schema(format!("invalid integer `{field}`: {e}")))
-}
-
-fn i32_field(row: &Value, field: &str) -> Result<i32, AhlFeedError> {
-    string_field(row, field)?
-        .parse()
-        .map_err(|e| AhlFeedError::Schema(format!("invalid integer `{field}`: {e}")))
-}
-
-fn f64_field(row: &Value, field: &str) -> Result<f64, AhlFeedError> {
-    string_field(row, field)?
-        .parse()
-        .map_err(|e| AhlFeedError::Schema(format!("invalid decimal `{field}`: {e}")))
+    icelines_sources::ahl::hockeytech::parse_jsonp(body).map_err(Into::into)
 }
 
 #[cfg(test)]

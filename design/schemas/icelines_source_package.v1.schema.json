@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.local/schemas/icelines_source_package.v1.schema.json",
+  "title": "IceLines source package v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "package_id", "evaluation_season", "effective_cutoff",
+    "knowledge_cutoff", "adapter_registry_version",
+    "reconciliation_policy_version", "review_registry_fingerprint",
+    "run_manifest", "inputs", "fact_assertions", "identity_proposals",
+    "identity_review_decisions", "conflicts", "exclusions", "coverage",
+    "disclosures", "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "icelines_source_package.v1" },
+    "package_id": { "$ref": "#/$defs/nonEmpty" },
+    "evaluation_season": { "type": "integer", "minimum": 19001901, "maximum": 29993000 },
+    "effective_cutoff": { "$ref": "#/$defs/dateTime" },
+    "knowledge_cutoff": { "$ref": "#/$defs/dateTime" },
+    "adapter_registry_version": { "$ref": "#/$defs/nonEmpty" },
+    "reconciliation_policy_version": { "$ref": "#/$defs/nonEmpty" },
+    "review_registry_fingerprint": { "$ref": "#/$defs/sha256" },
+    "run_manifest": { "$ref": "#/$defs/runManifest" },
+    "inputs": { "type": "array", "items": { "$ref": "#/$defs/input" } },
+    "fact_assertions": { "type": "array", "items": { "$ref": "#/$defs/factAssertion" } },
+    "staged_player_assertions": { "type": "array", "items": { "$ref": "#/$defs/stagedPlayerAssertion" } },
+    "identity_proposals": { "type": "array", "items": { "$ref": "#/$defs/identityProposal" } },
+    "identity_review_decisions": { "type": "array", "items": { "$ref": "#/$defs/identityDecision" } },
+    "conflicts": { "type": "array", "items": { "$ref": "#/$defs/conflict" } },
+    "exclusions": { "type": "array", "items": { "$ref": "#/$defs/exclusion" } },
+    "coverage": { "type": "array", "items": { "$ref": "#/$defs/coverage" } },
+    "disclosures": { "type": "array", "items": { "$ref": "#/$defs/disclosure" } },
+    "fingerprint": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "nonEmpty": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "dateTime": { "type": "string", "format": "date-time" },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "source_url", "provider", "captured_at", "content_sha256", "adapter_version"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/nonEmpty" },
+        "source_url": { "type": "string", "pattern": "^https?://" },
+        "provider": { "$ref": "#/$defs/nonEmpty" },
+        "captured_at": { "$ref": "#/$defs/dateTime" },
+        "content_sha256": { "$ref": "#/$defs/sha256" },
+        "adapter_version": { "$ref": "#/$defs/nonEmpty" }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "captured_at", "evaluated_at", "status", "policy_version"],
+      "properties": {
+        "class": { "enum": ["static", "transactional", "roster", "live", "unknown"] },
+        "captured_at": { "$ref": "#/$defs/dateTime" },
+        "evaluated_at": { "$ref": "#/$defs/dateTime" },
+        "status": { "enum": ["fresh", "stale", "static", "unknown"] },
+        "policy_version": { "$ref": "#/$defs/nonEmpty" }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence", "freshness"],
+      "properties": {
+        "evidence": { "$ref": "#/$defs/evidence" },
+        "freshness": { "$ref": "#/$defs/freshness" }
+      }
+    },
+    "sourceObject": {
+      "type": "object",
+      "required": ["object_id", "source_family", "terminal_pagination", "state"],
+      "properties": {
+        "object_id": { "$ref": "#/$defs/nonEmpty" },
+        "source_family": { "$ref": "#/$defs/nonEmpty" },
+        "organization": { "$ref": "#/$defs/nonEmpty" },
+        "terminal_pagination": { "type": "boolean" },
+        "state": { "enum": ["acquired", "not_applicable", "failed", "quarantined", "incomplete_pagination"] },
+        "records": { "type": "integer", "minimum": 0 },
+        "reason": { "type": "string" }
+      }
+    },
+    "runManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested_scope", "source_catalog_version", "objects", "complete"],
+      "properties": {
+        "requested_scope": { "$ref": "#/$defs/nonEmpty" },
+        "source_catalog_version": { "$ref": "#/$defs/nonEmpty" },
+        "objects": { "type": "array", "items": { "$ref": "#/$defs/sourceObject" } },
+        "complete": { "type": "boolean" }
+      }
+    },
+    "factAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact_id", "semantic_key", "subject", "occurred_at", "authority", "fact", "evidence"],
+      "properties": {
+        "fact_id": { "$ref": "#/$defs/nonEmpty" },
+        "semantic_key": { "$ref": "#/$defs/nonEmpty" },
+        "subject": { "type": "object", "required": ["kind", "id"] },
+        "occurred_at": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["starts_at", "precision"],
+          "properties": {
+            "starts_at": { "$ref": "#/$defs/dateTime" },
+            "ends_at": { "$ref": "#/$defs/dateTime" },
+            "precision": { "enum": ["instant", "day", "season", "unknown"] }
+          }
+        },
+        "authority": { "enum": ["draft", "attendance", "contract", "legal_control", "assignment", "context", "compatibility"] },
+        "fact": { "type": "object", "required": ["family", "value"] },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "supersedes": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } },
+        "retracts": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } }
+      }
+    },
+    "stagedPlayerAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assertion_id", "semantic_key", "proposal_id", "occurred_at", "authority", "fact", "evidence"],
+      "properties": {
+        "assertion_id": { "$ref": "#/$defs/nonEmpty" },
+        "semantic_key": { "$ref": "#/$defs/nonEmpty" },
+        "proposal_id": { "$ref": "#/$defs/nonEmpty" },
+        "occurred_at": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["starts_at", "precision"],
+          "properties": {
+            "starts_at": { "$ref": "#/$defs/dateTime" },
+            "ends_at": { "$ref": "#/$defs/dateTime" },
+            "precision": { "enum": ["instant", "day", "season", "unknown"] }
+          }
+        },
+        "authority": { "enum": ["draft", "attendance", "contract", "legal_control", "assignment", "context", "compatibility"] },
+        "fact": { "type": "object", "required": ["family", "value"] },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "identityProposal": {
+      "type": "object",
+      "required": ["proposal_id", "locator", "displayed_name", "evidence"],
+      "properties": {
+        "proposal_id": { "$ref": "#/$defs/nonEmpty" },
+        "locator": { "type": "object" },
+        "displayed_name": { "$ref": "#/$defs/nonEmpty" },
+        "birth_date": { "type": "string", "format": "date" },
+        "proposed_player_id": { "type": "integer", "minimum": 1 },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "identityDecision": {
+      "type": "object",
+      "required": ["decision_id", "proposal_id", "action", "reviewer", "reviewed_at", "rationale", "evidence"],
+      "properties": {
+        "decision_id": { "$ref": "#/$defs/nonEmpty" },
+        "proposal_id": { "$ref": "#/$defs/nonEmpty" },
+        "action": { "enum": ["accept_proposal", "set_identity", "reject"] },
+        "canonical_player_id": { "type": "integer", "minimum": 1 },
+        "reviewer": { "$ref": "#/$defs/nonEmpty" },
+        "reviewed_at": { "$ref": "#/$defs/dateTime" },
+        "rationale": { "$ref": "#/$defs/nonEmpty" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "required": ["conflict_id", "semantic_key", "fact_ids", "reason"],
+      "properties": {
+        "conflict_id": { "$ref": "#/$defs/nonEmpty" },
+        "semantic_key": { "$ref": "#/$defs/nonEmpty" },
+        "fact_ids": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/nonEmpty" } },
+        "reason": { "$ref": "#/$defs/nonEmpty" }
+      }
+    },
+    "exclusion": {
+      "type": "object",
+      "required": ["exclusion_id", "stage", "reason_code", "message", "source_ids"],
+      "properties": {
+        "exclusion_id": { "$ref": "#/$defs/nonEmpty" },
+        "stage": { "$ref": "#/$defs/nonEmpty" },
+        "subject": { "type": "object" },
+        "reason_code": { "$ref": "#/$defs/nonEmpty" },
+        "message": { "$ref": "#/$defs/nonEmpty" },
+        "source_ids": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["source_family", "expected", "acquired", "parsed", "quarantined", "resolved", "conflicted", "excluded"],
+      "properties": {
+        "source_family": { "$ref": "#/$defs/nonEmpty" },
+        "organization": { "$ref": "#/$defs/nonEmpty" },
+        "player_class": { "type": "string" },
+        "position_group": { "type": "string" },
+        "expected": { "type": "integer", "minimum": 0 },
+        "acquired": { "type": "integer", "minimum": 0 },
+        "parsed": { "type": "integer", "minimum": 0 },
+        "quarantined": { "type": "integer", "minimum": 0 },
+        "resolved": { "type": "integer", "minimum": 0 },
+        "conflicted": { "type": "integer", "minimum": 0 },
+        "excluded": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "disclosure": {
+      "type": "object",
+      "required": ["code", "scope", "message"],
+      "properties": {
+        "code": { "enum": ["partial_population", "missing_source_family", "stale_source", "unresolved_identity", "conflicting_control", "participation_only", "historical_cutoff", "rights_policy", "unsupported_league"] },
+        "scope": { "$ref": "#/$defs/nonEmpty" },
+        "message": { "$ref": "#/$defs/nonEmpty" }
+      }
+    }
+  }
+}

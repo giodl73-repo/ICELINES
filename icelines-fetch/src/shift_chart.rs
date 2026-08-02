@@ -4,34 +4,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
+pub use icelines_sources::nhl::shift_chart::{OfficialShiftChartResponse, OfficialShiftChartRow};
+
 pub const SHIFT_OVERLAP_SCHEMA: &str = "nhl_shift_overlap.v1";
 pub const SHIFT_CHART_SOURCE: &str = "NHL stats REST /shiftcharts";
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OfficialShiftChartRow {
-    pub game_id: u64,
-    pub player_id: u32,
-    #[serde(default)]
-    pub first_name: String,
-    #[serde(default)]
-    pub last_name: String,
-    #[serde(default)]
-    pub team_abbrev: String,
-    pub period: u8,
-    pub start_time: String,
-    pub end_time: String,
-    /// NHL leaves duration null on a small number of boundary/event rows. The
-    /// aggregator derives duration from start/end and never trusts this field.
-    pub duration: Option<String>,
-    pub shift_number: u16,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct OfficialShiftChartResponse {
-    pub data: Vec<OfficialShiftChartRow>,
-    pub total: usize,
-}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ShiftOverlapPlayerRow {

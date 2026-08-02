@@ -692,39 +692,33 @@ in this section.
 
 ## Crate dependency DAG
 
+Arrows mean “depends on.” This edge list is checked against the workspace; it
+must not be replaced by a visually simpler diagram that hides fetch-to-query.
+
+```text
+icelines-query   -> icelines-core
+icelines-sources -> icelines-core
+icelines-fetch   -> icelines-core, icelines-query, icelines-sources
+icelines-site    -> icelines-core, icelines-fetch
+icelines-web     -> icelines-core, icelines-query, icelines-fetch
+icelines-cli     -> icelines-core, icelines-query, icelines-fetch,
+                    icelines-site, icelines-web
 ```
-┌────────────────────────────────────────────────────┐
-│                  icelines-cli                       │
-│  src/main.rs · 28 commands · TUI · axum · render   │
-│  Depends on all three. No business logic — only    │
-│  argument parsing, screen rendering, I/O dispatch. │
-└─────────────────────┬──────────────────────────────┘
-                      │
-        ┌─────────────┴──────────────┐
-        ▼                            ▼
-┌──────────────────┐         ┌──────────────────┐
-│  icelines-site   │         │  icelines-fetch  │
-│  (mkdocs render) │         │  (NHL API + I/O) │
-└────────┬─────────┘         └────────┬─────────┘
-         │                            │
-         └────────────┬───────────────┘
-                      ▼
-        ┌──────────────────────────┐
-        │     icelines-core         │
-        │  (pure logic: model,      │
-        │   filter, scoring,        │
-        │   projections, depth      │
-        │   chart, scheme, ...)     │
-        │  No I/O. No async.        │
-        └───────────────────────────┘
-```
+
+`icelines-sources` is deterministic parsing and provider normalization. It has
+no networking, async runtime, filesystem, database, snapshot, scoring, or
+renderer ownership. `icelines-fetch` retains HTTP/FLETCH acquisition, cache and
+snapshot policy, persistence, and its existing query-backed feature composition
+during the staged extraction. Query must never depend on fetch, and sources
+must never depend on fetch or query.
 
 **Where to add new code**:
 
 | New thing | Crate | Why |
 |---|---|---|
 | Data type, scoring, projection, filter | `icelines-core` | Pure logic |
-| NHL API endpoint, snapshot, bundled data | `icelines-fetch` | I/O |
+| Provider DTO parser or source-neutral normalization | `icelines-sources` | Deterministic provider boundary over caller-supplied bytes |
+| NHL API endpoint, FLETCH plan, snapshot, bundled data | `icelines-fetch` | Acquisition and persistence I/O |
 | Durable Markdown/SVG/PDF projection | renderer crate/script | Consume shared ViewModels or sealed card documents only |
 | CLI command, TUI screen, HTTP handler | `icelines-cli` | Thin UI |
 

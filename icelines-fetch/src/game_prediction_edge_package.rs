@@ -4,7 +4,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use chrono::{DateTime, Utc};
-use icelines_core::{TeamGameForecastVintage, TeamGamePredictionEvidenceInput};
+use icelines_core::{
+    TeamGameEvidenceState, TeamGameForecastView, TeamGameForecastVintage,
+    TeamGameOpeningStrengthRow, TeamGamePredictionEvidenceInput,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -12,6 +15,7 @@ use thiserror::Error;
 use crate::atomic_write::write_json_atomic;
 use crate::game_prediction_edge_assembler::{
     GamePredictionEvidenceAssemblerError, GamePredictionGameAssemblyInput,
+    GamePredictionTeamAssemblyInput,
 };
 
 pub const GAME_PREDICTION_EDGE_PACKAGE_SCHEMA: &str = "game_prediction_edge_evidence_package.v1";
@@ -100,6 +104,149 @@ pub fn build_game_prediction_edge_evidence_package(
         games,
     )?;
     Ok(GamePredictionEvidencePackageBuildResult { package, warnings })
+}
+
+/// Seal the authoritative opening-roster strengths already carried by a
+/// complete preseason forecast as point-in-time evidence for every game.
+pub fn build_preseason_game_prediction_edge_evidence_package(
+    forecast: &TeamGameForecastView,
+    created_at: DateTime<Utc>,
+) -> Result<GamePredictionEvidencePackageBuildResult, GamePredictionEdgePackageError> {
+    let authority = forecast.opening_roster_authority.as_ref().ok_or_else(|| {
+        GamePredictionEdgePackageError::Invalid(
+            "preseason forecast has no opening-roster authority".to_owned(),
+        )
+    })?;
+    if authority.status != "authoritative" || !authority.player_value_effects_enabled {
+        return Err(GamePredictionEdgePackageError::Invalid(
+            "preseason evidence requires authoritative player-valued opening rosters".to_owned(),
+        ));
+    }
+    if created_at.date_naive() >= forecast.schedule_start {
+        return Err(GamePredictionEdgePackageError::Invalid(
+            "preseason evidence must be created before the schedule starts".to_owned(),
+        ));
+    }
+    let captured_at = authority
+        .selected_snapshot_created_at
+        .as_deref()
+        .ok_or_else(|| {
+            GamePredictionEdgePackageError::Invalid(
+                "opening-roster authority has no selected snapshot timestamp".to_owned(),
+            )
+        })?
+        .parse::<DateTime<Utc>>()
+        .map_err(|error| {
+            GamePredictionEdgePackageError::Invalid(format!(
+                "opening-roster snapshot timestamp is invalid: {error}"
+            ))
+        })?;
+    if captured_at > created_at {
+        return Err(GamePredictionEdgePackageError::Invalid(
+            "opening-roster snapshot is later than the preseason evidence freeze".to_owned(),
+        ));
+    }
+    let strengths = forecast
+        .opening_strengths
+        .iter()
+        .map(|row| (row.team.trim().to_ascii_uppercase(), row))
+        .collect::<BTreeMap<_, _>>();
+    let scheduled_teams = forecast
+        .games
+        .iter()
+        .flat_map(|game| [&game.away_team, &game.home_team])
+        .map(|team| team.trim().to_ascii_uppercase())
+        .collect::<BTreeSet<_>>();
+    if strengths.len() != forecast.opening_strengths.len()
+        || scheduled_teams
+            .iter()
+            .any(|team| !strengths.contains_key(team))
+    {
+        return Err(GamePredictionEdgePackageError::Invalid(
+            "opening strengths must contain one row for every scheduled team".to_owned(),
+        ));
+    }
+
+    let source_bytes = serde_json::to_vec(&(authority, &forecast.opening_strengths))?;
+    let source_fingerprint = format!("sha256:{:x}", Sha256::digest(source_bytes));
+    let source_uri = format!(
+        "icelines://opening-rosters/{}",
+        authority
+            .selected_snapshot
+            .as_deref()
+            .unwrap_or("authoritative-snapshot")
+    );
+    let source = GamePredictionEvidenceSource {
+        source_key: "icelines.opening_roster_strength".to_owned(),
+        evidence_cutoff_at: captured_at,
+        retrieved_at: captured_at,
+        authority: GamePredictionEvidenceSourceAuthority::LiveCapture,
+        source_uri,
+        fingerprint: source_fingerprint.clone(),
+    };
+    let games = forecast
+        .games
+        .iter()
+        .map(|game| GamePredictionGameAssemblyInput {
+            game_id: game.game_id,
+            forecast_at: created_at,
+            captured_at,
+            away: preseason_team_input(
+                &game.away_team,
+                strengths[&game.away_team.trim().to_ascii_uppercase()],
+                &source_fingerprint,
+            ),
+            home: preseason_team_input(
+                &game.home_team,
+                strengths[&game.home_team.trim().to_ascii_uppercase()],
+                &source_fingerprint,
+            ),
+        })
+        .collect();
+    let forecast_fingerprint =
+        format!("sha256:{:x}", Sha256::digest(serde_json::to_vec(forecast)?));
+    let mut result = build_game_prediction_edge_evidence_package(
+        forecast_fingerprint,
+        GamePredictionEvidencePackageBuildInput {
+            season: forecast.season,
+            vintage: TeamGameForecastVintage::Preseason,
+            created_at,
+            sources: vec![source],
+            games,
+        },
+    )?;
+    result
+        .warnings
+        .retain(|warning| !warning.ends_with("has no point-in-time eligible trailing xG form"));
+    result.warnings.push(
+        "preseason opening-roster evidence intentionally leaves lineup, goalie, xG, special-teams, and matchup signals unavailable"
+            .to_owned(),
+    );
+    result.warnings.sort();
+    Ok(result)
+}
+
+fn preseason_team_input(
+    team: &str,
+    strength: &TeamGameOpeningStrengthRow,
+    source_fingerprint: &str,
+) -> GamePredictionTeamAssemblyInput {
+    GamePredictionTeamAssemblyInput {
+        team: team.to_owned(),
+        opening_strength: Some(strength.clone()),
+        roster_state: TeamGameEvidenceState::Confirmed,
+        lineup: None,
+        lineup_state: TeamGameEvidenceState::Unavailable,
+        goalie_candidates: Vec::new(),
+        modeled_starter_key: None,
+        goalie_observations: Vec::new(),
+        xg_form: None,
+        opponent_adjusted_xg_form: None,
+        special_teams: None,
+        matchup_suitability: None,
+        matchup_state: TeamGameEvidenceState::Unavailable,
+        source_fingerprints: vec![source_fingerprint.to_owned()],
+    }
 }
 
 impl GamePredictionEdgeEvidencePackage {
@@ -301,7 +448,11 @@ fn valid_sha256(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
-    use icelines_core::{TeamGameEvidenceState, TeamGamePredictionTeamEvidence};
+    use icelines_core::{
+        build_team_game_forecast, TeamForecastGameInput, TeamForecastParameters,
+        TeamForecastStrengthInput, TeamGameEvidenceState, TeamGameOpeningRosterAuthorityRow,
+        TeamGameOpeningStrengthRow, TeamGamePredictionTeamEvidence,
+    };
 
     use super::*;
 
@@ -363,6 +514,69 @@ mod tests {
         .unwrap()
     }
 
+    fn preseason_forecast() -> TeamGameForecastView {
+        let mut forecast = build_team_game_forecast(
+            20_262_027,
+            vec![TeamForecastGameInput {
+                game_id: 1,
+                date: chrono::NaiveDate::from_ymd_opt(2026, 10, 10).unwrap(),
+                away_team: "SEA".to_owned(),
+                home_team: "NYR".to_owned(),
+                away_score: None,
+                home_score: None,
+                final_result: false,
+                last_period: None,
+            }],
+            vec![
+                TeamForecastStrengthInput {
+                    team: "SEA".to_owned(),
+                    strength: 49.0,
+                },
+                TeamForecastStrengthInput {
+                    team: "NYR".to_owned(),
+                    strength: 52.0,
+                },
+            ],
+            TeamForecastParameters::default(),
+            None,
+            None,
+        )
+        .unwrap();
+        forecast.opening_roster_authority = Some(TeamGameOpeningRosterAuthorityRow {
+            status: "authoritative".to_owned(),
+            required_before_date: forecast.schedule_start,
+            selected_snapshot: Some("20262027-2026-07-29-rosters".to_owned()),
+            selected_snapshot_created_at: Some("2026-07-29T04:00:12Z".to_owned()),
+            latest_observed_snapshot: Some("20262027-2026-07-29-rosters".to_owned()),
+            latest_observed_snapshot_created_at: Some("2026-07-29T04:00:12Z".to_owned()),
+            expected_teams: 2,
+            verified_teams: 2,
+            verified_team_abbrevs: vec!["NYR".to_owned(), "SEA".to_owned()],
+            player_value_effects_enabled: true,
+            personnel_events_effective_after: Some(
+                chrono::NaiveDate::from_ymd_opt(2026, 7, 29).unwrap(),
+            ),
+            reason: "test authority".to_owned(),
+        });
+        forecast.opening_strengths = [("NYR", 52.0), ("SEA", 49.0)]
+            .into_iter()
+            .map(|(team, strength)| TeamGameOpeningStrengthRow {
+                team: team.to_owned(),
+                as_of_date: Some(chrono::NaiveDate::from_ymd_opt(2026, 7, 29).unwrap()),
+                strength,
+                cohort_normalization_delta: 0.0,
+                roster_players: 23,
+                valued_players: 22,
+                value_coverage: 22.0 / 23.0,
+                forwards_used: 12,
+                defensemen_used: 6,
+                goalies_used: 2,
+                players: Vec::new(),
+            })
+            .collect();
+        forecast
+    }
+
     #[test]
     fn l0_package_is_canonical_and_sealed() {
         let package = package();
@@ -404,5 +618,37 @@ mod tests {
             package
         );
         assert!(!dir.path().join("edge-evidence.json.tmp").exists());
+    }
+
+    #[test]
+    fn l1_preseason_package_reuses_authoritative_opening_strengths() {
+        let forecast = preseason_forecast();
+        let result = build_preseason_game_prediction_edge_evidence_package(
+            &forecast,
+            Utc.with_ymd_and_hms(2026, 7, 31, 12, 0, 0).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(result.package.vintage, TeamGameForecastVintage::Preseason);
+        assert_eq!(result.package.games.len(), 1);
+        assert_eq!(result.package.games[0].away.roster_strength, Some(49.0));
+        assert_eq!(
+            result.package.games[0].home.roster_state,
+            TeamGameEvidenceState::Confirmed
+        );
+        assert_eq!(result.warnings.len(), 1);
+        assert!(result.warnings[0].contains("intentionally leaves lineup"));
+        result.package.validate().unwrap();
+    }
+
+    #[test]
+    fn l1_preseason_package_refuses_incomplete_team_coverage() {
+        let mut forecast = preseason_forecast();
+        forecast.opening_strengths.retain(|row| row.team == "NYR");
+        let error = build_preseason_game_prediction_edge_evidence_package(
+            &forecast,
+            Utc.with_ymd_and_hms(2026, 7, 31, 12, 0, 0).unwrap(),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("every scheduled team"));
     }
 }
