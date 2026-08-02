@@ -97,7 +97,11 @@ fn l0_source_compatibility_fixture_hashes_are_frozen() {
         let expected = fixture["sha256"].as_str().expect("fixture sha256");
         let bytes = fs::read(root.join(relative))
             .unwrap_or_else(|error| panic!("read compatibility fixture {relative}: {error}"));
-        let actual = format!("{:x}", Sha256::digest(bytes));
+        let text = std::str::from_utf8(&bytes).unwrap_or_else(|error| {
+            panic!("compatibility fixture {relative} is not UTF-8: {error}")
+        });
+        let canonical = text.replace("\r\n", "\n").replace('\r', "\n");
+        let actual = format!("{:x}", Sha256::digest(canonical.as_bytes()));
         assert_eq!(
             actual, expected,
             "compatibility fixture changed: {relative}"

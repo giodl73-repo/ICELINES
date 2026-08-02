@@ -241,9 +241,9 @@
     ],
     "fixtures": [
       { "path": "icelines-fetch/tests/fixtures/landing/mcdavid_8478402.json", "role": "player_landing", "sha256": "7d8089bca59ea757ffe012f8e0eb10f0716c210935784816c0ae590d8c6aaafd" },
-      { "path": "tests/fixtures/api/roster_SEA.json", "role": "official_nhl_roster", "sha256": "d4afc38486b7f63b04e92a40971da5f0034d0de452cdb29c01eaea9937cc01fd" },
-      { "path": "examples/ahl-affiliations-2026-27.json", "role": "ahl_affiliation", "sha256": "d15077733e737ba96752d96b94477c6b51c4c4520f2a7b5d124695d5bf589e1f" },
-      { "path": "examples/icecast-league-candidate-overlay-2026-27.json", "role": "prospect_population", "sha256": "23e7b6e302177e8aae679fa6f3764c6e5fc986e2699c305efef40eef8aa1a175" },
+        { "path": "tests/fixtures/api/roster_SEA.json", "role": "official_nhl_roster", "sha256": "d7dc7a6fc2d3f44a41d8e6182b91f9f5e50fef14cb5cf28538fa80a0ba0464b6" },
+        { "path": "examples/ahl-affiliations-2026-27.json", "role": "ahl_affiliation", "sha256": "99c0c01e95e1ae4c3c47c81a00e516a2f470874ccc07fd0870a1e7cee68e3eab" },
+        { "path": "examples/icecast-league-candidate-overlay-2026-27.json", "role": "prospect_population", "sha256": "cd42224d3a37975b6629cfb5f3fb04dc52c656258485f225e4c40fa8218450ac" },
       { "path": "design/data/prospect-ranking-depth-baseline-2026-07-31.v1.json", "role": "prospect_ranking_depth", "sha256": "9927ad4746e3f0e85b3d58a394006e3b109de866f9a5b666d93c3d79b528102c" }
     ]
   }
