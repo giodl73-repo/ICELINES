@@ -75,7 +75,12 @@ coverage and exclusions, preserves distinct outcome and baseline seals, and
 then enters the existing `shift_adjusted_outcome` reliability/shrinkage path.
 
 MoneyPuck's published usage terms and credit requirement travel with the source
-adapter disclosure. Raw unit xG is never labeled causal chemistry.
+adapter disclosure. Bulk network acquisition is not automated: MoneyPuck asks
+bulk users to arrange a data-license agreement. `moneypuck_line_chemistry_source_package.v1`
+therefore accepts caller-supplied season-summary, line-game, skater-game, and
+team-game CSV documents plus a retained rights-basis declaration. IceLines
+automatically discovers the relevant units and builds the per-game baseline
+inside that sealed local package. Raw unit xG is never labeled causal chemistry.
 
 ## Game matchup
 

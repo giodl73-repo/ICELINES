@@ -19,6 +19,17 @@ const REQUIRED_COLUMNS: &[&str] = &[
     "scoreVenueAdjustedxGoalsAgainst",
 ];
 
+const SUMMARY_REQUIRED_COLUMNS: &[&str] = &[
+    "lineId",
+    "season",
+    "name",
+    "team",
+    "position",
+    "situation",
+    "games_played",
+    "icetime",
+];
+
 /// One game of MoneyPuck pair/trio results. Player IDs come from `lineId`,
 /// which concatenates the two or three seven-digit NHL player IDs.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -37,6 +48,19 @@ pub struct MoneyPuckLineGameRow {
     pub ice_time_seconds: f64,
     pub score_venue_adjusted_xg_for: f64,
     pub score_venue_adjusted_xg_against: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MoneyPuckLineSummaryRow {
+    pub line_id: String,
+    pub player_ids: Vec<u32>,
+    pub name: String,
+    pub season: u32,
+    pub team: String,
+    pub position: String,
+    pub situation: String,
+    pub games_played: u32,
+    pub ice_time_seconds: f64,
 }
 
 #[derive(Debug, Error)]
@@ -72,6 +96,19 @@ struct RawRow {
     adjusted_xg_against: f64,
 }
 
+#[derive(Debug, Deserialize)]
+struct RawSummaryRow {
+    #[serde(rename = "lineId")]
+    line_id: String,
+    season: u32,
+    name: String,
+    team: String,
+    position: String,
+    situation: String,
+    games_played: u32,
+    icetime: f64,
+}
+
 pub fn parse_moneypuck_line_games(
     csv_text: &str,
 ) -> Result<Vec<MoneyPuckLineGameRow>, MoneyPuckLineGameError> {
@@ -92,7 +129,7 @@ pub fn parse_moneypuck_line_games(
         let raw = raw?;
         let date = NaiveDate::parse_from_str(&raw.game_date.to_string(), "%Y%m%d")
             .map_err(|_| MoneyPuckLineGameError::InvalidRow("invalid gameDate".to_owned()))?;
-        let player_ids = parse_line_id(&raw.line_id)?;
+        let player_ids = parse_moneypuck_line_id(&raw.line_id)?;
         let expected_players = match raw.position.trim().to_ascii_lowercase().as_str() {
             "line" => 3,
             "pairing" => 2,
@@ -104,7 +141,6 @@ pub fn parse_moneypuck_line_games(
             }
         };
         if player_ids.len() != expected_players
-            || raw.name.split('-').count() != expected_players
             || raw.player_team.trim().is_empty()
             || raw.opposing_team.trim().is_empty()
             || !raw.icetime.is_finite()
@@ -171,7 +207,76 @@ pub fn moneypuck_line_game_url(season_start_year: u32, line_id: &str) -> String 
     )
 }
 
-fn parse_line_id(value: &str) -> Result<Vec<u32>, MoneyPuckLineGameError> {
+pub fn moneypuck_line_summary_url(season_start_year: u32) -> String {
+    format!(
+        "https://moneypuck.com/moneypuck/playerData/seasonSummary/{season_start_year}/regular/lines.csv"
+    )
+}
+
+pub fn parse_moneypuck_line_summary(
+    csv_text: &str,
+) -> Result<Vec<MoneyPuckLineSummaryRow>, MoneyPuckLineGameError> {
+    let mut reader = csv::Reader::from_reader(csv_text.as_bytes());
+    let headers = reader.headers()?;
+    let missing = SUMMARY_REQUIRED_COLUMNS
+        .iter()
+        .filter(|column| !headers.iter().any(|header| header == **column))
+        .copied()
+        .collect::<Vec<_>>();
+    if !missing.is_empty() {
+        return Err(MoneyPuckLineGameError::MissingColumns(missing.join(", ")));
+    }
+    let mut rows = Vec::new();
+    let mut identities = BTreeSet::new();
+    for raw in reader.deserialize::<RawSummaryRow>() {
+        let raw = raw?;
+        let player_ids = parse_moneypuck_line_id(&raw.line_id)?;
+        let position = raw.position.trim().to_ascii_lowercase();
+        let expected_players = match position.as_str() {
+            "line" => 3,
+            "pairing" => 2,
+            value => {
+                return Err(MoneyPuckLineGameError::InvalidRow(format!(
+                    "unsupported summary position {value}"
+                )))
+            }
+        };
+        let team = raw.team.trim().to_ascii_uppercase();
+        let situation = raw.situation.trim().to_ascii_lowercase();
+        if player_ids.len() != expected_players
+            || team.is_empty()
+            || raw.games_played == 0
+            || !raw.icetime.is_finite()
+            || raw.icetime <= 0.0
+            || !identities.insert((raw.line_id.clone(), team.clone(), situation.clone()))
+        {
+            return Err(MoneyPuckLineGameError::InvalidRow(format!(
+                "invalid or duplicate summary line {}",
+                raw.line_id
+            )));
+        }
+        rows.push(MoneyPuckLineSummaryRow {
+            line_id: raw.line_id,
+            player_ids,
+            name: raw.name.trim().to_owned(),
+            season: raw.season * 10_000 + raw.season + 1,
+            team,
+            position,
+            situation,
+            games_played: raw.games_played,
+            ice_time_seconds: raw.icetime,
+        });
+    }
+    rows.sort_by(|left, right| {
+        left.team
+            .cmp(&right.team)
+            .then_with(|| right.ice_time_seconds.total_cmp(&left.ice_time_seconds))
+            .then_with(|| left.line_id.cmp(&right.line_id))
+    });
+    Ok(rows)
+}
+
+pub fn parse_moneypuck_line_id(value: &str) -> Result<Vec<u32>, MoneyPuckLineGameError> {
     let value = value.trim();
     if !matches!(value.len(), 14 | 21) || !value.bytes().all(|byte| byte.is_ascii_digit()) {
         return Err(MoneyPuckLineGameError::InvalidRow(format!(
@@ -224,5 +329,25 @@ mod tests {
             "{HEADER}84779878481624,Only-One,2025020008,CHI,BOS,AWAY,20251009,line,5on5,102,0.24,0.71\n"
         );
         assert!(parse_moneypuck_line_games(&csv).is_err());
+    }
+
+    #[test]
+    fn discovers_team_units_from_season_summary() {
+        let csv = "lineId,season,name,team,position,situation,games_played,icetime\n\
+                   847798784816248484144,2025,Donato-Bedard-Mikheyev,CHI,line,5on5,15,783\n\
+                   84801968484305,2025,Bryson-Metsa,BUF,pairing,5on5,11,5189\n";
+        let rows = parse_moneypuck_line_summary(csv).expect("valid line summary");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].team, "BUF");
+        assert_eq!(rows[0].player_ids, vec![8_480_196, 8_484_305]);
+        assert_eq!(rows[1].season, 20_252_026);
+    }
+
+    #[test]
+    fn stable_ids_handle_hyphenated_player_names() {
+        let summary = "lineId,season,name,team,position,situation,games_played,icetime\n\
+                       84751718482174,2025,Ekman-Larsson-Villeneuve,TOR,pairing,5on5,3,2562\n";
+        let rows = parse_moneypuck_line_summary(summary).expect("hyphenated surname is valid");
+        assert_eq!(rows[0].player_ids, vec![8_475_171, 8_482_174]);
     }
 }

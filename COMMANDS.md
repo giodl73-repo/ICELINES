@@ -1168,6 +1168,7 @@ icelines icecast edge-evidence --forecast games.json --input dated-assembly-inpu
 icelines icecast line-matchup-profiles --lineup lineup.json --role-evidence roles.json --shift-report shifts.json --evidence-cutoff-at 2026-04-18T23:00:00Z --source-fingerprint sha256:<64-hex> --json --out profiles.json
 icelines icecast line-chemistry --team NYR --forecast-at 2026-04-19T12:00:00Z --input shift-adjusted-outcomes.json --out chemistry.json
 icelines icecast line-chemistry-moneypuck --team NYR --forecast-at 2026-04-19T12:00:00Z --line-game 84784028482888.csv --line-game 84784028490001.csv --baselines pregame-unit-baselines.json --minimum-shared-minutes 30 --out chemistry.json
+icelines icecast line-chemistry-moneypuck-auto --team NYR --season-start 2025 --forecast-at 2026-04-19T12:00:00Z --summary licensed/lines.csv --line-game-dir licensed/line-games --skater-game-dir licensed/skaters --team-game-dir licensed/teams --rights-basis "MoneyPuck license/local authorized export" --out automatic-chemistry.json
 icelines icecast line-matchup --input player-line-matchup-input.json --home-bench-plan nyr-plan.json --away-bench-plan sea-plan.json --json --out matchup-2026020001.json
 icelines icecast line-matchup-compare --input lineup-scenarios.json --focus-team NYR --baseline baseline --out lineup-comparison.json
 icelines icecast line-matchup-validate --input ablation-observations.json --created-at 2026-04-20T12:00:00Z --out matchup-validation.json
@@ -1242,6 +1243,16 @@ each must have been computed before that game and include `individual`,
 reports baseline coverage and zero-xG/missing-baseline exclusions and carries
 MoneyPuck's credit/usage disclosure. It never treats raw shared ice as causal
 chemistry.
+
+`line-chemistry-moneypuck-auto` discovers eligible pair/trio IDs from a local
+season summary, joins local line-game, career-skater, and career-team CSV
+directories, and automatically constructs each strictly pregame baseline. The
+individual component uses every unit member's prior adjusted on-ice xG, the
+opponent component uses prior team xG, and the deployment component uses prior
+offensive/defensive-zone shift starts. Missing rookie or opponent history is an
+explicit exclusion. The command requires `--rights-basis` and does not perform
+bulk network acquisition because MoneyPuck's live license gate asks bulk users
+to arrange an agreement.
 
 `icecast edge-train` fits the regularized Elo-plus-evidence ensemble from
 frozen observations. `--validate` holds out each season chronologically and

@@ -2101,6 +2101,40 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Discover, cache, baseline, and score MoneyPuck pair/trio history.
+    #[command(name = "line-chemistry-moneypuck-auto")]
+    LineChemistryMoneyPuckAuto {
+        #[arg(long)]
+        team: String,
+        /// Four-digit season start year, for example 2025 for 2025-26.
+        #[arg(long)]
+        season_start: u32,
+        #[arg(long)]
+        forecast_at: String,
+        #[arg(long, default_value_t = 20)]
+        trailing_games: usize,
+        #[arg(long, default_value_t = 3)]
+        minimum_player_games: usize,
+        #[arg(long, default_value_t = 30.0)]
+        minimum_shared_minutes: f64,
+        /// MoneyPuck season-summary `lines.csv` obtained under applicable terms.
+        #[arg(long, value_name = "PATH")]
+        summary: PathBuf,
+        /// Directory containing one MoneyPuck pair/trio game CSV per unit ID.
+        #[arg(long, value_name = "DIR")]
+        line_game_dir: PathBuf,
+        /// Directory containing MoneyPuck career game CSVs named by player ID.
+        #[arg(long, value_name = "DIR")]
+        skater_game_dir: PathBuf,
+        /// Directory containing MoneyPuck career team-game CSVs named by abbreviation.
+        #[arg(long, value_name = "DIR")]
+        team_game_dir: PathBuf,
+        /// Short declaration describing the applicable source permission/license.
+        #[arg(long)]
+        rights_basis: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Evaluate frozen player/profile/chemistry/manager forecast ablations.
     #[command(name = "line-matchup-validate")]
     LineMatchupValidate {
@@ -4661,6 +4695,49 @@ mod tui_surface_tests {
                     && line_games == vec![PathBuf::from("line-a.csv"), PathBuf::from("line-b.csv")]
                     && baselines == PathBuf::from("baselines.json")
                     && minimum_shared_minutes == 30.0
+            ));
+
+            let automatic_chemistry = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-chemistry-moneypuck-auto",
+                "--team",
+                "NYR",
+                "--season-start",
+                "2025",
+                "--forecast-at",
+                "2026-04-19T12:00:00Z",
+                "--summary",
+                "lines.csv",
+                "--line-game-dir",
+                "line-games",
+                "--skater-game-dir",
+                "skater-games",
+                "--team-game-dir",
+                "team-games",
+                "--rights-basis",
+                "licensed local export",
+                "--out",
+                "automatic.json",
+            ])
+            .expect("automatic MoneyPuck chemistry command should parse");
+            assert!(matches!(
+                automatic_chemistry.command,
+                Commands::Icecast(IceCastSubcommand::LineChemistryMoneyPuckAuto {
+                    team,
+                    season_start: 2025,
+                    trailing_games: 20,
+                    minimum_player_games: 3,
+                    minimum_shared_minutes,
+                    summary,
+                    rights_basis,
+                    out: Some(out),
+                    ..
+                }) if team == "NYR"
+                    && minimum_shared_minutes == 30.0
+                    && summary == PathBuf::from("lines.csv")
+                    && rights_basis == "licensed local export"
+                    && out == PathBuf::from("automatic.json")
             ));
 
             let validation = Cli::try_parse_from([

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/moneypuck_line_chemistry_source_package.v1.schema.json",
+  "title": "IceLines MoneyPuck line chemistry source package",
+  "type": "object",
+  "required": [
+    "schema",
+    "summary_csv",
+    "line_game_csvs",
+    "skater_game_csvs",
+    "team_game_csvs",
+    "rights_basis"
+  ],
+  "properties": {
+    "schema": { "const": "moneypuck_line_chemistry_source_package.v1" },
+    "summary_csv": { "type": "string", "minLength": 1 },
+    "line_game_csvs": {
+      "type": "array", "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "skater_game_csvs": {
+      "type": "array", "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "team_game_csvs": {
+      "type": "array", "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "rights_basis": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

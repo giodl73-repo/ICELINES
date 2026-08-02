@@ -644,6 +644,10 @@ the same evidence from strictly prior 5-on-5 score/venue-adjusted xG, but only
 when every modeled game has a separately sealed pregame baseline declaring
 individual, opponent, and deployment components. Coverage and exclusions stay
 visible in the UI-neutral result.
+`line-chemistry-moneypuck-auto` performs unit discovery and baseline generation
+from a caller-supplied season summary plus local line, skater, and team-game CSV
+directories. It requires a retained `--rights-basis`; IceLines does not automate
+MoneyPuck bulk scraping where the provider requests a separate license.
 `line-matchup-compare` ranks frozen lineup alternatives, while
 `line-matchup-validate` measures the five cumulative profile/pair/trio/manager
 ablations with chronological Brier, log-loss, and leave-one-team/season checks.

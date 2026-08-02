@@ -36,8 +36,12 @@ the existing game-probability model and all-32 season simulator.
    - Require each pregame baseline to declare individual, opponent, and
      deployment components; disclose baseline coverage and excluded rows —
      implemented.
-   - Add cache-aware discovery/download of the published seasonal line index
-     and automatically generate the pregame baseline authority — remaining.
+   - Discover units from a rights-declared local season-summary/line/skater/team
+     package and automatically generate strictly pregame individual/opponent/
+     zone-start baselines — implemented.
+   - Do not automate bulk MoneyPuck network acquisition; the provider's live
+     license gate asks bulk consumers to arrange an agreement — implemented
+     refusal boundary.
    - Retain zone starts, score state, opponent quality, and role in the residual
      baseline instead of attributing them to chemistry.
    - Build projected/confirmed game-day lineups with captured-at authority.
@@ -70,5 +74,6 @@ separately sealed shift-adjusted chemistry inputs or build them from published
 MoneyPuck pair/trio game files plus complete frozen pregame baselines, feed the
 game edge, and evaluate frozen five-stage ablations. It does not claim that
 official shifts alone are outcome-adjusted, and it does not promote weights
-until real chronological observations pass the validation contract. Automated
-baseline generation and cache-aware acquisition remain the next source step.
+until real chronological observations pass the validation contract. Automatic
+baseline generation is implemented for caller-supplied, rights-declared source
+packages; licensed cache import can be added without changing the model.

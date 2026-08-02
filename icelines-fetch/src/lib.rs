@@ -46,6 +46,8 @@ pub mod management_behavior_source;
 pub mod manifest;
 pub mod moneypuck;
 pub mod moneypuck_goalie_game;
+pub mod moneypuck_line_acquisition;
+pub mod moneypuck_line_baseline;
 pub mod moneypuck_line_chemistry;
 pub mod moneypuck_team_game;
 pub mod nhl_api;
@@ -131,8 +133,13 @@ pub use historical_prediction_edge::{
     HistoricalPredictionEdgeBuildResult, HistoricalPredictionEdgeError,
 };
 pub use icelines_sources::moneypuck_line_game::{
-    moneypuck_line_game_url, parse_moneypuck_line_games, MoneyPuckLineGameError,
-    MoneyPuckLineGameRow,
+    moneypuck_line_game_url, moneypuck_line_summary_url, parse_moneypuck_line_games,
+    parse_moneypuck_line_summary, MoneyPuckLineGameError, MoneyPuckLineGameRow,
+    MoneyPuckLineSummaryRow,
+};
+pub use icelines_sources::moneypuck_skater_game::{
+    moneypuck_skater_career_game_url, parse_moneypuck_skater_games, MoneyPuckSkaterGameError,
+    MoneyPuckSkaterGameRow,
 };
 pub use icelines_sources::prospect_population::ProspectPopulationSourceFamily;
 pub use identity_review_workboard::build_identity_review_workboard_from_source_package;
@@ -150,6 +157,16 @@ pub use moneypuck::{parse_csv as parse_moneypuck_csv, MoneyPuckStats};
 pub use moneypuck_goalie_game::{
     derive_trailing_goalie_form, moneypuck_goalie_game_url, parse_moneypuck_goalie_games,
     MoneyPuckGoalieGameError, MoneyPuckGoalieGameRow, MoneyPuckTrailingGoalieForm,
+};
+pub use moneypuck_line_acquisition::{
+    build_moneypuck_line_chemistry_from_package, MoneyPuckLineChemistryAcquisitionView,
+    MoneyPuckLineChemistrySourcePackage, MONEYPUCK_LINE_CHEMISTRY_ACQUISITION_SCHEMA,
+    MONEYPUCK_LINE_CHEMISTRY_SOURCE_PACKAGE_SCHEMA,
+};
+pub use moneypuck_line_baseline::{
+    build_moneypuck_unit_baselines, MoneyPuckUnitBaselineConfig, MoneyPuckUnitBaselineExclusion,
+    MoneyPuckUnitBaselineExclusionReason, MoneyPuckUnitBaselineSetView,
+    MONEYPUCK_UNIT_BASELINE_SET_SCHEMA,
 };
 pub use moneypuck_line_chemistry::{
     build_moneypuck_line_chemistry, MoneyPuckLineChemistryView, PregameUnitXgBaseline,

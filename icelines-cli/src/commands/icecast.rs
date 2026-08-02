@@ -171,8 +171,8 @@ use icelines_fetch::{
     attach_player_line_matchup_forecast, build_game_prediction_edge_evidence_package,
     build_historical_confirmed_edge_package, build_historical_goalie_edge_package,
     build_historical_moneypuck_edge_package, build_historical_organization_window_origin,
-    build_moneypuck_line_chemistry, build_official_game_outcome_set,
-    build_organization_window_completion_status,
+    build_moneypuck_line_chemistry, build_moneypuck_line_chemistry_from_package,
+    build_official_game_outcome_set, build_organization_window_completion_status,
     build_organization_window_future_holdout_registration,
     build_organization_window_standings_snapshot, build_player_line_matchup_profiles,
     build_preseason_game_prediction_edge_evidence_package, build_prospect_career_context_draft,
@@ -201,7 +201,8 @@ use icelines_fetch::{
     stats_loader::load_into_repo,
     GamePredictionEvidencePackageBuildInput, GamePredictionEvidenceSource,
     GamePredictionEvidenceSourceAuthority, HistoricalMoneyPuckGoalieInput,
-    HistoricalMoneyPuckTeamInput, HistoricalOfficialBoxscoreInput, NhlApiClient,
+    HistoricalMoneyPuckTeamInput, HistoricalOfficialBoxscoreInput,
+    MoneyPuckLineChemistrySourcePackage, MoneyPuckUnitBaselineConfig, NhlApiClient,
     OfficialGameOutcomeSet, OfficialShiftChartRow, OrganizationWindowFutureHoldoutRegistration,
     OrganizationWindowFutureHoldoutResult, OrganizationWindowHistoricalOriginArtifact,
     OrganizationWindowStandingsSnapshot, PregameUnitXgBaseline, ProspectCareerContextDraftConfig,
@@ -4266,6 +4267,85 @@ pub fn run_line_chemistry_moneypuck(
         print!("{output}");
     }
     Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_line_chemistry_moneypuck_auto(
+    team: String,
+    season_start: u32,
+    forecast_at: String,
+    trailing_games: usize,
+    minimum_player_games: usize,
+    minimum_shared_minutes: f64,
+    summary: PathBuf,
+    line_game_dir: PathBuf,
+    skater_game_dir: PathBuf,
+    team_game_dir: PathBuf,
+    rights_basis: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let forecast_at = DateTime::parse_from_rfc3339(&forecast_at)
+        .context("--forecast-at must be RFC 3339, for example 2026-04-19T12:00:00Z")?
+        .with_timezone(&Utc);
+    let summary_csv = std::fs::read_to_string(&summary)
+        .with_context(|| format!("read MoneyPuck line summary {}", summary.display()))?;
+    let package = MoneyPuckLineChemistrySourcePackage {
+        schema: icelines_fetch::MONEYPUCK_LINE_CHEMISTRY_SOURCE_PACKAGE_SCHEMA.to_owned(),
+        summary_csv,
+        line_game_csvs: read_csv_directory(&line_game_dir, "MoneyPuck line-game")?,
+        skater_game_csvs: read_csv_directory(&skater_game_dir, "MoneyPuck skater-game")?,
+        team_game_csvs: read_csv_directory(&team_game_dir, "MoneyPuck team-game")?,
+        rights_basis,
+    };
+    let baseline_config = MoneyPuckUnitBaselineConfig {
+        trailing_games,
+        minimum_player_games,
+        ..MoneyPuckUnitBaselineConfig::default()
+    };
+    let view = build_moneypuck_line_chemistry_from_package(
+        &team,
+        season_start,
+        forecast_at,
+        package,
+        minimum_shared_minutes,
+        baseline_config,
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&view)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "automatic MoneyPuck line chemistry",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn read_csv_directory(path: &std::path::Path, label: &str) -> anyhow::Result<Vec<String>> {
+    let mut paths = std::fs::read_dir(path)
+        .with_context(|| format!("read {label} directory {}", path.display()))?
+        .map(|entry| entry.map(|entry| entry.path()))
+        .collect::<Result<Vec<_>, _>>()?;
+    paths.retain(|path| {
+        path.is_file()
+            && path
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("csv"))
+    });
+    paths.sort();
+    if paths.is_empty() {
+        bail!("{label} directory {} contains no CSV files", path.display());
+    }
+    paths
+        .into_iter()
+        .map(|path| {
+            std::fs::read_to_string(&path)
+                .with_context(|| format!("read {label} file {}", path.display()))
+        })
+        .collect()
 }
 
 pub fn run_line_matchup_validate(
