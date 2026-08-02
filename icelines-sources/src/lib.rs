@@ -17,6 +17,7 @@ pub mod fragment;
 pub mod identity_review;
 pub mod moneypuck;
 pub mod moneypuck_goalie_game;
+pub mod moneypuck_line_game;
 pub mod moneypuck_team_game;
 pub mod nhl;
 pub mod playoffs_bundle;

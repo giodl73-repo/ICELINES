@@ -625,6 +625,29 @@ easiest consecutive five-game window from baseline win probability and reports
 expected wins, opponents, road games, back-to-backs, and itinerary distance.
 JSON exposes the same products in `league_leaders` and `schedule_stretches`.
 
+**The Matchup** adds a player-and-line evidence layer without creating a
+second probability engine. `icelines icecast line-matchup --input
+player-line-matchup-input.json --json --out matchup.json` scores two complete
+dressed lineups from dated player profiles, explicitly typed pair/trio
+evidence, opponent style, and manager execution. Player rates shrink toward
+neutral using games, minutes, observed shifts, recency, and component coverage.
+Official shared-ice intervals remain deployment affinity and cannot become a
+causal chemistry bonus without a separate shift-adjusted outcome residual.
+`icecast edge-evidence --line-matchup matchup.json` attaches the sealed 5-on-5
+values to the existing prediction edge. PP-versus-PK suitability is reported
+separately so special teams are not counted twice.
+`line-matchup-profiles` builds the dated profile inputs from current lineup,
+role, EV-minute, and exact-shift authorities; `line-chemistry` accepts only
+shift-aligned xG residuals against a declared deployment/opponent baseline.
+`line-chemistry-moneypuck` normalizes published pair/trio game files and builds
+the same evidence from strictly prior 5-on-5 score/venue-adjusted xG, but only
+when every modeled game has a separately sealed pregame baseline declaring
+individual, opponent, and deployment components. Coverage and exclusions stay
+visible in the UI-neutral result.
+`line-matchup-compare` ranks frozen lineup alternatives, while
+`line-matchup-validate` measures the five cumulative profile/pair/trio/manager
+ablations with chronological Brier, log-loss, and leave-one-team/season checks.
+
 When the official schedule contains final scores, **The Review** grades the
 frozen game picks overall and by `strong`, `lean`, and `toss_up` confidence.
 Every game ledger row carries the actual score, REG/OT/SO ending, hit/miss,

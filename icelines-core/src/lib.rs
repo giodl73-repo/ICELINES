@@ -301,6 +301,28 @@ pub use view_model::organizational_prospect::{
     OrganizationalProspectBasis, OrganizationalProspectPolicy, OrganizationalProspectStatusView,
     ORGANIZATIONAL_PROSPECT_METHOD, ORGANIZATIONAL_PROSPECT_POLICY_SCHEMA,
 };
+pub use view_model::player_line_matchup::{
+    apply_bench_game_plan_to_player_line_matchup, build_player_line_matchup_forecast,
+    compare_player_line_matchup_scenarios, player_line_matchup_ablation_feature_vectors,
+    player_line_matchup_feature_vector, validate_player_line_matchup_forecast,
+    validate_player_line_matchup_scenario_comparison, LineChemistryEvidenceInput,
+    LineChemistryEvidenceKind, PlayerForecastProfileDimensions, PlayerForecastProfileInput,
+    PlayerForecastProfileView, PlayerLineMatchupAblationFeatureVector,
+    PlayerLineMatchupFeatureVector, PlayerLineMatchupForecastInput, PlayerLineMatchupForecastView,
+    PlayerLineMatchupScenarioComparisonView, PlayerLineMatchupScenarioInput,
+    PlayerLineMatchupScenarioRow, PlayerLineMatchupTeamInput, PlayerLineMatchupTeamView,
+    PlayerLineMatchupUnitKind, PlayerLineMatchupUnitView, PlayerLineSpecialTeamsMatchupView,
+    LINE_CHEMISTRY_EVIDENCE_SCHEMA, PLAYER_FORECAST_PROFILE_SCHEMA,
+    PLAYER_LINE_MATCHUP_FORECAST_JSON_SCHEMA, PLAYER_LINE_MATCHUP_FORECAST_METHOD,
+    PLAYER_LINE_MATCHUP_FORECAST_SCHEMA, PLAYER_LINE_MATCHUP_SCENARIO_COMPARISON_SCHEMA,
+};
+pub use view_model::player_line_matchup_validation::{
+    build_player_line_matchup_validation, validate_player_line_matchup_validation,
+    PlayerLineMatchupAblationMetric, PlayerLineMatchupAblationObservation,
+    PlayerLineMatchupAblationProbabilities, PlayerLineMatchupStabilityRow,
+    PlayerLineMatchupValidationView, PLAYER_LINE_MATCHUP_ABLATION_OBSERVATION_SCHEMA,
+    PLAYER_LINE_MATCHUP_VALIDATION_JSON_SCHEMA, PLAYER_LINE_MATCHUP_VALIDATION_SCHEMA,
+};
 pub use view_model::prospect_census::{
     build_prospect_census, require_publishable_prospect_census, ProspectCensusCandidateInput,
     ProspectCensusCounts, ProspectCensusDimensionRow, ProspectCensusFreshnessStatus,

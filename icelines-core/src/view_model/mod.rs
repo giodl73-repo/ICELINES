@@ -57,6 +57,8 @@ pub mod organization_window_registry;
 pub mod organization_window_scenario_distribution;
 pub mod organizational_prospect;
 pub mod player_card;
+pub mod player_line_matchup;
+pub mod player_line_matchup_validation;
 pub mod playoffs;
 pub mod poach;
 pub mod prospect_census;
@@ -445,6 +447,28 @@ pub use organizational_prospect::{
 };
 pub use player_card::{
     PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow, PlayerSeasonSummary,
+};
+pub use player_line_matchup::{
+    apply_bench_game_plan_to_player_line_matchup, build_player_line_matchup_forecast,
+    compare_player_line_matchup_scenarios, player_line_matchup_ablation_feature_vectors,
+    player_line_matchup_feature_vector, validate_player_line_matchup_forecast,
+    validate_player_line_matchup_scenario_comparison, LineChemistryEvidenceInput,
+    LineChemistryEvidenceKind, PlayerForecastProfileDimensions, PlayerForecastProfileInput,
+    PlayerForecastProfileView, PlayerLineMatchupAblationFeatureVector,
+    PlayerLineMatchupFeatureVector, PlayerLineMatchupForecastInput, PlayerLineMatchupForecastView,
+    PlayerLineMatchupScenarioComparisonView, PlayerLineMatchupScenarioInput,
+    PlayerLineMatchupScenarioRow, PlayerLineMatchupTeamInput, PlayerLineMatchupTeamView,
+    PlayerLineMatchupUnitKind, PlayerLineMatchupUnitView, PlayerLineSpecialTeamsMatchupView,
+    LINE_CHEMISTRY_EVIDENCE_SCHEMA, PLAYER_FORECAST_PROFILE_SCHEMA,
+    PLAYER_LINE_MATCHUP_FORECAST_JSON_SCHEMA, PLAYER_LINE_MATCHUP_FORECAST_METHOD,
+    PLAYER_LINE_MATCHUP_FORECAST_SCHEMA, PLAYER_LINE_MATCHUP_SCENARIO_COMPARISON_SCHEMA,
+};
+pub use player_line_matchup_validation::{
+    build_player_line_matchup_validation, validate_player_line_matchup_validation,
+    PlayerLineMatchupAblationMetric, PlayerLineMatchupAblationObservation,
+    PlayerLineMatchupAblationProbabilities, PlayerLineMatchupStabilityRow,
+    PlayerLineMatchupValidationView, PLAYER_LINE_MATCHUP_ABLATION_OBSERVATION_SCHEMA,
+    PLAYER_LINE_MATCHUP_VALIDATION_JSON_SCHEMA, PLAYER_LINE_MATCHUP_VALIDATION_SCHEMA,
 };
 pub use playoffs::{
     PlayoffsBracketInput, PlayoffsGameInput, PlayoffsGameRow, PlayoffsRoundInput, PlayoffsRoundRow,

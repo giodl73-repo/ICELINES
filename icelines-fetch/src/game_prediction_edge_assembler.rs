@@ -5,7 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
 use icelines_core::{
-    resolve_fantasy_goalie_start, FantasyGoalieStartObservation, FantasyGoalieStartState,
+    resolve_fantasy_goalie_start, validate_player_line_matchup_forecast,
+    FantasyGoalieStartObservation, FantasyGoalieStartState, PlayerLineMatchupForecastView,
     TeamGameEvidenceState, TeamGameOpeningStrengthRow, TeamGamePredictionEvidenceInput,
     TeamGamePredictionTeamEvidence, TeamLineupPlayerView, TeamLineupProjectionView,
 };
@@ -150,6 +151,37 @@ pub fn assemble_game_prediction_evidence(
         },
         warnings,
     })
+}
+
+/// Attach one sealed player/line matchup forecast to the raw evidence assembly
+/// consumed by the existing game-edge package. This is a typed adapter: it
+/// neither recomputes matchup scores nor changes the game probability model.
+pub fn attach_player_line_matchup_forecast(
+    input: &mut GamePredictionGameAssemblyInput,
+    matchup: &PlayerLineMatchupForecastView,
+) -> Result<(), GamePredictionEvidenceAssemblerError> {
+    validate_player_line_matchup_forecast(matchup)
+        .map_err(GamePredictionEvidenceAssemblerError::Invalid)?;
+    if input.game_id != matchup.game_id
+        || input.forecast_at != matchup.forecast_at
+        || input.captured_at != matchup.captured_at
+        || !input.away.team.eq_ignore_ascii_case(&matchup.away.team)
+        || !input.home.team.eq_ignore_ascii_case(&matchup.home.team)
+    {
+        return Err(GamePredictionEvidenceAssemblerError::Invalid(
+            "player-line matchup and game assembly identity or timestamps differ".to_owned(),
+        ));
+    }
+    input.away.matchup_suitability = matchup.away.matchup_suitability;
+    input.away.matchup_state = matchup.away.matchup_state;
+    input.home.matchup_suitability = matchup.home.matchup_suitability;
+    input.home.matchup_state = matchup.home.matchup_state;
+    for team in [&mut input.away, &mut input.home] {
+        if !team.source_fingerprints.contains(&matchup.fingerprint) {
+            team.source_fingerprints.push(matchup.fingerprint.clone());
+        }
+    }
+    Ok(())
 }
 
 impl GamePredictionGameAssemblyInput {
@@ -507,6 +539,11 @@ pub fn fingerprint_special_teams_scores(scores: &[GamePredictionSpecialTeamsScor
 #[cfg(test)]
 mod tests {
     use chrono::{NaiveDate, TimeZone};
+    use icelines_core::{
+        build_player_line_matchup_forecast, OpponentTacticalStyle, PlayerForecastProfileDimensions,
+        PlayerForecastProfileInput, PlayerLineMatchupForecastInput, PlayerLineMatchupTeamInput,
+        TeamGameForecastVintage, PLAYER_FORECAST_PROFILE_SCHEMA,
+    };
 
     use super::*;
 
@@ -608,5 +645,116 @@ mod tests {
             .warnings
             .iter()
             .any(|warning| warning.contains("NYR")));
+    }
+
+    #[test]
+    fn l0_sealed_player_line_matchup_attaches_to_the_exact_game_only() {
+        let away: TeamLineupProjectionView =
+            serde_json::from_str(include_str!("../../examples/team-lineup-sea-2026-27.json"))
+                .unwrap();
+        let home: TeamLineupProjectionView =
+            serde_json::from_str(include_str!("../../examples/team-lineup-nyr-2026-27.json"))
+                .unwrap();
+        let forecast_at = Utc.with_ymd_and_hms(2026, 10, 10, 16, 0, 0).unwrap();
+        let captured_at = Utc.with_ymd_and_hms(2026, 10, 10, 15, 0, 0).unwrap();
+        let matchup = build_player_line_matchup_forecast(PlayerLineMatchupForecastInput {
+            game_id: 2026020001,
+            season: 20262027,
+            game_date: NaiveDate::from_ymd_opt(2026, 10, 10).unwrap(),
+            vintage: TeamGameForecastVintage::GameMorning,
+            forecast_at,
+            captured_at,
+            away: matchup_team(away),
+            home: matchup_team(home),
+        })
+        .unwrap();
+        let side = |team: &str| GamePredictionTeamAssemblyInput {
+            team: team.to_owned(),
+            opening_strength: None,
+            roster_state: TeamGameEvidenceState::Unavailable,
+            lineup: None,
+            lineup_state: TeamGameEvidenceState::Unavailable,
+            goalie_candidates: Vec::new(),
+            modeled_starter_key: None,
+            goalie_observations: Vec::new(),
+            xg_form: None,
+            opponent_adjusted_xg_form: None,
+            special_teams: None,
+            matchup_suitability: None,
+            matchup_state: TeamGameEvidenceState::Unavailable,
+            source_fingerprints: vec![sha()],
+        };
+        let mut assembly = GamePredictionGameAssemblyInput {
+            game_id: matchup.game_id,
+            forecast_at,
+            captured_at,
+            away: side("SEA"),
+            home: side("NYR"),
+        };
+        attach_player_line_matchup_forecast(&mut assembly, &matchup).unwrap();
+        assert_eq!(
+            assembly.home.matchup_suitability,
+            matchup.home.matchup_suitability
+        );
+        assert!(assembly
+            .home
+            .source_fingerprints
+            .contains(&matchup.fingerprint));
+
+        assembly.game_id += 1;
+        assert!(attach_player_line_matchup_forecast(&mut assembly, &matchup).is_err());
+    }
+
+    fn matchup_team(lineup: TeamLineupProjectionView) -> PlayerLineMatchupTeamInput {
+        let mut players = lineup
+            .forward_lines
+            .iter()
+            .flat_map(|line| [&line.left_wing, &line.center, &line.right_wing])
+            .flatten()
+            .chain(
+                lineup
+                    .defense_pairs
+                    .iter()
+                    .flat_map(|pair| [&pair.left, &pair.right])
+                    .flatten(),
+            )
+            .collect::<Vec<_>>();
+        players.sort_by_key(|player| player.player_id);
+        let profiles = players
+            .into_iter()
+            .map(|player| PlayerForecastProfileInput {
+                schema: PLAYER_FORECAST_PROFILE_SCHEMA.to_owned(),
+                player_id: player.player_id,
+                team: lineup.team.clone(),
+                evidence_cutoff_at: Utc.with_ymd_and_hms(2026, 10, 1, 0, 0, 0).unwrap(),
+                games_played: 82,
+                even_strength_minutes: 1_000.0,
+                observed_shifts: 1_500,
+                recency: 1.0,
+                dimensions: PlayerForecastProfileDimensions {
+                    scoring_creation: Some(60.0),
+                    finishing: Some(60.0),
+                    passing_transition: Some(60.0),
+                    forecheck_retrieval: Some(60.0),
+                    defensive_suppression: Some(60.0),
+                    physical_matchup: Some(60.0),
+                    discipline_puck_security: Some(60.0),
+                    faceoffs: Some(60.0),
+                    power_play: Some(60.0),
+                    penalty_kill: Some(60.0),
+                },
+                source_fingerprints: vec![sha()],
+            })
+            .collect();
+        PlayerLineMatchupTeamInput {
+            lineup,
+            lineup_state: TeamGameEvidenceState::Reported,
+            profiles,
+            chemistry: Vec::new(),
+            opponent_style: OpponentTacticalStyle::Balanced,
+            manager_execution_confidence: 0.5,
+            forward_line_shares_pct: None,
+            source_fingerprints: vec![sha()],
+        }
     }
 }

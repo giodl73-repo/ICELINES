@@ -36,6 +36,12 @@ pub struct PlayerMatchupRoleEvidenceRow {
     pub schema: String,
     pub role: PlayerMatchupRoleInput,
     pub peer_group: String,
+    /// Official season even-strength TOI retained for downstream profile confidence.
+    #[serde(default)]
+    pub even_strength_toi_seconds: u32,
+    /// Official season shorthanded TOI retained for role provenance.
+    #[serde(default)]
+    pub short_handed_toi_seconds: u32,
     pub component_coverage_pct: f64,
     pub disclosures: Vec<String>,
 }
@@ -234,6 +240,8 @@ pub fn build_player_matchup_role_evidence(
                 evidence_label: EvidenceLabel::Estimated,
             },
             peer_group: if row.is_defenseman { "defense" } else { "forward" }.to_owned(),
+            even_strength_toi_seconds: row.even_strength_toi_seconds,
+            short_handed_toi_seconds: row.short_handed_toi_seconds,
             component_coverage_pct: if defensive_zone.is_some() { 100.0 } else { 90.0 },
             disclosures: vec![
                 "Scores are peer-group percentiles from descriptive rates, not isolated causal player effects.".to_owned(),

@@ -34,6 +34,10 @@ Game-prediction edge is an implemented child workstream of Team Season Forecast
 and does not consume another top-level slot: see
 [`2026-07-30-game-prediction-edge.md`](2026-07-30-game-prediction-edge.md).
 
+Player-line matchup forecasting is an active child workstream of Team Season
+Forecast and Game-Prediction Edge; it does not consume another top-level slot:
+see [`2026-08-01-player-line-matchup-forecast.md`](2026-08-01-player-line-matchup-forecast.md).
+
 IceLines Sources is an active authority-closure child workstream of Documentation Consolidation,
 organization/prospect intelligence, Team Season Forecast, and Fantasy War Room;
 it does not consume another top-level slot: see
@@ -68,6 +72,7 @@ editorial/stathead workflows, and data freshness authority.
 | [Fantasy Draft and Daily Assistant](2026-07-16-fantasy-draft-daily-assistant.md) | Superseded for active navigation | Original execution plan retained pending archive migration; active work is owned by Fantasy War Room. |
 | [Team Season Forecast](2026-07-19-team-season-forecast.md) | Implemented | Forecasts every game, runs seeded standings/playoff/streak trials, models player risks and atomic trades, and supports rolling plus cutoff-conditioned historical replay/calibration. |
 | [Line Combination Simulation](2026-07-23-line-combination-simulation.md) | Active child workstream | Adds The Blender lineup comparison and The Bench adaptive, result-aware coaching policy to IceCast. |
+| [Player-Line Matchup Forecast](2026-08-01-player-line-matchup-forecast.md) | Active child workstream | Adds confidence-weighted player profiles, pair/trio chemistry evidence, opponent fit, manager execution, and a sealed bridge into the existing game edge. |
 | [Phase Canadiens - Major stats systems roadmap](2026-06-22-phaseCanadiens-major-stats-roadmap.md) | Active | Orders the next eight competitive pushes: strength-state splits, advanced source authority, Signals promotion, historical shift policy, browser QA, production packaging, editorial/stathead workflows, and freshness authority. |
 | [Phase Canadiens Stathead - Query packs](2026-06-23-phaseCanadiensStathead-query-packs.md) | Closed | Adds `icelines stathead [pack] [--json]` with curated query-pack recipes for era leaders, young stars, playoff runs, and goalie notebooks. |
 | [Phase Canadiens Packaging - Checksums](2026-06-23-phaseCanadiensPackaging-checksums.md) | Closed | Adds SHA-256 sidecars to local Windows packaging and every GitHub release archive, with workflow verification and release-checklist documentation. |

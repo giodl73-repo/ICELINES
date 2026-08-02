@@ -1165,6 +1165,13 @@ icelines icecast edge --forecast games.json --evidence morning-evidence.json --j
 icelines icecast edge --forecast games.json --evidence confirmed-evidence.json --model promoted-edge-model.json --json --out confirmed-edge.json
 icelines icecast edge-preseason-evidence --forecast games-2026-27.json --created-at 2026-07-31T12:00:00Z --out preseason-evidence-2026-27.json
 icelines icecast edge-evidence --forecast games.json --input dated-assembly-input.json --out morning-evidence.json
+icelines icecast line-matchup-profiles --lineup lineup.json --role-evidence roles.json --shift-report shifts.json --evidence-cutoff-at 2026-04-18T23:00:00Z --source-fingerprint sha256:<64-hex> --json --out profiles.json
+icelines icecast line-chemistry --team NYR --forecast-at 2026-04-19T12:00:00Z --input shift-adjusted-outcomes.json --out chemistry.json
+icelines icecast line-chemistry-moneypuck --team NYR --forecast-at 2026-04-19T12:00:00Z --line-game 84784028482888.csv --line-game 84784028490001.csv --baselines pregame-unit-baselines.json --minimum-shared-minutes 30 --out chemistry.json
+icelines icecast line-matchup --input player-line-matchup-input.json --home-bench-plan nyr-plan.json --away-bench-plan sea-plan.json --json --out matchup-2026020001.json
+icelines icecast line-matchup-compare --input lineup-scenarios.json --focus-team NYR --baseline baseline --out lineup-comparison.json
+icelines icecast line-matchup-validate --input ablation-observations.json --created-at 2026-04-20T12:00:00Z --out matchup-validation.json
+icelines icecast edge-evidence --forecast games.json --input dated-assembly-input.json --line-matchup matchup-2026020001.json --out morning-evidence.json
 icelines icecast edge-outcomes --season 20252026 --captured-at 2026-07-30T20:00:00Z --refresh --out outcomes-2025-26.json
 icelines icecast edge-replay-xg --forecast games-2025-26.json --moneypuck-dir moneypuck-team-games --retrieved-at 2026-07-30T20:00:00Z --out xg-evidence-2025-26.json
 icelines icecast edge-replay-confirmed --forecast games-2025-26.json --morning-evidence xg-evidence-2025-26.json --boxscore-dir official-boxscores/2025-26 --retrieved-at 2026-07-30T20:00:00Z --refresh --out confirmed-evidence-2025-26.json
@@ -1197,6 +1204,44 @@ row for every scheduled team, freezes before opening day, binds the exact
 forecast and selected roster snapshot, and leaves unavailable xG, goalie,
 lineup, special-teams, and matchup inputs absent. It does not synthesize those
 signals from the schedule or closing results.
+
+`line-matchup` builds `player_line_matchup_forecast.v1` from two complete
+dressed lineups, dated multi-dimensional player profiles, explicitly typed
+pair/trio evidence, opponent styles, and manager execution confidence. Games,
+minutes, shift volume, recency, and component coverage shrink player profiles
+toward neutral. Exact shared deployment is reported as affinity and contributes
+zero causal chemistry unless a separate shift-adjusted outcome residual exists.
+PP-versus-PK suitability remains visible but outside the 5-on-5 feature so the
+edge does not count special teams twice. Repeat `edge-evidence --line-matchup`
+to attach each sealed game document; identity, timestamps, and fingerprints
+must match the raw assembly exactly.
+Optional `--home-bench-plan` and `--away-bench-plan` inputs copy the existing
+Bench opponent style, hard-match confidence, and forward-line shares into the
+forecast after verifying that all four assignments match the dressed lineup;
+the Bench schedule edge itself is not copied or counted twice.
+
+`line-matchup-profiles` adapts the existing complete lineup, player-role
+evidence, and exact official shift report into dated player profiles. Its
+shared-ice rows remain deployment affinity and have zero chemistry effect.
+`line-chemistry` separately converts shift-aligned xG share relative to a
+declared individual/opponent/deployment baseline into pair/trio residuals; it
+rejects rows after `--forecast-at`. `line-matchup-validate` evaluates the five
+frozen ablations chronologically and requires pooled plus per-season/per-team
+Brier and log-loss stability before marking a challenger eligible.
+`line-matchup-compare` ranks two or more complete lineup/manager alternatives
+at the same frozen game boundary and reports their 5-on-5 score delta from the
+named baseline. Win-probability movement still comes from running each sealed
+scenario through the registered edge model.
+
+`line-chemistry-moneypuck` reads one or more published MoneyPuck pair/trio
+game-by-game CSVs, recovers the concatenated NHL player IDs, and includes only
+positive-minute 5-on-5 rows dated strictly before the forecast. Its baseline
+file is an array of `pregame_unit_xg_baseline.v1` rows keyed by game/team/unit;
+each must have been computed before that game and include `individual`,
+`opponent`, and `deployment` components plus source fingerprints. The command
+reports baseline coverage and zero-xG/missing-baseline exclusions and carries
+MoneyPuck's credit/usage disclosure. It never treats raw shared ice as causal
+chemistry.
 
 `icecast edge-train` fits the regularized Elo-plus-evidence ensemble from
 frozen observations. `--validate` holds out each season chronologically and

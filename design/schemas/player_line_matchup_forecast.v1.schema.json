@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/player_line_matchup_forecast.v1.schema.json",
+  "title": "IceLines player-line matchup forecast",
+  "type": "object",
+  "required": [
+    "schema",
+    "method",
+    "game_id",
+    "season",
+    "game_date",
+    "vintage",
+    "forecast_at",
+    "captured_at",
+    "away",
+    "home",
+    "warnings",
+    "disclosures",
+    "source_fingerprints",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "player_line_matchup_forecast.v1" },
+    "method": { "const": "profile_line_matchup.v1" },
+    "game_id": { "type": "integer", "minimum": 1 },
+    "season": { "type": "integer", "minimum": 20000000 },
+    "game_date": { "type": "string", "format": "date" },
+    "vintage": {
+      "enum": ["preseason", "game_morning", "pregame_confirmed"]
+    },
+    "forecast_at": { "type": "string", "format": "date-time" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "away": { "$ref": "#/$defs/team" },
+    "home": { "$ref": "#/$defs/team" },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "disclosures": { "type": "array", "items": { "type": "string" } },
+    "source_fingerprints": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/fingerprint" }
+    },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-fA-F]{64}$"
+    },
+    "evidence_state": {
+      "enum": ["confirmed", "reported", "modeled", "unavailable"]
+    },
+    "dimensions": {
+      "type": "object",
+      "properties": {
+        "scoring_creation": { "$ref": "#/$defs/score_or_null" },
+        "finishing": { "$ref": "#/$defs/score_or_null" },
+        "passing_transition": { "$ref": "#/$defs/score_or_null" },
+        "forecheck_retrieval": { "$ref": "#/$defs/score_or_null" },
+        "defensive_suppression": { "$ref": "#/$defs/score_or_null" },
+        "physical_matchup": { "$ref": "#/$defs/score_or_null" },
+        "discipline_puck_security": { "$ref": "#/$defs/score_or_null" },
+        "faceoffs": { "$ref": "#/$defs/score_or_null" },
+        "power_play": { "$ref": "#/$defs/score_or_null" },
+        "penalty_kill": { "$ref": "#/$defs/score_or_null" }
+      },
+      "additionalProperties": false
+    },
+    "score_or_null": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100
+    },
+    "profile": {
+      "type": "object",
+      "required": [
+        "schema",
+        "player_id",
+        "display_name",
+        "team",
+        "evidence_cutoff_at",
+        "games_played",
+        "even_strength_minutes",
+        "observed_shifts",
+        "component_coverage",
+        "sample_confidence",
+        "raw_overall_score",
+        "reliability_adjusted_score",
+        "adjusted_dimensions"
+      ],
+      "properties": {
+        "schema": { "const": "player_forecast_profile.v1" },
+        "player_id": { "type": "integer", "minimum": 1 },
+        "display_name": { "type": "string", "minLength": 1 },
+        "team": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "evidence_cutoff_at": { "type": "string", "format": "date-time" },
+        "games_played": { "type": "integer", "minimum": 0 },
+        "even_strength_minutes": { "type": "number", "minimum": 0 },
+        "observed_shifts": { "type": "integer", "minimum": 0 },
+        "component_coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sample_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "raw_overall_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "reliability_adjusted_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "adjusted_dimensions": { "$ref": "#/$defs/dimensions" }
+      },
+      "additionalProperties": false
+    },
+    "unit": {
+      "type": "object",
+      "required": [
+        "kind",
+        "unit",
+        "player_ids",
+        "offense_score",
+        "defense_score",
+        "opponent_style_response",
+        "chemistry_effect",
+        "pair_chemistry_effect",
+        "trio_chemistry_effect",
+        "deployment_affinity",
+        "evidence_confidence"
+      ],
+      "properties": {
+        "kind": { "enum": ["forward_line", "defense_pair"] },
+        "unit": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "player_ids": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "offense_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "defense_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "opponent_style_response": { "type": "number", "minimum": 0, "maximum": 100 },
+        "chemistry_effect": { "type": "number", "minimum": -4, "maximum": 4 },
+        "pair_chemistry_effect": { "type": "number", "minimum": -4, "maximum": 4 },
+        "trio_chemistry_effect": { "type": "number", "minimum": -4, "maximum": 4 },
+        "deployment_affinity": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "evidence_confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "special_teams": {
+      "type": "object",
+      "required": [
+        "attacking_team",
+        "defending_team",
+        "power_play_score",
+        "penalty_kill_score",
+        "suitability",
+        "included_in_five_on_five_matchup"
+      ],
+      "properties": {
+        "attacking_team": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "defending_team": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "power_play_score": { "$ref": "#/$defs/score_or_null" },
+        "penalty_kill_score": { "$ref": "#/$defs/score_or_null" },
+        "suitability": { "type": ["number", "null"], "minimum": -1, "maximum": 1 },
+        "included_in_five_on_five_matchup": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "team": {
+      "type": "object",
+      "required": [
+        "team",
+        "opponent",
+        "profiles",
+        "units",
+        "profile_coverage",
+        "average_profile_confidence",
+        "offense_score",
+        "defense_score",
+        "opponent_style_response",
+        "chemistry_effect",
+        "pair_chemistry_effect",
+        "trio_chemistry_effect",
+        "manager_execution_confidence",
+        "last_change_adjustment",
+        "five_on_five_matchup_score",
+        "matchup_suitability",
+        "matchup_state",
+        "special_teams",
+        "warnings"
+      ],
+      "properties": {
+        "team": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "opponent": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "profiles": {
+          "type": "array",
+          "minItems": 18,
+          "maxItems": 18,
+          "items": { "$ref": "#/$defs/profile" }
+        },
+        "units": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": { "$ref": "#/$defs/unit" }
+        },
+        "profile_coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "average_profile_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "offense_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "defense_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "opponent_style_response": { "type": "number", "minimum": 0, "maximum": 100 },
+        "chemistry_effect": { "type": "number", "minimum": -4, "maximum": 4 },
+        "pair_chemistry_effect": { "type": "number", "minimum": -4, "maximum": 4 },
+        "trio_chemistry_effect": { "type": "number", "minimum": -4, "maximum": 4 },
+        "manager_execution_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "last_change_adjustment": { "type": "number", "minimum": 0, "maximum": 0.75 },
+        "five_on_five_matchup_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "matchup_suitability": { "type": ["number", "null"], "minimum": -1, "maximum": 1 },
+        "matchup_state": { "$ref": "#/$defs/evidence_state" },
+        "special_teams": { "$ref": "#/$defs/special_teams" },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  }
+}

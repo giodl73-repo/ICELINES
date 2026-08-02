@@ -2030,6 +2030,101 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Forecast one game from dated player profiles, line chemistry, and opponent fit.
+    #[command(name = "line-matchup")]
+    LineMatchup {
+        /// UI-neutral `PlayerLineMatchupForecastInput` JSON document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Optional Bench plan used to populate the away manager/style/share inputs.
+        #[arg(long, value_name = "PATH")]
+        away_bench_plan: Option<PathBuf>,
+        /// Optional Bench plan used to populate the home manager/style/share inputs.
+        #[arg(long, value_name = "PATH")]
+        home_bench_plan: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build dated player profiles and deployment-affinity evidence for The Matchup.
+    #[command(name = "line-matchup-profiles")]
+    LineMatchupProfiles {
+        #[arg(long, value_name = "PATH")]
+        lineup: PathBuf,
+        /// `team_player_matchup_role_evidence.v1` for the lineup team.
+        #[arg(long, value_name = "PATH")]
+        role_evidence: PathBuf,
+        /// Exact official `nhl_shift_overlap.v1` report from The Blender.
+        #[arg(long, value_name = "PATH")]
+        shift_report: PathBuf,
+        #[arg(long)]
+        evidence_cutoff_at: String,
+        #[arg(long, default_value_t = 1.0)]
+        recency: f64,
+        /// Repeat for every raw role/stat/shift source seal.
+        #[arg(long = "source-fingerprint", required = true)]
+        source_fingerprints: Vec<String>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Convert shift-aligned xG residuals into confidence-weighted chemistry evidence.
+    #[command(name = "line-chemistry")]
+    LineChemistry {
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        forecast_at: String,
+        /// JSON array of `shift_adjusted_unit_outcome.v1` rows.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build chronology-safe pair/trio chemistry from MoneyPuck line-game files.
+    #[command(name = "line-chemistry-moneypuck")]
+    LineChemistryMoneyPuck {
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        forecast_at: String,
+        /// Repeat for each MoneyPuck pair/trio game-by-game CSV.
+        #[arg(long = "line-game", value_name = "PATH", required = true)]
+        line_games: Vec<PathBuf>,
+        /// JSON array of sealed `pregame_unit_xg_baseline.v1` rows.
+        #[arg(long, value_name = "PATH")]
+        baselines: PathBuf,
+        #[arg(long, default_value_t = 30.0)]
+        minimum_shared_minutes: f64,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Evaluate frozen player/profile/chemistry/manager forecast ablations.
+    #[command(name = "line-matchup-validate")]
+    LineMatchupValidate {
+        /// JSON array of chronological `player_line_matchup_ablation_observation.v1` rows.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        created_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rank frozen lineup/manager alternatives for one game.
+    #[command(name = "line-matchup-compare")]
+    LineMatchupCompare {
+        /// JSON array of `PlayerLineMatchupScenarioInput` documents.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        focus_team: String,
+        #[arg(long)]
+        baseline: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Build baseline forecasts for every game in a season.
     Season {
         #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
@@ -2165,6 +2260,9 @@ pub enum IceCastSubcommand {
         /// `GamePredictionEvidencePackageBuildInput` JSON with lineup, goalie, and form inputs.
         #[arg(long, value_name = "PATH")]
         input: PathBuf,
+        /// Repeat to attach a sealed `player_line_matchup_forecast.v1` to its game.
+        #[arg(long = "line-matchup", value_name = "PATH")]
+        line_matchups: Vec<PathBuf>,
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
@@ -4443,6 +4541,201 @@ mod tui_surface_tests {
                 }
                 other => panic!("expected IceCast Bench command, got {other:?}"),
             }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_line_matchup_and_edge_attachment_surfaces_parse() {
+        with_large_stack(|| {
+            let matchup = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup",
+                "--input",
+                "matchup-input.json",
+                "--home-bench-plan",
+                "nyr-plan.json",
+                "--json",
+                "--out",
+                "matchup.json",
+            ])
+            .expect("IceCast line-matchup command should parse");
+            assert!(matches!(
+                matchup.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchup {
+                    input,
+                    home_bench_plan: Some(home_bench_plan),
+                    json: true,
+                    out: Some(out),
+                    ..
+                }) if input == PathBuf::from("matchup-input.json")
+                    && home_bench_plan == PathBuf::from("nyr-plan.json")
+                    && out == PathBuf::from("matchup.json")
+            ));
+
+            let profiles = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup-profiles",
+                "--lineup",
+                "lineup.json",
+                "--role-evidence",
+                "roles.json",
+                "--shift-report",
+                "shifts.json",
+                "--evidence-cutoff-at",
+                "2026-04-18T23:00:00Z",
+                "--source-fingerprint",
+                "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "--json",
+            ])
+            .expect("IceCast line-matchup-profiles command should parse");
+            assert!(matches!(
+                profiles.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchupProfiles {
+                    lineup,
+                    role_evidence,
+                    shift_report,
+                    recency,
+                    json: true,
+                    ..
+                }) if lineup == PathBuf::from("lineup.json")
+                    && role_evidence == PathBuf::from("roles.json")
+                    && shift_report == PathBuf::from("shifts.json")
+                    && recency == 1.0
+            ));
+
+            let chemistry = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-chemistry",
+                "--team",
+                "NYR",
+                "--forecast-at",
+                "2026-04-19T12:00:00Z",
+                "--input",
+                "outcomes.json",
+                "--out",
+                "chemistry.json",
+            ])
+            .expect("IceCast line-chemistry command should parse");
+            assert!(matches!(
+                chemistry.command,
+                Commands::Icecast(IceCastSubcommand::LineChemistry {
+                    team,
+                    input,
+                    out: Some(out),
+                    ..
+                }) if team == "NYR"
+                    && input == PathBuf::from("outcomes.json")
+                    && out == PathBuf::from("chemistry.json")
+            ));
+
+            let moneypuck_chemistry = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-chemistry-moneypuck",
+                "--team",
+                "NYR",
+                "--forecast-at",
+                "2026-04-19T12:00:00Z",
+                "--line-game",
+                "line-a.csv",
+                "--line-game",
+                "line-b.csv",
+                "--baselines",
+                "baselines.json",
+                "--out",
+                "chemistry.json",
+            ])
+            .expect("IceCast line-chemistry-moneypuck command should parse");
+            assert!(matches!(
+                moneypuck_chemistry.command,
+                Commands::Icecast(IceCastSubcommand::LineChemistryMoneyPuck {
+                    team,
+                    line_games,
+                    baselines,
+                    minimum_shared_minutes,
+                    ..
+                }) if team == "NYR"
+                    && line_games == vec![PathBuf::from("line-a.csv"), PathBuf::from("line-b.csv")]
+                    && baselines == PathBuf::from("baselines.json")
+                    && minimum_shared_minutes == 30.0
+            ));
+
+            let validation = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup-validate",
+                "--input",
+                "ablation-observations.json",
+                "--created-at",
+                "2026-04-20T12:00:00Z",
+                "--out",
+                "validation.json",
+            ])
+            .expect("IceCast line-matchup-validate command should parse");
+            assert!(matches!(
+                validation.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchupValidate {
+                    input,
+                    out: Some(out),
+                    ..
+                }) if input == PathBuf::from("ablation-observations.json")
+                    && out == PathBuf::from("validation.json")
+            ));
+
+            let comparison = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup-compare",
+                "--input",
+                "scenarios.json",
+                "--focus-team",
+                "NYR",
+                "--baseline",
+                "baseline",
+                "--out",
+                "comparison.json",
+            ])
+            .expect("IceCast line-matchup-compare command should parse");
+            assert!(matches!(
+                comparison.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchupCompare {
+                    input,
+                    focus_team,
+                    baseline,
+                    out: Some(out),
+                }) if input == PathBuf::from("scenarios.json")
+                    && focus_team == "NYR"
+                    && baseline == "baseline"
+                    && out == PathBuf::from("comparison.json")
+            ));
+
+            let evidence = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "edge-evidence",
+                "--forecast",
+                "games.json",
+                "--input",
+                "assembly.json",
+                "--line-matchup",
+                "matchup-a.json",
+                "--line-matchup",
+                "matchup-b.json",
+            ])
+            .expect("IceCast edge-evidence matchup attachments should parse");
+            assert!(matches!(
+                evidence.command,
+                Commands::Icecast(IceCastSubcommand::EdgeEvidence {
+                    line_matchups,
+                    ..
+                }) if line_matchups == vec![
+                    PathBuf::from("matchup-a.json"),
+                    PathBuf::from("matchup-b.json")
+                ]
+            ));
         });
     }
 

@@ -7,20 +7,21 @@ use anyhow::{bail, Context};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
 use icelines_core::{
     adapt_prospect_conversion_input, adapt_team_season_window_scenario_authorities,
-    adapt_training_camp_window_scenario_authorities, apply_team_behavior_research,
-    audit_organization_profile_history, audit_organization_window_source_package,
-    build_adaptive_lineup_policy, build_ahl_affiliate_projection,
-    build_balanced_organization_window_board_from_package, build_development_calibration,
-    build_forecast_history_card, build_forecast_movement_card, build_isolated_scenario_impact,
-    build_isolated_scenario_impact_as_of, build_line_combination_forecast,
-    build_organization_lineup_forecast, build_organization_profile_history,
-    build_organization_window_history, build_prospect_conversion_board,
-    build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
-    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
-    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
-    build_team_game_prediction_edge, build_team_game_prediction_edge_card,
-    build_team_game_prediction_observation_set,
+    adapt_training_camp_window_scenario_authorities, apply_bench_game_plan_to_player_line_matchup,
+    apply_team_behavior_research, audit_organization_profile_history,
+    audit_organization_window_source_package, build_adaptive_lineup_policy,
+    build_ahl_affiliate_projection, build_balanced_organization_window_board_from_package,
+    build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
+    build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
+    build_line_combination_forecast, build_organization_lineup_forecast,
+    build_organization_profile_history, build_organization_window_history,
+    build_player_line_matchup_forecast, build_player_line_matchup_validation,
+    build_prospect_conversion_board, build_prospect_development_study,
+    build_prospect_discovery_board, build_prospect_nhl_performance_document,
+    build_prospect_program_board_with_goalies, build_prospect_program_history,
+    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
+    build_team_game_forecast, build_team_game_forecast_validation, build_team_game_prediction_edge,
+    build_team_game_prediction_edge_card, build_team_game_prediction_observation_set,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -29,27 +30,30 @@ use icelines_core::{
     build_training_camp_opening_roster_policy, compare_organization_profile_history,
     compare_organization_window_scenario, compare_organization_window_snapshots,
     compare_organization_window_snapshots_with_bridge, compare_organization_window_typed_scenario,
-    compare_team_season_forecast_scenarios, current_ahl_affiliation_catalog,
-    load_organization_window_registry_lifecycle, model::Position, model::Season, model::TeamAbbr,
-    normalize_name, project_organization_profile_history_card, project_organization_window_card,
-    register_team_game_prediction_holdout, seal_new_organization_window_manifest,
-    seal_organization_profile_history, season_stats::SeasonType,
-    simulate_organization_window_scenario_distribution,
+    compare_player_line_matchup_scenarios, compare_team_season_forecast_scenarios,
+    current_ahl_affiliation_catalog, load_organization_window_registry_lifecycle, model::Position,
+    model::Season, model::TeamAbbr, normalize_name, project_organization_profile_history_card,
+    project_organization_window_card, register_team_game_prediction_holdout,
+    seal_new_organization_window_manifest, seal_organization_profile_history,
+    season_stats::SeasonType, simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
     simulate_training_camp, simulate_training_camp_league, train_team_game_prediction_model,
     validate_team_game_prediction_model_with_registration, AhlAffiliateProjectionInput,
     AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlCrossLeagueValuePolicy,
     AhlLineUnitKind, AhlPlayerValuePolicy, AhlRecallReadinessPolicy, AhlRosterPoolAuthorityKind,
-    DevelopmentCalibrationConfig, DevelopmentCalibrationView, DevelopmentPositionGroup,
-    DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput,
-    ForecastMovementCardInput, LineCombinationForecastConfig, LineCombinationForecastView,
-    LineCombinationPairEvidenceInput, NhlGoalieTranslationPolicy, OpponentStyleEvidenceRow,
-    OrganizationLevel, OrganizationLineupForecastInput, OrganizationLineupForecastView,
-    OrganizationPositionGroup, OrganizationProfileHistoryCheckpointView,
-    OrganizationProfileHistoryDeltaView, OrganizationProfileHistoryView, OrganizationUnitKind,
-    OrganizationWindowBoardView, OrganizationWindowBridgeView, OrganizationWindowManifestView,
+    BenchGamePlanView, DevelopmentCalibrationConfig, DevelopmentCalibrationView,
+    DevelopmentPositionGroup, DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel,
+    ForecastHistoryCardInput, ForecastMovementCardInput, LineCombinationForecastConfig,
+    LineCombinationForecastView, LineCombinationPairEvidenceInput, NhlGoalieTranslationPolicy,
+    OpponentStyleEvidenceRow, OrganizationLevel, OrganizationLineupForecastInput,
+    OrganizationLineupForecastView, OrganizationPositionGroup,
+    OrganizationProfileHistoryCheckpointView, OrganizationProfileHistoryDeltaView,
+    OrganizationProfileHistoryView, OrganizationUnitKind, OrganizationWindowBoardView,
+    OrganizationWindowBridgeView, OrganizationWindowManifestView,
     OrganizationWindowScenarioDistributionInput, OrganizationWindowSourceCoverageView,
-    OrganizationWindowSourcePackageView, OrganizationalProspectPolicy, ProspectConversionBoardView,
+    OrganizationWindowSourcePackageView, OrganizationalProspectPolicy,
+    PlayerLineMatchupAblationObservation, PlayerLineMatchupForecastInput,
+    PlayerLineMatchupForecastView, PlayerLineMatchupScenarioInput, ProspectConversionBoardView,
     ProspectConversionConfig, ProspectConversionPerformanceDocument,
     ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
     ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
@@ -65,7 +69,8 @@ use icelines_core::{
     TeamGamePredictionEdgeView, TeamGamePredictionHoldoutRegistration,
     TeamGamePredictionMarketBenchmarkInput, TeamGamePredictionModel,
     TeamGamePredictionObservationSet, TeamGamePredictionTrainingConfig,
-    TeamGamePredictionTrainingObservation, TeamLineupProjectionView, TeamSeasonAutoPersonnelConfig,
+    TeamGamePredictionTrainingObservation, TeamLineupProjectionView,
+    TeamPlayerMatchupRoleEvidenceView, TeamSeasonAutoPersonnelConfig,
     TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
     TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
     TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig, TeamSeasonStretchKind,
@@ -163,16 +168,17 @@ use icelines_fetch::{
         finalize_ahl_waiver_clearance_review, AhlWaiverClearanceApplicationView,
         AhlWaiverClearanceDecisionsView, AhlWaiverClearanceReviewView,
     },
-    build_game_prediction_edge_evidence_package, build_historical_confirmed_edge_package,
-    build_historical_goalie_edge_package, build_historical_moneypuck_edge_package,
-    build_historical_organization_window_origin, build_official_game_outcome_set,
+    attach_player_line_matchup_forecast, build_game_prediction_edge_evidence_package,
+    build_historical_confirmed_edge_package, build_historical_goalie_edge_package,
+    build_historical_moneypuck_edge_package, build_historical_organization_window_origin,
+    build_moneypuck_line_chemistry, build_official_game_outcome_set,
     build_organization_window_completion_status,
     build_organization_window_future_holdout_registration,
-    build_organization_window_standings_snapshot,
+    build_organization_window_standings_snapshot, build_player_line_matchup_profiles,
     build_preseason_game_prediction_edge_evidence_package, build_prospect_career_context_draft,
     build_prospect_career_discovery, build_prospect_league_context_draft,
     build_prospect_league_discovery, build_prospect_program_from_camp_and_career_store,
-    build_shift_overlap_report,
+    build_shift_adjusted_chemistry_evidence, build_shift_overlap_report,
     bundled::{
         get_bios, get_bios_installed, get_goalie_stats, get_goalie_stats_installed, get_stats,
         get_stats_installed, load_transactions_with_fallback,
@@ -184,6 +190,7 @@ use icelines_fetch::{
     fletch::{player_landing_url, roster_url, FletchPlayerLandingArtifact},
     load_game_prediction_edge_evidence_package, moneypuck_goalie_game_url, moneypuck_team_game_url,
     nhl_api::ScheduledGame,
+    parse_moneypuck_line_games,
     schema::{GoalieStats, LocalizedString, RosterPlayer, RosterResponse, SkaterBio, SkaterStats},
     score_organization_window_future_holdout, select_controlled_prospect_studies,
     snapshot::{
@@ -192,17 +199,19 @@ use icelines_fetch::{
         OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
     },
     stats_loader::load_into_repo,
-    GamePredictionEvidencePackageBuildInput, HistoricalMoneyPuckGoalieInput,
+    GamePredictionEvidencePackageBuildInput, GamePredictionEvidenceSource,
+    GamePredictionEvidenceSourceAuthority, HistoricalMoneyPuckGoalieInput,
     HistoricalMoneyPuckTeamInput, HistoricalOfficialBoxscoreInput, NhlApiClient,
     OfficialGameOutcomeSet, OfficialShiftChartRow, OrganizationWindowFutureHoldoutRegistration,
     OrganizationWindowFutureHoldoutResult, OrganizationWindowHistoricalOriginArtifact,
-    OrganizationWindowStandingsSnapshot, ProspectCareerContextDraftConfig,
+    OrganizationWindowStandingsSnapshot, PregameUnitXgBaseline, ProspectCareerContextDraftConfig,
     ProspectCareerContextIdentityInput, ProspectCareerDiscoveryView, ProspectCareerProgramConfig,
     ProspectLeagueContext, ProspectLeagueContextDraftConfig, ProspectLeagueContextExclusionReason,
     ProspectLeagueContextExclusionView, ProspectLeagueDiscoveryView,
     ProspectPopulationOverlay as LeagueCampCandidateOverlay, ScenarioRegistryStore,
-    ShiftOverlapReport, ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA,
-    PROSPECT_CAREER_DISCOVERY_SCHEMA, PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
+    ShiftAdjustedUnitOutcomeInput, ShiftOverlapReport,
+    ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA, PROSPECT_CAREER_DISCOVERY_SCHEMA,
+    PROSPECT_LEAGUE_DISCOVERY_SCHEMA,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -4109,6 +4118,225 @@ pub fn run_bench(args: IceCastBenchArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub struct IceCastLineMatchupArgs {
+    pub input: PathBuf,
+    pub away_bench_plan: Option<PathBuf>,
+    pub home_bench_plan: Option<PathBuf>,
+    pub json: bool,
+    pub out: Option<PathBuf>,
+}
+
+pub fn run_line_matchup(args: IceCastLineMatchupArgs) -> anyhow::Result<()> {
+    let mut input: PlayerLineMatchupForecastInput =
+        read_icecast_json(&args.input, "player-line matchup input")?;
+    for (path, side) in [
+        (args.away_bench_plan.as_deref(), &mut input.away),
+        (args.home_bench_plan.as_deref(), &mut input.home),
+    ] {
+        if let Some(path) = path {
+            let plan: BenchGamePlanView = read_icecast_json(path, "Bench game plan")?;
+            apply_bench_game_plan_to_player_line_matchup(side, &plan)
+                .map_err(anyhow::Error::msg)?;
+            let plan_fingerprint =
+                format!("sha256:{:x}", Sha256::digest(serde_json::to_vec(&plan)?));
+            if !side.source_fingerprints.contains(&plan_fingerprint) {
+                side.source_fingerprints.push(plan_fingerprint);
+            }
+        }
+    }
+    let view = build_player_line_matchup_forecast(input).map_err(anyhow::Error::msg)?;
+    let output = if args.json || args.out.is_some() {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_line_matchup(&view)
+    };
+    if let Some(path) = args.out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "player-line matchup forecast")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub struct IceCastLineMatchupProfilesArgs {
+    pub lineup: PathBuf,
+    pub role_evidence: PathBuf,
+    pub shift_report: PathBuf,
+    pub evidence_cutoff_at: String,
+    pub recency: f64,
+    pub source_fingerprints: Vec<String>,
+    pub json: bool,
+    pub out: Option<PathBuf>,
+}
+
+pub fn run_line_matchup_profiles(args: IceCastLineMatchupProfilesArgs) -> anyhow::Result<()> {
+    let lineup: TeamLineupProjectionView = read_icecast_json(&args.lineup, "team lineup")?;
+    let roles: TeamPlayerMatchupRoleEvidenceView =
+        read_icecast_json(&args.role_evidence, "player matchup role evidence")?;
+    let shifts: ShiftOverlapReport =
+        read_icecast_json(&args.shift_report, "official shift report")?;
+    let evidence_cutoff_at = DateTime::parse_from_rfc3339(&args.evidence_cutoff_at)
+        .context("--evidence-cutoff-at must be RFC 3339, for example 2026-04-18T23:00:00Z")?
+        .with_timezone(&Utc);
+    let view = build_player_line_matchup_profiles(
+        &lineup,
+        &roles,
+        &shifts,
+        evidence_cutoff_at,
+        args.recency,
+        args.source_fingerprints,
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if args.json || args.out.is_some() {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        format!(
+            "THE MATCHUP PROFILES — {}\n{} of {} skaters ({:.1}%)  {} deployment-affinity rows\n",
+            view.team,
+            view.profiles_built,
+            view.dressed_skaters,
+            view.coverage * 100.0,
+            view.deployment_chemistry.len(),
+        )
+    };
+    if let Some(path) = args.out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "player-line matchup profiles")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_line_chemistry(
+    team: String,
+    forecast_at: String,
+    input: PathBuf,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let rows: Vec<ShiftAdjustedUnitOutcomeInput> =
+        read_icecast_json(&input, "shift-adjusted unit outcomes")?;
+    let forecast_at = DateTime::parse_from_rfc3339(&forecast_at)
+        .context("--forecast-at must be RFC 3339, for example 2026-04-19T12:00:00Z")?
+        .with_timezone(&Utc);
+    let view = build_shift_adjusted_chemistry_evidence(&team, forecast_at, rows)
+        .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&view)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "shift-adjusted chemistry evidence")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_line_chemistry_moneypuck(
+    team: String,
+    forecast_at: String,
+    line_games: Vec<PathBuf>,
+    baselines: PathBuf,
+    minimum_shared_minutes: f64,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let forecast_at = DateTime::parse_from_rfc3339(&forecast_at)
+        .context("--forecast-at must be RFC 3339, for example 2026-04-19T12:00:00Z")?
+        .with_timezone(&Utc);
+    let baselines: Vec<PregameUnitXgBaseline> =
+        read_icecast_json(&baselines, "pregame unit xG baselines")?;
+    let mut rows = Vec::new();
+    for path in line_games {
+        let csv_text = std::fs::read_to_string(&path)
+            .with_context(|| format!("read MoneyPuck line-game file {}", path.display()))?;
+        rows.extend(
+            parse_moneypuck_line_games(&csv_text)
+                .with_context(|| format!("parse MoneyPuck line-game file {}", path.display()))?,
+        );
+    }
+    let view = build_moneypuck_line_chemistry(
+        &team,
+        forecast_at,
+        &rows,
+        baselines,
+        minimum_shared_minutes,
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&view)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "MoneyPuck line chemistry")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_line_matchup_validate(
+    input: PathBuf,
+    created_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let observations: Vec<PlayerLineMatchupAblationObservation> =
+        read_icecast_json(&input, "player-line matchup ablation observations")?;
+    let created_at = DateTime::parse_from_rfc3339(&created_at)
+        .context("--created-at must be RFC 3339, for example 2026-04-20T12:00:00Z")?
+        .with_timezone(&Utc);
+    let view = build_player_line_matchup_validation(observations, created_at)
+        .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&view)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "player-line matchup validation")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_line_matchup_compare(
+    input: PathBuf,
+    focus_team: String,
+    baseline: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let scenarios: Vec<PlayerLineMatchupScenarioInput> =
+        read_icecast_json(&input, "player-line matchup scenarios")?;
+    let view = compare_player_line_matchup_scenarios(&focus_team, &baseline, scenarios)
+        .map_err(anyhow::Error::msg)?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&view)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "player-line matchup comparison")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_line_matchup(view: &PlayerLineMatchupForecastView) -> String {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "THE MATCHUP — {} at {}  {}",
+        view.away.team, view.home.team, view.game_date
+    );
+    for team in [&view.away, &view.home] {
+        let suitability = team
+            .matchup_suitability
+            .map(|value| format!("{value:+.3}"))
+            .unwrap_or_else(|| "NO READ".to_owned());
+        let _ = writeln!(
+            out,
+            "{}  5v5 {:>5.1}  suitability {}  profiles {:>5.1}%  chemistry {:+.2}",
+            team.team,
+            team.five_on_five_matchup_score,
+            suitability,
+            team.profile_coverage * 100.0,
+            team.chemistry_effect
+        );
+        for warning in &team.warnings {
+            let _ = writeln!(out, "WARNING: {}: {warning}", team.team);
+        }
+    }
+    let _ = writeln!(out, "Fingerprint: {}", view.fingerprint);
+    out
+}
+
 fn read_icecast_json<T: for<'de> Deserialize<'de>>(
     path: &std::path::Path,
     label: &str,
@@ -4495,6 +4723,7 @@ pub fn run_season_simulate(
 pub fn run_edge_evidence(
     forecast_path: PathBuf,
     input_path: PathBuf,
+    line_matchup_paths: Vec<PathBuf>,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let forecast_bytes = std::fs::read(&forecast_path)
@@ -4503,14 +4732,47 @@ pub fn run_edge_evidence(
         .with_context(|| format!("parse baseline forecast {}", forecast_path.display()))?;
     let input_bytes = std::fs::read(&input_path)
         .with_context(|| format!("read edge assembly input {}", input_path.display()))?;
-    let input: GamePredictionEvidencePackageBuildInput = serde_json::from_slice(&input_bytes)
-        .with_context(|| format!("parse edge assembly input {}", input_path.display()))?;
+    let mut input: GamePredictionEvidencePackageBuildInput =
+        serde_json::from_slice(&input_bytes)
+            .with_context(|| format!("parse edge assembly input {}", input_path.display()))?;
     if input.season != forecast.season {
         bail!(
             "edge assembly season {} does not match forecast season {}",
             input.season,
             forecast.season
         );
+    }
+    let mut attached_games = BTreeSet::new();
+    for path in line_matchup_paths {
+        let matchup: PlayerLineMatchupForecastView =
+            read_icecast_json(&path, "player-line matchup forecast")?;
+        if matchup.season != input.season || !attached_games.insert(matchup.game_id) {
+            bail!(
+                "line matchup {} has a mismatched season or duplicate game {}",
+                path.display(),
+                matchup.game_id
+            );
+        }
+        let game = input
+            .games
+            .iter_mut()
+            .find(|game| game.game_id == matchup.game_id)
+            .with_context(|| {
+                format!(
+                    "line matchup {} references game {} absent from edge assembly",
+                    path.display(),
+                    matchup.game_id
+                )
+            })?;
+        attach_player_line_matchup_forecast(game, &matchup)?;
+        input.sources.push(GamePredictionEvidenceSource {
+            source_key: format!("icelines.player_line_matchup.{}", matchup.game_id),
+            evidence_cutoff_at: matchup.captured_at,
+            retrieved_at: matchup.captured_at,
+            authority: GamePredictionEvidenceSourceAuthority::LiveCapture,
+            source_uri: format!("icelines://game/{}/player-line-matchup", matchup.game_id),
+            fingerprint: matchup.fingerprint,
+        });
     }
     let forecast_fingerprint = format!(
         "sha256:{:x}",

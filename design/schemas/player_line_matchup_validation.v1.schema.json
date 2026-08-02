@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/player_line_matchup_validation.v1.schema.json",
+  "title": "IceLines player-line matchup chronological validation",
+  "type": "object",
+  "required": [
+    "schema",
+    "created_at",
+    "games",
+    "metrics",
+    "stability",
+    "promotion_eligible",
+    "disclosures",
+    "source_fingerprints",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "player_line_matchup_validation.v1" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "games": { "type": "integer", "minimum": 1 },
+    "metrics": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/metric" }
+    },
+    "stability": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stability" }
+    },
+    "promotion_eligible": { "type": "boolean" },
+    "disclosures": { "type": "array", "items": { "type": "string" } },
+    "source_fingerprints": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/fingerprint" }
+    },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-fA-F]{64}$"
+    },
+    "metric": {
+      "type": "object",
+      "required": [
+        "stage",
+        "games",
+        "brier_score",
+        "log_loss",
+        "brier_gain_vs_strength_only",
+        "log_loss_gain_vs_strength_only"
+      ],
+      "properties": {
+        "stage": {
+          "enum": [
+            "team_strength_only",
+            "player_profiles",
+            "profiles_plus_pairs",
+            "profiles_plus_pairs_trios",
+            "full_matchup_manager"
+          ]
+        },
+        "games": { "type": "integer", "minimum": 1 },
+        "brier_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "log_loss": { "type": "number", "minimum": 0 },
+        "brier_gain_vs_strength_only": { "type": "number" },
+        "log_loss_gain_vs_strength_only": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "stability": {
+      "type": "object",
+      "required": [
+        "scope",
+        "key",
+        "games",
+        "full_brier_gain",
+        "full_log_loss_gain"
+      ],
+      "properties": {
+        "scope": { "enum": ["leave_one_season_out", "leave_one_team_out"] },
+        "key": { "type": "string", "minLength": 1 },
+        "games": { "type": "integer", "minimum": 1 },
+        "full_brier_gain": { "type": "number" },
+        "full_log_loss_gain": { "type": "number" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

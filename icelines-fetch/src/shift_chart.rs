@@ -14,6 +14,9 @@ pub struct ShiftOverlapPlayerRow {
     pub player_id: u32,
     pub display_name: String,
     pub games: u32,
+    /// Count of valid official shift intervals represented in the report.
+    #[serde(default)]
+    pub shift_intervals: u32,
     pub ice_seconds: u64,
 }
 
@@ -61,6 +64,7 @@ pub fn build_shift_overlap_report(
     }
     let mut names = BTreeMap::<u32, String>::new();
     let mut player_games = BTreeMap::<u32, u32>::new();
+    let mut player_shifts = BTreeMap::<u32, u32>::new();
     let mut player_seconds = BTreeMap::<u32, u64>::new();
     let mut pair_games = BTreeMap::<(u32, u32), u32>::new();
     let mut pair_seconds = BTreeMap::<(u32, u32), u64>::new();
@@ -85,6 +89,7 @@ pub fn build_shift_overlap_report(
                 format!("{} {}", row.first_name.trim(), row.last_name.trim()),
             );
             appeared.insert(row.player_id);
+            *player_shifts.entry(row.player_id).or_default() += 1;
             boundaries
                 .entry((row.period, start))
                 .or_default()
@@ -149,6 +154,7 @@ pub fn build_shift_overlap_report(
                 .cloned()
                 .unwrap_or_else(|| format!("Player {player_id}")),
             games: player_games.get(player_id).copied().unwrap_or(0),
+            shift_intervals: player_shifts.get(player_id).copied().unwrap_or(0),
             ice_seconds: *ice_seconds,
         })
         .collect::<Vec<_>>();
@@ -247,6 +253,7 @@ mod tests {
         assert_eq!(report.pairs[0].shared_seconds, 30);
         assert_eq!(report.trios[0].shared_seconds, 10);
         assert_eq!(report.games_loaded, 1);
+        assert_eq!(report.players[0].shift_intervals, 1);
     }
 
     #[test]
