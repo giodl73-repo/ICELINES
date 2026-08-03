@@ -9,11 +9,13 @@ use super::team_lineup::{
     TeamLineupPlayerView, TeamLineupProjectionView, TeamLineupRequestedSlot,
     TeamLineupRosterChangeInput,
 };
-#[cfg(test)]
-use super::team_season_forecast::TeamSeasonLeagueRankProbability;
 use super::team_season_forecast::{
     compare_team_season_forecast_scenarios, TeamSeasonForecastRow, TeamSeasonForecastView,
     TeamSeasonScenarioImpactRow, TEAM_SEASON_FORECAST_SCHEMA,
+};
+#[cfg(test)]
+use super::team_season_forecast::{
+    TeamSeasonDraftSlotProbability, TeamSeasonLeagueRankProbability,
 };
 use super::training_camp::{
     TrainingCampLeagueForecastView, TrainingCampPlayerView, TRAINING_CAMP_FORECAST_SCHEMA,
@@ -2225,9 +2227,9 @@ pub fn populate_trade_scout_draft_picks_with_forecast(
                 .iter()
                 .find(|team| team.team.eq_ignore_ascii_case(&ownership.original_team))
         });
-        let current_slot_outcomes = standings_proxy_slot_outcomes(forecast_row)?;
+        let slot_policy = draft_slot_outcomes(forecast_row, ownership.round)?;
         let mut normalized = BTreeMap::<u16, f64>::new();
-        for (current_round_slot, probability) in &current_slot_outcomes {
+        for (current_round_slot, probability) in &slot_policy.outcomes {
             let historical_round_slot = ((current_round_slot - 1) * curve_round_width / 32) + 1;
             let overall_pick =
                 u16::from(ownership.round - 1) * curve_round_width + historical_round_slot;
@@ -2255,16 +2257,9 @@ pub fn populate_trade_scout_draft_picks_with_forecast(
             ownership.original_team, ownership.draft_year, ownership.round
         );
         asset.value_basis = input.value_basis.clone();
-        let slot_method = if forecast_row
-            .is_some_and(|row| !row.league_rank_probabilities.is_empty())
-        {
-            "the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy"
-        } else {
-            "a uniform 32-slot fallback because no trial-level rank distribution was available"
-        };
         asset.disclosures.push(format!(
             "Ownership was reviewed from {} at {}; future round {} slot value uses {} and maps by within-round percentile to the curve's {}-slot historical era.",
-            ownership.source_url, ownership.observed_at, ownership.round, slot_method, curve_round_width
+            ownership.source_url, ownership.observed_at, ownership.round, slot_policy.method, curve_round_width
         ));
         assets.push(TradeScoutAssetInput {
             organization: ownership.owner.clone(),
@@ -2288,17 +2283,69 @@ pub fn populate_trade_scout_draft_picks_with_forecast(
         disclosures: vec![
             "Only reviewed confirmed-unconditional ownership becomes offer inventory; conditional and encumbered rights remain unresolved."
                 .to_owned(),
-            "When trial-level team ranks are supplied, slot outcomes reverse regular-season league rank into a pre-lottery standings-order proxy; this does not model the draft lottery or playoff-based ordering. Missing or archived rank distributions fall back to a uniform round."
+            "Current season forecasts supply separate first-round lottery/playoff-order and later-round playoff-order distributions under a versioned NHL ruleset. Older rank-only forecasts use a pre-lottery standings proxy; missing team evidence falls back to a uniform round."
                 .to_owned(),
         ],
     })
 }
 
-fn standings_proxy_slot_outcomes(
+struct DraftSlotOutcomePolicy {
+    outcomes: Vec<(u16, f64)>,
+    method: &'static str,
+}
+
+fn draft_slot_outcomes(
     forecast: Option<&TeamSeasonForecastRow>,
-) -> Result<Vec<(u16, f64)>, DraftPickValueError> {
+    round: u8,
+) -> Result<DraftSlotOutcomePolicy, DraftPickValueError> {
+    let simulated = forecast.map(|row| {
+        if round == 1 {
+            &row.first_round_draft_slot_probabilities
+        } else {
+            &row.later_round_draft_slot_probabilities
+        }
+    });
+    if let Some(outcomes) = simulated.filter(|outcomes| !outcomes.is_empty()) {
+        let probability = outcomes
+            .iter()
+            .map(|outcome| outcome.probability)
+            .sum::<f64>();
+        let slots = outcomes
+            .iter()
+            .map(|outcome| outcome.draft_slot)
+            .collect::<BTreeSet<_>>();
+        if slots.len() != outcomes.len()
+            || outcomes.iter().any(|outcome| {
+                !(1..=32).contains(&outcome.draft_slot)
+                    || !outcome.probability.is_finite()
+                    || outcome.probability < 0.0
+            })
+            || (probability - 1.0).abs() > 1e-6
+        {
+            return Err(DraftPickValueError::InvalidDistribution(format!(
+                "team {} has an invalid draft-slot probability distribution",
+                forecast.expect("simulated outcomes require forecast").team
+            )));
+        }
+        let method = if round == 1 {
+            "the original team's simulated two-draw lottery and playoff-finish draft-order distribution"
+        } else {
+            "the original team's simulated non-lottery playoff-finish draft-order distribution"
+        };
+        return Ok(DraftSlotOutcomePolicy {
+            outcomes: outcomes
+                .iter()
+                .map(|outcome| (u16::from(outcome.draft_slot), outcome.probability))
+                .collect(),
+            method,
+        });
+    }
     let Some(forecast) = forecast.filter(|row| !row.league_rank_probabilities.is_empty()) else {
-        return Ok((1_u16..=32).map(|slot| (slot, 1.0 / 32.0)).collect());
+        return Ok(DraftSlotOutcomePolicy {
+            outcomes: (1_u16..=32).map(|slot| (slot, 1.0 / 32.0)).collect(),
+            method:
+                "a uniform 32-slot fallback because no trial-level team distribution was available",
+        });
     };
     let probability = forecast
         .league_rank_probabilities
@@ -2323,11 +2370,14 @@ fn standings_proxy_slot_outcomes(
             forecast.team
         )));
     }
-    Ok(forecast
-        .league_rank_probabilities
-        .iter()
-        .map(|outcome| (33_u16 - u16::from(outcome.league_rank), outcome.probability))
-        .collect())
+    Ok(DraftSlotOutcomePolicy {
+        outcomes: forecast
+            .league_rank_probabilities
+            .iter()
+            .map(|outcome| (33_u16 - u16::from(outcome.league_rank), outcome.probability))
+            .collect(),
+        method: "the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy",
+    })
 }
 
 pub fn build_trade_draft_pick_ownership_coverage(
@@ -4093,6 +4143,8 @@ mod tests {
                 league_rank: 1,
                 probability: 1.0,
             }],
+            first_round_draft_slot_probabilities: Vec::new(),
+            later_round_draft_slot_probabilities: Vec::new(),
             playoff_probability: 0.0,
             second_round_probability: 0.0,
             conference_final_probability: 0.0,
@@ -4109,13 +4161,59 @@ mod tests {
         weak.league_rank_probabilities[0].league_rank = 32;
 
         assert_eq!(
-            standings_proxy_slot_outcomes(Some(&strong)).unwrap(),
+            draft_slot_outcomes(Some(&strong), 1).unwrap().outcomes,
             [(32, 1.0)]
         );
         assert_eq!(
-            standings_proxy_slot_outcomes(Some(&weak)).unwrap(),
+            draft_slot_outcomes(Some(&weak), 1).unwrap().outcomes,
             [(1, 1.0)]
         );
+    }
+
+    #[test]
+    fn draft_slot_forecast_separates_first_and_later_round_rules() {
+        let mut row = TeamSeasonForecastRow {
+            team: "SEA".to_owned(),
+            conference: "Western".to_owned(),
+            division: "Pacific".to_owned(),
+            average_wins: 0.0,
+            average_losses: 0.0,
+            average_overtime_losses: 0.0,
+            average_points: 0.0,
+            points_p10: 0,
+            points_p50: 0,
+            points_p90: 0,
+            average_league_rank: 16.0,
+            league_rank_probabilities: Vec::new(),
+            first_round_draft_slot_probabilities: vec![TeamSeasonDraftSlotProbability {
+                draft_slot: 1,
+                probability: 1.0,
+            }],
+            later_round_draft_slot_probabilities: vec![TeamSeasonDraftSlotProbability {
+                draft_slot: 16,
+                probability: 1.0,
+            }],
+            playoff_probability: 0.0,
+            second_round_probability: 0.0,
+            conference_final_probability: 0.0,
+            stanley_cup_final_probability: 0.0,
+            stanley_cup_probability: 0.0,
+            presidents_trophy_probability: 0.0,
+            average_longest_win_streak: 0.0,
+            longest_win_streak_p90: 0,
+            longest_win_streak_leader_probability: 0.0,
+        };
+
+        assert_eq!(
+            draft_slot_outcomes(Some(&row), 1).unwrap().outcomes,
+            [(1, 1.0)]
+        );
+        assert_eq!(
+            draft_slot_outcomes(Some(&row), 2).unwrap().outcomes,
+            [(16, 1.0)]
+        );
+        row.first_round_draft_slot_probabilities[0].probability = 0.5;
+        assert!(draft_slot_outcomes(Some(&row), 1).is_err());
     }
 
     #[test]

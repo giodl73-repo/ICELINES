@@ -650,7 +650,8 @@ pub use team_season_forecast::{
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
     TeamSeasonAdaptiveLineupChoice, TeamSeasonAdaptiveLineupChoiceSummaryRow,
     TeamSeasonAdaptiveLineupPolicy, TeamSeasonAdaptiveLineupSummaryRow,
-    TeamSeasonAutoPersonnelConfig, TeamSeasonForecastHistoryCheckpointRow,
+    TeamSeasonAutoPersonnelConfig, TeamSeasonDraftLotterySeedOdds, TeamSeasonDraftOrderPolicyView,
+    TeamSeasonDraftSlotProbability, TeamSeasonForecastHistoryCheckpointRow,
     TeamSeasonForecastHistoryMateriality, TeamSeasonForecastHistoryMoverRow,
     TeamSeasonForecastHistoryPointRow, TeamSeasonForecastHistoryTeamRow,
     TeamSeasonForecastHistoryTrend, TeamSeasonForecastHistoryView, TeamSeasonForecastMovementRow,
@@ -663,9 +664,10 @@ pub use team_season_forecast::{
     TeamSeasonReplayCheckpointTeamRow, TeamSeasonReplayCheckpointView, TeamSeasonScenario,
     TeamSeasonScenarioEvent, TeamSeasonScenarioEventKind, TeamSeasonScenarioImpactRow,
     TeamSeasonScheduleStretchRow, TeamSeasonScheduledGamePlanRow, TeamSeasonSimulationConfig,
-    TeamSeasonStretchKind, TeamSeasonTradeTeamInput, TEAM_SEASON_FORECAST_HISTORY_SCHEMA,
-    TEAM_SEASON_FORECAST_MOVEMENT_SCHEMA, TEAM_SEASON_FORECAST_SCHEMA,
-    TEAM_SEASON_GAME_PLAN_SCHEDULE_SCHEMA, TEAM_SEASON_SCENARIO_SCHEMA,
+    TeamSeasonStretchKind, TeamSeasonTradeTeamInput, TEAM_SEASON_DRAFT_ORDER_POLICY_SCHEMA,
+    TEAM_SEASON_FORECAST_HISTORY_SCHEMA, TEAM_SEASON_FORECAST_MOVEMENT_SCHEMA,
+    TEAM_SEASON_FORECAST_SCHEMA, TEAM_SEASON_GAME_PLAN_SCHEDULE_SCHEMA,
+    TEAM_SEASON_SCENARIO_SCHEMA,
 };
 pub use tokens::{
     MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision,

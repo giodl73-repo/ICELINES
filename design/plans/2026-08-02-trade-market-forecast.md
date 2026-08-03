@@ -86,7 +86,11 @@
     rank distribution, and `trade-pick-populate --season-forecast` values each
     right from its original team's pre-lottery standings-order proxy. Seattle's
     own 2027 first now projects earlier and more valuable than the Tampa Bay
-    first it owns. Full league provider acquisition remains.
+    first it owns. **Draft-order checkpoint:** the simulator now emits separate
+    Round 1 and Rounds 2-7 slot distributions. The first applies two weighted
+    lottery draws and the ten-place limit; both incorporate the actual simulated
+    playoff stage, division-winner ordering, finalist, and champion under an
+    explicit season-scoped ruleset. Full league provider acquisition remains.
 13. Audit all-team pick chain of title. **Coverage primitive and CLI complete:**
     `trade_draft_pick_ownership_coverage.v1` measures a target year against all
     224 original-team/round coordinates, rejects duplicate claims, and keeps

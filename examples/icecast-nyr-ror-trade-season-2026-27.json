@@ -5,6 +5,85 @@
   "replay_checkpoint": null,
   "trials": 10000,
   "seed": 20262027,
+  "draft_order_policy": {
+    "schema": "team_season_draft_order_policy.v1",
+    "ruleset": "nhl-2022-current",
+    "draft_year": 2027,
+    "non_playoff_teams": 16,
+    "first_round_lottery_draws": 2,
+    "maximum_move_up": 10,
+    "lottery_odds": [
+      {
+        "seed": 1,
+        "probability": 0.185
+      },
+      {
+        "seed": 2,
+        "probability": 0.135
+      },
+      {
+        "seed": 3,
+        "probability": 0.115
+      },
+      {
+        "seed": 4,
+        "probability": 0.095
+      },
+      {
+        "seed": 5,
+        "probability": 0.085
+      },
+      {
+        "seed": 6,
+        "probability": 0.075
+      },
+      {
+        "seed": 7,
+        "probability": 0.065
+      },
+      {
+        "seed": 8,
+        "probability": 0.06
+      },
+      {
+        "seed": 9,
+        "probability": 0.05
+      },
+      {
+        "seed": 10,
+        "probability": 0.035
+      },
+      {
+        "seed": 11,
+        "probability": 0.03
+      },
+      {
+        "seed": 12,
+        "probability": 0.025
+      },
+      {
+        "seed": 13,
+        "probability": 0.02
+      },
+      {
+        "seed": 14,
+        "probability": 0.015
+      },
+      {
+        "seed": 15,
+        "probability": 0.005
+      },
+      {
+        "seed": 16,
+        "probability": 0.005
+      }
+    ],
+    "later_rounds_use_lottery": false,
+    "authority_urls": [
+      "https://www.nhl.com/news/2026-nhl-draft-lottery-set-for-may-5",
+      "https://www.nhl.com/news/2026-nhl-draft-1st-round-set-through-pick-no-27"
+    ]
+  },
   "schedule_games": 1344,
   "scenario": {
     "name": "NYR acquires Ryan O'Reilly — paired trade season",
@@ -115805,6 +115884,266 @@
           "probability": 0.0002
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0024
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0027
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0013
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0026
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0019
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0036
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0028
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0049
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0064
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0069
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.008
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0109
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0132
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0204
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0243
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0287
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0063
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0088
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0228
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0327
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0428
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0537
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0601
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0561
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0804
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.1279
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0322
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.1012
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0706
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.1161
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0002
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0009
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0018
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0019
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0031
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.003
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0029
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0059
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0059
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0072
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0085
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0118
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0132
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0213
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0245
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0289
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0063
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0088
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0228
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0327
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0428
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0537
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0601
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0561
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0804
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.1279
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0322
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.1012
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0706
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.1161
+        }
+      ],
       "playoff_probability": 0.859,
       "second_round_probability": 0.5274,
       "conference_final_probability": 0.3201,
@@ -115955,6 +116294,266 @@
         {
           "league_rank": 32,
           "probability": 0.001
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0039
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0025
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0038
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0028
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0043
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0062
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0066
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0072
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0092
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0147
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0158
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0226
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0235
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.037
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0417
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0074
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0122
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0175
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0326
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.041
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0502
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0631
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0562
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.054
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0694
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.1001
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0313
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0884
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0557
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0843
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.001
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0016
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0031
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0032
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0037
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0051
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.007
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0068
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0074
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.011
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0138
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0175
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.023
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0241
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0364
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0418
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0074
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0122
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0175
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0326
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.041
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0502
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0631
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0562
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.054
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0694
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.1001
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0313
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0884
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0557
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0843
         }
       ],
       "playoff_probability": 0.7935,
@@ -116109,6 +116708,266 @@
           "probability": 0.0009
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0067
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0061
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0031
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0044
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.005
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0063
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0083
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0098
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0132
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0137
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0148
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0214
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0243
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0318
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0389
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.05
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0083
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0151
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0196
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0279
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0398
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0484
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0523
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0631
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0591
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0518
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0595
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0803
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0312
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0721
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0491
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0646
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0009
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.003
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0043
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0065
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0068
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0099
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0106
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.013
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0134
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0171
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0206
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0255
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0323
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0391
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0501
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0083
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0151
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0196
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0279
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0398
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0484
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0523
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0631
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0591
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0518
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0595
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0803
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0312
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0721
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0491
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0646
+        }
+      ],
       "playoff_probability": 0.7422,
       "second_round_probability": 0.4014,
       "conference_final_probability": 0.217,
@@ -116259,6 +117118,266 @@
         {
           "league_rank": 32,
           "probability": 0.0023
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0062
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0079
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0033
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0043
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0068
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0077
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0111
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0103
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0107
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.016
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0149
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0148
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0137
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0097
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.009
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0311
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0365
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0444
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0419
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.039
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0381
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0454
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0426
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0442
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0595
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0702
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0682
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0615
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0528
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0764
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0891
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0023
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0032
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0052
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0066
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0074
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0095
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0111
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0119
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0119
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.016
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0145
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0151
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0138
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0122
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0096
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0088
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0311
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0365
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0444
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0419
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.039
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0381
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0454
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0426
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0442
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0595
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0702
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0682
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0615
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0528
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0764
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0891
         }
       ],
       "playoff_probability": 0.8409,
@@ -116413,6 +117532,266 @@
           "probability": 0.0024
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0066
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0075
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0049
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0064
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0083
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0083
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0113
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.016
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0162
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0222
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0236
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0315
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.034
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0423
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0491
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.011
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0149
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0234
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0404
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0487
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0584
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0633
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0576
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0469
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0504
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0606
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0309
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0617
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0411
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0588
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0024
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0037
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0053
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0058
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0084
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0093
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0123
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0141
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0161
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0238
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0244
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0315
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0354
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0437
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0486
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.011
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0149
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0234
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0404
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0487
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0584
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0633
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0576
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0469
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0504
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0606
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0309
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0617
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0411
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0588
+        }
+      ],
       "playoff_probability": 0.6982,
       "second_round_probability": 0.3749,
       "conference_final_probability": 0.1925,
@@ -116563,6 +117942,266 @@
         {
           "league_rank": 32,
           "probability": 0.0019
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0072
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0075
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0037
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0063
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0072
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0077
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0102
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0115
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0169
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0164
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0168
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0126
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0106
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0109
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.033
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0425
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0431
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0418
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.04
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0378
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0408
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0449
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0486
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0554
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0616
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0672
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0607
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0464
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.082
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0779
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0019
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0042
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.006
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0063
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0079
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0102
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0118
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0139
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0175
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0174
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0162
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0119
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0104
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0108
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.033
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0425
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0431
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0418
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.04
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0378
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0408
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0449
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0486
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0554
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0616
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0672
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0607
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0464
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.082
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0779
         }
       ],
       "playoff_probability": 0.8237,
@@ -116717,6 +118356,266 @@
           "probability": 0.003
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0096
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0103
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0081
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0096
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0116
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.015
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0146
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0179
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0168
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0193
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.019
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0185
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0139
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0102
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0103
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0399
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0435
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0487
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0422
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0405
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0403
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0398
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.043
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0446
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0511
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0573
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0545
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0635
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0452
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0707
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0658
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.003
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0062
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0076
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0102
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0119
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0128
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0161
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0144
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.019
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0165
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.021
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0186
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0184
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0134
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.01
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0103
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0399
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0435
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0487
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0422
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0405
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0403
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0398
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.043
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0446
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0511
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0573
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0545
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0635
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0452
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0707
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0658
+        }
+      ],
       "playoff_probability": 0.7906,
       "second_round_probability": 0.4453,
       "conference_final_probability": 0.2452,
@@ -116867,6 +118766,266 @@
         {
           "league_rank": 32,
           "probability": 0.003
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0095
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0101
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0056
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0087
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.01
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0139
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0143
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0199
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0222
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0236
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0272
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0335
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0402
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0479
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0548
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0095
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0159
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0268
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0335
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0386
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0486
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0536
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0555
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0513
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0436
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0424
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0591
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0297
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0568
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0359
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0451
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.003
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0055
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.008
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0105
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0096
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0143
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0171
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0197
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0238
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0236
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0282
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0333
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0408
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.048
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0551
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0095
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0159
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0268
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0335
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0386
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0486
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0536
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0555
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0513
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0436
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0424
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0591
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0297
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0568
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0359
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0451
         }
       ],
       "playoff_probability": 0.6459,
@@ -117021,6 +119180,266 @@
           "probability": 0.0038
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0081
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0093
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0063
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0066
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0085
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0111
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0144
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0164
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0157
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0187
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0185
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0191
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0106
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0086
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0058
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0508
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0483
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0426
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0342
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0297
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0268
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0229
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0227
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0501
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0801
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0744
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0531
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0786
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0557
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0758
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0638
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0038
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0069
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.007
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0084
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0098
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0138
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0151
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0178
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0154
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0178
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0186
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0191
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0116
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0112
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0083
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0058
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0508
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0483
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0426
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0342
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0297
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0268
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0229
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0227
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0501
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0801
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0744
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0531
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0786
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0557
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0758
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0638
+        }
+      ],
       "playoff_probability": 0.8096,
       "second_round_probability": 0.4757,
       "conference_final_probability": 0.2739,
@@ -117171,6 +119590,266 @@
         {
           "league_rank": 32,
           "probability": 0.006
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.012
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0143
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0083
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0099
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0124
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0124
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.016
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.02
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0193
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0211
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0283
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0302
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0344
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0476
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0516
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0562
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0093
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0285
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0352
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0412
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0479
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0528
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0533
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0491
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0405
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0418
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0458
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.026
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0504
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.031
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.036
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.006
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0066
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0097
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0117
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0133
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0168
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0213
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0217
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0222
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0299
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0296
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0361
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0471
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0524
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.056
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0093
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0285
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0352
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0412
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0479
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0528
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0533
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0491
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0405
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0418
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0458
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.026
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0504
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.031
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.036
         }
       ],
       "playoff_probability": 0.606,
@@ -117325,6 +120004,266 @@
           "probability": 0.0048
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0132
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0135
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0078
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0104
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0122
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.016
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0186
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0179
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0228
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0227
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0275
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0319
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.041
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0483
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0562
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0582
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0108
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0269
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0398
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0411
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0496
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0524
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0532
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0496
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0358
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0347
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0383
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0235
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0428
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0332
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0329
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0048
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0076
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.011
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0121
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0148
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0154
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.02
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0206
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0215
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0242
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.029
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0324
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0432
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.047
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0565
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0581
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0108
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0269
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0398
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0411
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0496
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0524
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0532
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0496
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0358
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0347
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0383
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0235
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0428
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0332
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0329
+        }
+      ],
       "playoff_probability": 0.5818,
       "second_round_probability": 0.2826,
       "conference_final_probability": 0.1324,
@@ -117475,6 +120414,266 @@
         {
           "league_rank": 32,
           "probability": 0.0058
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.014
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0167
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0077
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0135
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0156
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.015
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0211
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0209
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0247
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0285
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0312
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0321
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0402
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0457
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0561
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0632
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0175
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0259
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0348
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0452
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.051
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0453
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.051
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0425
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0332
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0334
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0372
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0246
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0394
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0277
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0324
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0058
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0086
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0121
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.015
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0156
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0198
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0209
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0226
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0268
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0309
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0282
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0337
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0405
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0463
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.056
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0634
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0175
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0259
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0348
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0452
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.051
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0453
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.051
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0425
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0332
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0334
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0372
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0246
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0394
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0277
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0324
         }
       ],
       "playoff_probability": 0.5538,
@@ -117629,6 +120828,266 @@
           "probability": 0.0093
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0165
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0241
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0137
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0157
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0205
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0238
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0247
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.028
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0288
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0315
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.029
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0244
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0197
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0159
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0115
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0078
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0699
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0608
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0499
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.038
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0316
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0289
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0205
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0203
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0379
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0571
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0247
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0621
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0308
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0522
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0338
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0093
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0147
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0168
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.023
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.024
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0256
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0257
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.028
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0316
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0299
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0288
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.024
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0196
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0151
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0116
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0079
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0699
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0608
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0499
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.038
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0316
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0289
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0205
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0203
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0379
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0571
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0247
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0621
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0308
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0522
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0338
+        }
+      ],
       "playoff_probability": 0.6644,
       "second_round_probability": 0.3528,
       "conference_final_probability": 0.1789,
@@ -117779,6 +121238,266 @@
         {
           "league_rank": 32,
           "probability": 0.0105
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0244
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0222
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0167
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0228
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0235
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0273
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0294
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0297
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0323
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0346
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0375
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0429
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0441
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0568
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0633
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0621
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0122
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0176
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0257
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0347
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0393
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0412
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0405
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0372
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0337
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0238
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0236
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0174
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0202
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0266
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0194
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0173
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0105
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0201
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.019
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0248
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0279
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0283
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0302
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.03
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.031
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0371
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0383
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0432
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0458
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0579
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0634
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0621
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0122
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0176
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0257
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0347
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0393
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0412
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0405
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0372
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0337
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0238
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0236
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0174
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0202
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0266
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0194
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0173
         }
       ],
       "playoff_probability": 0.4304,
@@ -117933,6 +121652,266 @@
           "probability": 0.0135
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.022
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0244
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0189
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0252
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0264
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0286
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0313
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0323
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0322
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0375
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0378
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0458
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0451
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0592
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0632
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0624
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0091
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.016
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0224
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0335
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0382
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0385
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0428
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0383
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0312
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0182
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0191
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0185
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0176
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.027
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0201
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0135
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0207
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0257
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0255
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0271
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0294
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0309
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0344
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0333
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0375
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0371
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0467
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0594
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.063
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0622
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0091
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.016
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0224
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0335
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0382
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0385
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0428
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0383
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0312
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0182
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0191
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0185
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0176
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.027
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0201
+        }
+      ],
       "playoff_probability": 0.4077,
       "second_round_probability": 0.183,
       "conference_final_probability": 0.0819,
@@ -118083,6 +122062,266 @@
         {
           "league_rank": 32,
           "probability": 0.0152
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0209
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.028
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.021
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0245
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.028
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0323
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0313
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0353
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0344
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0364
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0335
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0288
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0237
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0179
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0133
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0506
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0618
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0533
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0439
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.039
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.035
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0317
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0315
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.026
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0286
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0302
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0203
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0457
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0199
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0339
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0223
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0152
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.019
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.023
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0247
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0268
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0338
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0362
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0363
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0365
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0321
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0287
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0224
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.018
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0134
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0506
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0618
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0533
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0439
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.039
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.035
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0317
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0315
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.026
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0286
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0302
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0203
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0457
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0199
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0339
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0223
         }
       ],
       "playoff_probability": 0.5737,
@@ -118237,6 +122476,266 @@
           "probability": 0.0139
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0242
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0255
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.019
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0232
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0224
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0287
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0306
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0356
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0342
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0391
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0371
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0452
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.053
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0518
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0633
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0633
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0123
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0168
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0234
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0347
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0416
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0405
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0382
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0346
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0287
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0203
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0177
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0176
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0289
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0162
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0153
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0139
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0214
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0211
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0241
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0281
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.032
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0313
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0347
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.035
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0391
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0383
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0458
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0521
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0528
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0633
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0632
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0123
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0168
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0234
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0347
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0416
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0405
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0382
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0346
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0287
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0203
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0177
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0176
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0289
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0162
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0153
+        }
+      ],
       "playoff_probability": 0.4038,
       "second_round_probability": 0.1753,
       "conference_final_probability": 0.078,
@@ -118387,6 +122886,266 @@
         {
           "league_rank": 32,
           "probability": 0.0177
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0248
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0262
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.019
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.018
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0308
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0292
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0291
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0324
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0349
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0328
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0296
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0271
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0231
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0157
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0108
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0094
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.07
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0593
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0505
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0391
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0314
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0247
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0229
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0185
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0321
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0445
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0397
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.022
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0575
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0264
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0426
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0259
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0177
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0193
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0221
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0285
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0295
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0309
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.031
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0325
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0333
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0332
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0295
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.027
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0222
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0163
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0105
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0094
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.07
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0593
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0505
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0391
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0314
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0247
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0229
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0185
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0321
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0445
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0397
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.022
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0575
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0264
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0426
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0259
         }
       ],
       "playoff_probability": 0.6071,
@@ -118541,6 +123300,266 @@
           "probability": 0.0189
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0268
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0322
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0227
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0273
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0324
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0343
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0306
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0373
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0383
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0372
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0446
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0458
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0523
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0534
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0607
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0564
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0117
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0179
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0221
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0314
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0338
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0361
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0384
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0341
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0263
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0171
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0185
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0156
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0227
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.014
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0144
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0189
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0254
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0263
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0313
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0332
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0362
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0383
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0387
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0392
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0456
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.046
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0524
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0547
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0595
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0565
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0117
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0179
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0221
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0314
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0338
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0361
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0384
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0341
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0263
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0171
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0185
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0156
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0227
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.014
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0144
+        }
+      ],
       "playoff_probability": 0.3677,
       "second_round_probability": 0.1552,
       "conference_final_probability": 0.0667,
@@ -118691,6 +123710,266 @@
         {
           "league_rank": 32,
           "probability": 0.0193
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0299
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0306
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.026
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0274
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0332
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0339
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0382
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0386
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0368
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.037
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0431
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0476
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.055
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0581
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0598
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0595
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0101
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.015
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.023
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0356
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0367
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0306
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0298
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.026
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0202
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0158
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0132
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0202
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0141
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0113
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0193
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0245
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0287
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0317
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0353
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0381
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0384
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0355
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0371
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0395
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0441
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.049
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0549
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0594
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0594
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0598
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0101
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.015
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.023
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0356
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0367
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0306
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0298
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.026
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0202
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0158
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0132
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0202
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0141
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0113
         }
       ],
       "playoff_probability": 0.3453,
@@ -118845,6 +124124,266 @@
           "probability": 0.033
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0418
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0394
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0344
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0431
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0397
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0443
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0471
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0447
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0461
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0422
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0349
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0234
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.019
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0123
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0091
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0737
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0548
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0446
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0342
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0223
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0201
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0119
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0222
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0253
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0217
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0092
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0406
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0131
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0231
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0146
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.033
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0402
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0393
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0417
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0474
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0471
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0451
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0473
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0438
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0395
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.035
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0287
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0234
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0188
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0123
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.009
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0737
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0548
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0446
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0342
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0223
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0201
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0119
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0222
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0253
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0217
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0092
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0406
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0131
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0231
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0146
+        }
+      ],
       "playoff_probability": 0.4484,
       "second_round_probability": 0.2045,
       "conference_final_probability": 0.0914,
@@ -118995,6 +124534,266 @@
         {
           "league_rank": 32,
           "probability": 0.0369
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0465
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0404
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0388
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0408
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.044
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0457
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0418
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.047
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0415
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0508
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0465
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0473
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0521
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.056
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0545
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0538
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.01
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0135
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0165
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0254
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0286
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0294
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0254
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0239
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0148
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0133
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0082
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0068
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0114
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0064
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0062
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0369
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.04
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0444
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0403
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0485
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0442
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0428
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0472
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0419
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0507
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0461
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0471
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0529
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0561
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0545
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0539
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.01
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0135
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0165
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0254
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0286
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0294
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0254
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0239
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0148
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0133
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0082
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0068
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0114
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0064
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0062
         }
       ],
       "playoff_probability": 0.2525,
@@ -119149,6 +124948,266 @@
           "probability": 0.04
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0446
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0426
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0494
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0434
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0513
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0469
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0435
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0452
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0399
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0395
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0381
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0294
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0219
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0151
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0147
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0556
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0543
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0464
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0323
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0286
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0242
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0212
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0173
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0143
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0146
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0109
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0055
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0315
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0066
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0083
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.04
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0475
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0485
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0485
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0458
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0506
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0449
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0444
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0386
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0403
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0373
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0279
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0214
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0154
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0144
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0556
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0543
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0464
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0323
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0286
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0242
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0212
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0173
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0143
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0146
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0109
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0055
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0315
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0066
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0083
+        }
+      ],
       "playoff_probability": 0.3886,
       "second_round_probability": 0.1575,
       "conference_final_probability": 0.0634,
@@ -119299,6 +125358,266 @@
         {
           "league_rank": 32,
           "probability": 0.0459
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0468
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0435
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0474
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0458
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.049
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0489
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0484
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.042
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0455
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.042
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0374
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0317
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.025
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0172
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0131
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0075
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0684
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0526
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0404
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0292
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0225
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0163
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0149
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0117
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0207
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0262
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0175
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.008
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0382
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.011
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0191
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0121
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0461
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0501
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0504
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0469
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0477
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0452
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.042
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0474
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0402
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0372
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0301
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0246
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0165
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0073
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0684
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0526
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0404
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0292
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0225
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0163
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0149
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0117
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0207
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0262
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0175
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.008
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0382
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.011
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0191
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0121
         }
       ],
       "playoff_probability": 0.4088,
@@ -119453,6 +125772,266 @@
           "probability": 0.0421
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0443
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0457
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0438
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.049
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0546
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0511
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0498
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.047
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.046
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0431
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0409
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0377
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0294
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.024
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0158
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0136
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0497
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0486
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0443
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0321
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0269
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0214
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0187
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0171
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0152
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0101
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0072
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0274
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0095
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0168
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0065
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0421
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.047
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0512
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0555
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0488
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0487
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0479
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0482
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0449
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0432
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0395
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0383
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0278
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0228
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0162
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0137
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0497
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0486
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0443
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0321
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0269
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0214
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0187
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0171
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0127
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0152
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0101
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0072
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0274
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0095
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0168
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0065
+        }
+      ],
       "playoff_probability": 0.3642,
       "second_round_probability": 0.1448,
       "conference_final_probability": 0.0602,
@@ -119603,6 +126182,266 @@
         {
           "league_rank": 32,
           "probability": 0.0528
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0551
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0518
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0516
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0561
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0539
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0485
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0496
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0476
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0473
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0369
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0373
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0306
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0259
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0174
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0125
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0089
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0707
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0532
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0388
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0275
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0204
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0163
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0105
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0092
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0159
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0232
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0137
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.008
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0308
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0061
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0173
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0074
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0528
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0561
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0584
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0537
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0517
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0498
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0467
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0494
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0444
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0363
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0362
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0319
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0252
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0171
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0124
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0089
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0707
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0532
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0388
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0275
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0204
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0163
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0105
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0092
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0159
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0232
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0137
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.008
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0308
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0061
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0173
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0074
         }
       ],
       "playoff_probability": 0.369,
@@ -119757,6 +126596,266 @@
           "probability": 0.0577
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0537
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0577
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0573
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0616
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0564
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0572
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0543
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0515
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0443
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0403
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0375
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0342
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0305
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0239
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0145
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0144
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0512
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0476
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0367
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0315
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0244
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0192
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0169
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0119
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0087
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0098
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0069
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0032
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0209
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.012
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0051
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0577
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.063
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0631
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0572
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0552
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0535
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0541
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0497
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0433
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0399
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0377
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0342
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0284
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0236
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0143
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0144
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0512
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0476
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0367
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0315
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0244
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0192
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0169
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0119
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0087
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0098
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0069
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0032
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0209
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.012
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0051
+        }
+      ],
       "playoff_probability": 0.3107,
       "second_round_probability": 0.1141,
       "conference_final_probability": 0.0427,
@@ -119907,6 +127006,266 @@
         {
           "league_rank": 32,
           "probability": 0.0698
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0585
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0592
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0691
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0681
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0616
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0532
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0516
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0496
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0464
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0494
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0456
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0453
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0486
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0487
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0457
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0064
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0105
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.013
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0165
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0203
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0166
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0158
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0132
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0084
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0059
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0043
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0031
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0063
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0058
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0045
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0029
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0698
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0689
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0646
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0609
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0572
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0525
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0522
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0479
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0464
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0474
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0438
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0457
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0485
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0489
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0453
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0465
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0064
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0105
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.013
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0165
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0203
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0166
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0158
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0132
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0084
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0059
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0043
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0031
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0063
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0058
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0045
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0029
         }
       ],
       "playoff_probability": 0.1535,
@@ -120061,6 +127420,266 @@
           "probability": 0.0688
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0646
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0601
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.064
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0706
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0614
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0575
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.051
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0541
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0452
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0446
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0447
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0464
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0489
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0481
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0432
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0369
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0083
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0115
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0139
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0189
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0196
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0176
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0156
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0133
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0088
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0048
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0054
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0028
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0064
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0056
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.005
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0012
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0688
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0686
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0698
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0592
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0595
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0554
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0556
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0477
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0432
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0442
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0457
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0498
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0473
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0439
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0367
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0083
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0115
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0139
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0189
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0196
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0176
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0156
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0133
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0088
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0048
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0054
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0028
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0064
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0056
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.005
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0012
+        }
+      ],
       "playoff_probability": 0.1587,
       "second_round_probability": 0.0523,
       "conference_final_probability": 0.0182,
@@ -120211,6 +127830,266 @@
         {
           "league_rank": 32,
           "probability": 0.0779
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0668
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.06
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0736
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0672
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0666
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0612
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0533
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0499
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0458
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0444
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.04
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0339
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0262
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0226
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0141
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0134
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0418
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0376
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0325
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0258
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.021
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0133
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0126
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.011
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0079
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0087
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0067
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0032
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0183
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0052
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0103
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0051
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0779
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0767
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0666
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0668
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0647
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0546
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0514
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0475
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.044
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.044
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0367
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0332
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0263
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0214
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0138
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0134
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0418
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0376
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0325
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0258
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.021
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0133
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0126
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.011
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0079
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0087
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0067
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0032
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0183
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0052
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0103
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0051
         }
       ],
       "playoff_probability": 0.261,
@@ -120365,6 +128244,266 @@
           "probability": 0.1217
         }
       ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.0823
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0749
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.1076
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0769
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0751
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0628
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0586
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0512
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0446
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0402
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0337
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0289
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0216
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0134
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0095
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0537
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0359
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0222
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.012
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0078
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0069
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0039
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0062
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0105
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0057
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.003
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0165
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0031
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0069
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0027
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.1217
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.096
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.0798
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0732
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.066
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0598
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.051
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0483
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0356
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0334
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0275
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0205
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0137
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0089
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0537
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0359
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0222
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.017
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.012
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0078
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0069
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0039
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0062
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0105
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0057
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.003
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0165
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0031
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0069
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0027
+        }
+      ],
       "playoff_probability": 0.214,
       "second_round_probability": 0.081,
       "conference_final_probability": 0.0292,
@@ -120515,6 +128654,266 @@
         {
           "league_rank": 32,
           "probability": 0.2
+        }
+      ],
+      "first_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.1061
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.0976
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.1576
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.1058
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0803
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0678
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0525
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0459
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0419
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0332
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0267
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0211
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.0155
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0119
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0058
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.005
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0345
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0251
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0158
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0099
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0053
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0022
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0019
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0045
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0029
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0006
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0085
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0012
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0028
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0007
+        }
+      ],
+      "later_round_draft_slot_probabilities": [
+        {
+          "draft_slot": 1,
+          "probability": 0.2
+        },
+        {
+          "draft_slot": 2,
+          "probability": 0.1268
+        },
+        {
+          "draft_slot": 3,
+          "probability": 0.1004
+        },
+        {
+          "draft_slot": 4,
+          "probability": 0.0826
+        },
+        {
+          "draft_slot": 5,
+          "probability": 0.0675
+        },
+        {
+          "draft_slot": 6,
+          "probability": 0.0556
+        },
+        {
+          "draft_slot": 7,
+          "probability": 0.0474
+        },
+        {
+          "draft_slot": 8,
+          "probability": 0.0411
+        },
+        {
+          "draft_slot": 9,
+          "probability": 0.0377
+        },
+        {
+          "draft_slot": 10,
+          "probability": 0.0321
+        },
+        {
+          "draft_slot": 11,
+          "probability": 0.0263
+        },
+        {
+          "draft_slot": 12,
+          "probability": 0.0201
+        },
+        {
+          "draft_slot": 13,
+          "probability": 0.015
+        },
+        {
+          "draft_slot": 14,
+          "probability": 0.0114
+        },
+        {
+          "draft_slot": 15,
+          "probability": 0.0058
+        },
+        {
+          "draft_slot": 16,
+          "probability": 0.0049
+        },
+        {
+          "draft_slot": 17,
+          "probability": 0.0345
+        },
+        {
+          "draft_slot": 18,
+          "probability": 0.0251
+        },
+        {
+          "draft_slot": 19,
+          "probability": 0.0158
+        },
+        {
+          "draft_slot": 20,
+          "probability": 0.0099
+        },
+        {
+          "draft_slot": 21,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 22,
+          "probability": 0.0053
+        },
+        {
+          "draft_slot": 23,
+          "probability": 0.0022
+        },
+        {
+          "draft_slot": 24,
+          "probability": 0.0019
+        },
+        {
+          "draft_slot": 25,
+          "probability": 0.0045
+        },
+        {
+          "draft_slot": 26,
+          "probability": 0.0047
+        },
+        {
+          "draft_slot": 27,
+          "probability": 0.0029
+        },
+        {
+          "draft_slot": 28,
+          "probability": 0.0006
+        },
+        {
+          "draft_slot": 29,
+          "probability": 0.0085
+        },
+        {
+          "draft_slot": 30,
+          "probability": 0.0012
+        },
+        {
+          "draft_slot": 31,
+          "probability": 0.0028
+        },
+        {
+          "draft_slot": 32,
+          "probability": 0.0007
         }
       ],
       "playoff_probability": 0.1253,
@@ -124566,6 +132965,9 @@
   ],
   "warnings": [
     "Rehydrated from an archived season simulation; forecast parameters were supplied explicitly as 'icecast-baseline-v1'.",
+    "Rehydrated from an archived season simulation; forecast parameters were supplied explicitly as 'icecast-baseline-v1'.",
+    "Rehydrated from an archived season simulation; forecast parameters were supplied explicitly as 'icecast-baseline-v1'.",
+    "Rehydrated from an archived season simulation; forecast parameters were supplied explicitly as 'icecast-baseline-v1'.",
     "Rehydrated from an archived season simulation; forecast parameters were supplied explicitly as 'icecast-baseline-v1'."
   ],
   "disclosures": [
@@ -124585,6 +132987,30 @@
     "During the final 45 days, conference ranks 7-10 define the hunt and ranks 13-16 can create spoiler matchups; hunt motivation is capped at 0.4 probability points and five-game form at 1.5 points.",
     "League leaderboards rank Presidents' Trophy, Stanley Cup, and longest-win-streak leader probabilities; schedule stretches use each team's lowest and highest baseline average win probability across consecutive five-game windows.",
     "Only events embedded in the run's scenario are applied; automatic personnel events are modeled risks from player records, not live injury or goalie confirmations.",
+    "IceCast samples one shared result for every scheduled game in every seeded trial; team records and league standings therefore reconcile within each trial.",
+    "Playoff qualification uses the modern NHL top-three-per-division plus two conference wild cards format; simplified tiebreaks are points, wins, then team abbreviation.",
+    "Each trial continues through the modern divisional playoff bracket using best-of-seven 2-2-1-1-1 home ice, roster/depth strength, and scenario events still active after the regular season.",
+    "During the final 45 days, conference ranks 7-10 define the hunt and ranks 13-16 can create spoiler matchups; hunt motivation is capped at 0.4 probability points and five-game form at 1.5 points.",
+    "League leaderboards rank Presidents' Trophy, Stanley Cup, and longest-win-streak leader probabilities; schedule stretches use each team's lowest and highest baseline average win probability across consecutive five-game windows.",
+    "Only events embedded in the run's scenario are applied; automatic personnel events are modeled risks from player records, not live injury or goalie confirmations.",
+    "Scenario 'NYR acquires Ryan O'Reilly — paired trade season' contains 2 dated event(s); occurrence decisions use an independent seeded stream and affect only games on or after each effective date.",
+    "Season simulation consumed the supplied rehydrated-season-artifact game forecast without recomputing game probabilities.",
+    "IceCast samples one shared result for every scheduled game in every seeded trial; team records and league standings therefore reconcile within each trial.",
+    "Playoff qualification uses the modern NHL top-three-per-division plus two conference wild cards format; simplified tiebreaks are points, wins, then team abbreviation.",
+    "Each trial continues through the modern divisional playoff bracket using best-of-seven 2-2-1-1-1 home ice, roster/depth strength, and scenario events still active after the regular season.",
+    "During the final 45 days, conference ranks 7-10 define the hunt and ranks 13-16 can create spoiler matchups; hunt motivation is capped at 0.4 probability points and five-game form at 1.5 points.",
+    "League leaderboards rank Presidents' Trophy, Stanley Cup, and longest-win-streak leader probabilities; schedule stretches use each team's lowest and highest baseline average win probability across consecutive five-game windows.",
+    "Only events embedded in the run's scenario are applied; automatic personnel events are modeled risks from player records, not live injury or goalie confirmations.",
+    "Scenario 'NYR acquires Ryan O'Reilly — paired trade season' contains 2 dated event(s); occurrence decisions use an independent seeded stream and affect only games on or after each effective date.",
+    "Season simulation consumed the supplied rehydrated-season-artifact game forecast without recomputing game probabilities.",
+    "IceCast samples one shared result for every scheduled game in every seeded trial; team records and league standings therefore reconcile within each trial.",
+    "Playoff qualification uses the modern NHL top-three-per-division plus two conference wild cards format; simplified tiebreaks are points, wins, then team abbreviation.",
+    "Each trial continues through the modern divisional playoff bracket using best-of-seven 2-2-1-1-1 home ice, roster/depth strength, and scenario events still active after the regular season.",
+    "During the final 45 days, conference ranks 7-10 define the hunt and ranks 13-16 can create spoiler matchups; hunt motivation is capped at 0.4 probability points and five-game form at 1.5 points.",
+    "League leaderboards rank Presidents' Trophy, Stanley Cup, and longest-win-streak leader probabilities; schedule stretches use each team's lowest and highest baseline average win probability across consecutive five-game windows.",
+    "Only events embedded in the run's scenario are applied; automatic personnel events are modeled risks from player records, not live injury or goalie confirmations.",
+    "Scenario 'NYR acquires Ryan O'Reilly — paired trade season' contains 2 dated event(s); occurrence decisions use an independent seeded stream and affect only games on or after each effective date.",
+    "Season simulation consumed the supplied rehydrated-season-artifact game forecast without recomputing game probabilities.",
     "IceCast samples one shared result for every scheduled game in every seeded trial; team records and league standings therefore reconcile within each trial.",
     "Playoff qualification uses the modern NHL top-three-per-division plus two conference wild cards format; simplified tiebreaks are points, wins, then team abbreviation.",
     "Each trial continues through the modern divisional playoff bracket using best-of-seven 2-2-1-1-1 home ice, roster/depth strength, and scenario events still active after the regular season.",

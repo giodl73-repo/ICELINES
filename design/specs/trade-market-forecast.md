@@ -225,13 +225,19 @@ and observation time. The supported states are `confirmed_unconditional`,
 human-readable condition and remain unresolved; they cannot enter an offer.
 
 Confirmed-unconditional rights are valued through the sealed mature-cohort pick
-curve. When `team_season_forecast.v1` supplies trial-level league-rank
-probabilities, the original team's distribution is reversed into a pre-lottery
-standings-order proxy. Ownership and slot outlook therefore remain independent:
-a Tampa Bay pick owned by Seattle follows Tampa Bay's forecast. This proxy does
-not model the lottery or playoff-based draft ordering. Older forecasts without
-the distribution and absent teams fall back explicitly to a uniform distribution
-across the round's 32 nominal slots. Slots map by within-round percentile when
+curve. Current `team_season_forecast.v1` artifacts retain two trial-level draft
+slot distributions. Round 1 applies the versioned two-draw NHL lottery to the 16
+non-playoff teams, limits each selected team to a ten-place move, and then orders
+playoff clubs by elimination stage, division-winner status where applicable,
+regular-season finish, finalist, and champion. Rounds 2-7 use the same playoff
+ordering without lottery movement. Ownership and slot outlook remain independent:
+a Tampa Bay pick owned by Seattle follows Tampa Bay's simulated outcome.
+
+The embedded policy names its ruleset, draft year, seed odds, draw count,
+movement limit, and official authority URLs. Seasons predating the supported
+ruleset do not silently inherit it. Older rank-only forecasts fall back to the
+pre-lottery standings proxy; absent teams fall back explicitly to a uniform
+distribution across the round's 32 nominal slots. Slots map by within-round percentile when
 the sealed curve reflects a smaller historical league, preserving all
 probability mass instead of truncating late rounds. The output retains the curve
 disclosure while adopting the supplied common player/pick value basis, so a

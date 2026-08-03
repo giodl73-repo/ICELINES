@@ -18,11 +18,11 @@
           "horizon_years": 7,
           "method": "camp-score screening translation v1"
         },
-        "market_value": 285.6301104749632,
+        "market_value": 280.0624682253314,
         "current_value": 0.0,
-        "future_value": 285.6301104749632,
+        "future_value": 280.0624682253314,
         "season_points_impact": 0.0,
-        "uncertainty": 129.86682007093145,
+        "uncertainty": 130.74384914514403,
         "availability": {
           "kind": "depth_surplus",
           "probability": 1.0,
@@ -33,16 +33,16 @@
         "draft_pick": {
           "id": "SEA-2027-1",
           "draft_year": 2027,
-          "expected_overall_pick": 11.256499999999999,
-          "expected_value": 285.6301104749632,
-          "expected_value_low": 220.69670043949748,
-          "expected_value_high": 350.56352051042893,
+          "expected_overall_pick": 12.1105,
+          "expected_value": 280.0624682253314,
+          "expected_value_low": 214.69054365275937,
+          "expected_value_high": 345.4343927979034,
           "future_discount": 1.0,
-          "uncertainty_width": 129.86682007093145
+          "uncertainty_width": 130.74384914514403
         },
         "disclosures": [
           "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 1 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 1 slot value uses the original team's simulated two-draw lottery and playoff-finish draft-order distribution and maps by within-round percentile to the curve's 30-slot historical era."
         ]
       },
       "protected": true
@@ -58,11 +58,11 @@
           "horizon_years": 7,
           "method": "camp-score screening translation v1"
         },
-        "market_value": 55.47809056898012,
+        "market_value": 55.12575080022953,
         "current_value": 0.0,
-        "future_value": 55.47809056898012,
+        "future_value": 55.12575080022953,
         "season_points_impact": 0.0,
-        "uncertainty": 88.51787430238284,
+        "uncertainty": 87.20178748443551,
         "availability": {
           "kind": "depth_surplus",
           "probability": 1.0,
@@ -73,16 +73,16 @@
         "draft_pick": {
           "id": "SEA-2027-3",
           "draft_year": 2027,
-          "expected_overall_pick": 71.25649999999999,
-          "expected_value": 55.47809056898012,
-          "expected_value_low": 12.342442162620628,
-          "expected_value_high": 100.86031646500346,
+          "expected_overall_pick": 72.0673,
+          "expected_value": 55.12575080022953,
+          "expected_value_low": 12.463697699311881,
+          "expected_value_high": 99.66548518374739,
           "future_discount": 1.0,
-          "uncertainty_width": 88.51787430238284
+          "uncertainty_width": 87.20178748443551
         },
         "disclosures": [
           "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 3 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 3 slot value uses the original team's simulated non-lottery playoff-finish draft-order distribution and maps by within-round percentile to the curve's 30-slot historical era."
         ]
       },
       "protected": false
@@ -98,11 +98,11 @@
           "horizon_years": 7,
           "method": "camp-score screening translation v1"
         },
-        "market_value": 40.73615675151514,
+        "market_value": 40.58128835513578,
         "current_value": 0.0,
-        "future_value": 40.73615675151514,
+        "future_value": 40.58128835513578,
         "season_points_impact": 0.0,
-        "uncertainty": 74.84644407904771,
+        "uncertainty": 73.14291311205692,
         "availability": {
           "kind": "depth_surplus",
           "probability": 1.0,
@@ -113,16 +113,16 @@
         "draft_pick": {
           "id": "SEA-2027-4",
           "draft_year": 2027,
-          "expected_overall_pick": 101.25649999999997,
-          "expected_value": 40.73615675151514,
-          "expected_value_low": 5.853302419418302,
-          "expected_value_high": 80.69974649846601,
+          "expected_overall_pick": 102.06729999999999,
+          "expected_value": 40.58128835513578,
+          "expected_value_low": 6.239354804466748,
+          "expected_value_high": 79.38226791652366,
           "future_discount": 1.0,
-          "uncertainty_width": 74.84644407904771
+          "uncertainty_width": 73.14291311205692
         },
         "disclosures": [
           "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 4 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 4 slot value uses the original team's simulated non-lottery playoff-finish draft-order distribution and maps by within-round percentile to the curve's 30-slot historical era."
         ]
       },
       "protected": false
@@ -138,11 +138,11 @@
           "horizon_years": 7,
           "method": "camp-score screening translation v1"
         },
-        "market_value": 29.605158469087083,
+        "market_value": 29.605158469087087,
         "current_value": 0.0,
-        "future_value": 29.605158469087083,
+        "future_value": 29.605158469087087,
         "season_points_impact": 0.0,
-        "uncertainty": 52.12845464369512,
+        "uncertainty": 51.709328049127876,
         "availability": {
           "kind": "depth_surplus",
           "probability": 1.0,
@@ -153,16 +153,16 @@
         "draft_pick": {
           "id": "SEA-2027-5",
           "draft_year": 2027,
-          "expected_overall_pick": 131.25650000000002,
-          "expected_value": 29.605158469087083,
-          "expected_value_low": 7.1889197923525465,
-          "expected_value_high": 59.317374436047665,
+          "expected_overall_pick": 132.0673,
+          "expected_value": 29.605158469087087,
+          "expected_value_low": 7.658679501248644,
+          "expected_value_high": 59.36800755037652,
           "future_discount": 1.0,
-          "uncertainty_width": 52.12845464369512
+          "uncertainty_width": 51.709328049127876
         },
         "disclosures": [
           "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 5 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 5 slot value uses the original team's simulated non-lottery playoff-finish draft-order distribution and maps by within-round percentile to the curve's 30-slot historical era."
         ]
       },
       "protected": false
@@ -178,11 +178,11 @@
           "horizon_years": 7,
           "method": "camp-score screening translation v1"
         },
-        "market_value": 24.80239766934398,
+        "market_value": 24.5388810669019,
         "current_value": 0.0,
-        "future_value": 24.80239766934398,
+        "future_value": 24.5388810669019,
         "season_points_impact": 0.0,
-        "uncertainty": 50.142223203746724,
+        "uncertainty": 51.30124572797884,
         "availability": {
           "kind": "depth_surplus",
           "probability": 1.0,
@@ -193,16 +193,16 @@
         "draft_pick": {
           "id": "SEA-2027-6",
           "draft_year": 2027,
-          "expected_overall_pick": 161.25650000000002,
-          "expected_value": 24.80239766934398,
-          "expected_value_low": 4.391022398852296,
-          "expected_value_high": 54.53324560259902,
+          "expected_overall_pick": 162.06729999999996,
+          "expected_value": 24.5388810669019,
+          "expected_value_low": 3.919628996013629,
+          "expected_value_high": 55.220874723992466,
           "future_discount": 1.0,
-          "uncertainty_width": 50.142223203746724
+          "uncertainty_width": 51.30124572797884
         },
         "disclosures": [
           "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 6 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 6 slot value uses the original team's simulated non-lottery playoff-finish draft-order distribution and maps by within-round percentile to the curve's 30-slot historical era."
         ]
       },
       "protected": false
@@ -218,11 +218,11 @@
           "horizon_years": 7,
           "method": "camp-score screening translation v1"
         },
-        "market_value": 17.313218907563027,
+        "market_value": 17.18284271708683,
         "current_value": 0.0,
-        "future_value": 17.313218907563027,
+        "future_value": 17.18284271708683,
         "season_points_impact": 0.0,
-        "uncertainty": 35.518518823234004,
+        "uncertainty": 34.39300925394638,
         "availability": {
           "kind": "depth_surplus",
           "probability": 1.0,
@@ -233,16 +233,16 @@
         "draft_pick": {
           "id": "SEA-2027-7",
           "draft_year": 2027,
-          "expected_overall_pick": 191.2564999999999,
-          "expected_value": 17.313218907563027,
-          "expected_value_low": 3.840626845660392,
-          "expected_value_high": 39.35914566889439,
+          "expected_overall_pick": 192.0673,
+          "expected_value": 17.18284271708683,
+          "expected_value_low": 3.6255798816916665,
+          "expected_value_high": 38.018589135638045,
           "future_discount": 1.0,
-          "uncertainty_width": 35.518518823234004
+          "uncertainty_width": 34.39300925394638
         },
         "disclosures": [
           "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 7 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 7 slot value uses the original team's simulated non-lottery playoff-finish draft-order distribution and maps by within-round percentile to the curve's 30-slot historical era."
         ]
       },
       "protected": false
@@ -258,11 +258,11 @@
           "horizon_years": 7,
           "method": "camp-score screening translation v1"
         },
-        "market_value": 182.6194242083947,
+        "market_value": 187.63745738217966,
         "current_value": 0.0,
-        "future_value": 182.6194242083947,
+        "future_value": 187.63745738217966,
         "season_points_impact": 0.0,
-        "uncertainty": 142.13966548982896,
+        "uncertainty": 142.67680997127752,
         "availability": {
           "kind": "depth_surplus",
           "probability": 1.0,
@@ -273,16 +273,16 @@
         "draft_pick": {
           "id": "TBL-2027-1-owned-by-SEA",
           "draft_year": 2027,
-          "expected_overall_pick": 22.562800000000003,
-          "expected_value": 182.6194242083947,
-          "expected_value_low": 111.54959146348023,
-          "expected_value_high": 253.68925695330918,
+          "expected_overall_pick": 21.748,
+          "expected_value": 187.63745738217966,
+          "expected_value_low": 116.29905239654092,
+          "expected_value_high": 258.9758623678184,
           "future_discount": 1.0,
-          "uncertainty_width": 142.13966548982896
+          "uncertainty_width": 142.67680997127752
         },
         "disclosures": [
           "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 1 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 1 slot value uses the original team's simulated two-draw lottery and playoff-finish draft-order distribution and maps by within-round percentile to the curve's 30-slot historical era."
         ]
       },
       "protected": false
@@ -290,6 +290,6 @@
   ],
   "disclosures": [
     "Only reviewed confirmed-unconditional ownership becomes offer inventory; conditional and encumbered rights remain unresolved.",
-    "When trial-level team ranks are supplied, slot outcomes reverse regular-season league rank into a pre-lottery standings-order proxy; this does not model the draft lottery or playoff-based ordering. Missing or archived rank distributions fall back to a uniform round."
+    "Current season forecasts supply separate first-round lottery/playoff-order and later-round playoff-order distributions under a versioned NHL ruleset. Older rank-only forecasts use a pre-lottery standings proxy; missing team evidence falls back to a uniform round."
   ]
 }
