@@ -690,6 +690,53 @@ pub struct TradeDraftPickConditionalValuationView {
     pub disclosures: Vec<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TradeDraftPickFutureSlotPolicy {
+    CurrentTeamStrengthProxy,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TradeDraftPickProtectionLegInput {
+    pub original_team: String,
+    pub draft_year: u16,
+    pub round: u8,
+    #[serde(default)]
+    pub protected_through_slot: Option<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TradeDraftPickProtectionChainInput {
+    pub asset_id: String,
+    pub future_slot_policy: TradeDraftPickFutureSlotPolicy,
+    pub legs: Vec<TradeDraftPickProtectionLegInput>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeDraftPickProtectionLegView {
+    pub original_team: String,
+    pub draft_year: u16,
+    pub round: u8,
+    pub protected_through_slot: Option<u8>,
+    pub reach_probability: f64,
+    pub conveyance_probability: f64,
+    pub conditional_value: Option<DraftPickAssetValue>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeDraftPickProtectionChainValuationView {
+    pub asset_id: String,
+    pub owner: String,
+    pub condition: String,
+    pub future_slot_policy: TradeDraftPickFutureSlotPolicy,
+    pub legs: Vec<TradeDraftPickProtectionLegView>,
+    pub blended_expected_value: f64,
+    pub blended_expected_value_low: f64,
+    pub blended_expected_value_high: f64,
+    pub offer_eligible: bool,
+    pub disclosures: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TradeScoutDraftPickPopulationInput {
     pub as_of: String,
@@ -700,6 +747,8 @@ pub struct TradeScoutDraftPickPopulationInput {
     pub protected_asset_ids: Vec<String>,
     #[serde(default)]
     pub conditional_rights: Vec<TradeDraftPickConditionalRightInput>,
+    #[serde(default)]
+    pub protection_chains: Vec<TradeDraftPickProtectionChainInput>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -712,6 +761,8 @@ pub struct TradeScoutDraftPickPopulationView {
     pub assets: Vec<TradeScoutAssetInput>,
     #[serde(default)]
     pub conditional_valuations: Vec<TradeDraftPickConditionalValuationView>,
+    #[serde(default)]
+    pub protection_chain_valuations: Vec<TradeDraftPickProtectionChainValuationView>,
     pub disclosures: Vec<String>,
 }
 
@@ -2242,8 +2293,14 @@ pub fn populate_trade_scout_draft_picks_with_forecast(
         .iter()
         .map(|right| (right.asset_id.as_str(), right))
         .collect::<BTreeMap<_, _>>();
+    let protection_chains = input
+        .protection_chains
+        .iter()
+        .map(|chain| (chain.asset_id.as_str(), chain))
+        .collect::<BTreeMap<_, _>>();
     let mut unresolved_asset_ids = Vec::new();
     let mut conditional_valuations = Vec::new();
+    let mut protection_chain_valuations = Vec::new();
     let mut assets = Vec::new();
     for ownership in &input.ownership {
         if ownership.status != TradeDraftPickOwnershipStatus::ConfirmedUnconditional {
@@ -2259,6 +2316,20 @@ pub fn populate_trade_scout_draft_picks_with_forecast(
                         curve,
                         ownership,
                         right,
+                        forecast,
+                        input.current_draft_year,
+                    )?);
+                } else if let Some(chain) = protection_chains.get(ownership.asset_id.as_str()) {
+                    let forecast = season_forecast.ok_or_else(|| {
+                        DraftPickValueError::InvalidDistribution(format!(
+                            "protection chain {} requires a team-season forecast",
+                            ownership.asset_id
+                        ))
+                    })?;
+                    protection_chain_valuations.push(evaluate_protection_chain(
+                        curve,
+                        ownership,
+                        chain,
                         forecast,
                         input.current_draft_year,
                     )?);
@@ -2326,12 +2397,15 @@ pub fn populate_trade_scout_draft_picks_with_forecast(
         unresolved_asset_ids,
         assets,
         conditional_valuations,
+        protection_chain_valuations,
         disclosures: vec![
             "Only reviewed confirmed-unconditional ownership becomes offer inventory; conditional and encumbered rights remain unresolved."
                 .to_owned(),
             "Current season forecasts supply separate first-round lottery/playoff-order and later-round playoff-order distributions under a versioned NHL ruleset. Older rank-only forecasts use a pre-lottery standings proxy; missing team evidence falls back to a uniform round."
                 .to_owned(),
             "Structured conditional rights may receive an indicative valuation and dependence range, but remain unresolved and ineligible for generated offers until ownership resolves."
+                .to_owned(),
+            "Structured protection chains expose reach and conveyance probability by draft year; terminal conveyance remains indicative and offer-ineligible until the condition resolves."
                 .to_owned(),
         ],
     })
@@ -2414,6 +2488,114 @@ fn evaluate_conditional_draft_pick_right(
                 .to_owned(),
         ],
     })
+}
+
+fn evaluate_protection_chain(
+    curve: &DraftPickValueCurve,
+    ownership: &TradeDraftPickOwnershipInput,
+    chain: &TradeDraftPickProtectionChainInput,
+    forecast: &TeamSeasonForecastView,
+    current_draft_year: u16,
+) -> Result<TradeDraftPickProtectionChainValuationView, DraftPickValueError> {
+    let mut reach_probability = 1.0;
+    let mut blended_expected_value = 0.0;
+    let mut blended_expected_value_low = 0.0;
+    let mut blended_expected_value_high = 0.0;
+    let mut legs = Vec::with_capacity(chain.legs.len());
+    for leg in &chain.legs {
+        let row = forecast
+            .teams
+            .iter()
+            .find(|row| row.team.eq_ignore_ascii_case(&leg.original_team))
+            .ok_or_else(|| {
+                DraftPickValueError::InvalidDistribution(format!(
+                    "protection chain {} is missing forecast team {}",
+                    chain.asset_id, leg.original_team
+                ))
+            })?;
+        let distribution = draft_slot_outcomes(Some(row), leg.round)?.outcomes;
+        let (conveys, conveyance_mass) =
+            split_protected_distribution(&distribution, leg.protected_through_slot);
+        let conveyance_probability = reach_probability * conveyance_mass;
+        let conditional_value = if conveyance_mass > 1e-12 {
+            let conditional = conveys
+                .into_iter()
+                .map(|(slot, probability)| (slot, probability / conveyance_mass))
+                .collect::<Vec<_>>();
+            Some(value_draft_pick_asset(
+                curve,
+                &DraftPickAssetInput {
+                    id: chain.asset_id.clone(),
+                    draft_year: leg.draft_year,
+                    slot_outcomes: normalize_current_round_slots(curve, leg.round, &conditional)?,
+                },
+                current_draft_year,
+            )?)
+        } else {
+            None
+        };
+        if let Some(value) = &conditional_value {
+            blended_expected_value += conveyance_probability * value.expected_value;
+            blended_expected_value_low += conveyance_probability * value.expected_value_low;
+            blended_expected_value_high += conveyance_probability * value.expected_value_high;
+        }
+        legs.push(TradeDraftPickProtectionLegView {
+            original_team: leg.original_team.clone(),
+            draft_year: leg.draft_year,
+            round: leg.round,
+            protected_through_slot: leg.protected_through_slot,
+            reach_probability,
+            conveyance_probability,
+            conditional_value,
+        });
+        reach_probability *= 1.0 - conveyance_mass;
+    }
+    if reach_probability > 1e-6 {
+        return Err(DraftPickValueError::InvalidDistribution(format!(
+            "protection chain {} leaves {:.6} probability without terminal conveyance",
+            chain.asset_id, reach_probability
+        )));
+    }
+    Ok(TradeDraftPickProtectionChainValuationView {
+        asset_id: chain.asset_id.clone(),
+        owner: ownership.owner.clone(),
+        condition: ownership
+            .conditions
+            .clone()
+            .expect("conditional ownership validation requires condition"),
+        future_slot_policy: chain.future_slot_policy,
+        legs,
+        blended_expected_value,
+        blended_expected_value_low,
+        blended_expected_value_high,
+        offer_eligible: false,
+        disclosures: vec![
+            "Each protected leg advances only its simulated protected-slot probability to the next leg; the terminal leg must be unprotected."
+                .to_owned(),
+            "Future draft years reuse the named team's current forecast distribution as an explicit strength-persistence proxy, then apply the appropriate future-year discount."
+                .to_owned(),
+            "Indicative chain valuation does not resolve conveyance or chain of title and cannot enter an offer."
+                .to_owned(),
+        ],
+    })
+}
+
+fn split_protected_distribution(
+    distribution: &[(u16, f64)],
+    protected_through_slot: Option<u8>,
+) -> (Vec<(u16, f64)>, f64) {
+    let conveys = distribution
+        .iter()
+        .filter(|(slot, _)| {
+            protected_through_slot.is_none_or(|protected| *slot > u16::from(protected))
+        })
+        .copied()
+        .collect::<Vec<_>>();
+    let conveyance_mass = conveys
+        .iter()
+        .map(|(_, probability)| probability)
+        .sum::<f64>();
+    (conveys, conveyance_mass)
 }
 
 fn selected_slot(left: u16, right: u16, rule: TradeDraftPickSelectionRule) -> u16 {
@@ -2780,6 +2962,11 @@ fn validate_trade_scout_draft_pick_population(
         .iter()
         .map(|right| right.asset_id.as_str())
         .collect::<BTreeSet<_>>();
+    let protection_ids = input
+        .protection_chains
+        .iter()
+        .map(|chain| chain.asset_id.as_str())
+        .collect::<BTreeSet<_>>();
     let valid_as_of = chrono::DateTime::parse_from_rfc3339(&input.as_of).is_ok()
         || chrono::NaiveDate::parse_from_str(&input.as_of, "%Y-%m-%d").is_ok();
     if curve.schema != DRAFT_PICK_VALUE_CURVE_SCHEMA
@@ -2792,6 +2979,8 @@ fn validate_trade_scout_draft_pick_population(
         || asset_ids.len() != input.ownership.len()
         || protected.len() != input.protected_asset_ids.len()
         || conditional_ids.len() != input.conditional_rights.len()
+        || protection_ids.len() != input.protection_chains.len()
+        || conditional_ids.iter().any(|id| protection_ids.contains(id))
         || protected.iter().any(|asset_id| !known.contains(asset_id))
         || input.conditional_rights.iter().any(|right| {
             let teams = right
@@ -2808,6 +2997,37 @@ fn validate_trade_scout_draft_pick_population(
                     .iter()
                     .find(|row| row.asset_id == right.asset_id)
                     .is_none_or(|row| row.status != TradeDraftPickOwnershipStatus::Conditional)
+        })
+        || input.protection_chains.iter().any(|chain| {
+            let ownership = input
+                .ownership
+                .iter()
+                .find(|row| row.asset_id == chain.asset_id);
+            chain.asset_id.trim().is_empty()
+                || chain.legs.len() < 2
+                || ownership.is_none_or(|row| {
+                    row.status != TradeDraftPickOwnershipStatus::Conditional
+                        || chain.legs.first().is_none_or(|leg| {
+                            !leg.original_team.eq_ignore_ascii_case(&row.original_team)
+                                || leg.draft_year != row.draft_year
+                                || leg.round != row.round
+                        })
+                })
+                || chain.legs.iter().enumerate().any(|(index, leg)| {
+                    leg.original_team.trim().is_empty()
+                        || leg.draft_year < input.current_draft_year
+                        || !(1..=7).contains(&leg.round)
+                        || if index + 1 == chain.legs.len() {
+                            leg.protected_through_slot.is_some()
+                        } else {
+                            leg.protected_through_slot
+                                .is_none_or(|slot| !(1..=32).contains(&slot))
+                        }
+                })
+                || chain
+                    .legs
+                    .windows(2)
+                    .any(|pair| pair[1].draft_year <= pair[0].draft_year)
         })
         || input.ownership.iter().any(|row| {
             row.asset_id.trim().is_empty()
@@ -2832,7 +3052,7 @@ fn validate_trade_scout_draft_pick_population(
         })
     {
         return Err(DraftPickValueError::InvalidDistribution(
-            "draft-pick population requires a valid curve/basis/date, unique known protection, future rounds 1-7, dated ownership provenance, explicit conditions for unresolved rights, and unique two-team contracts for modeled conditional rights"
+            "draft-pick population requires valid curve/basis/date/provenance, unique known protection, future rounds 1-7, explicit unresolved conditions, disjoint two-team selection contracts, and ordered protection chains ending in an unprotected terminal leg"
                 .to_owned(),
         ));
     }
@@ -4359,6 +4579,7 @@ mod tests {
                 ],
                 protected_asset_ids: vec!["TBL-2027-1".to_owned()],
                 conditional_rights: Vec::new(),
+                protection_chains: Vec::new(),
             },
         )
         .unwrap();
@@ -4489,6 +4710,64 @@ mod tests {
             ),
             [(10, 0.5), (15, 0.5)]
         );
+    }
+
+    #[test]
+    fn protected_distribution_defers_only_protected_slots() {
+        let distribution = [(5, 0.2), (10, 0.3), (11, 0.1), (20, 0.4)];
+        let (conveys, probability) = split_protected_distribution(&distribution, Some(10));
+        assert_eq!(conveys, [(11, 0.1), (20, 0.4)]);
+        assert!((probability - 0.5).abs() < 1e-12);
+        let (terminal, probability) = split_protected_distribution(&distribution, None);
+        assert_eq!(terminal, distribution);
+        assert!((probability - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn protection_chain_requires_ordered_years_and_terminal_conveyance() {
+        let mut input = TradeScoutDraftPickPopulationInput {
+            as_of: "2026-08-03".to_owned(),
+            current_draft_year: 2027,
+            value_basis: TradeValueBasis {
+                outcome_measure: "seven-year IceLines value".to_owned(),
+                horizon_years: 7,
+                method: DRAFT_PICK_VALUE_METHOD.to_owned(),
+            },
+            ownership: vec![TradeDraftPickOwnershipInput {
+                asset_id: "protected-right".to_owned(),
+                owner: "SEA".to_owned(),
+                original_team: "SEA".to_owned(),
+                draft_year: 2027,
+                round: 1,
+                status: TradeDraftPickOwnershipStatus::Conditional,
+                conditions: Some("Top-10 protected, converts to unprotected 2028 first".to_owned()),
+                source_url: "https://example.test/protected".to_owned(),
+                observed_at: "2026-08-03T12:00:00Z".to_owned(),
+            }],
+            protected_asset_ids: Vec::new(),
+            conditional_rights: Vec::new(),
+            protection_chains: vec![TradeDraftPickProtectionChainInput {
+                asset_id: "protected-right".to_owned(),
+                future_slot_policy: TradeDraftPickFutureSlotPolicy::CurrentTeamStrengthProxy,
+                legs: vec![
+                    TradeDraftPickProtectionLegInput {
+                        original_team: "SEA".to_owned(),
+                        draft_year: 2027,
+                        round: 1,
+                        protected_through_slot: Some(10),
+                    },
+                    TradeDraftPickProtectionLegInput {
+                        original_team: "SEA".to_owned(),
+                        draft_year: 2028,
+                        round: 1,
+                        protected_through_slot: None,
+                    },
+                ],
+            }],
+        };
+        assert!(validate_trade_scout_draft_pick_population(&curve(), &input).is_ok());
+        input.protection_chains[0].legs[1].protected_through_slot = Some(10);
+        assert!(validate_trade_scout_draft_pick_population(&curve(), &input).is_err());
     }
 
     #[test]

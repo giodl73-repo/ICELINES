@@ -338,9 +338,11 @@
       ]
     }
   ],
+  "protection_chain_valuations": [],
   "disclosures": [
     "Only reviewed confirmed-unconditional ownership becomes offer inventory; conditional and encumbered rights remain unresolved.",
     "Current season forecasts supply separate first-round lottery/playoff-order and later-round playoff-order distributions under a versioned NHL ruleset. Older rank-only forecasts use a pre-lottery standings proxy; missing team evidence falls back to a uniform round.",
-    "Structured conditional rights may receive an indicative valuation and dependence range, but remain unresolved and ineligible for generated offers until ownership resolves."
+    "Structured conditional rights may receive an indicative valuation and dependence range, but remain unresolved and ineligible for generated offers until ownership resolves.",
+    "Structured protection chains expose reach and conveyance probability by draft year; terminal conveyance remains indicative and offer-ineligible until the condition resolves."
   ]
 }

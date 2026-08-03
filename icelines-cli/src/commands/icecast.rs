@@ -442,6 +442,8 @@ struct TradePickPopulationPolicy {
     protected_asset_ids: Vec<String>,
     #[serde(default)]
     conditional_rights: Vec<icelines_core::TradeDraftPickConditionalRightInput>,
+    #[serde(default)]
+    protection_chains: Vec<icelines_core::TradeDraftPickProtectionChainInput>,
 }
 
 pub fn run_trade_pick_populate(
@@ -484,6 +486,7 @@ pub fn run_trade_pick_populate(
             ownership,
             protected_asset_ids: policy.protected_asset_ids,
             conditional_rights: policy.conditional_rights,
+            protection_chains: policy.protection_chains,
         },
         season_forecast.as_ref(),
     )
@@ -492,11 +495,11 @@ pub fn run_trade_pick_populate(
         format!("{}\n", serde_json::to_string_pretty(&view)?)
     } else {
         format!(
-            "TRADE PICK POPULATION — {}/{} offer-ready valued; {} conditional or encumbered rights unresolved ({} indicative conditional valuations)\n",
+            "TRADE PICK POPULATION — {}/{} offer-ready valued; {} conditional or encumbered rights unresolved ({} indicative conditional analyses)\n",
             view.picks_populated,
             view.picks_supplied,
             view.unresolved_asset_ids.len(),
-            view.conditional_valuations.len()
+            view.conditional_valuations.len() + view.protection_chain_valuations.len()
         )
     };
     if let Some(path) = out.as_deref() {

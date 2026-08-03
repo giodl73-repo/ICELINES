@@ -230,6 +230,15 @@ aligned/opposed percentile-coupling sensitivity values, while retaining the
 right in `unresolved_asset_ids` with `offer_eligible=false`. These values support
 planning; they do not resolve ownership.
 
+Protected/deferred rights use an ordered chain of explicit legs. Every leg names
+the original team, draft year, round, and protected-through slot; draft years
+must increase, and the final leg must be unprotected. The view reports reach and
+conveyance probability plus conditional value for every leg, then probability-
+weights those values across the chain. A declared `current_team_strength_proxy`
+reuses the named team's available distribution for future seasons and applies
+the curve's future-year discount. This is a strength-persistence scenario, not
+a future-season forecast. Protection chains remain unresolved and offer-ineligible.
+
 Confirmed-unconditional rights are valued through the sealed mature-cohort pick
 curve. Current `team_season_forecast.v1` artifacts retain two trial-level draft
 slot distributions. Round 1 applies the versioned two-draw NHL lottery to the 16

@@ -106,4 +106,8 @@
     round distributions produce an independence estimate and aligned/opposed
     dependence sensitivity. Seattle's later-of Columbus/Winnipeg 2027 second is
     now visible as indicative value but remains unresolved and offer-ineligible.
-    Protection/deferment chains and conditions spanning draft years remain.
+    **Protection-chain checkpoint:** ordered multi-year legs now expose reach,
+    conveyance, conditional leg value, future-year discount, and blended value;
+    terminal conveyance is mandatory. Future years use a declared current-team-
+    strength persistence proxy. Compound conditions that mix selection and
+    protection within one right remain.
