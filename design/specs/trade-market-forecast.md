@@ -239,6 +239,14 @@ reuses the named team's available distribution for future seasons and applies
 the curve's future-year discount. This is a strength-persistence scenario, not
 a future-season forecast. Protection chains remain unresolved and offer-ineligible.
 
+A protection leg may also carry an explicit two-team `earlier_of` or `later_of`
+selector. IceLines constructs the selected slot distribution before applying
+that leg's protection, so only the selected outcome's protected mass defers. The
+central chain value uses independent team marginals. Separate aligned/opposed
+percentile-coupling outputs expose dependence sensitivity without replacing the
+pick curve's own low/high uncertainty. Candidate teams remain explicit; condition
+prose is never parsed into executable logic.
+
 Confirmed-unconditional rights are valued through the sealed mature-cohort pick
 curve. Current `team_season_forecast.v1` artifacts retain two trial-level draft
 slot distributions. Round 1 applies the versioned two-draw NHL lottery to the 16

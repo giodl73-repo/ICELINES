@@ -109,5 +109,8 @@
     **Protection-chain checkpoint:** ordered multi-year legs now expose reach,
     conveyance, conditional leg value, future-year discount, and blended value;
     terminal conveyance is mandatory. Future years use a declared current-team-
-    strength persistence proxy. Compound conditions that mix selection and
-    protection within one right remain.
+    strength persistence proxy. **Compound-condition checkpoint:** any chain leg
+    can now apply an explicit two-team `earlier_of`/`later_of` selector before
+    protection. Central and dependence-sensitivity values remain separate, all
+    probability must still reach an unprotected terminal leg, and the right
+    remains offer-ineligible.

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Compose earlier/later-of draft-pick selection with protected multi-year conveyance chains while preserving separate curve and dependence uncertainty.
 - Added the UI-neutral Automatic Trade Scout and Package Negotiator with buyer-specific discovery scoring, protected-asset policy, bounded opening/fair/maximum offer ladders, walk-away values, and a `trade-scout` CLI. Generated offers remain transaction-blocked until full execution authority is attached.
 - Added `trade_scout_league.v1` and `trade-scout-league` to derive targets and buyer offer assets from normalized organization inventories. Need matching, seller surplus/availability, destination vetoes, protection policy, and explicit complete/partial league coverage are enforced before package generation.
 - Added `trade_scout_population.v1` and `trade-scout-populate` to translate the existing all-team training-camp roster/prospect authority into Trade Scout inventory. Player values and role thresholds use an explicit policy; dated availability, protection, and ownership-scoped pick inputs remain separate overlays. The CLI can write both the reusable populated inventory and its immediately evaluated league board.
