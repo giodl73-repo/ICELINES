@@ -1,0 +1,28 @@
+{
+  "name": "NYR acquires Ryan O'Reilly — paired trade season",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "nyr-ror-trade-buyer",
+      "kind": "trade",
+      "team": "NYR",
+      "player": "Ryan O'Reilly",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.48,
+      "occurrence_probability": 1.0,
+      "correlation_key": "nyr-nsh-ror-trade",
+      "label": "NYR adds Ryan O'Reilly at 50% retained for the BOS 2027 second-round pick"
+    },
+    {
+      "id": "nsh-ror-trade-seller",
+      "kind": "trade",
+      "team": "NSH",
+      "player": "Ryan O'Reilly",
+      "effective_date": "2026-09-29",
+      "strength_delta": -2.48,
+      "occurrence_probability": 1.0,
+      "correlation_key": "nyr-nsh-ror-trade",
+      "label": "NSH moves Ryan O'Reilly at 50% retained for the BOS 2027 second-round pick"
+    }
+  ]
+}

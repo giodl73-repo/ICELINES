@@ -1816,9 +1816,98 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 commands::fantasy::run_serve(port, league).await?
             }
         },
+        Commands::Icecast(IceCastSubcommand::DraftPickCurve {
+            start_year,
+            cutoff_year,
+            completed_season_start_year,
+            horizon,
+            max_pick,
+            annual_future_discount,
+            generated_at,
+            json,
+            out,
+        }) => {
+            commands::icecast::run_draft_pick_curve(
+                start_year,
+                cutoff_year,
+                completed_season_start_year,
+                horizon,
+                max_pick,
+                annual_future_discount,
+                generated_at,
+                json,
+                out,
+            )
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::TradeMarketAssemble {
+            input,
+            curve,
+            baseline_forecast,
+            scenario_forecast,
+            buyer_lineup,
+            seller_lineup,
+            json,
+            out,
+        }) => commands::icecast::run_trade_market_assemble(
+            commands::icecast::IceCastTradeMarketAssembleArgs {
+                input,
+                curve,
+                baseline_forecast,
+                scenario_forecast,
+                buyer_lineup,
+                seller_lineup,
+                json,
+                out,
+            },
+        )?,
+        Commands::Icecast(IceCastSubcommand::TradeMarket { input, json, out }) => {
+            commands::icecast::run_trade_market(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::TradeScout { input, json, out }) => {
+            commands::icecast::run_trade_scout(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::TradeScoutLeague { input, json, out }) => {
+            commands::icecast::run_trade_scout_league(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::TradeScoutPopulate {
+            camp,
+            input,
+            pick_assets,
+            board_out,
+            json,
+            out,
+        }) => commands::icecast::run_trade_scout_populate(
+            camp,
+            input,
+            pick_assets,
+            board_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::TradePickPopulate {
+            ownership,
+            curve,
+            policy,
+            json,
+            out,
+        }) => commands::icecast::run_trade_pick_populate(ownership, curve, policy, json, out)?,
+        Commands::Icecast(IceCastSubcommand::TradeLineup {
+            lineup,
+            change,
+            json,
+            out,
+        }) => commands::icecast::run_trade_lineup(lineup, change, json, out)?,
+        Commands::Icecast(IceCastSubcommand::TradeLineupBoard {
+            lineup,
+            input,
+            json,
+            out,
+        }) => commands::icecast::run_trade_lineup_board(lineup, input, json, out)?,
         Commands::Icecast(IceCastSubcommand::Season {
             season,
             stats_season,
+            candidate_overlay,
             teams,
             trials,
             seed,
@@ -1840,6 +1929,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             commands::icecast::run_season(commands::icecast::IceCastSeasonArgs {
                 season,
                 stats_season,
+                candidate_overlay,
                 teams,
                 trials,
                 seed,

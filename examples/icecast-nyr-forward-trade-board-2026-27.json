@@ -1,0 +1,141 @@
+{
+  "candidates": [
+    {
+      "candidate_id": "ryan-oreilly-retained",
+      "label": "Ryan O'Reilly",
+      "availability_probability": 0.2,
+      "feasibility_probability": 0.2,
+      "transaction_ready": true,
+      "package_evaluation": {
+        "buyer": "NYR",
+        "seller": "NSH",
+        "assets_to_buyer": ["Ryan O'Reilly (50% retained)"],
+        "assets_to_seller": ["2027 draft selection"],
+        "buyer_utility_delta": 113.38282559248658,
+        "seller_utility_delta": 88.99351042629685,
+        "market_value_to_buyer": 68.0,
+        "market_value_to_seller": 80.29543601878348,
+        "market_value_gap": -12.295436018783477,
+        "buyer_season_points_delta": 0.7201,
+        "seller_season_points_delta": -0.7201,
+        "buyer_cap_space_delta": -2.25,
+        "seller_cap_space_delta": 2.25,
+        "fairness_score": 0.8468725418477432,
+        "feasibility_probability": 0.2,
+        "transaction_ready": true,
+        "transaction_gates": {"cap_compliant":true,"roster_compliant":true,"retention_compliant":true,"contract_authority_complete":true,"pick_ownership_confirmed":true},
+        "mutually_beneficial": true,
+        "pick_roles": [{"asset_id":"BOS-2027-2-owned-by-NYR","direction":"to_seller","package_share":1.0,"role":"principal"}],
+        "season_forecast_impact": {
+          "buyer": {"team":"NYR","average_points_delta":0.7099999999999937,"playoff_probability_delta":0.027700000000000058,"stanley_cup_probability_delta":0.006699999999999998},
+          "seller": {"team":"NSH","average_points_delta":-0.7075999999999993,"playoff_probability_delta":-0.03109999999999996,"stanley_cup_probability_delta":-0.0026000000000000007},
+          "buyer_points_residual_vs_isolated": -0.010100000000006215
+        },
+        "lineup_impact": null,
+        "disclosures": ["Package evaluation was produced by the authority-backed NYR/NSH Trade Desk assembly dated 2026-08-02."]
+      },
+      "disclosures": [
+        "Transaction readiness reuses the separately evaluated NYR/NSH 50%-retained package; it is not evidence that the clubs discussed it."
+      ],
+      "change": {
+        "incoming_players": [{"player_id":8475158,"label":"Ryan O'Reilly","natural_positions":["center"],"alternate_positions":["left_wing","right_wing"],"projected_score":60.0,"alternate_position_penalty":3.0}],
+        "projection_incoming_players": [{"player_id":8475158,"display_name":"Ryan O'Reilly","team":"NYR","prior_team":"NSH","primary_position":"Center","eligible_positions":["LeftWing","Center","RightWing"],"headshot_canonical_url":"https://assets.nhle.com/mugs/nhl/20262027/NYR/8475158.png","games_played":81,"lens_scores":{"points_pace":72.0,"goal_scoring":36.0,"fantasy":270.0,"upside":72.0},"score_evidence":"simulated","power_play_role_score":172.05,"penalty_kill_role_score":116.31,"special_teams_evidence":"confirmed","requested_slot":null,"assignment_evidence":"scenario"}],
+        "outgoing_player_ids": [],
+        "limits": {"centers":4,"left_wings":4,"right_wings":4,"defense":6,"goalies":2},
+        "disclosures": ["The 60.0 IceLines score is an authored acquisition scenario; 2025-26 PP/PK seconds per game come from the official NHL skater time-on-ice endpoint."]
+      }
+    },
+    {
+      "candidate_id": "bryan-rust",
+      "label": "Bryan Rust",
+      "availability_probability": 0.15,
+      "feasibility_probability": 0.12,
+      "transaction_ready": true,
+      "package_evaluation": {
+        "buyer":"NYR","seller":"PIT","assets_to_buyer":["Bryan Rust (50% retained)"],"assets_to_seller":["Joe Veleno","2027 draft selection"],
+        "buyer_utility_delta":132.0568255924866,"seller_utility_delta":72.38861042629684,"market_value_to_buyer":110.0,"market_value_to_seller":115.29543601878348,"market_value_gap":-5.295436018783477,
+        "buyer_season_points_delta":0.55,"seller_season_points_delta":-0.55,"buyer_cap_space_delta":-1.3625,"seller_cap_space_delta":1.3625,"fairness_score":0.9540707229909711,"feasibility_probability":0.12,"transaction_ready":true,
+        "transaction_gates":{"cap_compliant":true,"roster_compliant":true,"retention_compliant":true,"contract_authority_complete":true,"pick_ownership_confirmed":true},
+        "mutually_beneficial":true,"pick_roles":[{"asset_id":"BOS-2027-2-owned-by-NYR","direction":"to_seller","package_share":0.696432042684691,"role":"principal"}],"season_forecast_impact":{"buyer":{"team":"NYR","average_points_delta":0.5360000000000014,"playoff_probability_delta":0.021600000000000064,"stanley_cup_probability_delta":0.003700000000000002},"seller":{"team":"PIT","average_points_delta":-0.4603000000000037,"playoff_probability_delta":-0.018899999999999972,"stanley_cup_probability_delta":-0.0023},"buyer_points_residual_vs_isolated":-0.01399999999999868},"lineup_impact":null,
+        "disclosures":["Package evaluation was produced by the authority-backed NYR/PIT Trade Desk assembly dated 2026-08-02."]
+      },
+      "disclosures": ["The authority-backed NYR/PIT package passes cap, clause, roster, retention, and pick-ownership gates; feasibility remains a speculative 12%, not evidence that the clubs discussed it."],
+      "change": {
+        "incoming_players": [{"player_id":8475810,"label":"Bryan Rust","natural_positions":["right_wing"],"alternate_positions":["left_wing"],"projected_score":55.0,"alternate_position_penalty":2.0}],
+        "projection_incoming_players": [{"player_id":8475810,"display_name":"Bryan Rust","team":"NYR","prior_team":"PIT","primary_position":"RightWing","eligible_positions":["LeftWing","RightWing"],"headshot_canonical_url":"https://assets.nhle.com/mugs/nhl/20262027/NYR/8475810.png","games_played":72,"lens_scores":{"points_pace":66.0,"goal_scoring":33.0,"fantasy":247.5,"upside":66.0},"score_evidence":"simulated","power_play_role_score":201.08,"penalty_kill_role_score":95.64,"special_teams_evidence":"confirmed","requested_slot":null,"assignment_evidence":"scenario"}],
+        "outgoing_player_ids": [8480813],
+        "limits": {"centers":4,"left_wings":4,"right_wings":4,"defense":6,"goalies":2},
+        "disclosures": ["The 55.0 score is a transparent scenario bridge, not a sealed player projection; 2025-26 PP/PK deployment is official NHL evidence."]
+      }
+    },
+    {
+      "candidate_id": "brock-boeser",
+      "label": "Brock Boeser",
+      "availability_probability": 0.12,
+      "feasibility_probability": 0.0,
+      "transaction_ready": false,
+      "package_evaluation": {
+        "buyer":"NYR","seller":"VAN","assets_to_buyer":["Brock Boeser ($500K retained)"],"assets_to_seller":["Oliver Bjorkstrand","2027 draft selection"],
+        "buyer_utility_delta":93.7818255924866,"seller_utility_delta":20.04497962066182,"market_value_to_buyer":150.0,"market_value_to_seller":145.29543601878348,"market_value_gap":4.704563981216523,
+        "buyer_season_points_delta":0.18,"seller_season_points_delta":-0.18,"buyer_cap_space_delta":-2.25,"seller_cap_space_delta":2.25,"fairness_score":0.9686362401252232,"feasibility_probability":0.0,"transaction_ready":false,
+        "transaction_gates":{"cap_compliant":true,"roster_compliant":true,"retention_compliant":true,"contract_authority_complete":false,"pick_ownership_confirmed":true},"mutually_beneficial":false,
+        "pick_roles":[{"asset_id":"BOS-2027-2-owned-by-NYR","direction":"to_seller","package_share":0.5526356382481488,"role":"principal"}],"season_forecast_impact":null,"lineup_impact":null,
+        "disclosures":["Package passes cap, roster, retention, and pick gates but lacks affirmative NMC destination authority."]
+      },
+      "disclosures": ["Reported as a stylistic Rangers fit, but availability and a complete executable NYR/VAN package remain unconfirmed."],
+      "change": {
+        "incoming_players": [{"player_id":8478444,"label":"Brock Boeser","natural_positions":["right_wing"],"alternate_positions":["left_wing"],"projected_score":42.0,"alternate_position_penalty":2.0}],
+        "projection_incoming_players": [{"player_id":8478444,"display_name":"Brock Boeser","team":"NYR","prior_team":"VAN","primary_position":"RightWing","eligible_positions":["LeftWing","RightWing"],"headshot_canonical_url":"https://assets.nhle.com/mugs/nhl/20262027/NYR/8478444.png","games_played":75,"lens_scores":{"points_pace":50.4,"goal_scoring":25.2,"fantasy":189.0,"upside":50.4},"score_evidence":"simulated","power_play_role_score":197.68,"penalty_kill_role_score":54.53,"special_teams_evidence":"confirmed","requested_slot":null,"assignment_evidence":"scenario"}],
+        "outgoing_player_ids": [8477416],
+        "limits": {"centers":4,"left_wings":4,"right_wings":4,"defense":6,"goalies":2},
+        "disclosures": ["The 42.0 score is a transparent scenario bridge, not a sealed player projection; 2025-26 PP/PK deployment is official NHL evidence."]
+      }
+    },
+    {
+      "candidate_id": "jake-debrusk",
+      "label": "Jake DeBrusk",
+      "availability_probability": 0.12,
+      "feasibility_probability": 0.0,
+      "transaction_ready": false,
+      "package_evaluation": {
+        "buyer":"NYR","seller":"VAN","assets_to_buyer":["Jake DeBrusk"],"assets_to_seller":["Oliver Bjorkstrand","2027 draft selection"],
+        "buyer_utility_delta":81.38182559248659,"seller_utility_delta":26.214979620661836,"market_value_to_buyer":140.0,"market_value_to_seller":145.29543601878348,"market_value_gap":-5.295436018783477,
+        "buyer_season_points_delta":0.11,"seller_season_points_delta":-0.11,"buyer_cap_space_delta":-1.0,"seller_cap_space_delta":1.0,"fairness_score":0.9635540099270641,"feasibility_probability":0.0,"transaction_ready":false,
+        "transaction_gates":{"cap_compliant":true,"roster_compliant":true,"retention_compliant":true,"contract_authority_complete":false,"pick_ownership_confirmed":true},"mutually_beneficial":false,
+        "pick_roles":[{"asset_id":"BOS-2027-2-owned-by-NYR","direction":"to_seller","package_share":0.5526356382481488,"role":"principal"}],"season_forecast_impact":null,"lineup_impact":null,
+        "disclosures":["Package passes cap, roster, retention, and pick gates but lacks affirmative NMC destination authority."]
+      },
+      "disclosures": ["Reported as a stylistic Rangers fit, but availability and a complete executable NYR/VAN package remain unconfirmed."],
+      "change": {
+        "incoming_players": [{"player_id":8478498,"label":"Jake DeBrusk","natural_positions":["left_wing"],"alternate_positions":["right_wing"],"projected_score":38.0,"alternate_position_penalty":2.0}],
+        "projection_incoming_players": [{"player_id":8478498,"display_name":"Jake DeBrusk","team":"NYR","prior_team":"VAN","primary_position":"LeftWing","eligible_positions":["LeftWing","RightWing"],"headshot_canonical_url":"https://assets.nhle.com/mugs/nhl/20262027/NYR/8478498.png","games_played":81,"lens_scores":{"points_pace":45.6,"goal_scoring":22.8,"fantasy":171.0,"upside":45.6},"score_evidence":"simulated","power_play_role_score":185.72,"penalty_kill_role_score":43.36,"special_teams_evidence":"confirmed","requested_slot":null,"assignment_evidence":"scenario"}],
+        "outgoing_player_ids": [8477416],
+        "limits": {"centers":4,"left_wings":4,"right_wings":4,"defense":6,"goalies":2},
+        "disclosures": ["The 38.0 score is a transparent scenario bridge, not a sealed player projection; 2025-26 PP/PK deployment is official NHL evidence."]
+      }
+    },
+    {
+      "candidate_id": "frank-vatrano",
+      "label": "Frank Vatrano",
+      "availability_probability": 0.25,
+      "feasibility_probability": 0.0,
+      "transaction_ready": false,
+      "package_evaluation": {
+        "buyer":"NYR","seller":"ANA","assets_to_buyer":["Frank Vatrano (50% retained)"],"assets_to_seller":["2027 draft selection"],
+        "buyer_utility_delta":61.81063559248659,"seller_utility_delta":80.48480042629686,"market_value_to_buyer":55.0,"market_value_to_seller":80.29543601878348,"market_value_gap":-25.295436018783477,
+        "buyer_season_points_delta":0.0,"seller_season_points_delta":0.0,"buyer_cap_space_delta":-2.285595,"seller_cap_space_delta":2.285595,"fairness_score":0.6849704382592041,"feasibility_probability":0.0,"transaction_ready":false,
+        "transaction_gates":{"cap_compliant":true,"roster_compliant":true,"retention_compliant":true,"contract_authority_complete":false,"pick_ownership_confirmed":true},"mutually_beneficial":false,
+        "pick_roles":[{"asset_id":"BOS-2027-2-owned-by-NYR","direction":"to_seller","package_share":1.0,"role":"principal"}],"season_forecast_impact":null,"lineup_impact":null,
+        "disclosures":["Package passes cap, roster, retention, and pick gates but lacks affirmative modified no-trade destination authority."]
+      },
+      "disclosures": ["Potential salary-movement fit only; a complete executable NYR/ANA package and current destination authority are absent."],
+      "change": {
+        "incoming_players": [{"player_id":8478366,"label":"Frank Vatrano","natural_positions":["right_wing"],"alternate_positions":["left_wing"],"projected_score":15.0,"alternate_position_penalty":2.0}],
+        "projection_incoming_players": [{"player_id":8478366,"display_name":"Frank Vatrano","team":"NYR","prior_team":"ANA","primary_position":"RightWing","eligible_positions":["LeftWing","RightWing"],"headshot_canonical_url":"https://assets.nhle.com/mugs/nhl/20262027/NYR/8478366.png","games_played":50,"lens_scores":{"points_pace":18.0,"goal_scoring":9.0,"fantasy":67.5,"upside":18.0},"score_evidence":"simulated","power_play_role_score":44.88,"penalty_kill_role_score":48.44,"special_teams_evidence":"confirmed","requested_slot":null,"assignment_evidence":"scenario"}],
+        "outgoing_player_ids": [],
+        "limits": {"centers":4,"left_wings":4,"right_wings":4,"defense":6,"goalies":2},
+        "disclosures": ["The 15.0 score deliberately reflects the weak 2025-26 sample rather than reputation; 2025-26 PP/PK deployment is official NHL evidence."]
+      }
+    }
+  ]
+}

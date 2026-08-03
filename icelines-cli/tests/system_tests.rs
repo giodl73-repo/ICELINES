@@ -48,6 +48,15 @@ fn l2_prediction_edge_commands_expose_replayable_surfaces() {
         "edge-replay-xg",
         "edge-train",
         "season-simulate",
+        "trade-market",
+        "trade-market-assemble",
+        "trade-scout",
+        "trade-scout-league",
+        "trade-scout-populate",
+        "trade-pick-populate",
+        "trade-lineup",
+        "trade-lineup-board",
+        "draft-pick-curve",
     ] {
         let out = run(&["icecast", command, "--help"]);
         assert!(
@@ -58,6 +67,64 @@ fn l2_prediction_edge_commands_expose_replayable_surfaces() {
         let stdout = String::from_utf8_lossy(&out.stdout);
         assert!(stdout.contains("--out"));
     }
+}
+
+#[test]
+fn l2_trade_scout_populates_the_full_camp_inventory() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let camp = repo.join("examples/icecast-league-training-camp-2026-27.json");
+    let policy = repo.join("examples/icecast-sea-trade-scout-population-2026-27.json");
+    let picks = repo.join("examples/icecast-sea-draft-pick-population-2027.json");
+    let out = run(&[
+        "icecast",
+        "trade-scout-populate",
+        "--camp",
+        camp.to_str().expect("UTF-8 camp path"),
+        "--input",
+        policy.to_str().expect("UTF-8 policy path"),
+        "--pick-assets",
+        picks.to_str().expect("UTF-8 pick assets path"),
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade scout population failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("32/32 teams, 933 players (147 prospects)"));
+    assert!(stdout.contains("7 picks"));
+    assert!(stdout.contains("0 coverage gaps"));
+}
+
+#[test]
+fn l2_trade_pick_population_keeps_conditional_rights_unresolved() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let ownership = repo.join("examples/icecast-sea-draft-pick-ownership-2027.csv");
+    let curve = repo.join("examples/icecast-draft-pick-value-curve-2005-2018.json");
+    let policy = repo.join("examples/icecast-sea-draft-pick-population-policy-2027.json");
+    let out = run(&[
+        "icecast",
+        "trade-pick-populate",
+        "--ownership",
+        ownership.to_str().expect("UTF-8 ownership path"),
+        "--curve",
+        curve.to_str().expect("UTF-8 curve path"),
+        "--policy",
+        policy.to_str().expect("UTF-8 policy path"),
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade pick population failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(String::from_utf8_lossy(&out.stdout)
+        .contains("7/8 valued; 1 conditional or encumbered rights unresolved"));
 }
 
 #[test]

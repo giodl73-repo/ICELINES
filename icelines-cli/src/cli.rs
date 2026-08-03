@@ -1011,6 +1011,159 @@ Examples:
 
 #[derive(Debug, Subcommand)]
 pub enum IceCastSubcommand {
+    /// Fit a survivorship-safe historical NHL draft-pick value curve.
+    #[command(name = "draft-pick-curve")]
+    DraftPickCurve {
+        /// First complete official draft class in the training population.
+        #[arg(long, default_value_t = 2005)]
+        start_year: u16,
+        /// Last mature draft class in the training population.
+        #[arg(long, default_value_t = 2018)]
+        cutoff_year: u16,
+        /// Start year of the newest completed NHL season in local data.
+        #[arg(long, default_value_t = 2025)]
+        completed_season_start_year: u16,
+        /// Fixed NHL-season outcome horizon after each draft.
+        #[arg(long, default_value_t = 7)]
+        horizon: u8,
+        /// Highest overall selection represented by the curve.
+        #[arg(long, default_value_t = 210)]
+        max_pick: u16,
+        /// Annual retained-value factor for future-year draft assets (0-1).
+        #[arg(long, default_value_t = 0.92)]
+        annual_future_discount: f64,
+        /// Fixed RFC 3339 acquisition timestamp for reproducible output.
+        #[arg(long)]
+        generated_at: Option<String>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Assemble and evaluate raw packages against sourced execution authority.
+    #[command(name = "trade-market-assemble")]
+    TradeMarketAssemble {
+        /// UI-neutral `TradeMarketAssemblyInput` JSON document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// `DraftPickValueCurve` or `DraftPickCurveAcquisitionView` JSON.
+        #[arg(long, value_name = "PATH")]
+        curve: PathBuf,
+        /// Baseline `TeamSeasonForecastView`; requires --scenario-forecast.
+        #[arg(long, value_name = "PATH", requires = "scenario_forecast")]
+        baseline_forecast: Option<PathBuf>,
+        /// Paired trade-scenario forecast; requires --baseline-forecast.
+        #[arg(long, value_name = "PATH", requires = "baseline_forecast")]
+        scenario_forecast: Option<PathBuf>,
+        /// Buyer `TradeLineupScenarioInput`; requires --seller-lineup.
+        #[arg(long, value_name = "PATH", requires = "seller_lineup")]
+        buyer_lineup: Option<PathBuf>,
+        /// Seller `TradeLineupScenarioInput`; requires --buyer-lineup.
+        #[arg(long, value_name = "PATH", requires = "buyer_lineup")]
+        seller_lineup: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Evaluate sourced, needs-aware real-team trade packages.
+    #[command(name = "trade-market")]
+    TradeMarket {
+        /// UI-neutral `TradeMarketInput` JSON document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Discover buyer-specific trade fits and generate bounded offer ladders.
+    #[command(name = "trade-scout")]
+    TradeScout {
+        /// UI-neutral `TradeScoutInput` with pre-valued league and buyer assets.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Derive targets and offer assets from a normalized league inventory.
+    #[command(name = "trade-scout-league")]
+    TradeScoutLeague {
+        /// UI-neutral `TradeScoutLeagueInput` organization inventory.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Populate league trade inventory from the all-team training-camp forecast.
+    #[command(name = "trade-scout-populate")]
+    TradeScoutPopulate {
+        /// `training_camp_league_forecast.v1` roster and prospect authority.
+        #[arg(long, value_name = "PATH")]
+        camp: PathBuf,
+        /// `TradeScoutPopulationInput` translation policy and trade overlays.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Optional `trade_scout_draft_pick_population.v1` assets to merge.
+        #[arg(long, value_name = "PATH")]
+        pick_assets: Option<PathBuf>,
+        /// Also write the immediately evaluated `trade_scout_league.v1` board.
+        #[arg(long, value_name = "PATH")]
+        board_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Value reviewed, unconditional future-pick ownership for Trade Scout.
+    #[command(name = "trade-pick-populate")]
+    TradePickPopulate {
+        /// Reviewed future-pick ownership CSV with dated row provenance.
+        #[arg(long, value_name = "PATH")]
+        ownership: PathBuf,
+        /// `draft_pick_value_curve.v1` or acquisition wrapper.
+        #[arg(long, value_name = "PATH")]
+        curve: PathBuf,
+        /// Pick population policy JSON with date, basis, and protection.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Optimize before/after trade lineups from an existing lineup projection.
+    #[command(name = "trade-lineup")]
+    TradeLineup {
+        /// Baseline `TeamLineupProjectionView` JSON.
+        #[arg(long, value_name = "PATH")]
+        lineup: PathBuf,
+        /// `TradeLineupProjectionChangeInput` JSON.
+        #[arg(long, value_name = "PATH")]
+        change: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compare multiple acquisitions against one lineup and transaction gate.
+    #[command(name = "trade-lineup-board")]
+    TradeLineupBoard {
+        /// Baseline `TeamLineupProjectionView` or `TrainingCampLineupSetView` JSON.
+        #[arg(long, value_name = "PATH")]
+        lineup: PathBuf,
+        /// `TradeLineupBoardInput` JSON.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Gather and rank three seasons of all-team management behavior evidence.
     #[command(name = "behavior-rankings")]
     BehaviorRankings {
@@ -2166,6 +2319,9 @@ pub enum IceCastSubcommand {
         /// Completed player-stat season used by roster/depth strength.
         #[arg(long, default_value_t = 20252026)]
         stats_season: u32,
+        /// Sourced organization candidates used to complete thin roster snapshots.
+        #[arg(long, value_name = "PATH")]
+        candidate_overlay: Option<PathBuf>,
         /// Repeat to focus text output; JSON always retains the full league run.
         #[arg(long = "team")]
         teams: Vec<String>,
@@ -2258,7 +2414,7 @@ pub enum IceCastSubcommand {
     /// Simulate a season from an existing baseline or edge-enhanced game forecast.
     #[command(name = "season-simulate")]
     SeasonSimulate {
-        /// UI-neutral `team_game_forecast.v1`, including `edge --enhanced-forecast-out`.
+        /// UI-neutral `team_game_forecast.v1` or replayable `team_season_forecast.v1`.
         #[arg(long, value_name = "PATH")]
         forecast: PathBuf,
         #[arg(long, default_value_t = 10_000)]
@@ -4575,6 +4731,131 @@ mod tui_surface_tests {
                 }
                 other => panic!("expected IceCast Bench command, got {other:?}"),
             }
+        });
+    }
+
+    #[test]
+    fn l0_icecast_draft_pick_curve_defaults_to_retained_value_factor() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "draft-pick-curve",
+                "--out",
+                "curve.json",
+            ])
+            .expect("draft-pick curve command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::DraftPickCurve {
+                    start_year: 2005,
+                    cutoff_year: 2018,
+                    completed_season_start_year: 2025,
+                    horizon: 7,
+                    max_pick: 210,
+                    annual_future_discount,
+                    ..
+                }) if (annual_future_discount - 0.92).abs() < f64::EPSILON
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_trade_market_assemble_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "trade-market-assemble",
+                "--input",
+                "packages.json",
+                "--curve",
+                "curve.json",
+                "--baseline-forecast",
+                "baseline.json",
+                "--scenario-forecast",
+                "scenario.json",
+                "--buyer-lineup",
+                "buyer-lineup.json",
+                "--seller-lineup",
+                "seller-lineup.json",
+                "--json",
+                "--out",
+                "market.json",
+            ])
+            .expect("trade market assembly command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::TradeMarketAssemble {
+                    input,
+                    curve,
+                    baseline_forecast: Some(baseline),
+                    scenario_forecast: Some(scenario),
+                    buyer_lineup: Some(buyer_lineup),
+                    seller_lineup: Some(seller_lineup),
+                    json: true,
+                    ..
+                }) if input == PathBuf::from("packages.json")
+                    && curve == PathBuf::from("curve.json")
+                    && baseline == PathBuf::from("baseline.json")
+                    && scenario == PathBuf::from("scenario.json")
+                    && buyer_lineup == PathBuf::from("buyer-lineup.json")
+                    && seller_lineup == PathBuf::from("seller-lineup.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_trade_lineup_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "trade-lineup",
+                "--lineup",
+                "lineup.json",
+                "--change",
+                "change.json",
+                "--json",
+            ])
+            .expect("trade lineup command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::TradeLineup {
+                    lineup,
+                    change,
+                    json: true,
+                    ..
+                }) if lineup == PathBuf::from("lineup.json")
+                    && change == PathBuf::from("change.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_trade_lineup_board_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "trade-lineup-board",
+                "--lineup",
+                "lineup.json",
+                "--input",
+                "board.json",
+                "--json",
+            ])
+            .expect("trade lineup board command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::TradeLineupBoard {
+                    lineup,
+                    input,
+                    json: true,
+                    ..
+                }) if lineup == PathBuf::from("lineup.json")
+                    && input == PathBuf::from("board.json")
+            ));
         });
     }
 

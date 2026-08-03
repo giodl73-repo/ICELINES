@@ -270,6 +270,26 @@ mod roster_schema_tests {
 // `ties` is null for 2005-06 and later (NHL eliminated ties in the lockout
 // rules); `ot_losses` is null pre-2005 (no shootout era).
 
+/// Draft identity and season appearances from NHL `/goalie/bios`.
+///
+/// This is deliberately distinct from [`GoalieStats`]: the summary endpoint
+/// has performance but omits draft coordinates, while the bios endpoint is
+/// the authority needed to join goalies into complete historical draft
+/// cohorts without name matching.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoalieBio {
+    pub player_id: u32,
+    pub goalie_full_name: String,
+    pub games_played: u32,
+    pub draft_year: Option<u32>,
+    pub draft_round: Option<u32>,
+    pub draft_overall: Option<u32>,
+    pub first_season_for_game_type: Option<u32>,
+    #[serde(default)]
+    pub season_id: Option<u32>,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GoalieStats {

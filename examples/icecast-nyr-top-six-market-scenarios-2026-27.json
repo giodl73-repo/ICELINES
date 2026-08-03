@@ -1,0 +1,56 @@
+{
+  "name": "NYR top-six acquisition ceiling set — evaluation only",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "nyr-acquires-dylan-larkin",
+      "kind": "trade",
+      "team": "NYR",
+      "player": "Dylan Larkin",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.66,
+      "occurrence_probability": 0.0,
+      "label": "evaluation ceiling: Dylan Larkin acquired; destination control and outbound package excluded"
+    },
+    {
+      "id": "nyr-acquires-bo-horvat",
+      "kind": "trade",
+      "team": "NYR",
+      "player": "Bo Horvat",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.54,
+      "occurrence_probability": 0.0,
+      "label": "evaluation ceiling: Bo Horvat acquired; availability, cap, and outbound package excluded"
+    },
+    {
+      "id": "nyr-acquires-troy-terry",
+      "kind": "trade",
+      "team": "NYR",
+      "player": "Troy Terry",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.42,
+      "occurrence_probability": 0.0,
+      "label": "evaluation ceiling: Troy Terry acquired; availability, cap, and outbound package excluded"
+    },
+    {
+      "id": "nyr-acquires-ryan-oreilly",
+      "kind": "trade",
+      "team": "NYR",
+      "player": "Ryan O'Reilly",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.48,
+      "occurrence_probability": 0.0,
+      "label": "evaluation ceiling: Ryan O'Reilly acquired; availability, cap, and outbound package excluded"
+    },
+    {
+      "id": "nyr-acquires-tyler-toffoli",
+      "kind": "trade",
+      "team": "NYR",
+      "player": "Tyler Toffoli",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.04,
+      "occurrence_probability": 0.0,
+      "label": "evaluation ceiling: Tyler Toffoli acquired; availability, cap, and outbound package excluded"
+    }
+  ]
+}

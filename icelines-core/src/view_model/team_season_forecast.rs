@@ -16,9 +16,9 @@ use super::matchup_evidence::{
 use super::scenario_registry::{scenario_content_sha256, ScenarioRegistryReferenceView};
 use super::team_game_forecast::{
     TeamForecastParameters, TeamGameForecastAccuracySummary, TeamGameForecastRow,
-    TeamGameForecastView, TeamGameMembershipAnomalyRow, TeamGameMembershipIntervalRow,
-    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamGamePairedTradeRow,
-    TeamGamePersonnelEvidenceRow,
+    TeamGameForecastSummaryRow, TeamGameForecastView, TeamGameMembershipAnomalyRow,
+    TeamGameMembershipIntervalRow, TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow,
+    TeamGamePairedTradeRow, TeamGamePersonnelEvidenceRow, TEAM_GAME_FORECAST_SCHEMA,
 };
 use super::team_lineup::TeamLineupProjectionView;
 
@@ -1115,6 +1115,100 @@ pub struct TeamSeasonForecastView {
     pub schedule_stretches: Vec<TeamSeasonScheduleStretchRow>,
     pub warnings: Vec<String>,
     pub disclosures: Vec<String>,
+}
+
+/// Rehydrate the game-forecast envelope retained inside an archived season
+/// simulation so it can be replayed with a new scenario. Season artifacts
+/// intentionally keep every game and evidence row, but the v1 schema predates
+/// retention of the forecast parameters and summary envelope. Callers must
+/// therefore provide the parameters explicitly.
+pub fn rehydrate_team_game_forecast(
+    season: &TeamSeasonForecastView,
+    parameters: TeamForecastParameters,
+) -> Result<TeamGameForecastView, String> {
+    if season.schema != TEAM_SEASON_FORECAST_SCHEMA {
+        return Err("IceCast season replay requires team_season_forecast.v1".to_owned());
+    }
+    let schedule_start = season
+        .games
+        .iter()
+        .map(|game| game.date)
+        .min()
+        .ok_or_else(|| "IceCast season replay requires at least one retained game".to_owned())?;
+    let schedule_end = season
+        .games
+        .iter()
+        .map(|game| game.date)
+        .max()
+        .expect("non-empty retained games validated");
+    if season.schedule_games != season.games.len() {
+        return Err(format!(
+            "IceCast season replay expected {} retained games but found {}",
+            season.schedule_games,
+            season.games.len()
+        ));
+    }
+
+    let mut summaries = BTreeMap::<String, TeamGameForecastSummaryRow>::new();
+    for game in &season.games {
+        let home =
+            summaries
+                .entry(game.home_team.clone())
+                .or_insert_with(|| TeamGameForecastSummaryRow {
+                    team: game.home_team.clone(),
+                    games: 0,
+                    home_games: 0,
+                    away_games: 0,
+                    favored_games: 0,
+                    expected_standings_points: 0.0,
+                });
+        home.games += 1;
+        home.home_games += 1;
+        home.favored_games += usize::from(game.favored_team == game.home_team);
+        home.expected_standings_points += game.home_expected_standings_points;
+
+        let away =
+            summaries
+                .entry(game.away_team.clone())
+                .or_insert_with(|| TeamGameForecastSummaryRow {
+                    team: game.away_team.clone(),
+                    games: 0,
+                    home_games: 0,
+                    away_games: 0,
+                    favored_games: 0,
+                    expected_standings_points: 0.0,
+                });
+        away.games += 1;
+        away.away_games += 1;
+        away.favored_games += usize::from(game.favored_team == game.away_team);
+        away.expected_standings_points += game.away_expected_standings_points;
+    }
+
+    let mut warnings = season.warnings.clone();
+    warnings.push(format!(
+        "Rehydrated from an archived season simulation; forecast parameters were supplied explicitly as '{}'.",
+        parameters.name
+    ));
+    Ok(TeamGameForecastView {
+        schema: TEAM_GAME_FORECAST_SCHEMA.to_owned(),
+        season: season.season,
+        schedule_games: season.schedule_games,
+        schedule_start,
+        schedule_end,
+        parameters,
+        forecast_mode: "rehydrated-season-artifact".to_owned(),
+        games: season.games.clone(),
+        teams: summaries.into_values().collect(),
+        accuracy: season.accuracy.clone(),
+        personnel_evidence: season.personnel_evidence.clone(),
+        membership_intervals: season.membership_intervals.clone(),
+        membership_anomalies: season.membership_anomalies.clone(),
+        opening_roster_authority: season.opening_roster_authority.clone(),
+        opening_strengths: season.opening_strengths.clone(),
+        paired_trades: season.paired_trades.clone(),
+        warnings,
+        disclosures: season.disclosures.clone(),
+    })
 }
 
 #[derive(Debug, Clone, Default)]
@@ -3572,6 +3666,28 @@ mod tests {
             );
             assert!((0.0..=1.0).contains(&team.playoff_probability));
         }
+    }
+
+    #[test]
+    fn archived_season_rehydrates_to_the_same_seeded_team_results() {
+        let forecast = fixture();
+        let config = TeamSeasonSimulationConfig {
+            trials: 25,
+            seed: 20262027,
+        };
+        let archived = simulate_team_season_forecast(&forecast, config).unwrap();
+        let rehydrated =
+            rehydrate_team_game_forecast(&archived, TeamForecastParameters::default()).unwrap();
+        let replayed = simulate_team_season_forecast(&rehydrated, config).unwrap();
+
+        assert_eq!(rehydrated.games, forecast.games);
+        assert_eq!(rehydrated.schedule_start, forecast.schedule_start);
+        assert_eq!(rehydrated.schedule_end, forecast.schedule_end);
+        assert_eq!(replayed.teams, archived.teams);
+        assert!(rehydrated
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("parameters were supplied explicitly")));
     }
 
     #[test]

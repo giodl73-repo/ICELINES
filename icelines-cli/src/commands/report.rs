@@ -15,7 +15,11 @@ use icelines_fetch::schema::{RosterPlayer, RosterResponse};
 use icelines_fetch::snapshot::SnapshotStore;
 use icelines_fetch::snapshot::SnapshotTier;
 use icelines_fetch::stats_loader::load_into_repo;
-use icelines_fetch::{build_nhl_goalie_translation_ledger, career_landing::CareerHistoryStore};
+use icelines_fetch::{
+    build_nhl_goalie_translation_ledger,
+    career_landing::CareerHistoryStore,
+    prospect_population::{ProspectPopulationCandidate, ProspectPopulationOverlay},
+};
 use serde::Serialize;
 use std::fmt::Write as _;
 use std::path::PathBuf;
@@ -234,6 +238,7 @@ pub async fn run_team_card(args: TeamCardArgs) -> anyhow::Result<()> {
     let season_args = super::icecast::IceCastSeasonArgs {
         season: roster_season.0,
         stats_season: stats_season.0,
+        candidate_overlay: None,
         teams: vec![team.as_str().to_string()],
         trials: args.trials,
         seed: args.seed,
@@ -583,6 +588,14 @@ pub(crate) fn load_team_ceiling_view(
     roster_season: Season,
     stats_season: Season,
 ) -> anyhow::Result<TeamCeilingView> {
+    load_team_ceiling_view_with_candidates(roster_season, stats_season, None)
+}
+
+pub(crate) fn load_team_ceiling_view_with_candidates(
+    roster_season: Season,
+    stats_season: Season,
+    candidate_overlay: Option<&ProspectPopulationOverlay>,
+) -> anyhow::Result<TeamCeilingView> {
     let cfg = Config::load()?;
     let store = SnapshotStore::new(cfg.snapshot_dir());
     let outcome = load_into_repo(stats_season, SeasonType::Regular, &store).map_err(|error| {
@@ -615,13 +628,88 @@ pub(crate) fn load_team_ceiling_view(
             &outcome.repo,
         ));
     }
+    let mut added_candidates = 0usize;
+    if let Some(overlay) = candidate_overlay {
+        overlay.validate().map_err(anyhow::Error::msg)?;
+        let mut known = current
+            .iter()
+            .map(|player| (player.team.clone(), player.player_id))
+            .collect::<std::collections::BTreeSet<_>>();
+        for candidate in overlay
+            .candidates
+            .iter()
+            .filter(|candidate| candidate.relationship.supports_prospect_ranking())
+        {
+            let team = candidate.team.trim().to_ascii_uppercase();
+            if known.insert((team.clone(), candidate.player_id)) {
+                if let Some(player) = candidate_roster_input(
+                    candidate,
+                    &team,
+                    roster_season,
+                    stats_season,
+                    &outcome.repo,
+                ) {
+                    current.push(player);
+                    added_candidates += 1;
+                }
+            }
+        }
+    }
     let previous = prior_season_roster_inputs(&outcome.repo, stats_season);
-    Ok(build_team_ceiling(
-        current,
-        previous,
-        roster_season.0,
-        stats_season.0,
-    )?)
+    let mut view = build_team_ceiling(current, previous, roster_season.0, stats_season.0)?;
+    if let Some(overlay) = candidate_overlay {
+        view.disclosures.push(format!(
+            "Opening-roster depth included {added_candidates} sourced organization candidate(s) absent from official roster snapshots (overlay checked {}). Candidates without NHL evidence receive no invented production value.",
+            overlay.checked_at
+        ));
+    }
+    Ok(view)
+}
+
+fn candidate_roster_input(
+    candidate: &ProspectPopulationCandidate,
+    team: &str,
+    age_season: Season,
+    stats_season: Season,
+    repo: &icelines_core::stats_repository::StatsRepository,
+) -> Option<TeamCeilingPlayerInput> {
+    let position = icelines_core::model::Position::from_api_code(&candidate.position)?;
+    let view = repo.view(
+        icelines_core::identity::PlayerId(candidate.player_id),
+        stats_season,
+        SeasonType::Regular,
+    );
+    let gp = view.as_ref().map_or(0, |value| value.gp());
+    let fantasy_per_82 = view.as_ref().and_then(|value| {
+        (value.gp() > 0).then(|| {
+            icelines_core::cross_team::fantasy_score_view(value) / value.gp() as f64 * 82.0
+        })
+    });
+    let goalie_quality = view.as_ref().and_then(|value| {
+        value.stats.goalie.as_ref().and_then(|goalie| {
+            goalie.save_pct.map(|save_pct| {
+                (50.0 + (save_pct as f64 - 0.900) * 1000.0 + value.gp().min(50) as f64 * 0.25)
+                    .clamp(0.0, 100.0)
+            })
+        })
+    });
+    Some(TeamCeilingPlayerInput {
+        player_id: candidate.player_id,
+        player: candidate.display_name.trim().to_owned(),
+        team: team.to_owned(),
+        prior_team: view
+            .as_ref()
+            .and_then(|value| value.team())
+            .and_then(|value| canonical_last_team(value.as_str())),
+        position,
+        age: age_at_season_start(candidate.birth_date.as_deref(), age_season),
+        games_played: gp,
+        points_per_82: view.as_ref().and_then(|value| value.pace_82()),
+        goals_per_82: view.as_ref().and_then(|value| value.goals_per_82()),
+        shots_per_82: view.as_ref().and_then(|value| value.shots_per_82()),
+        fantasy_per_82,
+        goalie_quality,
+    })
 }
 
 fn roster_inputs(

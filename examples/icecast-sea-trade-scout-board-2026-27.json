@@ -1,0 +1,539 @@
+{
+  "schema": "trade_scout.v1",
+  "as_of": "2026-08-03",
+  "buyer": "SEA",
+  "candidates": [
+    {
+      "rank": 1,
+      "target_id": "8475810",
+      "label": "Bryan Rust",
+      "seller": "PIT",
+      "role": "top_six_forward",
+      "hockey_fit_score": 206.89999999999998,
+      "discovery_score": 31.034999999999997,
+      "availability": {
+        "kind": "speculative_fit",
+        "probability": 0.15,
+        "source_url": null,
+        "observed_at": null,
+        "destination_allowed": null
+      },
+      "negotiation": {
+        "target_market_value": 110.0,
+        "opening_offer": {
+          "tier": "opening_offer",
+          "assets_to_seller": [
+            "Columbus 2027 second-round pick",
+            "Jacob Melanson"
+          ],
+          "market_value": 102.0,
+          "target_value_ratio": 0.9272727272727272,
+          "evaluation": {
+            "buyer": "SEA",
+            "seller": "PIT",
+            "assets_to_buyer": [
+              "Bryan Rust"
+            ],
+            "assets_to_seller": [
+              "Columbus 2027 second-round pick",
+              "Jacob Melanson"
+            ],
+            "buyer_utility_delta": 160.79999999999995,
+            "seller_utility_delta": 67.72999999999998,
+            "market_value_to_buyer": 110.0,
+            "market_value_to_seller": 102.0,
+            "market_value_gap": 8.0,
+            "buyer_season_points_delta": 0.62,
+            "seller_season_points_delta": -0.62,
+            "buyer_cap_space_delta": null,
+            "seller_cap_space_delta": null,
+            "fairness_score": 0.9272727272727272,
+            "feasibility_probability": 0.0,
+            "transaction_ready": false,
+            "transaction_gates": {
+              "cap_compliant": null,
+              "roster_compliant": null,
+              "retention_compliant": null,
+              "contract_authority_complete": false,
+              "pick_ownership_confirmed": null
+            },
+            "mutually_beneficial": false,
+            "pick_roles": [],
+            "disclosures": [
+              "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+              "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+              "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+              "Bryan Rust: Candidate value is the same authored control used by the NYR Trade Board; Seattle lineup impact and paired season value remain uncomputed.",
+              "Columbus 2027 second-round pick: Ownership and slot distribution require execution authority before this pick enters a transaction-ready package.",
+              "Jacob Melanson: Prospect control value is an authored discovery assumption pending the learned player-value model."
+            ]
+          }
+        },
+        "fair_midpoint": {
+          "tier": "fair_midpoint",
+          "assets_to_seller": [
+            "Seattle 2028 second-round pick",
+            "Ryan Winterton"
+          ],
+          "market_value": 103.0,
+          "target_value_ratio": 0.9363636363636364,
+          "evaluation": {
+            "buyer": "SEA",
+            "seller": "PIT",
+            "assets_to_buyer": [
+              "Bryan Rust"
+            ],
+            "assets_to_seller": [
+              "Seattle 2028 second-round pick",
+              "Ryan Winterton"
+            ],
+            "buyer_utility_delta": 157.2,
+            "seller_utility_delta": 67.19999999999997,
+            "market_value_to_buyer": 110.0,
+            "market_value_to_seller": 103.0,
+            "market_value_gap": 7.0,
+            "buyer_season_points_delta": 0.6,
+            "seller_season_points_delta": -0.6,
+            "buyer_cap_space_delta": null,
+            "seller_cap_space_delta": null,
+            "fairness_score": 0.9363636363636364,
+            "feasibility_probability": 0.0,
+            "transaction_ready": false,
+            "transaction_gates": {
+              "cap_compliant": null,
+              "roster_compliant": null,
+              "retention_compliant": null,
+              "contract_authority_complete": false,
+              "pick_ownership_confirmed": null
+            },
+            "mutually_beneficial": false,
+            "pick_roles": [],
+            "disclosures": [
+              "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+              "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+              "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+              "Bryan Rust: Candidate value is the same authored control used by the NYR Trade Board; Seattle lineup impact and paired season value remain uncomputed.",
+              "Seattle 2028 second-round pick: Ownership and slot distribution require execution authority before this pick enters a transaction-ready package.",
+              "Ryan Winterton: Prospect control value is an authored discovery assumption pending the learned player-value model."
+            ]
+          }
+        },
+        "maximum_acceptable": {
+          "tier": "maximum_acceptable",
+          "assets_to_seller": [
+            "Columbus 2027 second-round pick",
+            "Ryan Winterton"
+          ],
+          "market_value": 117.0,
+          "target_value_ratio": 1.0636363636363637,
+          "evaluation": {
+            "buyer": "SEA",
+            "seller": "PIT",
+            "assets_to_buyer": [
+              "Bryan Rust"
+            ],
+            "assets_to_seller": [
+              "Columbus 2027 second-round pick",
+              "Ryan Winterton"
+            ],
+            "buyer_utility_delta": 151.59999999999997,
+            "seller_utility_delta": 86.79999999999997,
+            "market_value_to_buyer": 110.0,
+            "market_value_to_seller": 117.0,
+            "market_value_gap": -7.0,
+            "buyer_season_points_delta": 0.6,
+            "seller_season_points_delta": -0.6,
+            "buyer_cap_space_delta": null,
+            "seller_cap_space_delta": null,
+            "fairness_score": 0.9401709401709402,
+            "feasibility_probability": 0.0,
+            "transaction_ready": false,
+            "transaction_gates": {
+              "cap_compliant": null,
+              "roster_compliant": null,
+              "retention_compliant": null,
+              "contract_authority_complete": false,
+              "pick_ownership_confirmed": null
+            },
+            "mutually_beneficial": false,
+            "pick_roles": [],
+            "disclosures": [
+              "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+              "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+              "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+              "Bryan Rust: Candidate value is the same authored control used by the NYR Trade Board; Seattle lineup impact and paired season value remain uncomputed.",
+              "Columbus 2027 second-round pick: Ownership and slot distribution require execution authority before this pick enters a transaction-ready package.",
+              "Ryan Winterton: Prospect control value is an authored discovery assumption pending the learned player-value model."
+            ]
+          }
+        },
+        "walk_away_market_value": 126.49999999999999,
+        "protected_buyer_assets": [
+          "Jagger Firkus",
+          "Berkly Catton",
+          "Shane Wright"
+        ],
+        "disclosures": [
+          "The ladder enumerates only supplied, unprotected buyer assets and does not infer seller acceptance.",
+          "Generated packages remain transaction-blocked until IceLines attaches cap, roster, retention, contract/clause, and pick-ownership authority."
+        ]
+      },
+      "disclosures": [
+        "Candidate discovery is a buyer-need and timeline fit, not evidence of trade talks."
+      ]
+    },
+    {
+      "rank": 2,
+      "target_id": "8475158",
+      "label": "Ryan O'Reilly",
+      "seller": "NSH",
+      "role": "top_six_forward",
+      "hockey_fit_score": 150.00099999999998,
+      "discovery_score": 30.000199999999996,
+      "availability": {
+        "kind": "speculative_fit",
+        "probability": 0.2,
+        "source_url": null,
+        "observed_at": null,
+        "destination_allowed": null
+      },
+      "negotiation": {
+        "target_market_value": 68.0,
+        "opening_offer": {
+          "tier": "opening_offer",
+          "assets_to_seller": [
+            "Seattle 2028 second-round pick"
+          ],
+          "market_value": 68.0,
+          "target_value_ratio": 1.0,
+          "evaluation": {
+            "buyer": "SEA",
+            "seller": "NSH",
+            "assets_to_buyer": [
+              "Ryan O'Reilly"
+            ],
+            "assets_to_seller": [
+              "Seattle 2028 second-round pick"
+            ],
+            "buyer_utility_delta": 122.80099999999997,
+            "seller_utility_delta": 67.27989999999998,
+            "market_value_to_buyer": 68.0,
+            "market_value_to_seller": 68.0,
+            "market_value_gap": 0.0,
+            "buyer_season_points_delta": 0.7201,
+            "seller_season_points_delta": -0.7201,
+            "buyer_cap_space_delta": null,
+            "seller_cap_space_delta": null,
+            "fairness_score": 1.0,
+            "feasibility_probability": 0.0,
+            "transaction_ready": false,
+            "transaction_gates": {
+              "cap_compliant": null,
+              "roster_compliant": null,
+              "retention_compliant": null,
+              "contract_authority_complete": false,
+              "pick_ownership_confirmed": null
+            },
+            "mutually_beneficial": false,
+            "pick_roles": [],
+            "disclosures": [
+              "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+              "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+              "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+              "Ryan O'Reilly: Candidate value is the same authored control used by the NYR Trade Board; Seattle role redundancy remains a downstream lineup question.",
+              "Seattle 2028 second-round pick: Ownership and slot distribution require execution authority before this pick enters a transaction-ready package."
+            ]
+          }
+        },
+        "fair_midpoint": {
+          "tier": "fair_midpoint",
+          "assets_to_seller": [
+            "Seattle 2028 second-round pick"
+          ],
+          "market_value": 68.0,
+          "target_value_ratio": 1.0,
+          "evaluation": {
+            "buyer": "SEA",
+            "seller": "NSH",
+            "assets_to_buyer": [
+              "Ryan O'Reilly"
+            ],
+            "assets_to_seller": [
+              "Seattle 2028 second-round pick"
+            ],
+            "buyer_utility_delta": 122.80099999999997,
+            "seller_utility_delta": 67.27989999999998,
+            "market_value_to_buyer": 68.0,
+            "market_value_to_seller": 68.0,
+            "market_value_gap": 0.0,
+            "buyer_season_points_delta": 0.7201,
+            "seller_season_points_delta": -0.7201,
+            "buyer_cap_space_delta": null,
+            "seller_cap_space_delta": null,
+            "fairness_score": 1.0,
+            "feasibility_probability": 0.0,
+            "transaction_ready": false,
+            "transaction_gates": {
+              "cap_compliant": null,
+              "roster_compliant": null,
+              "retention_compliant": null,
+              "contract_authority_complete": false,
+              "pick_ownership_confirmed": null
+            },
+            "mutually_beneficial": false,
+            "pick_roles": [],
+            "disclosures": [
+              "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+              "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+              "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+              "Ryan O'Reilly: Candidate value is the same authored control used by the NYR Trade Board; Seattle role redundancy remains a downstream lineup question.",
+              "Seattle 2028 second-round pick: Ownership and slot distribution require execution authority before this pick enters a transaction-ready package."
+            ]
+          }
+        },
+        "maximum_acceptable": {
+          "tier": "maximum_acceptable",
+          "assets_to_seller": [
+            "Seattle 2028 second-round pick"
+          ],
+          "market_value": 68.0,
+          "target_value_ratio": 1.0,
+          "evaluation": {
+            "buyer": "SEA",
+            "seller": "NSH",
+            "assets_to_buyer": [
+              "Ryan O'Reilly"
+            ],
+            "assets_to_seller": [
+              "Seattle 2028 second-round pick"
+            ],
+            "buyer_utility_delta": 122.80099999999997,
+            "seller_utility_delta": 67.27989999999998,
+            "market_value_to_buyer": 68.0,
+            "market_value_to_seller": 68.0,
+            "market_value_gap": 0.0,
+            "buyer_season_points_delta": 0.7201,
+            "seller_season_points_delta": -0.7201,
+            "buyer_cap_space_delta": null,
+            "seller_cap_space_delta": null,
+            "fairness_score": 1.0,
+            "feasibility_probability": 0.0,
+            "transaction_ready": false,
+            "transaction_gates": {
+              "cap_compliant": null,
+              "roster_compliant": null,
+              "retention_compliant": null,
+              "contract_authority_complete": false,
+              "pick_ownership_confirmed": null
+            },
+            "mutually_beneficial": false,
+            "pick_roles": [],
+            "disclosures": [
+              "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+              "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+              "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+              "Ryan O'Reilly: Candidate value is the same authored control used by the NYR Trade Board; Seattle role redundancy remains a downstream lineup question.",
+              "Seattle 2028 second-round pick: Ownership and slot distribution require execution authority before this pick enters a transaction-ready package."
+            ]
+          }
+        },
+        "walk_away_market_value": 78.19999999999999,
+        "protected_buyer_assets": [
+          "Jagger Firkus",
+          "Berkly Catton",
+          "Shane Wright"
+        ],
+        "disclosures": [
+          "The ladder enumerates only supplied, unprotected buyer assets and does not infer seller acceptance.",
+          "Generated packages remain transaction-blocked until IceLines attaches cap, roster, retention, contract/clause, and pick-ownership authority."
+        ]
+      },
+      "disclosures": [
+        "Candidate discovery is a buyer-need and timeline fit, not evidence of trade talks."
+      ]
+    },
+    {
+      "rank": 3,
+      "target_id": "8478444",
+      "label": "Brock Boeser",
+      "seller": "VAN",
+      "role": "first_line_wing",
+      "hockey_fit_score": 210.99999999999997,
+      "discovery_score": 25.319999999999997,
+      "availability": {
+        "kind": "speculative_fit",
+        "probability": 0.12,
+        "source_url": null,
+        "observed_at": null,
+        "destination_allowed": null
+      },
+      "negotiation": {
+        "target_market_value": 125.0,
+        "opening_offer": {
+          "tier": "opening_offer",
+          "assets_to_seller": [
+            "Seattle 2028 second-round pick",
+            "Ryan Winterton"
+          ],
+          "market_value": 103.0,
+          "target_value_ratio": 0.824,
+          "evaluation": {
+            "buyer": "SEA",
+            "seller": "VAN",
+            "assets_to_buyer": [
+              "Brock Boeser"
+            ],
+            "assets_to_seller": [
+              "Seattle 2028 second-round pick",
+              "Ryan Winterton"
+            ],
+            "buyer_utility_delta": 161.29999999999995,
+            "seller_utility_delta": -21.099999999999994,
+            "market_value_to_buyer": 125.0,
+            "market_value_to_seller": 103.0,
+            "market_value_gap": 22.0,
+            "buyer_season_points_delta": 0.75,
+            "seller_season_points_delta": -0.75,
+            "buyer_cap_space_delta": null,
+            "seller_cap_space_delta": null,
+            "fairness_score": 0.8240000000000001,
+            "feasibility_probability": 0.0,
+            "transaction_ready": false,
+            "transaction_gates": {
+              "cap_compliant": null,
+              "roster_compliant": null,
+              "retention_compliant": null,
+              "contract_authority_complete": false,
+              "pick_ownership_confirmed": null
+            },
+            "mutually_beneficial": false,
+            "pick_roles": [],
+            "disclosures": [
+              "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+              "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+              "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+              "Brock Boeser: Destination consent is unknown and an intra-division seller decision has not been sourced; this is discovery-only.",
+              "Seattle 2028 second-round pick: Ownership and slot distribution require execution authority before this pick enters a transaction-ready package.",
+              "Ryan Winterton: Prospect control value is an authored discovery assumption pending the learned player-value model."
+            ]
+          }
+        },
+        "fair_midpoint": {
+          "tier": "fair_midpoint",
+          "assets_to_seller": [
+            "Columbus 2027 second-round pick",
+            "Ryan Winterton"
+          ],
+          "market_value": 117.0,
+          "target_value_ratio": 0.936,
+          "evaluation": {
+            "buyer": "SEA",
+            "seller": "VAN",
+            "assets_to_buyer": [
+              "Brock Boeser"
+            ],
+            "assets_to_seller": [
+              "Columbus 2027 second-round pick",
+              "Ryan Winterton"
+            ],
+            "buyer_utility_delta": 155.69999999999996,
+            "seller_utility_delta": -7.099999999999994,
+            "market_value_to_buyer": 125.0,
+            "market_value_to_seller": 117.0,
+            "market_value_gap": 8.0,
+            "buyer_season_points_delta": 0.75,
+            "seller_season_points_delta": -0.75,
+            "buyer_cap_space_delta": null,
+            "seller_cap_space_delta": null,
+            "fairness_score": 0.9359999999999999,
+            "feasibility_probability": 0.0,
+            "transaction_ready": false,
+            "transaction_gates": {
+              "cap_compliant": null,
+              "roster_compliant": null,
+              "retention_compliant": null,
+              "contract_authority_complete": false,
+              "pick_ownership_confirmed": null
+            },
+            "mutually_beneficial": false,
+            "pick_roles": [],
+            "disclosures": [
+              "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+              "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+              "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+              "Brock Boeser: Destination consent is unknown and an intra-division seller decision has not been sourced; this is discovery-only.",
+              "Columbus 2027 second-round pick: Ownership and slot distribution require execution authority before this pick enters a transaction-ready package.",
+              "Ryan Winterton: Prospect control value is an authored discovery assumption pending the learned player-value model."
+            ]
+          }
+        },
+        "maximum_acceptable": {
+          "tier": "maximum_acceptable",
+          "assets_to_seller": [
+            "Columbus 2027 second-round pick",
+            "Ryan Winterton"
+          ],
+          "market_value": 117.0,
+          "target_value_ratio": 0.936,
+          "evaluation": {
+            "buyer": "SEA",
+            "seller": "VAN",
+            "assets_to_buyer": [
+              "Brock Boeser"
+            ],
+            "assets_to_seller": [
+              "Columbus 2027 second-round pick",
+              "Ryan Winterton"
+            ],
+            "buyer_utility_delta": 155.69999999999996,
+            "seller_utility_delta": -7.099999999999994,
+            "market_value_to_buyer": 125.0,
+            "market_value_to_seller": 117.0,
+            "market_value_gap": 8.0,
+            "buyer_season_points_delta": 0.75,
+            "seller_season_points_delta": -0.75,
+            "buyer_cap_space_delta": null,
+            "seller_cap_space_delta": null,
+            "fairness_score": 0.9359999999999999,
+            "feasibility_probability": 0.0,
+            "transaction_ready": false,
+            "transaction_gates": {
+              "cap_compliant": null,
+              "roster_compliant": null,
+              "retention_compliant": null,
+              "contract_authority_complete": false,
+              "pick_ownership_confirmed": null
+            },
+            "mutually_beneficial": false,
+            "pick_roles": [],
+            "disclosures": [
+              "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+              "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+              "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+              "Brock Boeser: Destination consent is unknown and an intra-division seller decision has not been sourced; this is discovery-only.",
+              "Columbus 2027 second-round pick: Ownership and slot distribution require execution authority before this pick enters a transaction-ready package.",
+              "Ryan Winterton: Prospect control value is an authored discovery assumption pending the learned player-value model."
+            ]
+          }
+        },
+        "walk_away_market_value": 143.75,
+        "protected_buyer_assets": [
+          "Jagger Firkus",
+          "Berkly Catton",
+          "Shane Wright"
+        ],
+        "disclosures": [
+          "The ladder enumerates only supplied, unprotected buyer assets and does not infer seller acceptance.",
+          "Generated packages remain transaction-blocked until IceLines attaches cap, roster, retention, contract/clause, and pick-ownership authority."
+        ]
+      },
+      "disclosures": [
+        "Candidate discovery is a buyer-need and timeline fit, not evidence of trade talks."
+      ]
+    }
+  ],
+  "disclosures": [
+    "The Automatic Trade Scout ranks supplied league assets by buyer-specific hockey utility multiplied by availability; it does not manufacture availability evidence.",
+    "Protected assets are audited but excluded from every generated offer, and the published maximum is a walk-away boundary rather than a recommendation to pay it."
+  ]
+}

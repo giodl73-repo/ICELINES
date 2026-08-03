@@ -31,9 +31,10 @@ use icelines_core::{
     compare_organization_window_scenario, compare_organization_window_snapshots,
     compare_organization_window_snapshots_with_bridge, compare_organization_window_typed_scenario,
     compare_player_line_matchup_scenarios, compare_team_season_forecast_scenarios,
-    current_ahl_affiliation_catalog, load_organization_window_registry_lifecycle, model::Position,
-    model::Season, model::TeamAbbr, normalize_name, project_organization_profile_history_card,
-    project_organization_window_card, register_team_game_prediction_holdout,
+    confidence_weighted_player_value, current_ahl_affiliation_catalog,
+    load_organization_window_registry_lifecycle, model::Position, model::Season, model::TeamAbbr,
+    normalize_name, project_organization_profile_history_card, project_organization_window_card,
+    register_team_game_prediction_holdout, rehydrate_team_game_forecast,
     seal_new_organization_window_manifest, seal_organization_profile_history,
     season_stats::SeasonType, simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
@@ -217,12 +218,13 @@ use icelines_fetch::{
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use super::{fantasy::load_fantasy_schedule, report::load_team_ceiling_view};
+use super::{fantasy::load_fantasy_schedule, report::load_team_ceiling_view_with_candidates};
 use crate::config::Config;
 
 pub struct IceCastSeasonArgs {
     pub season: u32,
     pub stats_season: u32,
+    pub candidate_overlay: Option<PathBuf>,
     pub teams: Vec<String>,
     pub trials: u32,
     pub seed: u64,
@@ -240,6 +242,729 @@ pub struct IceCastSeasonArgs {
     pub json: bool,
     pub out: Option<PathBuf>,
     pub game_forecast_out: Option<PathBuf>,
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn run_draft_pick_curve(
+    start_year: u16,
+    cutoff_year: u16,
+    completed_season_start_year: u16,
+    horizon: u8,
+    max_pick: u16,
+    annual_future_discount: f64,
+    generated_at: Option<String>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let generated_at = generated_at
+        .map(|value| {
+            DateTime::parse_from_rfc3339(&value)
+                .map(|value| value.with_timezone(&Utc))
+                .with_context(|| format!("parse --generated-at {value}"))
+        })
+        .transpose()?
+        .unwrap_or_else(Utc::now);
+    let view = icelines_fetch::acquire_draft_pick_value_curve(
+        &NhlApiClient::production(),
+        icelines_fetch::DraftPickOutcomeBuildConfig {
+            training_start_year: start_year,
+            training_cutoff_year: cutoff_year,
+            completed_season_start_year,
+            outcome_horizon_years: horizon,
+            max_overall_pick: max_pick,
+        },
+        annual_future_discount,
+        generated_at,
+    )
+    .await
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        let mut rendered = format!(
+            "THE TRADE DESK · DRAFT-PICK CURVE\n{}-{} drafts · {}-season NHL GP horizon · {} selections · {} zero outcomes\n\n",
+            view.outcome_set.training_start_year,
+            view.outcome_set.training_cutoff_year,
+            view.outcome_set.outcome_horizon_years,
+            view.outcome_set.selections,
+            view.outcome_set.zero_outcomes
+        );
+        for pick in [1_u16, 16, 32, 64, 96, 128, 160, 192, max_pick] {
+            if let Some(row) = view
+                .curve
+                .values
+                .iter()
+                .find(|row| row.overall_pick == pick)
+            {
+                let _ = writeln!(
+                    rendered,
+                    "#{pick:<3} {:>6.1} expected NHL GP  ({:>5.1}-{:>5.1}) · n={}",
+                    row.expected_value,
+                    row.expected_value_low,
+                    row.expected_value_high,
+                    row.observations
+                );
+            }
+        }
+        for disclosure in view
+            .outcome_set
+            .disclosures
+            .iter()
+            .chain(view.curve.disclosures.iter())
+        {
+            let _ = writeln!(rendered, "- {disclosure}");
+        }
+        rendered
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "draft-pick value curve")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_trade_market(input: PathBuf, json: bool, out: Option<PathBuf>) -> anyhow::Result<()> {
+    let market: icelines_core::TradeMarketInput = serde_json::from_slice(
+        &std::fs::read(&input)
+            .with_context(|| format!("read trade market input {}", input.display()))?,
+    )
+    .with_context(|| format!("parse trade market input {}", input.display()))?;
+    let view = icelines_core::evaluate_trade_market(market).map_err(anyhow::Error::msg)?;
+    write_trade_market_view(&view, json, out)
+}
+
+pub fn run_trade_scout(input: PathBuf, json: bool, out: Option<PathBuf>) -> anyhow::Result<()> {
+    let scout: icelines_core::TradeScoutInput = read_icecast_json(&input, "trade scout input")?;
+    let view = icelines_core::build_trade_scout(scout).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_trade_scout_view(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "trade scout")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_trade_scout_league(
+    input: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let inventory: icelines_core::TradeScoutLeagueInput =
+        read_icecast_json(&input, "league trade scout input")?;
+    let view =
+        icelines_core::build_trade_scout_from_league(inventory).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        let coverage = if view.inventory_complete {
+            "complete"
+        } else {
+            "partial"
+        };
+        format!(
+            "LEAGUE INVENTORY — {}/{} ({coverage}); derived {} targets and {} buyer assets\n{}",
+            view.organizations_supplied,
+            view.expected_organizations,
+            view.derived_targets,
+            view.derived_buyer_assets,
+            render_trade_scout_view(&view.scout)
+        )
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "league trade scout")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_trade_scout_populate(
+    camp: PathBuf,
+    input: PathBuf,
+    pick_assets: Option<PathBuf>,
+    board_out: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let camp: icelines_core::TrainingCampLeagueForecastView =
+        read_icecast_json(&camp, "training camp league forecast")?;
+    let mut policy: icelines_core::TradeScoutPopulationInput =
+        read_icecast_json(&input, "trade scout population input")?;
+    if let Some(path) = pick_assets.as_deref() {
+        let picks: icelines_core::TradeScoutDraftPickPopulationView =
+            read_icecast_json(path, "trade scout draft-pick population")?;
+        if picks.schema != icelines_core::TRADE_SCOUT_DRAFT_PICK_POPULATION_SCHEMA {
+            bail!("pick assets must use trade_scout_draft_pick_population.v1");
+        }
+        policy.draft_pick_assets.extend(picks.assets);
+    }
+    let view = icelines_core::populate_trade_scout_league_from_camp(&camp, policy)
+        .map_err(anyhow::Error::msg)?;
+    if let Some(path) = board_out.as_deref() {
+        let board = icelines_core::build_trade_scout_from_league(view.league_input.clone())
+            .map_err(anyhow::Error::msg)?;
+        let board_json = format!("{}\n", serde_json::to_string_pretty(&board)?);
+        write_icecast_file(path, board_json.as_bytes(), "populated league trade scout")?;
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        format!(
+            "TRADE SCOUT POPULATION — {}/{} teams, {} players ({} prospects), {} picks; {} coverage gaps\n",
+            view.teams_populated,
+            view.teams_requested,
+            view.players_populated,
+            view.prospects_populated,
+            view.picks_populated,
+            view.teams_without_forecast.len()
+        )
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "trade scout population")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+struct TradePickPopulationPolicy {
+    as_of: String,
+    current_draft_year: u16,
+    value_basis: icelines_core::TradeValueBasis,
+    #[serde(default)]
+    protected_asset_ids: Vec<String>,
+}
+
+pub fn run_trade_pick_populate(
+    ownership: PathBuf,
+    curve: PathBuf,
+    policy: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let policy: TradePickPopulationPolicy =
+        read_icecast_json(&policy, "trade draft-pick population policy")?;
+    let ownership_bytes = std::fs::read(&ownership)
+        .with_context(|| format!("read draft-pick ownership {}", ownership.display()))?;
+    let ownership = icelines_fetch::parse_draft_pick_ownership_csv(
+        &ownership_bytes,
+        policy.current_draft_year,
+    )?;
+    let curve_value: serde_json::Value = read_icecast_json(&curve, "draft-pick value curve")?;
+    let curve = serde_json::from_value::<icelines_core::DraftPickValueCurve>(curve_value.clone())
+        .or_else(|_| {
+            serde_json::from_value::<icelines_fetch::DraftPickCurveAcquisitionView>(curve_value)
+                .map(|view| view.curve)
+        })
+        .with_context(|| {
+            "curve must be draft_pick_value_curve.v1 or draft_pick_curve_acquisition.v1"
+        })?;
+    let view = icelines_core::populate_trade_scout_draft_picks(
+        &curve,
+        icelines_core::TradeScoutDraftPickPopulationInput {
+            as_of: policy.as_of,
+            current_draft_year: policy.current_draft_year,
+            value_basis: policy.value_basis,
+            ownership,
+            protected_asset_ids: policy.protected_asset_ids,
+        },
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        format!(
+            "TRADE PICK POPULATION — {}/{} valued; {} conditional or encumbered rights unresolved\n",
+            view.picks_populated,
+            view.picks_supplied,
+            view.unresolved_asset_ids.len()
+        )
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "trade draft-pick population")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_trade_scout_view(view: &icelines_core::TradeScoutView) -> String {
+    let mut rendered = format!("THE TRADE SCOUT — {}\n", view.buyer);
+    for candidate in &view.candidates {
+        let _ = writeln!(
+            rendered,
+            "{} {} ({})  fit={:.2}  avail={:.0}%",
+            candidate.rank,
+            candidate.label,
+            candidate.seller,
+            candidate.hockey_fit_score,
+            candidate.availability.probability * 100.0
+        );
+        for package in [
+            &candidate.negotiation.opening_offer,
+            &candidate.negotiation.fair_midpoint,
+            &candidate.negotiation.maximum_acceptable,
+        ] {
+            let tier = match package.tier {
+                icelines_core::TradeNegotiationTier::OpeningOffer => "opening",
+                icelines_core::TradeNegotiationTier::FairMidpoint => "fair",
+                icelines_core::TradeNegotiationTier::MaximumAcceptable => "maximum",
+            };
+            let _ = writeln!(
+                rendered,
+                "   {tier}: {:.0}% value [{}]",
+                package.target_value_ratio * 100.0,
+                package.assets_to_seller.join(", ")
+            );
+        }
+        let _ = writeln!(
+            rendered,
+            "   walk away above {:.2}; transaction authority pending",
+            candidate.negotiation.walk_away_market_value
+        );
+    }
+    for disclosure in &view.disclosures {
+        let _ = writeln!(rendered, "- {disclosure}");
+    }
+    rendered
+}
+
+pub fn run_trade_lineup(
+    lineup: PathBuf,
+    change: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let (lineup, lineup_adapter_disclosure) = read_trade_lineup_baseline(&lineup)?;
+    let change: icelines_core::TradeLineupProjectionChangeInput =
+        read_icecast_json(&change, "trade lineup change")?;
+    let mut view = icelines_core::build_trade_lineup_scenario_from_projection(&lineup, change)
+        .map_err(anyhow::Error::msg)?;
+    if let Some(disclosure) = lineup_adapter_disclosure {
+        view.disclosures.push(disclosure);
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        let mut rendered = format!(
+            "THE LINE CHANGE — {}\nStrength {:+.2} ({:.2} → {:.2})\nAdded: {}\nTraded out: {}\nDisplaced: {}\n",
+            view.team,
+            view.strength_delta,
+            view.before_strength,
+            view.after_strength,
+            display_names_or_none(&view.added_to_lineup),
+            display_names_or_none(&view.explicitly_removed_from_lineup),
+            display_names_or_none(&view.displaced_by_competition)
+        );
+        for disclosure in &view.disclosures {
+            let _ = writeln!(rendered, "- {disclosure}");
+        }
+        if let Some(lineup) = &view.projected_lineup {
+            render_trade_projected_lineup(&mut rendered, lineup);
+        }
+        rendered
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "trade lineup impact")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_trade_lineup_board(
+    lineup: PathBuf,
+    input: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let (lineup, adapter_disclosure) = read_trade_lineup_baseline(&lineup)?;
+    let input: icelines_core::TradeLineupBoardInput =
+        read_icecast_json(&input, "trade lineup board")?;
+    let mut view =
+        icelines_core::build_trade_lineup_board(&lineup, input).map_err(anyhow::Error::msg)?;
+    if let Some(disclosure) = adapter_disclosure {
+        view.disclosures.push(disclosure);
+    }
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        let mut rendered = format!("THE TRADE BOARD — {}\n", view.team);
+        for row in &view.rows {
+            let actionable = row
+                .actionable_rank
+                .map_or_else(|| "blocked".to_owned(), |rank| format!("A{rank}"));
+            let _ = writeln!(
+                rendered,
+                "H{} {:<20} {:+.2}  {:>7}  avail={:.0}% exec={:.0}%  adds {}  displaces {}",
+                row.hockey_rank,
+                row.label,
+                row.scenario.strength_delta,
+                actionable,
+                row.availability_probability * 100.0,
+                row.feasibility_probability * 100.0,
+                display_names_or_none(&row.scenario.added_to_lineup),
+                display_names_or_none(&row.scenario.displaced_by_competition)
+            );
+            if let Some(impact) = row
+                .package_evaluation
+                .as_ref()
+                .and_then(|package| package.season_forecast_impact.as_ref())
+            {
+                let _ = writeln!(
+                    rendered,
+                    "   paired season: {:+.2} pts  {:+.2}pp playoffs  {:+.2}pp Cup",
+                    impact.buyer.average_points_delta,
+                    impact.buyer.playoff_probability_delta * 100.0,
+                    impact.buyer.stanley_cup_probability_delta * 100.0
+                );
+            }
+        }
+        for disclosure in &view.disclosures {
+            let _ = writeln!(rendered, "- {disclosure}");
+        }
+        rendered
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "trade lineup board")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn read_trade_lineup_baseline(
+    lineup: &std::path::Path,
+) -> anyhow::Result<(icelines_core::TeamLineupProjectionView, Option<String>)> {
+    let lineup_bytes = std::fs::read(lineup)
+        .with_context(|| format!("read baseline trade lineup {}", lineup.display()))?;
+    match serde_json::from_slice::<icelines_core::TeamLineupProjectionView>(&lineup_bytes) {
+        Ok(lineup) => Ok((lineup, None)),
+        Err(projection_error) => {
+            let set: icelines_core::TrainingCampLineupSetView =
+                serde_json::from_slice(&lineup_bytes).with_context(|| {
+                    format!(
+                        "parse baseline {} as team lineup projection ({projection_error}) or training-camp lineup set",
+                        lineup.display()
+                    )
+                })?;
+            let branch = set.branches.first().ok_or_else(|| {
+                anyhow::anyhow!("training-camp lineup set has no retained branches")
+            })?;
+            Ok((
+                branch.lineup.clone(),
+                Some(format!(
+                    "Baseline selected training-camp branch {} ({:.1}% probability) from {}.",
+                    branch.rank,
+                    branch.probability * 100.0,
+                    set.schema
+                )),
+            ))
+        }
+    }
+}
+
+fn render_trade_projected_lineup(
+    rendered: &mut String,
+    lineup: &icelines_core::TeamLineupProjectionView,
+) {
+    let _ = writeln!(rendered, "\nPROJECTED LINES");
+    for line in &lineup.forward_lines {
+        let _ = writeln!(
+            rendered,
+            "F{}  {} | {} | {}",
+            line.line,
+            trade_lineup_player_label(line.left_wing.as_ref()),
+            trade_lineup_player_label(line.center.as_ref()),
+            trade_lineup_player_label(line.right_wing.as_ref())
+        );
+    }
+    for pair in &lineup.defense_pairs {
+        let _ = writeln!(
+            rendered,
+            "D{}  {} | {}",
+            pair.pair,
+            trade_lineup_player_label(pair.left.as_ref()),
+            trade_lineup_player_label(pair.right.as_ref())
+        );
+    }
+    let _ = writeln!(
+        rendered,
+        "G   {} | {}",
+        trade_lineup_player_label(lineup.goalies.starter.as_ref()),
+        trade_lineup_player_label(lineup.goalies.backup.as_ref())
+    );
+
+    let names = trade_lineup_player_names(lineup);
+    let _ = writeln!(rendered, "\nSPECIAL TEAMS");
+    for unit in lineup
+        .special_teams
+        .power_play
+        .iter()
+        .chain(&lineup.special_teams.penalty_kill)
+    {
+        let kind = match unit.kind {
+            icelines_core::TeamLineupSpecialTeamsKind::PowerPlay => "PP",
+            icelines_core::TeamLineupSpecialTeamsKind::PenaltyKill => "PK",
+        };
+        let players = unit
+            .player_ids
+            .iter()
+            .map(|id| {
+                names
+                    .get(id)
+                    .map_or_else(|| id.to_string(), |name| (*name).clone())
+            })
+            .collect::<Vec<_>>()
+            .join(" | ");
+        let quarterback = unit
+            .quarterback_id
+            .and_then(|id| names.get(&id))
+            .map_or(String::new(), |name| format!(" (QB: {name})"));
+        let _ = writeln!(rendered, "{kind}{} {players}{quarterback}", unit.unit);
+    }
+    for warning in &lineup.special_teams.warnings {
+        let _ = writeln!(rendered, "- {warning}");
+    }
+}
+
+fn trade_lineup_player_label(player: Option<&icelines_core::TeamLineupPlayerView>) -> String {
+    player.map_or_else(
+        || "open".to_owned(),
+        |player| format!("{} ({})", player.display_name, player.score.display),
+    )
+}
+
+fn trade_lineup_player_names(
+    lineup: &icelines_core::TeamLineupProjectionView,
+) -> std::collections::BTreeMap<u32, String> {
+    lineup
+        .forward_lines
+        .iter()
+        .flat_map(|line| [&line.left_wing, &line.center, &line.right_wing])
+        .chain(
+            lineup
+                .defense_pairs
+                .iter()
+                .flat_map(|pair| [&pair.left, &pair.right]),
+        )
+        .chain([&lineup.goalies.starter, &lineup.goalies.backup])
+        .flatten()
+        .chain(&lineup.extras)
+        .map(|player| (player.player_id, player.display_name.clone()))
+        .collect()
+}
+
+fn display_names_or_none(names: &[String]) -> String {
+    if names.is_empty() {
+        "none".to_owned()
+    } else {
+        names.join(", ")
+    }
+}
+
+pub struct IceCastTradeMarketAssembleArgs {
+    pub input: PathBuf,
+    pub curve: PathBuf,
+    pub baseline_forecast: Option<PathBuf>,
+    pub scenario_forecast: Option<PathBuf>,
+    pub buyer_lineup: Option<PathBuf>,
+    pub seller_lineup: Option<PathBuf>,
+    pub json: bool,
+    pub out: Option<PathBuf>,
+}
+
+pub fn run_trade_market_assemble(args: IceCastTradeMarketAssembleArgs) -> anyhow::Result<()> {
+    let assembly: icelines_core::TradeMarketAssemblyInput =
+        serde_json::from_slice(&std::fs::read(&args.input).with_context(|| {
+            format!("read trade market assembly input {}", args.input.display())
+        })?)
+        .with_context(|| format!("parse trade market assembly input {}", args.input.display()))?;
+    let curve_value: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(&args.curve)
+            .with_context(|| format!("read draft-pick curve {}", args.curve.display()))?,
+    )
+    .with_context(|| format!("parse draft-pick curve {}", args.curve.display()))?;
+    let curve = serde_json::from_value::<icelines_core::DraftPickValueCurve>(curve_value.clone())
+        .or_else(|_| {
+            serde_json::from_value::<icelines_fetch::DraftPickCurveAcquisitionView>(curve_value)
+                .map(|view| view.curve)
+        })
+        .with_context(|| {
+            "curve must be draft_pick_value_curve.v1 or draft_pick_curve_acquisition.v1"
+        })?;
+    let mut view =
+        icelines_core::assemble_trade_market(assembly, &curve).map_err(anyhow::Error::msg)?;
+    if let (Some(baseline_path), Some(scenario_path)) = (
+        args.baseline_forecast.as_deref(),
+        args.scenario_forecast.as_deref(),
+    ) {
+        if view.proposals.len() != 1 {
+            anyhow::bail!(
+                "paired season forecast attachment currently requires exactly one assembled proposal"
+            );
+        }
+        let baseline: icelines_core::TeamSeasonForecastView =
+            read_icecast_json(baseline_path, "baseline team-season forecast")?;
+        let scenario: icelines_core::TeamSeasonForecastView =
+            read_icecast_json(scenario_path, "trade-scenario team-season forecast")?;
+        let buyer = view.proposals[0].buyer.clone();
+        let seller = view.proposals[0].seller.clone();
+        icelines_core::attach_trade_package_season_forecast(
+            &mut view, &buyer, &seller, &baseline, &scenario,
+        )
+        .map_err(anyhow::Error::msg)?;
+    }
+    if let (Some(buyer_path), Some(seller_path)) =
+        (args.buyer_lineup.as_deref(), args.seller_lineup.as_deref())
+    {
+        if view.proposals.len() != 1 {
+            anyhow::bail!(
+                "lineup impact attachment currently requires exactly one assembled proposal"
+            );
+        }
+        let buyer_input: icelines_core::TradeLineupScenarioInput =
+            read_icecast_json(buyer_path, "buyer trade-lineup scenario")?;
+        let seller_input: icelines_core::TradeLineupScenarioInput =
+            read_icecast_json(seller_path, "seller trade-lineup scenario")?;
+        let buyer_lineup =
+            icelines_core::build_trade_lineup_scenario(buyer_input).map_err(anyhow::Error::msg)?;
+        let seller_lineup =
+            icelines_core::build_trade_lineup_scenario(seller_input).map_err(anyhow::Error::msg)?;
+        let buyer = view.proposals[0].buyer.clone();
+        let seller = view.proposals[0].seller.clone();
+        icelines_core::attach_trade_package_lineup_impacts(
+            &mut view,
+            &buyer,
+            &seller,
+            buyer_lineup,
+            seller_lineup,
+        )
+        .map_err(anyhow::Error::msg)?;
+    }
+    write_trade_market_view(&view, args.json, args.out)
+}
+
+fn write_trade_market_view(
+    view: &icelines_core::TradeMarketEvaluationView,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        let mut rendered = format!(
+            "THE TRADE DESK\nAs of {}\nValue basis: {} over {} years ({})\n\n",
+            view.as_of,
+            view.value_basis.outcome_measure,
+            view.value_basis.horizon_years,
+            view.value_basis.method
+        );
+        for (index, proposal) in view.proposals.iter().enumerate() {
+            let _ = writeln!(
+                rendered,
+                "{}. {} ⇄ {}  feasibility {:>5.1}%  fairness {:>5.1}%  mutual {}",
+                index + 1,
+                proposal.buyer,
+                proposal.seller,
+                proposal.feasibility_probability * 100.0,
+                proposal.fairness_score * 100.0,
+                if proposal.mutually_beneficial {
+                    "yes"
+                } else {
+                    "no"
+                }
+            );
+            let _ = writeln!(
+                rendered,
+                "   to {}: {}",
+                proposal.buyer,
+                proposal.assets_to_buyer.join(", ")
+            );
+            let _ = writeln!(
+                rendered,
+                "   to {}: {}",
+                proposal.seller,
+                proposal.assets_to_seller.join(", ")
+            );
+            let _ = writeln!(
+                rendered,
+                "   utility {:+.2} / {:+.2} · market gap {:+.2} · next-season points {:+.2} / {:+.2}\n",
+                proposal.buyer_utility_delta,
+                proposal.seller_utility_delta,
+                proposal.market_value_gap,
+                proposal.buyer_season_points_delta,
+                proposal.seller_season_points_delta
+            );
+            let _ = writeln!(
+                rendered,
+                "   cap-space delta (millions) {} / {}\n",
+                proposal
+                    .buyer_cap_space_delta
+                    .map_or_else(|| "unknown".to_owned(), |value| format!("{value:+.2}")),
+                proposal
+                    .seller_cap_space_delta
+                    .map_or_else(|| "unknown".to_owned(), |value| format!("{value:+.2}"))
+            );
+            if let Some(impact) = &proposal.season_forecast_impact {
+                let _ = writeln!(
+                    rendered,
+                    "   paired season: {} {:+.2} pts / {:+.2}pp playoffs / {:+.2}pp Cup; {} {:+.2} pts / {:+.2}pp playoffs / {:+.2}pp Cup",
+                    impact.buyer.team,
+                    impact.buyer.average_points_delta,
+                    impact.buyer.playoff_probability_delta * 100.0,
+                    impact.buyer.stanley_cup_probability_delta * 100.0,
+                    impact.seller.team,
+                    impact.seller.average_points_delta,
+                    impact.seller.playoff_probability_delta * 100.0,
+                    impact.seller.stanley_cup_probability_delta * 100.0
+                );
+                let _ = writeln!(
+                    rendered,
+                    "   paired-vs-isolated buyer points residual {:+.2}\n",
+                    impact.buyer_points_residual_vs_isolated
+                );
+            }
+            if let Some(impact) = &proposal.lineup_impact {
+                for lineup in [&impact.buyer, &impact.seller] {
+                    let _ = writeln!(
+                        rendered,
+                        "   {} lineup strength {:+.2} · added [{}] · traded out [{}] · displaced [{}]",
+                        lineup.team,
+                        lineup.strength_delta,
+                        lineup.added_to_lineup.join(", "),
+                        lineup.explicitly_removed_from_lineup.join(", "),
+                        lineup.displaced_by_competition.join(", ")
+                    );
+                }
+                rendered.push('\n');
+            }
+            if !proposal.transaction_ready {
+                let _ = writeln!(rendered, "   transaction authority incomplete\n");
+            }
+            for disclosure in &proposal.disclosures {
+                let _ = writeln!(rendered, "   - {disclosure}");
+            }
+            rendered.push('\n');
+        }
+        for disclosure in &view.disclosures {
+            let _ = writeln!(rendered, "- {disclosure}");
+        }
+        rendered
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "trade market evaluation")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
 }
 
 pub struct IceCastEdgeArgs {
@@ -4774,7 +5499,30 @@ pub fn run_season_simulate(
     through: Option<NaiveDate>,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    let forecast: TeamGameForecastView = read_icecast_json(&forecast_path, "team game forecast")?;
+    let bytes = std::fs::read(&forecast_path)
+        .with_context(|| format!("read season simulation input {}", forecast_path.display()))?;
+    let schema = serde_json::from_slice::<serde_json::Value>(&bytes)
+        .with_context(|| format!("parse season simulation input {}", forecast_path.display()))?
+        .get("schema")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    let forecast: TeamGameForecastView = match schema.as_str() {
+        "team_game_forecast.v1" => serde_json::from_slice(&bytes)
+            .with_context(|| format!("parse team game forecast {}", forecast_path.display()))?,
+        "team_season_forecast.v1" => {
+            let archived: TeamSeasonForecastView =
+                serde_json::from_slice(&bytes).with_context(|| {
+                    format!("parse archived season forecast {}", forecast_path.display())
+                })?;
+            rehydrate_team_game_forecast(&archived, TeamForecastParameters::default())
+                .map_err(anyhow::Error::msg)?
+        }
+        _ => bail!(
+            "season simulation input {} must use team_game_forecast.v1 or team_season_forecast.v1",
+            forecast_path.display()
+        ),
+    };
     let scenario = scenario_path
         .as_deref()
         .map(|path| load_scenario(path, forecast.season))
@@ -7306,11 +8054,8 @@ fn preseason_opening_players(players: &[TeamCeilingPlayerRow]) -> Vec<TeamGameOp
                 .flatten()
                 .copied()
                 .collect::<Vec<_>>();
-            let modeled_value = if scores.is_empty() {
-                50.0
-            } else {
-                scores.iter().sum::<f64>() / scores.len() as f64
-            };
+            let modeled_value =
+                confidence_weighted_player_value(&scores, player.games_played).unwrap_or(0.0);
             let position_group = if player.position.is_forward() {
                 "forward"
             } else if player.position.is_defense() {
@@ -7359,6 +8104,9 @@ pub(crate) async fn build_season_view(
     args: &IceCastSeasonArgs,
 ) -> anyhow::Result<(TeamSeasonForecastView, Vec<String>, String)> {
     let rolling_replay = args.replay_mode == "rolling";
+    if rolling_replay && args.candidate_overlay.is_some() {
+        bail!("--candidate-overlay is preseason evidence and cannot be combined with --replay-mode rolling");
+    }
     if args.ignore_replay_personnel_after.is_some() && !rolling_replay {
         bail!("--ignore-replay-personnel-after requires --replay-mode rolling");
     }
@@ -7432,11 +8180,26 @@ pub(crate) async fn build_season_view(
     if args.teams.is_empty() {
         focus.retain(|team| expected_teams.contains(team));
     }
+    let candidate_overlay = if let Some(path) = args.candidate_overlay.as_deref() {
+        let overlay: LeagueCampCandidateOverlay = serde_json::from_slice(
+            &std::fs::read(path)
+                .with_context(|| format!("read IceCast candidate overlay {}", path.display()))?,
+        )
+        .with_context(|| format!("parse IceCast candidate overlay {}", path.display()))?;
+        validate_league_camp_candidate_overlay(&overlay).map_err(anyhow::Error::msg)?;
+        Some(overlay)
+    } else {
+        None
+    };
     let (mut strengths, personnel, mut preseason_opening_strengths, strength_warning) =
         if rolling_replay {
             (Vec::new(), Vec::new(), Vec::new(), None)
         } else {
-            match load_team_ceiling_view(Season(args.season), Season(args.stats_season)) {
+            match load_team_ceiling_view_with_candidates(
+                Season(args.season),
+                Season(args.stats_season),
+                candidate_overlay.as_ref(),
+            ) {
                 Ok(ceiling) => {
                     let mut strengths = Vec::new();
                     let mut personnel = Vec::new();
@@ -7476,11 +8239,9 @@ pub(crate) async fn build_season_view(
                                 .flatten()
                                 .copied()
                                 .collect::<Vec<_>>();
-                            let rating = if scores.is_empty() {
-                                f64::NAN
-                            } else {
-                                scores.iter().sum::<f64>() / scores.len() as f64
-                            };
+                            let rating =
+                                confidence_weighted_player_value(&scores, player.games_played)
+                                    .unwrap_or(f64::NAN);
                             (rating.is_finite() && rating > 0.0).then(|| TeamSeasonPersonnelInput {
                                 team: team.team.clone(),
                                 player: player.player,
@@ -7638,6 +8399,18 @@ pub(crate) async fn build_season_view(
         )
     }
     .map_err(anyhow::Error::msg)?;
+    if !rolling_replay {
+        game_view.disclosures.push(
+            "Preseason depth, opening-lineup selection, and simulated personnel values bound each lens to 0–100 before shrinking prior-season rate statistics by GP/(GP+20); low-sample heaters retain upside without outranking established players at full weight."
+                .to_owned(),
+        );
+        if let Some(overlay) = candidate_overlay.as_ref() {
+            game_view.disclosures.push(format!(
+                "Opening-roster shape was completed from a sourced organization-candidate overlay checked {}; only ranking-eligible relationships were admitted, duplicates were ignored, and absent NHL evidence received no invented production value.",
+                overlay.checked_at
+            ));
+        }
+    }
     if let Some(authority) = opening_authority {
         if authority.status == "retrospective_evaluation" && authority.player_value_effects_enabled
         {
@@ -12598,6 +13371,84 @@ mod tests {
     }
 
     #[test]
+    fn preseason_opening_players_shrink_low_gp_goalie_and_partial_lens_samples() {
+        let row = |player_id,
+                   player: &str,
+                   position,
+                   games_played,
+                   scores: BTreeMap<TeamCeilingLens, Option<f64>>| {
+            TeamCeilingPlayerRow {
+                player_id,
+                player: player.to_owned(),
+                position,
+                age: 25,
+                games_played,
+                prior_team: Some("NYR".to_owned()),
+                newcomer: false,
+                has_nhl_sample: games_played > 0,
+                lens_scores: scores,
+            }
+        };
+        let one_score = |value| BTreeMap::from([(TeamCeilingLens::PointsPace, Some(value))]);
+        let mut players = vec![
+            row(1, "Dylan Garand", Position::Goalie, 3, one_score(98.66)),
+            row(2, "Igor Shesterkin", Position::Goalie, 51, one_score(74.07)),
+            row(
+                3,
+                "Joonas Korpisalo",
+                Position::Goalie,
+                31,
+                one_score(51.99),
+            ),
+            row(
+                10,
+                "Drew Fortescue",
+                Position::Defense,
+                9,
+                BTreeMap::from([
+                    (TeamCeilingLens::PointsPace, None),
+                    (TeamCeilingLens::Fantasy, Some(95.67)),
+                ]),
+            ),
+            row(
+                11,
+                "Vladislav Gavrikov",
+                Position::Defense,
+                82,
+                BTreeMap::from([
+                    (TeamCeilingLens::PointsPace, Some(35.0)),
+                    (TeamCeilingLens::GoalScoring, Some(14.0)),
+                    (TeamCeilingLens::Fantasy, Some(89.5)),
+                    (TeamCeilingLens::Upside, Some(31.01)),
+                ]),
+            ),
+        ];
+        players.extend((0..5).map(|index| {
+            row(
+                20 + index,
+                "Established defenseman",
+                Position::Defense,
+                82,
+                one_score(60.0 - f64::from(index)),
+            )
+        }));
+
+        let rows = super::preseason_opening_players(&players);
+        let selected = |player_id| {
+            rows.iter()
+                .find(|candidate| candidate.player_id == player_id)
+                .unwrap()
+                .selected_at_opening
+        };
+
+        assert!(!selected(1), "three-game goalie heater must be regressed");
+        assert!(selected(2));
+        assert!(selected(3));
+        assert!(!selected(10), "partial nine-game lens must be regressed");
+        assert!(selected(11));
+    }
+
+    #[test]
     fn window_package_refuses_partial_league_affiliate_inputs() {
         let league = super::AhlPreseasonLeagueProjectionInputsView {
             schema: super::AHL_PRESEASON_LEAGUE_PROJECTION_INPUTS_SCHEMA.to_owned(),
@@ -12828,8 +13679,14 @@ mod tests {
         assert!(audit.fully_classified);
         assert_eq!(audit.legacy_relationships, 0);
         assert_eq!(audit.unknown_relationships, 0);
-        assert_eq!(audit.ranking_eligible, 9);
+        assert_eq!(audit.ranking_eligible, 10);
         assert_eq!(audit.camp_only, 1);
+        assert!(overlay
+            .candidates
+            .iter()
+            .any(|candidate| candidate.display_name == "Luca Cagnoni"
+                && candidate.team == "SJS"
+                && candidate.relationship.supports_prospect_ranking()));
         assert_eq!(
             overlay
                 .candidates

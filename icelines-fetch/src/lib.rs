@@ -26,6 +26,7 @@ pub mod chunkstore;
 pub mod contracts_csv;
 pub mod csv_loader;
 pub mod datastore;
+pub mod draft_pick_history;
 pub mod error;
 pub mod fantasy_daily;
 pub mod fantasy_db;
@@ -99,6 +100,12 @@ pub use bundled::{
 };
 pub use cache::Cache;
 pub use career::load_career;
+pub use draft_pick_history::{
+    acquire_draft_pick_value_curve, build_draft_pick_outcome_set, DraftPickCurveAcquisitionView,
+    DraftPickOutcomeBuildConfig, DraftPickOutcomeBuildError, DraftPickOutcomeSet,
+    DraftPickSeasonAppearance, HistoricalDraftClass, HistoricalDraftSelection,
+    DRAFT_PICK_CURVE_ACQUISITION_SCHEMA, DRAFT_PICK_OUTCOME_SET_SCHEMA,
+};
 pub use error::FetchError;
 pub use game_prediction_edge_assembler::{
     assemble_game_prediction_evidence, attach_player_line_matchup_forecast,
@@ -131,6 +138,9 @@ pub use historical_official_prediction_edge::{
 pub use historical_prediction_edge::{
     build_historical_moneypuck_edge_package, HistoricalMoneyPuckTeamInput,
     HistoricalPredictionEdgeBuildResult, HistoricalPredictionEdgeError,
+};
+pub use icelines_sources::draft_pick_ownership_csv::{
+    parse_draft_pick_ownership_csv, DraftPickOwnershipCsvError,
 };
 pub use icelines_sources::moneypuck_line_game::{
     moneypuck_line_game_url, moneypuck_line_summary_url, parse_moneypuck_line_games,

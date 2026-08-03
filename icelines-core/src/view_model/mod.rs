@@ -83,6 +83,7 @@ pub mod team_game_prediction_training;
 pub mod team_lineup;
 pub mod team_season_forecast;
 pub mod tokens;
+pub mod trade_market;
 pub mod training_camp;
 pub mod transactions;
 
@@ -575,9 +576,11 @@ pub use streaks::{
     TeamPlayerStreakLeaderRow, TeamPlayerStreaksView,
 };
 pub use team_ceiling::{
-    build_team_ceiling, team_ceiling_player_lens_score, TeamCeilingError, TeamCeilingLens,
-    TeamCeilingLensScore, TeamCeilingPlayerInput, TeamCeilingPlayerRow, TeamCeilingRow,
-    TeamCeilingView, TEAM_CEILING_METHOD, TEAM_CEILING_SCHEMA,
+    build_team_ceiling, confidence_weighted_player_value, nhl_sample_confidence,
+    team_ceiling_player_lens_score, team_ceiling_player_modeled_lens_score, TeamCeilingError,
+    TeamCeilingLens, TeamCeilingLensScore, TeamCeilingPlayerInput, TeamCeilingPlayerRow,
+    TeamCeilingRow, TeamCeilingView, NHL_SAMPLE_PRIOR_GAMES, TEAM_CEILING_METHOD,
+    TEAM_CEILING_SCHEMA,
 };
 pub use team_depth::{
     DeploymentEvidence, DepthGoalieSlot, DepthLeagueView, DepthLine, DepthPair, DepthPlayerSlot,
@@ -628,30 +631,31 @@ pub use team_game_prediction_training::{
     TEAM_GAME_PREDICTION_VALIDATION_JSON_SCHEMA, TEAM_GAME_PREDICTION_VALIDATION_SCHEMA,
 };
 pub use team_lineup::{
-    build_team_lineup_projection, team_lineup_card_assets, team_lineup_card_section,
-    IceLinesPlayerScoreComponent, IceLinesPlayerScoreView, LineupAssignmentEvidence,
-    LineupForwardPosition, PlayerScorePositionGroup, TeamLineupDefensePairView,
-    TeamLineupForwardLineView, TeamLineupGoaliesView, TeamLineupPlayerInput, TeamLineupPlayerView,
-    TeamLineupPortraitView, TeamLineupProjectionError, TeamLineupProjectionView,
-    TeamLineupRequestedSlot, TeamLineupSpecialTeamsKind, TeamLineupSpecialTeamsUnitView,
-    TeamLineupSpecialTeamsView, TeamLineupWarningView, ICELINES_PLAYER_SCORE_METHOD,
-    ICELINES_PLAYER_SCORE_SCHEMA, TEAM_LINEUP_PROJECTION_SCHEMA,
+    build_team_lineup_projection, rebuild_team_lineup_projection, team_lineup_card_assets,
+    team_lineup_card_section, IceLinesPlayerScoreComponent, IceLinesPlayerScoreView,
+    LineupAssignmentEvidence, LineupForwardPosition, PlayerScorePositionGroup,
+    TeamLineupDefensePairView, TeamLineupForwardLineView, TeamLineupGoaliesView,
+    TeamLineupPlayerInput, TeamLineupPlayerView, TeamLineupPortraitView, TeamLineupProjectionError,
+    TeamLineupProjectionView, TeamLineupRequestedSlot, TeamLineupRosterChangeInput,
+    TeamLineupSpecialTeamsKind, TeamLineupSpecialTeamsUnitView, TeamLineupSpecialTeamsView,
+    TeamLineupWarningView, ICELINES_PLAYER_SCORE_METHOD, ICELINES_PLAYER_SCORE_SCHEMA,
+    TEAM_LINEUP_PROJECTION_SCHEMA,
 };
 pub use team_season_forecast::{
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_event,
     build_team_season_game_plan_schedule, build_team_season_game_plan_schedule_from_evidence,
     build_team_season_plausible_trade_scenario, compare_team_season_forecast_scenarios,
-    simulate_team_season_forecast, simulate_team_season_forecast_as_of_with_scenario,
-    simulate_team_season_forecast_with_scenario, TeamSeasonAdaptiveLineupChoice,
-    TeamSeasonAdaptiveLineupChoiceSummaryRow, TeamSeasonAdaptiveLineupPolicy,
-    TeamSeasonAdaptiveLineupSummaryRow, TeamSeasonAutoPersonnelConfig,
-    TeamSeasonForecastHistoryCheckpointRow, TeamSeasonForecastHistoryMateriality,
-    TeamSeasonForecastHistoryMoverRow, TeamSeasonForecastHistoryPointRow,
-    TeamSeasonForecastHistoryTeamRow, TeamSeasonForecastHistoryTrend,
-    TeamSeasonForecastHistoryView, TeamSeasonForecastMovementRow, TeamSeasonForecastMovementView,
-    TeamSeasonForecastRow, TeamSeasonForecastView, TeamSeasonGamePlanScheduleView,
-    TeamSeasonLeagueLeaders, TeamSeasonOpeningRosterChoice,
+    rehydrate_team_game_forecast, simulate_team_season_forecast,
+    simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
+    TeamSeasonAdaptiveLineupChoice, TeamSeasonAdaptiveLineupChoiceSummaryRow,
+    TeamSeasonAdaptiveLineupPolicy, TeamSeasonAdaptiveLineupSummaryRow,
+    TeamSeasonAutoPersonnelConfig, TeamSeasonForecastHistoryCheckpointRow,
+    TeamSeasonForecastHistoryMateriality, TeamSeasonForecastHistoryMoverRow,
+    TeamSeasonForecastHistoryPointRow, TeamSeasonForecastHistoryTeamRow,
+    TeamSeasonForecastHistoryTrend, TeamSeasonForecastHistoryView, TeamSeasonForecastMovementRow,
+    TeamSeasonForecastMovementView, TeamSeasonForecastRow, TeamSeasonForecastView,
+    TeamSeasonGamePlanScheduleView, TeamSeasonLeagueLeaders, TeamSeasonOpeningRosterChoice,
     TeamSeasonOpeningRosterChoiceSummaryRow, TeamSeasonOpeningRosterPolicy,
     TeamSeasonOpeningRosterSummaryRow, TeamSeasonOpponentGamePlanInput, TeamSeasonPersonnelInput,
     TeamSeasonPivotalGameRow, TeamSeasonPlausibleTradeConfig, TeamSeasonProbabilityLeaderRow,
@@ -665,6 +669,37 @@ pub use team_season_forecast::{
 pub use tokens::{
     MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision,
     ALL_SEMANTIC_TOKENS,
+};
+pub use trade_market::{
+    assemble_trade_market, attach_trade_package_lineup_impacts,
+    attach_trade_package_season_forecast, build_draft_pick_value_curve, build_trade_lineup_board,
+    build_trade_lineup_scenario, build_trade_lineup_scenario_from_projection, build_trade_scout,
+    build_trade_scout_from_league, closest_balancing_pick, draft_pick_trade_asset,
+    evaluate_trade_market, evaluate_trade_package, populate_trade_scout_draft_picks,
+    populate_trade_scout_league_from_camp, value_draft_pick_asset, DraftPickAssetInput,
+    DraftPickAssetValue, DraftPickOutcomeObservation, DraftPickPackageRole, DraftPickSlotOutcome,
+    DraftPickValueConfig, DraftPickValueCurve, DraftPickValueError, DraftPickValueRow,
+    TradeAssetAssemblyInput, TradeAssetValueInput, TradeAvailabilityEvidence,
+    TradeAvailabilityKind, TradeDraftPickExecutionAuthority, TradeDraftPickOwnershipInput,
+    TradeDraftPickOwnershipStatus, TradeExecutionAuthorityInput, TradeLineupAssignmentKind,
+    TradeLineupAssignmentView, TradeLineupBoardCandidateInput, TradeLineupBoardInput,
+    TradeLineupBoardRowView, TradeLineupBoardView, TradeLineupLimits, TradeLineupPlayerInput,
+    TradeLineupPosition, TradeLineupProjectionChangeInput, TradeLineupScenarioInput,
+    TradeLineupScenarioView, TradeMarketAssemblyInput, TradeMarketEvaluationView, TradeMarketInput,
+    TradeNegotiationLadderView, TradeNegotiationPackageView, TradeNegotiationTier,
+    TradePackageAssemblyInput, TradePackageEvaluationView, TradePackageInput,
+    TradePackageLineupImpactView, TradePackagePickRoleView, TradePackageSeasonForecastImpactView,
+    TradePlayerExecutionAuthority, TradeScoutAssetInput, TradeScoutAvailabilityOverlayInput,
+    TradeScoutCandidateView, TradeScoutConfig, TradeScoutDraftPickPopulationInput,
+    TradeScoutDraftPickPopulationView, TradeScoutInput, TradeScoutLeagueAssetInput,
+    TradeScoutLeagueAssetKind, TradeScoutLeagueConfig, TradeScoutLeagueInput,
+    TradeScoutLeagueOrganizationInput, TradeScoutLeagueView, TradeScoutPopulationConfig,
+    TradeScoutPopulationInput, TradeScoutPopulationView, TradeScoutView,
+    TradeTeamExecutionAuthority, TradeTeamPreferenceInput, TradeTeamSeasonForecastDeltaView,
+    TradeTransactionGates, TradeValueBasis, DRAFT_PICK_VALUE_CURVE_SCHEMA, DRAFT_PICK_VALUE_METHOD,
+    TRADE_LINEUP_BOARD_SCHEMA, TRADE_MARKET_EVALUATION_SCHEMA,
+    TRADE_SCOUT_DRAFT_PICK_POPULATION_SCHEMA, TRADE_SCOUT_LEAGUE_SCHEMA,
+    TRADE_SCOUT_POPULATION_SCHEMA, TRADE_SCOUT_SCHEMA,
 };
 pub use training_camp::{
     build_training_camp_blender_set, build_training_camp_exposure_board,

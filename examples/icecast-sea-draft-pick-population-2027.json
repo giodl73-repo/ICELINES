@@ -1,0 +1,295 @@
+{
+  "schema": "trade_scout_draft_pick_population.v1",
+  "as_of": "2026-08-03",
+  "picks_supplied": 8,
+  "picks_populated": 7,
+  "unresolved_asset_ids": [
+    "CBJ-WPG-2027-2-lower-owned-by-SEA"
+  ],
+  "assets": [
+    {
+      "organization": "SEA",
+      "asset": {
+        "id": "SEA-2027-1",
+        "label": "SEA 2027 round 1 pick",
+        "position": null,
+        "value_basis": {
+          "outcome_measure": "nhl_regular_season_games_played",
+          "horizon_years": 7,
+          "method": "camp-score screening translation v1"
+        },
+        "market_value": 249.47514727540496,
+        "current_value": 0.0,
+        "future_value": 249.47514727540496,
+        "season_points_impact": 0.0,
+        "uncertainty": 134.05699574178803,
+        "availability": {
+          "kind": "depth_surplus",
+          "probability": 1.0,
+          "source_url": null,
+          "observed_at": null,
+          "destination_allowed": true
+        },
+        "draft_pick": {
+          "id": "SEA-2027-1",
+          "draft_year": 2027,
+          "expected_overall_pick": 15.0625,
+          "expected_value": 249.47514727540496,
+          "expected_value_low": 182.44664940451102,
+          "expected_value_high": 316.50364514629905,
+          "future_discount": 1.0,
+          "uncertainty_width": 134.05699574178803
+        },
+        "disclosures": [
+          "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 1 and mapped by within-round percentile to the curve's 30-slot historical era."
+        ]
+      },
+      "protected": true
+    },
+    {
+      "organization": "SEA",
+      "asset": {
+        "id": "SEA-2027-3",
+        "label": "SEA 2027 round 3 pick",
+        "position": null,
+        "value_basis": {
+          "outcome_measure": "nhl_regular_season_games_played",
+          "horizon_years": 7,
+          "method": "camp-score screening translation v1"
+        },
+        "market_value": 51.8003878974636,
+        "current_value": 0.0,
+        "future_value": 51.8003878974636,
+        "season_points_impact": 0.0,
+        "uncertainty": 84.70418255852952,
+        "availability": {
+          "kind": "depth_surplus",
+          "probability": 1.0,
+          "source_url": null,
+          "observed_at": null,
+          "destination_allowed": true
+        },
+        "draft_pick": {
+          "id": "SEA-2027-3",
+          "draft_year": 2027,
+          "expected_overall_pick": 75.0625,
+          "expected_value": 51.8003878974636,
+          "expected_value_low": 10.765510340249307,
+          "expected_value_high": 95.46969289877883,
+          "future_discount": 1.0,
+          "uncertainty_width": 84.70418255852952
+        },
+        "disclosures": [
+          "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 3 and mapped by within-round percentile to the curve's 30-slot historical era."
+        ]
+      },
+      "protected": false
+    },
+    {
+      "organization": "SEA",
+      "asset": {
+        "id": "SEA-2027-4",
+        "label": "SEA 2027 round 4 pick",
+        "position": null,
+        "value_basis": {
+          "outcome_measure": "nhl_regular_season_games_played",
+          "horizon_years": 7,
+          "method": "camp-score screening translation v1"
+        },
+        "market_value": 40.14120602125146,
+        "current_value": 0.0,
+        "future_value": 40.14120602125146,
+        "season_points_impact": 0.0,
+        "uncertainty": 74.366861279566,
+        "availability": {
+          "kind": "depth_surplus",
+          "probability": 1.0,
+          "source_url": null,
+          "observed_at": null,
+          "destination_allowed": true
+        },
+        "draft_pick": {
+          "id": "SEA-2027-4",
+          "draft_year": 2027,
+          "expected_overall_pick": 105.0625,
+          "expected_value": 40.14120602125146,
+          "expected_value_low": 5.745558849502107,
+          "expected_value_high": 80.1124201290681,
+          "future_discount": 1.0,
+          "uncertainty_width": 74.366861279566
+        },
+        "disclosures": [
+          "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 4 and mapped by within-round percentile to the curve's 30-slot historical era."
+        ]
+      },
+      "protected": false
+    },
+    {
+      "organization": "SEA",
+      "asset": {
+        "id": "SEA-2027-5",
+        "label": "SEA 2027 round 5 pick",
+        "position": null,
+        "value_basis": {
+          "outcome_measure": "nhl_regular_season_games_played",
+          "horizon_years": 7,
+          "method": "camp-score screening translation v1"
+        },
+        "market_value": 29.102155649829005,
+        "current_value": 0.0,
+        "future_value": 29.102155649829005,
+        "season_points_impact": 0.0,
+        "uncertainty": 53.10715429583169,
+        "availability": {
+          "kind": "depth_surplus",
+          "probability": 1.0,
+          "source_url": null,
+          "observed_at": null,
+          "destination_allowed": true
+        },
+        "draft_pick": {
+          "id": "SEA-2027-5",
+          "draft_year": 2027,
+          "expected_overall_pick": 135.0625,
+          "expected_value": 29.102155649829005,
+          "expected_value_low": 6.743944072362518,
+          "expected_value_high": 59.85109836819421,
+          "future_discount": 1.0,
+          "uncertainty_width": 53.10715429583169
+        },
+        "disclosures": [
+          "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 5 and mapped by within-round percentile to the curve's 30-slot historical era."
+        ]
+      },
+      "protected": false
+    },
+    {
+      "organization": "SEA",
+      "asset": {
+        "id": "SEA-2027-6",
+        "label": "SEA 2027 round 6 pick",
+        "position": null,
+        "value_basis": {
+          "outcome_measure": "nhl_regular_season_games_played",
+          "horizon_years": 7,
+          "method": "camp-score screening translation v1"
+        },
+        "market_value": 23.338977165451833,
+        "current_value": 0.0,
+        "future_value": 23.338977165451833,
+        "season_points_impact": 0.0,
+        "uncertainty": 47.81735963386523,
+        "availability": {
+          "kind": "depth_surplus",
+          "probability": 1.0,
+          "source_url": null,
+          "observed_at": null,
+          "destination_allowed": true
+        },
+        "draft_pick": {
+          "id": "SEA-2027-6",
+          "draft_year": 2027,
+          "expected_overall_pick": 165.0625,
+          "expected_value": 23.338977165451833,
+          "expected_value_low": 4.079216342498323,
+          "expected_value_high": 51.89657597636355,
+          "future_discount": 1.0,
+          "uncertainty_width": 47.81735963386523
+        },
+        "disclosures": [
+          "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 6 and mapped by within-round percentile to the curve's 30-slot historical era."
+        ]
+      },
+      "protected": false
+    },
+    {
+      "organization": "SEA",
+      "asset": {
+        "id": "SEA-2027-7",
+        "label": "SEA 2027 round 7 pick",
+        "position": null,
+        "value_basis": {
+          "outcome_measure": "nhl_regular_season_games_played",
+          "horizon_years": 7,
+          "method": "camp-score screening translation v1"
+        },
+        "market_value": 16.37740721288515,
+        "current_value": 0.0,
+        "future_value": 16.37740721288515,
+        "season_points_impact": 0.0,
+        "uncertainty": 35.517224687182896,
+        "availability": {
+          "kind": "depth_surplus",
+          "probability": 1.0,
+          "source_url": null,
+          "observed_at": null,
+          "destination_allowed": true
+        },
+        "draft_pick": {
+          "id": "SEA-2027-7",
+          "draft_year": 2027,
+          "expected_overall_pick": 195.0625,
+          "expected_value": 16.37740721288515,
+          "expected_value_low": 3.1138901207283007,
+          "expected_value_high": 38.631114807911196,
+          "future_discount": 1.0,
+          "uncertainty_width": 35.517224687182896
+        },
+        "disclosures": [
+          "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 7 and mapped by within-round percentile to the curve's 30-slot historical era."
+        ]
+      },
+      "protected": false
+    },
+    {
+      "organization": "SEA",
+      "asset": {
+        "id": "TBL-2027-1-owned-by-SEA",
+        "label": "TBL 2027 round 1 pick",
+        "position": null,
+        "value_basis": {
+          "outcome_measure": "nhl_regular_season_games_played",
+          "horizon_years": 7,
+          "method": "camp-score screening translation v1"
+        },
+        "market_value": 249.47514727540496,
+        "current_value": 0.0,
+        "future_value": 249.47514727540496,
+        "season_points_impact": 0.0,
+        "uncertainty": 134.05699574178803,
+        "availability": {
+          "kind": "depth_surplus",
+          "probability": 1.0,
+          "source_url": null,
+          "observed_at": null,
+          "destination_allowed": true
+        },
+        "draft_pick": {
+          "id": "TBL-2027-1-owned-by-SEA",
+          "draft_year": 2027,
+          "expected_overall_pick": 15.0625,
+          "expected_value": 249.47514727540496,
+          "expected_value_low": 182.44664940451102,
+          "expected_value_high": 316.50364514629905,
+          "future_discount": 1.0,
+          "uncertainty_width": 134.05699574178803
+        },
+        "disclosures": [
+          "Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+          "Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 1 and mapped by within-round percentile to the curve's 30-slot historical era."
+        ]
+      },
+      "protected": false
+    }
+  ],
+  "disclosures": [
+    "Only reviewed confirmed-unconditional ownership becomes offer inventory; conditional and encumbered rights remain unresolved.",
+    "Full-round uniform slot outcomes are a conservative preseason baseline, normalized by within-round percentile when the curve's historical league size differs; this is not a prediction of final draft order."
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "as_of": "2026-08-03",
+  "current_draft_year": 2027,
+  "value_basis": {
+    "outcome_measure": "nhl_regular_season_games_played",
+    "horizon_years": 7,
+    "method": "camp-score screening translation v1"
+  },
+  "protected_asset_ids": ["SEA-2027-1"]
+}

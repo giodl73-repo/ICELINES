@@ -13,6 +13,7 @@ pub mod capwages;
 pub mod compat;
 pub mod contracts_csv;
 pub mod current_state;
+pub mod draft_pick_ownership_csv;
 pub mod fragment;
 pub mod identity_review;
 pub mod moneypuck;

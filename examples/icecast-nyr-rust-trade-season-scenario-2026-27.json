@@ -1,0 +1,28 @@
+{
+  "name": "NYR acquires Bryan Rust — paired trade season",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "nyr-rust-trade-buyer",
+      "kind": "trade",
+      "team": "NYR",
+      "player": "Bryan Rust",
+      "effective_date": "2026-09-29",
+      "strength_delta": 1.8454,
+      "occurrence_probability": 1.0,
+      "correlation_key": "nyr-pit-rust-trade",
+      "label": "NYR adds Bryan Rust at 50% retained and sends Joe Veleno plus the BOS 2027 second-round pick"
+    },
+    {
+      "id": "pit-rust-trade-seller",
+      "kind": "trade",
+      "team": "PIT",
+      "player": "Bryan Rust",
+      "effective_date": "2026-09-29",
+      "strength_delta": -1.5615,
+      "occurrence_probability": 1.0,
+      "correlation_key": "nyr-pit-rust-trade",
+      "label": "PIT sends Bryan Rust at 50% retained and adds Joe Veleno plus the BOS 2027 second-round pick"
+    }
+  ]
+}

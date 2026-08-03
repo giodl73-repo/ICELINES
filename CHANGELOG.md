@@ -2,6 +2,92 @@
 
 ## Unreleased
 
+- Added the UI-neutral Automatic Trade Scout and Package Negotiator with buyer-specific discovery scoring, protected-asset policy, bounded opening/fair/maximum offer ladders, walk-away values, and a `trade-scout` CLI. Generated offers remain transaction-blocked until full execution authority is attached.
+- Added `trade_scout_league.v1` and `trade-scout-league` to derive targets and buyer offer assets from normalized organization inventories. Need matching, seller surplus/availability, destination vetoes, protection policy, and explicit complete/partial league coverage are enforced before package generation.
+- Added `trade_scout_population.v1` and `trade-scout-populate` to translate the existing all-team training-camp roster/prospect authority into Trade Scout inventory. Player values and role thresholds use an explicit policy; dated availability, protection, and ownership-scoped pick inputs remain separate overlays. The CLI can write both the reusable populated inventory and its immediately evaluated league board.
+- Added reviewed future-pick ownership ingestion and `trade_scout_draft_pick_population.v1`. `trade-pick-populate` values confirmed-unconditional rights through the existing mature-cohort curve, retains full-round slot uncertainty, and refuses to flatten conditional or encumbered rights into offer inventory. `trade-scout-populate --pick-assets` merges the resulting assets while preserving pick protection.
+- Sourced trade-availability states now require both a valid source URL and observation time; exact negotiation boundaries use scale-aware floating-point tolerance.
+- IceCast `season-simulate` now replays an archived `team_season_forecast.v1` directly, rehydrating its retained game forecast with explicit baseline-v1 parameters so paired trade scenarios do not require regenerating the schedule.
+
+- Trade Desk markets now reject mixed valuation measures, horizons, or methods
+  and keep projected next-season standings impact separate from control-value
+  fairness. Retained salary now changes both clubs' cap math and is gated by
+  the 50% contract limit plus sourced remaining club retention slots. Cap
+  utility now consumes each club's derived package-level cap-space delta.
+- Added a reproducible Rangers/Predators example that evaluates a speculative
+  50%-retained Ryan O'Reilly package against Boston's 2027 second-round pick,
+  including sourced cap, roster, contract, clause-review, retention-slot, and
+  pick-ownership authority plus visible player-value assumptions.
+- Trade Desk packages can now attach paired baseline/trade season forecasts
+  and expose both clubs' average-points, playoff, and Cup-probability deltas.
+  `trade-market-assemble` accepts optional same-seed baseline and scenario
+  forecasts and reports the residual versus the isolated buyer estimate.
+- Added Trade Desk lineup optimization across configurable C/LW/RW/D/G slots,
+  natural multi-position eligibility, and penalized alternate-side permission.
+  Buyer and seller attachments expose net lineup strength, additions, explicit
+  trade removals, and players displaced only by competition; CLI accepts paired
+  `--buyer-lineup` and `--seller-lineup` inputs.
+- Added `icecast trade-lineup`, which adapts an existing UI-neutral team lineup
+  plus a compact change document. The initial NYR/O'Reilly scenario adds him at
+  C, displaces Joe Veleno, excludes an unscored extra with disclosure, and keeps
+  the authored incoming score and alternate-side penalty visible.
+- Trade lineup changes can now carry full incoming-player lens and PP/PK role
+  evidence. Core preserves incumbent evidence, uses the optimizer's exact
+  dressed assignments, and regenerates four forward lines, three defense pairs,
+  goalies, PP1/PP2, and PK1/PK2 in the UI-neutral result. The CLI renders those
+  units directly and can explicitly adapt the top retained training-camp branch;
+  missing deployment evidence still fails visibly as unit warnings.
+- Added the UI-neutral `trade_lineup_board.v1` and `icecast trade-lineup-board`
+  comparison surface. It runs every candidate against one baseline, keeps pure
+  hockey rank separate from transaction-gated actionable rank, and refuses to
+  promote blocked rumors. The initial NYR board compares O'Reilly, Rust, Boeser,
+  DeBrusk, and Vatrano using official 2025-26 PP/PK deployment; Vatrano's weak
+  recent evidence correctly produces no modeled lineup upgrade.
+- Hardened Trade Board actionability: any candidate claiming transaction-ready
+  status must embed the matching Trade Desk package evaluation. Core rejects
+  missing evidence or mismatched buyer, feasibility, and gate results instead
+  of trusting an authored boolean.
+- Added an authority-backed NYR/PIT package for Bryan Rust at 50% retention in
+  exchange for Joe Veleno and Boston's 2027 second-round pick. The modeled deal
+  passes cap, roster, retention, contract, and pick gates, scores 95.4% market
+  fairness, and becomes Trade Board actionable rank 2 behind O'Reilly.
+- Added cap-balanced Boeser, DeBrusk, and Vatrano package tests. Each passes cap,
+  roster, retention, and pick gates but remains non-executable because current
+  NMC/M-NTC destination authority is absent. Trade Board now displays candidate
+  availability separately from executable feasibility, preserving a rumor
+  signal without mislabeling a protected transaction as possible today.
+- Added source-neutral Trade Desk package assembly. Raw player and pick assets
+  now join to dated team cap/roster evidence, player contract/clause evidence,
+  and pick-ownership evidence; picks are valued from the sealed historical
+  curve and both clubs' post-trade cap and roster states are derived in core.
+  `icecast trade-market-assemble` accepts the reusable curve artifact and emits
+  the existing UI-neutral market evaluation without recomputing logic in CLI.
+- Fixed Trade Desk execution gates so missing or failed cap compliance, roster
+  compliance, contract/clause authority, or required pick ownership can no
+  longer receive transaction-ready, nonzero-feasibility, or mutual-benefit
+  labels. Hockey utility remains visible for scenario analysis.
+- Added the IceCast Trade Desk foundation: mature-cohort monotone draft-pick
+  curves, probabilistic pick slots, future-pick discounting, needs/timeline/cap
+  utility for both clubs, sourced availability states, destination-control
+  gates, market fairness, balancing-pick selection, and explicit
+  rounding-versus-principal pick labels. `icecast trade-market` renders the
+  same UI-neutral evaluation contract consumed by other surfaces.
+- Added survivorship-safe historical pick calibration from complete terminal
+  NHL draft classes plus both skater and goalie bios. Players with no NHL
+  appearance remain zero outcomes, identity joins use draft coordinates rather
+  than names, byte-identical source duplicates are disclosed and collapsed,
+  conflicting duplicates fail closed, and `icecast draft-pick-curve` emits the
+  reusable outcome population and monotone value curve. The initial sealed
+  2005-2018 seven-season cohort contains 2,930 selections, including 1,491
+  zero-NHL-game outcomes.
+- Fixed preseason depth confidence so per-game player rates are weighted by
+  `GP/(GP+20)` in team aggregation, opening-lineup selection, and simulated
+  personnel values after each lens is bounded to 0–100. Three-game goalie
+  heaters and partial-lens prospect samples retain upside without outranking
+  established full-season players at full weight; raw per-82 values remain
+  visible for audit. `icecast season --candidate-overlay` now reuses the
+  sourced camp/prospect population contract to complete thin official roster
+  snapshots without hardcoded team exceptions or invented player production.
 - Added the reusable `icelines-sources` crate and moved deterministic NHL,
   AHL, MoneyPuck, CapWages, Yahoo, transaction, bundled-artifact, and identity
   parsing behind compatibility facades. Source-neutral fact/package contracts,

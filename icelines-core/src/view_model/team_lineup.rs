@@ -237,6 +237,18 @@ pub struct TeamLineupProjectionView {
     pub warnings: Vec<TeamLineupWarningView>,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamLineupRosterChangeInput {
+    #[serde(default)]
+    pub incoming_players: Vec<TeamLineupPlayerInput>,
+    #[serde(default)]
+    pub outgoing_player_ids: Vec<u32>,
+    /// Optional exact dressed deployment. When non-empty, every unlisted
+    /// player becomes an extra so selection and rendering cannot diverge.
+    #[serde(default)]
+    pub requested_slots: BTreeMap<u32, TeamLineupRequestedSlot>,
+}
+
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum TeamLineupProjectionError {
     #[error("lineup projection requires at least one player")]
@@ -267,6 +279,68 @@ pub enum TeamLineupProjectionError {
     DuplicateRequestedSlot,
     #[error("player {0} has an invalid special-teams role score")]
     InvalidSpecialTeamsScore(u32),
+    #[error("outgoing player {0} is absent from the baseline lineup projection")]
+    UnknownOutgoingPlayer(u32),
+    #[error("requested lineup player {0} is absent after the roster change")]
+    UnknownRequestedPlayer(u32),
+}
+
+/// Rebuild a complete renderer-neutral lineup after a roster transaction.
+///
+/// Incumbent score components and special-teams evidence are carried forward
+/// verbatim as inputs to the ordinary lineup builder. Assignments are deliberately
+/// released so the same production lineup logic can reconsider every line and unit.
+pub fn rebuild_team_lineup_projection(
+    baseline: &TeamLineupProjectionView,
+    change: TeamLineupRosterChangeInput,
+) -> Result<TeamLineupProjectionView, TeamLineupProjectionError> {
+    let outgoing = change
+        .outgoing_player_ids
+        .iter()
+        .copied()
+        .collect::<BTreeSet<_>>();
+    let mut players = lineup_players(baseline)
+        .map(team_lineup_input_from_view)
+        .collect::<Vec<_>>();
+    let baseline_ids = players
+        .iter()
+        .map(|player| player.player_id)
+        .collect::<BTreeSet<_>>();
+    if let Some(unknown) = outgoing.difference(&baseline_ids).next() {
+        return Err(TeamLineupProjectionError::UnknownOutgoingPlayer(*unknown));
+    }
+    players.retain(|player| !outgoing.contains(&player.player_id));
+    players.extend(change.incoming_players);
+    if !change.requested_slots.is_empty() {
+        let player_ids = players
+            .iter()
+            .map(|player| player.player_id)
+            .collect::<BTreeSet<_>>();
+        if let Some(unknown) = change
+            .requested_slots
+            .keys()
+            .find(|id| !player_ids.contains(id))
+        {
+            return Err(TeamLineupProjectionError::UnknownRequestedPlayer(*unknown));
+        }
+        for player in &mut players {
+            player.requested_slot = Some(
+                change
+                    .requested_slots
+                    .get(&player.player_id)
+                    .copied()
+                    .unwrap_or(TeamLineupRequestedSlot::Extra),
+            );
+            player.assignment_evidence = LineupAssignmentEvidence::Scenario;
+        }
+    }
+    let mut projection =
+        build_team_lineup_projection(&baseline.team, baseline.roster_season, players)?;
+    projection.warnings.push(TeamLineupWarningView {
+        code: "roster_change_reoptimized".to_owned(),
+        message: "All lineup and special-teams assignments were regenerated after the roster change; incumbent score evidence was preserved.".to_owned(),
+    });
+    Ok(projection)
 }
 
 pub fn build_team_lineup_projection(
@@ -747,6 +821,31 @@ fn lineup_players(view: &TeamLineupProjectionView) -> impl Iterator<Item = &Team
         .chain(view.extras.iter())
 }
 
+fn team_lineup_input_from_view(player: &TeamLineupPlayerView) -> TeamLineupPlayerInput {
+    TeamLineupPlayerInput {
+        player_id: player.player_id,
+        display_name: player.display_name.clone(),
+        team: player.team.clone(),
+        prior_team: player.prior_team.clone(),
+        primary_position: player.primary_position,
+        eligible_positions: player.eligible_positions.clone(),
+        headshot_canonical_url: player.portrait.headshot_canonical_url.clone(),
+        games_played: player.score.sample_games,
+        lens_scores: player
+            .score
+            .components
+            .iter()
+            .map(|component| (component.lens, component.raw_value))
+            .collect(),
+        score_evidence: player.score.evidence_label,
+        power_play_role_score: player.power_play_role_score,
+        penalty_kill_role_score: player.penalty_kill_role_score,
+        special_teams_evidence: player.special_teams_evidence,
+        requested_slot: None,
+        assignment_evidence: LineupAssignmentEvidence::Scenario,
+    }
+}
+
 impl TeamLineupPlayerView {
     fn requested_slot(&self) -> Option<TeamLineupRequestedSlot> {
         self.requested_slot
@@ -1177,6 +1276,68 @@ mod tests {
             .warnings
             .iter()
             .any(|warning| warning.code == "unrated_players"));
+    }
+
+    #[test]
+    fn roster_change_rebuilds_lines_and_special_teams_from_preserved_evidence() {
+        let baseline = build_team_lineup_projection(
+            "NYR",
+            20262027,
+            vec![
+                player(1, "Incumbent Center", Position::Center),
+                player(2, "Left Wing", Position::LeftWing),
+                player(3, "Right Wing", Position::RightWing),
+                player(4, "Quarterback", Position::Defense),
+                player(5, "Partner", Position::Defense),
+                player(6, "Goalie", Position::Goalie),
+            ],
+        )
+        .unwrap();
+        let incumbent_score = baseline.forward_lines[0]
+            .center
+            .as_ref()
+            .unwrap()
+            .score
+            .value;
+        let mut incoming = player(7, "Incoming Center", Position::Center);
+        incoming
+            .lens_scores
+            .insert(TeamCeilingLens::PointsPace, Some(100.0));
+        incoming.power_play_role_score = Some(120.0);
+        incoming.penalty_kill_role_score = Some(110.0);
+        incoming.assignment_evidence = LineupAssignmentEvidence::Scenario;
+
+        let rebuilt = rebuild_team_lineup_projection(
+            &baseline,
+            TeamLineupRosterChangeInput {
+                incoming_players: vec![incoming],
+                outgoing_player_ids: vec![3],
+                requested_slots: BTreeMap::new(),
+            },
+        )
+        .unwrap();
+
+        let ids = lineup_players(&rebuilt)
+            .map(|player| player.player_id)
+            .collect::<BTreeSet<_>>();
+        assert!(ids.contains(&7));
+        assert!(!ids.contains(&3));
+        assert_eq!(
+            lineup_players(&rebuilt)
+                .find(|player| player.player_id == 1)
+                .unwrap()
+                .score
+                .value,
+            incumbent_score
+        );
+        assert!(rebuilt.special_teams.power_play[0].player_ids.contains(&7));
+        assert!(rebuilt.special_teams.penalty_kill[0]
+            .player_ids
+            .contains(&7));
+        assert!(rebuilt
+            .warnings
+            .iter()
+            .any(|warning| warning.code == "roster_change_reoptimized"));
     }
 
     #[test]
