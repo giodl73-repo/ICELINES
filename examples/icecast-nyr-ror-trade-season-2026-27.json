@@ -115675,6 +115675,136 @@
       "points_p50": 105,
       "points_p90": 116,
       "average_league_rank": 7.1355,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.1682
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.1216
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0917
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0775
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0679
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0565
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0552
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0457
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0382
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0309
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0326
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0287
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0248
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0215
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0191
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0199
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0144
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.014
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0128
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0092
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0097
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0077
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0066
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.006
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0059
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0028
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.003
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0031
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0019
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0018
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0009
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0002
+        }
+      ],
       "playoff_probability": 0.859,
       "second_round_probability": 0.5274,
       "conference_final_probability": 0.3201,
@@ -115697,6 +115827,136 @@
       "points_p50": 103,
       "points_p90": 114,
       "average_league_rank": 8.6071,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.1133
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0964
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0777
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0717
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0702
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0628
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0522
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0459
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0444
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0383
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.037
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0299
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0325
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0317
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0271
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0217
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0239
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.017
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0158
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0149
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0141
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0123
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0104
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0073
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0068
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.007
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0051
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0037
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0032
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0031
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0016
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.001
+        }
+      ],
       "playoff_probability": 0.7935,
       "second_round_probability": 0.4575,
       "conference_final_probability": 0.2597,
@@ -115719,6 +115979,136 @@
       "points_p50": 101,
       "points_p90": 112,
       "average_league_rank": 9.7486,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0865
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0765
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0696
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0689
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0595
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0617
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0509
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0517
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0471
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0414
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0378
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0376
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0319
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0317
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.031
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0257
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.027
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0206
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0193
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0183
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0175
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0155
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0129
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0128
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0105
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0099
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0068
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0065
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0047
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0043
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.003
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0009
+        }
+      ],
       "playoff_probability": 0.7422,
       "second_round_probability": 0.4014,
       "conference_final_probability": 0.217,
@@ -115741,6 +116131,136 @@
       "points_p50": 101,
       "points_p90": 111,
       "average_league_rank": 10.3777,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0725
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.07
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0674
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0603
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0572
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0578
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0543
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0472
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0466
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0447
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.041
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0369
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0377
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0345
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.03
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0273
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0264
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0259
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0221
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0201
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0191
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0158
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0162
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.012
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0117
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0111
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0095
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0074
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0066
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0052
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0032
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0023
+        }
+      ],
       "playoff_probability": 0.8409,
       "second_round_probability": 0.4983,
       "conference_final_probability": 0.2798,
@@ -115763,6 +116283,136 @@
       "points_p50": 100,
       "points_p90": 111,
       "average_league_rank": 10.7608,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0677
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0645
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0652
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.061
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0541
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0536
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0545
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0503
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0473
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0403
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.042
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0381
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.03
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0348
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.032
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0315
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0263
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0235
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0245
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0233
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0205
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0215
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.016
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0161
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0141
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0124
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0093
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0084
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0058
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0053
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0037
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0024
+        }
+      ],
       "playoff_probability": 0.6982,
       "second_round_probability": 0.3749,
       "conference_final_probability": 0.1925,
@@ -115785,6 +116435,136 @@
       "points_p50": 100,
       "points_p90": 111,
       "average_league_rank": 10.783,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0663
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0644
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0637
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0619
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0548
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0527
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0515
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0499
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0442
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0436
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.041
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0401
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0369
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0329
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.033
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0299
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0307
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0243
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0237
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0238
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0194
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0186
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0177
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0143
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0124
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0118
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0102
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0079
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0063
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.006
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0042
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0019
+        }
+      ],
       "playoff_probability": 0.8237,
       "second_round_probability": 0.4837,
       "conference_final_probability": 0.267,
@@ -115807,6 +116587,136 @@
       "points_p50": 99,
       "points_p90": 110,
       "average_league_rank": 11.7314,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0524
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0589
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0534
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0549
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.051
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0532
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0487
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0479
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0435
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.043
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0393
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0376
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0378
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0367
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0347
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0299
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0321
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0302
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0262
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0278
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0216
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0216
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0168
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0187
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0143
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0161
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0128
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0119
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0102
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0076
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0062
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.003
+        }
+      ],
       "playoff_probability": 0.7906,
       "second_round_probability": 0.4453,
       "conference_final_probability": 0.2452,
@@ -115829,6 +116739,136 @@
       "points_p50": 99,
       "points_p90": 110,
       "average_league_rank": 11.7299,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0546
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.056
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0579
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0531
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0533
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0478
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0452
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0494
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0473
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0438
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0409
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0392
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0392
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0327
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.032
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0319
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.029
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0265
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0264
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0269
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0231
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0201
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0229
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0193
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0171
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0142
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0136
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0096
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0105
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.008
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0055
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.003
+        }
+      ],
       "playoff_probability": 0.6459,
       "second_round_probability": 0.3352,
       "conference_final_probability": 0.1675,
@@ -115851,6 +116891,136 @@
       "points_p50": 99,
       "points_p90": 109,
       "average_league_rank": 11.9849,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.05
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0483
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0518
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0501
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0491
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0532
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0471
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0483
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0447
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0461
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0404
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0424
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0364
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0401
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0343
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0365
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.032
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0316
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0284
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0227
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0261
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0221
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0194
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.016
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0181
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0151
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0138
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0098
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0084
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.007
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0069
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0038
+        }
+      ],
       "playoff_probability": 0.8096,
       "second_round_probability": 0.4757,
       "conference_final_probability": 0.2739,
@@ -115873,6 +117043,136 @@
       "points_p50": 98,
       "points_p90": 109,
       "average_league_rank": 12.5813,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0468
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0468
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0508
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0467
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0457
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0487
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0422
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.045
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0428
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0451
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.041
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0366
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0422
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0413
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0313
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0339
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0313
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0298
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0318
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0267
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0247
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0274
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0211
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0213
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0213
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0168
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0136
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0133
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0117
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0097
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0066
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.006
+        }
+      ],
       "playoff_probability": 0.606,
       "second_round_probability": 0.3013,
       "conference_final_probability": 0.1434,
@@ -115895,6 +117195,136 @@
       "points_p50": 97,
       "points_p90": 108,
       "average_league_rank": 13.0464,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0372
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0428
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0386
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0479
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0459
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0437
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0457
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0437
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0441
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0453
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0438
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0413
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0411
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0376
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0327
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0358
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0319
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0337
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0323
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0313
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.026
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0272
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0228
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0214
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0206
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0199
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0154
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0148
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0121
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.011
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0076
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0048
+        }
+      ],
       "playoff_probability": 0.5818,
       "second_round_probability": 0.2826,
       "conference_final_probability": 0.1324,
@@ -115917,6 +117347,136 @@
       "points_p50": 97,
       "points_p90": 108,
       "average_league_rank": 13.6499,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.032
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0369
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0399
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0423
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0444
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0401
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0415
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0398
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0411
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0457
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.042
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0415
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0404
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0381
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0373
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0369
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0375
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0334
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0304
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0287
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0273
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0268
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0292
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0265
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0225
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0209
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0198
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0156
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.015
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0121
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0086
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0058
+        }
+      ],
       "playoff_probability": 0.5538,
       "second_round_probability": 0.2673,
       "conference_final_probability": 0.1241,
@@ -115939,6 +117499,136 @@
       "points_p50": 95,
       "points_p90": 106,
       "average_league_rank": 15.4055,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0182
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0239
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0313
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0343
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0321
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.033
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.037
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0377
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.037
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.04
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0382
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0366
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0346
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.04
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0411
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0401
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0365
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0368
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0358
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0346
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0333
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0341
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.033
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0331
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0284
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0258
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0257
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.024
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.023
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0168
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0147
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0093
+        }
+      ],
       "playoff_probability": 0.6644,
       "second_round_probability": 0.3528,
       "conference_final_probability": 0.1789,
@@ -115961,6 +117651,136 @@
       "points_p50": 94,
       "points_p90": 105,
       "average_league_rank": 16.0293,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0164
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0224
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0268
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0273
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0292
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0312
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0332
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.035
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0376
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0361
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0352
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0402
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0393
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0368
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0388
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0387
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0404
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0331
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0388
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0359
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0357
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0353
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0351
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0311
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0296
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0302
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0283
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0279
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0248
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.019
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0201
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0105
+        }
+      ],
       "playoff_probability": 0.4304,
       "second_round_probability": 0.1944,
       "conference_final_probability": 0.0835,
@@ -115983,6 +117803,136 @@
       "points_p50": 94,
       "points_p90": 105,
       "average_league_rank": 16.4208,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0169
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0175
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0228
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0261
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0299
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0312
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0311
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0357
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0378
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0324
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0368
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.039
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0357
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0377
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0389
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0367
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0361
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.037
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0375
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0359
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0374
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0339
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.036
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.033
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0342
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.031
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0293
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0271
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0255
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0257
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0207
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0135
+        }
+      ],
       "playoff_probability": 0.4077,
       "second_round_probability": 0.183,
       "conference_final_probability": 0.0819,
@@ -116005,6 +117955,136 @@
       "points_p50": 94,
       "points_p90": 105,
       "average_league_rank": 16.4809,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0141
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.02
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0232
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0281
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0283
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0328
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0316
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0294
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0357
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0336
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0355
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0338
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0408
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0343
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0367
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0401
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0394
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0384
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0379
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0367
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0371
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0374
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0362
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0364
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0301
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0337
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.03
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0268
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0247
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.023
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.019
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0152
+        }
+      ],
       "playoff_probability": 0.5737,
       "second_round_probability": 0.2577,
       "conference_final_probability": 0.1218,
@@ -116027,6 +118107,136 @@
       "points_p50": 94,
       "points_p90": 105,
       "average_league_rank": 16.5598,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0139
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0204
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0233
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0248
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0259
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0265
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0318
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0347
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0346
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0373
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.035
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0376
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.038
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0363
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0394
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0383
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0361
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0374
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0373
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0407
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0368
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0355
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0379
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0341
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0345
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0313
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.032
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0281
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0241
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0211
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0214
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0139
+        }
+      ],
       "playoff_probability": 0.4038,
       "second_round_probability": 0.1753,
       "conference_final_probability": 0.078,
@@ -116049,6 +118259,136 @@
       "points_p50": 94,
       "points_p90": 105,
       "average_league_rank": 16.5921,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0141
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0213
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.023
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0251
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0305
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0294
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0314
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.032
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0294
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0354
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0367
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0375
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0381
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.04
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0364
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0366
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0376
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0375
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0351
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0373
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0369
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0348
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0373
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0342
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0331
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0313
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0309
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0295
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0285
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0221
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0193
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0177
+        }
+      ],
       "playoff_probability": 0.6071,
       "second_round_probability": 0.3105,
       "conference_final_probability": 0.1524,
@@ -116071,6 +118411,136 @@
       "points_p50": 93,
       "points_p90": 104,
       "average_league_rank": 17.385,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0115
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0167
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0217
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0209
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0252
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.026
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0289
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0309
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0306
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0304
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0322
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0352
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0344
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.036
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0362
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0363
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0381
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0372
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0374
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0406
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0371
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.041
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0376
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0386
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0379
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0363
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0331
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0301
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0313
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0263
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0254
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0189
+        }
+      ],
       "playoff_probability": 0.3677,
       "second_round_probability": 0.1552,
       "conference_final_probability": 0.0667,
@@ -116093,6 +118563,136 @@
       "points_p50": 92,
       "points_p90": 103,
       "average_league_rank": 17.6922,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0098
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0157
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0184
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0202
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0236
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0253
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0269
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.028
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0314
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0321
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0313
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0326
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0372
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0339
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0349
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.037
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.036
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0407
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0375
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0393
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0409
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.041
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0389
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0362
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0355
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0381
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0381
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0353
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0317
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0287
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0245
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0193
+        }
+      ],
       "playoff_probability": 0.3453,
       "second_round_probability": 0.1424,
       "conference_final_probability": 0.0588,
@@ -116115,6 +118715,136 @@
       "points_p50": 90,
       "points_p90": 101,
       "average_league_rank": 19.7219,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0052
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0096
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0115
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0135
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0154
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0169
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0196
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0218
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0206
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0238
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0264
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0292
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0308
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0326
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0331
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0337
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0358
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.037
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0357
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.04
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.038
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0399
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0431
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.045
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0478
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0452
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0472
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0474
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0417
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0393
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0402
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.033
+        }
+      ],
       "playoff_probability": 0.4484,
       "second_round_probability": 0.2045,
       "conference_final_probability": 0.0914,
@@ -116137,6 +118867,136 @@
       "points_p50": 90,
       "points_p90": 101,
       "average_league_rank": 19.8571,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0056
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0074
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0121
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0136
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0152
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0149
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0178
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0233
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0234
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0243
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.025
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0278
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0296
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0284
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0337
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0324
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0339
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0399
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0378
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0399
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0393
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0404
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0489
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0414
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0471
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0426
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0442
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0485
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0403
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0444
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.04
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0369
+        }
+      ],
       "playoff_probability": 0.2525,
       "second_round_probability": 0.0963,
       "conference_final_probability": 0.0367,
@@ -116159,6 +119019,136 @@
       "points_p50": 90,
       "points_p90": 101,
       "average_league_rank": 20.3864,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0037
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0066
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0101
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0107
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0145
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0146
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0176
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0167
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0203
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0225
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0266
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0267
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0277
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0288
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0349
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0343
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0341
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0368
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0354
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0383
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0423
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0428
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0385
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0454
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0443
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0449
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0506
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0458
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0485
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0485
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0475
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.04
+        }
+      ],
       "playoff_probability": 0.3886,
       "second_round_probability": 0.1575,
       "conference_final_probability": 0.0634,
@@ -116181,6 +119171,136 @@
       "points_p50": 89,
       "points_p90": 101,
       "average_league_rank": 20.5131,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0043
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0072
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0095
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0111
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0126
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.015
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0189
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0181
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.019
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0239
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0233
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0262
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0284
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.029
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0298
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.032
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0325
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0373
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.036
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0392
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0391
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0412
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0433
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0482
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0421
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0456
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0478
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0469
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0504
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0501
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0461
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0459
+        }
+      ],
       "playoff_probability": 0.4088,
       "second_round_probability": 0.1803,
       "conference_final_probability": 0.0804,
@@ -116203,6 +119323,136 @@
       "points_p50": 89,
       "points_p90": 100,
       "average_league_rank": 20.6885,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0053
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0052
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.009
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0106
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0138
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0138
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0155
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.019
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0229
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0198
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0233
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.024
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0266
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0274
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0314
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0303
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0342
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0343
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0377
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0362
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.041
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0417
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0435
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0443
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0481
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0478
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0487
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0488
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0555
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0512
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.047
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0421
+        }
+      ],
       "playoff_probability": 0.3642,
       "second_round_probability": 0.1448,
       "conference_final_probability": 0.0602,
@@ -116225,6 +119475,136 @@
       "points_p50": 88,
       "points_p90": 99,
       "average_league_rank": 21.3361,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0038
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0056
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0064
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0087
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0116
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0122
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0148
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0141
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.018
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0207
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0233
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0206
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0227
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0268
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0284
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.029
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0339
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0376
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0358
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0386
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0431
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0409
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0386
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0458
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0497
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0468
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0498
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0517
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0537
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0584
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0561
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0528
+        }
+      ],
       "playoff_probability": 0.369,
       "second_round_probability": 0.1523,
       "conference_final_probability": 0.0616,
@@ -116247,6 +119627,136 @@
       "points_p50": 88,
       "points_p90": 99,
       "average_league_rank": 21.904,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0027
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0035
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0061
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.007
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0084
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0095
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0125
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0134
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.016
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0163
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0227
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0241
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0235
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0254
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0272
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0324
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0288
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0338
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0378
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0345
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0396
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0393
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0396
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0426
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0496
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.054
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0535
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0552
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0572
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0631
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.063
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0577
+        }
+      ],
       "playoff_probability": 0.3107,
       "second_round_probability": 0.1141,
       "conference_final_probability": 0.0427,
@@ -116269,6 +119779,136 @@
       "points_p50": 87,
       "points_p90": 98,
       "average_league_rank": 22.4218,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0021
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0035
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0042
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.006
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0091
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0095
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.011
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0112
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0146
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0169
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0185
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0171
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0208
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0241
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0273
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0288
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0302
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0316
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0338
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0369
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0384
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0403
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0448
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0456
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0479
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0519
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0525
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0572
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0609
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0646
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0689
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0698
+        }
+      ],
       "playoff_probability": 0.1535,
       "second_round_probability": 0.0535,
       "conference_final_probability": 0.0195,
@@ -116291,6 +119931,136 @@
       "points_p50": 87,
       "points_p90": 98,
       "average_league_rank": 22.5252,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0017
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0043
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0046
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0053
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0078
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0087
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0126
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0128
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0131
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.016
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0184
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0194
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0188
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0223
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0259
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0242
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0308
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0349
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0341
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0348
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.039
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0406
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0407
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.045
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0474
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0556
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0553
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0595
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0592
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0698
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0686
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0688
+        }
+      ],
       "playoff_probability": 0.1587,
       "second_round_probability": 0.0523,
       "conference_final_probability": 0.0182,
@@ -116313,6 +120083,136 @@
       "points_p50": 86,
       "points_p90": 98,
       "average_league_rank": 22.8464,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0019
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0036
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0051
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0056
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0077
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0101
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0099
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0107
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0145
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0147
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0177
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.022
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0181
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.02
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0232
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0239
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0261
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0273
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0364
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0342
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0361
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0381
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0439
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0433
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0473
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0513
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0546
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0647
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0668
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0666
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.0767
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.0779
+        }
+      ],
       "playoff_probability": 0.261,
       "second_round_probability": 0.1,
       "conference_final_probability": 0.0389,
@@ -116335,6 +120235,136 @@
       "points_p50": 84,
       "points_p90": 95,
       "average_league_rank": 24.5178,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.001
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0019
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0027
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0033
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0045
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0047
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0062
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0074
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0077
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0105
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0107
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.013
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0157
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0168
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.0172
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0194
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0213
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0241
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0287
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.0317
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0343
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0364
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0374
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0471
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0488
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.051
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0598
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.066
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0732
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.0798
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.096
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.1217
+        }
+      ],
       "playoff_probability": 0.214,
       "second_round_probability": 0.081,
       "conference_final_probability": 0.0292,
@@ -116357,6 +120387,136 @@
       "points_p50": 82,
       "points_p90": 93,
       "average_league_rank": 26.5796,
+      "league_rank_probabilities": [
+        {
+          "league_rank": 1,
+          "probability": 0.0003
+        },
+        {
+          "league_rank": 2,
+          "probability": 0.0006
+        },
+        {
+          "league_rank": 3,
+          "probability": 0.0005
+        },
+        {
+          "league_rank": 4,
+          "probability": 0.0015
+        },
+        {
+          "league_rank": 5,
+          "probability": 0.0016
+        },
+        {
+          "league_rank": 6,
+          "probability": 0.0029
+        },
+        {
+          "league_rank": 7,
+          "probability": 0.0027
+        },
+        {
+          "league_rank": 8,
+          "probability": 0.0033
+        },
+        {
+          "league_rank": 9,
+          "probability": 0.0045
+        },
+        {
+          "league_rank": 10,
+          "probability": 0.0051
+        },
+        {
+          "league_rank": 11,
+          "probability": 0.0044
+        },
+        {
+          "league_rank": 12,
+          "probability": 0.0075
+        },
+        {
+          "league_rank": 13,
+          "probability": 0.0083
+        },
+        {
+          "league_rank": 14,
+          "probability": 0.0098
+        },
+        {
+          "league_rank": 15,
+          "probability": 0.011
+        },
+        {
+          "league_rank": 16,
+          "probability": 0.0149
+        },
+        {
+          "league_rank": 17,
+          "probability": 0.0157
+        },
+        {
+          "league_rank": 18,
+          "probability": 0.0168
+        },
+        {
+          "league_rank": 19,
+          "probability": 0.0198
+        },
+        {
+          "league_rank": 20,
+          "probability": 0.021
+        },
+        {
+          "league_rank": 21,
+          "probability": 0.0255
+        },
+        {
+          "league_rank": 22,
+          "probability": 0.0288
+        },
+        {
+          "league_rank": 23,
+          "probability": 0.0337
+        },
+        {
+          "league_rank": 24,
+          "probability": 0.0379
+        },
+        {
+          "league_rank": 25,
+          "probability": 0.0413
+        },
+        {
+          "league_rank": 26,
+          "probability": 0.0476
+        },
+        {
+          "league_rank": 27,
+          "probability": 0.0557
+        },
+        {
+          "league_rank": 28,
+          "probability": 0.0675
+        },
+        {
+          "league_rank": 29,
+          "probability": 0.0826
+        },
+        {
+          "league_rank": 30,
+          "probability": 0.1004
+        },
+        {
+          "league_rank": 31,
+          "probability": 0.1268
+        },
+        {
+          "league_rank": 32,
+          "probability": 0.2
+        }
+      ],
       "playoff_probability": 0.1253,
       "second_round_probability": 0.0415,
       "conference_final_probability": 0.0132,
@@ -120405,6 +124565,7 @@
     }
   ],
   "warnings": [
+    "Rehydrated from an archived season simulation; forecast parameters were supplied explicitly as 'icecast-baseline-v1'.",
     "Rehydrated from an archived season simulation; forecast parameters were supplied explicitly as 'icecast-baseline-v1'."
   ],
   "disclosures": [
@@ -120424,6 +124585,14 @@
     "During the final 45 days, conference ranks 7-10 define the hunt and ranks 13-16 can create spoiler matchups; hunt motivation is capped at 0.4 probability points and five-game form at 1.5 points.",
     "League leaderboards rank Presidents' Trophy, Stanley Cup, and longest-win-streak leader probabilities; schedule stretches use each team's lowest and highest baseline average win probability across consecutive five-game windows.",
     "Only events embedded in the run's scenario are applied; automatic personnel events are modeled risks from player records, not live injury or goalie confirmations.",
+    "IceCast samples one shared result for every scheduled game in every seeded trial; team records and league standings therefore reconcile within each trial.",
+    "Playoff qualification uses the modern NHL top-three-per-division plus two conference wild cards format; simplified tiebreaks are points, wins, then team abbreviation.",
+    "Each trial continues through the modern divisional playoff bracket using best-of-seven 2-2-1-1-1 home ice, roster/depth strength, and scenario events still active after the regular season.",
+    "During the final 45 days, conference ranks 7-10 define the hunt and ranks 13-16 can create spoiler matchups; hunt motivation is capped at 0.4 probability points and five-game form at 1.5 points.",
+    "League leaderboards rank Presidents' Trophy, Stanley Cup, and longest-win-streak leader probabilities; schedule stretches use each team's lowest and highest baseline average win probability across consecutive five-game windows.",
+    "Only events embedded in the run's scenario are applied; automatic personnel events are modeled risks from player records, not live injury or goalie confirmations.",
+    "Scenario 'NYR acquires Ryan O'Reilly — paired trade season' contains 2 dated event(s); occurrence decisions use an independent seeded stream and affect only games on or after each effective date.",
+    "Season simulation consumed the supplied rehydrated-season-artifact game forecast without recomputing game probabilities.",
     "IceCast samples one shared result for every scheduled game in every seeded trial; team records and league standings therefore reconcile within each trial.",
     "Playoff qualification uses the modern NHL top-three-per-division plus two conference wild cards format; simplified tiebreaks are points, wins, then team abbreviation.",
     "Each trial continues through the modern divisional playoff bracket using best-of-seven 2-2-1-1-1 home ice, roster/depth strength, and scenario events still active after the regular season.",

@@ -225,13 +225,17 @@ and observation time. The supported states are `confirmed_unconditional`,
 human-readable condition and remain unresolved; they cannot enter an offer.
 
 Confirmed-unconditional rights are valued through the sealed mature-cohort pick
-curve. Until a team-strength slot model is supplied, each future round uses a
-uniform distribution across its 32 nominal slots. Those slots map by within-round
-percentile when the sealed curve reflects a smaller historical league, preserving
-all probability mass instead of truncating late rounds. This is a conservative
-preseason uncertainty model, not a final-order prediction. The output retains
-the curve disclosure while adopting the supplied common player/pick value basis,
-so a caller must explicitly name the bridge that makes package arithmetic valid.
+curve. When `team_season_forecast.v1` supplies trial-level league-rank
+probabilities, the original team's distribution is reversed into a pre-lottery
+standings-order proxy. Ownership and slot outlook therefore remain independent:
+a Tampa Bay pick owned by Seattle follows Tampa Bay's forecast. This proxy does
+not model the lottery or playoff-based draft ordering. Older forecasts without
+the distribution and absent teams fall back explicitly to a uniform distribution
+across the round's 32 nominal slots. Slots map by within-round percentile when
+the sealed curve reflects a smaller historical league, preserving all
+probability mass instead of truncating late rounds. The output retains the curve
+disclosure while adopting the supplied common player/pick value basis, so a
+caller must explicitly name the bridge that makes package arithmetic valid.
 
 There is no assumed seven-picks-per-team fallback. A reviewed consolidated
 provider page or transaction source must support every imported right. Pick

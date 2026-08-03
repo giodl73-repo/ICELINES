@@ -757,6 +757,12 @@ impl Default for TeamSeasonSimulationConfig {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamSeasonLeagueRankProbability {
+    pub league_rank: u8,
+    pub probability: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TeamSeasonForecastRow {
     pub team: String,
     pub conference: String,
@@ -769,6 +775,10 @@ pub struct TeamSeasonForecastRow {
     pub points_p50: u16,
     pub points_p90: u16,
     pub average_league_rank: f64,
+    /// Trial-level regular-season rank distribution, where 1 is best in the league.
+    /// Older archived forecasts deserialize with an empty distribution.
+    #[serde(default)]
+    pub league_rank_probabilities: Vec<TeamSeasonLeagueRankProbability>,
     pub playoff_probability: f64,
     pub second_round_probability: f64,
     pub conference_final_probability: f64,
@@ -1272,6 +1282,7 @@ struct AggregateTeam {
     overtime_losses: u64,
     points: Vec<u16>,
     league_rank_sum: u64,
+    league_rank_counts: BTreeMap<u8, u64>,
     playoffs: u64,
     second_rounds: u64,
     conference_finals: u64,
@@ -1651,6 +1662,7 @@ fn simulate_team_season_forecast_impl(
             row.overtime_losses += u64::from(trial_team.overtime_losses);
             row.points.push(trial_team.points());
             row.league_rank_sum += rank as u64 + 1;
+            *row.league_rank_counts.entry(rank as u8 + 1).or_default() += 1;
             row.longest_win_streaks.push(trial_team.longest_win_streak);
             if playoff_teams.contains(team) {
                 row.playoffs += 1;
@@ -1729,6 +1741,14 @@ fn simulate_team_season_forecast_impl(
                 points_p50: percentile(&aggregate.points, 0.50),
                 points_p90: percentile(&aggregate.points, 0.90),
                 average_league_rank: aggregate.league_rank_sum as f64 / denominator,
+                league_rank_probabilities: aggregate
+                    .league_rank_counts
+                    .into_iter()
+                    .map(|(league_rank, count)| TeamSeasonLeagueRankProbability {
+                        league_rank,
+                        probability: count as f64 / denominator,
+                    })
+                    .collect(),
                 playoff_probability: aggregate.playoffs as f64 / denominator,
                 second_round_probability: aggregate.second_rounds as f64 / denominator,
                 conference_final_probability: aggregate.conference_finals as f64 / denominator,
@@ -4220,6 +4240,20 @@ mod tests {
         .unwrap();
         let playoff_sum: f64 = view.teams.iter().map(|team| team.playoff_probability).sum();
         assert!((playoff_sum - 16.0).abs() < 1e-9);
+        for team in &view.teams {
+            let probability_sum = team
+                .league_rank_probabilities
+                .iter()
+                .map(|outcome| outcome.probability)
+                .sum::<f64>();
+            let expected_rank = team
+                .league_rank_probabilities
+                .iter()
+                .map(|outcome| f64::from(outcome.league_rank) * outcome.probability)
+                .sum::<f64>();
+            assert!((probability_sum - 1.0).abs() < 1e-9);
+            assert!((expected_rank - team.average_league_rank).abs() < 1e-9);
+        }
         let second_round_sum: f64 = view
             .teams
             .iter()

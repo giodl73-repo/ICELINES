@@ -32,11 +32,11 @@
           "opening_offer": {
             "tier": "opening_offer",
             "assets_to_seller": [
-              "Nikke Kokko",
-              "SEA 2027 round 7 pick"
+              "Logan Morrison",
+              "SEA 2027 round 3 pick"
             ],
-            "market_value": 97.37740721288515,
-            "target_value_ratio": 0.8665754761858598,
+            "market_value": 92.97809056898012,
+            "target_value_ratio": 0.8274253280693682,
             "evaluation": {
               "buyer": "SEA",
               "seller": "NSH",
@@ -44,19 +44,19 @@
                 "Ryan O'Reilly"
               ],
               "assets_to_seller": [
-                "Nikke Kokko",
-                "SEA 2027 round 7 pick"
+                "Logan Morrison",
+                "SEA 2027 round 3 pick"
               ],
-              "buyer_utility_delta": 134.93668764105522,
-              "seller_utility_delta": 46.65441568597686,
+              "buyer_utility_delta": 148.05366327402706,
+              "seller_utility_delta": 48.662621359919655,
               "market_value_to_buyer": 112.37037037037038,
-              "market_value_to_seller": 97.37740721288515,
-              "market_value_gap": 14.992963157485235,
-              "buyer_season_points_delta": 0.20913580246913577,
-              "seller_season_points_delta": -0.20913580246913577,
+              "market_value_to_seller": 92.97809056898012,
+              "market_value_gap": 19.39227980139026,
+              "buyer_season_points_delta": 0.4991358024691358,
+              "seller_season_points_delta": -0.4991358024691358,
               "buyer_cap_space_delta": null,
               "seller_cap_space_delta": null,
-              "fairness_score": 0.8665754761858598,
+              "fairness_score": 0.8274253280693682,
               "feasibility_probability": 0.0,
               "transaction_ready": false,
               "transaction_gates": {
@@ -69,10 +69,10 @@
               "mutually_beneficial": false,
               "pick_roles": [
                 {
-                  "asset_id": "SEA-2027-7",
+                  "asset_id": "SEA-2027-3",
                   "direction": "to_seller",
-                  "package_share": 0.16818487657081574,
-                  "role": "rounding"
+                  "package_share": 0.5966791770994815,
+                  "role": "principal"
                 }
               ],
               "disclosures": [
@@ -80,9 +80,9 @@
                 "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
                 "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
                 "Ryan O'Reilly: Camp score 74.91, GP confidence 0.80, and prospect=false were translated by the supplied Trade Scout population policy for NSH.",
-                "Nikke Kokko: Camp score 54.00, GP confidence 0.47, and prospect=true were translated by the supplied Trade Scout population policy for SEA.",
-                "SEA 2027 round 7 pick: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-                "SEA 2027 round 7 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 7 and mapped by within-round percentile to the curve's 30-slot historical era."
+                "Logan Morrison: Camp score 25.00, GP confidence 0.63, and prospect=true were translated by the supplied Trade Scout population policy for SEA.",
+                "SEA 2027 round 3 pick: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+                "SEA 2027 round 3 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 3 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
               ]
             }
           },
@@ -141,8 +141,8 @@
               "Nikke Kokko",
               "SEA 2027 round 4 pick"
             ],
-            "market_value": 121.14120602125146,
-            "target_value_ratio": 1.078052921085626,
+            "market_value": 121.73615675151514,
+            "target_value_ratio": 1.0833474727392578,
             "evaluation": {
               "buyer": "SEA",
               "seller": "NSH",
@@ -153,16 +153,16 @@
                 "Nikke Kokko",
                 "SEA 2027 round 4 pick"
               ],
-              "buyer_utility_delta": 125.4311681177087,
-              "seller_utility_delta": 79.9237340176897,
+              "buyer_utility_delta": 125.19318782560322,
+              "seller_utility_delta": 80.75666504005883,
               "market_value_to_buyer": 112.37037037037038,
-              "market_value_to_seller": 121.14120602125146,
-              "market_value_gap": -8.770835650881082,
+              "market_value_to_seller": 121.73615675151514,
+              "market_value_gap": -9.365786381144758,
               "buyer_season_points_delta": 0.20913580246913577,
               "seller_season_points_delta": -0.20913580246913577,
               "buyer_cap_space_delta": null,
               "seller_cap_space_delta": null,
-              "fairness_score": 0.927598247211255,
+              "fairness_score": 0.9230648754563365,
               "feasibility_probability": 0.0,
               "transaction_ready": false,
               "transaction_gates": {
@@ -177,7 +177,7 @@
                 {
                   "asset_id": "SEA-2027-4",
                   "direction": "to_seller",
-                  "package_share": 0.33135881125543365,
+                  "package_share": 0.33462660427718927,
                   "role": "rounding"
                 }
               ],
@@ -188,7 +188,7 @@
                 "Ryan O'Reilly: Camp score 74.91, GP confidence 0.80, and prospect=false were translated by the supplied Trade Scout population policy for NSH.",
                 "Nikke Kokko: Camp score 54.00, GP confidence 0.47, and prospect=true were translated by the supplied Trade Scout population policy for SEA.",
                 "SEA 2027 round 4 pick: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-                "SEA 2027 round 4 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 4 and mapped by within-round percentile to the curve's 30-slot historical era."
+                "SEA 2027 round 4 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 4 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
               ]
             }
           },
@@ -226,11 +226,11 @@
           "opening_offer": {
             "tier": "opening_offer",
             "assets_to_seller": [
-              "SEA 2027 round 3 pick",
-              "SEA 2027 round 4 pick"
+              "Logan Morrison",
+              "SEA 2027 round 3 pick"
             ],
-            "market_value": 91.94159391871506,
-            "target_value_ratio": 0.8279918401685409,
+            "market_value": 92.97809056898012,
+            "target_value_ratio": 0.8373261439607966,
             "evaluation": {
               "buyer": "SEA",
               "seller": "PIT",
@@ -238,19 +238,19 @@
                 "Bryan Rust"
               ],
               "assets_to_seller": [
-                "SEA 2027 round 3 pick",
-                "SEA 2027 round 4 pick"
+                "Logan Morrison",
+                "SEA 2027 round 3 pick"
               ],
-              "buyer_utility_delta": 156.62093187695837,
-              "seller_utility_delta": 47.472745375089985,
+              "buyer_utility_delta": 145.73950432340973,
+              "seller_utility_delta": 42.00369468136269,
               "market_value_to_buyer": 111.04166666666666,
-              "market_value_to_seller": 91.94159391871506,
-              "market_value_gap": 19.1000727479516,
-              "buyer_season_points_delta": 0.7402777777777777,
-              "seller_season_points_delta": -0.7402777777777777,
+              "market_value_to_seller": 92.97809056898012,
+              "market_value_gap": 18.063576097686536,
+              "buyer_season_points_delta": 0.4902777777777777,
+              "seller_season_points_delta": -0.4902777777777777,
               "buyer_cap_space_delta": null,
               "seller_cap_space_delta": null,
-              "fairness_score": 0.8279918401685409,
+              "fairness_score": 0.8373261439607966,
               "feasibility_probability": 0.0,
               "transaction_ready": false,
               "transaction_gates": {
@@ -265,13 +265,7 @@
                 {
                   "asset_id": "SEA-2027-3",
                   "direction": "to_seller",
-                  "package_share": 0.5634053717108709,
-                  "role": "principal"
-                },
-                {
-                  "asset_id": "SEA-2027-4",
-                  "direction": "to_seller",
-                  "package_share": 0.4365946282891292,
+                  "package_share": 0.5966791770994815,
                   "role": "principal"
                 }
               ],
@@ -280,21 +274,20 @@
                 "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
                 "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
                 "Bryan Rust: Camp score 74.03, GP confidence 0.78, and prospect=false were translated by the supplied Trade Scout population policy for PIT.",
+                "Logan Morrison: Camp score 25.00, GP confidence 0.63, and prospect=true were translated by the supplied Trade Scout population policy for SEA.",
                 "SEA 2027 round 3 pick: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-                "SEA 2027 round 3 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 3 and mapped by within-round percentile to the curve's 30-slot historical era.",
-                "SEA 2027 round 4 pick: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-                "SEA 2027 round 4 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 4 and mapped by within-round percentile to the curve's 30-slot historical era."
+                "SEA 2027 round 3 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 3 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
               ]
             }
           },
           "fair_midpoint": {
             "tier": "fair_midpoint",
             "assets_to_seller": [
-              "Jani Nyman",
-              "Nikke Kokko"
+              "Nikke Kokko",
+              "SEA 2027 round 5 pick"
             ],
-            "market_value": 111.75,
-            "target_value_ratio": 1.0063789868667918,
+            "market_value": 110.60515846908709,
+            "target_value_ratio": 0.9960689693276136,
             "evaluation": {
               "buyer": "SEA",
               "seller": "PIT",
@@ -302,19 +295,19 @@
                 "Bryan Rust"
               ],
               "assets_to_seller": [
-                "Jani Nyman",
-                "Nikke Kokko"
+                "Nikke Kokko",
+                "SEA 2027 round 5 pick"
               ],
-              "buyer_utility_delta": 118.56006944444441,
-              "seller_utility_delta": 55.53076388888887,
+              "buyer_utility_delta": 127.33142818795712,
+              "seller_utility_delta": 59.360065663643596,
               "market_value_to_buyer": 111.04166666666666,
-              "market_value_to_seller": 111.75,
-              "market_value_gap": -0.7083333333333428,
-              "buyer_season_points_delta": -0.004722222222222405,
-              "seller_season_points_delta": 0.004722222222222405,
+              "market_value_to_seller": 110.60515846908709,
+              "market_value_gap": 0.4365081975795704,
+              "buyer_season_points_delta": 0.20027777777777767,
+              "seller_season_points_delta": -0.20027777777777767,
               "buyer_cap_space_delta": null,
               "seller_cap_space_delta": null,
-              "fairness_score": 0.9936614466815809,
+              "fairness_score": 0.9960689693276136,
               "feasibility_probability": 0.0,
               "transaction_ready": false,
               "transaction_gates": {
@@ -325,14 +318,22 @@
                 "pick_ownership_confirmed": null
               },
               "mutually_beneficial": false,
-              "pick_roles": [],
+              "pick_roles": [
+                {
+                  "asset_id": "SEA-2027-5",
+                  "direction": "to_seller",
+                  "package_share": 0.2676652597298289,
+                  "role": "rounding"
+                }
+              ],
               "disclosures": [
                 "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
                 "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
                 "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
                 "Bryan Rust: Camp score 74.03, GP confidence 0.78, and prospect=false were translated by the supplied Trade Scout population policy for PIT.",
-                "Jani Nyman: Camp score 20.50, GP confidence 0.58, and prospect=true were translated by the supplied Trade Scout population policy for SEA.",
-                "Nikke Kokko: Camp score 54.00, GP confidence 0.47, and prospect=true were translated by the supplied Trade Scout population policy for SEA."
+                "Nikke Kokko: Camp score 54.00, GP confidence 0.47, and prospect=true were translated by the supplied Trade Scout population policy for SEA.",
+                "SEA 2027 round 5 pick: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+                "SEA 2027 round 5 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 5 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
               ]
             }
           },
@@ -342,8 +343,8 @@
               "Nikke Kokko",
               "SEA 2027 round 4 pick"
             ],
-            "market_value": 121.14120602125146,
-            "target_value_ratio": 1.090952699628531,
+            "market_value": 121.73615675151514,
+            "target_value_ratio": 1.0963106048916937,
             "evaluation": {
               "buyer": "SEA",
               "seller": "PIT",
@@ -354,16 +355,16 @@
                 "Nikke Kokko",
                 "SEA 2027 round 4 pick"
               ],
-              "buyer_utility_delta": 123.11700916709137,
-              "seller_utility_delta": 74.1105322366737,
+              "buyer_utility_delta": 122.87902887498589,
+              "seller_utility_delta": 74.94346325904287,
               "market_value_to_buyer": 111.04166666666666,
-              "market_value_to_seller": 121.14120602125146,
-              "market_value_gap": -10.099539354584806,
+              "market_value_to_seller": 121.73615675151514,
+              "market_value_gap": -10.694490084848482,
               "buyer_season_points_delta": 0.20027777777777767,
               "seller_season_points_delta": -0.20027777777777767,
               "buyer_cap_space_delta": null,
               "seller_cap_space_delta": null,
-              "fairness_score": 0.9166300246935541,
+              "fairness_score": 0.9121502569965486,
               "feasibility_probability": 0.0,
               "transaction_ready": false,
               "transaction_gates": {
@@ -378,7 +379,7 @@
                 {
                   "asset_id": "SEA-2027-4",
                   "direction": "to_seller",
-                  "package_share": 0.33135881125543365,
+                  "package_share": 0.33462660427718927,
                   "role": "rounding"
                 }
               ],
@@ -389,7 +390,7 @@
                 "Bryan Rust: Camp score 74.03, GP confidence 0.78, and prospect=false were translated by the supplied Trade Scout population policy for PIT.",
                 "Nikke Kokko: Camp score 54.00, GP confidence 0.47, and prospect=true were translated by the supplied Trade Scout population policy for SEA.",
                 "SEA 2027 round 4 pick: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-                "SEA 2027 round 4 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future slot value is uniform across the current 32-slot round 4 and mapped by within-round percentile to the curve's 30-slot historical era."
+                "SEA 2027 round 4 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 4 slot value uses the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy and maps by within-round percentile to the curve's 30-slot historical era."
               ]
             }
           },

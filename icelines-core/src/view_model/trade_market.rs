@@ -9,8 +9,11 @@ use super::team_lineup::{
     TeamLineupPlayerView, TeamLineupProjectionView, TeamLineupRequestedSlot,
     TeamLineupRosterChangeInput,
 };
+#[cfg(test)]
+use super::team_season_forecast::TeamSeasonLeagueRankProbability;
 use super::team_season_forecast::{
-    compare_team_season_forecast_scenarios, TeamSeasonForecastView, TeamSeasonScenarioImpactRow,
+    compare_team_season_forecast_scenarios, TeamSeasonForecastRow, TeamSeasonForecastView,
+    TeamSeasonScenarioImpactRow, TEAM_SEASON_FORECAST_SCHEMA,
 };
 use super::training_camp::{
     TrainingCampLeagueForecastView, TrainingCampPlayerView, TRAINING_CAMP_FORECAST_SCHEMA,
@@ -2171,7 +2174,28 @@ pub fn populate_trade_scout_draft_picks(
     curve: &DraftPickValueCurve,
     input: TradeScoutDraftPickPopulationInput,
 ) -> Result<TradeScoutDraftPickPopulationView, DraftPickValueError> {
+    populate_trade_scout_draft_picks_with_forecast(curve, input, None)
+}
+
+pub fn populate_trade_scout_draft_picks_with_forecast(
+    curve: &DraftPickValueCurve,
+    input: TradeScoutDraftPickPopulationInput,
+    season_forecast: Option<&TeamSeasonForecastView>,
+) -> Result<TradeScoutDraftPickPopulationView, DraftPickValueError> {
     validate_trade_scout_draft_pick_population(curve, &input)?;
+    if let Some(forecast) = season_forecast {
+        let teams = forecast
+            .teams
+            .iter()
+            .map(|row| row.team.to_ascii_uppercase())
+            .collect::<BTreeSet<_>>();
+        if forecast.schema != TEAM_SEASON_FORECAST_SCHEMA || teams.len() != forecast.teams.len() {
+            return Err(DraftPickValueError::InvalidDistribution(
+                "draft-pick slot forecasting requires team_season_forecast.v1 with unique teams"
+                    .to_owned(),
+            ));
+        }
+    }
     let protected = input
         .protected_asset_ids
         .iter()
@@ -2195,12 +2219,19 @@ pub fn populate_trade_scout_draft_picks(
                 ownership.asset_id
             )));
         }
+        let forecast_row = season_forecast.and_then(|forecast| {
+            forecast
+                .teams
+                .iter()
+                .find(|team| team.team.eq_ignore_ascii_case(&ownership.original_team))
+        });
+        let current_slot_outcomes = standings_proxy_slot_outcomes(forecast_row)?;
         let mut normalized = BTreeMap::<u16, f64>::new();
-        for current_round_slot in 1_u16..=32 {
+        for (current_round_slot, probability) in &current_slot_outcomes {
             let historical_round_slot = ((current_round_slot - 1) * curve_round_width / 32) + 1;
             let overall_pick =
                 u16::from(ownership.round - 1) * curve_round_width + historical_round_slot;
-            *normalized.entry(overall_pick).or_default() += 1.0 / 32.0;
+            *normalized.entry(overall_pick).or_default() += probability;
         }
         let slot_outcomes = normalized
             .into_iter()
@@ -2224,9 +2255,16 @@ pub fn populate_trade_scout_draft_picks(
             ownership.original_team, ownership.draft_year, ownership.round
         );
         asset.value_basis = input.value_basis.clone();
+        let slot_method = if forecast_row
+            .is_some_and(|row| !row.league_rank_probabilities.is_empty())
+        {
+            "the original team's simulated regular-season rank distribution, reversed into a pre-lottery standings-order proxy"
+        } else {
+            "a uniform 32-slot fallback because no trial-level rank distribution was available"
+        };
         asset.disclosures.push(format!(
-            "Ownership was reviewed from {} at {}; future slot value is uniform across the current 32-slot round {} and mapped by within-round percentile to the curve's {}-slot historical era.",
-            ownership.source_url, ownership.observed_at, ownership.round, curve_round_width
+            "Ownership was reviewed from {} at {}; future round {} slot value uses {} and maps by within-round percentile to the curve's {}-slot historical era.",
+            ownership.source_url, ownership.observed_at, ownership.round, slot_method, curve_round_width
         ));
         assets.push(TradeScoutAssetInput {
             organization: ownership.owner.clone(),
@@ -2250,10 +2288,46 @@ pub fn populate_trade_scout_draft_picks(
         disclosures: vec![
             "Only reviewed confirmed-unconditional ownership becomes offer inventory; conditional and encumbered rights remain unresolved."
                 .to_owned(),
-            "Full-round uniform slot outcomes are a conservative preseason baseline, normalized by within-round percentile when the curve's historical league size differs; this is not a prediction of final draft order."
+            "When trial-level team ranks are supplied, slot outcomes reverse regular-season league rank into a pre-lottery standings-order proxy; this does not model the draft lottery or playoff-based ordering. Missing or archived rank distributions fall back to a uniform round."
                 .to_owned(),
         ],
     })
+}
+
+fn standings_proxy_slot_outcomes(
+    forecast: Option<&TeamSeasonForecastRow>,
+) -> Result<Vec<(u16, f64)>, DraftPickValueError> {
+    let Some(forecast) = forecast.filter(|row| !row.league_rank_probabilities.is_empty()) else {
+        return Ok((1_u16..=32).map(|slot| (slot, 1.0 / 32.0)).collect());
+    };
+    let probability = forecast
+        .league_rank_probabilities
+        .iter()
+        .map(|outcome| outcome.probability)
+        .sum::<f64>();
+    let ranks = forecast
+        .league_rank_probabilities
+        .iter()
+        .map(|outcome| outcome.league_rank)
+        .collect::<BTreeSet<_>>();
+    if ranks.len() != forecast.league_rank_probabilities.len()
+        || forecast.league_rank_probabilities.iter().any(|outcome| {
+            !(1..=32).contains(&outcome.league_rank)
+                || !outcome.probability.is_finite()
+                || outcome.probability < 0.0
+        })
+        || (probability - 1.0).abs() > 1e-6
+    {
+        return Err(DraftPickValueError::InvalidDistribution(format!(
+            "team {} has an invalid league-rank probability distribution",
+            forecast.team
+        )));
+    }
+    Ok(forecast
+        .league_rank_probabilities
+        .iter()
+        .map(|outcome| (33_u16 - u16::from(outcome.league_rank), outcome.probability))
+        .collect())
 }
 
 pub fn build_trade_draft_pick_ownership_coverage(
@@ -3998,6 +4072,49 @@ mod tests {
         assert_eq!(
             view.assets[0].asset.value_basis.method,
             "camp-score and pick-curve bridge v1"
+        );
+    }
+
+    #[test]
+    fn standings_proxy_reverses_team_rank_into_draft_slot() {
+        let strong = TeamSeasonForecastRow {
+            team: "COL".to_owned(),
+            conference: "Western".to_owned(),
+            division: "Central".to_owned(),
+            average_wins: 0.0,
+            average_losses: 0.0,
+            average_overtime_losses: 0.0,
+            average_points: 0.0,
+            points_p10: 0,
+            points_p50: 0,
+            points_p90: 0,
+            average_league_rank: 1.0,
+            league_rank_probabilities: vec![TeamSeasonLeagueRankProbability {
+                league_rank: 1,
+                probability: 1.0,
+            }],
+            playoff_probability: 0.0,
+            second_round_probability: 0.0,
+            conference_final_probability: 0.0,
+            stanley_cup_final_probability: 0.0,
+            stanley_cup_probability: 0.0,
+            presidents_trophy_probability: 0.0,
+            average_longest_win_streak: 0.0,
+            longest_win_streak_p90: 0,
+            longest_win_streak_leader_probability: 0.0,
+        };
+        let mut weak = strong.clone();
+        weak.team = "SJS".to_owned();
+        weak.average_league_rank = 32.0;
+        weak.league_rank_probabilities[0].league_rank = 32;
+
+        assert_eq!(
+            standings_proxy_slot_outcomes(Some(&strong)).unwrap(),
+            [(32, 1.0)]
+        );
+        assert_eq!(
+            standings_proxy_slot_outcomes(Some(&weak)).unwrap(),
+            [(1, 1.0)]
         );
     }
 

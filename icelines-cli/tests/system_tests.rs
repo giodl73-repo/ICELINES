@@ -108,6 +108,7 @@ fn l2_trade_pick_population_keeps_conditional_rights_unresolved() {
     let ownership = repo.join("examples/icecast-sea-draft-pick-ownership-2027.csv");
     let curve = repo.join("examples/icecast-draft-pick-value-curve-2005-2018.json");
     let policy = repo.join("examples/icecast-sea-draft-pick-population-policy-2027.json");
+    let season_forecast = repo.join("examples/icecast-nyr-ror-trade-season-2026-27.json");
     let out = run(&[
         "icecast",
         "trade-pick-populate",
@@ -117,6 +118,11 @@ fn l2_trade_pick_population_keeps_conditional_rights_unresolved() {
         curve.to_str().expect("UTF-8 curve path"),
         "--policy",
         policy.to_str().expect("UTF-8 policy path"),
+        "--season-forecast",
+        season_forecast
+            .to_str()
+            .expect("UTF-8 season forecast path"),
+        "--json",
     ]);
 
     assert!(
@@ -124,8 +130,16 @@ fn l2_trade_pick_population_keeps_conditional_rights_unresolved() {
         "trade pick population failed: {}",
         String::from_utf8_lossy(&out.stderr)
     );
-    assert!(String::from_utf8_lossy(&out.stdout)
-        .contains("7/8 valued; 1 conditional or encumbered rights unresolved"));
+    let view: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(view["picks_populated"], 7);
+    assert_eq!(view["unresolved_asset_ids"].as_array().unwrap().len(), 1);
+    let assets = view["assets"].as_array().unwrap();
+    let pick_value = |id: &str| {
+        assets.iter().find(|row| row["asset"]["id"] == id).unwrap()["asset"]["future_value"]
+            .as_f64()
+            .unwrap()
+    };
+    assert!(pick_value("SEA-2027-1") > pick_value("TBL-2027-1-owned-by-SEA"));
 }
 
 #[test]

@@ -81,8 +81,12 @@
     unconditional picks through the sealed curve; and `trade-scout-populate
     --pick-assets` merges them into the buyer inventory. The Seattle control
     now carries seven valued 2027 rights, protects its own first, and leaves the
-    lower-of-Columbus/Winnipeg second-round condition unresolved. Full league
-    provider acquisition and team-strength slot distributions remain.
+    lower-of-Columbus/Winnipeg second-round condition unresolved. **Slot-model
+    checkpoint:** season simulations now retain every team's trial-level league
+    rank distribution, and `trade-pick-populate --season-forecast` values each
+    right from its original team's pre-lottery standings-order proxy. Seattle's
+    own 2027 first now projects earlier and more valuable than the Tampa Bay
+    first it owns. Full league provider acquisition remains.
 13. Audit all-team pick chain of title. **Coverage primitive and CLI complete:**
     `trade_draft_pick_ownership_coverage.v1` measures a target year against all
     224 original-team/round coordinates, rejects duplicate claims, and keeps

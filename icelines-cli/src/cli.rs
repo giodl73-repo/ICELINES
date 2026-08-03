@@ -1131,6 +1131,9 @@ pub enum IceCastSubcommand {
         /// Pick population policy JSON with date, basis, and protection.
         #[arg(long, value_name = "PATH")]
         policy: PathBuf,
+        /// Optional `team_season_forecast.v1` providing trial-level team-rank probabilities.
+        #[arg(long, value_name = "PATH")]
+        season_forecast: Option<PathBuf>,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]

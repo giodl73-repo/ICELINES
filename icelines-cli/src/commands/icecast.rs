@@ -446,6 +446,7 @@ pub fn run_trade_pick_populate(
     ownership: PathBuf,
     curve: PathBuf,
     policy: PathBuf,
+    season_forecast: Option<PathBuf>,
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
@@ -466,7 +467,13 @@ pub fn run_trade_pick_populate(
         .with_context(|| {
             "curve must be draft_pick_value_curve.v1 or draft_pick_curve_acquisition.v1"
         })?;
-    let view = icelines_core::populate_trade_scout_draft_picks(
+    let season_forecast = season_forecast
+        .as_deref()
+        .map(|path| {
+            read_icecast_json::<icelines_core::TeamSeasonForecastView>(path, "team season forecast")
+        })
+        .transpose()?;
+    let view = icelines_core::populate_trade_scout_draft_picks_with_forecast(
         &curve,
         icelines_core::TradeScoutDraftPickPopulationInput {
             as_of: policy.as_of,
@@ -475,6 +482,7 @@ pub fn run_trade_pick_populate(
             ownership,
             protected_asset_ids: policy.protected_asset_ids,
         },
+        season_forecast.as_ref(),
     )
     .map_err(anyhow::Error::msg)?;
     let output = if json {
