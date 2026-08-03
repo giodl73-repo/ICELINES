@@ -223,6 +223,12 @@ asset ID, current owner, original team, draft year, round, status, source URL,
 and observation time. The supported states are `confirmed_unconditional`,
 `conditional`, and `encumbered`. Conditional and encumbered rights require a
 human-readable condition and remain unresolved; they cannot enter an offer.
+An optional structured condition contract can model exactly two candidate teams
+with `earlier_of` or `later_of` selection semantics. Prose is never parsed into
+execution logic. The conditional view publishes an independence estimate plus
+aligned/opposed percentile-coupling sensitivity values, while retaining the
+right in `unresolved_asset_ids` with `offer_eligible=false`. These values support
+planning; they do not resolve ownership.
 
 Confirmed-unconditional rights are valued through the sealed mature-cohort pick
 curve. Current `team_season_forecast.v1` artifacts retain two trial-level draft

@@ -133,6 +133,10 @@ fn l2_trade_pick_population_keeps_conditional_rights_unresolved() {
     let view: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(view["picks_populated"], 7);
     assert_eq!(view["unresolved_asset_ids"].as_array().unwrap().len(), 1);
+    let conditional = view["conditional_valuations"].as_array().unwrap();
+    assert_eq!(conditional.len(), 1);
+    assert_eq!(conditional[0]["selection"], "later_of");
+    assert_eq!(conditional[0]["offer_eligible"], false);
     let assets = view["assets"].as_array().unwrap();
     let pick_value = |id: &str| {
         assets.iter().find(|row| row["asset"]["id"] == id).unwrap()["asset"]["future_value"]

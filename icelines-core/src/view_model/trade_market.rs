@@ -660,6 +660,36 @@ pub struct TradeDraftPickOwnershipInput {
     pub observed_at: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TradeDraftPickSelectionRule {
+    EarlierOf,
+    LaterOf,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TradeDraftPickConditionalRightInput {
+    pub asset_id: String,
+    pub selection: TradeDraftPickSelectionRule,
+    pub candidate_original_teams: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeDraftPickConditionalValuationView {
+    pub asset_id: String,
+    pub owner: String,
+    pub draft_year: u16,
+    pub round: u8,
+    pub selection: TradeDraftPickSelectionRule,
+    pub candidate_original_teams: Vec<String>,
+    pub condition: String,
+    pub independence_value: DraftPickAssetValue,
+    pub dependence_value_low: DraftPickAssetValue,
+    pub dependence_value_high: DraftPickAssetValue,
+    pub offer_eligible: bool,
+    pub disclosures: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TradeScoutDraftPickPopulationInput {
     pub as_of: String,
@@ -668,6 +698,8 @@ pub struct TradeScoutDraftPickPopulationInput {
     pub ownership: Vec<TradeDraftPickOwnershipInput>,
     #[serde(default)]
     pub protected_asset_ids: Vec<String>,
+    #[serde(default)]
+    pub conditional_rights: Vec<TradeDraftPickConditionalRightInput>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -678,6 +710,8 @@ pub struct TradeScoutDraftPickPopulationView {
     pub picks_populated: usize,
     pub unresolved_asset_ids: Vec<String>,
     pub assets: Vec<TradeScoutAssetInput>,
+    #[serde(default)]
+    pub conditional_valuations: Vec<TradeDraftPickConditionalValuationView>,
     pub disclosures: Vec<String>,
 }
 
@@ -2203,10 +2237,33 @@ pub fn populate_trade_scout_draft_picks_with_forecast(
         .iter()
         .map(String::as_str)
         .collect::<BTreeSet<_>>();
+    let conditional_rights = input
+        .conditional_rights
+        .iter()
+        .map(|right| (right.asset_id.as_str(), right))
+        .collect::<BTreeMap<_, _>>();
     let mut unresolved_asset_ids = Vec::new();
+    let mut conditional_valuations = Vec::new();
     let mut assets = Vec::new();
     for ownership in &input.ownership {
         if ownership.status != TradeDraftPickOwnershipStatus::ConfirmedUnconditional {
+            if ownership.status == TradeDraftPickOwnershipStatus::Conditional {
+                if let Some(right) = conditional_rights.get(ownership.asset_id.as_str()) {
+                    let forecast = season_forecast.ok_or_else(|| {
+                        DraftPickValueError::InvalidDistribution(format!(
+                            "conditional right {} requires a team-season forecast",
+                            ownership.asset_id
+                        ))
+                    })?;
+                    conditional_valuations.push(evaluate_conditional_draft_pick_right(
+                        curve,
+                        ownership,
+                        right,
+                        forecast,
+                        input.current_draft_year,
+                    )?);
+                }
+            }
             unresolved_asset_ids.push(ownership.asset_id.clone());
             continue;
         }
@@ -2228,20 +2285,8 @@ pub fn populate_trade_scout_draft_picks_with_forecast(
                 .find(|team| team.team.eq_ignore_ascii_case(&ownership.original_team))
         });
         let slot_policy = draft_slot_outcomes(forecast_row, ownership.round)?;
-        let mut normalized = BTreeMap::<u16, f64>::new();
-        for (current_round_slot, probability) in &slot_policy.outcomes {
-            let historical_round_slot = ((current_round_slot - 1) * curve_round_width / 32) + 1;
-            let overall_pick =
-                u16::from(ownership.round - 1) * curve_round_width + historical_round_slot;
-            *normalized.entry(overall_pick).or_default() += probability;
-        }
-        let slot_outcomes = normalized
-            .into_iter()
-            .map(|(overall_pick, probability)| DraftPickSlotOutcome {
-                overall_pick,
-                probability,
-            })
-            .collect();
+        let slot_outcomes =
+            normalize_current_round_slots(curve, ownership.round, &slot_policy.outcomes)?;
         let value = value_draft_pick_asset(
             curve,
             &DraftPickAssetInput {
@@ -2280,13 +2325,198 @@ pub fn populate_trade_scout_draft_picks_with_forecast(
         picks_populated: assets.len(),
         unresolved_asset_ids,
         assets,
+        conditional_valuations,
         disclosures: vec![
             "Only reviewed confirmed-unconditional ownership becomes offer inventory; conditional and encumbered rights remain unresolved."
                 .to_owned(),
             "Current season forecasts supply separate first-round lottery/playoff-order and later-round playoff-order distributions under a versioned NHL ruleset. Older rank-only forecasts use a pre-lottery standings proxy; missing team evidence falls back to a uniform round."
                 .to_owned(),
+            "Structured conditional rights may receive an indicative valuation and dependence range, but remain unresolved and ineligible for generated offers until ownership resolves."
+                .to_owned(),
         ],
     })
+}
+
+fn evaluate_conditional_draft_pick_right(
+    curve: &DraftPickValueCurve,
+    ownership: &TradeDraftPickOwnershipInput,
+    right: &TradeDraftPickConditionalRightInput,
+    forecast: &TeamSeasonForecastView,
+    current_draft_year: u16,
+) -> Result<TradeDraftPickConditionalValuationView, DraftPickValueError> {
+    let distributions = right
+        .candidate_original_teams
+        .iter()
+        .map(|team| {
+            let row = forecast
+                .teams
+                .iter()
+                .find(|row| row.team.eq_ignore_ascii_case(team))
+                .ok_or_else(|| {
+                    DraftPickValueError::InvalidDistribution(format!(
+                        "conditional right {} is missing forecast team {}",
+                        right.asset_id, team
+                    ))
+                })?;
+            Ok(draft_slot_outcomes(Some(row), ownership.round)?.outcomes)
+        })
+        .collect::<Result<Vec<_>, DraftPickValueError>>()?;
+    let independent = combine_independent_slot_distributions(
+        &distributions[0],
+        &distributions[1],
+        right.selection,
+    );
+    let aligned =
+        couple_slot_distributions(&distributions[0], &distributions[1], right.selection, false);
+    let opposed =
+        couple_slot_distributions(&distributions[0], &distributions[1], right.selection, true);
+    let value = |outcomes: Vec<(u16, f64)>| {
+        value_draft_pick_asset(
+            curve,
+            &DraftPickAssetInput {
+                id: right.asset_id.clone(),
+                draft_year: ownership.draft_year,
+                slot_outcomes: normalize_current_round_slots(curve, ownership.round, &outcomes)?,
+            },
+            current_draft_year,
+        )
+    };
+    let independence_value = value(independent)?;
+    let aligned_value = value(aligned)?;
+    let opposed_value = value(opposed)?;
+    let (dependence_value_low, dependence_value_high) =
+        if aligned_value.expected_value <= opposed_value.expected_value {
+            (aligned_value, opposed_value)
+        } else {
+            (opposed_value, aligned_value)
+        };
+    Ok(TradeDraftPickConditionalValuationView {
+        asset_id: right.asset_id.clone(),
+        owner: ownership.owner.clone(),
+        draft_year: ownership.draft_year,
+        round: ownership.round,
+        selection: right.selection,
+        candidate_original_teams: right.candidate_original_teams.clone(),
+        condition: ownership
+            .conditions
+            .clone()
+            .expect("conditional ownership validation requires condition"),
+        independence_value,
+        dependence_value_low,
+        dependence_value_high,
+        offer_eligible: false,
+        disclosures: vec![
+            "Central value combines candidate-team marginal slot distributions under independence; it is not a claim that team outcomes are independent."
+                .to_owned(),
+            "The low/high values couple candidate percentiles in aligned and opposed order to expose dependence sensitivity."
+                .to_owned(),
+            "Indicative valuation does not resolve chain of title and cannot enter an offer."
+                .to_owned(),
+        ],
+    })
+}
+
+fn selected_slot(left: u16, right: u16, rule: TradeDraftPickSelectionRule) -> u16 {
+    match rule {
+        TradeDraftPickSelectionRule::EarlierOf => left.min(right),
+        TradeDraftPickSelectionRule::LaterOf => left.max(right),
+    }
+}
+
+fn normalize_current_round_slots(
+    curve: &DraftPickValueCurve,
+    round: u8,
+    outcomes: &[(u16, f64)],
+) -> Result<Vec<DraftPickSlotOutcome>, DraftPickValueError> {
+    let curve_round_width = if curve.max_overall_pick >= 7 {
+        curve.max_overall_pick / 7
+    } else {
+        curve.max_overall_pick
+    };
+    if curve_round_width == 0 || (curve.max_overall_pick < 7 && round > 1) {
+        return Err(DraftPickValueError::InvalidDistribution(format!(
+            "round {round} is outside the supplied curve"
+        )));
+    }
+    let mut normalized = BTreeMap::<u16, f64>::new();
+    for (current_round_slot, probability) in outcomes {
+        if !(1..=32).contains(current_round_slot) {
+            return Err(DraftPickValueError::InvalidDistribution(format!(
+                "current round slot {current_round_slot} is outside 1-32"
+            )));
+        }
+        let historical_round_slot = ((current_round_slot - 1) * curve_round_width / 32) + 1;
+        let overall_pick = u16::from(round - 1) * curve_round_width + historical_round_slot;
+        *normalized.entry(overall_pick).or_default() += probability;
+    }
+    Ok(normalized
+        .into_iter()
+        .map(|(overall_pick, probability)| DraftPickSlotOutcome {
+            overall_pick,
+            probability,
+        })
+        .collect())
+}
+
+fn combine_independent_slot_distributions(
+    left: &[(u16, f64)],
+    right: &[(u16, f64)],
+    rule: TradeDraftPickSelectionRule,
+) -> Vec<(u16, f64)> {
+    let mut combined = BTreeMap::<u16, f64>::new();
+    for (left_slot, left_probability) in left {
+        for (right_slot, right_probability) in right {
+            *combined
+                .entry(selected_slot(*left_slot, *right_slot, rule))
+                .or_default() += left_probability * right_probability;
+        }
+    }
+    combined.into_iter().collect()
+}
+
+fn couple_slot_distributions(
+    left: &[(u16, f64)],
+    right: &[(u16, f64)],
+    rule: TradeDraftPickSelectionRule,
+    oppose: bool,
+) -> Vec<(u16, f64)> {
+    let mut left = left.to_vec();
+    let mut right = right.to_vec();
+    left.sort_by_key(|outcome| outcome.0);
+    right.sort_by_key(|outcome| outcome.0);
+    if oppose {
+        right.reverse();
+    }
+    let mut left_index = 0;
+    let mut right_index = 0;
+    let mut left_remaining = left[0].1;
+    let mut right_remaining = right[0].1;
+    let mut combined = BTreeMap::<u16, f64>::new();
+    while left_index < left.len() && right_index < right.len() {
+        let mass = left_remaining.min(right_remaining);
+        *combined
+            .entry(selected_slot(
+                left[left_index].0,
+                right[right_index].0,
+                rule,
+            ))
+            .or_default() += mass;
+        left_remaining -= mass;
+        right_remaining -= mass;
+        if left_remaining <= 1e-12 {
+            left_index += 1;
+            if left_index < left.len() {
+                left_remaining = left[left_index].1;
+            }
+        }
+        if right_remaining <= 1e-12 {
+            right_index += 1;
+            if right_index < right.len() {
+                right_remaining = right[right_index].1;
+            }
+        }
+    }
+    combined.into_iter().collect()
 }
 
 struct DraftSlotOutcomePolicy {
@@ -2545,6 +2775,11 @@ fn validate_trade_scout_draft_pick_population(
         .iter()
         .map(|row| row.asset_id.as_str())
         .collect::<BTreeSet<_>>();
+    let conditional_ids = input
+        .conditional_rights
+        .iter()
+        .map(|right| right.asset_id.as_str())
+        .collect::<BTreeSet<_>>();
     let valid_as_of = chrono::DateTime::parse_from_rfc3339(&input.as_of).is_ok()
         || chrono::NaiveDate::parse_from_str(&input.as_of, "%Y-%m-%d").is_ok();
     if curve.schema != DRAFT_PICK_VALUE_CURVE_SCHEMA
@@ -2556,7 +2791,24 @@ fn validate_trade_scout_draft_pick_population(
         || input.ownership.is_empty()
         || asset_ids.len() != input.ownership.len()
         || protected.len() != input.protected_asset_ids.len()
+        || conditional_ids.len() != input.conditional_rights.len()
         || protected.iter().any(|asset_id| !known.contains(asset_id))
+        || input.conditional_rights.iter().any(|right| {
+            let teams = right
+                .candidate_original_teams
+                .iter()
+                .map(|team| team.trim().to_ascii_uppercase())
+                .collect::<BTreeSet<_>>();
+            right.asset_id.trim().is_empty()
+                || right.candidate_original_teams.len() != 2
+                || teams.len() != 2
+                || teams.iter().any(String::is_empty)
+                || input
+                    .ownership
+                    .iter()
+                    .find(|row| row.asset_id == right.asset_id)
+                    .is_none_or(|row| row.status != TradeDraftPickOwnershipStatus::Conditional)
+        })
         || input.ownership.iter().any(|row| {
             row.asset_id.trim().is_empty()
                 || row.owner.trim().is_empty()
@@ -2580,7 +2832,7 @@ fn validate_trade_scout_draft_pick_population(
         })
     {
         return Err(DraftPickValueError::InvalidDistribution(
-            "draft-pick population requires a valid curve/basis/date, unique known protection, future rounds 1-7, dated ownership provenance, and explicit conditions for unresolved rights"
+            "draft-pick population requires a valid curve/basis/date, unique known protection, future rounds 1-7, dated ownership provenance, explicit conditions for unresolved rights, and unique two-team contracts for modeled conditional rights"
                 .to_owned(),
         ));
     }
@@ -4106,6 +4358,7 @@ mod tests {
                     },
                 ],
                 protected_asset_ids: vec!["TBL-2027-1".to_owned()],
+                conditional_rights: Vec::new(),
             },
         )
         .unwrap();
@@ -4214,6 +4467,28 @@ mod tests {
         );
         row.first_round_draft_slot_probabilities[0].probability = 0.5;
         assert!(draft_slot_outcomes(Some(&row), 1).is_err());
+    }
+
+    #[test]
+    fn conditional_selection_combines_candidate_distributions_without_resolving_ownership() {
+        let left = [(10, 0.5), (20, 0.5)];
+        let right = [(15, 1.0)];
+        assert_eq!(
+            combine_independent_slot_distributions(
+                &left,
+                &right,
+                TradeDraftPickSelectionRule::LaterOf,
+            ),
+            [(15, 0.5), (20, 0.5)]
+        );
+        assert_eq!(
+            combine_independent_slot_distributions(
+                &left,
+                &right,
+                TradeDraftPickSelectionRule::EarlierOf,
+            ),
+            [(10, 0.5), (15, 0.5)]
+        );
     }
 
     #[test]

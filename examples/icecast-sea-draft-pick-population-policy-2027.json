@@ -6,5 +6,12 @@
     "horizon_years": 7,
     "method": "camp-score screening translation v1"
   },
-  "protected_asset_ids": ["SEA-2027-1"]
+  "protected_asset_ids": ["SEA-2027-1"],
+  "conditional_rights": [
+    {
+      "asset_id": "CBJ-WPG-2027-2-lower-owned-by-SEA",
+      "selection": "later_of",
+      "candidate_original_teams": ["CBJ", "WPG"]
+    }
+  ]
 }

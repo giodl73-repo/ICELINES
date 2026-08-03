@@ -288,8 +288,59 @@
       "protected": false
     }
   ],
+  "conditional_valuations": [
+    {
+      "asset_id": "CBJ-WPG-2027-2-lower-owned-by-SEA",
+      "owner": "SEA",
+      "draft_year": 2027,
+      "round": 2,
+      "selection": "later_of",
+      "candidate_original_teams": [
+        "CBJ",
+        "WPG"
+      ],
+      "condition": "Seattle retains the lower selection of the Columbus or Winnipeg 2027 second-round picks",
+      "independence_value": {
+        "id": "CBJ-WPG-2027-2-lower-owned-by-SEA",
+        "draft_year": 2027,
+        "expected_overall_pick": 45.022330939999996,
+        "expected_value": 98.26250318282852,
+        "expected_value_low": 39.23126774202931,
+        "expected_value_high": 157.29373862362777,
+        "future_discount": 1.0,
+        "uncertainty_width": 118.06247088159847
+      },
+      "dependence_value_low": {
+        "id": "CBJ-WPG-2027-2-lower-owned-by-SEA",
+        "draft_year": 2027,
+        "expected_overall_pick": 46.9723,
+        "expected_value": 97.76679400176096,
+        "expected_value_low": 41.16753660368995,
+        "expected_value_high": 154.36605139983195,
+        "future_discount": 1.0,
+        "uncertainty_width": 113.19851479614199
+      },
+      "dependence_value_high": {
+        "id": "CBJ-WPG-2027-2-lower-owned-by-SEA",
+        "draft_year": 2027,
+        "expected_overall_pick": 41.46660000000001,
+        "expected_value": 100.31549039181155,
+        "expected_value_low": 41.886655594409234,
+        "expected_value_high": 158.74432518921387,
+        "future_discount": 1.0,
+        "uncertainty_width": 116.85766959480463
+      },
+      "offer_eligible": false,
+      "disclosures": [
+        "Central value combines candidate-team marginal slot distributions under independence; it is not a claim that team outcomes are independent.",
+        "The low/high values couple candidate percentiles in aligned and opposed order to expose dependence sensitivity.",
+        "Indicative valuation does not resolve chain of title and cannot enter an offer."
+      ]
+    }
+  ],
   "disclosures": [
     "Only reviewed confirmed-unconditional ownership becomes offer inventory; conditional and encumbered rights remain unresolved.",
-    "Current season forecasts supply separate first-round lottery/playoff-order and later-round playoff-order distributions under a versioned NHL ruleset. Older rank-only forecasts use a pre-lottery standings proxy; missing team evidence falls back to a uniform round."
+    "Current season forecasts supply separate first-round lottery/playoff-order and later-round playoff-order distributions under a versioned NHL ruleset. Older rank-only forecasts use a pre-lottery standings proxy; missing team evidence falls back to a uniform round.",
+    "Structured conditional rights may receive an indicative valuation and dependence range, but remain unresolved and ineligible for generated offers until ownership resolves."
   ]
 }

@@ -9,6 +9,7 @@
 - Added `trade_draft_pick_ownership_coverage.v1` and `trade-pick-coverage`. League completeness is audited against all 224 original-team/round coordinates for one draft year; missing coordinates remain unknown, while sourced conditional/encumbered coordinates count toward coverage but not offer readiness. Duplicate coordinate claims are rejected at ingestion.
 - Team-season forecasts now retain trial-level 1–32 league-rank probabilities. `trade-pick-populate --season-forecast` always follows the pick's original team; rank-only archived artifacts use an explicit pre-lottery proxy and missing team evidence uses a uniform fallback.
 - Added season-scoped NHL draft-order simulation. Forecasts now retain distinct Round 1 lottery/playoff-order and Rounds 2-7 playoff-order distributions; Trade Scout consumes the correct distribution for each pick while older artifacts retain explicit proxy/fallback behavior.
+- Added structured `earlier_of`/`later_of` conditional-pick valuation. Conditional rights receive an independence estimate and dependence sensitivity range from explicit candidate teams while remaining unresolved and ineligible for generated offers.
 - Sourced trade-availability states now require both a valid source URL and observation time; exact negotiation boundaries use scale-aware floating-point tolerance.
 - IceCast `season-simulate` now replays an archived `team_season_forecast.v1` directly, rehydrating its retained game forecast with explicit baseline-v1 parameters so paired trade scenarios do not require regenerating the schedule.
 

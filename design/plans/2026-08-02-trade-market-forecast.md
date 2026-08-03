@@ -100,3 +100,10 @@
     PuckPedia public-page acquisition is blocked by its browser challenge;
     licensed API access or reviewed snapshots are the next provider input, not
     a reason to assume native ownership for the remaining 216 coordinates.
+14. Value structured conditional rights without making them executable.
+    **Initial primitive complete:** `earlier_of` and `later_of` contracts require
+    two explicit original teams and never parse prose into logic. Candidate
+    round distributions produce an independence estimate and aligned/opposed
+    dependence sensitivity. Seattle's later-of Columbus/Winnipeg 2027 second is
+    now visible as indicative value but remains unresolved and offer-ineligible.
+    Protection/deferment chains and conditions spanning draft years remain.
