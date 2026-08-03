@@ -147,6 +147,58 @@ fn l2_trade_pick_population_keeps_conditional_rights_unresolved() {
 }
 
 #[test]
+fn l2_trade_pick_population_composes_selection_protection_and_deferral() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let fixtures = repo.join("icelines-cli/tests/fixtures");
+    let ownership = fixtures.join("compound-draft-pick-ownership.csv");
+    let policy = fixtures.join("compound-draft-pick-policy.json");
+    let curve = repo.join("examples/icecast-draft-pick-value-curve-2005-2018.json");
+    let season_forecast = repo.join("examples/icecast-nyr-ror-trade-season-2026-27.json");
+    let out = run(&[
+        "icecast",
+        "trade-pick-populate",
+        "--ownership",
+        ownership.to_str().expect("UTF-8 ownership path"),
+        "--curve",
+        curve.to_str().expect("UTF-8 curve path"),
+        "--policy",
+        policy.to_str().expect("UTF-8 policy path"),
+        "--season-forecast",
+        season_forecast
+            .to_str()
+            .expect("UTF-8 season forecast path"),
+        "--json",
+    ]);
+
+    assert!(
+        out.status.success(),
+        "compound trade pick population failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let view: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(view["picks_populated"], 0);
+    assert_eq!(view["unresolved_asset_ids"].as_array().unwrap().len(), 1);
+    let chains = view["protection_chain_valuations"].as_array().unwrap();
+    assert_eq!(chains.len(), 1);
+    let chain = &chains[0];
+    assert_eq!(chain["offer_eligible"], false);
+    assert_eq!(chain["legs"].as_array().unwrap().len(), 2);
+    assert_eq!(chain["legs"][0]["selection"]["selection"], "later_of");
+    let first_conveys = chain["legs"][0]["conveyance_probability"].as_f64().unwrap();
+    let second_reach = chain["legs"][1]["reach_probability"].as_f64().unwrap();
+    let second_conveys = chain["legs"][1]["conveyance_probability"].as_f64().unwrap();
+    assert!(first_conveys > 0.0 && first_conveys < 1.0);
+    assert!((second_reach - (1.0 - first_conveys)).abs() < 1e-9);
+    assert!((first_conveys + second_conveys - 1.0).abs() < 1e-9);
+    let expected = chain["blended_expected_value"].as_f64().unwrap();
+    let dependence_low = chain["dependence_expected_value_low"].as_f64().unwrap();
+    let dependence_high = chain["dependence_expected_value_high"].as_f64().unwrap();
+    assert!(dependence_low <= expected && expected <= dependence_high);
+}
+
+#[test]
 fn l2_trade_pick_coverage_refuses_to_claim_league_completeness() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()

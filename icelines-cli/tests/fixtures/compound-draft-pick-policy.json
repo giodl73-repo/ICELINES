@@ -1,0 +1,34 @@
+{
+  "as_of": "2026-08-03",
+  "current_draft_year": 2027,
+  "value_basis": {
+    "outcome_measure": "nhl_regular_season_games_played",
+    "horizon_years": 7,
+    "method": "camp-score screening translation v1"
+  },
+  "protected_asset_ids": [],
+  "conditional_rights": [],
+  "protection_chains": [
+    {
+      "asset_id": "compound-CBJ-WPG-first",
+      "future_slot_policy": "current_team_strength_proxy",
+      "legs": [
+        {
+          "original_team": "CBJ",
+          "draft_year": 2027,
+          "round": 1,
+          "selection": {
+            "selection": "later_of",
+            "candidate_original_teams": ["CBJ", "WPG"]
+          },
+          "protected_through_slot": 10
+        },
+        {
+          "original_team": "CBJ",
+          "draft_year": 2028,
+          "round": 1
+        }
+      ]
+    }
+  ]
+}

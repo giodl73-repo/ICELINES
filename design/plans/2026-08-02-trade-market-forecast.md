@@ -113,4 +113,6 @@
     can now apply an explicit two-team `earlier_of`/`later_of` selector before
     protection. Central and dependence-sensitivity values remain separate, all
     probability must still reach an unprotected terminal leg, and the right
-    remains offer-ineligible.
+    remains offer-ineligible. A synthetic CLI fixture proves selected first-year
+    conveyance plus protected deferral conserves total probability end to end;
+    it is intentionally separate from reviewed ownership evidence.
