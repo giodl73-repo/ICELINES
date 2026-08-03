@@ -54,6 +54,7 @@ fn l2_prediction_edge_commands_expose_replayable_surfaces() {
         "trade-scout-league",
         "trade-scout-populate",
         "trade-pick-populate",
+        "trade-pick-coverage",
         "trade-lineup",
         "trade-lineup-board",
         "draft-pick-curve",
@@ -125,6 +126,33 @@ fn l2_trade_pick_population_keeps_conditional_rights_unresolved() {
     );
     assert!(String::from_utf8_lossy(&out.stdout)
         .contains("7/8 valued; 1 conditional or encumbered rights unresolved"));
+}
+
+#[test]
+fn l2_trade_pick_coverage_refuses_to_claim_league_completeness() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let ownership = repo.join("examples/icecast-sea-draft-pick-ownership-2027.csv");
+    let out = run(&[
+        "icecast",
+        "trade-pick-coverage",
+        "--ownership",
+        ownership.to_str().expect("UTF-8 ownership path"),
+        "--draft-year",
+        "2027",
+        "--as-of",
+        "2026-08-03",
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade pick coverage failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("8/224 coordinates"));
+    assert!(stdout.contains("coordinate_complete=false offer_ready=false"));
 }
 
 #[test]

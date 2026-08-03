@@ -83,3 +83,12 @@
     now carries seven valued 2027 rights, protects its own first, and leaves the
     lower-of-Columbus/Winnipeg second-round condition unresolved. Full league
     provider acquisition and team-strength slot distributions remain.
+13. Audit all-team pick chain of title. **Coverage primitive and CLI complete:**
+    `trade_draft_pick_ownership_coverage.v1` measures a target year against all
+    224 original-team/round coordinates, rejects duplicate claims, and keeps
+    coordinate completeness separate from offer readiness. The current reviewed
+    Seattle evidence covers 8/224 coordinates (seven unconditional, one
+    conditional), so the league board correctly remains incomplete. Automated
+    PuckPedia public-page acquisition is blocked by its browser challenge;
+    licensed API access or reviewed snapshots are the next provider input, not
+    a reason to assume native ownership for the remaining 216 coordinates.

@@ -1136,6 +1136,22 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Audit reviewed future-pick ownership against all 224 league coordinates.
+    #[command(name = "trade-pick-coverage")]
+    TradePickCoverage {
+        /// Reviewed league future-pick ownership CSV.
+        #[arg(long, value_name = "PATH")]
+        ownership: PathBuf,
+        #[arg(long)]
+        draft_year: u16,
+        /// Evidence cutoff date or timestamp.
+        #[arg(long)]
+        as_of: String,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Optimize before/after trade lineups from an existing lineup projection.
     #[command(name = "trade-lineup")]
     TradeLineup {

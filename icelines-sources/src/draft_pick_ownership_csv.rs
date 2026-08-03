@@ -11,6 +11,13 @@ pub enum DraftPickOwnershipCsvError {
     Row { row: usize, source: csv::Error },
     #[error("draft-pick ownership CSV row {row}: duplicate asset id {asset_id}")]
     DuplicateAsset { row: usize, asset_id: String },
+    #[error("draft-pick ownership CSV row {row}: duplicate original coordinate {original_team} {draft_year} round {round}")]
+    DuplicateCoordinate {
+        row: usize,
+        original_team: String,
+        draft_year: u16,
+        round: u8,
+    },
     #[error("draft-pick ownership CSV row {row}: owner, original_team, and asset_id are required")]
     MissingIdentity { row: usize },
     #[error("draft-pick ownership CSV row {row}: draft year must be at least {minimum_year} and round must be 1-7")]
@@ -47,6 +54,7 @@ pub fn parse_draft_pick_ownership_csv(
         .trim(csv::Trim::All)
         .from_reader(bytes);
     let mut seen = HashSet::new();
+    let mut seen_coordinates = HashSet::new();
     let mut rows = Vec::new();
     for (index, result) in reader.deserialize::<DraftPickOwnershipCsvRow>().enumerate() {
         let row_number = index + 2;
@@ -61,6 +69,14 @@ pub fn parse_draft_pick_ownership_csv(
             return Err(DraftPickOwnershipCsvError::DuplicateAsset {
                 row: row_number,
                 asset_id: row.asset_id,
+            });
+        }
+        if !seen_coordinates.insert((row.original_team.clone(), row.draft_year, row.round)) {
+            return Err(DraftPickOwnershipCsvError::DuplicateCoordinate {
+                row: row_number,
+                original_team: row.original_team,
+                draft_year: row.draft_year,
+                round: row.round,
             });
         }
         if row.draft_year < minimum_year || !(1..=7).contains(&row.round) {
@@ -128,6 +144,15 @@ mod tests {
         assert!(matches!(
             parse_draft_pick_ownership_csv(bytes, 2027),
             Err(DraftPickOwnershipCsvError::InvalidConditions { row: 2 })
+        ));
+    }
+
+    #[test]
+    fn rejects_two_claims_for_one_original_coordinate() {
+        let bytes = b"asset_id,owner,original_team,draft_year,round,status,conditions,source_url,checked_at\none,SEA,TBL,2027,1,confirmed_unconditional,,https://example.test/one,2026-08-03T12:00:00Z\ntwo,TBL,TBL,2027,1,confirmed_unconditional,,https://example.test/two,2026-08-03T12:00:00Z\n";
+        assert!(matches!(
+            parse_draft_pick_ownership_csv(bytes, 2027),
+            Err(DraftPickOwnershipCsvError::DuplicateCoordinate { row: 3, .. })
         ));
     }
 }

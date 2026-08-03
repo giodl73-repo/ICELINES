@@ -1892,6 +1892,13 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         }) => commands::icecast::run_trade_pick_populate(ownership, curve, policy, json, out)?,
+        Commands::Icecast(IceCastSubcommand::TradePickCoverage {
+            ownership,
+            draft_year,
+            as_of,
+            json,
+            out,
+        }) => commands::icecast::run_trade_pick_coverage(ownership, draft_year, as_of, json, out)?,
         Commands::Icecast(IceCastSubcommand::TradeLineup {
             lineup,
             change,

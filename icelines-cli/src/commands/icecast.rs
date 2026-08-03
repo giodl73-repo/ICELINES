@@ -495,6 +495,54 @@ pub fn run_trade_pick_populate(
     Ok(())
 }
 
+pub fn run_trade_pick_coverage(
+    ownership: PathBuf,
+    draft_year: u16,
+    as_of: String,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let ownership_bytes = std::fs::read(&ownership)
+        .with_context(|| format!("read draft-pick ownership {}", ownership.display()))?;
+    let ownership = icelines_fetch::parse_draft_pick_ownership_csv(&ownership_bytes, draft_year)?;
+    let view = icelines_core::build_trade_draft_pick_ownership_coverage(
+        icelines_core::TradeDraftPickOwnershipCoverageInput {
+            as_of,
+            draft_year,
+            expected_teams: icelines_core::CANONICAL_TEAMS
+                .iter()
+                .map(|(abbreviation, _)| (*abbreviation).to_owned())
+                .collect(),
+            ownership,
+        },
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        format!(
+            "TRADE PICK COVERAGE — {}/{} coordinates; {} confirmed, {} conditional, {} encumbered; coordinate_complete={} offer_ready={}\n",
+            view.coordinates_supplied,
+            view.coordinates_expected,
+            view.confirmed_unconditional,
+            view.conditional,
+            view.encumbered,
+            view.coordinate_inventory_complete,
+            view.offer_ready_inventory_complete
+        )
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "trade draft-pick ownership coverage",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 fn render_trade_scout_view(view: &icelines_core::TradeScoutView) -> String {
     let mut rendered = format!("THE TRADE SCOUT — {}\n", view.buyer);
     for candidate in &view.candidates {

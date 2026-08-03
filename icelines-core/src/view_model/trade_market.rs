@@ -26,6 +26,8 @@ pub const TRADE_SCOUT_SCHEMA: &str = "trade_scout.v1";
 pub const TRADE_SCOUT_LEAGUE_SCHEMA: &str = "trade_scout_league.v1";
 pub const TRADE_SCOUT_POPULATION_SCHEMA: &str = "trade_scout_population.v1";
 pub const TRADE_SCOUT_DRAFT_PICK_POPULATION_SCHEMA: &str = "trade_scout_draft_pick_population.v1";
+pub const TRADE_DRAFT_PICK_OWNERSHIP_COVERAGE_SCHEMA: &str =
+    "trade_draft_pick_ownership_coverage.v1";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DraftPickOutcomeObservation {
@@ -671,6 +673,57 @@ pub struct TradeScoutDraftPickPopulationView {
     pub picks_populated: usize,
     pub unresolved_asset_ids: Vec<String>,
     pub assets: Vec<TradeScoutAssetInput>,
+    pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeDraftPickOwnershipCoverageInput {
+    pub as_of: String,
+    pub draft_year: u16,
+    pub expected_teams: Vec<String>,
+    pub ownership: Vec<TradeDraftPickOwnershipInput>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TradeDraftPickMissingCoordinateView {
+    pub original_team: String,
+    pub draft_year: u16,
+    pub round: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TradeDraftPickOwnerCoverageRow {
+    pub owner: String,
+    pub confirmed_unconditional: usize,
+    pub conditional: usize,
+    pub encumbered: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TradeDraftPickTeamCoverageRow {
+    pub original_team: String,
+    pub coordinates_supplied: usize,
+    pub confirmed_unconditional: usize,
+    pub unresolved: usize,
+    pub missing_rounds: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TradeDraftPickOwnershipCoverageView {
+    pub schema: String,
+    pub as_of: String,
+    pub draft_year: u16,
+    pub teams_expected: usize,
+    pub coordinates_expected: usize,
+    pub coordinates_supplied: usize,
+    pub confirmed_unconditional: usize,
+    pub conditional: usize,
+    pub encumbered: usize,
+    pub coordinate_inventory_complete: bool,
+    pub offer_ready_inventory_complete: bool,
+    pub missing_coordinates: Vec<TradeDraftPickMissingCoordinateView>,
+    pub teams: Vec<TradeDraftPickTeamCoverageRow>,
+    pub owners: Vec<TradeDraftPickOwnerCoverageRow>,
     pub disclosures: Vec<String>,
 }
 
@@ -2198,6 +2251,152 @@ pub fn populate_trade_scout_draft_picks(
             "Only reviewed confirmed-unconditional ownership becomes offer inventory; conditional and encumbered rights remain unresolved."
                 .to_owned(),
             "Full-round uniform slot outcomes are a conservative preseason baseline, normalized by within-round percentile when the curve's historical league size differs; this is not a prediction of final draft order."
+                .to_owned(),
+        ],
+    })
+}
+
+pub fn build_trade_draft_pick_ownership_coverage(
+    input: TradeDraftPickOwnershipCoverageInput,
+) -> Result<TradeDraftPickOwnershipCoverageView, DraftPickValueError> {
+    let expected = input
+        .expected_teams
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    let valid_as_of = chrono::DateTime::parse_from_rfc3339(&input.as_of).is_ok()
+        || chrono::NaiveDate::parse_from_str(&input.as_of, "%Y-%m-%d").is_ok();
+    let rows = input
+        .ownership
+        .iter()
+        .filter(|row| row.draft_year == input.draft_year)
+        .collect::<Vec<_>>();
+    let coordinates = rows
+        .iter()
+        .map(|row| (row.original_team.as_str(), row.round))
+        .collect::<BTreeSet<_>>();
+    if !valid_as_of
+        || input.draft_year == 0
+        || input.expected_teams.is_empty()
+        || expected.len() != input.expected_teams.len()
+        || rows.is_empty()
+        || coordinates.len() != rows.len()
+        || rows.iter().any(|row| {
+            !expected.contains(row.original_team.as_str())
+                || !expected.contains(row.owner.as_str())
+                || !(1..=7).contains(&row.round)
+                || !valid_execution_evidence(
+                    &Some(row.source_url.clone()),
+                    &Some(row.observed_at.clone()),
+                )
+                || (row.status != TradeDraftPickOwnershipStatus::ConfirmedUnconditional
+                    && row
+                        .conditions
+                        .as_deref()
+                        .is_none_or(|conditions| conditions.trim().is_empty()))
+        })
+    {
+        return Err(DraftPickValueError::InvalidDistribution(
+            "draft-pick ownership coverage requires a dated target year, unique expected teams and original-team/round coordinates, known owners, and sourced conditional detail"
+                .to_owned(),
+        ));
+    }
+
+    let mut missing_coordinates = Vec::new();
+    let mut teams = Vec::new();
+    for team in &input.expected_teams {
+        let team_rows = rows
+            .iter()
+            .filter(|row| row.original_team == *team)
+            .copied()
+            .collect::<Vec<_>>();
+        let supplied_rounds = team_rows
+            .iter()
+            .map(|row| row.round)
+            .collect::<BTreeSet<_>>();
+        let missing_rounds = (1_u8..=7)
+            .filter(|round| !supplied_rounds.contains(round))
+            .collect::<Vec<_>>();
+        missing_coordinates.extend(missing_rounds.iter().map(|round| {
+            TradeDraftPickMissingCoordinateView {
+                original_team: team.clone(),
+                draft_year: input.draft_year,
+                round: *round,
+            }
+        }));
+        let confirmed_unconditional = team_rows
+            .iter()
+            .filter(|row| row.status == TradeDraftPickOwnershipStatus::ConfirmedUnconditional)
+            .count();
+        teams.push(TradeDraftPickTeamCoverageRow {
+            original_team: team.clone(),
+            coordinates_supplied: team_rows.len(),
+            confirmed_unconditional,
+            unresolved: team_rows.len() - confirmed_unconditional,
+            missing_rounds,
+        });
+    }
+    teams.sort_by(|left, right| left.original_team.cmp(&right.original_team));
+    missing_coordinates.sort_by(|left, right| {
+        left.original_team
+            .cmp(&right.original_team)
+            .then_with(|| left.round.cmp(&right.round))
+    });
+
+    let mut owner_counts = BTreeMap::<String, [usize; 3]>::new();
+    for row in &rows {
+        let counts = owner_counts.entry(row.owner.clone()).or_default();
+        match row.status {
+            TradeDraftPickOwnershipStatus::ConfirmedUnconditional => counts[0] += 1,
+            TradeDraftPickOwnershipStatus::Conditional => counts[1] += 1,
+            TradeDraftPickOwnershipStatus::Encumbered => counts[2] += 1,
+        }
+    }
+    let owners = owner_counts
+        .into_iter()
+        .map(|(owner, counts)| TradeDraftPickOwnerCoverageRow {
+            owner,
+            confirmed_unconditional: counts[0],
+            conditional: counts[1],
+            encumbered: counts[2],
+        })
+        .collect::<Vec<_>>();
+    let confirmed_unconditional = rows
+        .iter()
+        .filter(|row| row.status == TradeDraftPickOwnershipStatus::ConfirmedUnconditional)
+        .count();
+    let conditional = rows
+        .iter()
+        .filter(|row| row.status == TradeDraftPickOwnershipStatus::Conditional)
+        .count();
+    let encumbered = rows
+        .iter()
+        .filter(|row| row.status == TradeDraftPickOwnershipStatus::Encumbered)
+        .count();
+    let coordinates_expected = input.expected_teams.len() * 7;
+    let coordinates_supplied = rows.len();
+    let coordinate_inventory_complete = coordinates_supplied == coordinates_expected;
+    Ok(TradeDraftPickOwnershipCoverageView {
+        schema: TRADE_DRAFT_PICK_OWNERSHIP_COVERAGE_SCHEMA.to_owned(),
+        as_of: input.as_of,
+        draft_year: input.draft_year,
+        teams_expected: input.expected_teams.len(),
+        coordinates_expected,
+        coordinates_supplied,
+        confirmed_unconditional,
+        conditional,
+        encumbered,
+        coordinate_inventory_complete,
+        offer_ready_inventory_complete: coordinate_inventory_complete
+            && conditional == 0
+            && encumbered == 0,
+        missing_coordinates,
+        teams,
+        owners,
+        disclosures: vec![
+            "Coverage is measured over one coordinate for every original team and round; absence is unknown ownership, never assumed native ownership."
+                .to_owned(),
+            "Coordinate completeness and offer readiness are separate because conditional or encumbered rights can be fully sourced but not safely offered."
                 .to_owned(),
         ],
     })
@@ -3800,6 +3999,50 @@ mod tests {
             view.assets[0].asset.value_basis.method,
             "camp-score and pick-curve bridge v1"
         );
+    }
+
+    #[test]
+    fn ownership_coverage_exposes_missing_and_unresolved_coordinates() {
+        let view =
+            build_trade_draft_pick_ownership_coverage(TradeDraftPickOwnershipCoverageInput {
+                as_of: "2026-08-03".to_owned(),
+                draft_year: 2027,
+                expected_teams: vec!["SEA".to_owned(), "TBL".to_owned()],
+                ownership: vec![
+                    TradeDraftPickOwnershipInput {
+                        asset_id: "SEA-2027-1".to_owned(),
+                        owner: "SEA".to_owned(),
+                        original_team: "SEA".to_owned(),
+                        draft_year: 2027,
+                        round: 1,
+                        status: TradeDraftPickOwnershipStatus::ConfirmedUnconditional,
+                        conditions: None,
+                        source_url: "https://example.test/sea".to_owned(),
+                        observed_at: "2026-08-03T12:00:00Z".to_owned(),
+                    },
+                    TradeDraftPickOwnershipInput {
+                        asset_id: "TBL-2027-1-right".to_owned(),
+                        owner: "SEA".to_owned(),
+                        original_team: "TBL".to_owned(),
+                        draft_year: 2027,
+                        round: 1,
+                        status: TradeDraftPickOwnershipStatus::Conditional,
+                        conditions: Some("condition pending".to_owned()),
+                        source_url: "https://example.test/tbl".to_owned(),
+                        observed_at: "2026-08-03T12:00:00Z".to_owned(),
+                    },
+                ],
+            })
+            .unwrap();
+
+        assert_eq!(view.schema, TRADE_DRAFT_PICK_OWNERSHIP_COVERAGE_SCHEMA);
+        assert_eq!(view.coordinates_expected, 14);
+        assert_eq!(view.coordinates_supplied, 2);
+        assert_eq!(view.confirmed_unconditional, 1);
+        assert_eq!(view.conditional, 1);
+        assert_eq!(view.missing_coordinates.len(), 12);
+        assert!(!view.coordinate_inventory_complete);
+        assert!(!view.offer_ready_inventory_complete);
     }
 
     fn cleared_gates(has_pick: bool) -> TradeTransactionGates {

@@ -238,6 +238,26 @@ provider page or transaction source must support every imported right. Pick
 protection is a separate buyer policy, and the Trade Desk must still reconfirm
 ownership before labeling any generated package executable.
 
+League coverage uses `trade_draft_pick_ownership_coverage.v1`. For one draft
+year, the expected inventory is 32 original teams times seven rounds: 224
+coordinates. Coverage is indexed by original team and round, not by the number
+of assets currently listed under an owner. This catches transferred-away picks
+and prevents a team page with seven visible assets from proving league-wide
+chain of title.
+
+The coverage view publishes coordinate completeness separately from offer-ready
+completeness. A sourced conditional or encumbered coordinate closes a source
+gap but remains unavailable to the package generator. A missing coordinate is
+unknown ownership; it cannot default to the original team. Two asset claims for
+the same original-team/year/round coordinate are an ingestion error requiring
+review.
+
+Provider acquisition is intentionally outside core. A licensed provider API or
+reviewed saved snapshot may populate the CSV adapter. Automated public-page
+access that returns an access challenge is a source failure, never an empty
+team ledger. The current PuckPedia public pages require browser execution in
+this environment, and its documented data API requires separate access.
+
 ## Historical calibration and validation
 
 Backtests freeze evidence at the proposal date. Trade completion is the market

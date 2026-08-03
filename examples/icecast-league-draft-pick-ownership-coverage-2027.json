@@ -1,0 +1,1581 @@
+{
+  "schema": "trade_draft_pick_ownership_coverage.v1",
+  "as_of": "2026-08-03",
+  "draft_year": 2027,
+  "teams_expected": 32,
+  "coordinates_expected": 224,
+  "coordinates_supplied": 8,
+  "confirmed_unconditional": 7,
+  "conditional": 1,
+  "encumbered": 0,
+  "coordinate_inventory_complete": false,
+  "offer_ready_inventory_complete": false,
+  "missing_coordinates": [
+    {
+      "original_team": "ANA",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "ANA",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "ANA",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "ANA",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "ANA",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "ANA",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "ANA",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "BOS",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "BOS",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "BOS",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "BOS",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "BOS",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "BOS",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "BOS",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "BUF",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "BUF",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "BUF",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "BUF",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "BUF",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "BUF",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "BUF",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "CAR",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "CAR",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "CAR",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "CAR",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "CAR",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "CAR",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "CAR",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "CBJ",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "CBJ",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "CBJ",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "CBJ",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "CBJ",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "CBJ",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "CGY",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "CGY",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "CGY",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "CGY",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "CGY",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "CGY",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "CGY",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "CHI",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "CHI",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "CHI",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "CHI",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "CHI",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "CHI",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "CHI",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "COL",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "COL",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "COL",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "COL",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "COL",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "COL",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "COL",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "DAL",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "DAL",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "DAL",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "DAL",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "DAL",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "DAL",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "DAL",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "DET",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "DET",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "DET",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "DET",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "DET",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "DET",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "DET",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "EDM",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "EDM",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "EDM",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "EDM",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "EDM",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "EDM",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "EDM",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "FLA",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "FLA",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "FLA",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "FLA",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "FLA",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "FLA",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "FLA",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "LAK",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "LAK",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "LAK",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "LAK",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "LAK",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "LAK",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "LAK",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "MIN",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "MIN",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "MIN",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "MIN",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "MIN",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "MIN",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "MIN",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "MTL",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "MTL",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "MTL",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "MTL",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "MTL",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "MTL",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "MTL",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "NJD",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "NJD",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "NJD",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "NJD",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "NJD",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "NJD",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "NJD",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "NSH",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "NSH",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "NSH",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "NSH",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "NSH",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "NSH",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "NSH",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "NYI",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "NYI",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "NYI",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "NYI",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "NYI",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "NYI",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "NYI",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "NYR",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "NYR",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "NYR",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "NYR",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "NYR",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "NYR",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "NYR",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "OTT",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "OTT",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "OTT",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "OTT",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "OTT",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "OTT",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "OTT",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "PHI",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "PHI",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "PHI",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "PHI",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "PHI",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "PHI",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "PHI",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "PIT",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "PIT",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "PIT",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "PIT",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "PIT",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "PIT",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "PIT",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "SEA",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "SJS",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "SJS",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "SJS",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "SJS",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "SJS",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "SJS",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "SJS",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "STL",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "STL",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "STL",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "STL",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "STL",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "STL",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "STL",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "TBL",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "TBL",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "TBL",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "TBL",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "TBL",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "TBL",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "TOR",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "TOR",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "TOR",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "TOR",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "TOR",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "TOR",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "TOR",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "UTA",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "UTA",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "UTA",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "UTA",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "UTA",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "UTA",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "UTA",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "VAN",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "VAN",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "VAN",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "VAN",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "VAN",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "VAN",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "VAN",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "VGK",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "VGK",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "VGK",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "VGK",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "VGK",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "VGK",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "VGK",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "WPG",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "WPG",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "WPG",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "WPG",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "WPG",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "WPG",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "WPG",
+      "draft_year": 2027,
+      "round": 7
+    },
+    {
+      "original_team": "WSH",
+      "draft_year": 2027,
+      "round": 1
+    },
+    {
+      "original_team": "WSH",
+      "draft_year": 2027,
+      "round": 2
+    },
+    {
+      "original_team": "WSH",
+      "draft_year": 2027,
+      "round": 3
+    },
+    {
+      "original_team": "WSH",
+      "draft_year": 2027,
+      "round": 4
+    },
+    {
+      "original_team": "WSH",
+      "draft_year": 2027,
+      "round": 5
+    },
+    {
+      "original_team": "WSH",
+      "draft_year": 2027,
+      "round": 6
+    },
+    {
+      "original_team": "WSH",
+      "draft_year": 2027,
+      "round": 7
+    }
+  ],
+  "teams": [
+    {
+      "original_team": "ANA",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "BOS",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "BUF",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "CAR",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "CBJ",
+      "coordinates_supplied": 1,
+      "confirmed_unconditional": 0,
+      "unresolved": 1,
+      "missing_rounds": [
+        1,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "CGY",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "CHI",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "COL",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "DAL",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "DET",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "EDM",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "FLA",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "LAK",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "MIN",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "MTL",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "NJD",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "NSH",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "NYI",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "NYR",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "OTT",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "PHI",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "PIT",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "SEA",
+      "coordinates_supplied": 6,
+      "confirmed_unconditional": 6,
+      "unresolved": 0,
+      "missing_rounds": [
+        2
+      ]
+    },
+    {
+      "original_team": "SJS",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "STL",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "TBL",
+      "coordinates_supplied": 1,
+      "confirmed_unconditional": 1,
+      "unresolved": 0,
+      "missing_rounds": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "TOR",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "UTA",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "VAN",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "VGK",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "WPG",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "original_team": "WSH",
+      "coordinates_supplied": 0,
+      "confirmed_unconditional": 0,
+      "unresolved": 0,
+      "missing_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "owner": "SEA",
+      "confirmed_unconditional": 7,
+      "conditional": 1,
+      "encumbered": 0
+    }
+  ],
+  "disclosures": [
+    "Coverage is measured over one coordinate for every original team and round; absence is unknown ownership, never assumed native ownership.",
+    "Coordinate completeness and offer readiness are separate because conditional or encumbered rights can be fully sourced but not safely offered."
+  ]
+}
