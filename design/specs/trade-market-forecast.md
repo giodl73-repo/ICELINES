@@ -299,6 +299,16 @@ Validation reports calibration for completion probability, error in package
 value, and realized utility for both clubs. Trades from the evaluation window
 cannot train the pick curve or availability model.
 
+Completion calibration uses `trade_completion_calibration.v1`. Every reviewed
+proposal supplies proposal, evidence-freeze, and resolution timestamps plus the
+probability issued at proposal time and a completed/failed label. Evidence must
+not postdate the proposal; proposals must fall inside the declared evaluation
+window; resolution must follow proposal and precede `as_of`. The view reports
+Brier score, log loss, equal-width calibration bins, and expected calibration
+error. This primitive scores a supplied cohort only. A completed-transactions
+feed contains positive outcomes but cannot prove failed negotiations, so absent
+trades are never synthesized as negative labels.
+
 ## Initial Rangers question
 
 The initial view searches for a top-six forward while protecting the Rangers'

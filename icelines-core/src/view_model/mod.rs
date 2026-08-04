@@ -83,6 +83,7 @@ pub mod team_game_prediction_training;
 pub mod team_lineup;
 pub mod team_season_forecast;
 pub mod tokens;
+pub mod trade_completion_calibration;
 pub mod trade_market;
 pub mod training_camp;
 pub mod transactions;
@@ -672,6 +673,11 @@ pub use team_season_forecast::{
 pub use tokens::{
     MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision,
     ALL_SEMANTIC_TOKENS,
+};
+pub use trade_completion_calibration::{
+    calibrate_trade_completion, TradeCompletionCalibrationBinView, TradeCompletionCalibrationError,
+    TradeCompletionCalibrationInput, TradeCompletionCalibrationView,
+    TradeCompletionObservationInput, TRADE_COMPLETION_CALIBRATION_SCHEMA,
 };
 pub use trade_market::{
     assemble_trade_market, attach_trade_package_lineup_impacts,

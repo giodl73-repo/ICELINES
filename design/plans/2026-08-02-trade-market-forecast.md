@@ -50,7 +50,12 @@
    remain blocked specifically on destination authority. Availability and
    executable feasibility are now separate board fields.
 8. Backtest historical deadlines and calibrate completion probabilities before
-   promoting likelihood language beyond scenario ranking.
+   promoting likelihood language beyond scenario ranking. **Initial core
+   primitive complete:** `trade_completion_calibration.v1` validates reviewed,
+   point-in-time labeled proposal cohorts and reports Brier score, log loss,
+   equal-width reliability bins, and expected calibration error. It rejects
+   future evidence and refuses to manufacture failed-proposal labels from absent
+   transactions. CLI ingestion and a reviewed historical proposal corpus remain.
 9. Discover complementary buyer/seller fits and generate bounded negotiation
    ladders. **Initial core and CLI complete:** `trade_scout.v1` ranks supplied
    targets without inventing availability, excludes protected assets, publishes
