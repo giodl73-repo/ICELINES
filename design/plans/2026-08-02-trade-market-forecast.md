@@ -55,7 +55,9 @@
    point-in-time labeled proposal cohorts and reports Brier score, log loss,
    equal-width reliability bins, and expected calibration error. It rejects
    future evidence and refuses to manufacture failed-proposal labels from absent
-   transactions. CLI ingestion and a reviewed historical proposal corpus remain.
+   transactions. **CLI checkpoint:** `trade-calibrate` reads the UI-neutral
+   cohort and emits either the complete JSON view or a concise score line with
+   normal `--out` parity. A reviewed historical proposal corpus remains.
 9. Discover complementary buyer/seller fits and generate bounded negotiation
    ladders. **Initial core and CLI complete:** `trade_scout.v1` ranks supplied
    targets without inventing availability, excludes protected assets, publishes

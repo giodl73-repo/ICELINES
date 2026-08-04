@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Added a leakage-safe trade-completion calibration primitive with Brier score, log loss, reliability bins, and explicit refusal to infer failed proposals from absent transactions.
+- Added a leakage-safe trade-completion calibration primitive and `icecast trade-calibrate` CLI with Brier score, log loss, reliability bins, and explicit refusal to infer failed proposals from absent transactions.
 - Compose earlier/later-of draft-pick selection with protected multi-year conveyance chains while preserving separate curve and dependence uncertainty.
 - Added the UI-neutral Automatic Trade Scout and Package Negotiator with buyer-specific discovery scoring, protected-asset policy, bounded opening/fair/maximum offer ladders, walk-away values, and a `trade-scout` CLI. Generated offers remain transaction-blocked until full execution authority is attached.
 - Added `trade_scout_league.v1` and `trade-scout-league` to derive targets and buyer offer assets from normalized organization inventories. Need matching, seller surplus/availability, destination vetoes, protection policy, and explicit complete/partial league coverage are enforced before package generation.

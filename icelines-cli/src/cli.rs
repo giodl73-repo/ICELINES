@@ -1119,6 +1119,17 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Score a reviewed, point-in-time trade-completion forecast cohort.
+    #[command(name = "trade-calibrate")]
+    TradeCalibrate {
+        /// UI-neutral `TradeCompletionCalibrationInput` JSON.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Value reviewed, unconditional future-pick ownership for Trade Scout.
     #[command(name = "trade-pick-populate")]
     TradePickPopulate {

@@ -53,6 +53,7 @@ fn l2_prediction_edge_commands_expose_replayable_surfaces() {
         "trade-scout",
         "trade-scout-league",
         "trade-scout-populate",
+        "trade-calibrate",
         "trade-pick-populate",
         "trade-pick-coverage",
         "trade-lineup",
@@ -98,6 +99,37 @@ fn l2_trade_scout_populates_the_full_camp_inventory() {
     assert!(stdout.contains("32/32 teams, 933 players (147 prospects)"));
     assert!(stdout.contains("7 picks"));
     assert!(stdout.contains("0 coverage gaps"));
+}
+
+#[test]
+fn l2_trade_completion_calibration_reports_proper_scores() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let input = repo.join("icelines-cli/tests/fixtures/trade-completion-calibration.json");
+    let out = run(&[
+        "icecast",
+        "trade-calibrate",
+        "--input",
+        input.to_str().expect("UTF-8 calibration path"),
+        "--json",
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade completion calibration failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let view: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(view["schema"], "trade_completion_calibration.v1");
+    assert_eq!(view["observations"], 2);
+    assert_eq!(view["completions"], 1);
+    assert!((view["brier_score"].as_f64().unwrap() - 0.04).abs() < 1e-12);
+    assert!((view["expected_calibration_error"].as_f64().unwrap() - 0.2).abs() < 1e-12);
+    assert!(view["disclosures"][1]
+        .as_str()
+        .unwrap()
+        .contains("cannot establish failed negotiations"));
 }
 
 #[test]

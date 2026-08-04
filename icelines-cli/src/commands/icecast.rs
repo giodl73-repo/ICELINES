@@ -433,6 +433,31 @@ pub fn run_trade_scout_populate(
     Ok(())
 }
 
+pub fn run_trade_calibrate(input: PathBuf, json: bool, out: Option<PathBuf>) -> anyhow::Result<()> {
+    let input: icelines_core::TradeCompletionCalibrationInput =
+        read_icecast_json(&input, "trade completion calibration input")?;
+    let view = icelines_core::calibrate_trade_completion(input).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        format!(
+            "TRADE COMPLETION CALIBRATION — {}/{} completed ({:.1}%); Brier {:.4}, log loss {:.4}, ECE {:.4}\n",
+            view.completions,
+            view.observations,
+            view.completion_rate * 100.0,
+            view.brier_score,
+            view.log_loss,
+            view.expected_calibration_error
+        )
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "trade completion calibration")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 #[derive(Debug, Deserialize)]
 struct TradePickPopulationPolicy {
     as_of: String,

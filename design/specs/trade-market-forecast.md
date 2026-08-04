@@ -309,6 +309,16 @@ error. This primitive scores a supplied cohort only. A completed-transactions
 feed contains positive outcomes but cannot prove failed negotiations, so absent
 trades are never synthesized as negative labels.
 
+The IceCast adapter reads and writes the same UI-neutral contract:
+
+```text
+icelines icecast trade-calibrate --input reviewed-proposals.json --json
+```
+
+Without `--json`, it prints the cohort completion rate and the three aggregate
+scores. `--out` follows the same file-output contract as the other IceCast
+forecast commands.
+
 ## Initial Rangers question
 
 The initial view searches for a top-six forward while protecting the Rangers'
