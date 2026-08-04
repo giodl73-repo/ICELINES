@@ -1888,6 +1888,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::TradeCalibrate { input, json, out }) => {
             commands::icecast::run_trade_calibrate(input, json, out)?
         }
+        Commands::Icecast(IceCastSubcommand::TradeFeatures { input, json, out }) => {
+            commands::icecast::run_trade_features(input, json, out)?
+        }
         Commands::Icecast(IceCastSubcommand::TradePickPopulate {
             ownership,
             curve,

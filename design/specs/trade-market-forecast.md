@@ -321,6 +321,19 @@ Without `--json`, it prints the cohort completion rate and the three aggregate
 scores. `--out` follows the same file-output contract as the other IceCast
 forecast commands.
 
+Historical cohort construction starts with `trade_completion_feature_set.v1`.
+It expands every `trade_scout.v1` candidate into opening, fair, and maximum
+negotiation rows with stable proposal IDs. Each row preserves point-in-time
+availability, hockey fit, package ratio, fairness, feasibility, both clubs'
+utility and standings effects, package size, pick presence, and every execution
+gate. It deliberately contains no outcome label or completion probability.
+Reviewed outcomes join later by proposal ID; a frozen trained model may issue
+probabilities only after that labeled training boundary exists.
+
+```text
+icelines icecast trade-features --input trade-scout.json --json
+```
+
 ## Initial Rangers question
 
 The initial view searches for a top-six forward while protecting the Rangers'

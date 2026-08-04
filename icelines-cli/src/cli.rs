@@ -1130,6 +1130,17 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Export point-in-time Trade Scout features without labels or completion odds.
+    #[command(name = "trade-features")]
+    TradeFeatures {
+        /// UI-neutral `trade_scout.v1` JSON.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Value reviewed, unconditional future-pick ownership for Trade Scout.
     #[command(name = "trade-pick-populate")]
     TradePickPopulate {

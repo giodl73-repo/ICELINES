@@ -458,6 +458,27 @@ pub fn run_trade_calibrate(input: PathBuf, json: bool, out: Option<PathBuf>) -> 
     Ok(())
 }
 
+pub fn run_trade_features(input: PathBuf, json: bool, out: Option<PathBuf>) -> anyhow::Result<()> {
+    let scout: icelines_core::TradeScoutView = read_icecast_json(&input, "trade scout view")?;
+    let view =
+        icelines_core::build_trade_completion_feature_set(&scout).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        format!(
+            "TRADE COMPLETION FEATURES — {} candidates, {} negotiation rows; labels=absent completion_probability=absent\n",
+            view.candidates,
+            view.rows.len()
+        )
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "trade completion features")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 #[derive(Debug, Deserialize)]
 struct TradePickPopulationPolicy {
     as_of: String,

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added `trade_completion_feature_set.v1` and `icecast trade-features` to export point-in-time negotiation features while explicitly omitting outcome labels and untrained completion odds.
 - Added a leakage-safe trade-completion calibration primitive and `icecast trade-calibrate` CLI with frozen model authority, Brier score, log loss, reliability bins, and explicit refusal to infer failed proposals from absent transactions.
 - Compose earlier/later-of draft-pick selection with protected multi-year conveyance chains while preserving separate curve and dependence uncertainty.
 - Added the UI-neutral Automatic Trade Scout and Package Negotiator with buyer-specific discovery scoring, protected-asset policy, bounded opening/fair/maximum offer ladders, walk-away values, and a `trade-scout` CLI. Generated offers remain transaction-blocked until full execution authority is attached.

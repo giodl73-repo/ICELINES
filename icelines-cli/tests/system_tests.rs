@@ -54,6 +54,7 @@ fn l2_prediction_edge_commands_expose_replayable_surfaces() {
         "trade-scout-league",
         "trade-scout-populate",
         "trade-calibrate",
+        "trade-features",
         "trade-pick-populate",
         "trade-pick-coverage",
         "trade-lineup",
@@ -131,6 +132,33 @@ fn l2_trade_completion_calibration_reports_proper_scores() {
         .as_str()
         .unwrap()
         .contains("cannot establish failed negotiations"));
+}
+
+#[test]
+fn l2_trade_features_expand_scout_without_inventing_completion_odds() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let input = repo.join("examples/icecast-sea-trade-scout-board-2026-27.json");
+    let out = run(&[
+        "icecast",
+        "trade-features",
+        "--input",
+        input.to_str().expect("UTF-8 trade scout path"),
+        "--json",
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade feature export failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let view: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(view["schema"], "trade_completion_feature_set.v1");
+    assert_eq!(view["candidates"], 3);
+    assert_eq!(view["rows"].as_array().unwrap().len(), 9);
+    assert!(view["rows"][0].get("completed").is_none());
+    assert!(view["rows"][0].get("completion_probability").is_none());
 }
 
 #[test]

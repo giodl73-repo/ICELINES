@@ -60,7 +60,11 @@
    normal `--out` parity. **Leakage-authority checkpoint:** every cohort now
    carries model identity, method, a SHA-256 training fingerprint, and a training
    cutoff strictly before the evaluation window. A reviewed historical proposal
-   corpus and trained completion model remain.
+   corpus and trained completion model remain. **Feature-export checkpoint:**
+   `trade_completion_feature_set.v1` and `trade-features` expand every candidate
+   into three stable point-in-time negotiation vectors while guaranteeing that
+   neither outcome labels nor completion odds are invented. Reviewed outcome
+   joins, model training, and temporal holdout promotion remain.
 9. Discover complementary buyer/seller fits and generate bounded negotiation
    ladders. **Initial core and CLI complete:** `trade_scout.v1` ranks supplied
    targets without inventing availability, excludes protected assets, publishes
