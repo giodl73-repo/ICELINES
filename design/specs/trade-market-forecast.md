@@ -305,7 +305,9 @@ probability issued at proposal time and a completed/failed label. Evidence must
 not postdate the proposal; proposals must fall inside the declared evaluation
 window; resolution must follow proposal and precede `as_of`. The view reports
 Brier score, log loss, equal-width calibration bins, and expected calibration
-error. This primitive scores a supplied cohort only. A completed-transactions
+error. The cohort also identifies the model and method, carries a SHA-256
+training fingerprint, and requires its training cutoff to precede the entire
+evaluation window. This primitive scores a supplied cohort only. A completed-transactions
 feed contains positive outcomes but cannot prove failed negotiations, so absent
 trades are never synthesized as negative labels.
 

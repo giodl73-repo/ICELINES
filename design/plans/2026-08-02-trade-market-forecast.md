@@ -57,7 +57,10 @@
    future evidence and refuses to manufacture failed-proposal labels from absent
    transactions. **CLI checkpoint:** `trade-calibrate` reads the UI-neutral
    cohort and emits either the complete JSON view or a concise score line with
-   normal `--out` parity. A reviewed historical proposal corpus remains.
+   normal `--out` parity. **Leakage-authority checkpoint:** every cohort now
+   carries model identity, method, a SHA-256 training fingerprint, and a training
+   cutoff strictly before the evaluation window. A reviewed historical proposal
+   corpus and trained completion model remain.
 9. Discover complementary buyer/seller fits and generate bounded negotiation
    ladders. **Initial core and CLI complete:** `trade_scout.v1` ranks supplied
    targets without inventing availability, excludes protected assets, publishes

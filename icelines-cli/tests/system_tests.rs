@@ -124,6 +124,7 @@ fn l2_trade_completion_calibration_reports_proper_scores() {
     assert_eq!(view["schema"], "trade_completion_calibration.v1");
     assert_eq!(view["observations"], 2);
     assert_eq!(view["completions"], 1);
+    assert_eq!(view["model_id"], "trade-completion-evaluation-v1");
     assert!((view["brier_score"].as_f64().unwrap() - 0.04).abs() < 1e-12);
     assert!((view["expected_calibration_error"].as_f64().unwrap() - 0.2).abs() < 1e-12);
     assert!(view["disclosures"][1]

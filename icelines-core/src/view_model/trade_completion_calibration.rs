@@ -20,6 +20,10 @@ pub struct TradeCompletionCalibrationInput {
     pub as_of: String,
     pub evaluation_start: String,
     pub evaluation_end: String,
+    pub model_id: String,
+    pub model_method: String,
+    pub model_trained_through: String,
+    pub training_fingerprint: String,
     pub bin_count: usize,
     pub observations: Vec<TradeCompletionObservationInput>,
 }
@@ -40,6 +44,10 @@ pub struct TradeCompletionCalibrationView {
     pub as_of: String,
     pub evaluation_start: String,
     pub evaluation_end: String,
+    pub model_id: String,
+    pub model_method: String,
+    pub model_trained_through: String,
+    pub training_fingerprint: String,
     pub observations: usize,
     pub completions: usize,
     pub completion_rate: f64,
@@ -62,6 +70,8 @@ pub fn calibrate_trade_completion(
     let as_of = parse_timestamp("as_of", &input.as_of)?;
     let evaluation_start = parse_timestamp("evaluation_start", &input.evaluation_start)?;
     let evaluation_end = parse_timestamp("evaluation_end", &input.evaluation_end)?;
+    let model_trained_through =
+        parse_timestamp("model_trained_through", &input.model_trained_through)?;
     if evaluation_start > evaluation_end || evaluation_end > as_of {
         return Err(TradeCompletionCalibrationError::InvalidInput(
             "evaluation_start must be at or before evaluation_end, and evaluation_end must not exceed as_of"
@@ -71,6 +81,16 @@ pub fn calibrate_trade_completion(
     if !(2..=20).contains(&input.bin_count) || input.observations.is_empty() {
         return Err(TradeCompletionCalibrationError::InvalidInput(
             "bin_count must be 2-20 and observations must not be empty".to_owned(),
+        ));
+    }
+    if input.model_id.trim().is_empty()
+        || input.model_method.trim().is_empty()
+        || model_trained_through >= evaluation_start
+        || !valid_sha256(&input.training_fingerprint)
+    {
+        return Err(TradeCompletionCalibrationError::InvalidInput(
+            "model identity/method are required, model_trained_through must precede the evaluation window, and training_fingerprint must be a SHA-256 hex digest"
+                .to_owned(),
         ));
     }
     let mut ids = BTreeSet::new();
@@ -168,6 +188,10 @@ pub fn calibrate_trade_completion(
         as_of: input.as_of,
         evaluation_start: input.evaluation_start,
         evaluation_end: input.evaluation_end,
+        model_id: input.model_id,
+        model_method: input.model_method,
+        model_trained_through: input.model_trained_through,
+        training_fingerprint: input.training_fingerprint,
         observations: count,
         completions,
         completion_rate: completions as f64 / count as f64,
@@ -184,6 +208,10 @@ pub fn calibrate_trade_completion(
                 .to_owned(),
         ],
     })
+}
+
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
 fn parse_timestamp(
@@ -217,6 +245,11 @@ mod tests {
             as_of: "2025-04-01T00:00:00-04:00".to_owned(),
             evaluation_start: "2025-02-01T00:00:00-05:00".to_owned(),
             evaluation_end: "2025-03-07T15:00:00-05:00".to_owned(),
+            model_id: "trade-completion-evaluation-v1".to_owned(),
+            model_method: "frozen logistic completion model".to_owned(),
+            model_trained_through: "2025-01-31T23:59:59-05:00".to_owned(),
+            training_fingerprint:
+                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_owned(),
             bin_count: 5,
             observations: vec![
                 observation("likely-completed", 0.8, true),
@@ -249,6 +282,17 @@ mod tests {
 
         let mut invalid = input();
         invalid.observations[1].proposal_id = invalid.observations[0].proposal_id.clone();
+        assert!(calibrate_trade_completion(invalid).is_err());
+    }
+
+    #[test]
+    fn calibration_rejects_model_trained_inside_evaluation_window() {
+        let mut invalid = input();
+        invalid.model_trained_through = "2025-02-15T00:00:00-05:00".to_owned();
+        assert!(calibrate_trade_completion(invalid).is_err());
+
+        let mut invalid = input();
+        invalid.training_fingerprint = "not-a-fingerprint".to_owned();
         assert!(calibrate_trade_completion(invalid).is_err());
     }
 }
