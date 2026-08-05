@@ -338,10 +338,11 @@ pub use view_model::prospect_arrival_calibration::{
     PROSPECT_ARRIVAL_CALIBRATION_SCHEMA, PROSPECT_ARRIVAL_LEAGUE_CALIBRATION_SCHEMA,
 };
 pub use view_model::prospect_census::{
-    build_prospect_census, require_publishable_prospect_census, ProspectCensusCandidateInput,
-    ProspectCensusCounts, ProspectCensusDimensionRow, ProspectCensusFreshnessStatus,
-    ProspectCensusInput, ProspectCensusLossReason, ProspectCensusLossRow,
-    ProspectCensusOrganizationInput, ProspectCensusOrganizationView,
+    build_prospect_census, require_publishable_prospect_census, ProspectCensusAuthorityGap,
+    ProspectCensusAuthorityGapState, ProspectCensusAuthorityGapSummary,
+    ProspectCensusCandidateInput, ProspectCensusCounts, ProspectCensusDimensionRow,
+    ProspectCensusFreshnessStatus, ProspectCensusInput, ProspectCensusLossReason,
+    ProspectCensusLossRow, ProspectCensusOrganizationInput, ProspectCensusOrganizationView,
     ProspectCensusPublicationStatus, ProspectCensusStage, ProspectCensusView,
     ProspectPopulationAuthorityStatus, ProspectRankPublicationStatus,
     ProspectScorePublicationStatus, PROSPECT_CENSUS_SCHEMA,

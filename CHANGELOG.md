@@ -169,7 +169,12 @@
   explicit identity review, honest all-32 prospect census gates, and fantasy
   eligibility reuse now share the same transport-free boundary; authorized
   identity, contract-control, and camp ledgers remain required before strict
-  population authority can publish.
+  population authority can publish. Prospect census output now promotes failed,
+  quarantined, and incomplete-pagination manifest cells into typed per-team
+  authority gaps and reconciled league family/state counts. The current sealed
+  package therefore reports the exact remaining backlog—32 AHL assignment, 32
+  club camp, and 32 contract publication cells—rather than only a generic
+  population-incomplete message.
 - Improved official draft-identity discovery for provider nicknames,
   parentheticals, diacritics, and transliterations. Surname fallback remains
   discovery-only and requires one exact official landing/draft-coordinate

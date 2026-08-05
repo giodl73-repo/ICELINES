@@ -9931,6 +9931,20 @@ fn render_prospect_census(view: &icelines_core::ProspectCensusView) -> String {
     if !league_losses.is_empty() {
         let _ = writeln!(output, "League losses · {league_losses}");
     }
+    if !view.authority_gap_summary.is_empty() {
+        let summary = view
+            .authority_gap_summary
+            .iter()
+            .map(|gap| {
+                format!(
+                    "{}:{:?}={}",
+                    gap.source_family, gap.state, gap.organizations
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let _ = writeln!(output, "Authority gaps · {summary}");
+    }
     for organization in &view.organizations {
         let loss_summary = prospect_census_loss_summary(&organization.losses);
         let _ = writeln!(
@@ -9948,6 +9962,15 @@ fn render_prospect_census(view: &icelines_core::ProspectCensusView) -> String {
                 format!(" · {loss_summary}")
             },
         );
+        if !organization.authority_gaps.is_empty() {
+            let gaps = organization
+                .authority_gaps
+                .iter()
+                .map(|gap| format!("{}:{:?}", gap.source_family, gap.state))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let _ = writeln!(output, "  authority gaps · {gaps}");
+        }
     }
     let _ = writeln!(
         output,

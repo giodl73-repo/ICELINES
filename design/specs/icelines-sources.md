@@ -533,7 +533,12 @@ positional-balance ranks remain withheld when required goalie authority fails.
 Consumers receive a UI-neutral `ProspectCensusView`, not the raw source package.
 It includes evaluation organization/season, both cutoffs, authority and
 freshness state, funnel and positional counts, typed exclusions/disclosures,
-policy versions, and remediation guidance. The first required surface is
+policy versions, and remediation guidance. Failed, quarantined, and
+incomplete-pagination source objects are retained as typed per-team authority
+gaps. A league summary groups those gaps by source family and state and counts
+affected organizations, allowing every renderer to distinguish a missing
+all-32 provider family from isolated team failures without parsing disclosure
+text. The first required surface is
 `icecast prospect-census --source-package PATH [--json]`. TUI/Web/card
 renderers are explicitly deferred until their
 `surface-parity.md` rows and row-identity/partial-state tests are added; no
@@ -600,6 +605,8 @@ retaining the original source and classification disclosure.
 ### L2 — consumer behavior
 
 - all-32 prospect census coverage funnel;
+- per-team authority gaps reconcile exactly into league source-family/state
+  counts and actionable remediation;
 - strict publication independently refuses incomplete population authority and
   incomplete ranking depth;
 - camp-only invite remains usable by camp simulation but not prospect ranking;
