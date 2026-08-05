@@ -1,11 +1,14 @@
 //! Read-only web provider for sealed UI-neutral card documents.
 
-use std::sync::OnceLock;
+use std::{collections::BTreeMap, sync::OnceLock};
 
+use chrono::{DateTime, Utc};
 use icelines_core::{
-    load_organization_window_profile_inventory, parse_card_document,
-    project_organization_window_card, validate_organization_window_board, CardDocumentView,
-    OrganizationWindowBoardView, OrganizationWindowCardError,
+    build_prospect_arrival_card, load_organization_window_profile_inventory, parse_card_document,
+    project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
+    CardDocumentView, OrganizationWindowBoardView, OrganizationWindowCardError,
+    ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView, Season, ViewContext,
+    ViewWindow, CANONICAL_TEAMS,
 };
 use thiserror::Error;
 
@@ -27,10 +30,14 @@ const NYR_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-sea-2024-25.json");
+#[cfg(test)]
 const NYR_PROSPECT_ARRIVAL: &str =
     include_str!("../../examples/prospect-arrival-card-nyr-2026-27.json");
+#[cfg(test)]
 const SEA_PROSPECT_ARRIVAL: &str =
     include_str!("../../examples/prospect-arrival-card-sea-2026-27.json");
+const PROSPECT_ARRIVAL_LEAGUE: &str =
+    include_str!("../../examples/icecast-prospect-arrival-league-2026-27.json");
 const BALANCED_ORGANIZATION_WINDOW: &str =
     include_str!("../../examples/organization-window-board-partial-2026-07-28.json");
 const DEXTERS_DAWGS: &str =
@@ -112,12 +119,13 @@ pub fn forecast_history_card(season: u32, team: &str) -> Result<CardDocumentView
 
 pub fn prospect_arrival_card(season: u32, team: &str) -> Result<CardDocumentView, CardStoreError> {
     let team = team.trim().to_ascii_uppercase();
-    match (season, team.as_str()) {
-        (20262027, "NYR") => Ok(nyr_prospect_arrival_card().clone()),
-        (20262027, "SEA") => Ok(sea_prospect_arrival_card().clone()),
-        (20262027, _) => Err(CardStoreError::UnsupportedProspectArrivalTeam(team)),
-        _ => Err(CardStoreError::UnsupportedSeason(season)),
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
     }
+    prospect_arrival_cards()
+        .get(&team)
+        .cloned()
+        .ok_or(CardStoreError::UnsupportedProspectArrivalTeam(team))
 }
 
 pub fn organization_window_card(
@@ -295,17 +303,34 @@ fn sea_2024_history_card() -> &'static CardDocumentView {
     })
 }
 
-fn nyr_prospect_arrival_card() -> &'static CardDocumentView {
-    static CARD: OnceLock<CardDocumentView> = OnceLock::new();
-    CARD.get_or_init(|| {
-        parse_card_document(NYR_PROSPECT_ARRIVAL).expect("sealed NYR prospect arrival card")
-    })
-}
-
-fn sea_prospect_arrival_card() -> &'static CardDocumentView {
-    static CARD: OnceLock<CardDocumentView> = OnceLock::new();
-    CARD.get_or_init(|| {
-        parse_card_document(SEA_PROSPECT_ARRIVAL).expect("sealed SEA prospect arrival card")
+fn prospect_arrival_cards() -> &'static BTreeMap<String, CardDocumentView> {
+    static CARDS: OnceLock<BTreeMap<String, CardDocumentView>> = OnceLock::new();
+    CARDS.get_or_init(|| {
+        let arrival: ProspectArrivalLeagueCalibrationView =
+            serde_json::from_str(PROSPECT_ARRIVAL_LEAGUE)
+                .expect("sealed prospect arrival league calibration");
+        let evidence_at = DateTime::parse_from_rfc3339("2026-09-15T12:00:00Z")
+            .expect("fixed prospect arrival evidence time")
+            .with_timezone(&Utc);
+        CANONICAL_TEAMS
+            .iter()
+            .map(|(team, team_name)| {
+                let mut view = ViewContext::new(ViewWindow::new(
+                    Season(arrival.forecast_season),
+                    SeasonType::Regular,
+                ));
+                view.generated_at = Some(evidence_at);
+                let card = build_prospect_arrival_card(ProspectArrivalCardInput {
+                    arrival: arrival.clone(),
+                    focus_team: (*team).to_owned(),
+                    team_name: (*team_name).to_owned(),
+                    view,
+                    evidence_at: Some(evidence_at),
+                })
+                .expect("canonical prospect arrival card projection");
+                ((*team).to_owned(), card)
+            })
+            .collect()
     })
 }
 
@@ -389,6 +414,22 @@ mod tests {
             sea_arrival.context.simulation.parameter_fingerprint
         );
         assert_eq!(nyr_arrival.provenance, sea_arrival.provenance);
+        assert_eq!(prospect_arrival_cards().len(), CANONICAL_TEAMS.len());
+        for (team, team_name) in CANONICAL_TEAMS {
+            let card = prospect_arrival_card(20262027, team).unwrap();
+            assert_eq!(card.context.joins.team_ids, [*team]);
+            assert_eq!(card.title, format!("{team_name} prospect arrivals"));
+        }
+        let sealed_nyr = parse_card_document(NYR_PROSPECT_ARRIVAL)
+            .expect("sealed NYR prospect arrival card fixture");
+        let sealed_sea = parse_card_document(SEA_PROSPECT_ARRIVAL)
+            .expect("sealed SEA prospect arrival card fixture");
+        assert_eq!(nyr_arrival, sealed_nyr);
+        assert_eq!(sea_arrival, sealed_sea);
+        assert!(matches!(
+            prospect_arrival_card(20262027, "XYZ"),
+            Err(CardStoreError::UnsupportedProspectArrivalTeam(_))
+        ));
         for (team, _) in icelines_core::CANONICAL_TEAMS {
             let card = organization_window_card(20262027, team).unwrap();
             assert_eq!(card.context.joins.team_ids, [*team]);

@@ -5,10 +5,12 @@
 
 use std::{collections::BTreeMap, sync::OnceLock};
 
+use chrono::{DateTime, Utc};
 use icelines_core::{
-    load_organization_window_profile_inventory, parse_card_document,
-    project_organization_window_card, validate_organization_window_board, CardDocumentView,
-    CardSectionView, OrganizationWindowBoardView, CANONICAL_TEAMS,
+    build_prospect_arrival_card, load_organization_window_profile_inventory, parse_card_document,
+    project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
+    CardDocumentView, CardSectionView, OrganizationWindowBoardView, ProspectArrivalCardInput,
+    ProspectArrivalLeagueCalibrationView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -40,10 +42,14 @@ const NYR_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-sea-2024-25.json");
+#[cfg(test)]
 const NYR_PROSPECT_ARRIVAL_CARD_JSON: &str =
     include_str!("../../../../examples/prospect-arrival-card-nyr-2026-27.json");
+#[cfg(test)]
 const SEA_PROSPECT_ARRIVAL_CARD_JSON: &str =
     include_str!("../../../../examples/prospect-arrival-card-sea-2026-27.json");
+const PROSPECT_ARRIVAL_LEAGUE_JSON: &str =
+    include_str!("../../../../examples/icecast-prospect-arrival-league-2026-27.json");
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
     include_str!("../../../../examples/organization-window-board-partial-2026-07-28.json");
 const FANTASY_CARD_JSON: &str =
@@ -57,6 +63,11 @@ const FANTASY_TRADE_CARD_JSON: &str =
 
 fn card(team: &str) -> &'static CardDocumentView {
     let upper = team.to_ascii_uppercase();
+    if let Some(arrival_team) = upper.strip_prefix("ARRIVAL-") {
+        return prospect_arrival_cards()
+            .get(arrival_team)
+            .expect("canonical prospect arrival team");
+    }
     if let Some(window_team) = upper.strip_prefix("WINDOW-") {
         return organization_window_cards()
             .get(window_team)
@@ -76,8 +87,6 @@ fn card(team: &str) -> &'static CardDocumentView {
     static SEA_2024_MOVEMENT: OnceLock<CardDocumentView> = OnceLock::new();
     static NYR_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
     static SEA_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
-    static NYR_PROSPECT_ARRIVAL: OnceLock<CardDocumentView> = OnceLock::new();
-    static SEA_PROSPECT_ARRIVAL: OnceLock<CardDocumentView> = OnceLock::new();
     match upper.as_str() {
         "SIM-NYR" => NYR_SEASON_SIMULATION.get_or_init(|| {
             parse_card_document(NYR_SEASON_SIMULATION_CARD_JSON)
@@ -109,14 +118,6 @@ fn card(team: &str) -> &'static CardDocumentView {
             parse_card_document(SEA_2024_HISTORY_CARD_JSON)
                 .expect("sealed SEA 2024-25 forecast history card")
         }),
-        "ARRIVAL-NYR" => NYR_PROSPECT_ARRIVAL.get_or_init(|| {
-            parse_card_document(NYR_PROSPECT_ARRIVAL_CARD_JSON)
-                .expect("sealed NYR prospect arrival card")
-        }),
-        "ARRIVAL-SEA" => SEA_PROSPECT_ARRIVAL.get_or_init(|| {
-            parse_card_document(SEA_PROSPECT_ARRIVAL_CARD_JSON)
-                .expect("sealed SEA prospect arrival card")
-        }),
         "SEA" => SEA.get_or_init(|| parse_card_document(SEA_CARD_JSON).expect("sealed SEA card")),
         "DEX" | "DEXTERS-DAWGS" | "FANTASY" => FANTASY.get_or_init(|| {
             parse_card_document(FANTASY_CARD_JSON).expect("sealed Dexter's Dawgs fantasy card")
@@ -135,6 +136,37 @@ fn card(team: &str) -> &'static CardDocumentView {
         }),
         _ => NYR.get_or_init(|| parse_card_document(NYR_CARD_JSON).expect("sealed NYR card")),
     }
+}
+
+fn prospect_arrival_cards() -> &'static BTreeMap<String, CardDocumentView> {
+    static CARDS: OnceLock<BTreeMap<String, CardDocumentView>> = OnceLock::new();
+    CARDS.get_or_init(|| {
+        let arrival: ProspectArrivalLeagueCalibrationView =
+            serde_json::from_str(PROSPECT_ARRIVAL_LEAGUE_JSON)
+                .expect("sealed prospect arrival league calibration");
+        let evidence_at = DateTime::parse_from_rfc3339("2026-09-15T12:00:00Z")
+            .expect("fixed prospect arrival evidence time")
+            .with_timezone(&Utc);
+        CANONICAL_TEAMS
+            .iter()
+            .map(|(team, team_name)| {
+                let mut view = ViewContext::new(ViewWindow::new(
+                    Season(arrival.forecast_season),
+                    SeasonType::Regular,
+                ));
+                view.generated_at = Some(evidence_at);
+                let card = build_prospect_arrival_card(ProspectArrivalCardInput {
+                    arrival: arrival.clone(),
+                    focus_team: (*team).to_owned(),
+                    team_name: (*team_name).to_owned(),
+                    view,
+                    evidence_at: Some(evidence_at),
+                })
+                .expect("canonical prospect arrival card projection");
+                ((*team).to_owned(), card)
+            })
+            .collect()
+    })
 }
 
 pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::ScreenChrome {
@@ -949,6 +981,22 @@ mod tests {
         );
         assert_eq!(nyr.provenance[0].fingerprint, sea.provenance[0].fingerprint);
         assert_ne!(nyr.fingerprint, sea.fingerprint);
+        assert_eq!(prospect_arrival_cards().len(), CANONICAL_TEAMS.len());
+        assert_eq!(
+            *nyr,
+            parse_card_document(NYR_PROSPECT_ARRIVAL_CARD_JSON)
+                .expect("sealed NYR prospect arrival fixture")
+        );
+        assert_eq!(
+            *sea,
+            parse_card_document(SEA_PROSPECT_ARRIVAL_CARD_JSON)
+                .expect("sealed SEA prospect arrival fixture")
+        );
+        for (team, team_name) in CANONICAL_TEAMS {
+            let card = card(&format!("ARRIVAL-{team}"));
+            assert_eq!(card.context.joins.team_ids, [*team]);
+            assert_eq!(card.title, format!("{team_name} prospect arrivals"));
+        }
 
         for width in [80, 120, 160] {
             let depth_chart = document_lines(nyr, 0, width).join("\n");
@@ -969,7 +1017,13 @@ mod tests {
                 team: "ARRIVAL-SEA".to_owned()
             }
         );
-        assert!(parse_command("prospect-arrival-card BOS").is_err());
+        assert_eq!(
+            parse_command("prospect-arrival-card BOS").unwrap(),
+            Command::TeamCard {
+                team: "ARRIVAL-BOS".to_owned()
+            }
+        );
+        assert!(parse_command("prospect-arrival-card XYZ").is_err());
 
         let mut app = App::new(true);
         execute_command(

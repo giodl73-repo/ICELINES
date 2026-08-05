@@ -1645,10 +1645,11 @@ the same sealed season-simulation documents. Press `p` to switch between The
 Scoreboard and The Insider, `t` to switch teams, or `c` for side-by-side NYR
 and SEA projections from the same league run.
 
-The TUI commands `prospect-arrival-card NYR` and `prospect-arrival-card SEA`
-open the same sealed prospect-arrival documents as the CLI and Web API. Press
-`p` to switch between The Depth Chart and The Insider, `t` to switch teams, or
-`c` for side-by-side arrival outlooks from the same league calibration.
+The TUI command `prospect-arrival-card <NHL team>` opens any of the 32
+prospect-arrival documents projected from the same sealed league artifact as
+the CLI and Web API. Press `p` to switch between The Depth Chart and The
+Insider, `t` to switch the NYR/SEA showcase, or `c` for their side-by-side
+arrival outlooks from the same league calibration.
 
 For the sealed completed-season replay, use `replay-card NYR` or
 `replay-card SEA`. Its Insider page adds confirmed actual records and points,

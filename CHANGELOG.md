@@ -20,9 +20,10 @@
   exclusions, methodology, warnings, and the full league-artifact fingerprint.
   The generic web renderer now serves dedicated NYR/SEA prospect-arrival HTML
   and JSON routes with shared card fingerprints, ETags, and explicit 404s for
-  unavailable teams. The generic TUI renderer now opens the identical cards
-  through `prospect-arrival-card NYR|SEA`, including page, team-toggle, and
-  side-by-side comparison controls.
+  unavailable teams. Web and TUI now project all 32 team cards from the one
+  sealed league artifact; `prospect-arrival-card <NHL team>` opens any team,
+  while the checked-in NYR/SEA cards remain golden parity references with page,
+  showcase-toggle, and side-by-side comparison controls.
 - Added a retained 543-player, all-32-organization retrospective prospect
   conversion archive from the frozen 2022-23 AHL baseline through 2025-26.
   `prospect-arrival-calibrate --career-discovery` now derives an attention-free

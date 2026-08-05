@@ -1,6 +1,6 @@
 use axum::body::{to_bytes, Body};
 use axum::http::{Request, StatusCode};
-use icelines_core::{parse_card_document, CardDocumentView};
+use icelines_core::{parse_card_document, CardDocumentView, CANONICAL_TEAMS};
 use icelines_web::{router, WebState};
 use tower::util::ServiceExt;
 
@@ -195,10 +195,27 @@ async fn prospect_arrival_routes_render_the_same_sealed_card() {
     assert!(insider.contains("No sealed prospect population source package was supplied"));
     assert!(insider.contains("Source authority"));
 
+    for (team, team_name) in CANONICAL_TEAMS {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/v1/cards/prospect-arrival/20262027/{team}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{team}");
+        let card = parse_card_document(&body(response).await).unwrap();
+        assert_eq!(card.context.joins.team_ids, [*team]);
+        assert_eq!(card.title, format!("{team_name} prospect arrivals"));
+    }
+
     let unsupported = app
         .oneshot(
             Request::builder()
-                .uri("/api/v1/cards/prospect-arrival/20262027/BOS")
+                .uri("/api/v1/cards/prospect-arrival/20262027/XYZ")
                 .body(Body::empty())
                 .unwrap(),
         )
