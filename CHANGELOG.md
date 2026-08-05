@@ -27,6 +27,12 @@
   `prospect_arrival_board.v1` and `icecast prospect-arrival-board`; CLI, Web,
   and TUI share one 32-team board with expected arrivals/established roles,
   team-card drill-down, deterministic fingerprints, and fail-closed ranks.
+  The board now separates its audited intake from the eligible arrival cohort:
+  established NHL players are typed non-blocking reroutes to established-role
+  forecasting, while comparable-distance, source-control, study-quality, and
+  other failures retain typed remediation and block publication. This corrects
+  the retained draft from a misleading 8/167 coverage view to 8/10 eligible,
+  with 157 reroutes and two true calibration blockers.
 - Added a retained 543-player, all-32-organization retrospective prospect
   conversion archive from the frozen 2022-23 AHL baseline through 2025-26.
   `prospect-arrival-calibrate --career-discovery` now derives an attention-free

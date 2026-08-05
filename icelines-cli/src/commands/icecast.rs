@@ -9429,17 +9429,25 @@ fn render_prospect_arrival_board(board: &icelines_core::ProspectArrivalBoardView
         icelines_core::ProspectArrivalRankState::Withheld => "rank withheld",
     };
     let mut output = format!(
-        "PROSPECT ARRIVAL BOARD · {} · {} · {}/{} calibrated · {} exclusions\n",
+        "PROSPECT ARRIVAL BOARD · {} · {} · {}/{} eligible calibrated · {} established-role reroutes · {} blocking exclusions\n",
         board.forecast_season,
         state,
         board.calibrated_skaters,
-        board.target_skaters,
-        board.excluded_skaters
+        board.eligible_skaters,
+        board.routed_established_skaters,
+        board.blocking_exclusions
     );
+    for summary in &board.exclusion_summary {
+        let _ = writeln!(
+            output,
+            "EXCLUSION · {:?} · {} · {}",
+            summary.kind, summary.count, summary.remediation
+        );
+    }
     for blocker in &board.rank_blockers {
         let _ = writeln!(output, "RANK BLOCKER · {blocker}");
     }
-    let _ = writeln!(output, "RK TEAM CAL/TGT COV  EXP ARR EXP ROLE TOP");
+    let _ = writeln!(output, "RK TEAM CAL/ELG COV  EXP ARR EXP ROLE TOP");
     for team in board.teams_in_display_order() {
         let rank = team
             .rank
@@ -9454,7 +9462,7 @@ fn render_prospect_arrival_board(board: &icelines_core::ProspectArrivalBoardView
             "{rank:>2} {:<4} {:>2}/{:<2} {:>3.0}% {:>7.2} {:>8.2} {top:>5}",
             team.organization,
             team.calibrated_skaters,
-            team.target_skaters,
+            team.eligible_skaters,
             team.calibration_coverage * 100.0,
             team.expected_arrivals,
             team.expected_established_roles,

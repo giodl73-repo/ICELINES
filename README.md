@@ -636,7 +636,13 @@ icelines icecast prospect-arrival-card --input league-arrival.json --team NYR --
 
 Build the UI-neutral all-team board from the same artifact. Expected arrivals
 and established roles are sums of player probabilities, not guaranteed counts.
-The current coverage draft retains all values but withholds ordinal ranks:
+The board keeps the original intake auditable but routes players who already
+have NHL games to established-role forecasting. They no longer masquerade as
+missing prospect calibrations. Typed blocker summaries distinguish those
+non-blocking reroutes from source-control, study-quality, comparable-distance,
+and other calibration remediation. The current coverage draft has 8 of 10
+eligible skaters calibrated, 157 established-player reroutes, and two true
+calibration blockers; it retains all values but withholds ordinal ranks:
 
 ```bash
 icelines icecast prospect-arrival-board --input league-arrival.json --generated-at 2026-09-15T12:00:00Z --json --out prospect-arrival-board.json

@@ -363,13 +363,17 @@ pub(crate) fn prospect_arrival_board_lines(
     let rows = board.teams_in_display_order();
     let start = page.min(1) * 16;
     let mut lines = vec![format!(
-        "32 teams · {}/{} calibrated · {} exclusions · ranks {:?}",
-        board.calibrated_skaters, board.target_skaters, board.excluded_skaters, board.rank_state
+        "32 teams · {}/{} eligible · {} rerouted · {} blocked · ranks {:?}",
+        board.calibrated_skaters,
+        board.eligible_skaters,
+        board.routed_established_skaters,
+        board.blocking_exclusions,
+        board.rank_state
     )];
     if width >= 72 {
-        lines.push("RK TEAM CAL/TGT COV  EXP ARR EXP ROLE TOP".to_owned());
+        lines.push("RK TEAM CAL/ELG COV  EXP ARR EXP ROLE TOP".to_owned());
     } else {
-        lines.push("RK TEAM CAL/TGT COV  EXP ARR TOP".to_owned());
+        lines.push("RK TEAM CAL/ELG COV  EXP ARR TOP".to_owned());
     }
     for row in rows.into_iter().skip(start).take(16) {
         let rank = row
@@ -385,7 +389,7 @@ pub(crate) fn prospect_arrival_board_lines(
                 "{rank:<2} {:<4} {:>2}/{:<2}    {:>3.0}%  {:>7.2} {:>8.2} {top}",
                 row.organization,
                 row.calibrated_skaters,
-                row.target_skaters,
+                row.eligible_skaters,
                 row.calibration_coverage * 100.0,
                 row.expected_arrivals,
                 row.expected_established_roles,
@@ -395,7 +399,7 @@ pub(crate) fn prospect_arrival_board_lines(
                 "{rank:<2} {:<4} {:>2}/{:<2}    {:>3.0}%  {:>7.2} {top}",
                 row.organization,
                 row.calibrated_skaters,
-                row.target_skaters,
+                row.eligible_skaters,
                 row.calibration_coverage * 100.0,
                 row.expected_arrivals,
             ));
@@ -1238,7 +1242,9 @@ mod tests {
         assert_eq!(first.len(), 18);
         assert_eq!(second.len(), 18);
         assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
-        assert!(first[0].contains("8/167 calibrated"));
+        assert!(first[0].contains("8/10 eligible"));
+        assert!(first[0].contains("157 rerouted"));
+        assert!(first[0].contains("2 blocked"));
         assert!(first[0].contains("ranks Withheld"));
         assert!(first.iter().skip(2).all(|line| line.starts_with("NR")));
         assert!(second.iter().skip(2).all(|line| line.starts_with("NR")));
@@ -1471,7 +1477,7 @@ mod tests {
             .find(|line| line.split_whitespace().any(|cell| cell == "NYR"))
             .unwrap();
         assert!(nyr.starts_with("NR"));
-        assert!(nyr.contains("2/6"));
-        assert!(nyr.contains("33%"));
+        assert!(nyr.contains("2/2"));
+        assert!(nyr.contains("100%"));
     }
 }

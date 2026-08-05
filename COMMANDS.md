@@ -1653,9 +1653,13 @@ Insider, `t` to switch the NYR/SEA showcase, or `c` for their side-by-side
 arrival outlooks from the same league calibration.
 
 The TUI command `prospect-arrival-board` opens the shared all-team board in two
-16-team pages. The board preserves calibrated counts and summed arrival/role
-probabilities while displaying `NR` for every team until complete population
-authority and comparable calibration coverage permit a real league ranking.
+16-team pages. The board preserves audited intake totals while reporting
+coverage against the true eligible prospect cohort. Players with NHL games are
+counted as non-blocking established-role reroutes; typed source-control,
+study-quality, comparable-distance, and other calibration failures include
+remediation and remain blocking. It displays `NR` for every team until complete
+population authority and comparable eligible-cohort coverage permit a real
+league ranking.
 
 For the sealed completed-season replay, use `replay-card NYR` or
 `replay-card SEA`. Its Insider page adds confirmed actual records and points,

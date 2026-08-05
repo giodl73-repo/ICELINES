@@ -264,7 +264,10 @@ async fn prospect_arrival_board_routes_preserve_withheld_ranks_and_team_drilldow
     let html = body(html).await;
     assert!(html.contains("Prospect Arrival Board"));
     assert!(html.contains("Rank state: <strong>Withheld</strong>"));
-    assert!(html.contains("159 target skaters lack a comparable arrival calibration"));
+    assert!(html.contains("2 eligible skaters lack a comparable arrival calibration"));
+    assert!(html.contains("8/10 eligible skaters calibrated"));
+    assert!(html.contains("157 established NHL players rerouted"));
+    assert!(html.contains("CalibrationDistance</strong>: 2"));
     assert!(html.contains("/icecast/20262027/NYR/prospect-arrivals"));
     assert!(html.contains("Expected arrivals"));
 

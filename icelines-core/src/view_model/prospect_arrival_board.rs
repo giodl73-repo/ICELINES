@@ -1,6 +1,7 @@
 //! Authority-aware all-team summary of prospect-arrival calibration.
 
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -21,12 +22,61 @@ pub enum ProspectArrivalRankState {
     Withheld,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectArrivalExclusionKind {
+    EstablishedRoleReroute,
+    CalibrationDistance,
+    SourceControl,
+    StudyQuality,
+    OtherCalibration,
+}
+
+impl ProspectArrivalExclusionKind {
+    pub fn blocks_rank(self) -> bool {
+        self != Self::EstablishedRoleReroute
+    }
+
+    pub fn remediation(self) -> &'static str {
+        match self {
+            Self::EstablishedRoleReroute => {
+                "remove from prospect arrivals and evaluate with established-role forecasting"
+            }
+            Self::CalibrationDistance => {
+                "expand or improve comparable historical cohorts before publishing a probability"
+            }
+            Self::SourceControl => {
+                "resolve current organization control with authoritative source evidence"
+            }
+            Self::StudyQuality => {
+                "repair the player identity, career evidence, or required study components"
+            }
+            Self::OtherCalibration => "review the retained player-level calibration failure",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectArrivalExclusionSummaryView {
+    pub kind: ProspectArrivalExclusionKind,
+    pub count: usize,
+    pub rank_blocking: bool,
+    pub remediation: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectArrivalBoardTeamView {
     pub organization: String,
+    /// Audited intake before established NHL players are routed elsewhere.
     pub target_skaters: usize,
+    /// True prospect-arrival cohort after non-blocking reroutes.
+    pub eligible_skaters: usize,
     pub calibrated_skaters: usize,
     pub excluded_skaters: usize,
+    pub routed_established_skaters: usize,
+    pub blocking_exclusions: usize,
+    #[serde(default)]
+    pub exclusion_summary: Vec<ProspectArrivalExclusionSummaryView>,
     pub calibration_coverage: f64,
     pub expected_arrivals: f64,
     pub expected_established_roles: f64,
@@ -51,8 +101,13 @@ pub struct ProspectArrivalBoardView {
     #[serde(default)]
     pub rank_blockers: Vec<String>,
     pub target_skaters: usize,
+    pub eligible_skaters: usize,
     pub calibrated_skaters: usize,
     pub excluded_skaters: usize,
+    pub routed_established_skaters: usize,
+    pub blocking_exclusions: usize,
+    #[serde(default)]
+    pub exclusion_summary: Vec<ProspectArrivalExclusionSummaryView>,
     pub teams: Vec<ProspectArrivalBoardTeamView>,
     pub disclosures: Vec<String>,
     pub fingerprint: String,
@@ -83,11 +138,13 @@ impl ProspectArrivalBoardView {
         let mut canonical = self.clone();
         canonical.fingerprint.clear();
         canonical.rank_blockers.sort();
+        canonical.exclusion_summary.sort_by_key(|row| row.kind);
         canonical
             .teams
             .sort_by(|left, right| left.organization.cmp(&right.organization));
         for team in &mut canonical.teams {
             team.rank_blockers.sort();
+            team.exclusion_summary.sort_by_key(|row| row.kind);
         }
         hash_json(&canonical)
     }
@@ -174,10 +231,26 @@ pub fn build_prospect_arrival_board(
         rank_blockers
             .push("complete sealed prospect population authority was not supplied".to_owned());
     }
-    if arrival.excluded_skaters > 0 {
+    let exclusion_summary = summarize_exclusions(
+        arrival
+            .teams
+            .iter()
+            .flat_map(|team| team.exclusions.iter().map(|row| row.reason.as_str())),
+    );
+    let routed_established_skaters = summary_count(
+        &exclusion_summary,
+        ProspectArrivalExclusionKind::EstablishedRoleReroute,
+    );
+    let blocking_exclusions = exclusion_summary
+        .iter()
+        .filter(|row| row.rank_blocking)
+        .map(|row| row.count)
+        .sum::<usize>();
+    let eligible_skaters = arrival.target_skaters - routed_established_skaters;
+    if blocking_exclusions > 0 {
         rank_blockers.push(format!(
-            "{} target skaters lack a comparable arrival calibration",
-            arrival.excluded_skaters
+            "{} eligible skaters lack a comparable arrival calibration",
+            blocking_exclusions
         ));
     }
     let rank_state = if rank_blockers.is_empty() {
@@ -190,6 +263,18 @@ pub fn build_prospect_arrival_board(
         .teams
         .iter()
         .map(|team| {
+            let exclusion_summary =
+                summarize_exclusions(team.exclusions.iter().map(|row| row.reason.as_str()));
+            let routed_established_skaters = summary_count(
+                &exclusion_summary,
+                ProspectArrivalExclusionKind::EstablishedRoleReroute,
+            );
+            let blocking_exclusions = exclusion_summary
+                .iter()
+                .filter(|row| row.rank_blocking)
+                .map(|row| row.count)
+                .sum::<usize>();
+            let eligible_skaters = team.target_skaters - routed_established_skaters;
             let probabilities = team
                 .calibrations
                 .iter()
@@ -215,26 +300,30 @@ pub fn build_prospect_arrival_board(
                 .iter()
                 .copied()
                 .max_by(|left, right| left.partial_cmp(right).unwrap_or(Ordering::Equal));
-            let calibration_coverage = if team.target_skaters == 0 {
+            let calibration_coverage = if eligible_skaters == 0 {
                 1.0
             } else {
-                team.calibrated_skaters as f64 / team.target_skaters as f64
+                team.calibrated_skaters as f64 / eligible_skaters as f64
             };
             let mut team_blockers = Vec::new();
             if !population_authority_complete {
                 team_blockers.push("population authority incomplete".to_owned());
             }
-            if team.excluded_skaters > 0 {
+            if blocking_exclusions > 0 {
                 team_blockers.push(format!(
-                    "{} of {} target skaters excluded",
-                    team.excluded_skaters, team.target_skaters
+                    "{} of {} eligible skaters excluded",
+                    blocking_exclusions, eligible_skaters
                 ));
             }
             ProspectArrivalBoardTeamView {
                 organization: team.organization.clone(),
                 target_skaters: team.target_skaters,
+                eligible_skaters,
                 calibrated_skaters: team.calibrated_skaters,
                 excluded_skaters: team.excluded_skaters,
+                routed_established_skaters,
+                blocking_exclusions,
+                exclusion_summary,
                 calibration_coverage,
                 expected_arrivals,
                 expected_established_roles,
@@ -272,19 +361,74 @@ pub fn build_prospect_arrival_board(
         rank_state,
         rank_blockers,
         target_skaters: arrival.target_skaters,
+        eligible_skaters,
         calibrated_skaters: arrival.calibrated_skaters,
         excluded_skaters: arrival.excluded_skaters,
+        routed_established_skaters,
+        blocking_exclusions,
+        exclusion_summary,
         teams,
         disclosures: vec![
             "Expected arrivals and established roles are sums of player-level horizon probabilities, not guaranteed player counts.".to_owned(),
-            "League ranks publish only when population authority is complete and every target skater has a comparable calibration.".to_owned(),
+            "League ranks publish only when population authority is complete and every eligible skater has a comparable calibration.".to_owned(),
             "A rank-withheld board stays in canonical team order; partial calibrated values never become a shadow ranking.".to_owned(),
             "Goalies remain outside this skater-arrival cohort until a separately calibrated goalie authority exists.".to_owned(),
+            "Players with NHL games are retained in the intake ledger but routed to established-role forecasting; they do not reduce prospect-arrival calibration coverage or block ranks.".to_owned(),
         ],
         fingerprint: String::new(),
     };
     board.fingerprint = board.calculate_fingerprint()?;
     Ok(board)
+}
+
+fn summarize_exclusions<'a>(
+    reasons: impl Iterator<Item = &'a str>,
+) -> Vec<ProspectArrivalExclusionSummaryView> {
+    let mut counts = BTreeMap::new();
+    for reason in reasons {
+        *counts.entry(classify_exclusion(reason)).or_insert(0usize) += 1;
+    }
+    counts
+        .into_iter()
+        .map(|(kind, count)| ProspectArrivalExclusionSummaryView {
+            kind,
+            count,
+            rank_blocking: kind.blocks_rank(),
+            remediation: kind.remediation().to_owned(),
+        })
+        .collect()
+}
+
+fn summary_count(
+    summary: &[ProspectArrivalExclusionSummaryView],
+    kind: ProspectArrivalExclusionKind,
+) -> usize {
+    summary
+        .iter()
+        .find(|row| row.kind == kind)
+        .map_or(0, |row| row.count)
+}
+
+fn classify_exclusion(reason: &str) -> ProspectArrivalExclusionKind {
+    let normalized = reason.to_ascii_lowercase();
+    if normalized.contains("already has")
+        && normalized.contains("nhl games")
+        && normalized.contains("established-role forecasting")
+    {
+        ProspectArrivalExclusionKind::EstablishedRoleReroute
+    } else if normalized.contains("mean signal distance") {
+        ProspectArrivalExclusionKind::CalibrationDistance
+    } else if normalized.contains("source control") || normalized.contains("organization control") {
+        ProspectArrivalExclusionKind::SourceControl
+    } else if normalized.contains("study lacks")
+        || normalized.contains("canonical skater study")
+        || normalized.contains("identity")
+        || normalized.contains("career evidence")
+    {
+        ProspectArrivalExclusionKind::StudyQuality
+    } else {
+        ProspectArrivalExclusionKind::OtherCalibration
+    }
 }
 
 fn hash_json(value: &impl Serialize) -> Result<String, ProspectArrivalBoardError> {
@@ -331,7 +475,33 @@ mod tests {
         );
         let nyr = board.team("NYR").unwrap();
         assert_eq!(nyr.calibrated_skaters, 2);
+        assert_eq!(nyr.eligible_skaters, 2);
+        assert_eq!(nyr.routed_established_skaters, 4);
+        assert_eq!(nyr.blocking_exclusions, 0);
+        assert_eq!(nyr.calibration_coverage, 1.0);
         assert!(nyr.expected_arrivals > 0.0);
+        assert_eq!(board.routed_established_skaters, 157);
+        assert_eq!(board.blocking_exclusions, 2);
+        assert_eq!(board.eligible_skaters, 10);
+        assert_eq!(
+            board
+                .exclusion_summary
+                .iter()
+                .map(|row| row.count)
+                .sum::<usize>(),
+            board.excluded_skaters
+        );
+        assert!(board.teams.iter().all(|team| {
+            team.calibrated_skaters + team.blocking_exclusions == team.eligible_skaters
+                && team.routed_established_skaters + team.blocking_exclusions
+                    == team.excluded_skaters
+                && team
+                    .exclusion_summary
+                    .iter()
+                    .map(|row| row.count)
+                    .sum::<usize>()
+                    == team.excluded_skaters
+        }));
         assert_eq!(board.calculate_fingerprint().unwrap(), board.fingerprint);
     }
 
@@ -339,12 +509,13 @@ mod tests {
     fn complete_comparable_population_receives_deterministic_ranks() {
         let mut arrival = fixture();
         for team in &mut arrival.teams {
-            team.target_skaters = team.calibrated_skaters;
-            team.excluded_skaters = 0;
-            team.exclusions.clear();
+            team.exclusions
+                .retain(|row| row.reason.contains("already has"));
+            team.excluded_skaters = team.exclusions.len();
+            team.target_skaters = team.calibrated_skaters + team.excluded_skaters;
         }
-        arrival.target_skaters = arrival.calibrated_skaters;
-        arrival.excluded_skaters = 0;
+        arrival.target_skaters = arrival.teams.iter().map(|team| team.target_skaters).sum();
+        arrival.excluded_skaters = arrival.teams.iter().map(|team| team.excluded_skaters).sum();
         arrival.population_authority = Some(crate::ProspectArrivalLeaguePopulationAuthorityView {
             source_package_fingerprint: "a".repeat(64),
             population_complete: true,
@@ -354,6 +525,7 @@ mod tests {
         });
         let board = build_prospect_arrival_board(&arrival, "2026-09-15T12:00:00Z").unwrap();
         assert_eq!(board.rank_state, ProspectArrivalRankState::Ranked);
+        assert_eq!(board.blocking_exclusions, 0);
         assert_eq!(
             board
                 .teams
@@ -363,5 +535,33 @@ mod tests {
             CANONICAL_TEAMS.len()
         );
         assert_eq!(board.teams_in_display_order()[0].rank, Some(1));
+    }
+
+    #[test]
+    fn exclusion_reasons_map_to_stable_remediation_classes() {
+        assert_eq!(
+            classify_exclusion(
+                "prospect arrival target already has 44 NHL games; use established-role forecasting instead"
+            ),
+            ProspectArrivalExclusionKind::EstablishedRoleReroute
+        );
+        assert_eq!(
+            classify_exclusion(
+                "prospect arrival calibration mean signal distance 31.8278 exceeds 15.0000"
+            ),
+            ProspectArrivalExclusionKind::CalibrationDistance
+        );
+        assert_eq!(
+            classify_exclusion("prospect source control gate: organization control is unsupported"),
+            ProspectArrivalExclusionKind::SourceControl
+        );
+        assert_eq!(
+            classify_exclusion("prospect arrival study lacks unique production component"),
+            ProspectArrivalExclusionKind::StudyQuality
+        );
+        assert_eq!(
+            classify_exclusion("unexpected calibration failure"),
+            ProspectArrivalExclusionKind::OtherCalibration
+        );
     }
 }

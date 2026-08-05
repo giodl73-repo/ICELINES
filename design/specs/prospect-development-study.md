@@ -471,13 +471,18 @@ mode, incomplete authority remains inspectable but must not be presented as a
 complete prospect census.
 
 `prospect_arrival_board.v1` is the league summary of that same artifact. It
-retains all 32 organizations, calibration coverage, summed horizon-adjusted
-arrival and establishment probabilities, and each team's highest calibrated
-arrival probability. These sums are expected values, not guaranteed player
-counts. Ordinal ranks are withheld for the entire cohort unless population
-authority is complete and every target skater has a comparable calibration;
-when withheld, every renderer uses canonical team order rather than sorting
-partial values into a shadow ranking.
+retains all 32 organizations, the original audited intake, the actual eligible
+prospect cohort, calibration coverage, summed horizon-adjusted arrival and
+establishment probabilities, and each team's highest calibrated arrival
+probability. Exclusions are aggregated into typed remediation classes.
+Established NHL players remain reconciled to the intake ledger but are routed
+to established-role forecasting, so they neither dilute prospect coverage nor
+block ranks. Source-control, study-quality, comparable-distance, and other
+calibration failures remain rank-blocking. These sums are expected values, not
+guaranteed player counts. Ordinal ranks are withheld for the entire cohort
+unless population authority is complete and every eligible skater has a
+comparable calibration; when withheld, every renderer uses canonical team
+order rather than sorting partial values into a shadow ranking.
 
 The primitive never reconstructs an absent historical board. It accepts either
 an authored current signal or derives one from a canonical skater career study;

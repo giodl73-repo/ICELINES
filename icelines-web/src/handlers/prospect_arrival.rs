@@ -60,11 +60,13 @@ pub async fn get_prospect_arrival_board(
             .map(|value| format!("{:.1}%", value * 100.0))
             .unwrap_or_else(|| "NR".to_owned());
         rows.push_str(&format!(
-            "<tr><th scope=\"row\"><a href=\"/icecast/{season}/{team}/prospect-arrivals\">{team}</a></th><td>{rank}</td><td>{calibrated}/{target}</td><td>{coverage:.0}%</td><td>{arrivals:.2}</td><td>{roles:.2}</td><td>{top}</td></tr>",
+            "<tr><th scope=\"row\"><a href=\"/icecast/{season}/{team}/prospect-arrivals\">{team}</a></th><td>{rank}</td><td>{calibrated}/{eligible}</td><td>{coverage:.0}%</td><td>{routed}</td><td>{blocked}</td><td>{arrivals:.2}</td><td>{roles:.2}</td><td>{top}</td></tr>",
             team = row.organization,
             calibrated = row.calibrated_skaters,
-            target = row.target_skaters,
+            eligible = row.eligible_skaters,
             coverage = row.calibration_coverage * 100.0,
+            routed = row.routed_established_skaters,
+            blocked = row.blocking_exclusions,
             arrivals = row.expected_arrivals,
             roles = row.expected_established_roles,
         ));
@@ -74,9 +76,21 @@ pub async fn get_prospect_arrival_board(
         .iter()
         .map(|blocker| format!("<li>{blocker}</li>"))
         .collect::<String>();
+    let remediation = board
+        .exclusion_summary
+        .iter()
+        .map(|row| {
+            format!(
+                "<li><strong>{:?}</strong>: {} — {}</li>",
+                row.kind, row.count, row.remediation
+            )
+        })
+        .collect::<String>();
     let html = format!(
-        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Prospect Arrival Board</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><a href=\"#main\" class=\"skip-link\">Skip to content</a><main id=\"main\" tabindex=\"-1\"><h1>Prospect Arrival Board</h1><p>Season {season} · generated {} · fingerprint <code>{}</code></p><p>Rank state: <strong>{:?}</strong>. Expected values are summed player probabilities, not guaranteed player counts.</p><ul>{blockers}</ul><div class=\"table-scroll\" role=\"region\" aria-label=\"Prospect arrival board\" tabindex=\"0\"><table><caption>All-team calibrated prospect-arrival outlook</caption><thead><tr><th scope=\"col\">Team</th><th scope=\"col\">Rank</th><th scope=\"col\">Calibrated</th><th scope=\"col\">Coverage</th><th scope=\"col\">Expected arrivals</th><th scope=\"col\">Expected roles</th><th scope=\"col\">Top arrival</th></tr></thead><tbody>{rows}</tbody></table></div><p><a href=\"/api/v1/prospect-arrivals/{season}\">Full JSON artifact</a></p></main></body></html>",
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Prospect Arrival Board</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><a href=\"#main\" class=\"skip-link\">Skip to content</a><main id=\"main\" tabindex=\"-1\"><h1>Prospect Arrival Board</h1><p>Season {season} · generated {} · fingerprint <code>{}</code></p><p>Rank state: <strong>{:?}</strong>. {}/{} eligible skaters calibrated; {} established NHL players rerouted; {} true blockers.</p><ul>{blockers}</ul><h2>Remediation</h2><ul>{remediation}</ul><div class=\"table-scroll\" role=\"region\" aria-label=\"Prospect arrival board\" tabindex=\"0\"><table><caption>All-team calibrated prospect-arrival outlook</caption><thead><tr><th scope=\"col\">Team</th><th scope=\"col\">Rank</th><th scope=\"col\">Calibrated/eligible</th><th scope=\"col\">Coverage</th><th scope=\"col\">Rerouted</th><th scope=\"col\">Blocked</th><th scope=\"col\">Expected arrivals</th><th scope=\"col\">Expected roles</th><th scope=\"col\">Top arrival</th></tr></thead><tbody>{rows}</tbody></table></div><p><a href=\"/api/v1/prospect-arrivals/{season}\">Full JSON artifact</a></p></main></body></html>",
         board.generated_at, board.fingerprint, board.rank_state,
+        board.calibrated_skaters, board.eligible_skaters,
+        board.routed_established_skaters, board.blocking_exclusions,
     );
     let fingerprint = board.fingerprint.clone();
     cached_response(Html(html).into_response(), &fingerprint, &headers)
