@@ -38,6 +38,8 @@ mod organization_window;
 pub use organization_window::*;
 mod organization_profile_history;
 pub use organization_profile_history::*;
+mod prospect_arrival;
+pub use prospect_arrival::*;
 
 pub const CARD_DOCUMENT_SCHEMA: &str = "card_document.v1";
 pub const CARD_DOCUMENT_JSON_SCHEMA: &str =
@@ -63,6 +65,7 @@ pub enum CardKind {
     FantasyTrade,
     OrganizationWindow,
     TeamGamePredictionEdge,
+    ProspectArrival,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]

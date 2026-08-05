@@ -40,6 +40,10 @@ const NYR_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-sea-2024-25.json");
+const NYR_PROSPECT_ARRIVAL_CARD_JSON: &str =
+    include_str!("../../../../examples/prospect-arrival-card-nyr-2026-27.json");
+const SEA_PROSPECT_ARRIVAL_CARD_JSON: &str =
+    include_str!("../../../../examples/prospect-arrival-card-sea-2026-27.json");
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
     include_str!("../../../../examples/organization-window-board-partial-2026-07-28.json");
 const FANTASY_CARD_JSON: &str =
@@ -72,6 +76,8 @@ fn card(team: &str) -> &'static CardDocumentView {
     static SEA_2024_MOVEMENT: OnceLock<CardDocumentView> = OnceLock::new();
     static NYR_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
     static SEA_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
+    static NYR_PROSPECT_ARRIVAL: OnceLock<CardDocumentView> = OnceLock::new();
+    static SEA_PROSPECT_ARRIVAL: OnceLock<CardDocumentView> = OnceLock::new();
     match upper.as_str() {
         "SIM-NYR" => NYR_SEASON_SIMULATION.get_or_init(|| {
             parse_card_document(NYR_SEASON_SIMULATION_CARD_JSON)
@@ -102,6 +108,14 @@ fn card(team: &str) -> &'static CardDocumentView {
         "HISTORY-SEA" => SEA_2024_HISTORY.get_or_init(|| {
             parse_card_document(SEA_2024_HISTORY_CARD_JSON)
                 .expect("sealed SEA 2024-25 forecast history card")
+        }),
+        "ARRIVAL-NYR" => NYR_PROSPECT_ARRIVAL.get_or_init(|| {
+            parse_card_document(NYR_PROSPECT_ARRIVAL_CARD_JSON)
+                .expect("sealed NYR prospect arrival card")
+        }),
+        "ARRIVAL-SEA" => SEA_PROSPECT_ARRIVAL.get_or_init(|| {
+            parse_card_document(SEA_PROSPECT_ARRIVAL_CARD_JSON)
+                .expect("sealed SEA prospect arrival card")
         }),
         "SEA" => SEA.get_or_init(|| parse_card_document(SEA_CARD_JSON).expect("sealed SEA card")),
         "DEX" | "DEXTERS-DAWGS" | "FANTASY" => FANTASY.get_or_init(|| {
@@ -159,6 +173,8 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
             "NYR vs SEA Season Simulation"
         } else if team.to_ascii_uppercase().starts_with("WINDOW-") {
             "NYR vs SEA Organization Window"
+        } else if team.to_ascii_uppercase().starts_with("ARRIVAL-") {
+            "NYR vs SEA Prospect Arrivals"
         } else {
             "NYR vs SEA"
         }
@@ -200,6 +216,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
             "SIM-NYR"
         } else if upper.starts_with("WINDOW-") {
             "WINDOW-NYR"
+        } else if upper.starts_with("ARRIVAL-") {
+            "ARRIVAL-NYR"
         } else {
             "NYR"
         };
@@ -213,6 +231,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
             "SIM-SEA"
         } else if upper.starts_with("WINDOW-") {
             "WINDOW-SEA"
+        } else if upper.starts_with("ARRIVAL-") {
+            "ARRIVAL-SEA"
         } else {
             "SEA"
         };
@@ -918,6 +938,59 @@ mod tests {
     }
 
     #[test]
+    fn l1_prospect_arrival_projects_depth_chart_insider_and_card_controls() {
+        let nyr = card("ARRIVAL-NYR");
+        let sea = card("ARRIVAL-SEA");
+        assert_eq!(nyr.card_kind, icelines_core::CardKind::ProspectArrival);
+        assert_eq!(sea.card_kind, icelines_core::CardKind::ProspectArrival);
+        assert_eq!(
+            nyr.context.simulation.parameter_fingerprint,
+            sea.context.simulation.parameter_fingerprint
+        );
+        assert_eq!(nyr.provenance[0].fingerprint, sea.provenance[0].fingerprint);
+        assert_ne!(nyr.fingerprint, sea.fingerprint);
+
+        for width in [80, 120, 160] {
+            let depth_chart = document_lines(nyr, 0, width).join("\n");
+            assert!(depth_chart.contains("Cole Beaudoin"));
+            assert!(depth_chart.contains("Calibrated arrival outlook"));
+            assert!(depth_chart.contains("Arrival"));
+
+            let insider = document_lines(nyr, 1, width).join("\n");
+            assert!(insider.contains("Coverage draft"));
+            assert!(insider.contains("Exclusion ledger"));
+            assert!(insider.contains("Source authority"));
+            assert!(insider.contains("No sealed prospect population source package"));
+        }
+
+        assert_eq!(
+            parse_command("prospect-arrival-card SEA").unwrap(),
+            Command::TeamCard {
+                team: "ARRIVAL-SEA".to_owned()
+            }
+        );
+        assert!(parse_command("prospect-arrival-card BOS").is_err());
+
+        let mut app = App::new(true);
+        execute_command(
+            parse_command("prospect-arrival-card SEA").unwrap(),
+            &mut app,
+        );
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
+        app.handle(Action::Char('t'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard { ref team, .. } if team == "ARRIVAL-NYR"
+        ));
+        app.handle(Action::Char('c'));
+        assert!(matches!(app.screen, Screen::TeamCard { compare: true, .. }));
+        assert!(chrome("ARRIVAL-NYR", 0, true)
+            .title
+            .contains("NYR vs SEA Prospect Arrivals"));
+    }
+
+    #[test]
     fn l1_organization_window_projects_shared_values_and_toggles() {
         let nyr = card("WINDOW-NYR");
         let sea = card("WINDOW-SEA");
@@ -1122,5 +1195,50 @@ mod tests {
             .unwrap();
         let cells = nyr_row.split_whitespace().collect::<Vec<_>>();
         assert_eq!(&cells[..5], &["NR", "NYR", "59.7", "64%", "85%"]);
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_arrival_golden_parity_across_cli_tui_and_web() {
+        let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let input = manifest_dir.join("../examples/icecast-prospect-arrival-league-2026-27.json");
+        let expected = card("ARRIVAL-NYR").clone();
+        let temp = tempfile::tempdir().unwrap();
+        let cli_path = temp.path().join("prospect-arrival-card.json");
+
+        crate::commands::icecast::run_prospect_arrival_card(
+            input,
+            "NYR".to_owned(),
+            Some("New York Rangers".to_owned()),
+            Some("2026-09-15T12:00:00Z".to_owned()),
+            Some(cli_path.clone()),
+        )
+        .unwrap();
+        let cli_card: CardDocumentView =
+            serde_json::from_slice(&std::fs::read(cli_path).unwrap()).unwrap();
+        assert_eq!(cli_card, expected);
+
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/cards/prospect-arrival/20262027/NYR")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(response.into_body(), 4 * 1024 * 1024)
+            .await
+            .unwrap();
+        let web_card: CardDocumentView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_card, expected);
+
+        let depth_chart = document_lines(&expected, 0, 80).join("\n");
+        let insider = document_lines(&expected, 1, 80).join("\n");
+        assert!(depth_chart.contains("Cole Beaudoin"));
+        assert!(depth_chart.contains("Arrival 29.0%"));
+        assert!(insider.contains("Coverage draft"));
+        assert!(insider.contains("Exclusion ledger"));
     }
 }

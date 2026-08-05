@@ -460,6 +460,16 @@ and comparable-distance failures remain attached to the player and team rather
 than disappearing from league totals. Goalies remain outside this skater
 cohort until a separately calibrated goalie-arrival authority exists.
 
+The camp-derived route is a coverage draft. The authority-backed route accepts
+one or more canonical career discoveries and a sealed prospect source package,
+then applies `select_controlled_prospect_studies`, the same current-control
+resolver used by the prospect census and program board. Its population block
+retains the package fingerprint, completeness state, supplied studies,
+controlled studies, and control exclusions. `--require-complete-population`
+fails before output when the package manifest is incomplete. Without strict
+mode, incomplete authority remains inspectable but must not be presented as a
+complete prospect census.
+
 The primitive never reconstructs an absent historical board. It accepts either
 an authored current signal or derives one from a canonical skater career study;
 goalies, missing IDs, and duplicate IDs fail closed. Historical proof runs

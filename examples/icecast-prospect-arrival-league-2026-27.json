@@ -1476,6 +1476,7 @@
     "Every requested organization remains present, including teams with no eligible skater study or no successful calibration.",
     "All targets use the same frozen conversion cohort, same-position neighbor policy, shrinkage prior, signal-distance gate, and forecast-horizon adjustment.",
     "Goalies require a separately calibrated goalie outcome cohort and are not treated as skaters in this artifact.",
-    "A player-level failure is retained as a typed team exclusion and never silently removed from league coverage totals."
+    "A player-level failure is retained as a typed team exclusion and never silently removed from league coverage totals.",
+    "When a source package is supplied, the existing current-control resolver gates studies before calibration and its unsupported or mismatched rows remain in the same reconciled exclusion ledger."
   ]
 }

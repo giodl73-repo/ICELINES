@@ -142,6 +142,72 @@ async fn kraken_and_unsupported_dimensions_are_explicit() {
 }
 
 #[tokio::test]
+async fn prospect_arrival_routes_render_the_same_sealed_card() {
+    let app = router(WebState::new());
+    let uri = "/api/v1/cards/prospect-arrival/20262027/NYR";
+    let response = app
+        .clone()
+        .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let etag = response.headers()["etag"].to_str().unwrap().to_owned();
+    let routed = parse_card_document(&body(response).await).unwrap();
+    let fixture = parse_card_document(include_str!(
+        "../../examples/prospect-arrival-card-nyr-2026-27.json"
+    ))
+    .unwrap();
+    assert_eq!(routed, fixture);
+    assert_eq!(routed.card_kind, icelines_core::CardKind::ProspectArrival);
+    assert_eq!(etag, format!("\"{}\"", fixture.fingerprint));
+
+    let depth = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/NYR/prospect-arrivals?page=depth-chart")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(depth.status(), StatusCode::OK);
+    let depth = body(depth).await;
+    assert!(depth.contains("The Depth Chart"));
+    assert!(depth.contains("Cole Beaudoin"));
+    assert!(depth.contains("Calibrated arrival outlook"));
+    assert!(depth.contains("View source JSON"));
+
+    let insider = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/NYR/prospect-arrivals?page=insider")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(insider.status(), StatusCode::OK);
+    let insider = body(insider).await;
+    assert!(insider.contains("The Insider"));
+    assert!(insider.contains("Exclusion ledger"));
+    assert!(insider.contains("No sealed prospect population source package was supplied"));
+    assert!(insider.contains("Source authority"));
+
+    let unsupported = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/cards/prospect-arrival/20262027/BOS")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unsupported.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn stylesheet_contains_phone_and_tablet_card_layouts() {
     let response = router(WebState::new())
         .oneshot(

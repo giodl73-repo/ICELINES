@@ -182,6 +182,14 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/cards/organization-window/:season/:team",
             get(handlers::team_card::get_organization_window_card_json),
         )
+        .route(
+            "/icecast/:season/:team/prospect-arrivals",
+            get(handlers::team_card::get_prospect_arrival_card),
+        )
+        .route(
+            "/api/v1/cards/prospect-arrival/:season/:team",
+            get(handlers::team_card::get_prospect_arrival_card_json),
+        )
         .route("/window/:frame/:season", get(handlers::window::get_window))
         .route(
             "/api/v1/window/:frame/:season",

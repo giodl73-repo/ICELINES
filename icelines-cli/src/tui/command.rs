@@ -562,6 +562,22 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
                 team: format!("HISTORY-{team}"),
             })
         }
+        "arrival-card" | "prospect-arrival-card" if args.trim().is_empty() => {
+            Ok(Command::TeamCard {
+                team: "ARRIVAL-NYR".to_string(),
+            })
+        }
+        "arrival-card" | "prospect-arrival-card" => {
+            let team = args.trim().to_ascii_uppercase();
+            if !matches!(team.as_str(), "NYR" | "SEA") {
+                return Err(ParseError::BadFilter {
+                    details: format!("prospect-arrival-card supports NYR or SEA, got '{team}'"),
+                });
+            }
+            Ok(Command::TeamCard {
+                team: format!("ARRIVAL-{team}"),
+            })
+        }
         "window-card" if args.trim().is_empty() => Ok(Command::TeamCard {
             team: "WINDOW-NYR".to_string(),
         }),
@@ -603,6 +619,8 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
                     | "HISTORY-SEA"
                     | "WINDOW-NYR"
                     | "WINDOW-SEA"
+                    | "ARRIVAL-NYR"
+                    | "ARRIVAL-SEA"
                     | "DEX"
                     | "DRAFT"
                     | "MORNING"
@@ -610,7 +628,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
             ) {
                 return Err(ParseError::BadFilter {
                     details: format!(
-                        "team-card supports NYR, SEA, SIM-NYR, SIM-SEA, REPLAY-NYR, REPLAY-SEA, MOVE-NYR, MOVE-SEA, HISTORY-NYR, HISTORY-SEA, WINDOW-NYR, WINDOW-SEA, DEX, DRAFT, MORNING, or TRADE, got '{team}'"
+                        "team-card supports NYR, SEA, SIM-NYR, SIM-SEA, REPLAY-NYR, REPLAY-SEA, MOVE-NYR, MOVE-SEA, HISTORY-NYR, HISTORY-SEA, WINDOW-NYR, WINDOW-SEA, ARRIVAL-NYR, ARRIVAL-SEA, DEX, DRAFT, MORNING, or TRADE, got '{team}'"
                     ),
                 });
             }

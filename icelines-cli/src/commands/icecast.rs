@@ -16,13 +16,14 @@ use icelines_core::{
     build_isolated_scenario_impact_as_of, build_line_combination_forecast,
     build_organization_lineup_forecast, build_organization_profile_history,
     build_organization_window_history, build_player_line_matchup_forecast,
-    build_player_line_matchup_validation, build_prospect_conversion_archive,
-    build_prospect_conversion_board, build_prospect_development_study,
-    build_prospect_discovery_board, build_prospect_nhl_performance_document,
-    build_prospect_program_board_with_goalies, build_prospect_program_history,
-    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
-    build_team_game_forecast, build_team_game_forecast_validation, build_team_game_prediction_edge,
-    build_team_game_prediction_edge_card, build_team_game_prediction_observation_set,
+    build_player_line_matchup_validation, build_prospect_arrival_card,
+    build_prospect_conversion_archive, build_prospect_conversion_board,
+    build_prospect_development_study, build_prospect_discovery_board,
+    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
+    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
+    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
+    build_team_game_prediction_edge, build_team_game_prediction_edge_card,
+    build_team_game_prediction_observation_set,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -59,10 +60,12 @@ use icelines_core::{
     PlayerLineMatchupAblationObservation, PlayerLineMatchupForecastInput,
     PlayerLineMatchupForecastView, PlayerLineMatchupScenarioInput,
     ProspectArrivalCalibrationConfig, ProspectArrivalCalibrationInput,
-    ProspectArrivalCalibrationView, ProspectConversionArchive, ProspectConversionBoardView,
-    ProspectConversionConfig, ProspectConversionPerformanceDocument,
-    ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
-    ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
+    ProspectArrivalCalibrationView, ProspectArrivalCardInput,
+    ProspectArrivalLeaguePopulationAuthorityView, ProspectArrivalLeagueSourceExclusionInput,
+    ProspectConversionArchive, ProspectConversionBoardView, ProspectConversionConfig,
+    ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
+    ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView, ProspectDiscoveryBoardRow,
+    ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
     ProspectGoalieDevelopmentStudyView, ProspectNhlGamesAuthority, ProspectProgramBoardConfig,
     ProspectProgramBoardView, ProspectProgramHistoryView, ProspectProgramPopulationAuthorityView,
     ProspectProgramSensitivityView, ScenarioScopeView, ScheduleRestProfileView,
@@ -207,9 +210,9 @@ use icelines_fetch::{
         OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
     },
     stats_loader::load_into_repo,
-    GamePredictionEvidencePackageBuildInput, GamePredictionEvidenceSource,
-    GamePredictionEvidenceSourceAuthority, HistoricalMoneyPuckGoalieInput,
-    HistoricalMoneyPuckTeamInput, HistoricalOfficialBoxscoreInput,
+    ControlledProspectStudySelection, GamePredictionEvidencePackageBuildInput,
+    GamePredictionEvidenceSource, GamePredictionEvidenceSourceAuthority,
+    HistoricalMoneyPuckGoalieInput, HistoricalMoneyPuckTeamInput, HistoricalOfficialBoxscoreInput,
     MoneyPuckLineChemistrySourcePackage, MoneyPuckUnitBaselineConfig, NhlApiClient,
     OfficialGameOutcomeSet, OfficialShiftChartRow, OrganizationWindowFutureHoldoutRegistration,
     OrganizationWindowFutureHoldoutResult, OrganizationWindowHistoricalOriginArtifact,
@@ -9162,8 +9165,11 @@ pub fn run_prospect_arrival_calibration(
 
 #[allow(clippy::too_many_arguments)]
 pub fn run_prospect_arrival_league(
-    camp_forecast_path: PathBuf,
+    camp_forecast_path: Option<PathBuf>,
+    career_discovery_paths: Vec<PathBuf>,
     career_history_path: Option<PathBuf>,
+    source_package_path: Option<PathBuf>,
+    require_complete_population: bool,
     conversion_board_path: Option<PathBuf>,
     conversion_archive_path: Option<PathBuf>,
     forecast_season: u32,
@@ -9173,63 +9179,114 @@ pub fn run_prospect_arrival_league(
     out: Option<PathBuf>,
     discovery_out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    let forecast: TrainingCampLeagueForecastView =
-        read_icecast_json(&camp_forecast_path, "league training-camp forecast")?;
-    let organizations = forecast
-        .teams
+    let organizations = CANONICAL_TEAMS
         .iter()
-        .map(|team| team.team.trim().to_ascii_uppercase())
+        .map(|(abbreviation, _)| (*abbreviation).to_owned())
         .collect::<Vec<_>>();
-    let actual = organizations
-        .iter()
-        .map(String::as_str)
-        .collect::<BTreeSet<_>>();
     let expected = CANONICAL_TEAMS
         .iter()
         .map(|(abbreviation, _)| *abbreviation)
         .collect::<BTreeSet<_>>();
-    if organizations.len() != CANONICAL_TEAMS.len() || actual != expected {
-        let missing = expected.difference(&actual).copied().collect::<Vec<_>>();
-        let unexpected = actual.difference(&expected).copied().collect::<Vec<_>>();
-        bail!(
-            "league prospect arrival requires the {} canonical organizations; found {} rows, missing [{}], unexpected [{}]",
-            CANONICAL_TEAMS.len(),
-            organizations.len(),
-            missing.join(", "),
-            unexpected.join(", ")
-        );
-    }
-    let as_of_date = NaiveDate::parse_from_str(&as_of, "%Y-%m-%d")
-        .with_context(|| format!("invalid --as-of date {as_of}; expected YYYY-MM-DD"))?;
-    let career_history_path = career_history_path.unwrap_or(Config::load()?.career_history_path());
-    let store = CareerHistoryStore::load(&career_history_path).with_context(|| {
-        format!(
-            "read career history store {}",
-            career_history_path.display()
-        )
-    })?;
-    let composition = build_prospect_program_from_camp_and_career_store(
-        forecast,
-        &store,
-        ProspectCareerProgramConfig {
-            context: ProspectCareerContextDraftConfig {
-                as_of_date,
-                max_age,
-            },
-            ..ProspectCareerProgramConfig::default()
-        },
-    )
-    .map_err(anyhow::Error::msg)?;
-    if let Some(path) = discovery_out.as_deref() {
-        let bytes = format!(
-            "{}\n",
-            serde_json::to_string_pretty(&composition.discovery)?
-        );
-        write_icecast_file(
-            path,
-            bytes.as_bytes(),
-            "IceCast league prospect career discovery",
-        )?;
+    let (mut studies, goalie_studies) = match (camp_forecast_path, career_discovery_paths.is_empty()) {
+        (Some(path), true) => {
+            let forecast: TrainingCampLeagueForecastView =
+                read_icecast_json(&path, "league training-camp forecast")?;
+            let actual = forecast
+                .teams
+                .iter()
+                .map(|team| team.team.trim().to_ascii_uppercase())
+                .collect::<BTreeSet<_>>();
+            let actual = actual.iter().map(String::as_str).collect::<BTreeSet<_>>();
+            if forecast.teams.len() != CANONICAL_TEAMS.len() || actual != expected {
+                let missing = expected.difference(&actual).copied().collect::<Vec<_>>();
+                let unexpected = actual.difference(&expected).copied().collect::<Vec<_>>();
+                bail!(
+                    "league prospect arrival requires the {} canonical organizations; found {} rows, missing [{}], unexpected [{}]",
+                    CANONICAL_TEAMS.len(),
+                    forecast.teams.len(),
+                    missing.join(", "),
+                    unexpected.join(", ")
+                );
+            }
+            let as_of_date = NaiveDate::parse_from_str(&as_of, "%Y-%m-%d")
+                .with_context(|| format!("invalid --as-of date {as_of}; expected YYYY-MM-DD"))?;
+            let career_history_path =
+                career_history_path.unwrap_or(Config::load()?.career_history_path());
+            let store = CareerHistoryStore::load(&career_history_path).with_context(|| {
+                format!(
+                    "read career history store {}",
+                    career_history_path.display()
+                )
+            })?;
+            let composition = build_prospect_program_from_camp_and_career_store(
+                forecast,
+                &store,
+                ProspectCareerProgramConfig {
+                    context: ProspectCareerContextDraftConfig {
+                        as_of_date,
+                        max_age,
+                    },
+                    ..ProspectCareerProgramConfig::default()
+                },
+            )
+            .map_err(anyhow::Error::msg)?;
+            if let Some(path) = discovery_out.as_deref() {
+                let bytes = format!(
+                    "{}\n",
+                    serde_json::to_string_pretty(&composition.discovery)?
+                );
+                write_icecast_file(
+                    path,
+                    bytes.as_bytes(),
+                    "IceCast league prospect career discovery",
+                )?;
+            }
+            (composition.discovery.studies, composition.discovery.goalie_studies)
+        }
+        (None, false) => {
+            if career_history_path.is_some() || discovery_out.is_some() {
+                bail!(
+                    "--career-history and --discovery-out apply only to --camp-forecast derivation"
+                );
+            }
+            let mut studies = Vec::new();
+            let mut goalies = Vec::new();
+            for path in career_discovery_paths {
+                let discovery: ProspectCareerDiscoveryView =
+                    read_icecast_json(&path, "prospect career discovery")?;
+                if discovery.schema != PROSPECT_CAREER_DISCOVERY_SCHEMA {
+                    bail!("invalid prospect career discovery schema in {}", path.display());
+                }
+                studies.extend(discovery.studies);
+                goalies.extend(discovery.goalie_studies);
+            }
+            (studies, goalies)
+        }
+        _ => bail!(
+            "provide exactly one prospect target route: --camp-forecast or one or more --career-discovery"
+        ),
+    };
+    let mut source_exclusions = Vec::new();
+    let mut population_authority = None;
+    if let Some(path) = source_package_path.as_deref() {
+        let package: icelines_core::source_facts::SourcePackage =
+            read_icecast_json(path, "prospect source package")?;
+        let supplied_skater_ids = studies
+            .iter()
+            .map(|study| study.player_id)
+            .collect::<BTreeSet<_>>();
+        let supplied_skaters = studies.len();
+        let selection = select_controlled_prospect_studies(&package, studies, goalie_studies)
+            .map_err(anyhow::Error::msg)?;
+        (studies, source_exclusions, population_authority) =
+            apply_prospect_arrival_population_selection(
+                selection,
+                &supplied_skater_ids,
+                supplied_skaters,
+                require_complete_population,
+            )?;
+    } else if require_complete_population {
+        bail!("--require-complete-population requires --source-package");
     }
     let board = match (conversion_board_path, conversion_archive_path) {
         (Some(path), None) => read_icecast_json(&path, "prospect conversion board")?,
@@ -9243,7 +9300,9 @@ pub fn run_prospect_arrival_league(
     };
     let view = calibrate_prospect_arrival_league(
         organizations,
-        composition.discovery.studies,
+        studies,
+        source_exclusions,
+        population_authority,
         forecast_season,
         &board,
         ProspectArrivalCalibrationConfig::default(),
@@ -9252,21 +9311,7 @@ pub fn run_prospect_arrival_league(
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&view)?)
     } else {
-        let mut output = format!(
-            "Prospect arrival league · {}/{} calibrated skaters · {} exclusions\n",
-            view.calibrated_skaters, view.target_skaters, view.excluded_skaters
-        );
-        for team in &view.teams {
-            let _ = writeln!(
-                output,
-                "{} · {}/{} calibrated · {} exclusions",
-                team.organization,
-                team.calibrated_skaters,
-                team.target_skaters,
-                team.excluded_skaters
-            );
-        }
-        output
+        render_prospect_arrival_league(&view)
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(
@@ -9278,6 +9323,117 @@ pub fn run_prospect_arrival_league(
         print!("{output}");
     }
     Ok(())
+}
+
+fn render_prospect_arrival_league(
+    view: &icelines_core::ProspectArrivalLeagueCalibrationView,
+) -> String {
+    let mut output = format!(
+        "PROSPECT ARRIVAL LEAGUE · {} · {}/{} calibrated skaters · {} exclusions\n",
+        view.forecast_season, view.calibrated_skaters, view.target_skaters, view.excluded_skaters
+    );
+    if let Some(authority) = &view.population_authority {
+        let status = if authority.population_complete {
+            "complete"
+        } else {
+            "incomplete"
+        };
+        let _ = writeln!(
+            output,
+            "Population authority · {status} · {}/{} controlled skaters · {} control exclusions · package {}",
+            authority.controlled_studies,
+            authority.supplied_studies,
+            authority.control_exclusions,
+            authority.source_package_fingerprint
+        );
+    } else {
+        let _ = writeln!(
+            output,
+            "Population authority · not supplied · coverage draft only"
+        );
+    }
+    for team in &view.teams {
+        let _ = writeln!(
+            output,
+            "{} · {}/{} calibrated · {} exclusions",
+            team.organization, team.calibrated_skaters, team.target_skaters, team.excluded_skaters
+        );
+    }
+    output
+}
+
+pub fn run_prospect_arrival_card(
+    input: PathBuf,
+    team: String,
+    team_name: Option<String>,
+    evidence_at: Option<String>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let arrival: icelines_core::ProspectArrivalLeagueCalibrationView =
+        read_icecast_json(&input, "prospect arrival league calibration")?;
+    let evidence_at = evidence_at
+        .as_deref()
+        .map(DateTime::parse_from_rfc3339)
+        .transpose()
+        .context("--evidence-at must be RFC 3339, for example 2026-09-15T12:00:00Z")?
+        .map(|value| value.with_timezone(&Utc));
+    let mut view = ViewContext::new(ViewWindow::new(
+        Season(arrival.forecast_season),
+        SeasonType::Regular,
+    ));
+    view.generated_at = evidence_at;
+    let team = team.trim().to_ascii_uppercase();
+    let card = build_prospect_arrival_card(ProspectArrivalCardInput {
+        arrival,
+        focus_team: team.clone(),
+        team_name: team_name.unwrap_or_else(|| team.clone()),
+        view,
+        evidence_at,
+    })?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&card)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect arrival card")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn apply_prospect_arrival_population_selection(
+    selection: ControlledProspectStudySelection,
+    supplied_skater_ids: &BTreeSet<u32>,
+    supplied_skaters: usize,
+    require_complete_population: bool,
+) -> anyhow::Result<(
+    Vec<ProspectDevelopmentStudyView>,
+    Vec<ProspectArrivalLeagueSourceExclusionInput>,
+    Option<ProspectArrivalLeaguePopulationAuthorityView>,
+)> {
+    if require_complete_population && !selection.population_complete {
+        bail!(
+            "prospect population source package is incomplete; league arrival publication was refused"
+        );
+    }
+    let studies = selection.studies;
+    let source_exclusions = selection
+        .exclusions
+        .into_iter()
+        .filter(|exclusion| supplied_skater_ids.contains(&exclusion.player_id))
+        .map(|exclusion| ProspectArrivalLeagueSourceExclusionInput {
+            organization: exclusion.supplied_organization,
+            player_id: exclusion.player_id,
+            player: exclusion.player,
+            reason: format!("prospect source control gate: {}", exclusion.detail),
+        })
+        .collect::<Vec<_>>();
+    let authority = ProspectArrivalLeaguePopulationAuthorityView {
+        source_package_fingerprint: selection.source_package_fingerprint,
+        population_complete: selection.population_complete,
+        supplied_studies: supplied_skaters,
+        controlled_studies: studies.len(),
+        control_exclusions: source_exclusions.len(),
+    };
+    Ok((studies, source_exclusions, Some(authority)))
 }
 
 pub fn run_prospect_study(
@@ -11041,6 +11197,23 @@ fn render_prospect_program(view: &ProspectProgramBoardView) -> String {
         view.maximum_nhl_games_played,
         view.unknown_nhl_games_studies
     );
+    if let Some(authority) = &view.population_authority {
+        let status = if authority.population_complete {
+            "complete"
+        } else {
+            "incomplete"
+        };
+        let _ = writeln!(
+            out,
+            "Population authority · {status} · {}/{} controlled studies · {} exclusions · package {}",
+            authority.controlled_studies,
+            authority.supplied_studies,
+            authority.excluded_studies,
+            authority.source_package_fingerprint
+        );
+    } else {
+        let _ = writeln!(out, "Population authority · not supplied");
+    }
     if let Some(methodology) = &view.methodology {
         let _ = writeln!(
             out,
@@ -13830,7 +14003,11 @@ mod tests {
 
     use chrono::NaiveDate;
     use icelines_core::{
-        simulate_training_camp, OrganizationWindowBoardView, Position, TeamCeilingLens,
+        build_prospect_development_study, simulate_training_camp, OrganizationWindowBoardView,
+        Position, ProspectArrivalLeagueCalibrationView,
+        ProspectArrivalLeaguePopulationAuthorityView, ProspectAvailabilityStatus,
+        ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig,
+        ProspectDevelopmentStudyInput, ProspectOpportunityStatus, TeamCeilingLens,
         TeamCeilingPlayerRow, TeamForecastPersonnelPlayerInput, TeamSeasonAdaptiveLineupChoice,
         TeamSeasonAdaptiveLineupPolicy, TeamSeasonForecastHistoryCheckpointRow,
         TeamSeasonForecastHistoryMateriality, TeamSeasonForecastHistoryMoverRow,
@@ -13849,7 +14026,138 @@ mod tests {
         AhlPreseasonOrganizationReview, AhlPreseasonOrganizationReviewRow,
         AHL_PRESEASON_ORGANIZATION_REVIEW_SCHEMA,
     };
-    use icelines_fetch::ProspectPopulationRelationship as LeagueCampCandidateRelationship;
+    use icelines_fetch::{
+        ControlledProspectStudySelection,
+        ProspectPopulationRelationship as LeagueCampCandidateRelationship,
+        ProspectStudyControlExclusion, ProspectStudyControlExclusionReason,
+    };
+
+    fn arrival_test_study(player_id: u32) -> icelines_core::ProspectDevelopmentStudyView {
+        build_prospect_development_study(
+            ProspectDevelopmentStudyInput {
+                player_id,
+                player: format!("Prospect {player_id}"),
+                organization: "SEA".to_owned(),
+                position: "C".to_owned(),
+                age: 20,
+                nhl_games_played: 0,
+                seasons: vec![ProspectDevelopmentSeasonInput {
+                    season: 20_252_026,
+                    league: "AHL".to_owned(),
+                    games_played: 30,
+                    goals: 10,
+                    assists: 15,
+                }],
+                opportunity: ProspectOpportunityStatus::None,
+                availability: ProspectAvailabilityStatus::Unknown,
+                attention_score: 0.5,
+                attention_basis: "Neutral test context".to_owned(),
+                evidence: vec![],
+            },
+            ProspectDevelopmentStudyConfig::default(),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn prospect_arrival_population_selection_refuses_incomplete_strict_authority() {
+        let error = super::apply_prospect_arrival_population_selection(
+            ControlledProspectStudySelection {
+                source_package_fingerprint: "a".repeat(64),
+                population_complete: false,
+                supplied_studies: 0,
+                studies: vec![],
+                goalie_studies: vec![],
+                exclusions: vec![],
+            },
+            &std::collections::BTreeSet::new(),
+            0,
+            true,
+        )
+        .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("population source package is incomplete"));
+    }
+
+    #[test]
+    fn prospect_arrival_population_selection_reconciles_only_skater_exclusions() {
+        let selection = ControlledProspectStudySelection {
+            source_package_fingerprint: "b".repeat(64),
+            population_complete: false,
+            supplied_studies: 3,
+            studies: vec![arrival_test_study(43)],
+            goalie_studies: vec![],
+            exclusions: vec![
+                ProspectStudyControlExclusion {
+                    player_id: 42,
+                    player: "Excluded Skater".to_owned(),
+                    supplied_organization: "SEA".to_owned(),
+                    controlled_organization: None,
+                    reason: ProspectStudyControlExclusionReason::UnsupportedControl,
+                    detail: "no current contract or rights fact".to_owned(),
+                },
+                ProspectStudyControlExclusion {
+                    player_id: 99,
+                    player: "Excluded Goalie".to_owned(),
+                    supplied_organization: "SEA".to_owned(),
+                    controlled_organization: None,
+                    reason: ProspectStudyControlExclusionReason::UnsupportedControl,
+                    detail: "no current contract or rights fact".to_owned(),
+                },
+            ],
+        };
+
+        let (studies, exclusions, authority) = super::apply_prospect_arrival_population_selection(
+            selection,
+            &std::collections::BTreeSet::from([42, 43]),
+            2,
+            false,
+        )
+        .unwrap();
+        let authority = authority.unwrap();
+
+        assert_eq!(studies.len(), 1);
+        assert_eq!(exclusions.len(), 1);
+        assert_eq!(exclusions[0].player_id, 42);
+        assert!(!authority.population_complete);
+        assert_eq!(authority.supplied_studies, 2);
+        assert_eq!(authority.controlled_studies, 1);
+        assert_eq!(authority.control_exclusions, 1);
+    }
+
+    #[test]
+    fn prospect_arrival_text_distinguishes_authority_from_coverage_draft() {
+        let mut view = ProspectArrivalLeagueCalibrationView {
+            schema: "prospect_arrival_league_calibration.v1".to_owned(),
+            source_schema: "prospect_conversion_board.v1".to_owned(),
+            forecast_season: 20_262_027,
+            organizations_requested: 32,
+            organizations_represented: 32,
+            target_skaters: 2,
+            calibrated_skaters: 1,
+            excluded_skaters: 1,
+            population_authority: Some(ProspectArrivalLeaguePopulationAuthorityView {
+                source_package_fingerprint: "c".repeat(64),
+                population_complete: false,
+                supplied_studies: 2,
+                controlled_studies: 1,
+                control_exclusions: 1,
+            }),
+            teams: vec![],
+            disclosures: vec![],
+        };
+
+        let sourced = super::render_prospect_arrival_league(&view);
+        assert!(sourced.contains("Population authority · incomplete"));
+        assert!(sourced.contains("1/2 controlled skaters · 1 control exclusions"));
+        assert!(sourced.contains(&"c".repeat(64)));
+
+        view.population_authority = None;
+        let draft = super::render_prospect_arrival_league(&view);
+        assert!(draft.contains("Population authority · not supplied · coverage draft only"));
+    }
 
     #[test]
     fn preseason_opening_players_keep_ranked_12f_6d_2g_evidence() {

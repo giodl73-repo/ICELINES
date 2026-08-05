@@ -14,7 +14,7 @@ use icelines_core::{
 use crate::card_store::{
     default_scenario, fantasy_draft_card, fantasy_morning_card, fantasy_roster_card,
     fantasy_trade_card, forecast_history_card, forecast_movement_card, organization_window_card,
-    season_simulation_card, team_prognosis_card, CardStoreError,
+    prospect_arrival_card, season_simulation_card, team_prognosis_card, CardStoreError,
 };
 use crate::state::WebState;
 use crate::templates::{
@@ -84,6 +84,43 @@ pub async fn get_organization_window_card_json(
             cached_response(axum::Json(card).into_response(), &fingerprint, &headers)
         }
         Err(error) => card_error(error, false),
+    }
+}
+
+pub async fn get_prospect_arrival_card_json(
+    Path((season, team)): Path<(u32, String)>,
+    headers: HeaderMap,
+) -> Response {
+    match prospect_arrival_card(season, &team) {
+        Ok(card) => {
+            let fingerprint = card.fingerprint.clone();
+            cached_response(axum::Json(card).into_response(), &fingerprint, &headers)
+        }
+        Err(error) => card_error(error, false),
+    }
+}
+
+pub async fn get_prospect_arrival_card(
+    State(state): State<WebState>,
+    Path((season, team)): Path<(u32, String)>,
+    Query(query): Query<FantasyRosterCardQuery>,
+    headers: HeaderMap,
+) -> Response {
+    let card = match prospect_arrival_card(season, &team) {
+        Ok(card) => card,
+        Err(error) => return card_error(error, true),
+    };
+    let active_label = state.config.read().await.active_label.clone();
+    let show_first = !matches!(query.page.as_deref(), Some("insider"));
+    let fingerprint = card.fingerprint.clone();
+    let template = project_fantasy_template(active_label, &card, show_first);
+    match template.render() {
+        Ok(html) => cached_response(Html(html).into_response(), &fingerprint, &headers),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {error}")),
+        )
+            .into_response(),
     }
 }
 
@@ -796,6 +833,23 @@ fn project_fantasy_template(
             ),
             "The Window",
         ),
+        CardKind::ProspectArrival => (
+            "THE SYSTEM · PROSPECT ARRIVALS",
+            "Prospect arrival card pages",
+            format!(
+                "/api/v1/cards/prospect-arrival/{}/{team}",
+                card.context.view.window.season.0
+            ),
+            format!(
+                "/icecast/{}/{team}/prospect-arrivals?page=depth-chart",
+                card.context.view.window.season.0
+            ),
+            format!(
+                "/icecast/{}/{team}/prospect-arrivals?page=insider",
+                card.context.view.window.season.0
+            ),
+            "The Depth Chart",
+        ),
         CardKind::FantasyDraft => (
             "THE BENCH · FANTASY DRAFT",
             "Fantasy draft card pages",
@@ -925,6 +979,7 @@ fn card_error(error: CardStoreError, html: bool) -> Response {
         | CardStoreError::UnsupportedSeasonSimulationTeam(_)
         | CardStoreError::UnsupportedForecastMovementTeam(_)
         | CardStoreError::UnsupportedForecastHistoryTeam(_)
+        | CardStoreError::UnsupportedProspectArrivalTeam(_)
         | CardStoreError::UnsupportedOrganizationWindowTeam(_)
         | CardStoreError::UnsupportedOrganizationWindowFrame(_)
         | CardStoreError::UnsupportedFantasyTeam(_)

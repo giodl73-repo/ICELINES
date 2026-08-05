@@ -3632,15 +3632,24 @@ pub enum IceCastSubcommand {
         #[arg(long = "input-out", value_name = "PATH", requires = "career_discovery")]
         input_out: Option<PathBuf>,
     },
-    /// Calibrate every eligible skater across a complete league camp forecast.
+    /// Calibrate every eligible skater across the canonical league envelope.
     #[command(name = "prospect-arrival-league")]
     ProspectArrivalLeague {
-        /// Complete `training_camp_league_forecast.v1` target population.
+        /// Derive canonical studies from a complete league camp forecast.
         #[arg(long = "camp-forecast", value_name = "PATH")]
-        camp_forecast: PathBuf,
-        /// Cached official NHL player landing career histories.
+        camp_forecast: Option<PathBuf>,
+        /// Use an existing canonical career discovery instead of camp derivation.
+        #[arg(long = "career-discovery", value_name = "PATH")]
+        career_discoveries: Vec<PathBuf>,
+        /// Cached official NHL player landing career histories for camp derivation.
         #[arg(long = "career-history", value_name = "PATH")]
         career_history: Option<PathBuf>,
+        /// Sealed prospect source package used to enforce current organization control.
+        #[arg(long = "source-package", value_name = "PATH")]
+        source_package: Option<PathBuf>,
+        /// Refuse output unless the supplied source package has complete population coverage.
+        #[arg(long = "require-complete-population", requires = "source_package")]
+        require_complete_population: bool,
         /// Frozen `prospect_conversion_board.v2` historical outcome cohort.
         #[arg(
             long = "conversion-board",
@@ -3673,6 +3682,24 @@ pub enum IceCastSubcommand {
         /// Retain the canonical all-team career discovery used by calibration.
         #[arg(long = "discovery-out", value_name = "PATH")]
         discovery_out: Option<PathBuf>,
+    },
+    /// Project one team's league arrival result into a UI-neutral card document.
+    #[command(name = "prospect-arrival-card")]
+    ProspectArrivalCard {
+        /// `prospect_arrival_league_calibration.v1` league artifact.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// NHL team abbreviation to focus after fingerprinting the league artifact.
+        #[arg(long)]
+        team: String,
+        /// Human-readable team name; defaults to the abbreviation.
+        #[arg(long = "team-name")]
+        team_name: Option<String>,
+        /// Evidence and card-generation time as RFC 3339.
+        #[arg(long = "evidence-at", value_name = "RFC3339")]
+        evidence_at: Option<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
     },
     /// Rank validated prospect studies into Hidden Gems, Buyer Beware, and Watch.
     #[command(name = "prospect-board")]
@@ -7606,16 +7633,82 @@ mod tui_surface_tests {
             assert!(matches!(
                 cli.command,
                 Commands::Icecast(IceCastSubcommand::ProspectArrivalLeague {
-                    camp_forecast,
+                    camp_forecast: Some(camp_forecast),
+                    career_discoveries,
                     conversion_board: None,
                     conversion_archive: Some(archive),
                     forecast_season: 20262027,
                     json: true,
                     out: Some(out),
                     ..
-                }) if camp_forecast == PathBuf::from("camp.json")
+                }) if career_discoveries.is_empty()
+                    && camp_forecast == PathBuf::from("camp.json")
                     && archive == PathBuf::from("conversion.json")
                     && out == PathBuf::from("league.json")
+            ));
+
+            let sourced = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-league",
+                "--career-discovery",
+                "league-career.json",
+                "--source-package",
+                "sources.json",
+                "--require-complete-population",
+                "--conversion-board",
+                "conversion.json",
+                "--forecast-season",
+                "20262027",
+            ])
+            .expect("source-backed prospect arrival league command should parse");
+            assert!(matches!(
+                sourced.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalLeague {
+                    camp_forecast: None,
+                    career_discoveries,
+                    source_package: Some(source_package),
+                    require_complete_population: true,
+                    conversion_board: Some(_),
+                    ..
+                }) if career_discoveries == vec![PathBuf::from("league-career.json")]
+                    && source_package == PathBuf::from("sources.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_arrival_card_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-card",
+                "--input",
+                "league-arrival.json",
+                "--team",
+                "NYR",
+                "--team-name",
+                "New York Rangers",
+                "--evidence-at",
+                "2026-09-15T12:00:00Z",
+                "--out",
+                "nyr-arrival-card.json",
+            ])
+            .expect("IceCast prospect arrival card command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalCard {
+                    input,
+                    team,
+                    team_name: Some(team_name),
+                    evidence_at: Some(evidence_at),
+                    out: Some(out),
+                }) if input == PathBuf::from("league-arrival.json")
+                    && team == "NYR"
+                    && team_name == "New York Rangers"
+                    && evidence_at == "2026-09-15T12:00:00Z"
+                    && out == PathBuf::from("nyr-arrival-card.json")
             ));
         });
     }

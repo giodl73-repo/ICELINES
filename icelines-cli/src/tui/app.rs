@@ -1323,6 +1323,8 @@ impl App {
                                 "HISTORY-"
                             } else if upper.starts_with("WINDOW-") {
                                 "WINDOW-"
+                            } else if upper.starts_with("ARRIVAL-") {
+                                "ARRIVAL-"
                             } else {
                                 ""
                             };

@@ -1070,6 +1070,9 @@ icelines icecast prospect-census --source-package source-package.json --pipeline
 icelines icecast prospect-census --source-package source-package.json --league-discovery ahl-discovery.json --career-discovery multi-league-discovery.json --program-board prospect-programs.json --pipeline-out prospect-census-pipeline.json --json --out prospect-census.json
 icelines icecast prospect-program --league-discovery league-discovery.json --prospects-per-team 10 --require-complete-rankings --json --out prospect-programs.json
 icelines icecast prospect-program --league-discovery league-discovery.json --study college-prospect-study.json --prior-board prior-prospect-programs.json --out prospect-programs.txt
+icelines icecast prospect-arrival-league --camp-forecast league-camp.json --career-history ~/.icelines/career_history.json --conversion-archive conversion-archive.json --forecast-season 20262027 --discovery-out league-career-discovery.json --out league-arrival.txt
+icelines icecast prospect-arrival-league --career-discovery league-career-discovery.json --source-package prospect-sources.json --require-complete-population --conversion-archive conversion-archive.json --forecast-season 20262027 --json --out league-arrival.json
+icelines icecast prospect-arrival-card --input league-arrival.json --team NYR --team-name "New York Rangers" --evidence-at 2026-09-15T12:00:00Z --out nyr-arrival-card.json
 icelines icecast prospect-program-sensitivity --league-discovery league-discovery.json --thresholds 25,50,82 --json --out prospect-program-sensitivity.json
 icelines icecast prospect-program-history --board prospect-programs-2024.json --board prospect-programs-2025.json --board prospect-programs-2026.json --json --out prospect-program-history.json
 icelines icecast prospect-conversion --league-discovery frozen-2022-23-prospects.json --career-history ~/.icelines/career_history.json --baseline-season 20222023 --through-season 20252026 --performance-out nhl-performance.json --json --out prospect-conversion.json
@@ -1641,6 +1644,11 @@ The TUI commands `season-card`, `season-card NYR`, and `season-card SEA` open
 the same sealed season-simulation documents. Press `p` to switch between The
 Scoreboard and The Insider, `t` to switch teams, or `c` for side-by-side NYR
 and SEA projections from the same league run.
+
+The TUI commands `prospect-arrival-card NYR` and `prospect-arrival-card SEA`
+open the same sealed prospect-arrival documents as the CLI and Web API. Press
+`p` to switch between The Depth Chart and The Insider, `t` to switch teams, or
+`c` for side-by-side arrival outlooks from the same league calibration.
 
 For the sealed completed-season replay, use `replay-card NYR` or
 `replay-card SEA`. Its Insider page adds confirmed actual records and points,

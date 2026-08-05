@@ -104,6 +104,23 @@ pub struct ProspectArrivalLeagueExclusionView {
     pub reason: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectArrivalLeagueSourceExclusionInput {
+    pub organization: String,
+    pub player_id: u32,
+    pub player: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectArrivalLeaguePopulationAuthorityView {
+    pub source_package_fingerprint: String,
+    pub population_complete: bool,
+    pub supplied_studies: usize,
+    pub controlled_studies: usize,
+    pub control_exclusions: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProspectArrivalLeagueTeamView {
     pub organization: String,
@@ -124,6 +141,8 @@ pub struct ProspectArrivalLeagueCalibrationView {
     pub target_skaters: usize,
     pub calibrated_skaters: usize,
     pub excluded_skaters: usize,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub population_authority: Option<ProspectArrivalLeaguePopulationAuthorityView>,
     pub teams: Vec<ProspectArrivalLeagueTeamView>,
     pub disclosures: Vec<String>,
 }
@@ -134,6 +153,8 @@ pub struct ProspectArrivalLeagueCalibrationView {
 pub fn calibrate_prospect_arrival_league(
     organizations: Vec<String>,
     studies: Vec<ProspectDevelopmentStudyView>,
+    source_exclusions: Vec<ProspectArrivalLeagueSourceExclusionInput>,
+    population_authority: Option<ProspectArrivalLeaguePopulationAuthorityView>,
     forecast_season: u32,
     board: &ProspectConversionBoardView,
     config: ProspectArrivalCalibrationConfig,
@@ -168,14 +189,60 @@ pub fn calibrate_prospect_arrival_league(
         }
         by_organization.entry(organization).or_default().push(study);
     }
+    let controlled_studies = player_ids.len();
+    let source_exclusion_count = source_exclusions.len();
+    let mut exclusions_by_organization =
+        BTreeMap::<String, Vec<ProspectArrivalLeagueExclusionView>>::new();
+    for exclusion in source_exclusions {
+        let organization = exclusion.organization.trim().to_ascii_uppercase();
+        if !normalized.contains(&organization)
+            || exclusion.player_id == 0
+            || exclusion.player.trim().is_empty()
+            || exclusion.reason.trim().is_empty()
+        {
+            return Err("prospect arrival league source exclusion is invalid".to_owned());
+        }
+        if !player_ids.insert(exclusion.player_id) {
+            return Err(format!(
+                "prospect arrival league target player {} is duplicated across controlled and excluded studies",
+                exclusion.player_id
+            ));
+        }
+        exclusions_by_organization
+            .entry(organization)
+            .or_default()
+            .push(ProspectArrivalLeagueExclusionView {
+                player_id: exclusion.player_id,
+                player: exclusion.player,
+                reason: exclusion.reason,
+            });
+    }
+    if population_authority.is_none() && source_exclusion_count > 0 {
+        return Err(
+            "prospect arrival league source exclusions require population authority".to_owned(),
+        );
+    }
+    if let Some(authority) = population_authority.as_ref() {
+        if authority.source_package_fingerprint.trim().is_empty()
+            || authority.supplied_studies
+                != authority.controlled_studies + authority.control_exclusions
+            || authority.controlled_studies != controlled_studies
+            || authority.control_exclusions != source_exclusion_count
+            || authority.supplied_studies != player_ids.len()
+        {
+            return Err("prospect arrival league population authority is invalid".to_owned());
+        }
+    }
 
     let mut teams = Vec::with_capacity(normalized.len());
     for organization in normalized {
         let mut calibrations = Vec::new();
-        let mut exclusions = Vec::new();
+        let mut exclusions = exclusions_by_organization
+            .remove(&organization)
+            .unwrap_or_default();
         let mut targets = by_organization.remove(&organization).unwrap_or_default();
         targets.sort_by_key(|study| study.player_id);
-        let target_skaters = targets.len();
+        let target_skaters = targets.len() + exclusions.len();
         for study in targets {
             let player_id = study.player_id;
             let player = study.player.clone();
@@ -219,12 +286,14 @@ pub fn calibrate_prospect_arrival_league(
         target_skaters,
         calibrated_skaters,
         excluded_skaters,
+        population_authority,
         teams,
         disclosures: vec![
             "Every requested organization remains present, including teams with no eligible skater study or no successful calibration.".to_owned(),
             "All targets use the same frozen conversion cohort, same-position neighbor policy, shrinkage prior, signal-distance gate, and forecast-horizon adjustment.".to_owned(),
             "Goalies require a separately calibrated goalie outcome cohort and are not treated as skaters in this artifact.".to_owned(),
             "A player-level failure is retained as a typed team exclusion and never silently removed from league coverage totals.".to_owned(),
+            "When a source package is supplied, the existing current-control resolver gates studies before calibration and its unsupported or mismatched rows remain in the same reconciled exclusion ledger.".to_owned(),
         ],
     })
 }
@@ -824,6 +893,8 @@ mod tests {
         let view = calibrate_prospect_arrival_league(
             vec!["SEA".to_owned(), "NYR".to_owned(), "VGK".to_owned()],
             vec![study, historical_target],
+            vec![],
+            None,
             20262027,
             &board(),
             ProspectArrivalCalibrationConfig {
@@ -843,6 +914,44 @@ mod tests {
         assert_eq!(view.teams[1].exclusions.len(), 1);
         assert_eq!(view.teams[2].organization, "VGK");
         assert_eq!(view.teams[2].target_skaters, 0);
+    }
+
+    #[test]
+    fn league_calibration_reconciles_source_control_exclusions() {
+        let view = calibrate_prospect_arrival_league(
+            vec!["NYR".to_owned(), "SEA".to_owned()],
+            vec![],
+            vec![ProspectArrivalLeagueSourceExclusionInput {
+                organization: "NYR".to_owned(),
+                player_id: 8_485_957,
+                player: "Alberts Smits".to_owned(),
+                reason: "current organization control is unsupported".to_owned(),
+            }],
+            Some(ProspectArrivalLeaguePopulationAuthorityView {
+                source_package_fingerprint: "sealed-source-package".to_owned(),
+                population_complete: false,
+                supplied_studies: 1,
+                controlled_studies: 0,
+                control_exclusions: 1,
+            }),
+            20262027,
+            &board(),
+            ProspectArrivalCalibrationConfig::default(),
+        )
+        .unwrap();
+
+        assert_eq!(view.target_skaters, 1);
+        assert_eq!(view.calibrated_skaters, 0);
+        assert_eq!(view.excluded_skaters, 1);
+        assert_eq!(view.teams[0].target_skaters, 1);
+        assert_eq!(view.teams[0].exclusions[0].player, "Alberts Smits");
+        assert_eq!(
+            view.population_authority
+                .as_ref()
+                .unwrap()
+                .controlled_studies,
+            0
+        );
     }
 
     #[test]

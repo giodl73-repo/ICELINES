@@ -3309,7 +3309,10 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         )?,
         Commands::Icecast(IceCastSubcommand::ProspectArrivalLeague {
             camp_forecast,
+            career_discoveries,
             career_history,
+            source_package,
+            require_complete_population,
             conversion_board,
             conversion_archive,
             forecast_season,
@@ -3320,7 +3323,10 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             discovery_out,
         }) => commands::icecast::run_prospect_arrival_league(
             camp_forecast,
+            career_discoveries,
             career_history,
+            source_package,
+            require_complete_population,
             conversion_board,
             conversion_archive,
             forecast_season,
@@ -3330,6 +3336,15 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             out,
             discovery_out,
         )?,
+        Commands::Icecast(IceCastSubcommand::ProspectArrivalCard {
+            input,
+            team,
+            team_name,
+            evidence_at,
+            out,
+        }) => {
+            commands::icecast::run_prospect_arrival_card(input, team, team_name, evidence_at, out)?
+        }
         Commands::Icecast(IceCastSubcommand::WindowStandings {
             target_season,
             date,

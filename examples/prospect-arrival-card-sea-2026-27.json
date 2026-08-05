@@ -1,0 +1,701 @@
+{
+  "schema": "card_document.v1",
+  "card_kind": "prospect_arrival",
+  "document_id": "prospect-arrival:SEA:20262027",
+  "fingerprint": "deab0ba37950b1a24d25c98ba7b02d7f97f026546fba62043fc62d3f1141c84c",
+  "title": "Seattle Kraken prospect arrivals",
+  "subtitle": "20262027 forecast · 3/13 calibrated",
+  "context": {
+    "view": {
+      "window": {
+        "season": 20262027,
+        "season_type": "regular"
+      },
+      "generated_at": "2026-09-15T12:00:00Z",
+      "source_state": [],
+      "completeness": "complete",
+      "data_generation": null
+    },
+    "evidence_at": "2026-09-15T12:00:00Z",
+    "evidence_label": "under_review",
+    "builder_version": "prospect_arrival_card.v1",
+    "methodology_versions": {
+      "card_projection": "prospect_arrival_card.v1",
+      "prospect_arrival": "prospect_arrival_league_calibration.v1"
+    },
+    "joins": {
+      "league_id": null,
+      "roster_snapshot_id": null,
+      "calendar_fingerprint": null,
+      "scoring_scheme_id": null,
+      "scenario_id": null,
+      "team_ids": [
+        "SEA"
+      ],
+      "player_ids": [
+        "8483442",
+        "8483494",
+        "8486009",
+        "8482751",
+        "8482858",
+        "8482866",
+        "8482874",
+        "8483012",
+        "8483497",
+        "8483524",
+        "8483684",
+        "8484168",
+        "8486087"
+      ],
+      "game_ids": []
+    },
+    "simulation": {
+      "model_id": "prospect-arrival-calibration",
+      "model_version": "prospect_arrival_league_calibration.v1",
+      "parameter_fingerprint": "626806f464a3f96b145f9fd6b527908c8e8dab911edb379bc3be096043d22a9c",
+      "seed": null,
+      "trials": null
+    }
+  },
+  "theme": {
+    "theme_key": "team_sea",
+    "primary": "#001628",
+    "secondary": "#99D9D9",
+    "accent": "#E9072B",
+    "surface": "#FFFFFF",
+    "text": "#111111",
+    "team_abbreviation": "SEA",
+    "ascii_identity": "SEA",
+    "minimum_text_contrast_x100": 450
+  },
+  "required_capabilities": [],
+  "pages": [
+    {
+      "id": "depth-chart",
+      "literal_label": "Prospect arrival probabilities",
+      "display_label": "The Depth Chart",
+      "order": 1,
+      "accessible_summary": "3 calibrated prospect arrivals and exclusions for Seattle Kraken.",
+      "sections": [
+        {
+          "section_type": "identity_header",
+          "id": "arrival-team",
+          "eyebrow": "Prospect arrival forecast",
+          "title": "Seattle Kraken",
+          "subtitle": "SEA",
+          "identities": [
+            {
+              "kind": "team",
+              "subject_id": "SEA",
+              "label": "Seattle Kraken",
+              "asset_id": null
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "arrival-coverage",
+          "title": "Forecast coverage",
+          "metrics": [
+            {
+              "metric": {
+                "key": "target_skaters",
+                "label": "Targets",
+                "value": {
+                  "integer": 13
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "13",
+              "accessible_text": "Targets 13",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "calibrated_skaters",
+                "label": "Calibrated",
+                "value": {
+                  "integer": 3
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "3",
+              "accessible_text": "Calibrated 3",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "excluded_skaters",
+                "label": "Excluded",
+                "value": {
+                  "integer": 10
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "10",
+              "accessible_text": "Excluded 10",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            }
+          ]
+        },
+        {
+          "section_type": "player_list",
+          "id": "calibrated-arrivals",
+          "title": "Calibrated arrival outlook",
+          "rows": [
+            {
+              "player_id": "8483442",
+              "name": "Jagger Firkus",
+              "role": "F",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "arrival_probability",
+                    "label": "Arrival",
+                    "value": {
+                      "decimal": 29.0389
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "29.0%",
+                  "accessible_text": "Arrival 29.0 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "establishment_probability",
+                    "label": "Established role",
+                    "value": {
+                      "decimal": 5.7966999999999995
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "5.8%",
+                  "accessible_text": "Established role 5.8 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "observed_signal",
+                    "label": "Signal",
+                    "value": {
+                      "decimal": 75.0
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "75.00",
+                  "accessible_text": "Signal 75.00",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "rising"
+              ],
+              "evidence_label": "simulated"
+            },
+            {
+              "player_id": "8486009",
+              "name": "Ryden Evers",
+              "role": "F",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "arrival_probability",
+                    "label": "Arrival",
+                    "value": {
+                      "decimal": 27.1958
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "27.2%",
+                  "accessible_text": "Arrival 27.2 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "establishment_probability",
+                    "label": "Established role",
+                    "value": {
+                      "decimal": 9.133
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "9.1%",
+                  "accessible_text": "Established role 9.1 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "observed_signal",
+                    "label": "Signal",
+                    "value": {
+                      "decimal": 50.0
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "50.00",
+                  "accessible_text": "Signal 50.00",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "rising"
+              ],
+              "evidence_label": "simulated"
+            },
+            {
+              "player_id": "8483494",
+              "name": "Ty Nelson",
+              "role": "D",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "arrival_probability",
+                    "label": "Arrival",
+                    "value": {
+                      "decimal": 26.448
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "26.4%",
+                  "accessible_text": "Arrival 26.4 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "establishment_probability",
+                    "label": "Established role",
+                    "value": {
+                      "decimal": 9.3061
+                    },
+                    "unit": "percentage",
+                    "precision": "percent_one_decimal",
+                    "token": null
+                  },
+                  "display_text": "9.3%",
+                  "accessible_text": "Established role 9.3 percent",
+                  "comparison": null,
+                  "evidence_label": "simulated"
+                },
+                {
+                  "metric": {
+                    "key": "observed_signal",
+                    "label": "Signal",
+                    "value": {
+                      "decimal": 50.0
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "50.00",
+                  "accessible_text": "Signal 50.00",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "rising"
+              ],
+              "evidence_label": "simulated"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "insider",
+      "literal_label": "Population authority and calibration methodology",
+      "display_label": "The Insider",
+      "order": 2,
+      "accessible_summary": "Current-control coverage, excluded players, historical calibration method, and limitations.",
+      "sections": [
+        {
+          "section_type": "state_notice",
+          "id": "population-authority",
+          "title": "Coverage draft",
+          "detail": "No sealed population authority was supplied. Camp-derived targets do not establish a complete controlled prospect pool.",
+          "empty_state": null,
+          "warnings": [
+            {
+              "kind": "missing_source",
+              "source": "snapshot",
+              "message": "No sealed prospect population source package was supplied; this is a coverage draft.",
+              "recovery": []
+            }
+          ],
+          "token": "source_unavailable"
+        },
+        {
+          "section_type": "player_list",
+          "id": "arrival-exclusions",
+          "title": "Exclusion ledger",
+          "rows": [
+            {
+              "player_id": "8482751",
+              "name": "Ryan Winterton",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival target already has 89 NHL games; use established-role forecasting instead"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival target already has 89 NHL games; use established-role forecasting instead",
+                  "accessible_text": "Reason: prospect arrival target already has 89 NHL games; use established-role forecasting instead",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            },
+            {
+              "player_id": "8482858",
+              "name": "Ryker Evans",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival target already has 176 NHL games; use established-role forecasting instead"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival target already has 176 NHL games; use established-role forecasting instead",
+                  "accessible_text": "Reason: prospect arrival target already has 176 NHL games; use established-role forecasting instead",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            },
+            {
+              "player_id": "8482866",
+              "name": "Ville Ottavainen",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival target already has 1 NHL games; use established-role forecasting instead"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival target already has 1 NHL games; use established-role forecasting instead",
+                  "accessible_text": "Reason: prospect arrival target already has 1 NHL games; use established-role forecasting instead",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            },
+            {
+              "player_id": "8482874",
+              "name": "Jacob Melanson",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival target already has 37 NHL games; use established-role forecasting instead"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival target already has 37 NHL games; use established-role forecasting instead",
+                  "accessible_text": "Reason: prospect arrival target already has 37 NHL games; use established-role forecasting instead",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            },
+            {
+              "player_id": "8483012",
+              "name": "Logan Morrison",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival target already has 4 NHL games; use established-role forecasting instead"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival target already has 4 NHL games; use established-role forecasting instead",
+                  "accessible_text": "Reason: prospect arrival target already has 4 NHL games; use established-role forecasting instead",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            },
+            {
+              "player_id": "8483497",
+              "name": "Jani Nyman",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival target already has 40 NHL games; use established-role forecasting instead"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival target already has 40 NHL games; use established-role forecasting instead",
+                  "accessible_text": "Reason: prospect arrival target already has 40 NHL games; use established-role forecasting instead",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            },
+            {
+              "player_id": "8483524",
+              "name": "Shane Wright",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival target already has 169 NHL games; use established-role forecasting instead"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival target already has 169 NHL games; use established-role forecasting instead",
+                  "accessible_text": "Reason: prospect arrival target already has 169 NHL games; use established-role forecasting instead",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            },
+            {
+              "player_id": "8483684",
+              "name": "Tyson Jugnauth",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival calibration mean signal distance 31.8278 exceeds 15.0000"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival calibration mean signal distance 31.8278 exceeds 15.0000",
+                  "accessible_text": "Reason: prospect arrival calibration mean signal distance 31.8278 exceeds 15.0000",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            },
+            {
+              "player_id": "8484168",
+              "name": "Oscar Fisker Molgaard",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival target already has 13 NHL games; use established-role forecasting instead"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival target already has 13 NHL games; use established-role forecasting instead",
+                  "accessible_text": "Reason: prospect arrival target already has 13 NHL games; use established-role forecasting instead",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            },
+            {
+              "player_id": "8486087",
+              "name": "Chase Reid",
+              "role": "Not calibrated",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "exclusion_reason",
+                    "label": "Reason",
+                    "value": {
+                      "text": "prospect arrival calibration mean signal distance 22.8110 exceeds 15.0000"
+                    },
+                    "unit": "none",
+                    "precision": "raw",
+                    "token": null
+                  },
+                  "display_text": "prospect arrival calibration mean signal distance 22.8110 exceeds 15.0000",
+                  "accessible_text": "Reason: prospect arrival calibration mean signal distance 22.8110 exceeds 15.0000",
+                  "comparison": null,
+                  "evidence_label": "under_review"
+                }
+              ],
+              "tokens": [
+                "warning"
+              ],
+              "evidence_label": "under_review"
+            }
+          ]
+        },
+        {
+          "section_type": "methodology",
+          "id": "arrival-methodology",
+          "title": "How to read the forecast",
+          "methods": [
+            {
+              "key": "frozen-neighbor-calibration",
+              "label": "Frozen same-position neighbor calibration",
+              "version": "prospect_arrival_league_calibration.v1",
+              "summary": "Every eligible skater uses the same historical conversion cohort, shrinkage prior, distance gate, and forecast-horizon adjustment."
+            }
+          ],
+          "limitations": [
+            "Every requested organization remains present, including teams with no eligible skater study or no successful calibration.",
+            "All targets use the same frozen conversion cohort, same-position neighbor policy, shrinkage prior, signal-distance gate, and forecast-horizon adjustment.",
+            "Goalies require a separately calibrated goalie outcome cohort and are not treated as skaters in this artifact.",
+            "A player-level failure is retained as a typed team exclusion and never silently removed from league coverage totals.",
+            "When a source package is supplied, the existing current-control resolver gates studies before calibration and its unsupported or mismatched rows remain in the same reconciled exclusion ledger."
+          ]
+        },
+        {
+          "section_type": "provenance",
+          "id": "arrival-sources",
+          "title": "Source authority",
+          "provenance_ids": [
+            "league-arrival-calibration"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "provenance": [
+    {
+      "id": "league-arrival-calibration",
+      "source": "career",
+      "label": "Sealed league prospect-arrival calibration",
+      "state": "complete",
+      "observed_at": "2026-09-15T12:00:00Z",
+      "fingerprint": "626806f464a3f96b145f9fd6b527908c8e8dab911edb379bc3be096043d22a9c",
+      "note": "167 targets across 32 organizations; focused only after the league artifact was fingerprinted"
+    }
+  ],
+  "warnings": [
+    {
+      "kind": "missing_source",
+      "source": "snapshot",
+      "message": "No sealed prospect population source package was supplied; this is a coverage draft.",
+      "recovery": []
+    }
+  ],
+  "empty_state": null
+}

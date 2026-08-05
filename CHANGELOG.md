@@ -8,7 +8,21 @@
   player failures remain visible and totals reconcile. Arrival adaptation now
   rejects players with authoritative NHL games and directs them to
   established-role forecasting, exposing young-NHLer contamination in camp
-  prospect pools instead of scoring it as a new arrival.
+  prospect pools instead of scoring it as a new arrival. The league command
+  now also accepts canonical career discoveries and a sealed prospect source
+  package, reuses the census current-control resolver, retains its exclusions
+  and population fingerprint in the output, and can fail closed on incomplete
+  population authority. Human-readable arrival and program output now labels
+  complete, incomplete, missing, and camp-derived coverage states instead of
+  leaving population authority visible only in JSON. Added the UI-neutral
+  `prospect_arrival` card and `icecast prospect-arrival-card`: The Depth Chart
+  ranks one team's calibrated outlook while The Insider retains authority,
+  exclusions, methodology, warnings, and the full league-artifact fingerprint.
+  The generic web renderer now serves dedicated NYR/SEA prospect-arrival HTML
+  and JSON routes with shared card fingerprints, ETags, and explicit 404s for
+  unavailable teams. The generic TUI renderer now opens the identical cards
+  through `prospect-arrival-card NYR|SEA`, including page, team-toggle, and
+  side-by-side comparison controls.
 - Added a retained 543-player, all-32-organization retrospective prospect
   conversion archive from the frozen 2022-23 AHL baseline through 2025-26.
   `prospect-arrival-calibrate --career-discovery` now derives an attention-free

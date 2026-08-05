@@ -613,6 +613,35 @@ incomplete arrival population instead of silently dropping teams:
 icelines icecast prospect-arrival-league --camp-forecast examples/icecast-league-training-camp-2026-27.json --conversion-archive examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json --forecast-season 20262027 --discovery-out league-career-discovery.json --json --out league-arrival.json
 ```
 
+The preferred publication path supplies one or more canonical
+`prospect_career_discovery.v1` artifacts plus a sealed prospect source package.
+That route reuses the census current-control resolver: sourced NHL rights or
+contracts can retain a study, while camp attendance and AHL affiliation alone
+cannot. Control failures remain reconciled player/team exclusions. Add
+`--require-complete-population` to refuse publication when the source-package
+manifest is incomplete:
+
+```bash
+icelines icecast prospect-arrival-league --career-discovery league-career-discovery.json --source-package prospect-sources.json --require-complete-population --conversion-archive examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json --forecast-season 20262027 --json --out league-arrival.json
+```
+
+Project any team from that league artifact into the shared two-page card
+contract. The Depth Chart contains the sorted calibrated players; The Insider
+retains population authority, exclusions, methodology, warnings, and the
+fingerprint of the full league artifact before team selection:
+
+```bash
+icelines icecast prospect-arrival-card --input league-arrival.json --team NYR --team-name "New York Rangers" --evidence-at 2026-09-15T12:00:00Z --out nyr-arrival-card.json
+```
+
+The bundled Rangers and Kraken cards are served through the same generic web
+renderer at `/icecast/20262027/NYR/prospect-arrivals` and
+`/icecast/20262027/SEA/prospect-arrivals`. Their sealed JSON is available at
+`/api/v1/cards/prospect-arrival/20262027/{team}`. The TUI command bar opens the
+identical documents with `prospect-arrival-card NYR` or
+`prospect-arrival-card SEA`; `p` switches between The Depth Chart and The
+Insider, `t` switches teams, and `c` compares both cards.
+
 IceCast loads the complete official schedule and produces one explained
 baseline probability for every league game. For 2026–27 it enforces 1,344
 unique games, 84 per team, and 42 home/42 road. The current baseline combines
