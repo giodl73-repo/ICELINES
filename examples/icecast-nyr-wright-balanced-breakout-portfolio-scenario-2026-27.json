@@ -1,0 +1,13 @@
+{
+  "name": "NYR Wright trade with a probability-weighted internal breakout portfolio",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {"id":"nyr-wright-balanced-trade","kind":"trade","team":"NYR","player":"Shane Wright","effective_date":"2026-09-29","strength_delta":-1.6,"occurrence_probability":1.0,"correlation_key":"nyr-sea-wright-schneider-balanced","label":"NYR acquires Wright for Schneider at the sealed no-breakout lineup delta"},
+    {"id":"sea-schneider-balanced-trade","kind":"trade","team":"SEA","player":"Braden Schneider","effective_date":"2026-09-29","strength_delta":0.5,"occurrence_probability":1.0,"correlation_key":"nyr-sea-wright-schneider-balanced","label":"SEA acquires Schneider for Wright at the sealed lineup delta"},
+    {"id":"nyr-wright-moderate-hit","kind":"form","team":"NYR","player":"Shane Wright","effective_date":"2026-09-29","strength_delta":4.7,"occurrence_probability":0.40,"correlation_key":null,"label":"Wright reaches the moderate 30.0 score branch (+4.7 over sealed)"},
+    {"id":"nyr-perreault-breakout-hit","kind":"form","team":"NYR","player":"Gabe Perreault","effective_date":"2026-09-29","strength_delta":4.5,"occurrence_probability":0.35,"correlation_key":null,"label":"Perreault supplies a +4.5 confidence-weighted lineup increment"},
+    {"id":"nyr-laba-breakout-hit","kind":"form","team":"NYR","player":"Noah Laba","effective_date":"2026-09-29","strength_delta":3.5,"occurrence_probability":0.30,"correlation_key":null,"label":"Laba supplies a +3.5 confidence-weighted lineup increment"},
+    {"id":"nyr-lafreniere-rebound-hit","kind":"form","team":"NYR","player":"Alexis Lafreniere","effective_date":"2026-09-29","strength_delta":3.0,"occurrence_probability":0.25,"correlation_key":null,"label":"Lafreniere supplies a +3.0 rebound increment"},
+    {"id":"nyr-smits-defense-hit","kind":"form","team":"NYR","player":"Alberts Smits","effective_date":"2026-09-29","strength_delta":2.2,"occurrence_probability":0.20,"correlation_key":null,"label":"Smits earns enough NHL deployment to create a net +2.2 defense increment after displacement"}
+  ]
+}

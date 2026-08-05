@@ -1,0 +1,1481 @@
+{
+  "schema": "prospect_arrival_league_calibration.v1",
+  "source_schema": "prospect_conversion_board.v2",
+  "forecast_season": 20262027,
+  "organizations_requested": 32,
+  "organizations_represented": 32,
+  "target_skaters": 167,
+  "calibrated_skaters": 8,
+  "excluded_skaters": 159,
+  "teams": [
+    {
+      "organization": "ANA",
+      "target_skaters": 9,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 9,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482118,
+          "player": "Sam Colangelo",
+          "reason": "prospect arrival target already has 44 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482731,
+          "player": "Tyson Hinds",
+          "reason": "prospect arrival target already has 6 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482745,
+          "player": "Mason McTavish",
+          "reason": "prospect arrival target already has 304 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482803,
+          "player": "Olen Zellweger",
+          "reason": "prospect arrival target already has 164 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483444,
+          "player": "Nathan Gaucher",
+          "reason": "prospect arrival target already has 3 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483445,
+          "player": "Cutter Gauthier",
+          "reason": "prospect arrival target already has 159 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483490,
+          "player": "Pavel Mintyukov",
+          "reason": "prospect arrival target already has 204 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484153,
+          "player": "Leo Carlsson",
+          "reason": "prospect arrival target already has 201 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484762,
+          "player": "Beckett Sennecke",
+          "reason": "prospect arrival target already has 82 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "BOS",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8483489,
+          "player": "Fraser Minten",
+          "reason": "prospect arrival target already has 107 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8485395,
+          "player": "James Hagens",
+          "reason": "prospect arrival target already has 2 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "BUF",
+      "target_skaters": 3,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 3,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8483468,
+          "player": "Jiri Kulich",
+          "reason": "prospect arrival target already has 75 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483500,
+          "player": "Noah Ostlund",
+          "reason": "prospect arrival target already has 68 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484145,
+          "player": "Zach Benson",
+          "reason": "prospect arrival target already has 211 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "CAR",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482702,
+          "player": "Logan Stankoven",
+          "reason": "prospect arrival target already has 183 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482809,
+          "player": "Jackson Blake",
+          "reason": "prospect arrival target already has 162 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484203,
+          "player": "Bradly Nadeau",
+          "reason": "prospect arrival target already has 15 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484428,
+          "player": "Charles Alexis Legault",
+          "reason": "prospect arrival target already has 12 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "CBJ",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482705,
+          "player": "Cole Sillinger",
+          "reason": "prospect arrival target already has 367 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483432,
+          "player": "Luca Del Bel Belluz",
+          "reason": "prospect arrival target already has 30 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483485,
+          "player": "Denton Mateychuk",
+          "reason": "prospect arrival target already has 120 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484166,
+          "player": "Adam Fantilli",
+          "reason": "prospect arrival target already has 213 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "CGY",
+      "target_skaters": 8,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 8,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482209,
+          "player": "Rory Kerins",
+          "reason": "prospect arrival target already has 9 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483709,
+          "player": "Abram Wiebe",
+          "reason": "prospect arrival target already has 4 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484150,
+          "player": "Hunter Brzustewicz",
+          "reason": "prospect arrival target already has 35 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484180,
+          "player": "Samuel Honzek",
+          "reason": "prospect arrival target already has 23 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484234,
+          "player": "Aydar Suniev",
+          "reason": "prospect arrival target already has 7 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484768,
+          "player": "Zayne Parekh",
+          "reason": "prospect arrival target already has 38 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484860,
+          "player": "Matvei Gridin",
+          "reason": "prospect arrival target already has 37 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8486056,
+          "player": "Tyson Gross",
+          "reason": "prospect arrival target already has 6 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "CHI",
+      "target_skaters": 11,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 11,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482807,
+          "player": "Ethan Del Mastro",
+          "reason": "prospect arrival target already has 45 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483450,
+          "player": "Ryan Greene",
+          "reason": "prospect arrival target already has 83 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483466,
+          "player": "Kevin Korchinski",
+          "reason": "prospect arrival target already has 105 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483493,
+          "player": "Frank Nazar",
+          "reason": "prospect arrival target already has 122 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483506,
+          "player": "Sam Rinzel",
+          "reason": "prospect arrival target already has 63 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484144,
+          "player": "Connor Bedard",
+          "reason": "prospect arrival target already has 219 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484185,
+          "player": "Nick Lardis",
+          "reason": "prospect arrival target already has 41 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484197,
+          "player": "Oliver Moore",
+          "reason": "prospect arrival target already has 60 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484783,
+          "player": "Artyom Levshunov",
+          "reason": "prospect arrival target already has 86 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484793,
+          "player": "Sacha Boisvert",
+          "reason": "prospect arrival target already has 7 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8485391,
+          "player": "Anton Frondell",
+          "reason": "prospect arrival target already has 12 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "COL",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8483930,
+          "player": "Ivan Ivan",
+          "reason": "prospect arrival target already has 49 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484149,
+          "player": "Gavin Brindley",
+          "reason": "prospect arrival target already has 57 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "DAL",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482740,
+          "player": "Wyatt Johnston",
+          "reason": "prospect arrival target already has 328 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483425,
+          "player": "Lian Bichsel",
+          "reason": "prospect arrival target already has 88 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "DET",
+      "target_skaters": 7,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 7,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482762,
+          "player": "Simon Edvinsson",
+          "reason": "prospect arrival target already has 175 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482802,
+          "player": "Carter Mazur",
+          "reason": "prospect arrival target already has 9 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483464,
+          "player": "Marco Kasper",
+          "reason": "prospect arrival target already has 159 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484160,
+          "player": "Nate Danielson",
+          "reason": "prospect arrival target already has 28 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484223,
+          "player": "Axel Sandin-Pellikka",
+          "reason": "prospect arrival target already has 68 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484471,
+          "player": "Emmitt Finnie",
+          "reason": "prospect arrival target already has 82 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484794,
+          "player": "Michael Brandsegg-Nygård",
+          "reason": "prospect arrival target already has 14 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "EDM",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482703,
+          "player": "Colton Dach",
+          "reason": "prospect arrival target already has 86 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483455,
+          "player": "Isaac Howard",
+          "reason": "prospect arrival target already has 29 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483512,
+          "player": "Matt Savoie",
+          "reason": "prospect arrival target already has 87 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484509,
+          "player": "Josh Samanski",
+          "reason": "prospect arrival target already has 24 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "FLA",
+      "target_skaters": 1,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 1,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482107,
+          "player": "Mike Benning",
+          "reason": "prospect arrival target already has 18 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "LAK",
+      "target_skaters": 3,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 3,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482730,
+          "player": "Brandt Clarke",
+          "reason": "prospect arrival target already has 185 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483699,
+          "player": "Angus Booth",
+          "reason": "prospect arrival target already has 1 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483756,
+          "player": "Jared Wright",
+          "reason": "prospect arrival target already has 23 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "MIN",
+      "target_skaters": 5,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 5,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482781,
+          "player": "Carson Lambos",
+          "reason": "prospect arrival target already has 1 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483452,
+          "player": "Hunter Haight",
+          "reason": "prospect arrival target already has 9 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483525,
+          "player": "Danila Yurov",
+          "reason": "prospect arrival target already has 73 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483766,
+          "player": "David Spacek",
+          "reason": "prospect arrival target already has 2 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8486166,
+          "player": "Viking Gustafsson Nyberg",
+          "reason": "prospect arrival target already has 2 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "MTL",
+      "target_skaters": 9,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 9,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482737,
+          "player": "Zachary Bolduc",
+          "reason": "prospect arrival target already has 175 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482775,
+          "player": "Oliver Kapanen",
+          "reason": "prospect arrival target already has 100 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483424,
+          "player": "Owen Beck",
+          "reason": "prospect arrival target already has 28 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483457,
+          "player": "Lane Hutson",
+          "reason": "prospect arrival target already has 166 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483515,
+          "player": "Juraj Slafkovský",
+          "reason": "prospect arrival target already has 282 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483686,
+          "player": "Adam Engstrom",
+          "reason": "prospect arrival target already has 15 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483728,
+          "player": "Jared Davidson",
+          "reason": "prospect arrival target already has 10 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484220,
+          "player": "David Reinbacher",
+          "reason": "prospect arrival target already has 2 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484984,
+          "player": "Ivan Demidov",
+          "reason": "prospect arrival target already has 84 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "NJD",
+      "target_skaters": 3,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 3,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482684,
+          "player": "Luke Hughes",
+          "reason": "prospect arrival target already has 223 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483495,
+          "player": "Simon Nemec",
+          "reason": "prospect arrival target already has 155 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484177,
+          "player": "Lenni Hameenaho",
+          "reason": "prospect arrival target already has 33 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "NSH",
+      "target_skaters": 9,
+      "calibrated_skaters": 1,
+      "excluded_skaters": 8,
+      "calibrations": [
+        {
+          "schema": "prospect_arrival_calibration.v1",
+          "source_schema": "prospect_conversion_board.v2",
+          "source_baseline_seasons": [
+            20222023
+          ],
+          "source_through_season": 20252026,
+          "event_id": "nsh-8484494-prospect-arrival",
+          "player_id": 8484494,
+          "player": "Aiden Fink",
+          "position_group": "F",
+          "observed_signal_score": 43.23,
+          "forecast_season": 20262027,
+          "candidate_players": 316,
+          "neighbor_players": 50,
+          "neighbor_signal_min": 37.11,
+          "neighbor_signal_max": 50.0,
+          "mean_signal_distance": 3.0022,
+          "neighbor_arrivals": 36,
+          "neighbor_established_players": 16,
+          "empirical_arrival_rate": 0.72,
+          "position_arrival_rate": 0.449367,
+          "calibrated_arrival_probability": 0.642676,
+          "empirical_established_rate": 0.32,
+          "position_established_rate": 0.174051,
+          "calibrated_established_probability": 0.2783,
+          "established_given_arrival_rate": 0.444444,
+          "source_horizon_seasons": 3,
+          "forecast_horizon_seasons": 1,
+          "horizon_adjusted_arrival_probability": 0.290389,
+          "horizon_adjusted_established_probability": 0.103014,
+          "config": {
+            "neighbor_count": 50,
+            "minimum_sample_size": 30,
+            "prior_sample_size": 20.0,
+            "maximum_mean_signal_distance": 15.0,
+            "forecast_horizon_seasons": 1
+          },
+          "disclosures": [
+            "Arrival means at least one post-baseline regular-season NHL game inside the frozen conversion horizon; it does not mean the player establishes an NHL role.",
+            "The estimate uses nearest same-position historical prospect signals and shrinks their empirical arrival rate toward the complete same-position cohort rate.",
+            "Established-role probability is calibrated independently by shrinking the neighbors' unconditional establishment rate toward the complete same-position establishment rate; established-given-arrival remains descriptive.",
+            "Cumulative historical probabilities span 3 seasons and are projected to the 1-season scenario horizon with a disclosed constant-hazard transformation.",
+            "The target is rejected if it appears in the historical outcome cohort, the board reaches the forecast season, or sample and signal-distance gates fail.",
+            "This historical base-rate estimate does not incorporate current camp performance, injuries, contract status, waivers, organizational depth, or manager behavior."
+          ]
+        }
+      ],
+      "exclusions": [
+        {
+          "player_id": 8482715,
+          "player": "Ryan Ufko",
+          "reason": "prospect arrival target already has 19 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482742,
+          "player": "Zachary L'Heureux",
+          "reason": "prospect arrival target already has 87 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482768,
+          "player": "Fedor Svechkov",
+          "reason": "prospect arrival target already has 122 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483465,
+          "player": "Joakim Kemell",
+          "reason": "prospect arrival target already has 18 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483513,
+          "player": "Reid Schaefer",
+          "reason": "prospect arrival target already has 47 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483696,
+          "player": "Cole O'Hara",
+          "reason": "prospect arrival target already has 1 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484241,
+          "player": "Matthew Wood",
+          "reason": "prospect arrival target already has 77 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8485405,
+          "player": "Brady Martin",
+          "reason": "prospect arrival target already has 3 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "NYI",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8484221,
+          "player": "Calum Ritchie",
+          "reason": "prospect arrival target already has 72 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8485366,
+          "player": "Matthew Schaefer",
+          "reason": "prospect arrival target already has 82 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "NYR",
+      "target_skaters": 6,
+      "calibrated_skaters": 2,
+      "excluded_skaters": 4,
+      "calibrations": [
+        {
+          "schema": "prospect_arrival_calibration.v1",
+          "source_schema": "prospect_conversion_board.v2",
+          "source_baseline_seasons": [
+            20222023
+          ],
+          "source_through_season": 20252026,
+          "event_id": "nyr-8484786-prospect-arrival",
+          "player_id": 8484786,
+          "player": "Cole Beaudoin",
+          "position_group": "F",
+          "observed_signal_score": 75.0,
+          "forecast_season": 20262027,
+          "candidate_players": 316,
+          "neighbor_players": 50,
+          "neighbor_signal_min": 46.37,
+          "neighbor_signal_max": 75.0,
+          "mean_signal_distance": 14.0568,
+          "neighbor_arrivals": 36,
+          "neighbor_established_players": 8,
+          "empirical_arrival_rate": 0.72,
+          "position_arrival_rate": 0.449367,
+          "calibrated_arrival_probability": 0.642676,
+          "empirical_established_rate": 0.16,
+          "position_established_rate": 0.174051,
+          "calibrated_established_probability": 0.164014,
+          "established_given_arrival_rate": 0.222222,
+          "source_horizon_seasons": 3,
+          "forecast_horizon_seasons": 1,
+          "horizon_adjusted_arrival_probability": 0.290389,
+          "horizon_adjusted_established_probability": 0.057967,
+          "config": {
+            "neighbor_count": 50,
+            "minimum_sample_size": 30,
+            "prior_sample_size": 20.0,
+            "maximum_mean_signal_distance": 15.0,
+            "forecast_horizon_seasons": 1
+          },
+          "disclosures": [
+            "Arrival means at least one post-baseline regular-season NHL game inside the frozen conversion horizon; it does not mean the player establishes an NHL role.",
+            "The estimate uses nearest same-position historical prospect signals and shrinks their empirical arrival rate toward the complete same-position cohort rate.",
+            "Established-role probability is calibrated independently by shrinking the neighbors' unconditional establishment rate toward the complete same-position establishment rate; established-given-arrival remains descriptive.",
+            "Cumulative historical probabilities span 3 seasons and are projected to the 1-season scenario horizon with a disclosed constant-hazard transformation.",
+            "The target is rejected if it appears in the historical outcome cohort, the board reaches the forecast season, or sample and signal-distance gates fail.",
+            "This historical base-rate estimate does not incorporate current camp performance, injuries, contract status, waivers, organizational depth, or manager behavior."
+          ]
+        },
+        {
+          "schema": "prospect_arrival_calibration.v1",
+          "source_schema": "prospect_conversion_board.v2",
+          "source_baseline_seasons": [
+            20222023
+          ],
+          "source_through_season": 20252026,
+          "event_id": "nyr-8484802-prospect-arrival",
+          "player_id": 8484802,
+          "player": "Liam Greentree",
+          "position_group": "F",
+          "observed_signal_score": 50.0,
+          "forecast_season": 20262027,
+          "candidate_players": 316,
+          "neighbor_players": 50,
+          "neighbor_signal_min": 41.37,
+          "neighbor_signal_max": 58.75,
+          "mean_signal_distance": 4.8676,
+          "neighbor_arrivals": 34,
+          "neighbor_established_players": 14,
+          "empirical_arrival_rate": 0.68,
+          "position_arrival_rate": 0.449367,
+          "calibrated_arrival_probability": 0.614105,
+          "empirical_established_rate": 0.28,
+          "position_established_rate": 0.174051,
+          "calibrated_established_probability": 0.249729,
+          "established_given_arrival_rate": 0.411765,
+          "source_horizon_seasons": 3,
+          "forecast_horizon_seasons": 1,
+          "horizon_adjusted_arrival_probability": 0.271958,
+          "horizon_adjusted_established_probability": 0.09133,
+          "config": {
+            "neighbor_count": 50,
+            "minimum_sample_size": 30,
+            "prior_sample_size": 20.0,
+            "maximum_mean_signal_distance": 15.0,
+            "forecast_horizon_seasons": 1
+          },
+          "disclosures": [
+            "Arrival means at least one post-baseline regular-season NHL game inside the frozen conversion horizon; it does not mean the player establishes an NHL role.",
+            "The estimate uses nearest same-position historical prospect signals and shrinks their empirical arrival rate toward the complete same-position cohort rate.",
+            "Established-role probability is calibrated independently by shrinking the neighbors' unconditional establishment rate toward the complete same-position establishment rate; established-given-arrival remains descriptive.",
+            "Cumulative historical probabilities span 3 seasons and are projected to the 1-season scenario horizon with a disclosed constant-hazard transformation.",
+            "The target is rejected if it appears in the historical outcome cohort, the board reaches the forecast season, or sample and signal-distance gates fail.",
+            "This historical base-rate estimate does not incorporate current camp performance, injuries, contract status, waivers, organizational depth, or manager behavior."
+          ]
+        }
+      ],
+      "exclusions": [
+        {
+          "player_id": 8482861,
+          "player": "Vincent Iorio",
+          "reason": "prospect arrival target already has 36 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482877,
+          "player": "Jaroslav Chmelar",
+          "reason": "prospect arrival target already has 28 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483669,
+          "player": "Adam Sykora",
+          "reason": "prospect arrival target already has 11 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484210,
+          "player": "Gabe Perreault",
+          "reason": "prospect arrival target already has 54 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "OTT",
+      "target_skaters": 3,
+      "calibrated_skaters": 2,
+      "excluded_skaters": 1,
+      "calibrations": [
+        {
+          "schema": "prospect_arrival_calibration.v1",
+          "source_schema": "prospect_conversion_board.v2",
+          "source_baseline_seasons": [
+            20222023
+          ],
+          "source_through_season": 20252026,
+          "event_id": "ott-8482674-prospect-arrival",
+          "player_id": 8482674,
+          "player": "Tyler Boucher",
+          "position_group": "F",
+          "observed_signal_score": 39.38,
+          "forecast_season": 20262027,
+          "candidate_players": 316,
+          "neighbor_players": 50,
+          "neighbor_signal_min": 33.8,
+          "neighbor_signal_max": 45.52,
+          "mean_signal_distance": 3.4428,
+          "neighbor_arrivals": 30,
+          "neighbor_established_players": 13,
+          "empirical_arrival_rate": 0.6,
+          "position_arrival_rate": 0.449367,
+          "calibrated_arrival_probability": 0.556962,
+          "empirical_established_rate": 0.26,
+          "position_established_rate": 0.174051,
+          "calibrated_established_probability": 0.235443,
+          "established_given_arrival_rate": 0.433333,
+          "source_horizon_seasons": 3,
+          "forecast_horizon_seasons": 1,
+          "horizon_adjusted_arrival_probability": 0.237663,
+          "horizon_adjusted_established_probability": 0.085599,
+          "config": {
+            "neighbor_count": 50,
+            "minimum_sample_size": 30,
+            "prior_sample_size": 20.0,
+            "maximum_mean_signal_distance": 15.0,
+            "forecast_horizon_seasons": 1
+          },
+          "disclosures": [
+            "Arrival means at least one post-baseline regular-season NHL game inside the frozen conversion horizon; it does not mean the player establishes an NHL role.",
+            "The estimate uses nearest same-position historical prospect signals and shrinks their empirical arrival rate toward the complete same-position cohort rate.",
+            "Established-role probability is calibrated independently by shrinking the neighbors' unconditional establishment rate toward the complete same-position establishment rate; established-given-arrival remains descriptive.",
+            "Cumulative historical probabilities span 3 seasons and are projected to the 1-season scenario horizon with a disclosed constant-hazard transformation.",
+            "The target is rejected if it appears in the historical outcome cohort, the board reaches the forecast season, or sample and signal-distance gates fail.",
+            "This historical base-rate estimate does not incorporate current camp performance, injuries, contract status, waivers, organizational depth, or manager behavior."
+          ]
+        },
+        {
+          "schema": "prospect_arrival_calibration.v1",
+          "source_schema": "prospect_conversion_board.v2",
+          "source_baseline_seasons": [
+            20222023
+          ],
+          "source_through_season": 20252026,
+          "event_id": "ott-8483673-prospect-arrival",
+          "player_id": 8483673,
+          "player": "Oskar Pettersson",
+          "position_group": "F",
+          "observed_signal_score": 8.04,
+          "forecast_season": 20262027,
+          "candidate_players": 316,
+          "neighbor_players": 50,
+          "neighbor_signal_min": 3.12,
+          "neighbor_signal_max": 12.53,
+          "mean_signal_distance": 2.413,
+          "neighbor_arrivals": 20,
+          "neighbor_established_players": 12,
+          "empirical_arrival_rate": 0.4,
+          "position_arrival_rate": 0.449367,
+          "calibrated_arrival_probability": 0.414105,
+          "empirical_established_rate": 0.24,
+          "position_established_rate": 0.174051,
+          "calibrated_established_probability": 0.221157,
+          "established_given_arrival_rate": 0.6,
+          "source_horizon_seasons": 3,
+          "forecast_horizon_seasons": 1,
+          "horizon_adjusted_arrival_probability": 0.163229,
+          "horizon_adjusted_established_probability": 0.079939,
+          "config": {
+            "neighbor_count": 50,
+            "minimum_sample_size": 30,
+            "prior_sample_size": 20.0,
+            "maximum_mean_signal_distance": 15.0,
+            "forecast_horizon_seasons": 1
+          },
+          "disclosures": [
+            "Arrival means at least one post-baseline regular-season NHL game inside the frozen conversion horizon; it does not mean the player establishes an NHL role.",
+            "The estimate uses nearest same-position historical prospect signals and shrinks their empirical arrival rate toward the complete same-position cohort rate.",
+            "Established-role probability is calibrated independently by shrinking the neighbors' unconditional establishment rate toward the complete same-position establishment rate; established-given-arrival remains descriptive.",
+            "Cumulative historical probabilities span 3 seasons and are projected to the 1-season scenario horizon with a disclosed constant-hazard transformation.",
+            "The target is rejected if it appears in the historical outcome cohort, the board reaches the forecast season, or sample and signal-distance gates fail.",
+            "This historical base-rate estimate does not incorporate current camp performance, injuries, contract status, waivers, organizational depth, or manager behavior."
+          ]
+        }
+      ],
+      "exclusions": [
+        {
+          "player_id": 8484759,
+          "player": "Carter Yakemchuk",
+          "reason": "prospect arrival target already has 4 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "PHI",
+      "target_skaters": 10,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 10,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482159,
+          "player": "Tyson Foerster",
+          "reason": "prospect arrival target already has 195 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482169,
+          "player": "Helge Grans",
+          "reason": "prospect arrival target already has 6 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483460,
+          "player": "David Jiricek",
+          "reason": "prospect arrival target already has 85 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483731,
+          "player": "Alex Bump",
+          "reason": "prospect arrival target already has 17 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483733,
+          "player": "Nikita Grebenkin",
+          "reason": "prospect arrival target already has 62 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483760,
+          "player": "Hunter McDonald",
+          "reason": "prospect arrival target already has 1 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484142,
+          "player": "Denver Barkey",
+          "reason": "prospect arrival target already has 43 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484148,
+          "player": "Oliver Bonk",
+          "reason": "prospect arrival target already has 1 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484387,
+          "player": "Matvei Michkov",
+          "reason": "prospect arrival target already has 161 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8485406,
+          "player": "Porter Martone",
+          "reason": "prospect arrival target already has 9 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "PIT",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482758,
+          "player": "Ville Koivunen",
+          "reason": "prospect arrival target already has 47 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483487,
+          "player": "Rutger McGroarty",
+          "reason": "prospect arrival target already has 32 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8485414,
+          "player": "Ben Kindel",
+          "reason": "prospect arrival target already has 77 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8486169,
+          "player": "Jake Livanavage",
+          "reason": "prospect arrival target already has 1 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "SEA",
+      "target_skaters": 13,
+      "calibrated_skaters": 3,
+      "excluded_skaters": 10,
+      "calibrations": [
+        {
+          "schema": "prospect_arrival_calibration.v1",
+          "source_schema": "prospect_conversion_board.v2",
+          "source_baseline_seasons": [
+            20222023
+          ],
+          "source_through_season": 20252026,
+          "event_id": "sea-8483442-prospect-arrival",
+          "player_id": 8483442,
+          "player": "Jagger Firkus",
+          "position_group": "F",
+          "observed_signal_score": 75.0,
+          "forecast_season": 20262027,
+          "candidate_players": 316,
+          "neighbor_players": 50,
+          "neighbor_signal_min": 46.37,
+          "neighbor_signal_max": 75.0,
+          "mean_signal_distance": 14.0568,
+          "neighbor_arrivals": 36,
+          "neighbor_established_players": 8,
+          "empirical_arrival_rate": 0.72,
+          "position_arrival_rate": 0.449367,
+          "calibrated_arrival_probability": 0.642676,
+          "empirical_established_rate": 0.16,
+          "position_established_rate": 0.174051,
+          "calibrated_established_probability": 0.164014,
+          "established_given_arrival_rate": 0.222222,
+          "source_horizon_seasons": 3,
+          "forecast_horizon_seasons": 1,
+          "horizon_adjusted_arrival_probability": 0.290389,
+          "horizon_adjusted_established_probability": 0.057967,
+          "config": {
+            "neighbor_count": 50,
+            "minimum_sample_size": 30,
+            "prior_sample_size": 20.0,
+            "maximum_mean_signal_distance": 15.0,
+            "forecast_horizon_seasons": 1
+          },
+          "disclosures": [
+            "Arrival means at least one post-baseline regular-season NHL game inside the frozen conversion horizon; it does not mean the player establishes an NHL role.",
+            "The estimate uses nearest same-position historical prospect signals and shrinks their empirical arrival rate toward the complete same-position cohort rate.",
+            "Established-role probability is calibrated independently by shrinking the neighbors' unconditional establishment rate toward the complete same-position establishment rate; established-given-arrival remains descriptive.",
+            "Cumulative historical probabilities span 3 seasons and are projected to the 1-season scenario horizon with a disclosed constant-hazard transformation.",
+            "The target is rejected if it appears in the historical outcome cohort, the board reaches the forecast season, or sample and signal-distance gates fail.",
+            "This historical base-rate estimate does not incorporate current camp performance, injuries, contract status, waivers, organizational depth, or manager behavior."
+          ]
+        },
+        {
+          "schema": "prospect_arrival_calibration.v1",
+          "source_schema": "prospect_conversion_board.v2",
+          "source_baseline_seasons": [
+            20222023
+          ],
+          "source_through_season": 20252026,
+          "event_id": "sea-8483494-prospect-arrival",
+          "player_id": 8483494,
+          "player": "Ty Nelson",
+          "position_group": "D",
+          "observed_signal_score": 50.0,
+          "forecast_season": 20262027,
+          "candidate_players": 164,
+          "neighbor_players": 50,
+          "neighbor_signal_min": 28.96,
+          "neighbor_signal_max": 70.55,
+          "mean_signal_distance": 11.9824,
+          "neighbor_arrivals": 33,
+          "neighbor_established_players": 14,
+          "empirical_arrival_rate": 0.66,
+          "position_arrival_rate": 0.457317,
+          "calibrated_arrival_probability": 0.602091,
+          "empirical_established_rate": 0.28,
+          "position_established_rate": 0.189024,
+          "calibrated_established_probability": 0.254007,
+          "established_given_arrival_rate": 0.424242,
+          "source_horizon_seasons": 3,
+          "forecast_horizon_seasons": 1,
+          "horizon_adjusted_arrival_probability": 0.26448,
+          "horizon_adjusted_established_probability": 0.093061,
+          "config": {
+            "neighbor_count": 50,
+            "minimum_sample_size": 30,
+            "prior_sample_size": 20.0,
+            "maximum_mean_signal_distance": 15.0,
+            "forecast_horizon_seasons": 1
+          },
+          "disclosures": [
+            "Arrival means at least one post-baseline regular-season NHL game inside the frozen conversion horizon; it does not mean the player establishes an NHL role.",
+            "The estimate uses nearest same-position historical prospect signals and shrinks their empirical arrival rate toward the complete same-position cohort rate.",
+            "Established-role probability is calibrated independently by shrinking the neighbors' unconditional establishment rate toward the complete same-position establishment rate; established-given-arrival remains descriptive.",
+            "Cumulative historical probabilities span 3 seasons and are projected to the 1-season scenario horizon with a disclosed constant-hazard transformation.",
+            "The target is rejected if it appears in the historical outcome cohort, the board reaches the forecast season, or sample and signal-distance gates fail.",
+            "This historical base-rate estimate does not incorporate current camp performance, injuries, contract status, waivers, organizational depth, or manager behavior."
+          ]
+        },
+        {
+          "schema": "prospect_arrival_calibration.v1",
+          "source_schema": "prospect_conversion_board.v2",
+          "source_baseline_seasons": [
+            20222023
+          ],
+          "source_through_season": 20252026,
+          "event_id": "sea-8486009-prospect-arrival",
+          "player_id": 8486009,
+          "player": "Ryden Evers",
+          "position_group": "F",
+          "observed_signal_score": 50.0,
+          "forecast_season": 20262027,
+          "candidate_players": 316,
+          "neighbor_players": 50,
+          "neighbor_signal_min": 41.37,
+          "neighbor_signal_max": 58.75,
+          "mean_signal_distance": 4.8676,
+          "neighbor_arrivals": 34,
+          "neighbor_established_players": 14,
+          "empirical_arrival_rate": 0.68,
+          "position_arrival_rate": 0.449367,
+          "calibrated_arrival_probability": 0.614105,
+          "empirical_established_rate": 0.28,
+          "position_established_rate": 0.174051,
+          "calibrated_established_probability": 0.249729,
+          "established_given_arrival_rate": 0.411765,
+          "source_horizon_seasons": 3,
+          "forecast_horizon_seasons": 1,
+          "horizon_adjusted_arrival_probability": 0.271958,
+          "horizon_adjusted_established_probability": 0.09133,
+          "config": {
+            "neighbor_count": 50,
+            "minimum_sample_size": 30,
+            "prior_sample_size": 20.0,
+            "maximum_mean_signal_distance": 15.0,
+            "forecast_horizon_seasons": 1
+          },
+          "disclosures": [
+            "Arrival means at least one post-baseline regular-season NHL game inside the frozen conversion horizon; it does not mean the player establishes an NHL role.",
+            "The estimate uses nearest same-position historical prospect signals and shrinks their empirical arrival rate toward the complete same-position cohort rate.",
+            "Established-role probability is calibrated independently by shrinking the neighbors' unconditional establishment rate toward the complete same-position establishment rate; established-given-arrival remains descriptive.",
+            "Cumulative historical probabilities span 3 seasons and are projected to the 1-season scenario horizon with a disclosed constant-hazard transformation.",
+            "The target is rejected if it appears in the historical outcome cohort, the board reaches the forecast season, or sample and signal-distance gates fail.",
+            "This historical base-rate estimate does not incorporate current camp performance, injuries, contract status, waivers, organizational depth, or manager behavior."
+          ]
+        }
+      ],
+      "exclusions": [
+        {
+          "player_id": 8482751,
+          "player": "Ryan Winterton",
+          "reason": "prospect arrival target already has 89 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482858,
+          "player": "Ryker Evans",
+          "reason": "prospect arrival target already has 176 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482866,
+          "player": "Ville Ottavainen",
+          "reason": "prospect arrival target already has 1 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482874,
+          "player": "Jacob Melanson",
+          "reason": "prospect arrival target already has 37 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483012,
+          "player": "Logan Morrison",
+          "reason": "prospect arrival target already has 4 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483497,
+          "player": "Jani Nyman",
+          "reason": "prospect arrival target already has 40 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483524,
+          "player": "Shane Wright",
+          "reason": "prospect arrival target already has 169 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483684,
+          "player": "Tyson Jugnauth",
+          "reason": "prospect arrival calibration mean signal distance 31.8278 exceeds 15.0000"
+        },
+        {
+          "player_id": 8484168,
+          "player": "Oscar Fisker Molgaard",
+          "reason": "prospect arrival target already has 13 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8486087,
+          "player": "Chase Reid",
+          "reason": "prospect arrival calibration mean signal distance 22.8110 exceeds 15.0000"
+        }
+      ]
+    },
+    {
+      "organization": "SJS",
+      "target_skaters": 8,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 8,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482206,
+          "player": "Ethan Cardwell",
+          "reason": "prospect arrival target already has 13 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482859,
+          "player": "Zack Ostapchuk",
+          "reason": "prospect arrival target already has 122 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484152,
+          "player": "Luca Cagnoni",
+          "reason": "prospect arrival target already has 9 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484227,
+          "player": "Will Smith",
+          "reason": "prospect arrival target already has 143 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484801,
+          "player": "Macklin Celebrini",
+          "reason": "prospect arrival target already has 152 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484806,
+          "player": "Sam Dickinson",
+          "reason": "prospect arrival target already has 72 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484994,
+          "player": "Igor Chernyshov",
+          "reason": "prospect arrival target already has 28 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8485402,
+          "player": "Michael Misa",
+          "reason": "prospect arrival target already has 45 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "STL",
+      "target_skaters": 6,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 6,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482733,
+          "player": "Logan Mailloux",
+          "reason": "prospect arrival target already has 75 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483463,
+          "player": "Aleksanteri Kaskimaki",
+          "reason": "prospect arrival target already has 5 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483516,
+          "player": "Jimmy Snuggerud",
+          "reason": "prospect arrival target already has 77 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484164,
+          "player": "Dalibor Dvorsky",
+          "reason": "prospect arrival target already has 73 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484188,
+          "player": "Theo Lindstein",
+          "reason": "prospect arrival target already has 17 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484230,
+          "player": "Otto Stenberg",
+          "reason": "prospect arrival target already has 32 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "TBL",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482663,
+          "player": "Dylan Duke",
+          "reason": "prospect arrival target already has 3 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483447,
+          "player": "Conor Geekie",
+          "reason": "prospect arrival target already has 66 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "TOR",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482525,
+          "player": "Ryan Tverberg",
+          "reason": "prospect arrival target already has 2 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484158,
+          "player": "Easton Cowan",
+          "reason": "prospect arrival target already has 66 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484901,
+          "player": "Jacob Quillan",
+          "reason": "prospect arrival target already has 24 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8485467,
+          "player": "Luke Haymes",
+          "reason": "prospect arrival target already has 4 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "UTA",
+      "target_skaters": 6,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 6,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482699,
+          "player": "Dylan Guenther",
+          "reason": "prospect arrival target already has 227 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483431,
+          "player": "Logan Cooley",
+          "reason": "prospect arrival target already has 211 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483472,
+          "player": "Maveric Lamoureux",
+          "reason": "prospect arrival target already has 20 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483763,
+          "player": "Maksymilian Szuber",
+          "reason": "prospect arrival target already has 1 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484386,
+          "player": "Dmitri Simashev",
+          "reason": "prospect arrival target already has 28 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484388,
+          "player": "Daniil But",
+          "reason": "prospect arrival target already has 29 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "VAN",
+      "target_skaters": 7,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 7,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8483467,
+          "player": "Kirill Kudryavtsev",
+          "reason": "prospect arrival target already has 5 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483476,
+          "player": "Jonathan Lekkerimäki",
+          "reason": "prospect arrival target already has 37 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483499,
+          "player": "Liam Ohgren",
+          "reason": "prospect arrival target already has 97 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483678,
+          "player": "Elias Pettersson",
+          "reason": "prospect arrival target already has 98 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483768,
+          "player": "Victor Mancini",
+          "reason": "prospect arrival target already has 55 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484240,
+          "player": "Tom Willander",
+          "reason": "prospect arrival target already has 70 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484798,
+          "player": "Zeev Buium",
+          "reason": "prospect arrival target already has 76 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "VGK",
+      "target_skaters": 1,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 1,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8483890,
+          "player": "Braeden Bowman",
+          "reason": "prospect arrival target already has 54 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "WPG",
+      "target_skaters": 5,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 5,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8482765,
+          "player": "Isak Rosen",
+          "reason": "prospect arrival target already has 52 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8482787,
+          "player": "Nikita Chibrikov",
+          "reason": "prospect arrival target already has 16 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483471,
+          "player": "Brad Lambert",
+          "reason": "prospect arrival target already has 31 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483510,
+          "player": "Elias Salomonsson",
+          "reason": "prospect arrival target already has 32 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8483526,
+          "player": "Danil Zhilkin",
+          "reason": "prospect arrival target already has 6 NHL games; use established-role forecasting instead"
+        }
+      ]
+    },
+    {
+      "organization": "WSH",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibrations": [],
+      "exclusions": [
+        {
+          "player_id": 8483491,
+          "player": "Ivan Miroshnichenko",
+          "reason": "prospect arrival target already has 52 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484186,
+          "player": "Ryan Leonard",
+          "reason": "prospect arrival target already has 84 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484873,
+          "player": "Cole Hutson",
+          "reason": "prospect arrival target already has 14 NHL games; use established-role forecasting instead"
+        },
+        {
+          "player_id": 8484999,
+          "player": "Ilya Protas",
+          "reason": "prospect arrival target already has 4 NHL games; use established-role forecasting instead"
+        }
+      ]
+    }
+  ],
+  "disclosures": [
+    "Every requested organization remains present, including teams with no eligible skater study or no successful calibration.",
+    "All targets use the same frozen conversion cohort, same-position neighbor policy, shrinkage prior, signal-distance gate, and forecast-horizon adjustment.",
+    "Goalies require a separately calibrated goalie outcome cohort and are not treated as skaters in this artifact.",
+    "A player-level failure is retained as a typed team exclusion and never silently removed from league coverage totals."
+  ]
+}

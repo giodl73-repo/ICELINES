@@ -1,0 +1,33 @@
+{
+  "team": "SEA",
+  "baseline_roster": [
+    {"player_id":8482665,"label":"Matty Beniers","natural_positions":["center"],"alternate_positions":[],"projected_score":42.4,"alternate_position_penalty":0.0},
+    {"player_id":8483524,"label":"Shane Wright","natural_positions":["center"],"alternate_positions":[],"projected_score":25.3,"alternate_position_penalty":0.0},
+    {"player_id":8477919,"label":"Frederick Gaudreau","natural_positions":["center"],"alternate_positions":[],"projected_score":18.6,"alternate_position_penalty":0.0},
+    {"player_id":8484800,"label":"Berkly Catton","natural_positions":["center","right_wing"],"alternate_positions":[],"projected_score":17.9,"alternate_position_penalty":0.0},
+    {"player_id":8477955,"label":"Jared McCann","natural_positions":["left_wing","center"],"alternate_positions":[],"projected_score":52.4,"alternate_position_penalty":0.0},
+    {"player_id":8476905,"label":"Chandler Stephenson","natural_positions":["left_wing","center"],"alternate_positions":[],"projected_score":42.5,"alternate_position_penalty":0.0},
+    {"player_id":8482259,"label":"Bobby McMann","natural_positions":["left_wing","center"],"alternate_positions":[],"projected_score":41.0,"alternate_position_penalty":0.0},
+    {"player_id":8483570,"label":"Ben Meyers","natural_positions":["left_wing","center"],"alternate_positions":[],"projected_score":12.7,"alternate_position_penalty":0.0},
+    {"player_id":8474586,"label":"Jordan Eberle","natural_positions":["right_wing"],"alternate_positions":[],"projected_score":47.8,"alternate_position_penalty":0.0},
+    {"player_id":8481554,"label":"Kaapo Kakko","natural_positions":["right_wing"],"alternate_positions":[],"projected_score":42.8,"alternate_position_penalty":0.0},
+    {"player_id":8482713,"label":"Mackie Samoskevich","natural_positions":["left_wing","right_wing"],"alternate_positions":[],"projected_score":28.9,"alternate_position_penalty":0.0},
+    {"player_id":8482751,"label":"Ryan Winterton","natural_positions":["left_wing","center","right_wing"],"alternate_positions":[],"projected_score":18.4,"alternate_position_penalty":0.0},
+    {"player_id":8478407,"label":"Vince Dunn","natural_positions":["defense"],"alternate_positions":[],"projected_score":37.9,"alternate_position_penalty":0.0},
+    {"player_id":8477986,"label":"Brandon Montour","natural_positions":["defense"],"alternate_positions":[],"projected_score":36.0,"alternate_position_penalty":0.0},
+    {"player_id":8476457,"label":"Adam Larsson","natural_positions":["defense"],"alternate_positions":[],"projected_score":24.2,"alternate_position_penalty":0.0},
+    {"player_id":8482858,"label":"Ryker Evans","natural_positions":["defense"],"alternate_positions":[],"projected_score":20.1,"alternate_position_penalty":0.0},
+    {"player_id":8483684,"label":"Tyson Jugnauth","natural_positions":["defense"],"alternate_positions":[],"projected_score":17.4,"alternate_position_penalty":0.0},
+    {"player_id":8479324,"label":"Ryan Lindgren","natural_positions":["defense"],"alternate_positions":[],"projected_score":13.5,"alternate_position_penalty":0.0},
+    {"player_id":8478916,"label":"Joey Daccord","natural_positions":["goalie"],"alternate_positions":[],"projected_score":64.0,"alternate_position_penalty":0.0},
+    {"player_id":8475831,"label":"Philipp Grubauer","natural_positions":["goalie"],"alternate_positions":[],"projected_score":61.0,"alternate_position_penalty":0.0},
+    {"player_id":8482874,"label":"Jacob Melanson","natural_positions":["right_wing"],"alternate_positions":[],"projected_score":9.7,"alternate_position_penalty":0.0},
+    {"player_id":8479985,"label":"Cale Fleury","natural_positions":["defense"],"alternate_positions":[],"projected_score":10.3,"alternate_position_penalty":0.0},
+    {"player_id":8480876,"label":"Curtis Douglas","natural_positions":["left_wing","center"],"alternate_positions":[],"projected_score":6.4,"alternate_position_penalty":0.0}
+  ],
+  "incoming_players": [
+    {"player_id":8482073,"label":"Braden Schneider","natural_positions":["defense"],"alternate_positions":[],"projected_score":29.6,"alternate_position_penalty":0.0}
+  ],
+  "outgoing_player_ids": [8483524],
+  "limits": {"centers":4,"left_wings":4,"right_wings":4,"defense":6,"goalies":2}
+}

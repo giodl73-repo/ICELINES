@@ -1,0 +1,16 @@
+{
+  "schema": "prospect_arrival_calibration_input.v1",
+  "event_id": "nyr-smits-defense-hit",
+  "player_id": 8485957,
+  "player": "Alberts Smits",
+  "position": "D",
+  "observed_signal_score": 29.06,
+  "forecast_season": 20262027,
+  "config": {
+    "neighbor_count": 50,
+    "minimum_sample_size": 30,
+    "prior_sample_size": 20.0,
+    "maximum_mean_signal_distance": 15.0,
+    "forecast_horizon_seasons": 1
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "schema": "team_season_scenario_development_calibration_input.v1",
+  "scenario": {
+    "name": "NYR Wright trade with a probability-weighted internal breakout portfolio",
+    "trade_deadline": "2027-03-05",
+    "events": [
+      {
+        "id": "nyr-wright-balanced-trade",
+        "kind": "trade",
+        "team": "NYR",
+        "player": "Shane Wright",
+        "effective_date": "2026-09-29",
+        "strength_delta": -1.6,
+        "occurrence_probability": 1.0,
+        "correlation_key": "nyr-sea-wright-schneider-balanced",
+        "label": "NYR acquires Wright for Schneider at the sealed no-breakout lineup delta"
+      },
+      {
+        "id": "sea-schneider-balanced-trade",
+        "kind": "trade",
+        "team": "SEA",
+        "player": "Braden Schneider",
+        "effective_date": "2026-09-29",
+        "strength_delta": 0.5,
+        "occurrence_probability": 1.0,
+        "correlation_key": "nyr-sea-wright-schneider-balanced",
+        "label": "SEA acquires Schneider for Wright at the sealed lineup delta"
+      },
+      {
+        "id": "nyr-wright-moderate-hit",
+        "kind": "form",
+        "team": "NYR",
+        "player": "Shane Wright",
+        "effective_date": "2026-09-29",
+        "strength_delta": 4.7,
+        "occurrence_probability": 0.40,
+        "correlation_key": null,
+        "label": "Wright reaches the moderate 30.0 score branch (+4.7 over sealed)"
+      },
+      {
+        "id": "nyr-perreault-breakout-hit",
+        "kind": "form",
+        "team": "NYR",
+        "player": "Gabe Perreault",
+        "effective_date": "2026-09-29",
+        "strength_delta": 4.5,
+        "occurrence_probability": 0.35,
+        "correlation_key": null,
+        "label": "Perreault supplies a +4.5 confidence-weighted lineup increment"
+      },
+      {
+        "id": "nyr-laba-breakout-hit",
+        "kind": "form",
+        "team": "NYR",
+        "player": "Noah Laba",
+        "effective_date": "2026-09-29",
+        "strength_delta": 3.5,
+        "occurrence_probability": 0.30,
+        "correlation_key": null,
+        "label": "Laba supplies a +3.5 confidence-weighted lineup increment"
+      },
+      {
+        "id": "nyr-lafreniere-rebound-hit",
+        "kind": "form",
+        "team": "NYR",
+        "player": "Alexis Lafreniere",
+        "effective_date": "2026-09-29",
+        "strength_delta": 3.0,
+        "occurrence_probability": 0.25,
+        "correlation_key": null,
+        "label": "Lafreniere supplies a +3.0 rebound increment"
+      },
+      {
+        "id": "nyr-smits-defense-hit",
+        "kind": "form",
+        "team": "NYR",
+        "player": "Alberts Smits",
+        "effective_date": "2026-09-29",
+        "strength_delta": 2.2,
+        "occurrence_probability": 0.20,
+        "correlation_key": null,
+        "label": "Smits earns enough NHL deployment to create a net +2.2 defense increment after displacement"
+      }
+    ]
+  },
+  "profiles": [
+    {
+      "event_id": "nyr-wright-moderate-hit",
+      "player_id": 8483524,
+      "position": "forward",
+      "age": 21,
+      "prior_games_played": 74,
+      "prior_value": 47.016717094273126
+    },
+    {
+      "event_id": "nyr-perreault-breakout-hit",
+      "player_id": 8484210,
+      "position": "forward",
+      "age": 20,
+      "prior_games_played": 49,
+      "prior_value": 51.275457525233904
+    },
+    {
+      "event_id": "nyr-laba-breakout-hit",
+      "player_id": 8483690,
+      "position": "forward",
+      "age": 22,
+      "prior_games_played": 74,
+      "prior_value": 45.051667836431385
+    },
+    {
+      "event_id": "nyr-lafreniere-rebound-hit",
+      "player_id": 8482109,
+      "position": "forward",
+      "age": 23,
+      "prior_games_played": 82,
+      "prior_value": 56.04544589354312
+    }
+  ],
+  "prospect_arrivals": [
+    {
+      "schema": "prospect_arrival_calibration.v1",
+      "source_schema": "prospect_conversion_board.v2",
+      "source_baseline_seasons": [
+        20222023
+      ],
+      "source_through_season": 20252026,
+      "event_id": "nyr-smits-defense-hit",
+      "player_id": 8485957,
+      "player": "Alberts Smits",
+      "position_group": "D",
+      "observed_signal_score": 29.06,
+      "forecast_season": 20262027,
+      "candidate_players": 164,
+      "neighbor_players": 50,
+      "neighbor_signal_min": 19.68,
+      "neighbor_signal_max": 38.73,
+      "mean_signal_distance": 4.9478,
+      "neighbor_arrivals": 31,
+      "neighbor_established_players": 11,
+      "empirical_arrival_rate": 0.62,
+      "position_arrival_rate": 0.457317,
+      "calibrated_arrival_probability": 0.573519,
+      "empirical_established_rate": 0.22,
+      "position_established_rate": 0.189024,
+      "calibrated_established_probability": 0.21115,
+      "established_given_arrival_rate": 0.354839,
+      "source_horizon_seasons": 3,
+      "forecast_horizon_seasons": 1,
+      "horizon_adjusted_arrival_probability": 0.24728,
+      "horizon_adjusted_established_probability": 0.076015,
+      "config": {
+        "neighbor_count": 50,
+        "minimum_sample_size": 30,
+        "prior_sample_size": 20.0,
+        "maximum_mean_signal_distance": 15.0,
+        "forecast_horizon_seasons": 1
+      },
+      "disclosures": [
+        "Arrival means at least one post-baseline regular-season NHL game inside the frozen conversion horizon; it does not mean the player establishes an NHL role.",
+        "The estimate uses nearest same-position historical prospect signals and shrinks their empirical arrival rate toward the complete same-position cohort rate.",
+        "Established-role probability is calibrated independently by shrinking the neighbors' unconditional establishment rate toward the complete same-position establishment rate; established-given-arrival remains descriptive.",
+        "Cumulative historical probabilities span 3 seasons and are projected to the 1-season scenario horizon with a disclosed constant-hazard transformation.",
+        "The target is rejected if it appears in the historical outcome cohort, the board reaches the forecast season, or sample and signal-distance gates fail.",
+        "This historical base-rate estimate does not incorporate current camp performance, injuries, contract status, waivers, organizational depth, or manager behavior."
+      ]
+    }
+  ],
+  "prospect_outcomes": [
+    {
+      "event_id": "nyr-smits-defense-hit",
+      "outcome": "established_role"
+    }
+  ]
+}

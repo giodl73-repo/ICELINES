@@ -782,13 +782,42 @@ pub async fn fetch_official_player_landing_cachelines(
     delay_between_items_ms: u64,
 ) -> Result<BTreeMap<u32, Vec<u8>>> {
     let mut results = BTreeMap::new();
-    for chunk in player_ids.chunks(LANDING_BATCH_SIZE) {
+    let player_ids = player_ids.into_iter().collect::<BTreeSet<_>>();
+    let mut pending = player_ids.iter().copied().collect::<Vec<_>>();
+    if !refresh {
+        let dataset_ids = player_ids
+            .iter()
+            .map(|player_id| {
+                format!(
+                    "icelines.player.{}.{player_id}",
+                    FletchPlayerLandingArtifact::Landing.id_segment()
+                )
+            })
+            .collect::<Vec<_>>();
+        let cached = read_verified_fletch_cache_batch_bytes(&cache_root, dataset_ids)?;
+        pending.retain(|player_id| {
+            let dataset_id = format!(
+                "icelines.player.{}.{player_id}",
+                FletchPlayerLandingArtifact::Landing.id_segment()
+            );
+            if let Some(bytes) = cached.get(&dataset_id) {
+                results.insert(*player_id, bytes.clone());
+                false
+            } else {
+                true
+            }
+        });
+    }
+    for chunk in pending.chunks(LANDING_BATCH_SIZE) {
         results.extend(
             fetch_player_landing_batch_bytes_async(
                 chunk.to_vec(),
                 FletchPlayerLandingArtifact::Landing,
                 cache_root.clone(),
-                refresh,
+                // The batch read above proved these IDs absent. Bypass the
+                // per-chunk manifest scan; the global fetch lock prevents a
+                // competing writer from filling them between phases.
+                true,
                 delay_between_items_ms,
             )
             .await?,

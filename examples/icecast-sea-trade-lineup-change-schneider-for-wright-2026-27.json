@@ -1,0 +1,49 @@
+{
+  "incoming_players": [
+    {
+      "player_id": 8482073,
+      "label": "Braden Schneider",
+      "natural_positions": ["defense"],
+      "alternate_positions": [],
+      "projected_score": 29.6,
+      "alternate_position_penalty": 0.0
+    }
+  ],
+  "projection_incoming_players": [
+    {
+      "player_id": 8482073,
+      "display_name": "Braden Schneider",
+      "team": "SEA",
+      "prior_team": "NYR",
+      "primary_position": "Defense",
+      "eligible_positions": ["Defense"],
+      "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/SEA/8482073.png",
+      "games_played": 82,
+      "lens_scores": {
+        "points_pace": 18.0,
+        "goal_scoring": 2.0,
+        "fantasy": 189.5,
+        "upside": 19.98
+      },
+      "score_evidence": "confirmed",
+      "power_play_role_score": null,
+      "penalty_kill_role_score": null,
+      "special_teams_evidence": null,
+      "requested_slot": null,
+      "assignment_evidence": "scenario"
+    }
+  ],
+  "outgoing_player_ids": [8483524],
+  "limits": {
+    "centers": 4,
+    "left_wings": 4,
+    "right_wings": 4,
+    "defense": 6,
+    "goalies": 2
+  },
+  "disclosures": [
+    "Straight-up scenario sends Shane Wright to New York and Braden Schneider to Seattle.",
+    "Schneider's score and role evidence are copied from the sealed 2026-27 Rangers lineup baseline; no reputation bonus is added.",
+    "Contract and availability evidence remain transaction gates outside the lineup optimizer."
+  ]
+}

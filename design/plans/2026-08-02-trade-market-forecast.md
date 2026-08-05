@@ -70,7 +70,7 @@
    targets without inventing availability, excludes protected assets, publishes
    opening/fair/maximum packages and a walk-away boundary, and leaves generated
    packages blocked pending execution authority. A Seattle control board
-   protects Catton, Wright, and injury-obscured Firkus; destination evidence
+   protects Catton and injury-obscured Firkus; destination evidence
    removes Larkin despite his hockey fit. League-wide source ingestion and
    learned player values remain.
 10. Normalize all organizations into automatic discovery. **Core and CLI
@@ -87,6 +87,43 @@
     translation policy, and accepts separate dated availability, protection,
     and pre-valued pick overlays. `trade-scout-populate` writes the reusable
     population document and can immediately write the evaluated league board.
+    **Young-NHL timing checkpoint:** a sourced, dated overlay can now move a
+    fixed player value between current and future/control utility without
+    misclassifying the player as a prospect. The Wright/Schneider control case
+    exercises that distinction while leaving total market value unchanged.
+    **Package checkpoint:** the control case now passes current contract, cap,
+    roster, and clause gates; attaches recomputed NYR/SEA lineup impacts; and
+    publishes a one-asset negotiation ladder whose walk-away boundary refuses
+    to invent an additional pick. **Season checkpoint:** a same-schedule,
+    same-seed 10,000-trial comparison attaches both clubs' points, playoff, and
+    Cup deltas to the package; the sealed base case distinguishes immediate
+    lineup cost from Wright's unmodeled breakout upside. **Sensitivity
+    checkpoint:** sealed 25.3, moderate 30, strong 35, and star 40 Wright score
+    branches publish standard UI-neutral movement documents and a regression
+    test enforces monotone NYR points, playoff, and Cup response. **Threshold
+    checkpoint:** score 43.0 produced 9.98% Cup odds, so the durable 43.2 branch
+    is the first tested branch to clear the 10% target at 10.04%; the product
+    does not round a miss into a success. **Portfolio checkpoint:** moderate
+    Wright growth plus explicit Perreault, Laba, Lafreniere, and Smits increments
+    are sampled independently at declared hit rates. The paired expected path
+    improves NYR, while regression coverage preserves the distinction between
+    that outlook and the 0.21% five-for-five ceiling.
+    **Probability-authority checkpoint:** `team_season_scenario_development_calibration.v1`
+    now joins probabilistic scenario events to the existing historical development
+    cohorts by position, age, completed NHL workload, and prior value. The Rangers
+    control recalibrates Wright, Perreault, Laba, and Lafreniere from 11,156
+    transitions while retaining Smits at 20% as an explicitly uncalibrated
+    scenario assumption. The calibrated portfolio leaves the expected result
+    materially unchanged (+1.1538 points, +4.25 percentage points playoffs, and
+    +0.65 percentage points Cup versus baseline), but lowers the independent
+    five-for-five branch from 0.21% to about 0.176%. IceCast season simulation
+    consumes the wrapper directly, so renderers and simulation share one authority.
+    **Prospect-arrival checkpoint:** `prospect_arrival_calibration.v1` now supplies
+    a separate leakage-safe nearest-cohort authority for players without NHL
+    workload, and the scenario wrapper can apply it without confusing arrival
+    with development. The historical 247-player proof board and a frozen current
+    Smits prospect signal are not retained locally, so Smits remains visibly
+    uncalibrated rather than receiving a reconstructed number.
     Live availability and pick-ownership provider population remain source work;
     execution authority remains downstream in Trade Desk.
 12. Populate current future-pick capital. **Initial source/core/CLI path

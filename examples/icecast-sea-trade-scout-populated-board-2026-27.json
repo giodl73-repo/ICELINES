@@ -1,15 +1,15 @@
 {
   "schema": "trade_scout_league.v1",
-  "as_of": "2026-08-03",
+  "as_of": "2026-08-04",
   "buyer": "SEA",
   "organizations_supplied": 32,
   "expected_organizations": 32,
   "inventory_complete": true,
   "derived_targets": 2,
-  "derived_buyer_assets": 17,
+  "derived_buyer_assets": 18,
   "scout": {
     "schema": "trade_scout.v1",
-    "as_of": "2026-08-03",
+    "as_of": "2026-08-04",
     "buyer": "SEA",
     "candidates": [
       {
@@ -138,11 +138,11 @@
           "maximum_acceptable": {
             "tier": "maximum_acceptable",
             "assets_to_seller": [
-              "Nikke Kokko",
-              "SEA 2027 round 4 pick"
+              "Shane Wright",
+              "Nikke Kokko"
             ],
-            "market_value": 121.58128835513578,
-            "target_value_ratio": 1.081969276726653,
+            "market_value": 125.85,
+            "target_value_ratio": 1.1199571522742253,
             "evaluation": {
               "buyer": "SEA",
               "seller": "NSH",
@@ -150,19 +150,19 @@
                 "Ryan O'Reilly"
               ],
               "assets_to_seller": [
-                "Nikke Kokko",
-                "SEA 2027 round 4 pick"
+                "Shane Wright",
+                "Nikke Kokko"
               ],
-              "buyer_utility_delta": 125.25513518415497,
-              "seller_utility_delta": 80.53984928512773,
+              "buyer_utility_delta": 100.37515052620927,
+              "seller_utility_delta": 66.63254558793764,
               "market_value_to_buyer": 112.37037037037038,
-              "market_value_to_seller": 121.58128835513578,
-              "market_value_gap": -9.210917984765402,
-              "buyer_season_points_delta": 0.20913580246913577,
-              "seller_season_points_delta": -0.20913580246913577,
+              "market_value_to_seller": 125.85,
+              "market_value_gap": -13.479629629629613,
+              "buyer_season_points_delta": -0.08986419753086416,
+              "seller_season_points_delta": 0.08986419753086416,
               "buyer_cap_space_delta": null,
               "seller_cap_space_delta": null,
-              "fairness_score": 0.9242406614588542,
+              "fairness_score": 0.8928913021086244,
               "feasibility_probability": 0.0,
               "transaction_ready": false,
               "transaction_gates": {
@@ -173,22 +173,15 @@
                 "pick_ownership_confirmed": null
               },
               "mutually_beneficial": false,
-              "pick_roles": [
-                {
-                  "asset_id": "SEA-2027-4",
-                  "direction": "to_seller",
-                  "package_share": 0.33377906176317934,
-                  "role": "rounding"
-                }
-              ],
+              "pick_roles": [],
               "disclosures": [
                 "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
                 "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
                 "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
                 "Ryan O'Reilly: Camp score 74.91, GP confidence 0.80, and prospect=false were translated by the supplied Trade Scout population policy for NSH.",
-                "Nikke Kokko: Camp score 54.00, GP confidence 0.47, and prospect=true were translated by the supplied Trade Scout population policy for SEA.",
-                "SEA 2027 round 4 pick: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-                "SEA 2027 round 4 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 4 slot value uses the original team's simulated non-lottery playoff-finish draft-order distribution and maps by within-round percentile to the curve's 30-slot historical era."
+                "Shane Wright: Camp score 29.90, GP confidence 0.79, and prospect=false were translated by the supplied Trade Scout population policy for SEA.",
+                "Shane Wright: Value timing uses current share 0.45 from https://puckpedia.com/player/shane-wright observed 2026-08-04T12:00:00-07:00: Age 22, entering the final season of an $886,666 ELC and retaining RFA control in 2027; this is a future/control timing scenario, not a total-value premium.",
+                "Nikke Kokko: Camp score 54.00, GP confidence 0.47, and prospect=true were translated by the supplied Trade Scout population policy for SEA."
               ]
             }
           },
@@ -340,11 +333,11 @@
           "maximum_acceptable": {
             "tier": "maximum_acceptable",
             "assets_to_seller": [
-              "Nikke Kokko",
-              "SEA 2027 round 4 pick"
+              "Shane Wright",
+              "Nikke Kokko"
             ],
-            "market_value": 121.58128835513578,
-            "target_value_ratio": 1.09491591764475,
+            "market_value": 125.85,
+            "target_value_ratio": 1.1333583489681052,
             "evaluation": {
               "buyer": "SEA",
               "seller": "PIT",
@@ -352,19 +345,19 @@
                 "Bryan Rust"
               ],
               "assets_to_seller": [
-                "Nikke Kokko",
-                "SEA 2027 round 4 pick"
+                "Shane Wright",
+                "Nikke Kokko"
               ],
-              "buyer_utility_delta": 122.94097623353764,
-              "seller_utility_delta": 74.72664750411177,
+              "buyer_utility_delta": 98.06099157559194,
+              "seller_utility_delta": 62.837593806921674,
               "market_value_to_buyer": 111.04166666666666,
-              "market_value_to_seller": 121.58128835513578,
-              "market_value_gap": -10.539621688469126,
-              "buyer_season_points_delta": 0.20027777777777767,
-              "seller_season_points_delta": -0.20027777777777767,
+              "market_value_to_seller": 125.85,
+              "market_value_gap": -14.808333333333337,
+              "buyer_season_points_delta": -0.09872222222222227,
+              "seller_season_points_delta": 0.09872222222222227,
               "buyer_cap_space_delta": null,
               "seller_cap_space_delta": null,
-              "fairness_score": 0.9133121401240365,
+              "fairness_score": 0.8823334657661237,
               "feasibility_probability": 0.0,
               "transaction_ready": false,
               "transaction_gates": {
@@ -375,22 +368,15 @@
                 "pick_ownership_confirmed": null
               },
               "mutually_beneficial": false,
-              "pick_roles": [
-                {
-                  "asset_id": "SEA-2027-4",
-                  "direction": "to_seller",
-                  "package_share": 0.33377906176317934,
-                  "role": "rounding"
-                }
-              ],
+              "pick_roles": [],
               "disclosures": [
                 "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
                 "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
                 "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
                 "Bryan Rust: Camp score 74.03, GP confidence 0.78, and prospect=false were translated by the supplied Trade Scout population policy for PIT.",
-                "Nikke Kokko: Camp score 54.00, GP confidence 0.47, and prospect=true were translated by the supplied Trade Scout population policy for SEA.",
-                "SEA 2027 round 4 pick: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
-                "SEA 2027 round 4 pick: Ownership was reviewed from https://puckpedia.com/team/seattle-kraken/draftpicks at 2026-08-03T12:00:00Z; future round 4 slot value uses the original team's simulated non-lottery playoff-finish draft-order distribution and maps by within-round percentile to the curve's 30-slot historical era."
+                "Shane Wright: Camp score 29.90, GP confidence 0.79, and prospect=false were translated by the supplied Trade Scout population policy for SEA.",
+                "Shane Wright: Value timing uses current share 0.45 from https://puckpedia.com/player/shane-wright observed 2026-08-04T12:00:00-07:00: Age 22, entering the final season of an $886,666 ELC and retaining RFA control in 2027; this is a future/control timing scenario, not a total-value premium.",
+                "Nikke Kokko: Camp score 54.00, GP confidence 0.47, and prospect=true were translated by the supplied Trade Scout population policy for SEA."
               ]
             }
           },

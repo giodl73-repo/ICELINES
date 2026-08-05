@@ -324,7 +324,7 @@ icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.js
 icelines icecast affiliate --input affiliate-scenario.json --json --out affiliate-lines.json
 icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "Hartford Wolf Pack" --candidates examples/icecast-league-candidate-overlay-2026-27.json --json --out hartford-identity-review.json
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
-icelines icecast affiliate-identities-league --snapshot ahl-season.json --discover-official --json --out ahl-league-identity-crosswalk.json
+icelines icecast affiliate-identities-league --snapshot ahl-season.json --discover-official --as-of 2023-09-15 --max-age 24 --json --out ahl-league-identity-crosswalk.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-draft-league --league-crosswalk ahl-league-exact-alias-reviewed.json --include-conflicts --out ahl-league-exception-drafts.json
 icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer identity-pilot --reviewed-at 2026-07-25T12:00:00Z --json --out hartford-exact-reviewed.json
@@ -560,9 +560,58 @@ defense, and goalie NHL-performance scores, confidence-weights small samples,
 and compares baseline signal with later arrival, role, and quality. The neutral
 JSON includes player-level expected-hit, breakout, miss, and developing buckets,
 organization totals and rank blockers, plus every component and NHL landing
-URL. Use `--performance-out` to retain the derived authority; pass it back with
-`--performance` for a reproducible replay. Complete zero-game histories count
-as observed zeros, while missing official facts fail closed.
+URL. Use `--performance-out` to retain the derived authority and `--input-out`
+to retain the exact adapted cohort consumed by the board builder. Complete
+zero-game histories count as observed zeros, while missing official facts fail
+closed. A conversion result used for later calibration should retain all three
+siblings: input, performance authority, and output board.
+`icecast prospect-conversion-replay --input <path>` rebuilds the board directly
+from that retained input and applies the same schema and methodology checks.
+Prefer `--archive-out` for durable proofs: `prospect_conversion_archive.v1`
+keeps all three documents together with SHA-256 fingerprints. Replay and
+prospect-arrival calibration accept the archive directly and reject a modified
+member or a board that no longer rebuilds from its input.
+
+`icecast prospect-arrival-calibrate` reuses a retained conversion board for a
+new prospect without pretending the player already has NHL development history.
+It selects nearest same-position historical prospect signals, reports their raw
+arrival and establishment rates, and shrinks arrival toward the complete
+position cohort. The command rejects a target already present in the historical
+outcomes, a board reaching into the forecast season, thin cohorts, and distant
+comparables. It also rejects a player with authoritative NHL games because that
+player has already arrived and belongs in established-role forecasting. The
+resulting `prospect_arrival_calibration.v1` can be attached to
+the scenario probability-authority wrapper; it changes occurrence probability,
+not the authored hockey-impact magnitude.
+
+Scenario inputs may additionally bind a prospect event to `established_role`.
+That path uses a separately calibrated unconditional establishment probability:
+the neighbor rate is shrunk toward the complete same-position establishment
+rate. Established-given-arrival remains visible context, not an unshrunk model
+input. Without an explicit binding, the compatible default remains `arrival`.
+Historical conversion probabilities are cumulative over their retained outcome
+horizon. New calibrations require one common source horizon and project it to
+the configured forecast horizon with a disclosed constant-hazard transform;
+mixed horizons and forecasts longer than the evidence window fail closed.
+
+The target may be supplied as an authored calibration input or derived from a
+canonical career discovery. The derived route selects exactly one skater by
+canonical ID, computes the attention-free production/trajectory/opportunity
+signal in core, and can retain that input for review:
+
+```bash
+icelines icecast prospect-arrival-calibrate --career-discovery examples/icecast-nyr-smits-prospect-career-discovery-2026-27.json --player-id 8485957 --event-id nyr-smits-defense-hit --forecast-season 20262027 --conversion-archive examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json --input-out smits-arrival-input.json --json --out smits-arrival.json
+```
+
+For a complete league audit, `icecast prospect-arrival-league` composes a
+32-team camp forecast with the official career cache, applies the identical
+arrival policy to every canonical skater study, and retains all team rows and
+all player-level failures. It distinguishes a clean league envelope from an
+incomplete arrival population instead of silently dropping teams:
+
+```bash
+icelines icecast prospect-arrival-league --camp-forecast examples/icecast-league-training-camp-2026-27.json --conversion-archive examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json --forecast-season 20262027 --discovery-out league-career-discovery.json --json --out league-arrival.json
+```
 
 IceCast loads the complete official schedule and produces one explained
 baseline probability for every league game. For 2026–27 it enforces 1,344

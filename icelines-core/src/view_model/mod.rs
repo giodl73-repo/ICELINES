@@ -61,11 +61,13 @@ pub mod player_line_matchup;
 pub mod player_line_matchup_validation;
 pub mod playoffs;
 pub mod poach;
+pub mod prospect_arrival_calibration;
 pub mod prospect_census;
 pub mod prospect_conversion;
 pub mod prospect_study;
 pub mod records;
 pub mod report;
+pub mod scenario_development_calibration;
 pub mod scenario_registry;
 pub mod schedule;
 pub mod scores;
@@ -488,6 +490,12 @@ pub use poach::{
     WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleMutationIntent,
     WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
 };
+pub use prospect_arrival_calibration::{
+    adapt_prospect_arrival_calibration_input, calibrate_prospect_arrival,
+    ProspectArrivalCalibrationConfig, ProspectArrivalCalibrationInput,
+    ProspectArrivalCalibrationView, PROSPECT_ARRIVAL_CALIBRATION_INPUT_SCHEMA,
+    PROSPECT_ARRIVAL_CALIBRATION_SCHEMA,
+};
 pub use prospect_census::{
     build_prospect_census, require_publishable_prospect_census, ProspectCensusCandidateInput,
     ProspectCensusCounts, ProspectCensusDimensionRow, ProspectCensusFreshnessStatus,
@@ -498,8 +506,10 @@ pub use prospect_census::{
     ProspectScorePublicationStatus, PROSPECT_CENSUS_SCHEMA,
 };
 pub use prospect_conversion::{
-    adapt_prospect_conversion_input, build_prospect_conversion_board,
-    build_prospect_nhl_performance_document, ProspectConversionBaselineInput,
+    adapt_prospect_conversion_input, build_prospect_conversion_archive,
+    build_prospect_conversion_board, build_prospect_nhl_performance_document,
+    validate_prospect_conversion_archive, ProspectConversionArchive,
+    ProspectConversionArchiveFingerprints, ProspectConversionBaselineInput,
     ProspectConversionBoardView, ProspectConversionCalibrationBandView, ProspectConversionConfig,
     ProspectConversionDisposition, ProspectConversionInput, ProspectConversionMethodologyView,
     ProspectConversionOrganizationView, ProspectConversionPerformanceDocument,
@@ -507,7 +517,8 @@ pub use prospect_conversion::{
     ProspectConversionRankBlocker, ProspectConversionResultClass,
     ProspectConversionSignalCalibrationView, ProspectConversionSignalInput,
     ProspectConversionSignalKind, ProspectNhlOutcomeInput, ProspectNhlPerformanceComponentView,
-    PROSPECT_CONVERSION_BOARD_SCHEMA, PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
+    PROSPECT_CONVERSION_ARCHIVE_SCHEMA, PROSPECT_CONVERSION_BOARD_SCHEMA,
+    PROSPECT_CONVERSION_INPUT_SCHEMA, PROSPECT_CONVERSION_METHOD,
     PROSPECT_CONVERSION_PERFORMANCE_SCHEMA, PROSPECT_NHL_PERFORMANCE_METHOD,
 };
 pub use prospect_study::{
@@ -538,6 +549,14 @@ pub use records::{
     FightRecordInput, PlayerGoalRecordInput, PlayerRecordsView, RecordsOpponentRow, TeamRecordsView,
 };
 pub use report::{scouting_report_sections, ReportFormat, ReportView};
+pub use scenario_development_calibration::{
+    calibrate_team_season_scenario_development, TeamSeasonProspectOutcomeInput,
+    TeamSeasonProspectOutcomeKind, TeamSeasonScenarioDevelopmentCalibrationInput,
+    TeamSeasonScenarioDevelopmentCalibrationView, TeamSeasonScenarioDevelopmentProfileInput,
+    TeamSeasonScenarioProbabilityAuthorityRow, TeamSeasonScenarioProbabilityAuthorityStatus,
+    TEAM_SEASON_SCENARIO_DEVELOPMENT_CALIBRATION_INPUT_SCHEMA,
+    TEAM_SEASON_SCENARIO_DEVELOPMENT_CALIBRATION_SCHEMA,
+};
 pub use scenario_registry::{
     scenario_content_sha256, validate_scenario_id, ScenarioRegistryContractError,
     ScenarioRegistryEntryView, ScenarioRegistryReferenceView, ScenarioRegistryView,
@@ -716,10 +735,10 @@ pub use trade_market::{
     TradeScoutConfig, TradeScoutDraftPickPopulationInput, TradeScoutDraftPickPopulationView,
     TradeScoutInput, TradeScoutLeagueAssetInput, TradeScoutLeagueAssetKind, TradeScoutLeagueConfig,
     TradeScoutLeagueInput, TradeScoutLeagueOrganizationInput, TradeScoutLeagueView,
-    TradeScoutPopulationConfig, TradeScoutPopulationInput, TradeScoutPopulationView,
-    TradeScoutView, TradeTeamExecutionAuthority, TradeTeamPreferenceInput,
-    TradeTeamSeasonForecastDeltaView, TradeTransactionGates, TradeValueBasis,
-    DRAFT_PICK_VALUE_CURVE_SCHEMA, DRAFT_PICK_VALUE_METHOD,
+    TradeScoutPlayerValueTimingOverlayInput, TradeScoutPopulationConfig, TradeScoutPopulationInput,
+    TradeScoutPopulationView, TradeScoutView, TradeTeamExecutionAuthority,
+    TradeTeamPreferenceInput, TradeTeamSeasonForecastDeltaView, TradeTransactionGates,
+    TradeValueBasis, DRAFT_PICK_VALUE_CURVE_SCHEMA, DRAFT_PICK_VALUE_METHOD,
     TRADE_DRAFT_PICK_OWNERSHIP_COVERAGE_SCHEMA, TRADE_LINEUP_BOARD_SCHEMA,
     TRADE_MARKET_EVALUATION_SCHEMA, TRADE_SCOUT_DRAFT_PICK_POPULATION_SCHEMA,
     TRADE_SCOUT_LEAGUE_SCHEMA, TRADE_SCOUT_POPULATION_SCHEMA, TRADE_SCOUT_SCHEMA,

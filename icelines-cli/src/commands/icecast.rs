@@ -6,16 +6,17 @@ use std::path::{Path, PathBuf};
 use anyhow::{bail, Context};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, Utc};
 use icelines_core::{
-    adapt_prospect_conversion_input, adapt_team_season_window_scenario_authorities,
-    adapt_training_camp_window_scenario_authorities, apply_bench_game_plan_to_player_line_matchup,
-    apply_team_behavior_research, audit_organization_profile_history,
-    audit_organization_window_source_package, build_adaptive_lineup_policy,
-    build_ahl_affiliate_projection, build_balanced_organization_window_board_from_package,
-    build_development_calibration, build_forecast_history_card, build_forecast_movement_card,
-    build_isolated_scenario_impact, build_isolated_scenario_impact_as_of,
-    build_line_combination_forecast, build_organization_lineup_forecast,
-    build_organization_profile_history, build_organization_window_history,
-    build_player_line_matchup_forecast, build_player_line_matchup_validation,
+    adapt_prospect_arrival_calibration_input, adapt_prospect_conversion_input,
+    adapt_team_season_window_scenario_authorities, adapt_training_camp_window_scenario_authorities,
+    apply_bench_game_plan_to_player_line_matchup, apply_team_behavior_research,
+    audit_organization_profile_history, audit_organization_window_source_package,
+    build_adaptive_lineup_policy, build_ahl_affiliate_projection,
+    build_balanced_organization_window_board_from_package, build_development_calibration,
+    build_forecast_history_card, build_forecast_movement_card, build_isolated_scenario_impact,
+    build_isolated_scenario_impact_as_of, build_line_combination_forecast,
+    build_organization_lineup_forecast, build_organization_profile_history,
+    build_organization_window_history, build_player_line_matchup_forecast,
+    build_player_line_matchup_validation, build_prospect_conversion_archive,
     build_prospect_conversion_board, build_prospect_development_study,
     build_prospect_discovery_board, build_prospect_nhl_performance_document,
     build_prospect_program_board_with_goalies, build_prospect_program_history,
@@ -27,34 +28,38 @@ use icelines_core::{
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
     build_team_season_plausible_trade_scenario, build_training_camp_blender_set,
     build_training_camp_exposure_board_with_context, build_training_camp_lineup_set,
-    build_training_camp_opening_roster_policy, compare_organization_profile_history,
-    compare_organization_window_scenario, compare_organization_window_snapshots,
-    compare_organization_window_snapshots_with_bridge, compare_organization_window_typed_scenario,
-    compare_player_line_matchup_scenarios, compare_team_season_forecast_scenarios,
-    confidence_weighted_player_value, current_ahl_affiliation_catalog,
-    load_organization_window_registry_lifecycle, model::Position, model::Season, model::TeamAbbr,
-    normalize_name, project_organization_profile_history_card, project_organization_window_card,
-    register_team_game_prediction_holdout, rehydrate_team_game_forecast,
-    seal_new_organization_window_manifest, seal_organization_profile_history,
-    season_stats::SeasonType, simulate_organization_window_scenario_distribution,
+    build_training_camp_opening_roster_policy, calibrate_prospect_arrival,
+    calibrate_prospect_arrival_league, calibrate_team_season_scenario_development,
+    compare_organization_profile_history, compare_organization_window_scenario,
+    compare_organization_window_snapshots, compare_organization_window_snapshots_with_bridge,
+    compare_organization_window_typed_scenario, compare_player_line_matchup_scenarios,
+    compare_team_season_forecast_scenarios, confidence_weighted_player_value,
+    current_ahl_affiliation_catalog, load_organization_window_registry_lifecycle, model::Position,
+    model::Season, model::TeamAbbr, normalize_name, project_organization_profile_history_card,
+    project_organization_window_card, register_team_game_prediction_holdout,
+    rehydrate_team_game_forecast, seal_new_organization_window_manifest,
+    seal_organization_profile_history, season_stats::SeasonType,
+    simulate_organization_window_scenario_distribution,
     simulate_team_season_forecast_as_of_with_scenario, simulate_team_season_forecast_with_scenario,
     simulate_training_camp, simulate_training_camp_league, train_team_game_prediction_model,
-    validate_team_game_prediction_model_with_registration, AhlAffiliateProjectionInput,
-    AhlAffiliateProjectionView, AhlAffiliationCatalogView, AhlCrossLeagueValuePolicy,
-    AhlLineUnitKind, AhlPlayerValuePolicy, AhlRecallReadinessPolicy, AhlRosterPoolAuthorityKind,
-    BenchGamePlanView, DevelopmentCalibrationConfig, DevelopmentCalibrationView,
-    DevelopmentPositionGroup, DevelopmentTransitionInput, DevelopmentValueModel, EvidenceLabel,
-    ForecastHistoryCardInput, ForecastMovementCardInput, LineCombinationForecastConfig,
-    LineCombinationForecastView, LineCombinationPairEvidenceInput, NhlGoalieTranslationPolicy,
-    OpponentStyleEvidenceRow, OrganizationLevel, OrganizationLineupForecastInput,
-    OrganizationLineupForecastView, OrganizationPositionGroup,
+    validate_prospect_conversion_archive, validate_team_game_prediction_model_with_registration,
+    AhlAffiliateProjectionInput, AhlAffiliateProjectionView, AhlAffiliationCatalogView,
+    AhlCrossLeagueValuePolicy, AhlLineUnitKind, AhlPlayerValuePolicy, AhlRecallReadinessPolicy,
+    AhlRosterPoolAuthorityKind, BenchGamePlanView, DevelopmentCalibrationConfig,
+    DevelopmentCalibrationView, DevelopmentPositionGroup, DevelopmentTransitionInput,
+    DevelopmentValueModel, EvidenceLabel, ForecastHistoryCardInput, ForecastMovementCardInput,
+    LineCombinationForecastConfig, LineCombinationForecastView, LineCombinationPairEvidenceInput,
+    NhlGoalieTranslationPolicy, OpponentStyleEvidenceRow, OrganizationLevel,
+    OrganizationLineupForecastInput, OrganizationLineupForecastView, OrganizationPositionGroup,
     OrganizationProfileHistoryCheckpointView, OrganizationProfileHistoryDeltaView,
     OrganizationProfileHistoryView, OrganizationUnitKind, OrganizationWindowBoardView,
     OrganizationWindowBridgeView, OrganizationWindowManifestView,
     OrganizationWindowScenarioDistributionInput, OrganizationWindowSourceCoverageView,
     OrganizationWindowSourcePackageView, OrganizationalProspectPolicy,
     PlayerLineMatchupAblationObservation, PlayerLineMatchupForecastInput,
-    PlayerLineMatchupForecastView, PlayerLineMatchupScenarioInput, ProspectConversionBoardView,
+    PlayerLineMatchupForecastView, PlayerLineMatchupScenarioInput,
+    ProspectArrivalCalibrationConfig, ProspectArrivalCalibrationInput,
+    ProspectArrivalCalibrationView, ProspectConversionArchive, ProspectConversionBoardView,
     ProspectConversionConfig, ProspectConversionPerformanceDocument,
     ProspectDevelopmentStudyConfig, ProspectDevelopmentStudyInput, ProspectDevelopmentStudyView,
     ProspectDiscoveryBoardRow, ProspectDiscoveryBoardView, ProspectGoalieDevelopmentStudyConfig,
@@ -74,6 +79,7 @@ use icelines_core::{
     TeamPlayerMatchupRoleEvidenceView, TeamSeasonAutoPersonnelConfig,
     TeamSeasonForecastHistoryView, TeamSeasonForecastMovementView, TeamSeasonForecastView,
     TeamSeasonPersonnelInput, TeamSeasonPlausibleTradeConfig, TeamSeasonScenario,
+    TeamSeasonScenarioDevelopmentCalibrationInput, TeamSeasonScenarioDevelopmentCalibrationView,
     TeamSeasonScenarioEventKind, TeamSeasonSimulationConfig, TeamSeasonStretchKind,
     TeamSeasonTradeTeamInput, TrainingCampAuthorityStatus, TrainingCampCompetitionPoolStatus,
     TrainingCampConfig, TrainingCampExposureBoardView, TrainingCampExposureLane,
@@ -83,6 +89,7 @@ use icelines_core::{
     TrainingCampTransactionContextInput, ViewContext, ViewWindow, WindowHorizon,
     WindowManifestLifecyclePolicy, WindowScenarioAuthorityView, CANONICAL_TEAMS, CURRENT_SEASON,
     ORGANIZATION_WINDOW_SOURCE_PACKAGE_SCHEMA, PROSPECT_CONVERSION_PERFORMANCE_SCHEMA,
+    TEAM_SEASON_SCENARIO_DEVELOPMENT_CALIBRATION_SCHEMA,
 };
 use icelines_core::{
     attribute_organization_window_personnel_movement,
@@ -1732,6 +1739,8 @@ pub async fn run_affiliate_identities_league(
     candidates_path: Option<PathBuf>,
     discover_official: bool,
     refresh: bool,
+    as_of: Option<String>,
+    max_age: Option<u8>,
     json: bool,
     out: Option<PathBuf>,
     cfg: &Config,
@@ -1745,19 +1754,34 @@ pub async fn run_affiliate_identities_league(
     }
     let mut discovery_note = None;
     if discover_official {
+        let age_policy = match (as_of.as_deref(), max_age) {
+            (Some(value), Some(max_age)) => Some((
+                NaiveDate::parse_from_str(value, "%Y-%m-%d").with_context(|| {
+                    format!("invalid AHL identity discovery as-of date `{value}`")
+                })?,
+                max_age,
+            )),
+            (None, None) => None,
+            _ => bail!("AHL identity discovery age policy requires both --as-of and --max-age"),
+        };
         let teams = snapshot
             .teams
             .iter()
             .map(|team| team.team_name.clone())
             .collect::<Vec<_>>();
         let (catalog, exact_search_candidates, surname_search_candidates, landing_enriched) =
-            discover_official_affiliate_identities_for_teams(&snapshot, &teams, refresh, cfg)
-                .await?;
+            discover_official_affiliate_identities_for_teams(
+                &snapshot, &teams, refresh, cfg, age_policy,
+            )
+            .await?;
         catalogs.push(catalog);
+        let age_note = age_policy.map_or_else(String::new, |(as_of, max_age)| {
+            format!(" Discovery was restricted to players age {max_age} or younger on {as_of}.")
+        });
         discovery_note = Some(format!(
             "Deduplicated official NHL discovery across {} AHL team(s) proposed {exact_search_candidates} exact-name candidate(s) and {surname_search_candidates} surname fallback candidate(s); {landing_enriched} received player-landing birth-date corroboration. All proposals remain pending explicit review.",
             teams.len()
-        ));
+        ) + &age_note);
     }
     if catalogs.is_empty() {
         bail!("league affiliate identity review requires --candidates or --discover-official");
@@ -3277,8 +3301,14 @@ async fn discover_official_affiliate_identities(
     refresh: bool,
     cfg: &Config,
 ) -> anyhow::Result<(AhlCanonicalIdentityCatalog, usize, usize, usize)> {
-    discover_official_affiliate_identities_for_teams(snapshot, &[team.to_owned()], refresh, cfg)
-        .await
+    discover_official_affiliate_identities_for_teams(
+        snapshot,
+        &[team.to_owned()],
+        refresh,
+        cfg,
+        None,
+    )
+    .await
 }
 
 async fn discover_official_affiliate_identities_for_teams(
@@ -3286,6 +3316,7 @@ async fn discover_official_affiliate_identities_for_teams(
     teams: &[String],
     refresh: bool,
     cfg: &Config,
+    age_policy: Option<(NaiveDate, u8)>,
 ) -> anyhow::Result<(AhlCanonicalIdentityCatalog, usize, usize, usize)> {
     snapshot.validate().map_err(anyhow::Error::msg)?;
     if teams.is_empty() {
@@ -3293,14 +3324,19 @@ async fn discover_official_affiliate_identities_for_teams(
     }
     let mut roster = Vec::new();
     for team in teams {
-        roster.extend(
-            &snapshot
-                .teams
-                .iter()
-                .find(|row| row.team_name == *team)
-                .with_context(|| format!("AHL snapshot has no team named `{team}`"))?
-                .roster,
-        );
+        let team = snapshot
+            .teams
+            .iter()
+            .find(|row| row.team_name == *team)
+            .with_context(|| format!("AHL snapshot has no team named `{team}`"))?;
+        roster.extend(team.roster.iter().filter(|player| {
+            age_policy.is_none_or(|(as_of, max_age)| {
+                age_on_date(&player.birthdate, as_of).is_some_and(|age| age <= max_age)
+            })
+        }));
+    }
+    if roster.is_empty() {
+        bail!("official AHL identity discovery age policy selected no roster players");
     }
     let icelines_home = cfg
         .snapshot_dir()
@@ -3428,6 +3464,16 @@ async fn discover_official_affiliate_identities_for_teams(
         surname_search_candidates,
         landing_enriched,
     ))
+}
+
+fn age_on_date(birth_date: &str, as_of: NaiveDate) -> Option<u8> {
+    let birth = NaiveDate::parse_from_str(birth_date, "%Y-%m-%d").ok()?;
+    if birth > as_of {
+        return None;
+    }
+    let before_birthday = (as_of.month(), as_of.day()) < (birth.month(), birth.day());
+    let age = as_of.year() - birth.year() - i32::from(before_birthday);
+    u8::try_from(age).ok()
 }
 
 pub fn run_affiliate_input(
@@ -8979,6 +9025,261 @@ pub fn run_development_calibration(
     Ok(())
 }
 
+pub fn run_scenario_development_calibration(
+    input_path: PathBuf,
+    calibration_path: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let input: TeamSeasonScenarioDevelopmentCalibrationInput =
+        read_icecast_json(&input_path, "scenario development calibration input")?;
+    let calibration: DevelopmentCalibrationView =
+        read_icecast_json(&calibration_path, "development calibration")?;
+    let view = calibrate_team_season_scenario_development(input, &calibration)
+        .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_scenario_development_calibration(&view)
+    };
+    if let Some(path) = out {
+        if let Some(parent) = path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("create {}", parent.display()))?;
+        }
+        std::fs::write(&path, output.as_bytes())
+            .with_context(|| format!("write {}", path.display()))?;
+        println!(
+            "Wrote IceCast scenario development calibration to {}",
+            path.display()
+        );
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_prospect_arrival_calibration(
+    input_path: Option<PathBuf>,
+    career_discovery_path: Option<PathBuf>,
+    player_id: Option<u32>,
+    event_id: Option<String>,
+    forecast_season: Option<u32>,
+    conversion_board_path: Option<PathBuf>,
+    conversion_archive_path: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+    input_out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let input: ProspectArrivalCalibrationInput = match (input_path, career_discovery_path) {
+        (Some(path), None) => read_icecast_json(&path, "prospect arrival calibration input")?,
+        (None, Some(path)) => {
+            let player_id = player_id.context("--player-id is required with --career-discovery")?;
+            let event_id = event_id.context("--event-id is required with --career-discovery")?;
+            let forecast_season =
+                forecast_season.context("--forecast-season is required with --career-discovery")?;
+            let discovery: ProspectCareerDiscoveryView =
+                read_icecast_json(&path, "prospect career discovery")?;
+            if discovery.schema != PROSPECT_CAREER_DISCOVERY_SCHEMA {
+                bail!(
+                    "invalid prospect career discovery schema in {}",
+                    path.display()
+                );
+            }
+            let studies = discovery
+                .studies
+                .iter()
+                .filter(|study| study.player_id == player_id)
+                .collect::<Vec<_>>();
+            if studies.len() != 1 {
+                let goalie_matches = discovery
+                    .goalie_studies
+                    .iter()
+                    .filter(|study| study.player_id == player_id)
+                    .count();
+                bail!(
+                    "career discovery must contain exactly one skater study for player {player_id}; found {} skater and {goalie_matches} goalie studies",
+                    studies.len()
+                );
+            }
+            let input = adapt_prospect_arrival_calibration_input(
+                event_id,
+                studies[0],
+                forecast_season,
+                ProspectArrivalCalibrationConfig::default(),
+            )
+            .map_err(anyhow::Error::msg)?;
+            if let Some(path) = input_out.as_deref() {
+                let bytes = format!("{}\n", serde_json::to_string_pretty(&input)?);
+                write_icecast_file(
+                    path,
+                    bytes.as_bytes(),
+                    "IceCast prospect arrival calibration input",
+                )?;
+            }
+            input
+        }
+        _ => bail!("provide exactly one prospect arrival input or career discovery"),
+    };
+    let board = match (conversion_board_path, conversion_archive_path) {
+        (Some(path), None) => read_icecast_json(&path, "prospect conversion board")?,
+        (None, Some(path)) => {
+            let archive: ProspectConversionArchive =
+                read_icecast_json(&path, "prospect conversion archive")?;
+            validate_prospect_conversion_archive(&archive).map_err(anyhow::Error::msg)?;
+            archive.board
+        }
+        _ => bail!("provide exactly one prospect conversion board or archive"),
+    };
+    let view = calibrate_prospect_arrival(input, &board).map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_arrival_calibration(&view)
+    };
+    if let Some(path) = out {
+        if let Some(parent) = path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("create {}", parent.display()))?;
+        }
+        std::fs::write(&path, output.as_bytes())
+            .with_context(|| format!("write {}", path.display()))?;
+        println!(
+            "Wrote IceCast prospect arrival calibration to {}",
+            path.display()
+        );
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_prospect_arrival_league(
+    camp_forecast_path: PathBuf,
+    career_history_path: Option<PathBuf>,
+    conversion_board_path: Option<PathBuf>,
+    conversion_archive_path: Option<PathBuf>,
+    forecast_season: u32,
+    as_of: String,
+    max_age: u8,
+    json: bool,
+    out: Option<PathBuf>,
+    discovery_out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let forecast: TrainingCampLeagueForecastView =
+        read_icecast_json(&camp_forecast_path, "league training-camp forecast")?;
+    let organizations = forecast
+        .teams
+        .iter()
+        .map(|team| team.team.trim().to_ascii_uppercase())
+        .collect::<Vec<_>>();
+    let actual = organizations
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    let expected = CANONICAL_TEAMS
+        .iter()
+        .map(|(abbreviation, _)| *abbreviation)
+        .collect::<BTreeSet<_>>();
+    if organizations.len() != CANONICAL_TEAMS.len() || actual != expected {
+        let missing = expected.difference(&actual).copied().collect::<Vec<_>>();
+        let unexpected = actual.difference(&expected).copied().collect::<Vec<_>>();
+        bail!(
+            "league prospect arrival requires the {} canonical organizations; found {} rows, missing [{}], unexpected [{}]",
+            CANONICAL_TEAMS.len(),
+            organizations.len(),
+            missing.join(", "),
+            unexpected.join(", ")
+        );
+    }
+    let as_of_date = NaiveDate::parse_from_str(&as_of, "%Y-%m-%d")
+        .with_context(|| format!("invalid --as-of date {as_of}; expected YYYY-MM-DD"))?;
+    let career_history_path = career_history_path.unwrap_or(Config::load()?.career_history_path());
+    let store = CareerHistoryStore::load(&career_history_path).with_context(|| {
+        format!(
+            "read career history store {}",
+            career_history_path.display()
+        )
+    })?;
+    let composition = build_prospect_program_from_camp_and_career_store(
+        forecast,
+        &store,
+        ProspectCareerProgramConfig {
+            context: ProspectCareerContextDraftConfig {
+                as_of_date,
+                max_age,
+            },
+            ..ProspectCareerProgramConfig::default()
+        },
+    )
+    .map_err(anyhow::Error::msg)?;
+    if let Some(path) = discovery_out.as_deref() {
+        let bytes = format!(
+            "{}\n",
+            serde_json::to_string_pretty(&composition.discovery)?
+        );
+        write_icecast_file(
+            path,
+            bytes.as_bytes(),
+            "IceCast league prospect career discovery",
+        )?;
+    }
+    let board = match (conversion_board_path, conversion_archive_path) {
+        (Some(path), None) => read_icecast_json(&path, "prospect conversion board")?,
+        (None, Some(path)) => {
+            let archive: ProspectConversionArchive =
+                read_icecast_json(&path, "prospect conversion archive")?;
+            validate_prospect_conversion_archive(&archive).map_err(anyhow::Error::msg)?;
+            archive.board
+        }
+        _ => bail!("provide exactly one prospect conversion board or archive"),
+    };
+    let view = calibrate_prospect_arrival_league(
+        organizations,
+        composition.discovery.studies,
+        forecast_season,
+        &board,
+        ProspectArrivalCalibrationConfig::default(),
+    )
+    .map_err(anyhow::Error::msg)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        let mut output = format!(
+            "Prospect arrival league · {}/{} calibrated skaters · {} exclusions\n",
+            view.calibrated_skaters, view.target_skaters, view.excluded_skaters
+        );
+        for team in &view.teams {
+            let _ = writeln!(
+                output,
+                "{} · {}/{} calibrated · {} exclusions",
+                team.organization,
+                team.calibrated_skaters,
+                team.target_skaters,
+                team.excluded_skaters
+            );
+        }
+        output
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "IceCast prospect arrival league calibration",
+        )?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
 pub fn run_prospect_study(
     input_path: PathBuf,
     json: bool,
@@ -9888,6 +10189,8 @@ pub fn run_prospect_conversion(
     through_season: u32,
     performance_path: Option<PathBuf>,
     performance_out: Option<PathBuf>,
+    input_out: Option<PathBuf>,
+    archive_out: Option<PathBuf>,
     json: bool,
     out: Option<PathBuf>,
 ) -> anyhow::Result<()> {
@@ -9946,7 +10249,17 @@ pub fn run_prospect_conversion(
         ProspectConversionConfig::default(),
     )
     .map_err(anyhow::Error::msg)?;
+    if let Some(path) = input_out.as_deref() {
+        let body = format!("{}\n", serde_json::to_string_pretty(&input)?);
+        write_icecast_file(path, body.as_bytes(), "IceCast prospect conversion input")?;
+    }
     let view = build_prospect_conversion_board(&input).map_err(anyhow::Error::msg)?;
+    if let Some(path) = archive_out.as_deref() {
+        let archive = build_prospect_conversion_archive(input.clone(), performance.clone())
+            .map_err(anyhow::Error::msg)?;
+        let body = format!("{}\n", serde_json::to_string_pretty(&archive)?);
+        write_icecast_file(path, body.as_bytes(), "IceCast prospect conversion archive")?;
+    }
     let output = if json {
         format!("{}\n", serde_json::to_string_pretty(&view)?)
     } else {
@@ -9954,6 +10267,42 @@ pub fn run_prospect_conversion(
     };
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "IceCast prospect conversion board")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_prospect_conversion_replay(
+    input_path: Option<PathBuf>,
+    archive_path: Option<PathBuf>,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let view = match (input_path, archive_path) {
+        (Some(path), None) => {
+            let input = read_icecast_json(&path, "prospect conversion input")?;
+            build_prospect_conversion_board(&input).map_err(anyhow::Error::msg)?
+        }
+        (None, Some(path)) => {
+            let archive: ProspectConversionArchive =
+                read_icecast_json(&path, "prospect conversion archive")?;
+            validate_prospect_conversion_archive(&archive).map_err(anyhow::Error::msg)?;
+            archive.board
+        }
+        _ => bail!("provide exactly one prospect conversion input or archive"),
+    };
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&view)?)
+    } else {
+        render_prospect_conversion(&view)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "IceCast prospect conversion replay",
+        )?;
     } else {
         print!("{output}");
     }
@@ -10436,6 +10785,62 @@ fn render_development_calibration(view: &DevelopmentCalibrationView) -> String {
         let _ = writeln!(out, "\n- {disclosure}");
     }
     out
+}
+
+fn render_scenario_development_calibration(
+    view: &TeamSeasonScenarioDevelopmentCalibrationView,
+) -> String {
+    let mut text = String::new();
+    let _ = writeln!(text, "Scenario development calibration");
+    let _ = writeln!(text, "{}", view.scenario.name);
+    let _ = writeln!(
+        text,
+        "Historical transitions: {} | calibrated: {} | uncalibrated: {}",
+        view.source_transitions, view.calibrated_events, view.uncalibrated_events
+    );
+    for row in &view.probability_authority {
+        let _ = writeln!(
+            text,
+            "{}: {:.1}% -> {:.1}% [{:?}]",
+            row.player.as_deref().unwrap_or(&row.event_id),
+            row.configured_probability * 100.0,
+            row.applied_probability * 100.0,
+            row.status
+        );
+    }
+    text
+}
+
+fn render_prospect_arrival_calibration(view: &ProspectArrivalCalibrationView) -> String {
+    let applied_arrival = view
+        .horizon_adjusted_arrival_probability
+        .unwrap_or(view.calibrated_arrival_probability);
+    let applied_established = view
+        .horizon_adjusted_established_probability
+        .or(view.calibrated_established_probability);
+    let horizon = match (
+        view.source_horizon_seasons,
+        view.forecast_horizon_seasons,
+    ) {
+        (Some(source), Some(forecast)) => format!(
+            " | cumulative source: {:.1}% arrival over {source} seasons | applied horizon: {forecast} season(s)",
+            view.calibrated_arrival_probability * 100.0
+        ),
+        _ => String::new(),
+    };
+    format!(
+        "Prospect arrival calibration\n{} ({})\nArrival: {:.1}% | established role: {}{} | neighbors: {} | same-position candidates: {} | mean signal distance: {:.2}\n",
+        view.player,
+        view.position_group,
+        applied_arrival * 100.0,
+        applied_established
+            .map(|probability| format!("{:.1}%", probability * 100.0))
+            .unwrap_or_else(|| "unavailable".to_owned()),
+        horizon,
+        view.neighbor_players,
+        view.candidate_players,
+        view.mean_signal_distance
+    )
 }
 
 fn render_prospect_study(view: &ProspectDevelopmentStudyView) -> String {
@@ -11733,8 +12138,18 @@ fn parse_official_nhl_archive_url(
 
 fn load_scenario(path: &std::path::Path, season: u32) -> anyhow::Result<TeamSeasonScenario> {
     let bytes = std::fs::read(path).with_context(|| format!("read {}", path.display()))?;
-    let mut scenario: TeamSeasonScenario = serde_json::from_slice(&bytes)
+    let value: serde_json::Value = serde_json::from_slice(&bytes)
         .with_context(|| format!("parse IceCast scenario {}", path.display()))?;
+    let mut scenario = if value.get("schema").and_then(serde_json::Value::as_str)
+        == Some(TEAM_SEASON_SCENARIO_DEVELOPMENT_CALIBRATION_SCHEMA)
+    {
+        serde_json::from_value::<TeamSeasonScenarioDevelopmentCalibrationView>(value)
+            .with_context(|| format!("parse calibrated IceCast scenario {}", path.display()))?
+            .scenario
+    } else {
+        serde_json::from_value::<TeamSeasonScenario>(value)
+            .with_context(|| format!("parse IceCast scenario {}", path.display()))?
+    };
     if season == CURRENT_SEASON && scenario.trade_deadline.is_none() {
         scenario.trade_deadline = NaiveDate::from_ymd_opt(2027, 3, 5);
     }

@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-03",
+  "as_of": "2026-08-04",
   "buyer": "SEA",
   "preferences": [
     {"team":"ANA","current_weight":0.5,"future_weight":1.4,"cap_weight":2.0,"season_impact_weight":1.0,"needs":{"future_asset":100.0}},
@@ -37,9 +37,13 @@
   ],
   "availability": [
     {"player_id":8475158,"evidence":{"kind":"speculative_fit","probability":0.20,"source_url":null,"observed_at":null,"destination_allowed":null},"surplus_score":60.0},
-    {"player_id":8475810,"evidence":{"kind":"speculative_fit","probability":0.15,"source_url":null,"observed_at":null,"destination_allowed":null},"surplus_score":70.0}
+    {"player_id":8475810,"evidence":{"kind":"speculative_fit","probability":0.15,"source_url":null,"observed_at":null,"destination_allowed":null},"surplus_score":70.0},
+    {"player_id":8483524,"evidence":{"kind":"reported_request","probability":0.80,"source_url":"https://sports.mynorthwest.com/nhl/seattle-kraken/report-seattle-kraken-shane-wright-to-part-ways","observed_at":"2026-07-04T10:10:00-07:00","destination_allowed":null},"surplus_score":85.0}
   ],
-  "protected_player_ids": [8483442, 8483524, 8484800],
+  "value_timing": [
+    {"player_id":8483524,"current_value_share":0.45,"source_url":"https://puckpedia.com/player/shane-wright","observed_at":"2026-08-04T12:00:00-07:00","disclosure":"Age 22, entering the final season of an $886,666 ELC and retaining RFA control in 2027; this is a future/control timing scenario, not a total-value premium."}
+  ],
+  "protected_player_ids": [8483442, 8484800],
   "draft_pick_assets": [],
   "config": {
     "value_basis": {"outcome_measure":"nhl_regular_season_games_played","horizon_years":7,"method":"camp-score screening translation v1"},

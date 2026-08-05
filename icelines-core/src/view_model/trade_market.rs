@@ -597,6 +597,17 @@ pub struct TradeScoutAvailabilityOverlayInput {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeScoutPlayerValueTimingOverlayInput {
+    pub player_id: u32,
+    /// Share of total control value attributed to current contribution rather
+    /// than future/control value. This changes timing, not total market value.
+    pub current_value_share: f64,
+    pub source_url: String,
+    pub observed_at: String,
+    pub disclosure: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TradeScoutPopulationConfig {
     pub value_basis: TradeValueBasis,
     pub control_value_per_score: f64,
@@ -615,6 +626,8 @@ pub struct TradeScoutPopulationInput {
     pub preferences: Vec<TradeTeamPreferenceInput>,
     #[serde(default)]
     pub availability: Vec<TradeScoutAvailabilityOverlayInput>,
+    #[serde(default)]
+    pub value_timing: Vec<TradeScoutPlayerValueTimingOverlayInput>,
     #[serde(default)]
     pub protected_player_ids: Vec<u32>,
     /// Already-valued, ownership-scoped picks from the draft-pick source.
@@ -2178,6 +2191,11 @@ pub fn populate_trade_scout_league_from_camp(
         .iter()
         .map(|row| (row.player_id, row))
         .collect::<BTreeMap<_, _>>();
+    let value_timing = input
+        .value_timing
+        .iter()
+        .map(|row| (row.player_id, row))
+        .collect::<BTreeMap<_, _>>();
     let protected = input
         .protected_player_ids
         .iter()
@@ -2215,6 +2233,7 @@ pub fn populate_trade_scout_league_from_camp(
                     &team.team,
                     player,
                     availability.get(&player.player_id).copied(),
+                    value_timing.get(&player.player_id).copied(),
                     protected.contains(&player.player_id),
                     &input.config,
                 )
@@ -3163,6 +3182,7 @@ fn camp_player_trade_asset(
     team: &str,
     player: &TrainingCampPlayerView,
     overlay: Option<&TradeScoutAvailabilityOverlayInput>,
+    value_timing: Option<&TradeScoutPlayerValueTimingOverlayInput>,
     protected: bool,
     config: &TradeScoutPopulationConfig,
 ) -> Result<TradeScoutLeagueAssetInput, DraftPickValueError> {
@@ -3196,11 +3216,16 @@ fn camp_player_trade_asset(
         |row| row.evidence.clone(),
     );
     let market_value = player.projected_score * config.control_value_per_score;
-    let current_share = if player.prospect {
-        (0.20 + player.make_probability * 0.45).clamp(0.20, 0.65)
-    } else {
-        0.75
-    };
+    let current_share = value_timing.map_or_else(
+        || {
+            if player.prospect {
+                (0.20 + player.make_probability * 0.45).clamp(0.20, 0.65)
+            } else {
+                0.75
+            }
+        },
+        |row| row.current_value_share,
+    );
     let (position, minimum_score) = if player.primary_position.is_forward() {
         ("top_six_forward", config.top_six_forward_score)
     } else if player.primary_position.is_defense() {
@@ -3238,7 +3263,15 @@ fn camp_player_trade_asset(
             disclosures: vec![format!(
                 "Camp score {:.2}, GP confidence {:.2}, and prospect={} were translated by the supplied Trade Scout population policy for {team}.",
                 player.projected_score, player.gp_confidence, player.prospect
-            )],
+            )]
+            .into_iter()
+            .chain(value_timing.map(|row| {
+                format!(
+                    "Value timing uses current share {:.2} from {} observed {}: {}",
+                    row.current_value_share, row.source_url, row.observed_at, row.disclosure
+                )
+            }))
+            .collect(),
         },
         surplus_score,
         protected,
@@ -3271,6 +3304,11 @@ fn validate_trade_scout_population(
         .iter()
         .map(|row| row.player_id)
         .collect::<BTreeSet<_>>();
+    let value_timing = input
+        .value_timing
+        .iter()
+        .map(|row| row.player_id)
+        .collect::<BTreeSet<_>>();
     let protected = input
         .protected_player_ids
         .iter()
@@ -3299,6 +3337,7 @@ fn validate_trade_scout_population(
         || preferences.len() != input.preferences.len()
         || preferences.iter().any(|team| !team_ids.contains(team))
         || overlays.len() != input.availability.len()
+        || value_timing.len() != input.value_timing.len()
         || protected.len() != input.protected_player_ids.len()
         || pick_ids.len() != input.draft_pick_assets.len()
         || input.config.value_basis.outcome_measure.trim().is_empty()
@@ -3329,6 +3368,17 @@ fn validate_trade_scout_population(
                     &row.evidence.observed_at,
                 ))
         })
+        || input.value_timing.iter().any(|row| {
+            row.player_id == 0
+                || !camp_player_id_set.contains(&row.player_id)
+                || !row.current_value_share.is_finite()
+                || !(0.0..=1.0).contains(&row.current_value_share)
+                || row.disclosure.trim().is_empty()
+                || !valid_execution_evidence(
+                    &Some(row.source_url.clone()),
+                    &Some(row.observed_at.clone()),
+                )
+        })
         || input
             .protected_player_ids
             .iter()
@@ -3341,7 +3391,7 @@ fn validate_trade_scout_population(
         })
     {
         return Err(DraftPickValueError::InvalidDistribution(
-            "trade scout population requires a valid as_of and unique camp teams/players, unique known preferences/overlays/protection, 0-1 dated sourced availability, ownership-scoped picks, non-negative translation policy, and one common value basis"
+            "trade scout population requires a valid as_of and unique camp teams/players, unique known preferences/availability/value-timing/protection, dated sourced availability and value-timing overlays, ownership-scoped picks, non-negative translation policy, and one common value basis"
                 .to_owned(),
         ));
     }
@@ -4561,6 +4611,13 @@ mod tests {
                 buyer: "SEA".to_owned(),
                 preferences: vec![preference("SEA", 1.4, 0.5), preference("PIT", 0.5, 1.4)],
                 availability: Vec::new(),
+                value_timing: vec![TradeScoutPlayerValueTimingOverlayInput {
+                    player_id: 2,
+                    current_value_share: 0.4,
+                    source_url: "https://example.test/veteran-contract".to_owned(),
+                    observed_at: "2026-08-03T12:00:00Z".to_owned(),
+                    disclosure: "Young NHL player retains meaningful future control.".to_owned(),
+                }],
                 protected_player_ids: Vec::new(),
                 draft_pick_assets: Vec::new(),
                 config: TradeScoutPopulationConfig {
@@ -4588,6 +4645,11 @@ mod tests {
             population.league_input.organizations[0].assets[0].kind,
             TradeScoutLeagueAssetKind::Prospect
         );
+        let veteran = &population.league_input.organizations[1].assets[0].asset;
+        assert!((veteran.market_value - 90.0).abs() < 1e-9);
+        assert!((veteran.current_value - 36.0).abs() < 1e-9);
+        assert!((veteran.future_value - 54.0).abs() < 1e-9);
+        assert!(veteran.disclosures[1].contains("Young NHL player"));
     }
 
     #[test]
@@ -4623,6 +4685,7 @@ mod tests {
                     },
                     surplus_score: None,
                 }],
+                value_timing: Vec::new(),
                 protected_player_ids: Vec::new(),
                 draft_pick_assets: Vec::new(),
                 config: TradeScoutPopulationConfig {
@@ -4639,6 +4702,54 @@ mod tests {
         .unwrap_err();
 
         assert!(error.to_string().contains("dated sourced availability"));
+    }
+
+    #[test]
+    fn camp_population_rejects_undated_value_timing_override() {
+        let camp = TrainingCampLeagueForecastView {
+            schema: TRAINING_CAMP_LEAGUE_FORECAST_SCHEMA.to_owned(),
+            season: 20262027,
+            teams_requested: 1,
+            teams_simulated: 1,
+            teams_degraded: 0,
+            teams_augmented: 0,
+            teams_failed: 0,
+            teams: vec![camp_team(
+                "SEA",
+                vec![camp_player(1, "Young NHL player", false, true, 60.0, 0.8)],
+            )],
+            disclosures: Vec::new(),
+        };
+        let error = populate_trade_scout_league_from_camp(
+            &camp,
+            TradeScoutPopulationInput {
+                as_of: "2026-08-03".to_owned(),
+                buyer: "SEA".to_owned(),
+                preferences: vec![preference("SEA", 1.4, 0.5)],
+                availability: Vec::new(),
+                value_timing: vec![TradeScoutPlayerValueTimingOverlayInput {
+                    player_id: 1,
+                    current_value_share: 0.4,
+                    source_url: "https://example.test/player-contract".to_owned(),
+                    observed_at: String::new(),
+                    disclosure: "Future control scenario.".to_owned(),
+                }],
+                protected_player_ids: Vec::new(),
+                draft_pick_assets: Vec::new(),
+                config: TradeScoutPopulationConfig {
+                    value_basis: player_asset("basis", "x", 1.0, 1.0, 0.0).value_basis,
+                    control_value_per_score: 1.5,
+                    season_points_per_score: 0.01,
+                    top_six_forward_score: 45.0,
+                    top_four_defense_score: 45.0,
+                    starting_goalie_score: 50.0,
+                    league: TradeScoutLeagueConfig::default(),
+                },
+            },
+        )
+        .unwrap_err();
+
+        assert!(error.to_string().contains("value-timing"));
     }
 
     #[test]

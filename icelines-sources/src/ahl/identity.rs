@@ -213,10 +213,15 @@ pub fn merge_ahl_canonical_identity_catalogs(
 ) -> Result<AhlCanonicalIdentityCatalog, AhlIdentityError> {
     let checked_at = checked_at.into();
     let mut merged = BTreeMap::<u32, AhlCanonicalIdentityCandidate>::new();
+    let mut evidence_by_player = BTreeMap::<u32, BTreeSet<String>>::new();
     for catalog in catalogs {
         validate_catalog_authority(catalog)?;
         for candidate in &catalog.candidates {
             validate_candidate(candidate)?;
+            evidence_by_player
+                .entry(candidate.nhl_player_id)
+                .or_default()
+                .extend(candidate.evidence_urls.iter().cloned());
             match merged.entry(candidate.nhl_player_id) {
                 std::collections::btree_map::Entry::Vacant(entry) => {
                     entry.insert(candidate.clone());
@@ -238,14 +243,16 @@ pub fn merge_ahl_canonical_identity_catalogs(
                     if current.birth_date.is_none() {
                         current.birth_date.clone_from(&candidate.birth_date);
                     }
-                    current
-                        .evidence_urls
-                        .extend(candidate.evidence_urls.clone());
-                    current.evidence_urls.sort();
-                    current.evidence_urls.dedup();
                 }
             }
         }
+    }
+    for (player_id, candidate) in &mut merged {
+        candidate.evidence_urls = evidence_by_player
+            .remove(player_id)
+            .unwrap_or_default()
+            .into_iter()
+            .collect();
     }
     let catalog = AhlCanonicalIdentityCatalog {
         schema: AHL_CANONICAL_IDENTITY_CATALOG_SCHEMA.to_owned(),

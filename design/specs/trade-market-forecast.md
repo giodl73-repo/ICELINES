@@ -209,6 +209,21 @@ non-incumbent selection loss produce only a `depth_surplus` hypothesis unless a
 separate overlay supplies stronger evidence. Reported-request, club-shopping,
 or contract-pressure overlays require a source URL and observation time.
 
+A dated `value_timing` overlay may change only the split of an established NHL
+player's fixed total market value between current contribution and future/control
+value. It exists for young NHL players whose age, contract cost, and remaining
+team control are not represented by the generic incumbent split. The overlay
+must name the player, a bounded current-value share, source URL, observation
+time, and disclosure. It must not relabel the player as a prospect or silently
+increase total market value.
+
+Control packages that exchange players with distinct timeline profiles must
+evaluate both clubs with their own current/future, cap, season, and need weights.
+A near-equal total-value exchange may therefore be mutually useful even when its
+immediate lineup effect differs by club. Negotiation ladders must remain bounded
+by the target-value policy; they must not add a pick merely because a sourced
+report says the seller seeks a high return.
+
 Protection policy and already-valued, ownership-scoped draft-pick assets remain
 explicit inputs. Missing camp forecasts remain named coverage gaps, and the
 populator automatically marks the downstream league inventory partial. Contract,
@@ -292,6 +307,13 @@ team ledger. The current PuckPedia public pages require browser execution in
 this environment, and its documented data API requires separate access.
 
 ## Historical calibration and validation
+
+Player-breakout occurrence assumptions attached to a trade scenario use the
+team-season forecast's `team_season_scenario_development_calibration.v1`
+contract. Trade fairness and current/future player value remain separate from
+that occurrence model. A young established NHL player may use a matching
+development cohort; a prospect without qualifying NHL history must stay labeled
+as an uncalibrated scenario assumption until a separate arrival model exists.
 
 Backtests freeze evidence at the proposal date. Trade completion is the market
 label; later player performance is used only for retrospective value scoring.
