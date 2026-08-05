@@ -59,8 +59,9 @@
         "kind": {
           "type": "string",
           "enum": [
-            "established_role_reroute", "calibration_distance", "source_control",
-            "study_quality", "other_calibration"
+            "established_role_reroute", "calibration_distance", "comparable_sample",
+            "forecast_horizon", "historical_cohort_overlap", "unsupported_position",
+            "source_control", "study_quality", "other_calibration"
           ]
         },
         "count": { "type": "integer", "minimum": 1 },

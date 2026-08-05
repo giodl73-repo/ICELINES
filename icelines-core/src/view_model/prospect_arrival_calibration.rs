@@ -12,6 +12,98 @@ pub const PROSPECT_ARRIVAL_CALIBRATION_SCHEMA: &str = "prospect_arrival_calibrat
 pub const PROSPECT_ARRIVAL_LEAGUE_CALIBRATION_SCHEMA: &str =
     "prospect_arrival_league_calibration.v1";
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectArrivalExclusionKind {
+    /// Backward-compatible state for artifacts created before typed causes.
+    #[default]
+    Unclassified,
+    EstablishedRoleReroute,
+    CalibrationDistance,
+    ComparableSample,
+    ForecastHorizon,
+    HistoricalCohortOverlap,
+    UnsupportedPosition,
+    SourceControl,
+    StudyQuality,
+    OtherCalibration,
+}
+
+impl ProspectArrivalExclusionKind {
+    pub fn is_unclassified(&self) -> bool {
+        *self == Self::Unclassified
+    }
+
+    pub fn from_reason(reason: &str) -> Self {
+        let normalized = reason.to_ascii_lowercase();
+        if normalized.contains("already has")
+            && normalized.contains("nhl games")
+            && normalized.contains("established-role forecasting")
+        {
+            Self::EstablishedRoleReroute
+        } else if normalized.contains("mean signal distance") {
+            Self::CalibrationDistance
+        } else if normalized.contains("same-position candidates")
+            || normalized.contains("selected only") && normalized.contains("neighbors")
+        {
+            Self::ComparableSample
+        } else if normalized.contains("forecast horizon")
+            || normalized.contains("historical outcome horizon")
+        {
+            Self::ForecastHorizon
+        } else if normalized.contains("cannot appear in its historical outcome cohort") {
+            Self::HistoricalCohortOverlap
+        } else if normalized.contains("position is unsupported") {
+            Self::UnsupportedPosition
+        } else if normalized.contains("source control")
+            || normalized.contains("organization control")
+        {
+            Self::SourceControl
+        } else if normalized.contains("study lacks")
+            || normalized.contains("canonical skater study")
+            || normalized.contains("identity")
+            || normalized.contains("career evidence")
+        {
+            Self::StudyQuality
+        } else {
+            Self::OtherCalibration
+        }
+    }
+
+    pub fn blocks_rank(self) -> bool {
+        !matches!(self, Self::EstablishedRoleReroute)
+    }
+
+    pub fn remediation(self) -> &'static str {
+        match self {
+            Self::Unclassified => "classify the retained player-level exclusion",
+            Self::EstablishedRoleReroute => {
+                "remove from prospect arrivals and evaluate with established-role forecasting"
+            }
+            Self::CalibrationDistance => {
+                "expand or improve comparable historical cohorts before publishing a probability"
+            }
+            Self::ComparableSample => {
+                "acquire enough same-position historical comparables for the configured sample gate"
+            }
+            Self::ForecastHorizon => {
+                "align the requested forecast horizon with one supported historical outcome horizon"
+            }
+            Self::HistoricalCohortOverlap => {
+                "remove the target player from its historical outcome cohort to prevent leakage"
+            }
+            Self::UnsupportedPosition => "map the player to a supported canonical position cohort",
+            Self::SourceControl => {
+                "resolve current organization control with authoritative source evidence"
+            }
+            Self::StudyQuality => {
+                "repair the player identity, career evidence, or required study components"
+            }
+            Self::OtherCalibration => "review the retained player-level calibration failure",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct ProspectArrivalCalibrationConfig {
     pub neighbor_count: usize,
@@ -101,7 +193,22 @@ pub struct ProspectArrivalCalibrationView {
 pub struct ProspectArrivalLeagueExclusionView {
     pub player_id: u32,
     pub player: String,
+    #[serde(
+        default,
+        skip_serializing_if = "ProspectArrivalExclusionKind::is_unclassified"
+    )]
+    pub kind: ProspectArrivalExclusionKind,
     pub reason: String,
+}
+
+impl ProspectArrivalLeagueExclusionView {
+    pub fn effective_kind(&self) -> ProspectArrivalExclusionKind {
+        if self.kind == ProspectArrivalExclusionKind::Unclassified {
+            ProspectArrivalExclusionKind::from_reason(&self.reason)
+        } else {
+            self.kind
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -214,6 +321,7 @@ pub fn calibrate_prospect_arrival_league(
             .push(ProspectArrivalLeagueExclusionView {
                 player_id: exclusion.player_id,
                 player: exclusion.player,
+                kind: ProspectArrivalExclusionKind::SourceControl,
                 reason: exclusion.reason,
             });
     }
@@ -259,6 +367,7 @@ pub fn calibrate_prospect_arrival_league(
                 Err(reason) => exclusions.push(ProspectArrivalLeagueExclusionView {
                     player_id,
                     player,
+                    kind: ProspectArrivalExclusionKind::from_reason(&reason),
                     reason,
                 }),
             }
@@ -912,6 +1021,10 @@ mod tests {
         assert_eq!(view.teams[0].organization, "NYR");
         assert_eq!(view.teams[1].organization, "SEA");
         assert_eq!(view.teams[1].exclusions.len(), 1);
+        assert_eq!(
+            view.teams[1].exclusions[0].kind,
+            ProspectArrivalExclusionKind::HistoricalCohortOverlap
+        );
         assert_eq!(view.teams[2].organization, "VGK");
         assert_eq!(view.teams[2].target_skaters, 0);
     }
@@ -945,6 +1058,10 @@ mod tests {
         assert_eq!(view.excluded_skaters, 1);
         assert_eq!(view.teams[0].target_skaters, 1);
         assert_eq!(view.teams[0].exclusions[0].player, "Alberts Smits");
+        assert_eq!(
+            view.teams[0].exclusions[0].kind,
+            ProspectArrivalExclusionKind::SourceControl
+        );
         assert_eq!(
             view.population_authority
                 .as_ref()

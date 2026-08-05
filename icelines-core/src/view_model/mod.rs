@@ -494,13 +494,13 @@ pub use poach::{
 };
 pub use prospect_arrival_board::{
     build_prospect_arrival_board, ProspectArrivalBoardError, ProspectArrivalBoardTeamView,
-    ProspectArrivalBoardView, ProspectArrivalExclusionKind, ProspectArrivalExclusionSummaryView,
-    ProspectArrivalRankState, PROSPECT_ARRIVAL_BOARD_METHOD, PROSPECT_ARRIVAL_BOARD_SCHEMA,
+    ProspectArrivalBoardView, ProspectArrivalExclusionSummaryView, ProspectArrivalRankState,
+    PROSPECT_ARRIVAL_BOARD_METHOD, PROSPECT_ARRIVAL_BOARD_SCHEMA,
 };
 pub use prospect_arrival_calibration::{
     adapt_prospect_arrival_calibration_input, calibrate_prospect_arrival,
     calibrate_prospect_arrival_league, ProspectArrivalCalibrationConfig,
-    ProspectArrivalCalibrationInput, ProspectArrivalCalibrationView,
+    ProspectArrivalCalibrationInput, ProspectArrivalCalibrationView, ProspectArrivalExclusionKind,
     ProspectArrivalLeagueCalibrationView, ProspectArrivalLeagueExclusionView,
     ProspectArrivalLeaguePopulationAuthorityView, ProspectArrivalLeagueSourceExclusionInput,
     ProspectArrivalLeagueTeamView, PROSPECT_ARRIVAL_CALIBRATION_INPUT_SCHEMA,

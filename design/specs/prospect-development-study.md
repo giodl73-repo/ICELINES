@@ -459,6 +459,12 @@ Each skater uses one shared cohort and policy. Adapter, self-overlap, sample,
 and comparable-distance failures remain attached to the player and team rather
 than disappearing from league totals. Goalies remain outside this skater
 cohort until a separately calibrated goalie-arrival authority exists.
+Every newly generated exclusion carries a stable `kind` alongside its raw
+reason. The enum distinguishes established-role reroutes, control and study
+failures, historical-cohort leakage, position and horizon mismatches,
+comparable-sample and distance gates, and unknown calibration failures. Older
+v1 artifacts without `kind` remain readable and are classified once at the
+core boundary.
 
 The camp-derived route is a coverage draft. The authority-backed route accepts
 one or more canonical career discoveries and a sealed prospect source package,

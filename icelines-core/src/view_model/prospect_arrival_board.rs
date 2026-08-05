@@ -8,7 +8,8 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 use crate::{
-    ProspectArrivalLeagueCalibrationView, CANONICAL_TEAMS,
+    ProspectArrivalExclusionKind, ProspectArrivalLeagueCalibrationView,
+    ProspectArrivalLeagueExclusionView, CANONICAL_TEAMS,
     PROSPECT_ARRIVAL_LEAGUE_CALIBRATION_SCHEMA,
 };
 
@@ -20,40 +21,6 @@ pub const PROSPECT_ARRIVAL_BOARD_METHOD: &str = "prospect_arrival_board.v1";
 pub enum ProspectArrivalRankState {
     Ranked,
     Withheld,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ProspectArrivalExclusionKind {
-    EstablishedRoleReroute,
-    CalibrationDistance,
-    SourceControl,
-    StudyQuality,
-    OtherCalibration,
-}
-
-impl ProspectArrivalExclusionKind {
-    pub fn blocks_rank(self) -> bool {
-        self != Self::EstablishedRoleReroute
-    }
-
-    pub fn remediation(self) -> &'static str {
-        match self {
-            Self::EstablishedRoleReroute => {
-                "remove from prospect arrivals and evaluate with established-role forecasting"
-            }
-            Self::CalibrationDistance => {
-                "expand or improve comparable historical cohorts before publishing a probability"
-            }
-            Self::SourceControl => {
-                "resolve current organization control with authoritative source evidence"
-            }
-            Self::StudyQuality => {
-                "repair the player identity, career evidence, or required study components"
-            }
-            Self::OtherCalibration => "review the retained player-level calibration failure",
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -231,12 +198,8 @@ pub fn build_prospect_arrival_board(
         rank_blockers
             .push("complete sealed prospect population authority was not supplied".to_owned());
     }
-    let exclusion_summary = summarize_exclusions(
-        arrival
-            .teams
-            .iter()
-            .flat_map(|team| team.exclusions.iter().map(|row| row.reason.as_str())),
-    );
+    let exclusion_summary =
+        summarize_exclusions(arrival.teams.iter().flat_map(|team| team.exclusions.iter()));
     let routed_established_skaters = summary_count(
         &exclusion_summary,
         ProspectArrivalExclusionKind::EstablishedRoleReroute,
@@ -263,8 +226,7 @@ pub fn build_prospect_arrival_board(
         .teams
         .iter()
         .map(|team| {
-            let exclusion_summary =
-                summarize_exclusions(team.exclusions.iter().map(|row| row.reason.as_str()));
+            let exclusion_summary = summarize_exclusions(team.exclusions.iter());
             let routed_established_skaters = summary_count(
                 &exclusion_summary,
                 ProspectArrivalExclusionKind::EstablishedRoleReroute,
@@ -382,11 +344,11 @@ pub fn build_prospect_arrival_board(
 }
 
 fn summarize_exclusions<'a>(
-    reasons: impl Iterator<Item = &'a str>,
+    exclusions: impl Iterator<Item = &'a ProspectArrivalLeagueExclusionView>,
 ) -> Vec<ProspectArrivalExclusionSummaryView> {
     let mut counts = BTreeMap::new();
-    for reason in reasons {
-        *counts.entry(classify_exclusion(reason)).or_insert(0usize) += 1;
+    for exclusion in exclusions {
+        *counts.entry(exclusion.effective_kind()).or_insert(0usize) += 1;
     }
     counts
         .into_iter()
@@ -407,28 +369,6 @@ fn summary_count(
         .iter()
         .find(|row| row.kind == kind)
         .map_or(0, |row| row.count)
-}
-
-fn classify_exclusion(reason: &str) -> ProspectArrivalExclusionKind {
-    let normalized = reason.to_ascii_lowercase();
-    if normalized.contains("already has")
-        && normalized.contains("nhl games")
-        && normalized.contains("established-role forecasting")
-    {
-        ProspectArrivalExclusionKind::EstablishedRoleReroute
-    } else if normalized.contains("mean signal distance") {
-        ProspectArrivalExclusionKind::CalibrationDistance
-    } else if normalized.contains("source control") || normalized.contains("organization control") {
-        ProspectArrivalExclusionKind::SourceControl
-    } else if normalized.contains("study lacks")
-        || normalized.contains("canonical skater study")
-        || normalized.contains("identity")
-        || normalized.contains("career evidence")
-    {
-        ProspectArrivalExclusionKind::StudyQuality
-    } else {
-        ProspectArrivalExclusionKind::OtherCalibration
-    }
 }
 
 fn hash_json(value: &impl Serialize) -> Result<String, ProspectArrivalBoardError> {
@@ -540,27 +480,37 @@ mod tests {
     #[test]
     fn exclusion_reasons_map_to_stable_remediation_classes() {
         assert_eq!(
-            classify_exclusion(
+            ProspectArrivalExclusionKind::from_reason(
                 "prospect arrival target already has 44 NHL games; use established-role forecasting instead"
             ),
             ProspectArrivalExclusionKind::EstablishedRoleReroute
         );
         assert_eq!(
-            classify_exclusion(
+            ProspectArrivalExclusionKind::from_reason(
                 "prospect arrival calibration mean signal distance 31.8278 exceeds 15.0000"
             ),
             ProspectArrivalExclusionKind::CalibrationDistance
         );
         assert_eq!(
-            classify_exclusion("prospect source control gate: organization control is unsupported"),
+            ProspectArrivalExclusionKind::from_reason(
+                "prospect source control gate: organization control is unsupported"
+            ),
             ProspectArrivalExclusionKind::SourceControl
         );
         assert_eq!(
-            classify_exclusion("prospect arrival study lacks unique production component"),
+            ProspectArrivalExclusionKind::from_reason(
+                "prospect arrival study lacks unique production component"
+            ),
             ProspectArrivalExclusionKind::StudyQuality
         );
         assert_eq!(
-            classify_exclusion("unexpected calibration failure"),
+            ProspectArrivalExclusionKind::from_reason(
+                "prospect arrival calibration target cannot appear in its historical outcome cohort"
+            ),
+            ProspectArrivalExclusionKind::HistoricalCohortOverlap
+        );
+        assert_eq!(
+            ProspectArrivalExclusionKind::from_reason("unexpected calibration failure"),
             ProspectArrivalExclusionKind::OtherCalibration
         );
     }
