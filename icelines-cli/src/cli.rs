@@ -3701,6 +3701,20 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Summarize all 32 teams without publishing ranks from incomplete authority.
+    #[command(name = "prospect-arrival-board")]
+    ProspectArrivalBoard {
+        /// `prospect_arrival_league_calibration.v1` league artifact.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Deterministic board-generation time as RFC 3339.
+        #[arg(long = "generated-at", value_name = "RFC3339")]
+        generated_at: String,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Rank validated prospect studies into Hidden Gems, Buyer Beware, and Watch.
     #[command(name = "prospect-board")]
     ProspectBoard {
@@ -7709,6 +7723,36 @@ mod tui_surface_tests {
                     && team_name == "New York Rangers"
                     && evidence_at == "2026-09-15T12:00:00Z"
                     && out == PathBuf::from("nyr-arrival-card.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_arrival_board_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-board",
+                "--input",
+                "league-arrival.json",
+                "--generated-at",
+                "2026-09-15T12:00:00Z",
+                "--json",
+                "--out",
+                "arrival-board.json",
+            ])
+            .expect("IceCast prospect arrival board command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalBoard {
+                    input,
+                    generated_at,
+                    json: true,
+                    out: Some(out),
+                }) if input == PathBuf::from("league-arrival.json")
+                    && generated_at == "2026-09-15T12:00:00Z"
+                    && out == PathBuf::from("arrival-board.json")
             ));
         });
     }

@@ -1,0 +1,477 @@
+{
+  "schema": "prospect_arrival_board.v1",
+  "method_version": "prospect_arrival_board.v1",
+  "forecast_season": 20262027,
+  "generated_at": "2026-09-15T12:00:00Z",
+  "source_artifact_fingerprint": "626806f464a3f96b145f9fd6b527908c8e8dab911edb379bc3be096043d22a9c",
+  "population_authority_complete": false,
+  "rank_state": "withheld",
+  "rank_blockers": [
+    "complete sealed prospect population authority was not supplied",
+    "159 target skaters lack a comparable arrival calibration"
+  ],
+  "target_skaters": 167,
+  "calibrated_skaters": 8,
+  "excluded_skaters": 159,
+  "teams": [
+    {
+      "organization": "ANA",
+      "target_skaters": 9,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 9,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "9 of 9 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "BOS",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "2 of 2 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "BUF",
+      "target_skaters": 3,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 3,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "3 of 3 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "CAR",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "4 of 4 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "CBJ",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "4 of 4 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "CGY",
+      "target_skaters": 8,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 8,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "8 of 8 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "CHI",
+      "target_skaters": 11,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 11,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "11 of 11 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "COL",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "2 of 2 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "DAL",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "2 of 2 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "DET",
+      "target_skaters": 7,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 7,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "7 of 7 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "EDM",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "4 of 4 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "FLA",
+      "target_skaters": 1,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 1,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "1 of 1 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "LAK",
+      "target_skaters": 3,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 3,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "3 of 3 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "MIN",
+      "target_skaters": 5,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 5,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "5 of 5 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "MTL",
+      "target_skaters": 9,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 9,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "9 of 9 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "NJD",
+      "target_skaters": 3,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 3,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "3 of 3 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "NSH",
+      "target_skaters": 9,
+      "calibrated_skaters": 1,
+      "excluded_skaters": 8,
+      "calibration_coverage": 0.1111111111111111,
+      "expected_arrivals": 0.290389,
+      "expected_established_roles": 0.103014,
+      "top_arrival_probability": 0.290389,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "8 of 9 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "NYI",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "2 of 2 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "NYR",
+      "target_skaters": 6,
+      "calibrated_skaters": 2,
+      "excluded_skaters": 4,
+      "calibration_coverage": 0.3333333333333333,
+      "expected_arrivals": 0.5623469999999999,
+      "expected_established_roles": 0.14929699999999999,
+      "top_arrival_probability": 0.290389,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "4 of 6 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "OTT",
+      "target_skaters": 3,
+      "calibrated_skaters": 2,
+      "excluded_skaters": 1,
+      "calibration_coverage": 0.6666666666666666,
+      "expected_arrivals": 0.400892,
+      "expected_established_roles": 0.165538,
+      "top_arrival_probability": 0.237663,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "1 of 3 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "PHI",
+      "target_skaters": 10,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 10,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "10 of 10 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "PIT",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "4 of 4 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "SEA",
+      "target_skaters": 13,
+      "calibrated_skaters": 3,
+      "excluded_skaters": 10,
+      "calibration_coverage": 0.23076923076923078,
+      "expected_arrivals": 0.826827,
+      "expected_established_roles": 0.242358,
+      "top_arrival_probability": 0.290389,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "10 of 13 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "SJS",
+      "target_skaters": 8,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 8,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "8 of 8 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "STL",
+      "target_skaters": 6,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 6,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "6 of 6 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "TBL",
+      "target_skaters": 2,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 2,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "2 of 2 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "TOR",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "4 of 4 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "UTA",
+      "target_skaters": 6,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 6,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "6 of 6 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "VAN",
+      "target_skaters": 7,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 7,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "7 of 7 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "VGK",
+      "target_skaters": 1,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 1,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "1 of 1 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "WPG",
+      "target_skaters": 5,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 5,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "5 of 5 target skaters excluded"
+      ]
+    },
+    {
+      "organization": "WSH",
+      "target_skaters": 4,
+      "calibrated_skaters": 0,
+      "excluded_skaters": 4,
+      "calibration_coverage": 0.0,
+      "expected_arrivals": 0.0,
+      "expected_established_roles": 0.0,
+      "rank_state": "withheld",
+      "rank_blockers": [
+        "population authority incomplete",
+        "4 of 4 target skaters excluded"
+      ]
+    }
+  ],
+  "disclosures": [
+    "Expected arrivals and established roles are sums of player-level horizon probabilities, not guaranteed player counts.",
+    "League ranks publish only when population authority is complete and every target skater has a comparable calibration.",
+    "A rank-withheld board stays in canonical team order; partial calibrated values never become a shadow ranking.",
+    "Goalies remain outside this skater-arrival cohort until a separately calibrated goalie authority exists."
+  ],
+  "fingerprint": "d120adeb13776dcdbf2e6aba20707afad59e4a9db8bcc4f066dc78d2127d1eff"
+}

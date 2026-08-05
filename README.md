@@ -634,6 +634,14 @@ fingerprint of the full league artifact before team selection:
 icelines icecast prospect-arrival-card --input league-arrival.json --team NYR --team-name "New York Rangers" --evidence-at 2026-09-15T12:00:00Z --out nyr-arrival-card.json
 ```
 
+Build the UI-neutral all-team board from the same artifact. Expected arrivals
+and established roles are sums of player probabilities, not guaranteed counts.
+The current coverage draft retains all values but withholds ordinal ranks:
+
+```bash
+icelines icecast prospect-arrival-board --input league-arrival.json --generated-at 2026-09-15T12:00:00Z --json --out prospect-arrival-board.json
+```
+
 All 32 team cards are projected from the same sealed league artifact and served
 through the generic web renderer at
 `/icecast/20262027/{team}/prospect-arrivals`; their sealed JSON is available at
@@ -642,6 +650,9 @@ same document with `prospect-arrival-card <team>`; `p` switches between The
 Depth Chart and The Insider, `t` switches the NYR/SEA showcase, and `c`
 compares those two cards. The checked-in Rangers and Kraken documents remain
 golden references for cross-surface parity rather than separate scoring paths.
+The all-team board is available at `/icecast/20262027/prospect-arrivals`, with
+JSON at `/api/v1/prospect-arrivals/20262027`; `prospect-arrival-board` opens the
+same two-page board in the TUI.
 
 IceCast loads the complete official schedule and produces one explained
 baseline probability for every league game. For 2026–27 it enforces 1,344

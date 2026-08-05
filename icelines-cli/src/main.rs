@@ -3345,6 +3345,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         }) => {
             commands::icecast::run_prospect_arrival_card(input, team, team_name, evidence_at, out)?
         }
+        Commands::Icecast(IceCastSubcommand::ProspectArrivalBoard {
+            input,
+            generated_at,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_arrival_board(input, generated_at, json, out)?,
         Commands::Icecast(IceCastSubcommand::WindowStandings {
             target_season,
             date,

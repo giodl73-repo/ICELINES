@@ -4,11 +4,12 @@ use std::{collections::BTreeMap, sync::OnceLock};
 
 use chrono::{DateTime, Utc};
 use icelines_core::{
-    build_prospect_arrival_card, load_organization_window_profile_inventory, parse_card_document,
+    build_prospect_arrival_board, build_prospect_arrival_card,
+    load_organization_window_profile_inventory, parse_card_document,
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
     CardDocumentView, OrganizationWindowBoardView, OrganizationWindowCardError,
-    ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView, Season, ViewContext,
-    ViewWindow, CANONICAL_TEAMS,
+    ProspectArrivalBoardView, ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView,
+    Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
 use thiserror::Error;
 
@@ -38,6 +39,9 @@ const SEA_PROSPECT_ARRIVAL: &str =
     include_str!("../../examples/prospect-arrival-card-sea-2026-27.json");
 const PROSPECT_ARRIVAL_LEAGUE: &str =
     include_str!("../../examples/icecast-prospect-arrival-league-2026-27.json");
+#[cfg(test)]
+const PROSPECT_ARRIVAL_BOARD: &str =
+    include_str!("../../examples/prospect-arrival-board-2026-27.json");
 const BALANCED_ORGANIZATION_WINDOW: &str =
     include_str!("../../examples/organization-window-board-partial-2026-07-28.json");
 const DEXTERS_DAWGS: &str =
@@ -126,6 +130,19 @@ pub fn prospect_arrival_card(season: u32, team: &str) -> Result<CardDocumentView
         .get(&team)
         .cloned()
         .ok_or(CardStoreError::UnsupportedProspectArrivalTeam(team))
+}
+
+pub fn prospect_arrival_board(season: u32) -> Result<ProspectArrivalBoardView, CardStoreError> {
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static BOARD: OnceLock<ProspectArrivalBoardView> = OnceLock::new();
+    Ok(BOARD
+        .get_or_init(|| {
+            build_prospect_arrival_board(prospect_arrival_league(), "2026-09-15T12:00:00Z")
+                .expect("sealed prospect arrival board projection")
+        })
+        .clone())
 }
 
 pub fn organization_window_card(
@@ -306,9 +323,7 @@ fn sea_2024_history_card() -> &'static CardDocumentView {
 fn prospect_arrival_cards() -> &'static BTreeMap<String, CardDocumentView> {
     static CARDS: OnceLock<BTreeMap<String, CardDocumentView>> = OnceLock::new();
     CARDS.get_or_init(|| {
-        let arrival: ProspectArrivalLeagueCalibrationView =
-            serde_json::from_str(PROSPECT_ARRIVAL_LEAGUE)
-                .expect("sealed prospect arrival league calibration");
+        let arrival = prospect_arrival_league();
         let evidence_at = DateTime::parse_from_rfc3339("2026-09-15T12:00:00Z")
             .expect("fixed prospect arrival evidence time")
             .with_timezone(&Utc);
@@ -331,6 +346,14 @@ fn prospect_arrival_cards() -> &'static BTreeMap<String, CardDocumentView> {
                 ((*team).to_owned(), card)
             })
             .collect()
+    })
+}
+
+fn prospect_arrival_league() -> &'static ProspectArrivalLeagueCalibrationView {
+    static ARRIVAL: OnceLock<ProspectArrivalLeagueCalibrationView> = OnceLock::new();
+    ARRIVAL.get_or_init(|| {
+        serde_json::from_str(PROSPECT_ARRIVAL_LEAGUE)
+            .expect("sealed prospect arrival league calibration")
     })
 }
 
@@ -426,6 +449,12 @@ mod tests {
             .expect("sealed SEA prospect arrival card fixture");
         assert_eq!(nyr_arrival, sealed_nyr);
         assert_eq!(sea_arrival, sealed_sea);
+        let board = prospect_arrival_board(20262027).unwrap();
+        let sealed_board: ProspectArrivalBoardView = serde_json::from_str(PROSPECT_ARRIVAL_BOARD)
+            .expect("sealed prospect arrival board fixture");
+        assert_eq!(board, sealed_board);
+        assert_eq!(board.teams.len(), CANONICAL_TEAMS.len());
+        assert!(board.teams.iter().all(|team| team.rank.is_none()));
         assert!(matches!(
             prospect_arrival_card(20262027, "XYZ"),
             Err(CardStoreError::UnsupportedProspectArrivalTeam(_))

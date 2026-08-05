@@ -9,8 +9,9 @@ use chrono::{DateTime, Utc};
 use icelines_core::{
     build_prospect_arrival_card, load_organization_window_profile_inventory, parse_card_document,
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
-    CardDocumentView, CardSectionView, OrganizationWindowBoardView, ProspectArrivalCardInput,
-    ProspectArrivalLeagueCalibrationView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
+    CardDocumentView, CardSectionView, OrganizationWindowBoardView, ProspectArrivalBoardView,
+    ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView, Season, ViewContext,
+    ViewWindow, CANONICAL_TEAMS,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -50,6 +51,8 @@ const SEA_PROSPECT_ARRIVAL_CARD_JSON: &str =
     include_str!("../../../../examples/prospect-arrival-card-sea-2026-27.json");
 const PROSPECT_ARRIVAL_LEAGUE_JSON: &str =
     include_str!("../../../../examples/icecast-prospect-arrival-league-2026-27.json");
+const PROSPECT_ARRIVAL_BOARD_JSON: &str =
+    include_str!("../../../../examples/prospect-arrival-board-2026-27.json");
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
     include_str!("../../../../examples/organization-window-board-partial-2026-07-28.json");
 const FANTASY_CARD_JSON: &str =
@@ -180,6 +183,15 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
             ],
         };
     }
+    if team.eq_ignore_ascii_case("ARRIVAL-BOARD") {
+        return ScreenChrome {
+            title: format!("Prospect Arrival Board - page {}", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
     let fantasy = matches!(
         team.to_ascii_uppercase().as_str(),
         "DEX" | "DRAFT" | "MORNING" | "TRADE"
@@ -229,6 +241,10 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
     let page = app.selected.min(1);
     if team.eq_ignore_ascii_case("WINDOW-BOARD") {
         render_organization_window_board(f, area, page);
+        return;
+    }
+    if team.eq_ignore_ascii_case("ARRIVAL-BOARD") {
+        render_prospect_arrival_board(f, area, page);
         return;
     }
     if compare
@@ -314,6 +330,78 @@ fn organization_window_cards() -> &'static BTreeMap<String, CardDocumentView> {
             })
             .collect()
     })
+}
+
+fn prospect_arrival_board() -> &'static ProspectArrivalBoardView {
+    static BOARD: OnceLock<ProspectArrivalBoardView> = OnceLock::new();
+    BOARD.get_or_init(|| {
+        serde_json::from_str(PROSPECT_ARRIVAL_BOARD_JSON)
+            .expect("sealed 32-team prospect arrival board")
+    })
+}
+
+fn render_prospect_arrival_board(f: &mut Frame, area: Rect, page: usize) {
+    let board = prospect_arrival_board();
+    let title = format!(
+        " PROSPECT ARRIVALS | {} | {:?} | {} ",
+        board.forecast_season,
+        board.rank_state,
+        &board.fingerprint[..8]
+    );
+    let lines = prospect_arrival_board_lines(board, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+pub(crate) fn prospect_arrival_board_lines(
+    board: &ProspectArrivalBoardView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let rows = board.teams_in_display_order();
+    let start = page.min(1) * 16;
+    let mut lines = vec![format!(
+        "32 teams · {}/{} calibrated · {} exclusions · ranks {:?}",
+        board.calibrated_skaters, board.target_skaters, board.excluded_skaters, board.rank_state
+    )];
+    if width >= 72 {
+        lines.push("RK TEAM CAL/TGT COV  EXP ARR EXP ROLE TOP".to_owned());
+    } else {
+        lines.push("RK TEAM CAL/TGT COV  EXP ARR TOP".to_owned());
+    }
+    for row in rows.into_iter().skip(start).take(16) {
+        let rank = row
+            .rank
+            .map(|rank| format!("{rank:>2}"))
+            .unwrap_or_else(|| "NR".to_owned());
+        let top = row
+            .top_arrival_probability
+            .map(|value| format!("{:>4.0}%", value * 100.0))
+            .unwrap_or_else(|| "  NR".to_owned());
+        if width >= 72 {
+            lines.push(format!(
+                "{rank:<2} {:<4} {:>2}/{:<2}    {:>3.0}%  {:>7.2} {:>8.2} {top}",
+                row.organization,
+                row.calibrated_skaters,
+                row.target_skaters,
+                row.calibration_coverage * 100.0,
+                row.expected_arrivals,
+                row.expected_established_roles,
+            ));
+        } else {
+            lines.push(format!(
+                "{rank:<2} {:<4} {:>2}/{:<2}    {:>3.0}%  {:>7.2} {top}",
+                row.organization,
+                row.calibrated_skaters,
+                row.target_skaters,
+                row.calibration_coverage * 100.0,
+                row.expected_arrivals,
+            ));
+        }
+    }
+    lines
 }
 
 fn render_organization_window_board(f: &mut Frame, area: Rect, page: usize) {
@@ -1142,6 +1230,49 @@ mod tests {
         assert_eq!(app.selected, 1);
     }
 
+    #[test]
+    fn l1_prospect_arrival_board_pages_cover_all_32_without_shadow_ranks() {
+        let board = prospect_arrival_board();
+        let first = prospect_arrival_board_lines(board, 0, 80);
+        let second = prospect_arrival_board_lines(board, 1, 80);
+        assert_eq!(first.len(), 18);
+        assert_eq!(second.len(), 18);
+        assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
+        assert!(first[0].contains("8/167 calibrated"));
+        assert!(first[0].contains("ranks Withheld"));
+        assert!(first.iter().skip(2).all(|line| line.starts_with("NR")));
+        assert!(second.iter().skip(2).all(|line| line.starts_with("NR")));
+        let teams = first
+            .iter()
+            .skip(2)
+            .chain(second.iter().skip(2))
+            .filter_map(|line| line.split_whitespace().nth(1))
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(teams.len(), CANONICAL_TEAMS.len());
+        assert!(teams.contains("NYR"));
+        assert!(teams.contains("SEA"));
+        assert_eq!(
+            parse_command("prospect-arrival-board").unwrap(),
+            Command::TeamCard {
+                team: "ARRIVAL-BOARD".to_owned()
+            }
+        );
+
+        let mut app = App::new(true);
+        execute_command(parse_command("prospect-arrival-board").unwrap(), &mut app);
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('c'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard {
+                ref team,
+                compare: false
+            } if team == "ARRIVAL-BOARD"
+        ));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
+    }
+
     #[tokio::test]
     async fn l2_organization_window_golden_parity_across_cli_tui_and_web() {
         let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -1294,5 +1425,53 @@ mod tests {
         assert!(depth_chart.contains("Arrival 29.0%"));
         assert!(insider.contains("Coverage draft"));
         assert!(insider.contains("Exclusion ledger"));
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_arrival_board_golden_parity_across_cli_tui_and_web() {
+        let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let input = manifest_dir.join("../examples/icecast-prospect-arrival-league-2026-27.json");
+        let expected = prospect_arrival_board().clone();
+        let temp = tempfile::tempdir().unwrap();
+        let cli_path = temp.path().join("prospect-arrival-board.json");
+
+        crate::commands::icecast::run_prospect_arrival_board(
+            input,
+            "2026-09-15T12:00:00Z".to_owned(),
+            true,
+            Some(cli_path.clone()),
+        )
+        .unwrap();
+        let cli_board: ProspectArrivalBoardView =
+            serde_json::from_slice(&std::fs::read(cli_path).unwrap()).unwrap();
+        assert_eq!(cli_board, expected);
+
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/prospect-arrivals/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(response.into_body(), 4 * 1024 * 1024)
+            .await
+            .unwrap();
+        let web_board: ProspectArrivalBoardView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_board, expected);
+
+        let first = prospect_arrival_board_lines(&expected, 0, 80);
+        let second = prospect_arrival_board_lines(&expected, 1, 80);
+        let nyr = first
+            .iter()
+            .chain(&second)
+            .find(|line| line.split_whitespace().any(|cell| cell == "NYR"))
+            .unwrap();
+        assert!(nyr.starts_with("NR"));
+        assert!(nyr.contains("2/6"));
+        assert!(nyr.contains("33%"));
     }
 }

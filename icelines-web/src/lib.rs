@@ -190,6 +190,14 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/cards/prospect-arrival/:season/:team",
             get(handlers::team_card::get_prospect_arrival_card_json),
         )
+        .route(
+            "/icecast/:season/prospect-arrivals",
+            get(handlers::prospect_arrival::get_prospect_arrival_board),
+        )
+        .route(
+            "/api/v1/prospect-arrivals/:season",
+            get(handlers::prospect_arrival::get_prospect_arrival_board_json),
+        )
         .route("/window/:frame/:season", get(handlers::window::get_window))
         .route(
             "/api/v1/window/:frame/:season",
@@ -661,6 +669,7 @@ mod handlers {
     /// `/docs` — King.8.1. Renders COMMANDS.md as HTML.
     pub mod docs;
 
+    pub mod prospect_arrival;
     /// `/team/:abbrev` — King.4.1 roster page.
     pub mod team;
     pub mod team_card;

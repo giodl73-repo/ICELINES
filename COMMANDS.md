@@ -1073,6 +1073,7 @@ icelines icecast prospect-program --league-discovery league-discovery.json --stu
 icelines icecast prospect-arrival-league --camp-forecast league-camp.json --career-history ~/.icelines/career_history.json --conversion-archive conversion-archive.json --forecast-season 20262027 --discovery-out league-career-discovery.json --out league-arrival.txt
 icelines icecast prospect-arrival-league --career-discovery league-career-discovery.json --source-package prospect-sources.json --require-complete-population --conversion-archive conversion-archive.json --forecast-season 20262027 --json --out league-arrival.json
 icelines icecast prospect-arrival-card --input league-arrival.json --team NYR --team-name "New York Rangers" --evidence-at 2026-09-15T12:00:00Z --out nyr-arrival-card.json
+icelines icecast prospect-arrival-board --input league-arrival.json --generated-at 2026-09-15T12:00:00Z --json --out prospect-arrival-board.json
 icelines icecast prospect-program-sensitivity --league-discovery league-discovery.json --thresholds 25,50,82 --json --out prospect-program-sensitivity.json
 icelines icecast prospect-program-history --board prospect-programs-2024.json --board prospect-programs-2025.json --board prospect-programs-2026.json --json --out prospect-program-history.json
 icelines icecast prospect-conversion --league-discovery frozen-2022-23-prospects.json --career-history ~/.icelines/career_history.json --baseline-season 20222023 --through-season 20252026 --performance-out nhl-performance.json --json --out prospect-conversion.json
@@ -1650,6 +1651,11 @@ prospect-arrival documents projected from the same sealed league artifact as
 the CLI and Web API. Press `p` to switch between The Depth Chart and The
 Insider, `t` to switch the NYR/SEA showcase, or `c` for their side-by-side
 arrival outlooks from the same league calibration.
+
+The TUI command `prospect-arrival-board` opens the shared all-team board in two
+16-team pages. The board preserves calibrated counts and summed arrival/role
+probabilities while displaying `NR` for every team until complete population
+authority and comparable calibration coverage permit a real league ranking.
 
 For the sealed completed-season replay, use `replay-card NYR` or
 `replay-card SEA`. Its Insider page adds confirmed actual records and points,

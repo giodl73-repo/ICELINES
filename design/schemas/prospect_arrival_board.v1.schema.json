@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/prospect_arrival_board.v1.schema.json",
+  "title": "IceLines Prospect Arrival Board v1",
+  "type": "object",
+  "required": [
+    "schema", "method_version", "forecast_season", "generated_at",
+    "source_artifact_fingerprint", "population_authority_complete",
+    "rank_state", "rank_blockers", "target_skaters", "calibrated_skaters",
+    "excluded_skaters", "teams", "disclosures", "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "prospect_arrival_board.v1" },
+    "method_version": { "const": "prospect_arrival_board.v1" },
+    "forecast_season": { "type": "integer", "minimum": 19001901 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "source_artifact_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "population_authority_complete": { "type": "boolean" },
+    "rank_state": { "$ref": "#/$defs/rankState" },
+    "rank_blockers": { "$ref": "#/$defs/messages" },
+    "target_skaters": { "type": "integer", "minimum": 0 },
+    "calibrated_skaters": { "type": "integer", "minimum": 0 },
+    "excluded_skaters": { "type": "integer", "minimum": 0 },
+    "teams": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/team" }
+    },
+    "disclosures": { "$ref": "#/$defs/messages" },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "rankState": {
+      "type": "string",
+      "enum": ["ranked", "withheld"]
+    },
+    "messages": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "team": {
+      "type": "object",
+      "required": [
+        "organization", "target_skaters", "calibrated_skaters",
+        "excluded_skaters", "calibration_coverage", "expected_arrivals",
+        "expected_established_roles", "rank_state", "rank_blockers"
+      ],
+      "properties": {
+        "organization": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "target_skaters": { "type": "integer", "minimum": 0 },
+        "calibrated_skaters": { "type": "integer", "minimum": 0 },
+        "excluded_skaters": { "type": "integer", "minimum": 0 },
+        "calibration_coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "expected_arrivals": { "type": "number", "minimum": 0 },
+        "expected_established_roles": { "type": "number", "minimum": 0 },
+        "top_arrival_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rank": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "rank_state": { "$ref": "#/$defs/rankState" },
+        "rank_blockers": { "$ref": "#/$defs/messages" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

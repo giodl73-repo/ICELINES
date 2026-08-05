@@ -225,6 +225,76 @@ async fn prospect_arrival_routes_render_the_same_sealed_card() {
 }
 
 #[tokio::test]
+async fn prospect_arrival_board_routes_preserve_withheld_ranks_and_team_drilldown() {
+    let app = router(WebState::new());
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/prospect-arrivals/20262027")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let etag = response.headers()["etag"].to_str().unwrap().to_owned();
+    let routed: icelines_core::ProspectArrivalBoardView =
+        serde_json::from_str(&body(response).await).unwrap();
+    let fixture: icelines_core::ProspectArrivalBoardView = serde_json::from_str(include_str!(
+        "../../examples/prospect-arrival-board-2026-27.json"
+    ))
+    .unwrap();
+    assert_eq!(routed, fixture);
+    assert_eq!(routed.teams.len(), CANONICAL_TEAMS.len());
+    assert!(routed.teams.iter().all(|team| team.rank.is_none()));
+    assert_eq!(etag, format!("\"{}\"", fixture.fingerprint));
+
+    let html = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-arrivals")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(html.status(), StatusCode::OK);
+    let html = body(html).await;
+    assert!(html.contains("Prospect Arrival Board"));
+    assert!(html.contains("Rank state: <strong>Withheld</strong>"));
+    assert!(html.contains("159 target skaters lack a comparable arrival calibration"));
+    assert!(html.contains("/icecast/20262027/NYR/prospect-arrivals"));
+    assert!(html.contains("Expected arrivals"));
+
+    let focused = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-arrivals?team=SEA")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let focused = body(focused).await;
+    assert!(focused.contains("/icecast/20262027/SEA/prospect-arrivals"));
+    assert!(!focused.contains("/icecast/20262027/NYR/prospect-arrivals"));
+
+    let unsupported = app
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-arrivals?team=XYZ")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unsupported.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn stylesheet_contains_phone_and_tablet_card_layouts() {
     let response = router(WebState::new())
         .oneshot(

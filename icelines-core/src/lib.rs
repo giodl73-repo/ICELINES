@@ -323,6 +323,11 @@ pub use view_model::player_line_matchup_validation::{
     PlayerLineMatchupValidationView, PLAYER_LINE_MATCHUP_ABLATION_OBSERVATION_SCHEMA,
     PLAYER_LINE_MATCHUP_VALIDATION_JSON_SCHEMA, PLAYER_LINE_MATCHUP_VALIDATION_SCHEMA,
 };
+pub use view_model::prospect_arrival_board::{
+    build_prospect_arrival_board, ProspectArrivalBoardError, ProspectArrivalBoardTeamView,
+    ProspectArrivalBoardView, ProspectArrivalRankState, PROSPECT_ARRIVAL_BOARD_METHOD,
+    PROSPECT_ARRIVAL_BOARD_SCHEMA,
+};
 pub use view_model::prospect_arrival_calibration::{
     adapt_prospect_arrival_calibration_input, calibrate_prospect_arrival,
     calibrate_prospect_arrival_league, ProspectArrivalCalibrationConfig,

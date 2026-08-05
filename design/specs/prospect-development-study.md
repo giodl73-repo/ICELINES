@@ -470,6 +470,15 @@ fails before output when the package manifest is incomplete. Without strict
 mode, incomplete authority remains inspectable but must not be presented as a
 complete prospect census.
 
+`prospect_arrival_board.v1` is the league summary of that same artifact. It
+retains all 32 organizations, calibration coverage, summed horizon-adjusted
+arrival and establishment probabilities, and each team's highest calibrated
+arrival probability. These sums are expected values, not guaranteed player
+counts. Ordinal ranks are withheld for the entire cohort unless population
+authority is complete and every target skater has a comparable calibration;
+when withheld, every renderer uses canonical team order rather than sorting
+partial values into a shadow ranking.
+
 The primitive never reconstructs an absent historical board. It accepts either
 an authored current signal or derives one from a canonical skater career study;
 goalies, missing IDs, and duplicate IDs fail closed. Historical proof runs

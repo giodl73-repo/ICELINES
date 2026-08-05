@@ -18,12 +18,15 @@
   `prospect_arrival` card and `icecast prospect-arrival-card`: The Depth Chart
   ranks one team's calibrated outlook while The Insider retains authority,
   exclusions, methodology, warnings, and the full league-artifact fingerprint.
-  The generic web renderer now serves dedicated NYR/SEA prospect-arrival HTML
-  and JSON routes with shared card fingerprints, ETags, and explicit 404s for
-  unavailable teams. Web and TUI now project all 32 team cards from the one
+  The generic web renderer serves prospect-arrival HTML and JSON routes with
+  shared card fingerprints, ETags, and explicit 404s for invalid teams. Web
+  and TUI now project all 32 team cards from the one
   sealed league artifact; `prospect-arrival-card <NHL team>` opens any team,
   while the checked-in NYR/SEA cards remain golden parity references with page,
-  showcase-toggle, and side-by-side comparison controls.
+  showcase-toggle, and side-by-side comparison controls. Added the UI-neutral
+  `prospect_arrival_board.v1` and `icecast prospect-arrival-board`; CLI, Web,
+  and TUI share one 32-team board with expected arrivals/established roles,
+  team-card drill-down, deterministic fingerprints, and fail-closed ranks.
 - Added a retained 543-player, all-32-organization retrospective prospect
   conversion archive from the frozen 2022-23 AHL baseline through 2025-26.
   `prospect-arrival-calibrate --career-discovery` now derives an attention-free

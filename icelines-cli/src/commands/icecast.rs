@@ -16,14 +16,14 @@ use icelines_core::{
     build_isolated_scenario_impact_as_of, build_line_combination_forecast,
     build_organization_lineup_forecast, build_organization_profile_history,
     build_organization_window_history, build_player_line_matchup_forecast,
-    build_player_line_matchup_validation, build_prospect_arrival_card,
-    build_prospect_conversion_archive, build_prospect_conversion_board,
-    build_prospect_development_study, build_prospect_discovery_board,
-    build_prospect_nhl_performance_document, build_prospect_program_board_with_goalies,
-    build_prospect_program_history, build_prospect_program_sensitivity_with_goalies,
-    build_season_simulation_card, build_team_game_forecast, build_team_game_forecast_validation,
-    build_team_game_prediction_edge, build_team_game_prediction_edge_card,
-    build_team_game_prediction_observation_set,
+    build_player_line_matchup_validation, build_prospect_arrival_board,
+    build_prospect_arrival_card, build_prospect_conversion_archive,
+    build_prospect_conversion_board, build_prospect_development_study,
+    build_prospect_discovery_board, build_prospect_nhl_performance_document,
+    build_prospect_program_board_with_goalies, build_prospect_program_history,
+    build_prospect_program_sensitivity_with_goalies, build_season_simulation_card,
+    build_team_game_forecast, build_team_game_forecast_validation, build_team_game_prediction_edge,
+    build_team_game_prediction_edge_card, build_team_game_prediction_observation_set,
     build_team_game_rolling_replay_with_opening_strengths, build_team_player_matchup_role_evidence,
     build_team_season_auto_personnel_scenario, build_team_season_forecast_history,
     build_team_season_forecast_movement, build_team_season_game_plan_schedule_from_evidence,
@@ -9397,6 +9397,70 @@ pub fn run_prospect_arrival_card(
         print!("{output}");
     }
     Ok(())
+}
+
+pub fn run_prospect_arrival_board(
+    input: PathBuf,
+    generated_at: String,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    DateTime::parse_from_rfc3339(&generated_at)
+        .context("--generated-at must be RFC 3339, for example 2026-09-15T12:00:00Z")?;
+    let arrival: icelines_core::ProspectArrivalLeagueCalibrationView =
+        read_icecast_json(&input, "prospect arrival league calibration")?;
+    let board = build_prospect_arrival_board(&arrival, generated_at)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&board)?)
+    } else {
+        render_prospect_arrival_board(&board)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "IceCast prospect arrival board")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_prospect_arrival_board(board: &icelines_core::ProspectArrivalBoardView) -> String {
+    let state = match board.rank_state {
+        icelines_core::ProspectArrivalRankState::Ranked => "ranked",
+        icelines_core::ProspectArrivalRankState::Withheld => "rank withheld",
+    };
+    let mut output = format!(
+        "PROSPECT ARRIVAL BOARD · {} · {} · {}/{} calibrated · {} exclusions\n",
+        board.forecast_season,
+        state,
+        board.calibrated_skaters,
+        board.target_skaters,
+        board.excluded_skaters
+    );
+    for blocker in &board.rank_blockers {
+        let _ = writeln!(output, "RANK BLOCKER · {blocker}");
+    }
+    let _ = writeln!(output, "RK TEAM CAL/TGT COV  EXP ARR EXP ROLE TOP");
+    for team in board.teams_in_display_order() {
+        let rank = team
+            .rank
+            .map(|rank| rank.to_string())
+            .unwrap_or_else(|| "NR".to_owned());
+        let top = team
+            .top_arrival_probability
+            .map(|value| format!("{:.1}%", value * 100.0))
+            .unwrap_or_else(|| "NR".to_owned());
+        let _ = writeln!(
+            output,
+            "{rank:>2} {:<4} {:>2}/{:<2} {:>3.0}% {:>7.2} {:>8.2} {top:>5}",
+            team.organization,
+            team.calibrated_skaters,
+            team.target_skaters,
+            team.calibration_coverage * 100.0,
+            team.expected_arrivals,
+            team.expected_established_roles,
+        );
+    }
+    output
 }
 
 fn apply_prospect_arrival_population_selection(

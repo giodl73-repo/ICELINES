@@ -61,6 +61,7 @@ pub mod player_line_matchup;
 pub mod player_line_matchup_validation;
 pub mod playoffs;
 pub mod poach;
+pub mod prospect_arrival_board;
 pub mod prospect_arrival_calibration;
 pub mod prospect_census;
 pub mod prospect_conversion;
@@ -490,6 +491,11 @@ pub use poach::{
     PoachScore, PoachScoreComponent, PoachWindow, RecommendationKind, ScoreRange, WatchAlertRow,
     WatchAlertSeverity, WatchAlertTrigger, WatchAlertsView, WatchRule, WatchRuleMutationIntent,
     WatchRuleMutationOperation, WatchRuleTrigger, WatchRulesView,
+};
+pub use prospect_arrival_board::{
+    build_prospect_arrival_board, ProspectArrivalBoardError, ProspectArrivalBoardTeamView,
+    ProspectArrivalBoardView, ProspectArrivalRankState, PROSPECT_ARRIVAL_BOARD_METHOD,
+    PROSPECT_ARRIVAL_BOARD_SCHEMA,
 };
 pub use prospect_arrival_calibration::{
     adapt_prospect_arrival_calibration_input, calibrate_prospect_arrival,
