@@ -64,6 +64,7 @@ pub mod poach;
 pub mod prospect_arrival_board;
 pub mod prospect_arrival_calibration;
 pub mod prospect_census;
+pub mod prospect_census_readiness;
 pub mod prospect_conversion;
 pub mod prospect_study;
 pub mod records;
@@ -515,6 +516,12 @@ pub use prospect_census::{
     ProspectCensusPublicationStatus, ProspectCensusStage, ProspectCensusView,
     ProspectPopulationAuthorityStatus, ProspectRankPublicationStatus,
     ProspectScorePublicationStatus, PROSPECT_CENSUS_SCHEMA,
+};
+pub use prospect_census_readiness::{
+    build_prospect_census_readiness, ProspectCensusLossSummaryView,
+    ProspectCensusReadinessBoardView, ProspectCensusReadinessError,
+    ProspectCensusReadinessTeamView, PROSPECT_CENSUS_READINESS_METHOD,
+    PROSPECT_CENSUS_READINESS_SCHEMA,
 };
 pub use prospect_conversion::{
     adapt_prospect_conversion_input, build_prospect_conversion_archive,

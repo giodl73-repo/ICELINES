@@ -544,6 +544,16 @@ renderers are explicitly deferred until their
 `surface-parity.md` rows and row-identity/partial-state tests are added; no
 surface reimplements census logic.
 
+`prospect_census_readiness_board.v1` is the compact, UI-neutral publication
+projection of that census. It retains the 32-team funnel totals, independent
+population/depth/publication gates, typed authority-gap and player-loss
+summaries, remediation, the sealed package fingerprint, and a fingerprint of
+the complete source census. It intentionally omits player-level loss rows so a
+renderer can load the league readiness state without loading the full audit
+ledger. `icecast prospect-census-readiness --input PATH [--json]` builds this
+projection only after team, league, loss, and authority-gap totals reconcile.
+It does not replace the census or grant publication authority.
+
 ## Compatibility and migration
 
 Migration is facade-first and build-green:
@@ -607,6 +617,8 @@ retaining the original source and classification disclosure.
 - all-32 prospect census coverage funnel;
 - per-team authority gaps reconcile exactly into league source-family/state
   counts and actionable remediation;
+- compact readiness output reconciles to the complete census, preserves its
+  fingerprint, and refuses partial league envelopes;
 - strict publication independently refuses incomplete population authority and
   incomplete ranking depth;
 - camp-only invite remains usable by camp simulation but not prospect ranking;

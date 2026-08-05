@@ -3408,6 +3408,17 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Project a full prospect census into a compact 32-team readiness board.
+    #[command(name = "prospect-census-readiness")]
+    ProspectCensusReadiness {
+        /// `prospect_census.v1` artifact to compact without changing evidence.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Generate neutral multi-league prospect context from the league camp pool.
     #[command(name = "prospect-career-context")]
     ProspectCareerContext {
@@ -7378,6 +7389,30 @@ mod tui_surface_tests {
                     && out == PathBuf::from("census.json")
             ));
         });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_census_readiness_surface_parses() {
+        let cli = Cli::try_parse_from([
+            "icelines",
+            "icecast",
+            "prospect-census-readiness",
+            "--input",
+            "census.json",
+            "--json",
+            "--out",
+            "readiness.json",
+        ])
+        .expect("IceCast prospect census readiness command should parse");
+        assert!(matches!(
+            cli.command,
+            Commands::Icecast(IceCastSubcommand::ProspectCensusReadiness {
+                input,
+                json: true,
+                out: Some(out),
+            }) if input == PathBuf::from("census.json")
+                && out == PathBuf::from("readiness.json")
+        ));
     }
 
     #[test]

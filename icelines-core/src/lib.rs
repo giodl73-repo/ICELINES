@@ -347,6 +347,12 @@ pub use view_model::prospect_census::{
     ProspectPopulationAuthorityStatus, ProspectRankPublicationStatus,
     ProspectScorePublicationStatus, PROSPECT_CENSUS_SCHEMA,
 };
+pub use view_model::prospect_census_readiness::{
+    build_prospect_census_readiness, ProspectCensusLossSummaryView,
+    ProspectCensusReadinessBoardView, ProspectCensusReadinessError,
+    ProspectCensusReadinessTeamView, PROSPECT_CENSUS_READINESS_METHOD,
+    PROSPECT_CENSUS_READINESS_SCHEMA,
+};
 pub use view_model::prospect_conversion::{
     adapt_prospect_conversion_input, build_prospect_conversion_archive,
     build_prospect_conversion_board, build_prospect_nhl_performance_document,

@@ -9980,6 +9980,74 @@ fn render_prospect_census(view: &icelines_core::ProspectCensusView) -> String {
     output
 }
 
+pub fn run_prospect_census_readiness(
+    input: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let census: icelines_core::ProspectCensusView = read_icecast_json(&input, "prospect census")?;
+    let board = icelines_core::build_prospect_census_readiness(&census)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&board)?)
+    } else {
+        render_prospect_census_readiness(&board)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "prospect census readiness board")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_prospect_census_readiness(
+    board: &icelines_core::ProspectCensusReadinessBoardView,
+) -> String {
+    let mut output = format!(
+        "PROSPECT CENSUS READINESS · {} · {}/{} population complete · {}/{} depth complete · {}/{} published\n",
+        board.evaluation_season,
+        board.population_complete_organizations,
+        board.organizations,
+        board.depth_complete_organizations,
+        board.organizations,
+        board.published_organizations,
+        board.organizations,
+    );
+    for gap in &board.authority_gap_summary {
+        let _ = writeln!(
+            output,
+            "AUTHORITY GAP · {} · {:?} · {} organizations",
+            gap.source_family, gap.state, gap.organizations
+        );
+    }
+    for loss in &board.loss_summary {
+        let _ = writeln!(
+            output,
+            "PLAYER LOSS · {:?} · {} players",
+            loss.reason, loss.players
+        );
+    }
+    let _ = writeln!(
+        output,
+        "TEAM AUTH       PUBLICATION           CAN CTRL RANK/TGT GAPS"
+    );
+    for team in &board.teams {
+        let _ = writeln!(
+            output,
+            "{:<4} {:<10?} {:<21?} {:>3} {:>4} {:>4}/{:<3} {:>4}",
+            team.organization,
+            team.population_authority_status,
+            team.publication_status,
+            team.counts.canonical_identity,
+            team.counts.controlled_relationship,
+            team.counts.ranked,
+            team.requested_ranking_depth,
+            team.authority_gaps.len(),
+        );
+    }
+    output
+}
+
 fn prospect_census_loss_summary(losses: &[icelines_core::ProspectCensusLossRow]) -> String {
     let mut counts = BTreeMap::<String, usize>::new();
     for loss in losses {

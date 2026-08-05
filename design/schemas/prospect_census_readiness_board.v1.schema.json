@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/prospect_census_readiness_board.v1.schema.json",
+  "title": "IceLines Prospect Census Readiness Board v1",
+  "type": "object",
+  "required": [
+    "schema", "method_version", "evaluation_season", "effective_cutoff",
+    "knowledge_cutoff", "source_package_fingerprint", "source_census_fingerprint",
+    "organizations", "population_complete_organizations", "depth_complete_organizations",
+    "published_organizations", "league_counts", "authority_gap_summary", "loss_summary",
+    "teams", "disclosures", "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "prospect_census_readiness_board.v1" },
+    "method_version": { "const": "prospect_census_readiness_board.v1" },
+    "evaluation_season": { "type": "integer", "minimum": 19001901 },
+    "effective_cutoff": { "type": "string", "format": "date-time" },
+    "knowledge_cutoff": { "type": "string", "format": "date-time" },
+    "source_package_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "source_census_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "organizations": { "const": 32 },
+    "population_complete_organizations": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "depth_complete_organizations": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "published_organizations": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "league_counts": { "$ref": "#/$defs/counts" },
+    "authority_gap_summary": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/authorityGapSummary" }
+    },
+    "loss_summary": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/lossSummary" }
+    },
+    "teams": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/team" }
+    },
+    "disclosures": { "$ref": "#/$defs/messages" },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "messages": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "populationStatus": {
+      "type": "string",
+      "enum": ["complete", "incomplete", "conflicted"]
+    },
+    "publicationStatus": {
+      "type": "string",
+      "enum": ["published", "population_incomplete", "depth_incomplete"]
+    },
+    "gapState": {
+      "type": "string",
+      "enum": ["failed", "quarantined", "incomplete_pagination"]
+    },
+    "lossReason": {
+      "type": "string",
+      "enum": [
+        "unresolved_identity", "conflicting_control", "unsupported_control",
+        "missing_eligibility_evidence", "prospect_ineligible", "missing_career_evidence",
+        "study_build_failed", "ranking_withheld", "missing_source_family", "excluded_by_policy"
+      ]
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "discovered", "canonical_identity", "controlled_relationship", "prospect_eligible",
+        "career_evidence_usable", "study_built", "ranked"
+      ],
+      "properties": {
+        "discovered": { "type": "integer", "minimum": 0 },
+        "canonical_identity": { "type": "integer", "minimum": 0 },
+        "controlled_relationship": { "type": "integer", "minimum": 0 },
+        "prospect_eligible": { "type": "integer", "minimum": 0 },
+        "career_evidence_usable": { "type": "integer", "minimum": 0 },
+        "study_built": { "type": "integer", "minimum": 0 },
+        "ranked": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "authorityGap": {
+      "type": "object",
+      "required": ["source_family", "state", "reason"],
+      "properties": {
+        "source_family": { "type": "string", "minLength": 1 },
+        "state": { "$ref": "#/$defs/gapState" },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "authorityGapSummary": {
+      "type": "object",
+      "required": ["source_family", "state", "organizations"],
+      "properties": {
+        "source_family": { "type": "string", "minLength": 1 },
+        "state": { "$ref": "#/$defs/gapState" },
+        "organizations": { "type": "integer", "minimum": 1, "maximum": 32 }
+      },
+      "additionalProperties": false
+    },
+    "lossSummary": {
+      "type": "object",
+      "required": ["reason", "players"],
+      "properties": {
+        "reason": { "$ref": "#/$defs/lossReason" },
+        "players": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "team": {
+      "type": "object",
+      "required": [
+        "organization", "population_authority_status", "publication_status",
+        "requested_ranking_depth", "ranking_depth_shortfall", "counts",
+        "authority_gaps", "loss_summary", "remediation"
+      ],
+      "properties": {
+        "organization": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "population_authority_status": { "$ref": "#/$defs/populationStatus" },
+        "publication_status": { "$ref": "#/$defs/publicationStatus" },
+        "requested_ranking_depth": { "type": "integer", "minimum": 1 },
+        "ranking_depth_shortfall": { "type": "integer", "minimum": 0 },
+        "counts": { "$ref": "#/$defs/counts" },
+        "authority_gaps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/authorityGap" }
+        },
+        "loss_summary": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/lossSummary" }
+        },
+        "remediation": { "$ref": "#/$defs/messages" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -3516,6 +3516,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::ProspectCensusReadiness { input, json, out }) => {
+            commands::icecast::run_prospect_census_readiness(input, json, out)?
+        }
         Commands::Icecast(IceCastSubcommand::ProspectCareerContext {
             camp_forecast,
             rosters,

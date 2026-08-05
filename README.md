@@ -648,6 +648,16 @@ calibration blockers; it retains all values but withholds ordinal ranks:
 icelines icecast prospect-arrival-board --input league-arrival.json --generated-at 2026-09-15T12:00:00Z --json --out prospect-arrival-board.json
 ```
 
+The separate prospect census exposes why an all-team top-ten board can or
+cannot publish. Its compact readiness projection preserves the complete
+census fingerprint, all 32 team funnel totals, typed authority gaps and player
+loss summaries, without copying the full player-level audit ledger into every
+UI. Population authority and ranking depth remain independent gates:
+
+```bash
+icelines icecast prospect-census-readiness --input prospect-census.json --json --out prospect-census-readiness.json
+```
+
 All 32 team cards are projected from the same sealed league artifact and served
 through the generic web renderer at
 `/icecast/20262027/{team}/prospect-arrivals`; their sealed JSON is available at

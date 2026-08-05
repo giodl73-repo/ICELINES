@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Added the compact, UI-neutral `prospect_census_readiness_board.v1` and
+  `icecast prospect-census-readiness`. The 32-team projection retains census
+  fingerprints, funnel totals, independent population/depth/publication gates,
+  typed authority gaps, summarized player losses, and remediation while
+  leaving the full player-level audit ledger in the source census. It refuses
+  partial league envelopes or unreconciled team, league, loss, and gap totals.
+  A retained real-data 2026-27 board is 97.49% smaller than its complete audit
+  census and exposes the remaining all-32 authority backlog without inventing
+  publishable rankings.
+
 - Added `prospect_arrival_league_calibration.v1` and
   `icecast prospect-arrival-league` to run one horizon-aligned historical
   arrival policy across the canonical 32-team camp envelope. All team rows and
