@@ -558,6 +558,15 @@ and Web HTML/JSON routes. Web team focus is a row filter over the same sealed
 artifact; every surface preserves its fingerprint and withheld publication
 state.
 
+`prospect_authority_closure_board.v1` turns those typed gaps into an operator
+workboard without crossing the acquisition boundary. Each team/family cell
+retains its failed, quarantined, or incomplete-pagination state; names the
+population or organizational-control gate it blocks; and, where registered,
+names the exact provider-neutral artifact schema and existing ingestion option.
+The builder validates the source readiness fingerprint and reconciles family,
+team, and league cell counts. Closing a recipe requires a new source-package
+and census replay; editing the closure board cannot change readiness.
+
 ## Compatibility and migration
 
 Migration is facade-first and build-green:
@@ -623,6 +632,8 @@ retaining the original source and classification disclosure.
   counts and actionable remediation;
 - compact readiness output reconciles to the complete census, preserves its
   fingerprint, and refuses partial league envelopes;
+- authority closure recipes reconcile to readiness gaps, preserve their source
+  fingerprint, and never promote a recipe into acquired evidence;
 - strict publication independently refuses incomplete population authority and
   incomplete ranking depth;
 - camp-only invite remains usable by camp simulation but not prospect ranking;

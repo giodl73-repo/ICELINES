@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Added `prospect_authority_closure_board.v1` and
+  `icecast prospect-authority-closure` to convert a sealed census-readiness
+  board into exact, fingerprinted acquisition recipes. The retained 2026-27
+  plan reconciles 96 cells across 32 teams: 32 organizational-control blockers
+  require the contract ledger boundary, while 64 population blockers require
+  camp or AHL assignment authority. Failed, quarantined, and incomplete-page
+  states receive different dispositions; no recipe acquires data or approves
+  evidence by itself.
+
 - Added the compact, UI-neutral `prospect_census_readiness_board.v1` and
   `icecast prospect-census-readiness`. The 32-team projection retains census
   fingerprints, funnel totals, independent population/depth/publication gates,

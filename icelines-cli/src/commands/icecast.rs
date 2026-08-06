@@ -10000,6 +10000,66 @@ pub fn run_prospect_census_readiness(
     Ok(())
 }
 
+pub fn run_prospect_authority_closure(
+    input: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let readiness: icelines_core::ProspectCensusReadinessBoardView =
+        read_icecast_json(&input, "prospect census readiness board")?;
+    let board = icelines_core::build_prospect_authority_closure(&readiness)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&board)?)
+    } else {
+        render_prospect_authority_closure(&board)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "prospect authority closure board")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_prospect_authority_closure(
+    board: &icelines_core::ProspectAuthorityClosureBoardView,
+) -> String {
+    let mut output = format!(
+        "PROSPECT AUTHORITY CLOSURE · {} · {} cells · {} control · {} population\n",
+        board.evaluation_season,
+        board.cells,
+        board.control_blocking_cells,
+        board.population_blocking_cells,
+    );
+    for family in &board.family_summary {
+        let artifact = family
+            .required_artifact_schema
+            .as_deref()
+            .unwrap_or("adapter required");
+        let option = family
+            .ingestion_option
+            .as_deref()
+            .unwrap_or("no CLI boundary registered");
+        let _ = writeln!(
+            output,
+            "FAMILY · {} · {:?} · {} organizations · {} · {}",
+            family.source_family, family.gate, family.organizations, artifact, option
+        );
+    }
+    let _ = writeln!(
+        output,
+        "TEAM FAMILY                         STATE                GATE"
+    );
+    for cell in &board.closure_cells {
+        let _ = writeln!(
+            output,
+            "{:<4} {:<30} {:<20?} {:?}",
+            cell.organization, cell.source_family, cell.state, cell.gate
+        );
+    }
+    output
+}
+
 fn render_prospect_census_readiness(
     board: &icelines_core::ProspectCensusReadinessBoardView,
 ) -> String {

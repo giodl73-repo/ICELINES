@@ -665,6 +665,20 @@ The retained 2026-27 readiness board is served as HTML at
 `?team=SEA` filter changes presentation only; it never recomputes or republishes
 the league artifact.
 
+Convert that readiness artifact into machine-actionable authority closure
+recipes. The closure board distinguishes control blockers from population
+blockers and names only already-supported ledger/snapshot ingestion boundaries;
+it does not guess player rights or mark acquisition complete:
+
+```bash
+icelines icecast prospect-authority-closure --input prospect-census-readiness.json --json --out prospect-authority-closure.json
+```
+
+The retained 2026-27 plan has 96 cells: 32 contract-control cells requiring
+`contract_control_ledger.v1`, 32 camp cells requiring
+`camp_participation_ledger.v1`, and 32 AHL assignment cells requiring
+`ahl_roster_stats.v1`.
+
 All 32 team cards are projected from the same sealed league artifact and served
 through the generic web renderer at
 `/icecast/20262027/{team}/prospect-arrivals`; their sealed JSON is available at

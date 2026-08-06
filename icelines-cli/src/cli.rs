@@ -3419,6 +3419,17 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Turn a readiness board into exact authority-boundary closure recipes.
+    #[command(name = "prospect-authority-closure")]
+    ProspectAuthorityClosure {
+        /// `prospect_census_readiness_board.v1` artifact to plan from.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Generate neutral multi-league prospect context from the league camp pool.
     #[command(name = "prospect-career-context")]
     ProspectCareerContext {
@@ -7412,6 +7423,30 @@ mod tui_surface_tests {
                 out: Some(out),
             }) if input == PathBuf::from("census.json")
                 && out == PathBuf::from("readiness.json")
+        ));
+    }
+
+    #[test]
+    fn l0_icecast_prospect_authority_closure_surface_parses() {
+        let cli = Cli::try_parse_from([
+            "icelines",
+            "icecast",
+            "prospect-authority-closure",
+            "--input",
+            "readiness.json",
+            "--json",
+            "--out",
+            "closure.json",
+        ])
+        .expect("IceCast prospect authority closure command should parse");
+        assert!(matches!(
+            cli.command,
+            Commands::Icecast(IceCastSubcommand::ProspectAuthorityClosure {
+                input,
+                json: true,
+                out: Some(out),
+            }) if input == PathBuf::from("readiness.json")
+                && out == PathBuf::from("closure.json")
         ));
     }
 

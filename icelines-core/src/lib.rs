@@ -337,6 +337,13 @@ pub use view_model::prospect_arrival_calibration::{
     ProspectArrivalLeagueTeamView, PROSPECT_ARRIVAL_CALIBRATION_INPUT_SCHEMA,
     PROSPECT_ARRIVAL_CALIBRATION_SCHEMA, PROSPECT_ARRIVAL_LEAGUE_CALIBRATION_SCHEMA,
 };
+pub use view_model::prospect_authority_closure::{
+    build_prospect_authority_closure, ProspectAuthorityClosureBoardView,
+    ProspectAuthorityClosureCell, ProspectAuthorityClosureDisposition,
+    ProspectAuthorityClosureError, ProspectAuthorityClosureFamilySummary,
+    ProspectAuthorityClosureGate, PROSPECT_AUTHORITY_CLOSURE_METHOD,
+    PROSPECT_AUTHORITY_CLOSURE_SCHEMA,
+};
 pub use view_model::prospect_census::{
     build_prospect_census, require_publishable_prospect_census, ProspectCensusAuthorityGap,
     ProspectCensusAuthorityGapState, ProspectCensusAuthorityGapSummary,

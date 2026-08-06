@@ -63,6 +63,7 @@ pub mod playoffs;
 pub mod poach;
 pub mod prospect_arrival_board;
 pub mod prospect_arrival_calibration;
+pub mod prospect_authority_closure;
 pub mod prospect_census;
 pub mod prospect_census_readiness;
 pub mod prospect_conversion;
@@ -506,6 +507,13 @@ pub use prospect_arrival_calibration::{
     ProspectArrivalLeaguePopulationAuthorityView, ProspectArrivalLeagueSourceExclusionInput,
     ProspectArrivalLeagueTeamView, PROSPECT_ARRIVAL_CALIBRATION_INPUT_SCHEMA,
     PROSPECT_ARRIVAL_CALIBRATION_SCHEMA, PROSPECT_ARRIVAL_LEAGUE_CALIBRATION_SCHEMA,
+};
+pub use prospect_authority_closure::{
+    build_prospect_authority_closure, ProspectAuthorityClosureBoardView,
+    ProspectAuthorityClosureCell, ProspectAuthorityClosureDisposition,
+    ProspectAuthorityClosureError, ProspectAuthorityClosureFamilySummary,
+    ProspectAuthorityClosureGate, PROSPECT_AUTHORITY_CLOSURE_METHOD,
+    PROSPECT_AUTHORITY_CLOSURE_SCHEMA,
 };
 pub use prospect_census::{
     build_prospect_census, require_publishable_prospect_census, ProspectCensusAuthorityGap,
