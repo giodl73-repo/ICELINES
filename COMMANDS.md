@@ -1066,6 +1066,8 @@ icelines icecast prospect-authority-progress --prior prior-authority-closure.jso
 prospect-census-readiness
 # TUI command bar: open the same retained two-page authority delta
 prospect-authority-progress
+# TUI command bar: inspect every retained closure recipe across four pages
+prospect-authority-closure
 icelines icecast identity-review-workboard --source-package target/prospect-sources-2026-27-landings.v2.json --json --out identity-review-workboard.json
 icelines icecast official-identity-candidates --workboard identity-review-workboard.json --json --out official-identity-candidates.json
 icelines icecast official-identity-candidates --workboard identity-review-workboard.json --refresh --json --out official-identity-candidates-refreshed.json

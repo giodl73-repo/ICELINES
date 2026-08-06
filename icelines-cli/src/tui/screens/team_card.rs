@@ -11,6 +11,7 @@ use icelines_core::{
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
     CardDocumentView, CardSectionView, OrganizationWindowBoardView, ProspectArrivalBoardView,
     ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView,
+    ProspectAuthorityClosureBoardView, ProspectAuthorityClosureDisposition,
     ProspectAuthorityProgressChangeKind, ProspectAuthorityProgressView,
     ProspectCensusAuthorityGapState, ProspectCensusReadinessBoardView, Season, ViewContext,
     ViewWindow, CANONICAL_TEAMS,
@@ -57,6 +58,8 @@ const PROSPECT_ARRIVAL_BOARD_JSON: &str =
     include_str!("../../../../examples/prospect-arrival-board-2026-27.json");
 const PROSPECT_CENSUS_READINESS_BOARD_JSON: &str =
     include_str!("../../../../examples/prospect-census-readiness-2026-27.json");
+const PROSPECT_AUTHORITY_CLOSURE_BOARD_JSON: &str =
+    include_str!("../../../../examples/prospect-authority-closure-2026-27.json");
 const PROSPECT_AUTHORITY_PROGRESS_JSON: &str =
     include_str!("../../../../examples/prospect-authority-progress-2026-27-ahl.json");
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
@@ -178,6 +181,14 @@ fn prospect_arrival_cards() -> &'static BTreeMap<String, CardDocumentView> {
     })
 }
 
+pub(crate) fn page_count(team: &str) -> usize {
+    if team.eq_ignore_ascii_case("AUTHORITY-CLOSURE-BOARD") {
+        4
+    } else {
+        2
+    }
+}
+
 pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
     if team.eq_ignore_ascii_case("WINDOW-BOARD") {
@@ -212,6 +223,15 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
             title: format!("Prospect Authority Progress - page {}", page + 1),
             keybinds: vec![
                 KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
+    if team.eq_ignore_ascii_case("AUTHORITY-CLOSURE-BOARD") {
+        return ScreenChrome {
+            title: format!("Prospect Authority Closure - page {} of 4", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "next 16 cells"),
                 KeyHint::new(":", "command"),
             ],
         };
@@ -262,7 +282,7 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
 }
 
 pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
-    let page = app.selected.min(1);
+    let page = app.selected.min(page_count(team) - 1);
     if team.eq_ignore_ascii_case("WINDOW-BOARD") {
         render_organization_window_board(f, area, page);
         return;
@@ -277,6 +297,10 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
     }
     if team.eq_ignore_ascii_case("AUTHORITY-PROGRESS-BOARD") {
         render_prospect_authority_progress(f, area, page);
+        return;
+    }
+    if team.eq_ignore_ascii_case("AUTHORITY-CLOSURE-BOARD") {
+        render_prospect_authority_closure(f, area, page);
         return;
     }
     if compare
@@ -406,6 +430,77 @@ fn prospect_authority_progress() -> &'static ProspectAuthorityProgressView {
     })
 }
 
+fn prospect_authority_closure_board() -> &'static ProspectAuthorityClosureBoardView {
+    static BOARD: OnceLock<ProspectAuthorityClosureBoardView> = OnceLock::new();
+    BOARD.get_or_init(|| {
+        let board: ProspectAuthorityClosureBoardView =
+            serde_json::from_str(PROSPECT_AUTHORITY_CLOSURE_BOARD_JSON)
+                .expect("sealed prospect authority closure board");
+        assert_eq!(
+            board
+                .calculate_fingerprint()
+                .expect("authority closure fingerprint"),
+            board.fingerprint,
+            "sealed prospect authority closure board must remain canonical"
+        );
+        board
+    })
+}
+
+fn render_prospect_authority_closure(f: &mut Frame, area: Rect, page: usize) {
+    let board = prospect_authority_closure_board();
+    let title = format!(
+        " PROSPECT AUTHORITY CLOSURE | {} | {} | {}/4 ",
+        board.evaluation_season,
+        &board.fingerprint[..8],
+        page + 1
+    );
+    let lines = prospect_authority_closure_lines(board, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+pub(crate) fn prospect_authority_closure_lines(
+    board: &ProspectAuthorityClosureBoardView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let start = page.min(3) * 16;
+    let mut lines = vec![format!(
+        "{} blockers · {} population · {} control · {}/{} teams affected",
+        board.cells,
+        board.population_blocking_cells,
+        board.control_blocking_cells,
+        board.affected_organizations,
+        board.organizations,
+    )];
+    if width >= 72 {
+        lines.extend([
+            "CAMP · camp_participation_ledger.v1 · --camp-participation-ledger".to_owned(),
+            "CONTRACT · contract_control_ledger.v1 · --contract-control-ledger".to_owned(),
+        ]);
+    } else {
+        lines.extend([
+            "CAMP · camp_participation_ledger.v1".to_owned(),
+            "CONTRACT · contract_control_ledger.v1".to_owned(),
+        ]);
+    }
+    lines.push("TEAM SOURCE FAMILY               GATE       STATE      ACTION".to_owned());
+    for row in board.closure_cells.iter().skip(start).take(16) {
+        lines.push(format!(
+            "{:<4} {:<27} {:<10} {:<10} {}",
+            row.organization,
+            fit_authority_cell(&row.source_family, 27),
+            authority_gate_label(row.gate),
+            authority_gap_state_label(row.state),
+            authority_disposition_label(row.disposition),
+        ));
+    }
+    lines
+}
+
 fn render_prospect_authority_progress(f: &mut Frame, area: Rect, page: usize) {
     let progress = prospect_authority_progress();
     let title = format!(
@@ -485,6 +580,14 @@ fn authority_change_label(kind: ProspectAuthorityProgressChangeKind) -> &'static
         ProspectAuthorityProgressChangeKind::Closed => "closed",
         ProspectAuthorityProgressChangeKind::Opened => "opened",
         ProspectAuthorityProgressChangeKind::StateChanged => "state changed",
+    }
+}
+
+fn authority_disposition_label(disposition: ProspectAuthorityClosureDisposition) -> &'static str {
+    match disposition {
+        ProspectAuthorityClosureDisposition::Acquire => "acquire",
+        ProspectAuthorityClosureDisposition::ResolveQuarantine => "resolve quarantine",
+        ProspectAuthorityClosureDisposition::CompletePagination => "complete pagination",
     }
 }
 
@@ -1611,6 +1714,75 @@ mod tests {
         assert!(!rendered.contains("ANA  "));
     }
 
+    #[test]
+    fn l1_prospect_authority_closure_pages_preserve_all_64_exact_cells() {
+        let board = prospect_authority_closure_board();
+        let pages = (0..4)
+            .map(|page| prospect_authority_closure_lines(board, page, 80))
+            .collect::<Vec<_>>();
+        assert!(pages.iter().all(|page| page.len() == 20));
+        assert!(pages
+            .iter()
+            .flat_map(|page| page.iter())
+            .all(|line| line.len() <= 80));
+        assert!(pages[0][0].contains("64 blockers"));
+        assert!(pages[0][0].contains("32 population"));
+        assert!(pages[0][0].contains("32 control"));
+        assert!(pages[0][1].contains("camp_participation_ledger.v1"));
+        assert!(pages[0][1].contains("--camp-participation-ledger"));
+        assert!(pages[0][2].contains("contract_control_ledger.v1"));
+        assert!(pages[0][2].contains("--contract-control-ledger"));
+        let keys = pages
+            .iter()
+            .flat_map(|page| page.iter().skip(4))
+            .filter_map(|line| {
+                let mut cells = line.split_whitespace();
+                Some(format!("{}:{}", cells.next()?, cells.next()?))
+            })
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(keys.len(), board.closure_cells.len());
+        assert!(keys.contains("NYR:nhl_club_camp_publication"));
+        assert!(keys.contains("NYR:nhl_contract_publication"));
+        assert!(keys.contains("SEA:nhl_club_camp_publication"));
+        assert!(keys.contains("SEA:nhl_contract_publication"));
+        assert_eq!(page_count("AUTHORITY-CLOSURE-BOARD"), 4);
+        assert_eq!(page_count("NYR"), 2);
+        assert_eq!(
+            parse_command("prospect-authority-closure").unwrap(),
+            Command::TeamCard {
+                team: "AUTHORITY-CLOSURE-BOARD".to_owned()
+            }
+        );
+
+        let mut app = App::new(true);
+        execute_command(
+            parse_command("prospect-authority-closure").unwrap(),
+            &mut app,
+        );
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('c'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard {
+                ref team,
+                compare: false
+            } if team == "AUTHORITY-CLOSURE-BOARD"
+        ));
+        let first = render_app(&app, 80, 30);
+        assert!(first.contains("PROSPECT AUTHORITY CLOSURE"));
+        assert!(first.contains("ANA"));
+        assert!(!first.contains("WSH"));
+        for expected_page in 1..=3 {
+            app.handle(Action::Char('p'));
+            assert_eq!(app.selected, expected_page);
+        }
+        let fourth = render_app(&app, 80, 30);
+        assert!(fourth.contains("WSH"));
+        assert!(!fourth.contains("ANA  "));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 0);
+    }
+
     #[tokio::test]
     async fn l2_organization_window_golden_parity_across_cli_tui_and_web() {
         let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -1882,5 +2054,47 @@ mod tests {
         assert!(nyr.contains("closed"));
         assert!(nyr.contains("failed"));
         assert!(nyr.contains("resolved"));
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_authority_closure_golden_parity_across_tui_and_web() {
+        let expected = prospect_authority_closure_board().clone();
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/prospect-authority-closure/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers()["etag"].to_str().unwrap(),
+            format!("\"{}\"", expected.fingerprint)
+        );
+        let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let web_board: ProspectAuthorityClosureBoardView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_board, expected);
+
+        let lines = (0..4)
+            .flat_map(|page| prospect_authority_closure_lines(&expected, page, 80))
+            .collect::<Vec<_>>();
+        let nyr = lines
+            .iter()
+            .filter(|line| line.starts_with("NYR"))
+            .collect::<Vec<_>>();
+        assert_eq!(nyr.len(), 2);
+        assert!(nyr
+            .iter()
+            .any(|line| line.contains("nhl_club_camp_publication")));
+        assert!(nyr
+            .iter()
+            .any(|line| line.contains("nhl_contract_publication")));
+        assert!(nyr.iter().all(|line| line.contains("failed")));
+        assert!(nyr.iter().all(|line| line.contains("acquire")));
     }
 }

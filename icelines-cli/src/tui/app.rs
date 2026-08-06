@@ -1300,8 +1300,14 @@ impl App {
                         );
                     }
                 } else if matches!(self.screen, Screen::TeamCard { .. }) && c == 'p' {
-                    self.selected = (self.selected + 1) % 2;
-                    self.status = format!("IceCast card page {} of 2", self.selected + 1);
+                    let pages = match &self.screen {
+                        Screen::TeamCard { team, .. } => {
+                            crate::tui::screens::team_card::page_count(team)
+                        }
+                        _ => unreachable!("TeamCard branch"),
+                    };
+                    self.selected = (self.selected + 1) % pages;
+                    self.status = format!("IceCast card page {} of {pages}", self.selected + 1);
                 } else if matches!(self.screen, Screen::TeamCard { ref team, .. } if !team.ends_with("-BOARD"))
                     && c == 't'
                 {

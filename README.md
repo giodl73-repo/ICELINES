@@ -678,6 +678,8 @@ The retained current closure plan is served as HTML at
 `/icecast/20262027/prospect-authority-closure` and as fingerprinted JSON at
 `/api/v1/prospect-authority-closure/20262027`. Optional team focus such as
 `?team=NYR` filters the two displayed recipes without changing the league ETag.
+In the TUI, `prospect-authority-closure` preserves all 64 exact cells across
+four 16-cell pages; `p` advances and wraps without applying any recipe.
 
 Compare two sealed closure boards to measure exactly what closed, opened, or
 changed state. The delta verifies both source fingerprints and their internal
