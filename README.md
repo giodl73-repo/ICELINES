@@ -674,6 +674,11 @@ it does not guess player rights or mark acquisition complete:
 icelines icecast prospect-authority-closure --input prospect-census-readiness.json --json --out prospect-authority-closure.json
 ```
 
+The retained current closure plan is served as HTML at
+`/icecast/20262027/prospect-authority-closure` and as fingerprinted JSON at
+`/api/v1/prospect-authority-closure/20262027`. Optional team focus such as
+`?team=NYR` filters the two displayed recipes without changing the league ETag.
+
 Compare two sealed closure boards to measure exactly what closed, opened, or
 changed state. The delta verifies both source fingerprints and their internal
 totals, requires one season and chronological knowledge cutoffs, and reports

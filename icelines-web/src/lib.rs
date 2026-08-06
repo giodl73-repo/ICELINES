@@ -207,6 +207,14 @@ pub fn router(state: WebState) -> Router {
             get(handlers::prospect_census::get_prospect_census_readiness_json),
         )
         .route(
+            "/icecast/:season/prospect-authority-closure",
+            get(handlers::prospect_census::get_prospect_authority_closure),
+        )
+        .route(
+            "/api/v1/prospect-authority-closure/:season",
+            get(handlers::prospect_census::get_prospect_authority_closure_json),
+        )
+        .route(
             "/icecast/:season/prospect-authority-progress",
             get(handlers::prospect_census::get_prospect_authority_progress),
         )

@@ -23,7 +23,9 @@
   the contract ledger boundary and 32 population blockers require camp
   authority. Failed, quarantined, and incomplete-page
   states receive different dispositions; no recipe acquires data or approves
-  evidence by itself.
+  evidence by itself. Web HTML and JSON expose the same sealed 64-cell plan,
+  including exact artifact and ingestion boundaries, with presentation-only
+  team focus and full-artifact ETags.
 
 - Added the compact, UI-neutral `prospect_census_readiness_board.v1` and
   `icecast prospect-census-readiness`. The 32-team projection retains census

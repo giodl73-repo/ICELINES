@@ -9,8 +9,8 @@ use icelines_core::{
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
     CardDocumentView, OrganizationWindowBoardView, OrganizationWindowCardError,
     ProspectArrivalBoardView, ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView,
-    ProspectAuthorityProgressView, ProspectCensusReadinessBoardView, Season, ViewContext,
-    ViewWindow, CANONICAL_TEAMS,
+    ProspectAuthorityClosureBoardView, ProspectAuthorityProgressView,
+    ProspectCensusReadinessBoardView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
 use thiserror::Error;
 
@@ -45,6 +45,8 @@ const PROSPECT_ARRIVAL_BOARD: &str =
     include_str!("../../examples/prospect-arrival-board-2026-27.json");
 const PROSPECT_CENSUS_READINESS_BOARD: &str =
     include_str!("../../examples/prospect-census-readiness-2026-27.json");
+const PROSPECT_AUTHORITY_CLOSURE_BOARD: &str =
+    include_str!("../../examples/prospect-authority-closure-2026-27.json");
 const PROSPECT_AUTHORITY_PROGRESS: &str =
     include_str!("../../examples/prospect-authority-progress-2026-27-ahl.json");
 const BALANCED_ORGANIZATION_WINDOW: &str =
@@ -194,6 +196,30 @@ pub fn prospect_authority_progress(
                 "sealed prospect authority progress must remain canonical"
             );
             progress
+        })
+        .clone())
+}
+
+pub fn prospect_authority_closure_board(
+    season: u32,
+) -> Result<ProspectAuthorityClosureBoardView, CardStoreError> {
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static BOARD: OnceLock<ProspectAuthorityClosureBoardView> = OnceLock::new();
+    Ok(BOARD
+        .get_or_init(|| {
+            let board: ProspectAuthorityClosureBoardView =
+                serde_json::from_str(PROSPECT_AUTHORITY_CLOSURE_BOARD)
+                    .expect("sealed prospect authority closure board");
+            assert_eq!(
+                board
+                    .calculate_fingerprint()
+                    .expect("authority closure fingerprint"),
+                board.fingerprint,
+                "sealed prospect authority closure board must remain canonical"
+            );
+            board
         })
         .clone())
 }

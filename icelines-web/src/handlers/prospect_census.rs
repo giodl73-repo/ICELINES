@@ -4,15 +4,105 @@ use axum::response::{Html, IntoResponse, Response};
 use serde::Deserialize;
 
 use icelines_core::{
-    ProspectAuthorityProgressChangeKind, ProspectCensusAuthorityGapState, CANONICAL_TEAMS,
+    ProspectAuthorityClosureDisposition, ProspectAuthorityProgressChangeKind,
+    ProspectCensusAuthorityGapState, CANONICAL_TEAMS,
 };
 
-use crate::card_store::{prospect_authority_progress, prospect_census_readiness_board};
+use crate::card_store::{
+    prospect_authority_closure_board, prospect_authority_progress, prospect_census_readiness_board,
+};
 use crate::handlers::team_card::cached_response;
 
 #[derive(Debug, Default, Deserialize)]
 pub struct ProspectCensusReadinessQuery {
     pub team: Option<String>,
+}
+
+pub async fn get_prospect_authority_closure_json(
+    Path(season): Path<u32>,
+    headers: HeaderMap,
+) -> Response {
+    match prospect_authority_closure_board(season) {
+        Ok(board) => {
+            let fingerprint = board.fingerprint.clone();
+            cached_response(axum::Json(board).into_response(), &fingerprint, &headers)
+        }
+        Err(error) => (StatusCode::NOT_FOUND, error.to_string()).into_response(),
+    }
+}
+
+pub async fn get_prospect_authority_closure(
+    Path(season): Path<u32>,
+    Query(query): Query<ProspectCensusReadinessQuery>,
+    headers: HeaderMap,
+) -> Response {
+    let board = match prospect_authority_closure_board(season) {
+        Ok(board) => board,
+        Err(error) => return (StatusCode::NOT_FOUND, Html(error.to_string())).into_response(),
+    };
+    let focus = query.team.map(|team| team.trim().to_ascii_uppercase());
+    if focus.as_ref().is_some_and(|team| {
+        !CANONICAL_TEAMS
+            .iter()
+            .any(|(candidate, _)| candidate == team)
+    }) {
+        return (
+            StatusCode::NOT_FOUND,
+            Html("team is absent from the canonical NHL organization set".to_owned()),
+        )
+            .into_response();
+    }
+
+    let family_summary = board
+        .family_summary
+        .iter()
+        .map(|row| {
+            format!(
+                "<li><strong>{family}</strong>: {cells} cells across {organizations} teams · {gate} · <code>{artifact}</code> via <code>{option}</code></li>",
+                family = row.source_family,
+                cells = row.cells,
+                organizations = row.organizations,
+                gate = authority_gate_label(row.gate),
+                artifact = row.required_artifact_schema.as_deref().unwrap_or("adapter required"),
+                option = row.ingestion_option.as_deref().unwrap_or("no registered option"),
+            )
+        })
+        .collect::<String>();
+    let rows = board
+        .closure_cells
+        .iter()
+        .filter(|row| focus.as_ref().is_none_or(|team| row.organization == *team))
+        .map(|row| {
+            format!(
+                "<tr><th scope=\"row\">{team}</th><td>{family}</td><td>{gate}</td><td>{state}</td><td>{disposition}</td><td><code>{artifact}</code></td><td><code>{option}</code></td><td>{remediation}</td></tr>",
+                team = row.organization,
+                family = row.source_family,
+                gate = authority_gate_label(row.gate),
+                state = authority_gap_state_label(row.state),
+                disposition = authority_disposition_label(row.disposition),
+                artifact = row.required_artifact_schema.as_deref().unwrap_or("adapter required"),
+                option = row.ingestion_option.as_deref().unwrap_or("no registered option"),
+                remediation = row.remediation,
+            )
+        })
+        .collect::<String>();
+    let disclosures = board
+        .disclosures
+        .iter()
+        .map(|disclosure| format!("<li>{disclosure}</li>"))
+        .collect::<String>();
+    let html = format!(
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Prospect Authority Closure</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><a href=\"#main\" class=\"skip-link\">Skip to content</a><main id=\"main\" tabindex=\"-1\"><h1>Prospect Authority Closure</h1><p>Season {season} · fingerprint <code>{fingerprint}</code></p><p><strong>{cells}</strong> blocking cells across <strong>{affected}/{organizations}</strong> organizations · {population} population-authority · {control} organizational-control.</p><p>Knowledge cutoff: <time>{cutoff}</time>.</p><h2>Required source families</h2><ul>{family_summary}</ul><div class=\"table-scroll\" role=\"region\" aria-label=\"Prospect authority closure recipes\" tabindex=\"0\"><table><caption>Exact acquisition recipes; these rows are not evidence approvals</caption><thead><tr><th scope=\"col\">Team</th><th scope=\"col\">Source family</th><th scope=\"col\">Gate</th><th scope=\"col\">State</th><th scope=\"col\">Disposition</th><th scope=\"col\">Artifact</th><th scope=\"col\">Ingestion</th><th scope=\"col\">Remediation</th></tr></thead><tbody>{rows}</tbody></table></div><h2>Disclosures</h2><ul>{disclosures}</ul><p><a href=\"/api/v1/prospect-authority-closure/{season}\">Full JSON artifact</a></p></main></body></html>",
+        fingerprint = board.fingerprint,
+        cells = board.cells,
+        affected = board.affected_organizations,
+        organizations = board.organizations,
+        population = board.population_blocking_cells,
+        control = board.control_blocking_cells,
+        cutoff = board.knowledge_cutoff,
+    );
+    let fingerprint = board.fingerprint.clone();
+    cached_response(Html(html).into_response(), &fingerprint, &headers)
 }
 
 pub async fn get_prospect_authority_progress_json(
@@ -111,6 +201,14 @@ fn authority_gate_label(gate: icelines_core::ProspectAuthorityClosureGate) -> &'
         icelines_core::ProspectAuthorityClosureGate::OrganizationalControl => {
             "organizational control"
         }
+    }
+}
+
+fn authority_disposition_label(disposition: ProspectAuthorityClosureDisposition) -> &'static str {
+    match disposition {
+        ProspectAuthorityClosureDisposition::Acquire => "acquire",
+        ProspectAuthorityClosureDisposition::ResolveQuarantine => "resolve quarantine",
+        ProspectAuthorityClosureDisposition::CompletePagination => "complete pagination",
     }
 }
 

@@ -463,6 +463,97 @@ async fn prospect_authority_progress_routes_preserve_the_sealed_delta() {
 }
 
 #[tokio::test]
+async fn prospect_authority_closure_routes_preserve_recipes_without_approving_evidence() {
+    let app = router(WebState::new());
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/prospect-authority-closure/20262027")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let etag = response.headers()["etag"].to_str().unwrap().to_owned();
+    let routed: icelines_core::ProspectAuthorityClosureBoardView =
+        serde_json::from_str(&body(response).await).unwrap();
+    let fixture: icelines_core::ProspectAuthorityClosureBoardView = serde_json::from_str(
+        include_str!("../../examples/prospect-authority-closure-2026-27.json"),
+    )
+    .unwrap();
+    assert_eq!(routed, fixture);
+    assert_eq!(etag, format!("\"{}\"", fixture.fingerprint));
+    assert_eq!(routed.cells, 64);
+    assert_eq!(routed.control_blocking_cells, 32);
+    assert_eq!(routed.population_blocking_cells, 32);
+
+    let html = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-authority-closure")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(html.status(), StatusCode::OK);
+    let html = body(html).await;
+    assert!(html.contains("Prospect Authority Closure"));
+    assert!(html.contains("<strong>64</strong> blocking cells"));
+    assert!(html.contains("camp_participation_ledger.v1"));
+    assert!(html.contains("contract_control_ledger.v1"));
+    assert!(html.contains("--camp-participation-ledger"));
+    assert!(html.contains("--contract-control-ledger"));
+    assert!(html.contains("these rows are not evidence approvals"));
+    assert!(html.contains("NYR"));
+    assert!(html.contains("SEA"));
+
+    let focused = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-authority-closure?team=SEA")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        focused.headers()["etag"].to_str().unwrap(),
+        format!("\"{}\"", fixture.fingerprint)
+    );
+    let focused = body(focused).await;
+    assert_eq!(focused.matches("<th scope=\"row\">SEA</th>").count(), 2);
+    assert!(!focused.contains("<th scope=\"row\">NYR</th>"));
+
+    let unsupported_team = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-authority-closure?team=XYZ")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unsupported_team.status(), StatusCode::NOT_FOUND);
+
+    let unsupported_season = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/prospect-authority-closure/20252026")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unsupported_season.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn stylesheet_contains_phone_and_tablet_card_layouts() {
     let response = router(WebState::new())
         .oneshot(
