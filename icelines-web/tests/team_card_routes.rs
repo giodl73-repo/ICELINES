@@ -373,6 +373,96 @@ async fn prospect_census_readiness_routes_preserve_gates_and_team_focus() {
 }
 
 #[tokio::test]
+async fn prospect_authority_progress_routes_preserve_the_sealed_delta() {
+    let app = router(WebState::new());
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/prospect-authority-progress/20262027")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let etag = response.headers()["etag"].to_str().unwrap().to_owned();
+    let routed: icelines_core::ProspectAuthorityProgressView =
+        serde_json::from_str(&body(response).await).unwrap();
+    let fixture: icelines_core::ProspectAuthorityProgressView = serde_json::from_str(include_str!(
+        "../../examples/prospect-authority-progress-2026-27-ahl.json"
+    ))
+    .unwrap();
+    assert_eq!(routed, fixture);
+    assert_eq!(etag, format!("\"{}\"", fixture.fingerprint));
+    assert_eq!(routed.prior_cells, 96);
+    assert_eq!(routed.current_cells, 64);
+    assert_eq!(routed.closed_cells, 32);
+    assert_eq!(routed.opened_cells, 0);
+
+    let html = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-authority-progress")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(html.status(), StatusCode::OK);
+    let html = body(html).await;
+    assert!(html.contains("Prospect Authority Progress"));
+    assert!(html.contains("<strong>96 → 64</strong> blocking cells"));
+    assert!(html.contains("<strong>32</strong> closed"));
+    assert!(html.contains("33.33</strong>% of the prior backlog retired"));
+    assert!(html.contains("NYR"));
+    assert!(html.contains("SEA"));
+    assert!(html.contains("failed</td><td>resolved"));
+
+    let focused = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-authority-progress?team=SEA")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        focused.headers()["etag"].to_str().unwrap(),
+        format!("\"{}\"", fixture.fingerprint)
+    );
+    let focused = body(focused).await;
+    assert!(focused.contains("<th scope=\"row\">SEA</th>"));
+    assert!(!focused.contains("<th scope=\"row\">NYR</th>"));
+
+    let unsupported_team = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-authority-progress?team=XYZ")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unsupported_team.status(), StatusCode::NOT_FOUND);
+
+    let unsupported_season = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/prospect-authority-progress/20252026")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unsupported_season.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn stylesheet_contains_phone_and_tablet_card_layouts() {
     let response = router(WebState::new())
         .oneshot(

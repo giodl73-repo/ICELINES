@@ -9,7 +9,8 @@ use icelines_core::{
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
     CardDocumentView, OrganizationWindowBoardView, OrganizationWindowCardError,
     ProspectArrivalBoardView, ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView,
-    ProspectCensusReadinessBoardView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
+    ProspectAuthorityProgressView, ProspectCensusReadinessBoardView, Season, ViewContext,
+    ViewWindow, CANONICAL_TEAMS,
 };
 use thiserror::Error;
 
@@ -44,6 +45,8 @@ const PROSPECT_ARRIVAL_BOARD: &str =
     include_str!("../../examples/prospect-arrival-board-2026-27.json");
 const PROSPECT_CENSUS_READINESS_BOARD: &str =
     include_str!("../../examples/prospect-census-readiness-2026-27.json");
+const PROSPECT_AUTHORITY_PROGRESS: &str =
+    include_str!("../../examples/prospect-authority-progress-2026-27-ahl.json");
 const BALANCED_ORGANIZATION_WINDOW: &str =
     include_str!("../../examples/organization-window-board-partial-2026-07-28.json");
 const DEXTERS_DAWGS: &str =
@@ -167,6 +170,30 @@ pub fn prospect_census_readiness_board(
                 "sealed prospect census readiness board must remain canonical"
             );
             board
+        })
+        .clone())
+}
+
+pub fn prospect_authority_progress(
+    season: u32,
+) -> Result<ProspectAuthorityProgressView, CardStoreError> {
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static PROGRESS: OnceLock<ProspectAuthorityProgressView> = OnceLock::new();
+    Ok(PROGRESS
+        .get_or_init(|| {
+            let progress: ProspectAuthorityProgressView =
+                serde_json::from_str(PROSPECT_AUTHORITY_PROGRESS)
+                    .expect("sealed prospect authority progress");
+            assert_eq!(
+                progress
+                    .calculate_fingerprint()
+                    .expect("authority progress fingerprint"),
+                progress.fingerprint,
+                "sealed prospect authority progress must remain canonical"
+            );
+            progress
         })
         .clone())
 }

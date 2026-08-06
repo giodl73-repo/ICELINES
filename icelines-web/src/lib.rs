@@ -206,6 +206,14 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/prospect-census-readiness/:season",
             get(handlers::prospect_census::get_prospect_census_readiness_json),
         )
+        .route(
+            "/icecast/:season/prospect-authority-progress",
+            get(handlers::prospect_census::get_prospect_authority_progress),
+        )
+        .route(
+            "/api/v1/prospect-authority-progress/:season",
+            get(handlers::prospect_census::get_prospect_authority_progress_json),
+        )
         .route("/window/:frame/:season", get(handlers::window::get_window))
         .route(
             "/api/v1/window/:frame/:season",

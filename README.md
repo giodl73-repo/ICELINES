@@ -693,6 +693,11 @@ The retained pre/post AHL delta is 96 to 64 cells: 32 population-authority
 cells closed, zero opened, zero changed state, and 3,333 basis points of the
 starting backlog retired. The progress artifact does not itself approve the
 underlying evidence or declare the census publishable.
+The retained delta is also served as HTML at
+`/icecast/20262027/prospect-authority-progress` and as fingerprinted JSON at
+`/api/v1/prospect-authority-progress/20262027`. The optional `?team=SEA`
+filter changes presentation only; the response ETag remains the complete
+league artifact fingerprint.
 
 All 32 team cards are projected from the same sealed league artifact and served
 through the generic web renderer at
