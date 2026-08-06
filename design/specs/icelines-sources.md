@@ -567,6 +567,12 @@ The builder validates the source readiness fingerprint and reconciles family,
 team, and league cell counts. Closing a recipe requires a new source-package
 and census replay; editing the closure board cannot change readiness.
 
+The retained August 5 replay demonstrates that lifecycle. An official
+2026-27 AHL snapshot supplied exact affiliate coverage with explicit empty
+preseason rosters. Replay raised acquired manifest objects from 128 to 160 and
+removed all 32 AHL source gaps, while controlled-player counts correctly stayed
+at zero. The remaining 64 cells are the 32-team camp and contract families.
+
 ## Compatibility and migration
 
 Migration is facade-first and build-green:

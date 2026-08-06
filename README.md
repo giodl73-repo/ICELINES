@@ -674,10 +674,12 @@ it does not guess player rights or mark acquisition complete:
 icelines icecast prospect-authority-closure --input prospect-census-readiness.json --json --out prospect-authority-closure.json
 ```
 
-The retained 2026-27 plan has 96 cells: 32 contract-control cells requiring
-`contract_control_ledger.v1`, 32 camp cells requiring
-`camp_participation_ledger.v1`, and 32 AHL assignment cells requiring
-`ahl_roster_stats.v1`.
+The retained 2026-27 plan now has 64 cells: 32 contract-control cells requiring
+`contract_control_ledger.v1` and 32 camp cells requiring
+`camp_participation_ledger.v1`. A sealed official `ahl_roster_stats.v1`
+snapshot with explicit coverage for every affiliate closed all 32 AHL source
+cells. Its zero preseason player rows establish authoritative-empty source
+coverage, not player assignments or organizational control.
 
 All 32 team cards are projected from the same sealed league artifact and served
 through the generic web renderer at

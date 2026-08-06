@@ -5,9 +5,12 @@
 - Added `prospect_authority_closure_board.v1` and
   `icecast prospect-authority-closure` to convert a sealed census-readiness
   board into exact, fingerprinted acquisition recipes. The retained 2026-27
-  plan reconciles 96 cells across 32 teams: 32 organizational-control blockers
-  require the contract ledger boundary, while 64 population blockers require
-  camp or AHL assignment authority. Failed, quarantined, and incomplete-page
+  initial plan reconciled 96 cells across 32 teams. A subsequent sealed replay
+  admitted an official AHL snapshot with all 32 affiliate rows, raising acquired
+  manifest objects from 128 to 160 and closing every AHL source cell. The
+  retained plan now has 64 cells: 32 organizational-control blockers require
+  the contract ledger boundary and 32 population blockers require camp
+  authority. Failed, quarantined, and incomplete-page
   states receive different dispositions; no recipe acquires data or approves
   evidence by itself.
 
@@ -197,9 +200,10 @@
   population authority can publish. Prospect census output now promotes failed,
   quarantined, and incomplete-pagination manifest cells into typed per-team
   authority gaps and reconciled league family/state counts. The current sealed
-  package therefore reports the exact remaining backlog—32 AHL assignment, 32
-  club camp, and 32 contract publication cells—rather than only a generic
-  population-incomplete message.
+  package initially reported 32 AHL assignment, 32 club camp, and 32 contract
+  publication cells rather than only a generic population-incomplete message.
+  The later official AHL authoritative-empty replay closes the assignment
+  family; camp and contract remain the exact 64-cell backlog.
 - Improved official draft-identity discovery for provider nicknames,
   parentheticals, diacritics, and transliterations. Surname fallback remains
   discovery-only and requires one exact official landing/draft-coordinate

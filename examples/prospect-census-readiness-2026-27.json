@@ -2,10 +2,10 @@
   "schema": "prospect_census_readiness_board.v1",
   "method_version": "prospect_census_readiness_board.v1",
   "evaluation_season": 20262027,
-  "effective_cutoff": "2026-08-01T04:24:22.663724900+00:00",
-  "knowledge_cutoff": "2026-08-01T04:24:22.663724900+00:00",
-  "source_package_fingerprint": "966436b4dea1207e3cbef6c165dabffba053a35c3b917418656c6364c83cef12",
-  "source_census_fingerprint": "fc764fdb38de37cf5c5df1883e38d74ba49df8661b3dd734b766bc168abf83da",
+  "effective_cutoff": "2026-08-06T02:10:31.768176500+00:00",
+  "knowledge_cutoff": "2026-08-06T02:10:31.768176500+00:00",
+  "source_package_fingerprint": "dcc7a347b6b17fe4723545cdc7886031b096b1c131fa3371e85d318d3183a142",
+  "source_census_fingerprint": "e6b07ba7197facbeec8f2011c29f481db7b5524ab1e0df1be8a9c9388eb37bed",
   "organizations": 32,
   "population_complete_organizations": 0,
   "depth_complete_organizations": 0,
@@ -20,11 +20,6 @@
     "ranked": 0
   },
   "authority_gap_summary": [
-    {
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "organizations": 32
-    },
     {
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
@@ -72,11 +67,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -90,7 +80,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -118,11 +108,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -136,7 +121,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -164,11 +149,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -182,7 +162,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -210,11 +190,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -228,7 +203,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -256,11 +231,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -274,7 +244,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -302,11 +272,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -320,7 +285,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -348,11 +313,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -366,7 +326,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -394,11 +354,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -412,7 +367,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -440,11 +395,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -458,7 +408,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -486,11 +436,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -504,7 +449,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -532,11 +477,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -550,7 +490,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -578,11 +518,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -596,7 +531,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -624,11 +559,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -642,7 +572,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -670,11 +600,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -688,7 +613,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -716,11 +641,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -734,7 +654,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -762,11 +682,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -780,7 +695,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -808,11 +723,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -826,7 +736,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -854,11 +764,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -872,7 +777,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -900,11 +805,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -918,7 +818,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -946,11 +846,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -964,7 +859,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -992,11 +887,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1010,7 +900,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1038,11 +928,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1056,7 +941,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1084,11 +969,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1102,7 +982,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1130,11 +1010,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1148,7 +1023,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1176,11 +1051,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1194,7 +1064,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1222,11 +1092,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1240,7 +1105,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1268,11 +1133,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1286,7 +1146,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1314,11 +1174,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1332,7 +1187,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1360,11 +1215,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1378,7 +1228,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1406,11 +1256,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1424,7 +1269,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1452,11 +1297,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1470,7 +1310,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     },
     {
@@ -1498,11 +1338,6 @@
           "source_family": "nhl_contract_publication",
           "state": "failed",
           "reason": "requested source object was not acquired"
-        },
-        {
-          "source_family": "ahl_current_assignment",
-          "state": "failed",
-          "reason": "requested source object was not acquired"
         }
       ],
       "loss_summary": [
@@ -1516,7 +1351,7 @@
         }
       ],
       "remediation": [
-        "Acquire or resolve missing source families: ahl_current_assignment, nhl_club_camp_publication, nhl_contract_publication."
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
       ]
     }
   ],
@@ -1525,5 +1360,5 @@
     "Population completeness and requested ranking depth remain independent publication gates.",
     "Authority gaps identify missing source work; they are not permission to infer current organizational control."
   ],
-  "fingerprint": "dda00f2881995b11d8ffa06ad06171eab1794e01209c088fa386dadece848ecc"
+  "fingerprint": "591be971256cd1a7b11fa6f449045f07288166e36824d507078a1f931b09b5cc"
 }

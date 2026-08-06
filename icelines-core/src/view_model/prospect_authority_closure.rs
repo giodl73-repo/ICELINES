@@ -356,16 +356,20 @@ mod tests {
     }
 
     #[test]
-    fn real_readiness_becomes_exact_96_cell_closure_plan() {
+    fn real_readiness_becomes_exact_64_cell_closure_plan_after_ahl_closeout() {
         let board = build_prospect_authority_closure(&readiness()).unwrap();
         assert_eq!(board.organizations, 32);
         assert_eq!(board.affected_organizations, 32);
-        assert_eq!(board.cells, 96);
+        assert_eq!(board.cells, 64);
         assert_eq!(board.control_blocking_cells, 32);
-        assert_eq!(board.population_blocking_cells, 64);
-        assert_eq!(board.family_summary.len(), 3);
-        assert_eq!(board.cells_for_team("NYR").len(), 3);
-        assert_eq!(board.cells_for_team("SEA").len(), 3);
+        assert_eq!(board.population_blocking_cells, 32);
+        assert_eq!(board.family_summary.len(), 2);
+        assert_eq!(board.cells_for_team("NYR").len(), 2);
+        assert_eq!(board.cells_for_team("SEA").len(), 2);
+        assert!(!board
+            .family_summary
+            .iter()
+            .any(|row| row.source_family == "ahl_current_assignment"));
         let contract = board
             .family_summary
             .iter()

@@ -486,7 +486,7 @@ mod tests {
         assert_eq!(readiness.population_complete_organizations, 0);
         assert_eq!(readiness.depth_complete_organizations, 0);
         assert_eq!(readiness.published_organizations, 0);
-        assert_eq!(readiness.authority_gap_summary.len(), 3);
+        assert_eq!(readiness.authority_gap_summary.len(), 2);
         assert_eq!(
             readiness.calculate_fingerprint().unwrap(),
             readiness.fingerprint

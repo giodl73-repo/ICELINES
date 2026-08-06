@@ -339,7 +339,9 @@ async fn prospect_census_readiness_routes_preserve_gates_and_team_focus() {
     assert!(html.contains("Prospect Census Readiness"));
     assert!(html.contains("<strong>0/32</strong> population complete"));
     assert!(html.contains("2477 discovered → 807 canonical identities → 0 controlled"));
-    assert!(html.contains("ahl_current_assignment"));
+    assert!(!html.contains("ahl_current_assignment"));
+    assert!(html.contains("nhl_club_camp_publication"));
+    assert!(html.contains("nhl_contract_publication"));
     assert!(html.contains("UnresolvedIdentity</strong>: 1670 players"));
     assert!(html.contains("NYR"));
     assert!(html.contains("SEA"));

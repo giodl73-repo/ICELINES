@@ -1387,7 +1387,7 @@ mod tests {
         assert!(first[0].contains("0/32 population"));
         assert!(first[0].contains("0/32 depth"));
         assert!(first[0].contains("0/32 published"));
-        assert!(first[0].contains("96 authority gaps"));
+        assert!(first[0].contains("64 authority gaps"));
         let teams = first
             .iter()
             .skip(2)

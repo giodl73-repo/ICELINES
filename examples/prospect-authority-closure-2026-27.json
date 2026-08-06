@@ -2,23 +2,15 @@
   "schema": "prospect_authority_closure_board.v1",
   "method_version": "prospect_authority_closure_board.v1",
   "evaluation_season": 20262027,
-  "effective_cutoff": "2026-08-01T04:24:22.663724900+00:00",
-  "knowledge_cutoff": "2026-08-01T04:24:22.663724900+00:00",
-  "source_readiness_fingerprint": "dda00f2881995b11d8ffa06ad06171eab1794e01209c088fa386dadece848ecc",
+  "effective_cutoff": "2026-08-06T02:10:31.768176500+00:00",
+  "knowledge_cutoff": "2026-08-06T02:10:31.768176500+00:00",
+  "source_readiness_fingerprint": "591be971256cd1a7b11fa6f449045f07288166e36824d507078a1f931b09b5cc",
   "organizations": 32,
   "affected_organizations": 32,
-  "cells": 96,
+  "cells": 64,
   "control_blocking_cells": 32,
-  "population_blocking_cells": 64,
+  "population_blocking_cells": 32,
   "family_summary": [
-    {
-      "source_family": "ahl_current_assignment",
-      "cells": 32,
-      "organizations": 32,
-      "gate": "population_authority",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot"
-    },
     {
       "source_family": "nhl_club_camp_publication",
       "cells": 32,
@@ -39,17 +31,6 @@
   "closure_cells": [
     {
       "organization": "ANA",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "ANA",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -72,17 +53,6 @@
     },
     {
       "organization": "BOS",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "BOS",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -105,17 +75,6 @@
     },
     {
       "organization": "BUF",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "BUF",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -138,17 +97,6 @@
     },
     {
       "organization": "CAR",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "CAR",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -171,17 +119,6 @@
     },
     {
       "organization": "CBJ",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "CBJ",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -204,17 +141,6 @@
     },
     {
       "organization": "CGY",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "CGY",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -237,17 +163,6 @@
     },
     {
       "organization": "CHI",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "CHI",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -270,17 +185,6 @@
     },
     {
       "organization": "COL",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "COL",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -303,17 +207,6 @@
     },
     {
       "organization": "DAL",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "DAL",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -336,17 +229,6 @@
     },
     {
       "organization": "DET",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "DET",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -369,17 +251,6 @@
     },
     {
       "organization": "EDM",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "EDM",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -402,17 +273,6 @@
     },
     {
       "organization": "FLA",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "FLA",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -435,17 +295,6 @@
     },
     {
       "organization": "LAK",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "LAK",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -468,17 +317,6 @@
     },
     {
       "organization": "MIN",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "MIN",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -501,17 +339,6 @@
     },
     {
       "organization": "MTL",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "MTL",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -534,17 +361,6 @@
     },
     {
       "organization": "NJD",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "NJD",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -567,17 +383,6 @@
     },
     {
       "organization": "NSH",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "NSH",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -600,17 +405,6 @@
     },
     {
       "organization": "NYI",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "NYI",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -633,17 +427,6 @@
     },
     {
       "organization": "NYR",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "NYR",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -666,17 +449,6 @@
     },
     {
       "organization": "OTT",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "OTT",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -699,17 +471,6 @@
     },
     {
       "organization": "PHI",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "PHI",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -732,17 +493,6 @@
     },
     {
       "organization": "PIT",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "PIT",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -765,17 +515,6 @@
     },
     {
       "organization": "SEA",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "SEA",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -798,17 +537,6 @@
     },
     {
       "organization": "SJS",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "SJS",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -831,17 +559,6 @@
     },
     {
       "organization": "STL",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "STL",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -864,17 +581,6 @@
     },
     {
       "organization": "TBL",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "TBL",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -897,17 +603,6 @@
     },
     {
       "organization": "TOR",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "TOR",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -930,17 +625,6 @@
     },
     {
       "organization": "UTA",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "UTA",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -963,17 +647,6 @@
     },
     {
       "organization": "VAN",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "VAN",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -996,17 +669,6 @@
     },
     {
       "organization": "VGK",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "VGK",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -1029,17 +691,6 @@
     },
     {
       "organization": "WPG",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
-    },
-    {
-      "organization": "WPG",
       "source_family": "nhl_club_camp_publication",
       "state": "failed",
       "gate": "population_authority",
@@ -1059,17 +710,6 @@
       "ingestion_option": "--contract-control-ledger",
       "reason": "requested source object was not acquired",
       "remediation": "acquire and validate contract_control_ledger.v1, then ingest it with --contract-control-ledger"
-    },
-    {
-      "organization": "WSH",
-      "source_family": "ahl_current_assignment",
-      "state": "failed",
-      "gate": "population_authority",
-      "disposition": "acquire",
-      "required_artifact_schema": "ahl_roster_stats.v1",
-      "ingestion_option": "--ahl-roster-snapshot",
-      "reason": "requested source object was not acquired",
-      "remediation": "acquire and validate ahl_roster_stats.v1, then ingest it with --ahl-roster-snapshot"
     },
     {
       "organization": "WSH",
@@ -1099,5 +739,5 @@
     "Contract control is independent from roster, affiliate, draft, and camp observations.",
     "Camp participation and AHL assignment can close population cells but cannot establish organizational control."
   ],
-  "fingerprint": "e539a988429643d67be78452c0266eedca035ea0d498f2ceb73cf63cbb26ecf9"
+  "fingerprint": "00930ad770c7783545453f906a58c637da016dee48516575cd2a47356a3fa021"
 }
