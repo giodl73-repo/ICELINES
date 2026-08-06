@@ -2,6 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use chrono::DateTime;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -111,8 +112,96 @@ pub enum ProspectAuthorityClosureError {
     InvalidLeagueEnvelope,
     #[error("prospect authority closure summaries do not reconcile")]
     TotalsDoNotReconcile,
+    #[error("unsupported prospect authority closure schema or method: {0}")]
+    UnsupportedBoardSchema(String),
+    #[error("prospect authority closure fingerprint does not match its contents")]
+    InvalidBoardFingerprint,
+    #[error("prospect authority closure contains a duplicate team/family cell")]
+    DuplicateCell,
+    #[error("prospect authority closure contains an inconsistent recipe")]
+    InvalidRecipe,
+    #[error("prospect authority closure cutoff is invalid: {0}")]
+    InvalidCutoff(String),
     #[error("prospect authority closure JSON failed: {0}")]
     InvalidJson(String),
+}
+
+pub fn validate_prospect_authority_closure_board(
+    board: &ProspectAuthorityClosureBoardView,
+) -> Result<(), ProspectAuthorityClosureError> {
+    if board.schema != PROSPECT_AUTHORITY_CLOSURE_SCHEMA
+        || board.method_version != PROSPECT_AUTHORITY_CLOSURE_METHOD
+    {
+        return Err(ProspectAuthorityClosureError::UnsupportedBoardSchema(
+            format!("{} / {}", board.schema, board.method_version),
+        ));
+    }
+    if board.calculate_fingerprint()? != board.fingerprint {
+        return Err(ProspectAuthorityClosureError::InvalidBoardFingerprint);
+    }
+    DateTime::parse_from_rfc3339(&board.effective_cutoff)
+        .map_err(|error| ProspectAuthorityClosureError::InvalidCutoff(error.to_string()))?;
+    DateTime::parse_from_rfc3339(&board.knowledge_cutoff)
+        .map_err(|error| ProspectAuthorityClosureError::InvalidCutoff(error.to_string()))?;
+    if !is_lower_hex_fingerprint(&board.source_readiness_fingerprint)
+        || !is_lower_hex_fingerprint(&board.fingerprint)
+    {
+        return Err(ProspectAuthorityClosureError::InvalidBoardFingerprint);
+    }
+
+    let canonical_teams = CANONICAL_TEAMS
+        .iter()
+        .map(|(team, _)| *team)
+        .collect::<BTreeSet<_>>();
+    let affected_teams = board
+        .closure_cells
+        .iter()
+        .map(|row| row.organization.as_str())
+        .collect::<BTreeSet<_>>();
+    if board.organizations != CANONICAL_TEAMS.len() || !affected_teams.is_subset(&canonical_teams) {
+        return Err(ProspectAuthorityClosureError::InvalidLeagueEnvelope);
+    }
+
+    let mut keys = BTreeSet::new();
+    for cell in &board.closure_cells {
+        if !keys.insert((cell.organization.as_str(), cell.source_family.as_str())) {
+            return Err(ProspectAuthorityClosureError::DuplicateCell);
+        }
+        let boundary = boundary_for(&cell.source_family);
+        if cell.gate != boundary.gate
+            || cell.disposition != disposition_for(cell.state)
+            || cell.required_artifact_schema.as_deref() != boundary.artifact
+            || cell.ingestion_option.as_deref() != boundary.option
+            || cell.reason.trim().is_empty()
+            || cell.remediation
+                != remediation_for(
+                    &cell.source_family,
+                    cell.state,
+                    boundary.artifact,
+                    boundary.option,
+                )
+        {
+            return Err(ProspectAuthorityClosureError::InvalidRecipe);
+        }
+    }
+
+    let control_cells = board
+        .closure_cells
+        .iter()
+        .filter(|row| row.gate == ProspectAuthorityClosureGate::OrganizationalControl)
+        .count();
+    let mut supplied_summary = board.family_summary.clone();
+    supplied_summary.sort_by(|left, right| left.source_family.cmp(&right.source_family));
+    let derived_summary = summarize_families(&board.closure_cells);
+    if board.cells != board.closure_cells.len()
+        || board.affected_organizations != affected_teams.len()
+        || board.control_blocking_cells != control_cells
+        || board.population_blocking_cells != board.cells - control_cells
+        || supplied_summary != derived_summary
+    {
+        return Err(ProspectAuthorityClosureError::TotalsDoNotReconcile);
+    }
+    Ok(())
 }
 
 pub fn build_prospect_authority_closure(
@@ -240,6 +329,7 @@ pub fn build_prospect_authority_closure(
         fingerprint: String::new(),
     };
     board.fingerprint = board.calculate_fingerprint()?;
+    validate_prospect_authority_closure_board(&board)?;
     Ok(board)
 }
 
@@ -344,6 +434,13 @@ fn hash_json(value: &impl Serialize) -> Result<String, ProspectAuthorityClosureE
     Ok(format!("{:x}", Sha256::digest(bytes)))
 }
 
+fn is_lower_hex_fingerprint(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -358,6 +455,7 @@ mod tests {
     #[test]
     fn real_readiness_becomes_exact_64_cell_closure_plan_after_ahl_closeout() {
         let board = build_prospect_authority_closure(&readiness()).unwrap();
+        validate_prospect_authority_closure_board(&board).unwrap();
         assert_eq!(board.organizations, 32);
         assert_eq!(board.affected_organizations, 32);
         assert_eq!(board.cells, 64);
@@ -401,5 +499,77 @@ mod tests {
             build_prospect_authority_closure(&source).unwrap_err(),
             ProspectAuthorityClosureError::TotalsDoNotReconcile
         );
+    }
+
+    #[test]
+    fn validator_refuses_refingerprinted_unreconciled_board_totals() {
+        let mut board = build_prospect_authority_closure(&readiness()).unwrap();
+        board.cells += 1;
+        board.fingerprint = board.calculate_fingerprint().unwrap();
+        assert_eq!(
+            validate_prospect_authority_closure_board(&board).unwrap_err(),
+            ProspectAuthorityClosureError::TotalsDoNotReconcile
+        );
+    }
+
+    #[test]
+    fn validator_refuses_refingerprinted_recipe_drift() {
+        let mut board = build_prospect_authority_closure(&readiness()).unwrap();
+        board.closure_cells[0].disposition =
+            ProspectAuthorityClosureDisposition::CompletePagination;
+        board.fingerprint = board.calculate_fingerprint().unwrap();
+        assert_eq!(
+            validate_prospect_authority_closure_board(&board).unwrap_err(),
+            ProspectAuthorityClosureError::InvalidRecipe
+        );
+    }
+
+    #[test]
+    fn validator_refuses_duplicate_team_family_cells() {
+        let mut board = build_prospect_authority_closure(&readiness()).unwrap();
+        board.closure_cells.push(board.closure_cells[0].clone());
+        board.cells += 1;
+        board.population_blocking_cells += 1;
+        board.family_summary[0].cells += 1;
+        board.fingerprint = board.calculate_fingerprint().unwrap();
+        assert_eq!(
+            validate_prospect_authority_closure_board(&board).unwrap_err(),
+            ProspectAuthorityClosureError::DuplicateCell
+        );
+    }
+
+    #[test]
+    fn validator_refuses_a_refingerprinted_non_canonical_team() {
+        let mut board = build_prospect_authority_closure(&readiness()).unwrap();
+        board.closure_cells[0].organization = "XYZ".to_owned();
+        board.fingerprint = board.calculate_fingerprint().unwrap();
+        assert_eq!(
+            validate_prospect_authority_closure_board(&board).unwrap_err(),
+            ProspectAuthorityClosureError::InvalidLeagueEnvelope
+        );
+    }
+
+    #[test]
+    fn validator_refuses_a_refingerprinted_invalid_cutoff() {
+        let mut board = build_prospect_authority_closure(&readiness()).unwrap();
+        board.knowledge_cutoff = "not-a-cutoff".to_owned();
+        board.fingerprint = board.calculate_fingerprint().unwrap();
+        assert!(matches!(
+            validate_prospect_authority_closure_board(&board),
+            Err(ProspectAuthorityClosureError::InvalidCutoff(_))
+        ));
+    }
+
+    #[test]
+    fn validator_accepts_a_complete_zero_cell_board() {
+        let mut board = build_prospect_authority_closure(&readiness()).unwrap();
+        board.affected_organizations = 0;
+        board.cells = 0;
+        board.control_blocking_cells = 0;
+        board.population_blocking_cells = 0;
+        board.family_summary.clear();
+        board.closure_cells.clear();
+        board.fingerprint = board.calculate_fingerprint().unwrap();
+        validate_prospect_authority_closure_board(&board).unwrap();
     }
 }

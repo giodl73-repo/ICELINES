@@ -640,6 +640,9 @@ retaining the original source and classification disclosure.
   fingerprint, and refuses partial league envelopes;
 - authority closure recipes reconcile to readiness gaps, preserve their source
   fingerprint, and never promote a recipe into acquired evidence;
+- one core closure-board validator is mandatory at build, comparison, and
+  retained-artifact load boundaries; it rejects duplicate cells, non-canonical
+  teams, recipe drift, summary drift, invalid cutoffs, and fingerprint drift;
 - authority progress validates and compares two sealed closure boards from the
   same season, requires chronological knowledge cutoffs, and reconciles exact
   closed, opened, persisting, and state-changed cells without treating the

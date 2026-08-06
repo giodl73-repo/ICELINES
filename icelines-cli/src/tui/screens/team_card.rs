@@ -9,12 +9,12 @@ use chrono::{DateTime, Utc};
 use icelines_core::{
     build_prospect_arrival_card, load_organization_window_profile_inventory, parse_card_document,
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
-    CardDocumentView, CardSectionView, OrganizationWindowBoardView, ProspectArrivalBoardView,
-    ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView,
-    ProspectAuthorityClosureBoardView, ProspectAuthorityClosureDisposition,
-    ProspectAuthorityProgressChangeKind, ProspectAuthorityProgressView,
-    ProspectCensusAuthorityGapState, ProspectCensusReadinessBoardView, Season, ViewContext,
-    ViewWindow, CANONICAL_TEAMS,
+    validate_prospect_authority_closure_board, CardDocumentView, CardSectionView,
+    OrganizationWindowBoardView, ProspectArrivalBoardView, ProspectArrivalCardInput,
+    ProspectArrivalLeagueCalibrationView, ProspectAuthorityClosureBoardView,
+    ProspectAuthorityClosureDisposition, ProspectAuthorityProgressChangeKind,
+    ProspectAuthorityProgressView, ProspectCensusAuthorityGapState,
+    ProspectCensusReadinessBoardView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -436,13 +436,8 @@ fn prospect_authority_closure_board() -> &'static ProspectAuthorityClosureBoardV
         let board: ProspectAuthorityClosureBoardView =
             serde_json::from_str(PROSPECT_AUTHORITY_CLOSURE_BOARD_JSON)
                 .expect("sealed prospect authority closure board");
-        assert_eq!(
-            board
-                .calculate_fingerprint()
-                .expect("authority closure fingerprint"),
-            board.fingerprint,
-            "sealed prospect authority closure board must remain canonical"
-        );
+        validate_prospect_authority_closure_board(&board)
+            .expect("sealed prospect authority closure board must remain canonical");
         board
     })
 }

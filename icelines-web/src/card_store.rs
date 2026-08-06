@@ -7,10 +7,11 @@ use icelines_core::{
     build_prospect_arrival_board, build_prospect_arrival_card,
     load_organization_window_profile_inventory, parse_card_document,
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
-    CardDocumentView, OrganizationWindowBoardView, OrganizationWindowCardError,
-    ProspectArrivalBoardView, ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView,
-    ProspectAuthorityClosureBoardView, ProspectAuthorityProgressView,
-    ProspectCensusReadinessBoardView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
+    validate_prospect_authority_closure_board, CardDocumentView, OrganizationWindowBoardView,
+    OrganizationWindowCardError, ProspectArrivalBoardView, ProspectArrivalCardInput,
+    ProspectArrivalLeagueCalibrationView, ProspectAuthorityClosureBoardView,
+    ProspectAuthorityProgressView, ProspectCensusReadinessBoardView, Season, ViewContext,
+    ViewWindow, CANONICAL_TEAMS,
 };
 use thiserror::Error;
 
@@ -212,13 +213,8 @@ pub fn prospect_authority_closure_board(
             let board: ProspectAuthorityClosureBoardView =
                 serde_json::from_str(PROSPECT_AUTHORITY_CLOSURE_BOARD)
                     .expect("sealed prospect authority closure board");
-            assert_eq!(
-                board
-                    .calculate_fingerprint()
-                    .expect("authority closure fingerprint"),
-                board.fingerprint,
-                "sealed prospect authority closure board must remain canonical"
-            );
+            validate_prospect_authority_closure_board(&board)
+                .expect("sealed prospect authority closure board must remain canonical");
             board
         })
         .clone())

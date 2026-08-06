@@ -26,7 +26,9 @@
   evidence by itself. Web HTML and JSON expose the same sealed 64-cell plan,
   including exact artifact and ingestion boundaries, with presentation-only
   team focus and full-artifact ETags. The TUI preserves every exact cell across
-  four pages and shares the same sealed fingerprint.
+  four pages and shares the same sealed fingerprint. A single public core
+  validator now guards the builder, progress comparison, Web store, and TUI
+  store against fingerprint-valid but unreconciled or inconsistent recipes.
 
 - Added the compact, UI-neutral `prospect_census_readiness_board.v1` and
   `icecast prospect-census-readiness`. The 32-team projection retains census

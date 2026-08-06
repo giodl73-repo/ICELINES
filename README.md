@@ -680,6 +680,9 @@ The retained current closure plan is served as HTML at
 `?team=NYR` filters the two displayed recipes without changing the league ETag.
 In the TUI, `prospect-authority-closure` preserves all 64 exact cells across
 four 16-cell pages; `p` advances and wraps without applying any recipe.
+All closure consumers use the same core validator for canonical teams, unique
+cells, source boundaries, state/disposition recipes, summaries, cutoffs, and
+fingerprints.
 
 Compare two sealed closure boards to measure exactly what closed, opened, or
 changed state. The delta verifies both source fingerprints and their internal

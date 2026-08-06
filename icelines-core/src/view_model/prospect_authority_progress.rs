@@ -8,8 +8,8 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 use crate::{
-    ProspectAuthorityClosureBoardView, ProspectAuthorityClosureGate,
-    ProspectCensusAuthorityGapState, PROSPECT_AUTHORITY_CLOSURE_SCHEMA,
+    validate_prospect_authority_closure_board, ProspectAuthorityClosureBoardView,
+    ProspectAuthorityClosureError, ProspectAuthorityClosureGate, ProspectCensusAuthorityGapState,
 };
 
 pub const PROSPECT_AUTHORITY_PROGRESS_SCHEMA: &str = "prospect_authority_progress.v1";
@@ -98,8 +98,8 @@ pub fn build_prospect_authority_progress(
     prior: &ProspectAuthorityClosureBoardView,
     current: &ProspectAuthorityClosureBoardView,
 ) -> Result<ProspectAuthorityProgressView, ProspectAuthorityProgressError> {
-    validate_board(prior)?;
-    validate_board(current)?;
+    validate_prospect_authority_closure_board(prior).map_err(map_closure_validation_error)?;
+    validate_prospect_authority_closure_board(current).map_err(map_closure_validation_error)?;
     if prior.evaluation_season != current.evaluation_season {
         return Err(ProspectAuthorityProgressError::SeasonMismatch);
     }
@@ -233,78 +233,27 @@ fn index_cells(
     Ok(cells)
 }
 
-fn validate_board(
-    board: &ProspectAuthorityClosureBoardView,
-) -> Result<(), ProspectAuthorityProgressError> {
-    if board.schema != PROSPECT_AUTHORITY_CLOSURE_SCHEMA {
-        return Err(ProspectAuthorityProgressError::UnsupportedSchema(
-            board.schema.clone(),
-        ));
+fn map_closure_validation_error(
+    error: ProspectAuthorityClosureError,
+) -> ProspectAuthorityProgressError {
+    match error {
+        ProspectAuthorityClosureError::UnsupportedBoardSchema(schema) => {
+            ProspectAuthorityProgressError::UnsupportedSchema(schema)
+        }
+        ProspectAuthorityClosureError::InvalidBoardFingerprint => {
+            ProspectAuthorityProgressError::InvalidSourceFingerprint
+        }
+        ProspectAuthorityClosureError::DuplicateCell => {
+            ProspectAuthorityProgressError::DuplicateCell
+        }
+        ProspectAuthorityClosureError::InvalidJson(error) => {
+            ProspectAuthorityProgressError::InvalidJson(error)
+        }
+        ProspectAuthorityClosureError::InvalidCutoff(error) => {
+            ProspectAuthorityProgressError::InvalidCutoff(error)
+        }
+        _ => ProspectAuthorityProgressError::InvalidBoardTotals,
     }
-    if board
-        .calculate_fingerprint()
-        .map_err(|error| ProspectAuthorityProgressError::InvalidJson(error.to_string()))?
-        != board.fingerprint
-    {
-        return Err(ProspectAuthorityProgressError::InvalidSourceFingerprint);
-    }
-    let control_cells = board
-        .closure_cells
-        .iter()
-        .filter(|row| row.gate == ProspectAuthorityClosureGate::OrganizationalControl)
-        .count();
-    let affected = board
-        .closure_cells
-        .iter()
-        .map(|row| row.organization.as_str())
-        .collect::<BTreeSet<_>>()
-        .len();
-    let families = board
-        .closure_cells
-        .iter()
-        .map(|row| row.source_family.as_str())
-        .collect::<BTreeSet<_>>();
-    let summary_families = board
-        .family_summary
-        .iter()
-        .map(|row| row.source_family.as_str())
-        .collect::<BTreeSet<_>>();
-    if board.organizations != 32
-        || board.cells != board.closure_cells.len()
-        || board.control_blocking_cells != control_cells
-        || board.population_blocking_cells != board.cells - control_cells
-        || board.affected_organizations != affected
-        || summary_families != families
-        || board.family_summary.len() != summary_families.len()
-        || board
-            .family_summary
-            .iter()
-            .map(|row| row.cells)
-            .sum::<usize>()
-            != board.cells
-        || board.family_summary.iter().any(|summary| {
-            let rows = board
-                .closure_cells
-                .iter()
-                .filter(|row| row.source_family == summary.source_family)
-                .collect::<Vec<_>>();
-            rows.len() != summary.cells
-                || rows
-                    .iter()
-                    .map(|row| row.organization.as_str())
-                    .collect::<BTreeSet<_>>()
-                    .len()
-                    != summary.organizations
-                || rows.iter().any(|row| {
-                    row.gate != summary.gate
-                        || row.required_artifact_schema != summary.required_artifact_schema
-                        || row.ingestion_option != summary.ingestion_option
-                })
-        })
-    {
-        return Err(ProspectAuthorityProgressError::InvalidBoardTotals);
-    }
-    Ok(())
 }
 
 fn hash_json(value: &impl Serialize) -> Result<String, ProspectAuthorityProgressError> {
