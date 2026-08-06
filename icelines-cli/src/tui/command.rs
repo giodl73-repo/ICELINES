@@ -577,6 +577,11 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
                 team: "CENSUS-BOARD".to_string(),
             })
         }
+        "authority-progress" | "prospect-authority-progress" if args.trim().is_empty() => {
+            Ok(Command::TeamCard {
+                team: "AUTHORITY-PROGRESS-BOARD".to_string(),
+            })
+        }
         "arrival-card" | "prospect-arrival-card" => {
             let team = args.trim().to_ascii_uppercase();
             if !CANONICAL_TEAMS

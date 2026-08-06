@@ -698,6 +698,8 @@ The retained delta is also served as HTML at
 `/api/v1/prospect-authority-progress/20262027`. The optional `?team=SEA`
 filter changes presentation only; the response ETag remains the complete
 league artifact fingerprint.
+In the TUI, `prospect-authority-progress` renders those same 32 exact changes
+across two 16-team pages; `p` switches pages without rebuilding the delta.
 
 All 32 team cards are projected from the same sealed league artifact and served
 through the generic web renderer at

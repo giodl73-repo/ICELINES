@@ -1064,6 +1064,8 @@ icelines icecast prospect-authority-closure --input prospect-census-readiness.js
 icelines icecast prospect-authority-progress --prior prior-authority-closure.json --current current-authority-closure.json --json --out prospect-authority-progress.json
 # TUI command bar: open the same retained 32-team readiness board
 prospect-census-readiness
+# TUI command bar: open the same retained two-page authority delta
+prospect-authority-progress
 icelines icecast identity-review-workboard --source-package target/prospect-sources-2026-27-landings.v2.json --json --out identity-review-workboard.json
 icelines icecast official-identity-candidates --workboard identity-review-workboard.json --json --out official-identity-candidates.json
 icelines icecast official-identity-candidates --workboard identity-review-workboard.json --refresh --json --out official-identity-candidates-refreshed.json

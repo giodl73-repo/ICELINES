@@ -10,7 +10,8 @@
   clean 96-to-64 reduction: 32 population cells closed, no regressions, and
   3,333 basis points of the starting backlog retired. Web HTML and JSON now
   serve that same sealed artifact with full-fingerprint caching and optional
-  presentation-only team focus.
+  presentation-only team focus. The TUI renders the identical fingerprinted
+  delta across two 16-team pages with no scoring or state transition logic.
 
 - Added `prospect_authority_closure_board.v1` and
   `icecast prospect-authority-closure` to convert a sealed census-readiness

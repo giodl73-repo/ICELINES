@@ -11,7 +11,9 @@ use icelines_core::{
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
     CardDocumentView, CardSectionView, OrganizationWindowBoardView, ProspectArrivalBoardView,
     ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView,
-    ProspectCensusReadinessBoardView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
+    ProspectAuthorityProgressChangeKind, ProspectAuthorityProgressView,
+    ProspectCensusAuthorityGapState, ProspectCensusReadinessBoardView, Season, ViewContext,
+    ViewWindow, CANONICAL_TEAMS,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -55,6 +57,8 @@ const PROSPECT_ARRIVAL_BOARD_JSON: &str =
     include_str!("../../../../examples/prospect-arrival-board-2026-27.json");
 const PROSPECT_CENSUS_READINESS_BOARD_JSON: &str =
     include_str!("../../../../examples/prospect-census-readiness-2026-27.json");
+const PROSPECT_AUTHORITY_PROGRESS_JSON: &str =
+    include_str!("../../../../examples/prospect-authority-progress-2026-27-ahl.json");
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
     include_str!("../../../../examples/organization-window-board-partial-2026-07-28.json");
 const FANTASY_CARD_JSON: &str =
@@ -203,6 +207,15 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
             ],
         };
     }
+    if team.eq_ignore_ascii_case("AUTHORITY-PROGRESS-BOARD") {
+        return ScreenChrome {
+            title: format!("Prospect Authority Progress - page {}", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
     let fantasy = matches!(
         team.to_ascii_uppercase().as_str(),
         "DEX" | "DRAFT" | "MORNING" | "TRADE"
@@ -260,6 +273,10 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
     }
     if team.eq_ignore_ascii_case("CENSUS-BOARD") {
         render_prospect_census_readiness_board(f, area, page);
+        return;
+    }
+    if team.eq_ignore_ascii_case("AUTHORITY-PROGRESS-BOARD") {
+        render_prospect_authority_progress(f, area, page);
         return;
     }
     if compare
@@ -370,6 +387,120 @@ fn prospect_census_readiness_board() -> &'static ProspectCensusReadinessBoardVie
         );
         board
     })
+}
+
+fn prospect_authority_progress() -> &'static ProspectAuthorityProgressView {
+    static PROGRESS: OnceLock<ProspectAuthorityProgressView> = OnceLock::new();
+    PROGRESS.get_or_init(|| {
+        let progress: ProspectAuthorityProgressView =
+            serde_json::from_str(PROSPECT_AUTHORITY_PROGRESS_JSON)
+                .expect("sealed prospect authority progress");
+        assert_eq!(
+            progress
+                .calculate_fingerprint()
+                .expect("authority progress fingerprint"),
+            progress.fingerprint,
+            "sealed prospect authority progress must remain canonical"
+        );
+        progress
+    })
+}
+
+fn render_prospect_authority_progress(f: &mut Frame, area: Rect, page: usize) {
+    let progress = prospect_authority_progress();
+    let title = format!(
+        " PROSPECT AUTHORITY PROGRESS | {} | {} ",
+        progress.evaluation_season,
+        &progress.fingerprint[..8]
+    );
+    let lines = prospect_authority_progress_lines(progress, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+pub(crate) fn prospect_authority_progress_lines(
+    progress: &ProspectAuthorityProgressView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let start = page.min(1) * 16;
+    let mut lines = vec![format!(
+        "{}→{} blockers · {} closed · {} opened · {:.2}% retired",
+        progress.prior_cells,
+        progress.current_cells,
+        progress.closed_cells,
+        progress.opened_cells,
+        f64::from(progress.closure_basis_points) / 100.0,
+    )];
+    if width >= 72 {
+        lines.push(
+            "TEAM SOURCE FAMILY            GATE       CHANGE        PRIOR      → CURRENT"
+                .to_owned(),
+        );
+    } else {
+        lines.push("TEAM SOURCE FAMILY          CHANGE        PRIOR      → CURRENT".to_owned());
+    }
+    for row in progress.changes.iter().skip(start).take(16) {
+        let family = fit_authority_cell(&row.source_family, 22);
+        let prior = row
+            .prior_state
+            .map(authority_gap_state_label)
+            .unwrap_or("absent");
+        let current = row
+            .current_state
+            .map(authority_gap_state_label)
+            .unwrap_or("resolved");
+        if width >= 72 {
+            lines.push(format!(
+                "{:<4} {:<22} {:<10} {:<13} {:<10} → {}",
+                row.organization,
+                family,
+                authority_gate_label(row.gate),
+                authority_change_label(row.kind),
+                prior,
+                current,
+            ));
+        } else {
+            lines.push(format!(
+                "{:<4} {:<22} {:<13} {:<10} → {}",
+                row.organization,
+                family,
+                authority_change_label(row.kind),
+                prior,
+                current,
+            ));
+        }
+    }
+    lines
+}
+
+fn fit_authority_cell(value: &str, width: usize) -> String {
+    value.chars().take(width).collect()
+}
+
+fn authority_change_label(kind: ProspectAuthorityProgressChangeKind) -> &'static str {
+    match kind {
+        ProspectAuthorityProgressChangeKind::Closed => "closed",
+        ProspectAuthorityProgressChangeKind::Opened => "opened",
+        ProspectAuthorityProgressChangeKind::StateChanged => "state changed",
+    }
+}
+
+fn authority_gap_state_label(state: ProspectCensusAuthorityGapState) -> &'static str {
+    match state {
+        ProspectCensusAuthorityGapState::Failed => "failed",
+        ProspectCensusAuthorityGapState::Quarantined => "quarantine",
+        ProspectCensusAuthorityGapState::IncompletePagination => "pagination",
+    }
+}
+
+fn authority_gate_label(gate: icelines_core::ProspectAuthorityClosureGate) -> &'static str {
+    match gate {
+        icelines_core::ProspectAuthorityClosureGate::PopulationAuthority => "population",
+        icelines_core::ProspectAuthorityClosureGate::OrganizationalControl => "control",
+    }
 }
 
 fn render_prospect_census_readiness_board(f: &mut Frame, area: Rect, page: usize) {
@@ -1422,6 +1553,64 @@ mod tests {
         assert_eq!(app.selected, 1);
     }
 
+    #[test]
+    fn l1_prospect_authority_progress_pages_cover_every_exact_change() {
+        let progress = prospect_authority_progress();
+        let first = prospect_authority_progress_lines(progress, 0, 80);
+        let second = prospect_authority_progress_lines(progress, 1, 80);
+        assert_eq!(first.len(), 18);
+        assert_eq!(second.len(), 18);
+        assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
+        assert!(first[0].contains("96→64 blockers"));
+        assert!(first[0].contains("32 closed"));
+        assert!(first[0].contains("0 opened"));
+        assert!(first[0].contains("33.33% retired"));
+        let teams = first
+            .iter()
+            .skip(2)
+            .chain(second.iter().skip(2))
+            .filter_map(|line| line.split_whitespace().next())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(teams.len(), CANONICAL_TEAMS.len());
+        assert!(teams.contains("NYR"));
+        assert!(teams.contains("SEA"));
+        assert!(first
+            .iter()
+            .chain(&second)
+            .all(|line| !line.contains("Some(") && !line.contains("None")));
+        assert_eq!(
+            parse_command("prospect-authority-progress").unwrap(),
+            Command::TeamCard {
+                team: "AUTHORITY-PROGRESS-BOARD".to_owned()
+            }
+        );
+
+        let mut app = App::new(true);
+        execute_command(
+            parse_command("prospect-authority-progress").unwrap(),
+            &mut app,
+        );
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('c'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard {
+                ref team,
+                compare: false
+            } if team == "AUTHORITY-PROGRESS-BOARD"
+        ));
+        let rendered = render_app(&app, 80, 30);
+        assert!(rendered.contains("PROSPECT AUTHORITY PROGRESS"));
+        assert!(rendered.contains("96→64 blockers"));
+        assert!(rendered.contains("ANA"));
+        assert!(!rendered.contains("SJS"));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
+        let rendered = render_app(&app, 80, 30);
+        assert!(rendered.contains("SJS"));
+        assert!(!rendered.contains("ANA  "));
+    }
+
     #[tokio::test]
     async fn l2_organization_window_golden_parity_across_cli_tui_and_web() {
         let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -1655,5 +1844,43 @@ mod tests {
         assert!(nyr.contains("PopulationIncomplete"));
         assert!(nyr.contains("26"));
         assert!(nyr.contains("0/10"));
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_authority_progress_golden_parity_across_tui_and_web() {
+        let expected = prospect_authority_progress().clone();
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/prospect-authority-progress/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers()["etag"].to_str().unwrap(),
+            format!("\"{}\"", expected.fingerprint)
+        );
+        let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let web_progress: ProspectAuthorityProgressView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_progress, expected);
+
+        let first = prospect_authority_progress_lines(&expected, 0, 80);
+        let second = prospect_authority_progress_lines(&expected, 1, 80);
+        let nyr = first
+            .iter()
+            .chain(&second)
+            .find(|line| line.starts_with("NYR"))
+            .unwrap();
+        assert!(nyr.contains("ahl_current_assignment"));
+        assert!(nyr.contains("population"));
+        assert!(nyr.contains("closed"));
+        assert!(nyr.contains("failed"));
+        assert!(nyr.contains("resolved"));
     }
 }
