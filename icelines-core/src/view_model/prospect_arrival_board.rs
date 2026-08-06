@@ -246,8 +246,8 @@ pub fn build_prospect_arrival_board(
                         .unwrap_or(calibration.calibrated_arrival_probability)
                 })
                 .collect::<Vec<_>>();
-            let expected_arrivals = canonical_zero(probabilities.iter().sum::<f64>());
-            let expected_established_roles = canonical_zero(
+            let expected_arrivals = round6(probabilities.iter().sum::<f64>());
+            let expected_established_roles = round6(
                 team.calibrations
                     .iter()
                     .map(|calibration| {
@@ -385,6 +385,10 @@ fn canonical_zero(value: f64) -> f64 {
     }
 }
 
+fn round6(value: f64) -> f64 {
+    canonical_zero((value * 1_000_000.0).round() / 1_000_000.0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -443,6 +447,9 @@ mod tests {
                     == team.excluded_skaters
         }));
         assert_eq!(board.calculate_fingerprint().unwrap(), board.fingerprint);
+        let serialized = serde_json::to_string(&board).unwrap();
+        let round_tripped: ProspectArrivalBoardView = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(round_tripped, board);
     }
 
     #[test]

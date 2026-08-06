@@ -9,7 +9,7 @@ use icelines_core::{
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
     CardDocumentView, OrganizationWindowBoardView, OrganizationWindowCardError,
     ProspectArrivalBoardView, ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView,
-    Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
+    ProspectCensusReadinessBoardView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
 use thiserror::Error;
 
@@ -42,6 +42,8 @@ const PROSPECT_ARRIVAL_LEAGUE: &str =
 #[cfg(test)]
 const PROSPECT_ARRIVAL_BOARD: &str =
     include_str!("../../examples/prospect-arrival-board-2026-27.json");
+const PROSPECT_CENSUS_READINESS_BOARD: &str =
+    include_str!("../../examples/prospect-census-readiness-2026-27.json");
 const BALANCED_ORGANIZATION_WINDOW: &str =
     include_str!("../../examples/organization-window-board-partial-2026-07-28.json");
 const DEXTERS_DAWGS: &str =
@@ -141,6 +143,30 @@ pub fn prospect_arrival_board(season: u32) -> Result<ProspectArrivalBoardView, C
         .get_or_init(|| {
             build_prospect_arrival_board(prospect_arrival_league(), "2026-09-15T12:00:00Z")
                 .expect("sealed prospect arrival board projection")
+        })
+        .clone())
+}
+
+pub fn prospect_census_readiness_board(
+    season: u32,
+) -> Result<ProspectCensusReadinessBoardView, CardStoreError> {
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static BOARD: OnceLock<ProspectCensusReadinessBoardView> = OnceLock::new();
+    Ok(BOARD
+        .get_or_init(|| {
+            let board: ProspectCensusReadinessBoardView =
+                serde_json::from_str(PROSPECT_CENSUS_READINESS_BOARD)
+                    .expect("sealed prospect census readiness board");
+            assert_eq!(
+                board
+                    .calculate_fingerprint()
+                    .expect("readiness fingerprint"),
+                board.fingerprint,
+                "sealed prospect census readiness board must remain canonical"
+            );
+            board
         })
         .clone())
 }
@@ -455,6 +481,16 @@ mod tests {
         assert_eq!(board, sealed_board);
         assert_eq!(board.teams.len(), CANONICAL_TEAMS.len());
         assert!(board.teams.iter().all(|team| team.rank.is_none()));
+        let readiness = prospect_census_readiness_board(20262027).unwrap();
+        assert_eq!(readiness.teams.len(), CANONICAL_TEAMS.len());
+        assert_eq!(readiness.population_complete_organizations, 0);
+        assert_eq!(readiness.depth_complete_organizations, 0);
+        assert_eq!(readiness.published_organizations, 0);
+        assert_eq!(readiness.authority_gap_summary.len(), 3);
+        assert_eq!(
+            readiness.calculate_fingerprint().unwrap(),
+            readiness.fingerprint
+        );
         assert!(matches!(
             prospect_arrival_card(20262027, "XYZ"),
             Err(CardStoreError::UnsupportedProspectArrivalTeam(_))

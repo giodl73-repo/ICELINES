@@ -552,7 +552,11 @@ the complete source census. It intentionally omits player-level loss rows so a
 renderer can load the league readiness state without loading the full audit
 ledger. `icecast prospect-census-readiness --input PATH [--json]` builds this
 projection only after team, league, loss, and authority-gap totals reconcile.
-It does not replace the census or grant publication authority.
+It does not replace the census or grant publication authority. The retained
+board is projected without re-scoring through CLI, a two-page TUI league view,
+and Web HTML/JSON routes. Web team focus is a row filter over the same sealed
+artifact; every surface preserves its fingerprint and withheld publication
+state.
 
 ## Compatibility and migration
 

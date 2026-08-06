@@ -10,8 +10,8 @@ use icelines_core::{
     build_prospect_arrival_card, load_organization_window_profile_inventory, parse_card_document,
     project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
     CardDocumentView, CardSectionView, OrganizationWindowBoardView, ProspectArrivalBoardView,
-    ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView, Season, ViewContext,
-    ViewWindow, CANONICAL_TEAMS,
+    ProspectArrivalCardInput, ProspectArrivalLeagueCalibrationView,
+    ProspectCensusReadinessBoardView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -53,6 +53,8 @@ const PROSPECT_ARRIVAL_LEAGUE_JSON: &str =
     include_str!("../../../../examples/icecast-prospect-arrival-league-2026-27.json");
 const PROSPECT_ARRIVAL_BOARD_JSON: &str =
     include_str!("../../../../examples/prospect-arrival-board-2026-27.json");
+const PROSPECT_CENSUS_READINESS_BOARD_JSON: &str =
+    include_str!("../../../../examples/prospect-census-readiness-2026-27.json");
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
     include_str!("../../../../examples/organization-window-board-partial-2026-07-28.json");
 const FANTASY_CARD_JSON: &str =
@@ -192,6 +194,15 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
             ],
         };
     }
+    if team.eq_ignore_ascii_case("CENSUS-BOARD") {
+        return ScreenChrome {
+            title: format!("Prospect Census Readiness - page {}", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
     let fantasy = matches!(
         team.to_ascii_uppercase().as_str(),
         "DEX" | "DRAFT" | "MORNING" | "TRADE"
@@ -245,6 +256,10 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
     }
     if team.eq_ignore_ascii_case("ARRIVAL-BOARD") {
         render_prospect_arrival_board(f, area, page);
+        return;
+    }
+    if team.eq_ignore_ascii_case("CENSUS-BOARD") {
+        render_prospect_census_readiness_board(f, area, page);
         return;
     }
     if compare
@@ -338,6 +353,88 @@ fn prospect_arrival_board() -> &'static ProspectArrivalBoardView {
         serde_json::from_str(PROSPECT_ARRIVAL_BOARD_JSON)
             .expect("sealed 32-team prospect arrival board")
     })
+}
+
+fn prospect_census_readiness_board() -> &'static ProspectCensusReadinessBoardView {
+    static BOARD: OnceLock<ProspectCensusReadinessBoardView> = OnceLock::new();
+    BOARD.get_or_init(|| {
+        let board: ProspectCensusReadinessBoardView =
+            serde_json::from_str(PROSPECT_CENSUS_READINESS_BOARD_JSON)
+                .expect("sealed 32-team prospect census readiness board");
+        assert_eq!(
+            board
+                .calculate_fingerprint()
+                .expect("readiness fingerprint"),
+            board.fingerprint,
+            "sealed prospect census readiness board must remain canonical"
+        );
+        board
+    })
+}
+
+fn render_prospect_census_readiness_board(f: &mut Frame, area: Rect, page: usize) {
+    let board = prospect_census_readiness_board();
+    let title = format!(
+        " PROSPECT CENSUS READINESS | {} | {} ",
+        board.evaluation_season,
+        &board.fingerprint[..8]
+    );
+    let lines = prospect_census_readiness_board_lines(board, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+pub(crate) fn prospect_census_readiness_board_lines(
+    board: &ProspectCensusReadinessBoardView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let start = page.min(1) * 16;
+    let mut lines = vec![format!(
+        "{}/32 population · {}/32 depth · {}/32 published · {} authority gaps",
+        board.population_complete_organizations,
+        board.depth_complete_organizations,
+        board.published_organizations,
+        board
+            .authority_gap_summary
+            .iter()
+            .map(|row| row.organizations)
+            .sum::<usize>()
+    )];
+    if width >= 72 {
+        lines.push("TEAM AUTH       PUBLICATION           CAN CTRL RANK/TGT GAPS".to_owned());
+    } else {
+        lines.push("TEAM AUTH       CAN CTRL RANK/TGT GAPS".to_owned());
+    }
+    for row in board.teams.iter().skip(start).take(16) {
+        if width >= 72 {
+            lines.push(format!(
+                "{:<4} {:<10?} {:<21?} {:>3} {:>4} {:>4}/{:<3} {:>4}",
+                row.organization,
+                row.population_authority_status,
+                row.publication_status,
+                row.counts.canonical_identity,
+                row.counts.controlled_relationship,
+                row.counts.ranked,
+                row.requested_ranking_depth,
+                row.authority_gaps.len(),
+            ));
+        } else {
+            lines.push(format!(
+                "{:<4} {:<10?} {:>3} {:>4} {:>4}/{:<3} {:>4}",
+                row.organization,
+                row.population_authority_status,
+                row.counts.canonical_identity,
+                row.counts.controlled_relationship,
+                row.counts.ranked,
+                row.requested_ranking_depth,
+                row.authority_gaps.len(),
+            ));
+        }
+    }
+    lines
 }
 
 fn render_prospect_arrival_board(f: &mut Frame, area: Rect, page: usize) {
@@ -1279,6 +1376,52 @@ mod tests {
         assert_eq!(app.selected, 1);
     }
 
+    #[test]
+    fn l1_prospect_census_readiness_pages_cover_all_32_without_shadow_rankings() {
+        let board = prospect_census_readiness_board();
+        let first = prospect_census_readiness_board_lines(board, 0, 80);
+        let second = prospect_census_readiness_board_lines(board, 1, 80);
+        assert_eq!(first.len(), 18);
+        assert_eq!(second.len(), 18);
+        assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
+        assert!(first[0].contains("0/32 population"));
+        assert!(first[0].contains("0/32 depth"));
+        assert!(first[0].contains("0/32 published"));
+        assert!(first[0].contains("96 authority gaps"));
+        let teams = first
+            .iter()
+            .skip(2)
+            .chain(second.iter().skip(2))
+            .filter_map(|line| line.split_whitespace().next())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(teams.len(), CANONICAL_TEAMS.len());
+        assert!(teams.contains("NYR"));
+        assert!(teams.contains("SEA"));
+        assert_eq!(
+            parse_command("prospect-census-readiness").unwrap(),
+            Command::TeamCard {
+                team: "CENSUS-BOARD".to_owned()
+            }
+        );
+
+        let mut app = App::new(true);
+        execute_command(
+            parse_command("prospect-census-readiness").unwrap(),
+            &mut app,
+        );
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('c'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard {
+                ref team,
+                compare: false
+            } if team == "CENSUS-BOARD"
+        ));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
+    }
+
     #[tokio::test]
     async fn l2_organization_window_golden_parity_across_cli_tui_and_web() {
         let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -1479,5 +1622,38 @@ mod tests {
         assert!(nyr.starts_with("NR"));
         assert!(nyr.contains("2/2"));
         assert!(nyr.contains("100%"));
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_census_readiness_golden_parity_across_tui_and_web() {
+        let expected = prospect_census_readiness_board().clone();
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/prospect-census-readiness/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let web_board: ProspectCensusReadinessBoardView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_board, expected);
+
+        let first = prospect_census_readiness_board_lines(&expected, 0, 80);
+        let second = prospect_census_readiness_board_lines(&expected, 1, 80);
+        let nyr = first
+            .iter()
+            .chain(&second)
+            .find(|line| line.split_whitespace().any(|cell| cell == "NYR"))
+            .unwrap();
+        assert!(nyr.contains("Incomplete"));
+        assert!(nyr.contains("PopulationIncomplete"));
+        assert!(nyr.contains("26"));
+        assert!(nyr.contains("0/10"));
     }
 }

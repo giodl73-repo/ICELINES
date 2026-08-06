@@ -10,7 +10,13 @@
   partial league envelopes or unreconciled team, league, loss, and gap totals.
   A retained real-data 2026-27 board is 97.49% smaller than its complete audit
   census and exposes the remaining all-32 authority backlog without inventing
-  publishable rankings.
+  publishable rankings. Web HTML/JSON and the two-page TUI now render that same
+  fingerprinted artifact, with team filtering constrained to presentation and
+  cross-surface parity tests preserving all publication gates.
+- Fixed prospect-arrival board aggregate probabilities to use the contract's
+  six-decimal precision before fingerprinting. In-memory, retained JSON, CLI,
+  TUI, and Web values now compare exactly after serialization instead of
+  differing by one floating-point unit.
 
 - Added `prospect_arrival_league_calibration.v1` and
   `icecast prospect-arrival-league` to run one horizon-aligned historical

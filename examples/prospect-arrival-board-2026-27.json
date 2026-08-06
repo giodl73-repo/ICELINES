@@ -481,8 +481,8 @@
         }
       ],
       "calibration_coverage": 1.0,
-      "expected_arrivals": 0.5623469999999999,
-      "expected_established_roles": 0.14929699999999999,
+      "expected_arrivals": 0.562347,
+      "expected_established_roles": 0.149297,
       "top_arrival_probability": 0.290389,
       "rank_state": "withheld",
       "rank_blockers": [
@@ -818,5 +818,5 @@
     "Goalies remain outside this skater-arrival cohort until a separately calibrated goalie authority exists.",
     "Players with NHL games are retained in the intake ledger but routed to established-role forecasting; they do not reduce prospect-arrival calibration coverage or block ranks."
   ],
-  "fingerprint": "1584626ed4fcfb87b5a1bfe424e97dee6de6c1d50c1a8be54741147f56ebf9c2"
+  "fingerprint": "e3cda96f8636c48cd13aa3ac8795711073b16dee3f64395829840c9ff6236ca3"
 }

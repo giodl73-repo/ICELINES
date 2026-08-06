@@ -298,6 +298,79 @@ async fn prospect_arrival_board_routes_preserve_withheld_ranks_and_team_drilldow
 }
 
 #[tokio::test]
+async fn prospect_census_readiness_routes_preserve_gates_and_team_focus() {
+    let app = router(WebState::new());
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/prospect-census-readiness/20262027")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let etag = response.headers()["etag"].to_str().unwrap().to_owned();
+    let routed: icelines_core::ProspectCensusReadinessBoardView =
+        serde_json::from_str(&body(response).await).unwrap();
+    let fixture: icelines_core::ProspectCensusReadinessBoardView = serde_json::from_str(
+        include_str!("../../examples/prospect-census-readiness-2026-27.json"),
+    )
+    .unwrap();
+    assert_eq!(routed, fixture);
+    assert_eq!(etag, format!("\"{}\"", fixture.fingerprint));
+    assert_eq!(routed.teams.len(), CANONICAL_TEAMS.len());
+    assert_eq!(routed.population_complete_organizations, 0);
+    assert_eq!(routed.published_organizations, 0);
+
+    let html = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-census-readiness")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(html.status(), StatusCode::OK);
+    let html = body(html).await;
+    assert!(html.contains("Prospect Census Readiness"));
+    assert!(html.contains("<strong>0/32</strong> population complete"));
+    assert!(html.contains("2477 discovered → 807 canonical identities → 0 controlled"));
+    assert!(html.contains("ahl_current_assignment"));
+    assert!(html.contains("UnresolvedIdentity</strong>: 1670 players"));
+    assert!(html.contains("NYR"));
+    assert!(html.contains("SEA"));
+
+    let focused = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-census-readiness?team=SEA")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let focused = body(focused).await;
+    assert!(focused.contains("<th scope=\"row\">SEA</th>"));
+    assert!(!focused.contains("<th scope=\"row\">NYR</th>"));
+
+    let unsupported = app
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/prospect-census-readiness?team=XYZ")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unsupported.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn stylesheet_contains_phone_and_tablet_card_layouts() {
     let response = router(WebState::new())
         .oneshot(

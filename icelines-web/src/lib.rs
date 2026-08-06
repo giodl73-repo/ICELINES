@@ -198,6 +198,14 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/prospect-arrivals/:season",
             get(handlers::prospect_arrival::get_prospect_arrival_board_json),
         )
+        .route(
+            "/icecast/:season/prospect-census-readiness",
+            get(handlers::prospect_census::get_prospect_census_readiness),
+        )
+        .route(
+            "/api/v1/prospect-census-readiness/:season",
+            get(handlers::prospect_census::get_prospect_census_readiness_json),
+        )
         .route("/window/:frame/:season", get(handlers::window::get_window))
         .route(
             "/api/v1/window/:frame/:season",
@@ -670,6 +678,7 @@ mod handlers {
     pub mod docs;
 
     pub mod prospect_arrival;
+    pub mod prospect_census;
     /// `/team/:abbrev` — King.4.1 roster page.
     pub mod team;
     pub mod team_card;

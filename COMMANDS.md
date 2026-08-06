@@ -1060,6 +1060,8 @@ icelines icecast prospect-league --snapshot ahl-2023-24.json --snapshot ahl-2024
 icelines icecast prospect-population-audit --input examples/icecast-league-candidate-overlay-2026-27.json --require-fully-classified --json --out prospect-population-audit.json
 icelines icecast prospect-census --source-package target/prospect-sources-2026-27-final.json --json --out prospect-census.json
 icelines icecast prospect-census-readiness --input prospect-census.json --json --out prospect-census-readiness.json
+# TUI command bar: open the same retained 32-team readiness board
+prospect-census-readiness
 icelines icecast identity-review-workboard --source-package target/prospect-sources-2026-27-landings.v2.json --json --out identity-review-workboard.json
 icelines icecast official-identity-candidates --workboard identity-review-workboard.json --json --out official-identity-candidates.json
 icelines icecast official-identity-candidates --workboard identity-review-workboard.json --refresh --json --out official-identity-candidates-refreshed.json

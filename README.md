@@ -658,6 +658,13 @@ UI. Population authority and ranking depth remain independent gates:
 icelines icecast prospect-census-readiness --input prospect-census.json --json --out prospect-census-readiness.json
 ```
 
+The retained 2026-27 readiness board is served as HTML at
+`/icecast/20262027/prospect-census-readiness` and as fingerprinted JSON at
+`/api/v1/prospect-census-readiness/20262027`. In the TUI,
+`prospect-census-readiness` opens the same 32 teams across two pages. The Web
+`?team=SEA` filter changes presentation only; it never recomputes or republishes
+the league artifact.
+
 All 32 team cards are projected from the same sealed league artifact and served
 through the generic web renderer at
 `/icecast/20262027/{team}/prospect-arrivals`; their sealed JSON is available at
