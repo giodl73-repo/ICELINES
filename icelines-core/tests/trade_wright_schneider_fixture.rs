@@ -184,12 +184,12 @@ fn balanced_breakout_portfolio_separates_expected_path_from_all_hit_ceiling() {
 }
 
 #[test]
-fn balanced_portfolio_exposes_historical_and_uncalibrated_probability_authority() {
+fn balanced_portfolio_exposes_historical_probability_authority() {
     let calibrated: TeamSeasonScenarioDevelopmentCalibrationView =
         fixture("icecast-nyr-wright-balanced-breakout-portfolio-calibrated-2026-27.json");
     assert_eq!(calibrated.source_transitions, 11_156);
-    assert_eq!(calibrated.calibrated_events, 4);
-    assert_eq!(calibrated.uncalibrated_events, 1);
+    assert_eq!(calibrated.calibrated_events, 5);
+    assert_eq!(calibrated.uncalibrated_events, 0);
 
     let smits = calibrated
         .probability_authority
@@ -198,10 +198,11 @@ fn balanced_portfolio_exposes_historical_and_uncalibrated_probability_authority(
         .expect("Smits probability authority");
     assert_eq!(
         smits.status,
-        TeamSeasonScenarioProbabilityAuthorityStatus::UncalibratedScenarioAssumption
+        TeamSeasonScenarioProbabilityAuthorityStatus::HistoricalProspectEstablishedRoleCohort
     );
-    assert_eq!(smits.applied_probability, 0.20);
+    assert_eq!(smits.applied_probability, 0.076_015);
     assert!(smits.cohort.is_none());
+    assert!(smits.prospect_arrival.is_some());
 
     let historical = calibrated
         .probability_authority
@@ -222,7 +223,7 @@ fn balanced_portfolio_exposes_historical_and_uncalibrated_probability_authority(
         .filter(|event| event.kind == TeamSeasonScenarioEventKind::Form)
         .map(|event| event.occurrence_probability)
         .product::<f64>();
-    assert!((all_hit_probability - 0.001_757_117_370_794_63).abs() < 1e-15);
+    assert!((all_hit_probability - 0.000_667_836_384_704_767_7).abs() < 1e-15);
 
     let movement: TeamSeasonForecastMovementView =
         fixture("icecast-nyr-wright-balanced-breakout-portfolio-calibrated-movement-2026-27.json");
@@ -231,7 +232,7 @@ fn balanced_portfolio_exposes_historical_and_uncalibrated_probability_authority(
         .iter()
         .find(|row| row.team == "NYR")
         .expect("Rangers calibrated movement row");
-    assert!((nyr.average_points_delta - 1.1538).abs() < 1e-9);
-    assert!((nyr.playoff_probability_delta - 0.0425).abs() < 1e-9);
-    assert!((nyr.stanley_cup_probability_delta - 0.0065).abs() < 1e-9);
+    assert!((nyr.average_points_delta - 1.0811).abs() < 1e-9);
+    assert!((nyr.playoff_probability_delta - 0.0406).abs() < 1e-9);
+    assert!((nyr.stanley_cup_probability_delta - 0.0060).abs() < 1e-9);
 }

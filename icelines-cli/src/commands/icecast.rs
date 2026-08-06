@@ -1737,6 +1737,7 @@ pub async fn run_affiliate_identities(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)] // CLI dispatch mirrors the independent command flags.
 pub async fn run_affiliate_identities_league(
     snapshot_path: PathBuf,
     candidates_path: Option<PathBuf>,
@@ -9065,6 +9066,7 @@ pub fn run_scenario_development_calibration(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)] // CLI dispatch mirrors the independent command flags.
 pub fn run_prospect_arrival_calibration(
     input_path: Option<PathBuf>,
     career_discovery_path: Option<PathBuf>,
