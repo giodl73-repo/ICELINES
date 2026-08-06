@@ -1,0 +1,77 @@
+{
+  "schema": "trade_market_evaluation.v1",
+  "as_of": "2026-08-02",
+  "value_basis": {
+    "outcome_measure": "nhl_regular_season_games_played",
+    "horizon_years": 7,
+    "method": "mature-cohort fixed-horizon outcomes with weighted monotone regression"
+  },
+  "proposals": [
+    {
+      "buyer": "NYR",
+      "seller": "NSH",
+      "assets_to_buyer": [
+        "Ryan O'Reilly (50% retained)"
+      ],
+      "assets_to_seller": [
+        "2027 draft selection"
+      ],
+      "buyer_utility_delta": 113.38282559248658,
+      "seller_utility_delta": 88.99351042629685,
+      "market_value_to_buyer": 68.0,
+      "market_value_to_seller": 80.29543601878348,
+      "market_value_gap": -12.295436018783477,
+      "buyer_season_points_delta": 0.7201,
+      "seller_season_points_delta": -0.7201,
+      "buyer_cap_space_delta": -2.25,
+      "seller_cap_space_delta": 2.25,
+      "fairness_score": 0.8468725418477432,
+      "feasibility_probability": 0.2,
+      "transaction_ready": true,
+      "transaction_gates": {
+        "cap_compliant": true,
+        "roster_compliant": true,
+        "retention_compliant": true,
+        "contract_authority_complete": true,
+        "pick_ownership_confirmed": true
+      },
+      "mutually_beneficial": true,
+      "pick_roles": [
+        {
+          "asset_id": "BOS-2027-2-owned-by-NYR",
+          "direction": "to_seller",
+          "package_share": 1.0,
+          "role": "principal"
+        }
+      ],
+      "season_forecast_impact": {
+        "buyer": {
+          "team": "NYR",
+          "average_points_delta": 0.7099999999999937,
+          "playoff_probability_delta": 0.027700000000000058,
+          "stanley_cup_probability_delta": 0.006699999999999998
+        },
+        "seller": {
+          "team": "NSH",
+          "average_points_delta": -0.7075999999999993,
+          "playoff_probability_delta": -0.03109999999999996,
+          "stanley_cup_probability_delta": -0.0026000000000000007
+        },
+        "buyer_points_residual_vs_isolated": -0.010100000000006215
+      },
+      "disclosures": [
+        "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+        "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+        "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+        "Ryan O'Reilly (50% retained): The 68-game control estimate is a conservative one-season scenario assumption, not a learned player market-value forecast.",
+        "Ryan O'Reilly (50% retained): The +0.7201 standings-points impact reuses the isolated IceLines NYR acquisition-ceiling scenario; paired lineup simulation is still required.",
+        "2027 draft selection: Pick control value uses nhl_regular_season_games_played over 7 post-draft years.",
+        "Season deltas use a paired baseline/scenario simulation with the same schedule, trials, and seed; they supersede the isolated points estimate for forecast interpretation."
+      ]
+    }
+  ],
+  "disclosures": [
+    "Proposals are ranked scenarios, not reported negotiations or transaction advice.",
+    "Feasibility and mutual utility are separate: a hockey fit can still fail a clause, cap, roster, or evidence gate."
+  ]
+}

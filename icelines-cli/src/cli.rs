@@ -1011,6 +1011,200 @@ Examples:
 
 #[derive(Debug, Subcommand)]
 pub enum IceCastSubcommand {
+    /// Fit a survivorship-safe historical NHL draft-pick value curve.
+    #[command(name = "draft-pick-curve")]
+    DraftPickCurve {
+        /// First complete official draft class in the training population.
+        #[arg(long, default_value_t = 2005)]
+        start_year: u16,
+        /// Last mature draft class in the training population.
+        #[arg(long, default_value_t = 2018)]
+        cutoff_year: u16,
+        /// Start year of the newest completed NHL season in local data.
+        #[arg(long, default_value_t = 2025)]
+        completed_season_start_year: u16,
+        /// Fixed NHL-season outcome horizon after each draft.
+        #[arg(long, default_value_t = 7)]
+        horizon: u8,
+        /// Highest overall selection represented by the curve.
+        #[arg(long, default_value_t = 210)]
+        max_pick: u16,
+        /// Annual retained-value factor for future-year draft assets (0-1).
+        #[arg(long, default_value_t = 0.92)]
+        annual_future_discount: f64,
+        /// Fixed RFC 3339 acquisition timestamp for reproducible output.
+        #[arg(long)]
+        generated_at: Option<String>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Assemble and evaluate raw packages against sourced execution authority.
+    #[command(name = "trade-market-assemble")]
+    TradeMarketAssemble {
+        /// UI-neutral `TradeMarketAssemblyInput` JSON document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// `DraftPickValueCurve` or `DraftPickCurveAcquisitionView` JSON.
+        #[arg(long, value_name = "PATH")]
+        curve: PathBuf,
+        /// Baseline `TeamSeasonForecastView`; requires --scenario-forecast.
+        #[arg(long, value_name = "PATH", requires = "scenario_forecast")]
+        baseline_forecast: Option<PathBuf>,
+        /// Paired trade-scenario forecast; requires --baseline-forecast.
+        #[arg(long, value_name = "PATH", requires = "baseline_forecast")]
+        scenario_forecast: Option<PathBuf>,
+        /// Buyer `TradeLineupScenarioInput`; requires --seller-lineup.
+        #[arg(long, value_name = "PATH", requires = "seller_lineup")]
+        buyer_lineup: Option<PathBuf>,
+        /// Seller `TradeLineupScenarioInput`; requires --buyer-lineup.
+        #[arg(long, value_name = "PATH", requires = "buyer_lineup")]
+        seller_lineup: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Evaluate sourced, needs-aware real-team trade packages.
+    #[command(name = "trade-market")]
+    TradeMarket {
+        /// UI-neutral `TradeMarketInput` JSON document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Discover buyer-specific trade fits and generate bounded offer ladders.
+    #[command(name = "trade-scout")]
+    TradeScout {
+        /// UI-neutral `TradeScoutInput` with pre-valued league and buyer assets.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Derive targets and offer assets from a normalized league inventory.
+    #[command(name = "trade-scout-league")]
+    TradeScoutLeague {
+        /// UI-neutral `TradeScoutLeagueInput` organization inventory.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Populate league trade inventory from the all-team training-camp forecast.
+    #[command(name = "trade-scout-populate")]
+    TradeScoutPopulate {
+        /// `training_camp_league_forecast.v1` roster and prospect authority.
+        #[arg(long, value_name = "PATH")]
+        camp: PathBuf,
+        /// `TradeScoutPopulationInput` translation policy and trade overlays.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Optional `trade_scout_draft_pick_population.v1` assets to merge.
+        #[arg(long, value_name = "PATH")]
+        pick_assets: Option<PathBuf>,
+        /// Also write the immediately evaluated `trade_scout_league.v1` board.
+        #[arg(long, value_name = "PATH")]
+        board_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Score a reviewed, point-in-time trade-completion forecast cohort.
+    #[command(name = "trade-calibrate")]
+    TradeCalibrate {
+        /// UI-neutral `TradeCompletionCalibrationInput` JSON.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Export point-in-time Trade Scout features without labels or completion odds.
+    #[command(name = "trade-features")]
+    TradeFeatures {
+        /// UI-neutral `trade_scout.v1` JSON.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Value reviewed, unconditional future-pick ownership for Trade Scout.
+    #[command(name = "trade-pick-populate")]
+    TradePickPopulate {
+        /// Reviewed future-pick ownership CSV with dated row provenance.
+        #[arg(long, value_name = "PATH")]
+        ownership: PathBuf,
+        /// `draft_pick_value_curve.v1` or acquisition wrapper.
+        #[arg(long, value_name = "PATH")]
+        curve: PathBuf,
+        /// Pick population policy JSON with date, basis, and protection.
+        #[arg(long, value_name = "PATH")]
+        policy: PathBuf,
+        /// Optional `team_season_forecast.v1` providing trial-level team-rank probabilities.
+        #[arg(long, value_name = "PATH")]
+        season_forecast: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Audit reviewed future-pick ownership against all 224 league coordinates.
+    #[command(name = "trade-pick-coverage")]
+    TradePickCoverage {
+        /// Reviewed league future-pick ownership CSV.
+        #[arg(long, value_name = "PATH")]
+        ownership: PathBuf,
+        #[arg(long)]
+        draft_year: u16,
+        /// Evidence cutoff date or timestamp.
+        #[arg(long)]
+        as_of: String,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Optimize before/after trade lineups from an existing lineup projection.
+    #[command(name = "trade-lineup")]
+    TradeLineup {
+        /// Baseline `TeamLineupProjectionView` JSON.
+        #[arg(long, value_name = "PATH")]
+        lineup: PathBuf,
+        /// `TradeLineupProjectionChangeInput` JSON.
+        #[arg(long, value_name = "PATH")]
+        change: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compare multiple acquisitions against one lineup and transaction gate.
+    #[command(name = "trade-lineup-board")]
+    TradeLineupBoard {
+        /// Baseline `TeamLineupProjectionView` or `TrainingCampLineupSetView` JSON.
+        #[arg(long, value_name = "PATH")]
+        lineup: PathBuf,
+        /// `TradeLineupBoardInput` JSON.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Gather and rank three seasons of all-team management behavior evidence.
     #[command(name = "behavior-rankings")]
     BehaviorRankings {
@@ -1196,6 +1390,12 @@ pub enum IceCastSubcommand {
         discover_official: bool,
         #[arg(long, requires = "discover_official")]
         refresh: bool,
+        /// Restrict official discovery to players at or below `--max-age` on this date.
+        #[arg(long, value_name = "YYYY-MM-DD", requires = "max_age")]
+        as_of: Option<String>,
+        /// Maximum age eligible for official discovery; requires `--as-of`.
+        #[arg(long, value_parser = clap::value_parser!(u8).range(1..=60), requires = "as_of")]
+        max_age: Option<u8>,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -2030,6 +2230,135 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Forecast one game from dated player profiles, line chemistry, and opponent fit.
+    #[command(name = "line-matchup")]
+    LineMatchup {
+        /// UI-neutral `PlayerLineMatchupForecastInput` JSON document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Optional Bench plan used to populate the away manager/style/share inputs.
+        #[arg(long, value_name = "PATH")]
+        away_bench_plan: Option<PathBuf>,
+        /// Optional Bench plan used to populate the home manager/style/share inputs.
+        #[arg(long, value_name = "PATH")]
+        home_bench_plan: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build dated player profiles and deployment-affinity evidence for The Matchup.
+    #[command(name = "line-matchup-profiles")]
+    LineMatchupProfiles {
+        #[arg(long, value_name = "PATH")]
+        lineup: PathBuf,
+        /// `team_player_matchup_role_evidence.v1` for the lineup team.
+        #[arg(long, value_name = "PATH")]
+        role_evidence: PathBuf,
+        /// Exact official `nhl_shift_overlap.v1` report from The Blender.
+        #[arg(long, value_name = "PATH")]
+        shift_report: PathBuf,
+        #[arg(long)]
+        evidence_cutoff_at: String,
+        #[arg(long, default_value_t = 1.0)]
+        recency: f64,
+        /// Repeat for every raw role/stat/shift source seal.
+        #[arg(long = "source-fingerprint", required = true)]
+        source_fingerprints: Vec<String>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Convert shift-aligned xG residuals into confidence-weighted chemistry evidence.
+    #[command(name = "line-chemistry")]
+    LineChemistry {
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        forecast_at: String,
+        /// JSON array of `shift_adjusted_unit_outcome.v1` rows.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Build chronology-safe pair/trio chemistry from MoneyPuck line-game files.
+    #[command(name = "line-chemistry-moneypuck")]
+    LineChemistryMoneyPuck {
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        forecast_at: String,
+        /// Repeat for each MoneyPuck pair/trio game-by-game CSV.
+        #[arg(long = "line-game", value_name = "PATH", required = true)]
+        line_games: Vec<PathBuf>,
+        /// JSON array of sealed `pregame_unit_xg_baseline.v1` rows.
+        #[arg(long, value_name = "PATH")]
+        baselines: PathBuf,
+        #[arg(long, default_value_t = 30.0)]
+        minimum_shared_minutes: f64,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Discover, cache, baseline, and score MoneyPuck pair/trio history.
+    #[command(name = "line-chemistry-moneypuck-auto")]
+    LineChemistryMoneyPuckAuto {
+        #[arg(long)]
+        team: String,
+        /// Four-digit season start year, for example 2025 for 2025-26.
+        #[arg(long)]
+        season_start: u32,
+        #[arg(long)]
+        forecast_at: String,
+        #[arg(long, default_value_t = 20)]
+        trailing_games: usize,
+        #[arg(long, default_value_t = 3)]
+        minimum_player_games: usize,
+        #[arg(long, default_value_t = 30.0)]
+        minimum_shared_minutes: f64,
+        /// MoneyPuck season-summary `lines.csv` obtained under applicable terms.
+        #[arg(long, value_name = "PATH")]
+        summary: PathBuf,
+        /// Directory containing one MoneyPuck pair/trio game CSV per unit ID.
+        #[arg(long, value_name = "DIR")]
+        line_game_dir: PathBuf,
+        /// Directory containing MoneyPuck career game CSVs named by player ID.
+        #[arg(long, value_name = "DIR")]
+        skater_game_dir: PathBuf,
+        /// Directory containing MoneyPuck career team-game CSVs named by abbreviation.
+        #[arg(long, value_name = "DIR")]
+        team_game_dir: PathBuf,
+        /// Short declaration describing the applicable source permission/license.
+        #[arg(long)]
+        rights_basis: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Evaluate frozen player/profile/chemistry/manager forecast ablations.
+    #[command(name = "line-matchup-validate")]
+    LineMatchupValidate {
+        /// JSON array of chronological `player_line_matchup_ablation_observation.v1` rows.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        created_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rank frozen lineup/manager alternatives for one game.
+    #[command(name = "line-matchup-compare")]
+    LineMatchupCompare {
+        /// JSON array of `PlayerLineMatchupScenarioInput` documents.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        focus_team: String,
+        #[arg(long)]
+        baseline: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Build baseline forecasts for every game in a season.
     Season {
         #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
@@ -2037,6 +2366,9 @@ pub enum IceCastSubcommand {
         /// Completed player-stat season used by roster/depth strength.
         #[arg(long, default_value_t = 20252026)]
         stats_season: u32,
+        /// Sourced organization candidates used to complete thin roster snapshots.
+        #[arg(long, value_name = "PATH")]
+        candidate_overlay: Option<PathBuf>,
         /// Repeat to focus text output; JSON always retains the full league run.
         #[arg(long = "team")]
         teams: Vec<String>,
@@ -2129,7 +2461,7 @@ pub enum IceCastSubcommand {
     /// Simulate a season from an existing baseline or edge-enhanced game forecast.
     #[command(name = "season-simulate")]
     SeasonSimulate {
-        /// UI-neutral `team_game_forecast.v1`, including `edge --enhanced-forecast-out`.
+        /// UI-neutral `team_game_forecast.v1` or replayable `team_season_forecast.v1`.
         #[arg(long, value_name = "PATH")]
         forecast: PathBuf,
         #[arg(long, default_value_t = 10_000)]
@@ -2165,6 +2497,9 @@ pub enum IceCastSubcommand {
         /// `GamePredictionEvidencePackageBuildInput` JSON with lineup, goalie, and form inputs.
         #[arg(long, value_name = "PATH")]
         input: PathBuf,
+        /// Repeat to attach a sealed `player_line_matchup_forecast.v1` to its game.
+        #[arg(long = "line-matchup", value_name = "PATH")]
+        line_matchups: Vec<PathBuf>,
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
@@ -2906,6 +3241,20 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Replace authored scenario breakout probabilities with matching historical cohort rates.
+    #[command(name = "calibrate-scenario-development")]
+    CalibrateScenarioDevelopment {
+        /// `team_season_scenario_development_calibration_input.v1` scenario and player profiles.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Completed `development_calibration.v2` historical cohort artifact.
+        #[arg(long, value_name = "PATH")]
+        calibration: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Explain a prospect's development, opportunity, injury, and attention gap.
     #[command(name = "prospect-study")]
     ProspectStudy {
@@ -3059,6 +3408,40 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Project a full prospect census into a compact 32-team readiness board.
+    #[command(name = "prospect-census-readiness")]
+    ProspectCensusReadiness {
+        /// `prospect_census.v1` artifact to compact without changing evidence.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Turn a readiness board into exact authority-boundary closure recipes.
+    #[command(name = "prospect-authority-closure")]
+    ProspectAuthorityClosure {
+        /// `prospect_census_readiness_board.v1` artifact to plan from.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Compare two sealed authority closure boards and measure cell movement.
+    #[command(name = "prospect-authority-progress")]
+    ProspectAuthorityProgress {
+        #[arg(long, value_name = "PATH")]
+        prior: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        current: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Generate neutral multi-league prospect context from the league camp pool.
     #[command(name = "prospect-career-context")]
     ProspectCareerContext {
@@ -3196,6 +3579,171 @@ pub enum IceCastSubcommand {
         /// Write the supplied or derived NHL-performance authority for audit/reuse.
         #[arg(long = "performance-out", value_name = "PATH")]
         performance_out: Option<PathBuf>,
+        /// Write the exact adapted `prospect_conversion_input.v2` cohort for replay.
+        #[arg(long = "input-out", value_name = "PATH")]
+        input_out: Option<PathBuf>,
+        /// Write one fingerprinted archive containing input, performance, and board.
+        #[arg(long = "archive-out", value_name = "PATH")]
+        archive_out: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Rebuild a conversion board from an exact retained adapted cohort.
+    #[command(name = "prospect-conversion-replay")]
+    ProspectConversionReplay {
+        /// Retained `prospect_conversion_input.v2` artifact.
+        #[arg(
+            long,
+            value_name = "PATH",
+            required_unless_present = "archive",
+            conflicts_with = "archive"
+        )]
+        input: Option<PathBuf>,
+        /// Retained `prospect_conversion_archive.v1` artifact.
+        #[arg(
+            long,
+            value_name = "PATH",
+            required_unless_present = "input",
+            conflicts_with = "input"
+        )]
+        archive: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Estimate prospect NHL arrival from a frozen historical conversion board.
+    #[command(name = "prospect-arrival-calibrate")]
+    ProspectArrivalCalibrate {
+        /// `prospect_arrival_calibration_input.v1` target and fail-closed policy.
+        #[arg(
+            long,
+            value_name = "PATH",
+            required_unless_present = "career_discovery",
+            conflicts_with = "career_discovery"
+        )]
+        input: Option<PathBuf>,
+        /// Derive the target signal from a canonical `prospect_career_discovery.v1`.
+        #[arg(
+            long = "career-discovery",
+            value_name = "PATH",
+            required_unless_present = "input",
+            conflicts_with = "input"
+        )]
+        career_discovery: Option<PathBuf>,
+        /// Canonical player selected from `--career-discovery`.
+        #[arg(long, requires = "career_discovery")]
+        player_id: Option<u32>,
+        /// Scenario event receiving the calibrated probability.
+        #[arg(long, requires = "career_discovery")]
+        event_id: Option<String>,
+        /// Forecast season receiving the calibrated probability.
+        #[arg(long, requires = "career_discovery")]
+        forecast_season: Option<u32>,
+        /// Frozen `prospect_conversion_board.v2` historical outcome cohort.
+        #[arg(
+            long = "conversion-board",
+            value_name = "PATH",
+            required_unless_present = "conversion_archive",
+            conflicts_with = "conversion_archive"
+        )]
+        conversion_board: Option<PathBuf>,
+        /// Fingerprinted `prospect_conversion_archive.v1` containing the board.
+        #[arg(
+            long = "conversion-archive",
+            value_name = "PATH",
+            required_unless_present = "conversion_board",
+            conflicts_with = "conversion_board"
+        )]
+        conversion_archive: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Retain the canonical input derived from `--career-discovery`.
+        #[arg(long = "input-out", value_name = "PATH", requires = "career_discovery")]
+        input_out: Option<PathBuf>,
+    },
+    /// Calibrate every eligible skater across the canonical league envelope.
+    #[command(name = "prospect-arrival-league")]
+    ProspectArrivalLeague {
+        /// Derive canonical studies from a complete league camp forecast.
+        #[arg(long = "camp-forecast", value_name = "PATH")]
+        camp_forecast: Option<PathBuf>,
+        /// Use an existing canonical career discovery instead of camp derivation.
+        #[arg(long = "career-discovery", value_name = "PATH")]
+        career_discoveries: Vec<PathBuf>,
+        /// Cached official NHL player landing career histories for camp derivation.
+        #[arg(long = "career-history", value_name = "PATH")]
+        career_history: Option<PathBuf>,
+        /// Sealed prospect source package used to enforce current organization control.
+        #[arg(long = "source-package", value_name = "PATH")]
+        source_package: Option<PathBuf>,
+        /// Refuse output unless the supplied source package has complete population coverage.
+        #[arg(long = "require-complete-population", requires = "source_package")]
+        require_complete_population: bool,
+        /// Frozen `prospect_conversion_board.v2` historical outcome cohort.
+        #[arg(
+            long = "conversion-board",
+            value_name = "PATH",
+            required_unless_present = "conversion_archive",
+            conflicts_with = "conversion_archive"
+        )]
+        conversion_board: Option<PathBuf>,
+        /// Fingerprinted `prospect_conversion_archive.v1` containing the board.
+        #[arg(
+            long = "conversion-archive",
+            value_name = "PATH",
+            required_unless_present = "conversion_board",
+            conflicts_with = "conversion_board"
+        )]
+        conversion_archive: Option<PathBuf>,
+        /// Forecast season receiving the horizon-adjusted probabilities.
+        #[arg(long = "forecast-season")]
+        forecast_season: u32,
+        /// Exact age date used to define the current prospect pool.
+        #[arg(long = "as-of", default_value = "2026-09-15")]
+        as_of: String,
+        /// Maximum prospect age on `--as-of`.
+        #[arg(long = "max-age", default_value_t = 24)]
+        max_age: u8,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+        /// Retain the canonical all-team career discovery used by calibration.
+        #[arg(long = "discovery-out", value_name = "PATH")]
+        discovery_out: Option<PathBuf>,
+    },
+    /// Project one team's league arrival result into a UI-neutral card document.
+    #[command(name = "prospect-arrival-card")]
+    ProspectArrivalCard {
+        /// `prospect_arrival_league_calibration.v1` league artifact.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// NHL team abbreviation to focus after fingerprinting the league artifact.
+        #[arg(long)]
+        team: String,
+        /// Human-readable team name; defaults to the abbreviation.
+        #[arg(long = "team-name")]
+        team_name: Option<String>,
+        /// Evidence and card-generation time as RFC 3339.
+        #[arg(long = "evidence-at", value_name = "RFC3339")]
+        evidence_at: Option<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
+    /// Summarize all 32 teams without publishing ranks from incomplete authority.
+    #[command(name = "prospect-arrival-board")]
+    ProspectArrivalBoard {
+        /// `prospect_arrival_league_calibration.v1` league artifact.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Deterministic board-generation time as RFC 3339.
+        #[arg(long = "generated-at", value_name = "RFC3339")]
+        generated_at: String,
         #[arg(long)]
         json: bool,
         #[arg(long, value_name = "PATH")]
@@ -4447,6 +4995,369 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_icecast_draft_pick_curve_defaults_to_retained_value_factor() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "draft-pick-curve",
+                "--out",
+                "curve.json",
+            ])
+            .expect("draft-pick curve command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::DraftPickCurve {
+                    start_year: 2005,
+                    cutoff_year: 2018,
+                    completed_season_start_year: 2025,
+                    horizon: 7,
+                    max_pick: 210,
+                    annual_future_discount,
+                    ..
+                }) if (annual_future_discount - 0.92).abs() < f64::EPSILON
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_trade_market_assemble_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "trade-market-assemble",
+                "--input",
+                "packages.json",
+                "--curve",
+                "curve.json",
+                "--baseline-forecast",
+                "baseline.json",
+                "--scenario-forecast",
+                "scenario.json",
+                "--buyer-lineup",
+                "buyer-lineup.json",
+                "--seller-lineup",
+                "seller-lineup.json",
+                "--json",
+                "--out",
+                "market.json",
+            ])
+            .expect("trade market assembly command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::TradeMarketAssemble {
+                    input,
+                    curve,
+                    baseline_forecast: Some(baseline),
+                    scenario_forecast: Some(scenario),
+                    buyer_lineup: Some(buyer_lineup),
+                    seller_lineup: Some(seller_lineup),
+                    json: true,
+                    ..
+                }) if input == PathBuf::from("packages.json")
+                    && curve == PathBuf::from("curve.json")
+                    && baseline == PathBuf::from("baseline.json")
+                    && scenario == PathBuf::from("scenario.json")
+                    && buyer_lineup == PathBuf::from("buyer-lineup.json")
+                    && seller_lineup == PathBuf::from("seller-lineup.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_trade_lineup_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "trade-lineup",
+                "--lineup",
+                "lineup.json",
+                "--change",
+                "change.json",
+                "--json",
+            ])
+            .expect("trade lineup command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::TradeLineup {
+                    lineup,
+                    change,
+                    json: true,
+                    ..
+                }) if lineup == PathBuf::from("lineup.json")
+                    && change == PathBuf::from("change.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_trade_lineup_board_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "trade-lineup-board",
+                "--lineup",
+                "lineup.json",
+                "--input",
+                "board.json",
+                "--json",
+            ])
+            .expect("trade lineup board command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::TradeLineupBoard {
+                    lineup,
+                    input,
+                    json: true,
+                    ..
+                }) if lineup == PathBuf::from("lineup.json")
+                    && input == PathBuf::from("board.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_line_matchup_and_edge_attachment_surfaces_parse() {
+        with_large_stack(|| {
+            let matchup = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup",
+                "--input",
+                "matchup-input.json",
+                "--home-bench-plan",
+                "nyr-plan.json",
+                "--json",
+                "--out",
+                "matchup.json",
+            ])
+            .expect("IceCast line-matchup command should parse");
+            assert!(matches!(
+                matchup.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchup {
+                    input,
+                    home_bench_plan: Some(home_bench_plan),
+                    json: true,
+                    out: Some(out),
+                    ..
+                }) if input == PathBuf::from("matchup-input.json")
+                    && home_bench_plan == PathBuf::from("nyr-plan.json")
+                    && out == PathBuf::from("matchup.json")
+            ));
+
+            let profiles = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup-profiles",
+                "--lineup",
+                "lineup.json",
+                "--role-evidence",
+                "roles.json",
+                "--shift-report",
+                "shifts.json",
+                "--evidence-cutoff-at",
+                "2026-04-18T23:00:00Z",
+                "--source-fingerprint",
+                "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "--json",
+            ])
+            .expect("IceCast line-matchup-profiles command should parse");
+            assert!(matches!(
+                profiles.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchupProfiles {
+                    lineup,
+                    role_evidence,
+                    shift_report,
+                    recency,
+                    json: true,
+                    ..
+                }) if lineup == PathBuf::from("lineup.json")
+                    && role_evidence == PathBuf::from("roles.json")
+                    && shift_report == PathBuf::from("shifts.json")
+                    && recency == 1.0
+            ));
+
+            let chemistry = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-chemistry",
+                "--team",
+                "NYR",
+                "--forecast-at",
+                "2026-04-19T12:00:00Z",
+                "--input",
+                "outcomes.json",
+                "--out",
+                "chemistry.json",
+            ])
+            .expect("IceCast line-chemistry command should parse");
+            assert!(matches!(
+                chemistry.command,
+                Commands::Icecast(IceCastSubcommand::LineChemistry {
+                    team,
+                    input,
+                    out: Some(out),
+                    ..
+                }) if team == "NYR"
+                    && input == PathBuf::from("outcomes.json")
+                    && out == PathBuf::from("chemistry.json")
+            ));
+
+            let moneypuck_chemistry = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-chemistry-moneypuck",
+                "--team",
+                "NYR",
+                "--forecast-at",
+                "2026-04-19T12:00:00Z",
+                "--line-game",
+                "line-a.csv",
+                "--line-game",
+                "line-b.csv",
+                "--baselines",
+                "baselines.json",
+                "--out",
+                "chemistry.json",
+            ])
+            .expect("IceCast line-chemistry-moneypuck command should parse");
+            assert!(matches!(
+                moneypuck_chemistry.command,
+                Commands::Icecast(IceCastSubcommand::LineChemistryMoneyPuck {
+                    team,
+                    line_games,
+                    baselines,
+                    minimum_shared_minutes,
+                    ..
+                }) if team == "NYR"
+                    && line_games == vec![PathBuf::from("line-a.csv"), PathBuf::from("line-b.csv")]
+                    && baselines == PathBuf::from("baselines.json")
+                    && minimum_shared_minutes == 30.0
+            ));
+
+            let automatic_chemistry = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-chemistry-moneypuck-auto",
+                "--team",
+                "NYR",
+                "--season-start",
+                "2025",
+                "--forecast-at",
+                "2026-04-19T12:00:00Z",
+                "--summary",
+                "lines.csv",
+                "--line-game-dir",
+                "line-games",
+                "--skater-game-dir",
+                "skater-games",
+                "--team-game-dir",
+                "team-games",
+                "--rights-basis",
+                "licensed local export",
+                "--out",
+                "automatic.json",
+            ])
+            .expect("automatic MoneyPuck chemistry command should parse");
+            assert!(matches!(
+                automatic_chemistry.command,
+                Commands::Icecast(IceCastSubcommand::LineChemistryMoneyPuckAuto {
+                    team,
+                    season_start: 2025,
+                    trailing_games: 20,
+                    minimum_player_games: 3,
+                    minimum_shared_minutes,
+                    summary,
+                    rights_basis,
+                    out: Some(out),
+                    ..
+                }) if team == "NYR"
+                    && minimum_shared_minutes == 30.0
+                    && summary == PathBuf::from("lines.csv")
+                    && rights_basis == "licensed local export"
+                    && out == PathBuf::from("automatic.json")
+            ));
+
+            let validation = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup-validate",
+                "--input",
+                "ablation-observations.json",
+                "--created-at",
+                "2026-04-20T12:00:00Z",
+                "--out",
+                "validation.json",
+            ])
+            .expect("IceCast line-matchup-validate command should parse");
+            assert!(matches!(
+                validation.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchupValidate {
+                    input,
+                    out: Some(out),
+                    ..
+                }) if input == PathBuf::from("ablation-observations.json")
+                    && out == PathBuf::from("validation.json")
+            ));
+
+            let comparison = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup-compare",
+                "--input",
+                "scenarios.json",
+                "--focus-team",
+                "NYR",
+                "--baseline",
+                "baseline",
+                "--out",
+                "comparison.json",
+            ])
+            .expect("IceCast line-matchup-compare command should parse");
+            assert!(matches!(
+                comparison.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchupCompare {
+                    input,
+                    focus_team,
+                    baseline,
+                    out: Some(out),
+                }) if input == PathBuf::from("scenarios.json")
+                    && focus_team == "NYR"
+                    && baseline == "baseline"
+                    && out == PathBuf::from("comparison.json")
+            ));
+
+            let evidence = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "edge-evidence",
+                "--forecast",
+                "games.json",
+                "--input",
+                "assembly.json",
+                "--line-matchup",
+                "matchup-a.json",
+                "--line-matchup",
+                "matchup-b.json",
+            ])
+            .expect("IceCast edge-evidence matchup attachments should parse");
+            assert!(matches!(
+                evidence.command,
+                Commands::Icecast(IceCastSubcommand::EdgeEvidence {
+                    line_matchups,
+                    ..
+                }) if line_matchups == vec![
+                    PathBuf::from("matchup-a.json"),
+                    PathBuf::from("matchup-b.json")
+                ]
+            ));
+        });
+    }
+
+    #[test]
     fn l0_icecast_camp_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -5031,6 +5942,10 @@ mod tui_surface_tests {
                 "ahl-season.json",
                 "--discover-official",
                 "--refresh",
+                "--as-of",
+                "2023-09-15",
+                "--max-age",
+                "24",
                 "--json",
                 "--out",
                 "ahl-league-crosswalk.json",
@@ -5042,9 +5957,11 @@ mod tui_surface_tests {
                     candidates: None,
                     discover_official: true,
                     refresh: true,
+                    as_of: Some(as_of),
+                    max_age: Some(24),
                     json: true,
                     ..
-                })
+                }) if as_of == "2023-09-15"
             ));
 
             let draft = Cli::try_parse_from([
@@ -6210,6 +7127,36 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_icecast_scenario_development_calibration_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "calibrate-scenario-development",
+                "--input",
+                "scenario.json",
+                "--calibration",
+                "development.json",
+                "--json",
+                "--out",
+                "calibrated.json",
+            ])
+            .expect("IceCast scenario development calibration command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::CalibrateScenarioDevelopment {
+                    input,
+                    calibration,
+                    json: true,
+                    out: Some(out),
+                }) if input == PathBuf::from("scenario.json")
+                    && calibration == PathBuf::from("development.json")
+                    && out == PathBuf::from("calibrated.json")
+            ));
+        });
+    }
+
+    #[test]
     fn l0_icecast_prospect_study_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -6468,6 +7415,82 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_icecast_prospect_census_readiness_surface_parses() {
+        let cli = Cli::try_parse_from([
+            "icelines",
+            "icecast",
+            "prospect-census-readiness",
+            "--input",
+            "census.json",
+            "--json",
+            "--out",
+            "readiness.json",
+        ])
+        .expect("IceCast prospect census readiness command should parse");
+        assert!(matches!(
+            cli.command,
+            Commands::Icecast(IceCastSubcommand::ProspectCensusReadiness {
+                input,
+                json: true,
+                out: Some(out),
+            }) if input == PathBuf::from("census.json")
+                && out == PathBuf::from("readiness.json")
+        ));
+    }
+
+    #[test]
+    fn l0_icecast_prospect_authority_closure_surface_parses() {
+        let cli = Cli::try_parse_from([
+            "icelines",
+            "icecast",
+            "prospect-authority-closure",
+            "--input",
+            "readiness.json",
+            "--json",
+            "--out",
+            "closure.json",
+        ])
+        .expect("IceCast prospect authority closure command should parse");
+        assert!(matches!(
+            cli.command,
+            Commands::Icecast(IceCastSubcommand::ProspectAuthorityClosure {
+                input,
+                json: true,
+                out: Some(out),
+            }) if input == PathBuf::from("readiness.json")
+                && out == PathBuf::from("closure.json")
+        ));
+    }
+
+    #[test]
+    fn l0_icecast_prospect_authority_progress_surface_parses() {
+        let cli = Cli::try_parse_from([
+            "icelines",
+            "icecast",
+            "prospect-authority-progress",
+            "--prior",
+            "prior.json",
+            "--current",
+            "current.json",
+            "--json",
+            "--out",
+            "progress.json",
+        ])
+        .expect("IceCast prospect authority progress command should parse");
+        assert!(matches!(
+            cli.command,
+            Commands::Icecast(IceCastSubcommand::ProspectAuthorityProgress {
+                prior,
+                current,
+                json: true,
+                out: Some(out),
+            }) if prior == PathBuf::from("prior.json")
+                && current == PathBuf::from("current.json")
+                && out == PathBuf::from("progress.json")
+        ));
+    }
+
+    #[test]
     fn l0_icecast_prospect_census_derivation_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -6587,6 +7610,10 @@ mod tui_surface_tests {
                 "performance.json",
                 "--performance-out",
                 "derived-performance.json",
+                "--input-out",
+                "conversion-input.json",
+                "--archive-out",
+                "conversion-archive.json",
                 "--json",
                 "--out",
                 "conversion.json",
@@ -6603,6 +7630,8 @@ mod tui_surface_tests {
                     through_season: 20252026,
                     performance: Some(performance),
                     performance_out: Some(performance_out),
+                    input_out: Some(input_out),
+                    archive_out: Some(archive_out),
                     json: true,
                     out: Some(out),
                 }) if league_discoveries == vec![PathBuf::from("frozen-league.json")]
@@ -6611,7 +7640,273 @@ mod tui_surface_tests {
                     && career_history == PathBuf::from("career_history.json")
                     && performance == PathBuf::from("performance.json")
                     && performance_out == PathBuf::from("derived-performance.json")
+                    && input_out == PathBuf::from("conversion-input.json")
+                    && archive_out == PathBuf::from("conversion-archive.json")
                     && out == PathBuf::from("conversion.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_arrival_calibration_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-calibrate",
+                "--input",
+                "smits.json",
+                "--conversion-board",
+                "conversion.json",
+                "--json",
+                "--out",
+                "arrival.json",
+            ])
+            .expect("IceCast prospect arrival calibration command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalCalibrate {
+                    input: Some(input),
+                    career_discovery: None,
+                    conversion_board: Some(conversion_board),
+                    conversion_archive: None,
+                    json: true,
+                    out: Some(out),
+                    input_out: None,
+                    ..
+                }) if input == PathBuf::from("smits.json")
+                    && conversion_board == PathBuf::from("conversion.json")
+                    && out == PathBuf::from("arrival.json")
+            ));
+
+            let archived = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-calibrate",
+                "--input",
+                "smits.json",
+                "--conversion-archive",
+                "conversion-archive.json",
+            ])
+            .expect("IceCast prospect arrival archive command should parse");
+            assert!(matches!(
+                archived.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalCalibrate {
+                    conversion_board: None,
+                    conversion_archive: Some(archive),
+                    ..
+                }) if archive == PathBuf::from("conversion-archive.json")
+            ));
+
+            let derived = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-calibrate",
+                "--career-discovery",
+                "smits-career.json",
+                "--player-id",
+                "8485957",
+                "--event-id",
+                "nyr-smits-defense-hit",
+                "--forecast-season",
+                "20262027",
+                "--conversion-archive",
+                "conversion-archive.json",
+                "--input-out",
+                "smits-input.json",
+            ])
+            .expect("IceCast derived prospect arrival command should parse");
+            assert!(matches!(
+                derived.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalCalibrate {
+                    input: None,
+                    career_discovery: Some(discovery),
+                    player_id: Some(8485957),
+                    event_id: Some(event_id),
+                    forecast_season: Some(20262027),
+                    conversion_board: None,
+                    conversion_archive: Some(archive),
+                    input_out: Some(input_out),
+                    ..
+                }) if discovery == PathBuf::from("smits-career.json")
+                    && event_id == "nyr-smits-defense-hit"
+                    && archive == PathBuf::from("conversion-archive.json")
+                    && input_out == PathBuf::from("smits-input.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_arrival_league_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-league",
+                "--camp-forecast",
+                "camp.json",
+                "--conversion-archive",
+                "conversion.json",
+                "--forecast-season",
+                "20262027",
+                "--json",
+                "--out",
+                "league.json",
+            ])
+            .expect("IceCast prospect arrival league command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalLeague {
+                    camp_forecast: Some(camp_forecast),
+                    career_discoveries,
+                    conversion_board: None,
+                    conversion_archive: Some(archive),
+                    forecast_season: 20262027,
+                    json: true,
+                    out: Some(out),
+                    ..
+                }) if career_discoveries.is_empty()
+                    && camp_forecast == PathBuf::from("camp.json")
+                    && archive == PathBuf::from("conversion.json")
+                    && out == PathBuf::from("league.json")
+            ));
+
+            let sourced = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-league",
+                "--career-discovery",
+                "league-career.json",
+                "--source-package",
+                "sources.json",
+                "--require-complete-population",
+                "--conversion-board",
+                "conversion.json",
+                "--forecast-season",
+                "20262027",
+            ])
+            .expect("source-backed prospect arrival league command should parse");
+            assert!(matches!(
+                sourced.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalLeague {
+                    camp_forecast: None,
+                    career_discoveries,
+                    source_package: Some(source_package),
+                    require_complete_population: true,
+                    conversion_board: Some(_),
+                    ..
+                }) if career_discoveries == vec![PathBuf::from("league-career.json")]
+                    && source_package == PathBuf::from("sources.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_arrival_card_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-card",
+                "--input",
+                "league-arrival.json",
+                "--team",
+                "NYR",
+                "--team-name",
+                "New York Rangers",
+                "--evidence-at",
+                "2026-09-15T12:00:00Z",
+                "--out",
+                "nyr-arrival-card.json",
+            ])
+            .expect("IceCast prospect arrival card command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalCard {
+                    input,
+                    team,
+                    team_name: Some(team_name),
+                    evidence_at: Some(evidence_at),
+                    out: Some(out),
+                }) if input == PathBuf::from("league-arrival.json")
+                    && team == "NYR"
+                    && team_name == "New York Rangers"
+                    && evidence_at == "2026-09-15T12:00:00Z"
+                    && out == PathBuf::from("nyr-arrival-card.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_arrival_board_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-arrival-board",
+                "--input",
+                "league-arrival.json",
+                "--generated-at",
+                "2026-09-15T12:00:00Z",
+                "--json",
+                "--out",
+                "arrival-board.json",
+            ])
+            .expect("IceCast prospect arrival board command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectArrivalBoard {
+                    input,
+                    generated_at,
+                    json: true,
+                    out: Some(out),
+                }) if input == PathBuf::from("league-arrival.json")
+                    && generated_at == "2026-09-15T12:00:00Z"
+                    && out == PathBuf::from("arrival-board.json")
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_icecast_prospect_conversion_replay_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-conversion-replay",
+                "--input",
+                "conversion-input.json",
+                "--json",
+                "--out",
+                "conversion.json",
+            ])
+            .expect("IceCast prospect conversion replay command should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Icecast(IceCastSubcommand::ProspectConversionReplay {
+                    input: Some(input),
+                    archive: None,
+                    json: true,
+                    out: Some(out),
+                }) if input == PathBuf::from("conversion-input.json")
+                    && out == PathBuf::from("conversion.json")
+            ));
+
+            let archived = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "prospect-conversion-replay",
+                "--archive",
+                "conversion-archive.json",
+            ])
+            .expect("IceCast prospect conversion archive replay should parse");
+            assert!(matches!(
+                archived.command,
+                Commands::Icecast(IceCastSubcommand::ProspectConversionReplay {
+                    input: None,
+                    archive: Some(archive),
+                    ..
+                }) if archive == PathBuf::from("conversion-archive.json")
             ));
         });
     }

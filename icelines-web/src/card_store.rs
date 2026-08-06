@@ -1,11 +1,17 @@
 //! Read-only web provider for sealed UI-neutral card documents.
 
-use std::sync::OnceLock;
+use std::{collections::BTreeMap, sync::OnceLock};
 
+use chrono::{DateTime, Utc};
 use icelines_core::{
+    build_prospect_arrival_board, build_prospect_arrival_card,
     load_organization_window_profile_inventory, parse_card_document,
-    project_organization_window_card, validate_organization_window_board, CardDocumentView,
-    OrganizationWindowBoardView, OrganizationWindowCardError,
+    project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
+    validate_prospect_authority_closure_board, CardDocumentView, OrganizationWindowBoardView,
+    OrganizationWindowCardError, ProspectArrivalBoardView, ProspectArrivalCardInput,
+    ProspectArrivalLeagueCalibrationView, ProspectAuthorityClosureBoardView,
+    ProspectAuthorityProgressView, ProspectCensusReadinessBoardView, Season, ViewContext,
+    ViewWindow, CANONICAL_TEAMS,
 };
 use thiserror::Error;
 
@@ -27,6 +33,23 @@ const NYR_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-sea-2024-25.json");
+#[cfg(test)]
+const NYR_PROSPECT_ARRIVAL: &str =
+    include_str!("../../examples/prospect-arrival-card-nyr-2026-27.json");
+#[cfg(test)]
+const SEA_PROSPECT_ARRIVAL: &str =
+    include_str!("../../examples/prospect-arrival-card-sea-2026-27.json");
+const PROSPECT_ARRIVAL_LEAGUE: &str =
+    include_str!("../../examples/icecast-prospect-arrival-league-2026-27.json");
+#[cfg(test)]
+const PROSPECT_ARRIVAL_BOARD: &str =
+    include_str!("../../examples/prospect-arrival-board-2026-27.json");
+const PROSPECT_CENSUS_READINESS_BOARD: &str =
+    include_str!("../../examples/prospect-census-readiness-2026-27.json");
+const PROSPECT_AUTHORITY_CLOSURE_BOARD: &str =
+    include_str!("../../examples/prospect-authority-closure-2026-27.json");
+const PROSPECT_AUTHORITY_PROGRESS: &str =
+    include_str!("../../examples/prospect-authority-progress-2026-27-ahl.json");
 const BALANCED_ORGANIZATION_WINDOW: &str =
     include_str!("../../examples/organization-window-board-partial-2026-07-28.json");
 const DEXTERS_DAWGS: &str =
@@ -50,6 +73,8 @@ pub enum CardStoreError {
     UnsupportedForecastMovementTeam(String),
     #[error("forecast history card is not available for team {0}")]
     UnsupportedForecastHistoryTeam(String),
+    #[error("prospect arrival card is not available for team {0}")]
+    UnsupportedProspectArrivalTeam(String),
     #[error("organization Window card is not available for team {0}")]
     UnsupportedOrganizationWindowTeam(String),
     #[error("organization Window frame is not available: {0}")]
@@ -102,6 +127,97 @@ pub fn forecast_history_card(season: u32, team: &str) -> Result<CardDocumentView
         (20242025, _) => Err(CardStoreError::UnsupportedForecastHistoryTeam(team)),
         _ => Err(CardStoreError::UnsupportedSeason(season)),
     }
+}
+
+pub fn prospect_arrival_card(season: u32, team: &str) -> Result<CardDocumentView, CardStoreError> {
+    let team = team.trim().to_ascii_uppercase();
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    prospect_arrival_cards()
+        .get(&team)
+        .cloned()
+        .ok_or(CardStoreError::UnsupportedProspectArrivalTeam(team))
+}
+
+pub fn prospect_arrival_board(season: u32) -> Result<ProspectArrivalBoardView, CardStoreError> {
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static BOARD: OnceLock<ProspectArrivalBoardView> = OnceLock::new();
+    Ok(BOARD
+        .get_or_init(|| {
+            build_prospect_arrival_board(prospect_arrival_league(), "2026-09-15T12:00:00Z")
+                .expect("sealed prospect arrival board projection")
+        })
+        .clone())
+}
+
+pub fn prospect_census_readiness_board(
+    season: u32,
+) -> Result<ProspectCensusReadinessBoardView, CardStoreError> {
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static BOARD: OnceLock<ProspectCensusReadinessBoardView> = OnceLock::new();
+    Ok(BOARD
+        .get_or_init(|| {
+            let board: ProspectCensusReadinessBoardView =
+                serde_json::from_str(PROSPECT_CENSUS_READINESS_BOARD)
+                    .expect("sealed prospect census readiness board");
+            assert_eq!(
+                board
+                    .calculate_fingerprint()
+                    .expect("readiness fingerprint"),
+                board.fingerprint,
+                "sealed prospect census readiness board must remain canonical"
+            );
+            board
+        })
+        .clone())
+}
+
+pub fn prospect_authority_progress(
+    season: u32,
+) -> Result<ProspectAuthorityProgressView, CardStoreError> {
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static PROGRESS: OnceLock<ProspectAuthorityProgressView> = OnceLock::new();
+    Ok(PROGRESS
+        .get_or_init(|| {
+            let progress: ProspectAuthorityProgressView =
+                serde_json::from_str(PROSPECT_AUTHORITY_PROGRESS)
+                    .expect("sealed prospect authority progress");
+            assert_eq!(
+                progress
+                    .calculate_fingerprint()
+                    .expect("authority progress fingerprint"),
+                progress.fingerprint,
+                "sealed prospect authority progress must remain canonical"
+            );
+            progress
+        })
+        .clone())
+}
+
+pub fn prospect_authority_closure_board(
+    season: u32,
+) -> Result<ProspectAuthorityClosureBoardView, CardStoreError> {
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    static BOARD: OnceLock<ProspectAuthorityClosureBoardView> = OnceLock::new();
+    Ok(BOARD
+        .get_or_init(|| {
+            let board: ProspectAuthorityClosureBoardView =
+                serde_json::from_str(PROSPECT_AUTHORITY_CLOSURE_BOARD)
+                    .expect("sealed prospect authority closure board");
+            validate_prospect_authority_closure_board(&board)
+                .expect("sealed prospect authority closure board must remain canonical");
+            board
+        })
+        .clone())
 }
 
 pub fn organization_window_card(
@@ -279,6 +395,43 @@ fn sea_2024_history_card() -> &'static CardDocumentView {
     })
 }
 
+fn prospect_arrival_cards() -> &'static BTreeMap<String, CardDocumentView> {
+    static CARDS: OnceLock<BTreeMap<String, CardDocumentView>> = OnceLock::new();
+    CARDS.get_or_init(|| {
+        let arrival = prospect_arrival_league();
+        let evidence_at = DateTime::parse_from_rfc3339("2026-09-15T12:00:00Z")
+            .expect("fixed prospect arrival evidence time")
+            .with_timezone(&Utc);
+        CANONICAL_TEAMS
+            .iter()
+            .map(|(team, team_name)| {
+                let mut view = ViewContext::new(ViewWindow::new(
+                    Season(arrival.forecast_season),
+                    SeasonType::Regular,
+                ));
+                view.generated_at = Some(evidence_at);
+                let card = build_prospect_arrival_card(ProspectArrivalCardInput {
+                    arrival: arrival.clone(),
+                    focus_team: (*team).to_owned(),
+                    team_name: (*team_name).to_owned(),
+                    view,
+                    evidence_at: Some(evidence_at),
+                })
+                .expect("canonical prospect arrival card projection");
+                ((*team).to_owned(), card)
+            })
+            .collect()
+    })
+}
+
+fn prospect_arrival_league() -> &'static ProspectArrivalLeagueCalibrationView {
+    static ARRIVAL: OnceLock<ProspectArrivalLeagueCalibrationView> = OnceLock::new();
+    ARRIVAL.get_or_init(|| {
+        serde_json::from_str(PROSPECT_ARRIVAL_LEAGUE)
+            .expect("sealed prospect arrival league calibration")
+    })
+}
+
 fn dexters_dawgs_card() -> &'static CardDocumentView {
     static CARD: OnceLock<CardDocumentView> = OnceLock::new();
     CARD.get_or_init(|| parse_card_document(DEXTERS_DAWGS).expect("sealed fantasy roster card"))
@@ -352,6 +505,45 @@ mod tests {
             sea_history.context.simulation.parameter_fingerprint
         );
         assert_eq!(nyr_history.provenance, sea_history.provenance);
+        let nyr_arrival = prospect_arrival_card(20262027, "NYR").unwrap();
+        let sea_arrival = prospect_arrival_card(20262027, "SEA").unwrap();
+        assert_eq!(
+            nyr_arrival.context.simulation.parameter_fingerprint,
+            sea_arrival.context.simulation.parameter_fingerprint
+        );
+        assert_eq!(nyr_arrival.provenance, sea_arrival.provenance);
+        assert_eq!(prospect_arrival_cards().len(), CANONICAL_TEAMS.len());
+        for (team, team_name) in CANONICAL_TEAMS {
+            let card = prospect_arrival_card(20262027, team).unwrap();
+            assert_eq!(card.context.joins.team_ids, [*team]);
+            assert_eq!(card.title, format!("{team_name} prospect arrivals"));
+        }
+        let sealed_nyr = parse_card_document(NYR_PROSPECT_ARRIVAL)
+            .expect("sealed NYR prospect arrival card fixture");
+        let sealed_sea = parse_card_document(SEA_PROSPECT_ARRIVAL)
+            .expect("sealed SEA prospect arrival card fixture");
+        assert_eq!(nyr_arrival, sealed_nyr);
+        assert_eq!(sea_arrival, sealed_sea);
+        let board = prospect_arrival_board(20262027).unwrap();
+        let sealed_board: ProspectArrivalBoardView = serde_json::from_str(PROSPECT_ARRIVAL_BOARD)
+            .expect("sealed prospect arrival board fixture");
+        assert_eq!(board, sealed_board);
+        assert_eq!(board.teams.len(), CANONICAL_TEAMS.len());
+        assert!(board.teams.iter().all(|team| team.rank.is_none()));
+        let readiness = prospect_census_readiness_board(20262027).unwrap();
+        assert_eq!(readiness.teams.len(), CANONICAL_TEAMS.len());
+        assert_eq!(readiness.population_complete_organizations, 0);
+        assert_eq!(readiness.depth_complete_organizations, 0);
+        assert_eq!(readiness.published_organizations, 0);
+        assert_eq!(readiness.authority_gap_summary.len(), 2);
+        assert_eq!(
+            readiness.calculate_fingerprint().unwrap(),
+            readiness.fingerprint
+        );
+        assert!(matches!(
+            prospect_arrival_card(20262027, "XYZ"),
+            Err(CardStoreError::UnsupportedProspectArrivalTeam(_))
+        ));
         for (team, _) in icelines_core::CANONICAL_TEAMS {
             let card = organization_window_card(20262027, team).unwrap();
             assert_eq!(card.context.joins.team_ids, [*team]);

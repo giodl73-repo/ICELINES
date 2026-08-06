@@ -434,6 +434,54 @@ so following-season scenario cohort assignments are auditable. Blocks, xG,
 possession, matchup quality, and detailed special-teams deployment remain out
 of scope until comparable historical inputs exist.
 
+`team_season_scenario_development_calibration.v1` is the UI-neutral bridge from
+those historical cohorts to a forecast scenario. Its input binds an event ID to
+the player's completed-season position, age, NHL games, and value. Core derives
+the matching cohort and replaces only `occurrence_probability`; the scenario's
+authored strength delta is never silently changed. The output carries both the
+configured and applied probability, the complete cohort row and sample size,
+and one of three authority states: deterministic, historical development cohort,
+or uncalibrated scenario assumption.
+
+Missing player bindings or cohort cells retain the configured probability and
+must remain visibly uncalibrated. This is especially important for prospects
+without qualifying NHL workload: the development table is conditional on
+reaching its workload gate and cannot be repurposed as an NHL-arrival model.
+Correlated events must still resolve to one identical applied probability.
+`icecast season` and `icecast season-simulate` accept either a raw
+`team_season_scenario.v1` shape or this calibrated wrapper.
+
+For a prospect without qualifying NHL workload, the wrapper may instead carry
+a sealed `prospect_arrival_calibration.v1`. That authority receives the distinct
+`historical_prospect_arrival_cohort` status and replaces event occurrence only.
+It cannot overlap an NHL development profile for the same event, and its player
+identity must match the scenario event. If the historical conversion board or
+current prospect signal is unavailable, the event remains an explicitly
+uncalibrated scenario assumption.
+
+`prospect_outcomes` may explicitly bind an arrival-backed event to either
+`arrival` or `established_role`. The compatible default is `arrival`. An
+`established_role` event receives the distinct
+`historical_prospect_established_role_cohort` status and consumes the separately
+shrunken unconditional establishment probability. The authority row retains
+the neighbor establishment rate, complete-position prior, calibrated result,
+and descriptive established-given-arrival share. Older arrival artifacts that
+lack establishment calibration fail closed for this binding.
+
+Scenario calibration consumes the horizon-adjusted arrival or establishment
+probability when present. The underlying cumulative rate, common source
+horizon, requested forecast horizon, and transformation remain embedded in the
+prospect authority. Legacy artifacts without horizon metadata remain readable,
+but newly generated multi-season evidence cannot be silently presented as a
+one-season probability.
+
+```text
+icelines icecast calibrate-scenario-development \
+  --input scenario-calibration-input.json \
+  --calibration development-calibration.json \
+  --json --out calibrated-scenario.json
+```
+
 Scenario JSON may contain sourced or hypothetical events:
 
 ```json

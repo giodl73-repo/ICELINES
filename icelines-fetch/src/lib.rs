@@ -26,6 +26,7 @@ pub mod chunkstore;
 pub mod contracts_csv;
 pub mod csv_loader;
 pub mod datastore;
+pub mod draft_pick_history;
 pub mod error;
 pub mod fantasy_daily;
 pub mod fantasy_db;
@@ -41,16 +42,21 @@ pub mod historical_goalie_prediction_edge;
 pub mod historical_official_prediction_edge;
 pub mod historical_prediction_edge;
 pub mod identity_review_workboard;
+pub mod line_chemistry_outcome;
 pub mod management_behavior_source;
 pub mod manifest;
 pub mod moneypuck;
 pub mod moneypuck_goalie_game;
+pub mod moneypuck_line_acquisition;
+pub mod moneypuck_line_baseline;
+pub mod moneypuck_line_chemistry;
 pub mod moneypuck_team_game;
 pub mod nhl_api;
 pub mod nhl_goalie_translation;
 pub mod official_identity_acquisition;
 pub mod organization_window_completion;
 pub mod organization_window_history;
+pub mod player_line_matchup_profile;
 pub mod playoffs_bundle;
 pub mod prospect_career;
 pub mod prospect_census;
@@ -94,9 +100,16 @@ pub use bundled::{
 };
 pub use cache::Cache;
 pub use career::load_career;
+pub use draft_pick_history::{
+    acquire_draft_pick_value_curve, build_draft_pick_outcome_set, DraftPickCurveAcquisitionView,
+    DraftPickOutcomeBuildConfig, DraftPickOutcomeBuildError, DraftPickOutcomeSet,
+    DraftPickSeasonAppearance, HistoricalDraftClass, HistoricalDraftSelection,
+    DRAFT_PICK_CURVE_ACQUISITION_SCHEMA, DRAFT_PICK_OUTCOME_SET_SCHEMA,
+};
 pub use error::FetchError;
 pub use game_prediction_edge_assembler::{
-    assemble_game_prediction_evidence, fingerprint_special_teams_scores, rank_special_teams_forms,
+    assemble_game_prediction_evidence, attach_player_line_matchup_forecast,
+    fingerprint_special_teams_scores, rank_special_teams_forms,
     GamePredictionEvidenceAssemblerError, GamePredictionEvidenceAssembly,
     GamePredictionGameAssemblyInput, GamePredictionGoalieCandidate,
     GamePredictionSpecialTeamsScore, GamePredictionTeamAssemblyInput,
@@ -126,8 +139,25 @@ pub use historical_prediction_edge::{
     build_historical_moneypuck_edge_package, HistoricalMoneyPuckTeamInput,
     HistoricalPredictionEdgeBuildResult, HistoricalPredictionEdgeError,
 };
+pub use icelines_sources::draft_pick_ownership_csv::{
+    parse_draft_pick_ownership_csv, DraftPickOwnershipCsvError,
+};
+pub use icelines_sources::moneypuck_line_game::{
+    moneypuck_line_game_url, moneypuck_line_summary_url, parse_moneypuck_line_games,
+    parse_moneypuck_line_summary, MoneyPuckLineGameError, MoneyPuckLineGameRow,
+    MoneyPuckLineSummaryRow,
+};
+pub use icelines_sources::moneypuck_skater_game::{
+    moneypuck_skater_career_game_url, parse_moneypuck_skater_games, MoneyPuckSkaterGameError,
+    MoneyPuckSkaterGameRow,
+};
 pub use icelines_sources::prospect_population::ProspectPopulationSourceFamily;
 pub use identity_review_workboard::build_identity_review_workboard_from_source_package;
+pub use line_chemistry_outcome::{
+    build_shift_adjusted_chemistry_evidence, ShiftAdjustedChemistryAdapterView,
+    ShiftAdjustedUnitOutcomeInput, SHIFT_ADJUSTED_CHEMISTRY_ADAPTER_SCHEMA,
+    SHIFT_ADJUSTED_UNIT_OUTCOME_SCHEMA,
+};
 pub use management_behavior_source::{
     fetch_team_behavior_league_evidence, BehaviorEvidenceSourceView,
     TeamBehaviorLeagueEvidenceView, TeamBehaviorSeasonEvidenceView,
@@ -137,6 +167,20 @@ pub use moneypuck::{parse_csv as parse_moneypuck_csv, MoneyPuckStats};
 pub use moneypuck_goalie_game::{
     derive_trailing_goalie_form, moneypuck_goalie_game_url, parse_moneypuck_goalie_games,
     MoneyPuckGoalieGameError, MoneyPuckGoalieGameRow, MoneyPuckTrailingGoalieForm,
+};
+pub use moneypuck_line_acquisition::{
+    build_moneypuck_line_chemistry_from_package, MoneyPuckLineChemistryAcquisitionView,
+    MoneyPuckLineChemistrySourcePackage, MONEYPUCK_LINE_CHEMISTRY_ACQUISITION_SCHEMA,
+    MONEYPUCK_LINE_CHEMISTRY_SOURCE_PACKAGE_SCHEMA,
+};
+pub use moneypuck_line_baseline::{
+    build_moneypuck_unit_baselines, MoneyPuckUnitBaselineConfig, MoneyPuckUnitBaselineExclusion,
+    MoneyPuckUnitBaselineExclusionReason, MoneyPuckUnitBaselineSetView,
+    MONEYPUCK_UNIT_BASELINE_SET_SCHEMA,
+};
+pub use moneypuck_line_chemistry::{
+    build_moneypuck_line_chemistry, MoneyPuckLineChemistryView, PregameUnitXgBaseline,
+    UnitBaselineComponent, MONEYPUCK_LINE_CHEMISTRY_SCHEMA, PREGAME_UNIT_XG_BASELINE_SCHEMA,
 };
 pub use moneypuck_team_game::{
     derive_opponent_adjusted_xg_form, derive_trailing_special_teams_form, derive_trailing_xg_form,
@@ -181,6 +225,10 @@ pub use organization_window_history::{
     ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_JSON_SCHEMA,
     ORGANIZATION_WINDOW_HISTORICAL_ORIGIN_SCHEMA, ORGANIZATION_WINDOW_STANDINGS_JSON_SCHEMA,
     ORGANIZATION_WINDOW_STANDINGS_SCHEMA,
+};
+pub use player_line_matchup_profile::{
+    build_player_line_matchup_profiles, PlayerLineMatchupProfileAdapterView,
+    PLAYER_LINE_MATCHUP_PROFILE_ADAPTER_SCHEMA,
 };
 pub use playoffs_bundle::PlayoffsBundle;
 pub use prospect_career::{

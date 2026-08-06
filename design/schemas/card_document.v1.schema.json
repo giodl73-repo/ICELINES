@@ -30,7 +30,8 @@
         "fantasy_morning",
         "fantasy_trade",
         "organization_window",
-        "team_game_prediction_edge"
+        "team_game_prediction_edge",
+        "prospect_arrival"
       ]
     },
     "document_id": { "type": "string", "minLength": 1 },

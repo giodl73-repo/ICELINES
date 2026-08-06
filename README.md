@@ -44,8 +44,7 @@ operator/developer references and should not override the VTRACE baseline.
 
 1. Click the link above and download the file for your platform:
    - Windows → `icelines-windows-x86_64.zip`
-   - Mac (Apple Silicon) → `icelines-macos-arm64.tar.gz`
-   - Mac (Intel) → `icelines-macos-x86_64.tar.gz`
+   - Mac (Intel, or Apple Silicon through Rosetta 2) → `icelines-macos-x86_64.tar.gz`
    - Linux → `icelines-linux-x86_64.tar.gz`
 2. Optional: download the matching `.sha256` file and verify the archive hash
    before extracting. Release archives also contain `ICELINES-PACKAGE.txt` with
@@ -325,7 +324,7 @@ icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.js
 icelines icecast affiliate --input affiliate-scenario.json --json --out affiliate-lines.json
 icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "Hartford Wolf Pack" --candidates examples/icecast-league-candidate-overlay-2026-27.json --json --out hartford-identity-review.json
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
-icelines icecast affiliate-identities-league --snapshot ahl-season.json --discover-official --json --out ahl-league-identity-crosswalk.json
+icelines icecast affiliate-identities-league --snapshot ahl-season.json --discover-official --as-of 2023-09-15 --max-age 24 --json --out ahl-league-identity-crosswalk.json
 icelines icecast affiliate-review-draft --crosswalk hartford-official-identity-review.json --out hartford-review-decisions-draft.json
 icelines icecast affiliate-review-draft-league --league-crosswalk ahl-league-exact-alias-reviewed.json --include-conflicts --out ahl-league-exception-drafts.json
 icelines icecast affiliate-review-exact --crosswalk hartford-official-identity-review.json --reviewer identity-pilot --reviewed-at 2026-07-25T12:00:00Z --json --out hartford-exact-reviewed.json
@@ -561,9 +560,168 @@ defense, and goalie NHL-performance scores, confidence-weights small samples,
 and compares baseline signal with later arrival, role, and quality. The neutral
 JSON includes player-level expected-hit, breakout, miss, and developing buckets,
 organization totals and rank blockers, plus every component and NHL landing
-URL. Use `--performance-out` to retain the derived authority; pass it back with
-`--performance` for a reproducible replay. Complete zero-game histories count
-as observed zeros, while missing official facts fail closed.
+URL. Use `--performance-out` to retain the derived authority and `--input-out`
+to retain the exact adapted cohort consumed by the board builder. Complete
+zero-game histories count as observed zeros, while missing official facts fail
+closed. A conversion result used for later calibration should retain all three
+siblings: input, performance authority, and output board.
+`icecast prospect-conversion-replay --input <path>` rebuilds the board directly
+from that retained input and applies the same schema and methodology checks.
+Prefer `--archive-out` for durable proofs: `prospect_conversion_archive.v1`
+keeps all three documents together with SHA-256 fingerprints. Replay and
+prospect-arrival calibration accept the archive directly and reject a modified
+member or a board that no longer rebuilds from its input.
+
+`icecast prospect-arrival-calibrate` reuses a retained conversion board for a
+new prospect without pretending the player already has NHL development history.
+It selects nearest same-position historical prospect signals, reports their raw
+arrival and establishment rates, and shrinks arrival toward the complete
+position cohort. The command rejects a target already present in the historical
+outcomes, a board reaching into the forecast season, thin cohorts, and distant
+comparables. It also rejects a player with authoritative NHL games because that
+player has already arrived and belongs in established-role forecasting. The
+resulting `prospect_arrival_calibration.v1` can be attached to
+the scenario probability-authority wrapper; it changes occurrence probability,
+not the authored hockey-impact magnitude.
+
+Scenario inputs may additionally bind a prospect event to `established_role`.
+That path uses a separately calibrated unconditional establishment probability:
+the neighbor rate is shrunk toward the complete same-position establishment
+rate. Established-given-arrival remains visible context, not an unshrunk model
+input. Without an explicit binding, the compatible default remains `arrival`.
+Historical conversion probabilities are cumulative over their retained outcome
+horizon. New calibrations require one common source horizon and project it to
+the configured forecast horizon with a disclosed constant-hazard transform;
+mixed horizons and forecasts longer than the evidence window fail closed.
+
+The target may be supplied as an authored calibration input or derived from a
+canonical career discovery. The derived route selects exactly one skater by
+canonical ID, computes the attention-free production/trajectory/opportunity
+signal in core, and can retain that input for review:
+
+```bash
+icelines icecast prospect-arrival-calibrate --career-discovery examples/icecast-nyr-smits-prospect-career-discovery-2026-27.json --player-id 8485957 --event-id nyr-smits-defense-hit --forecast-season 20262027 --conversion-archive examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json --input-out smits-arrival-input.json --json --out smits-arrival.json
+```
+
+For a complete league audit, `icecast prospect-arrival-league` composes a
+32-team camp forecast with the official career cache, applies the identical
+arrival policy to every canonical skater study, and retains all team rows and
+all player-level failures. It distinguishes a clean league envelope from an
+incomplete arrival population instead of silently dropping teams:
+
+```bash
+icelines icecast prospect-arrival-league --camp-forecast examples/icecast-league-training-camp-2026-27.json --conversion-archive examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json --forecast-season 20262027 --discovery-out league-career-discovery.json --json --out league-arrival.json
+```
+
+The preferred publication path supplies one or more canonical
+`prospect_career_discovery.v1` artifacts plus a sealed prospect source package.
+That route reuses the census current-control resolver: sourced NHL rights or
+contracts can retain a study, while camp attendance and AHL affiliation alone
+cannot. Control failures remain reconciled player/team exclusions. Add
+`--require-complete-population` to refuse publication when the source-package
+manifest is incomplete:
+
+```bash
+icelines icecast prospect-arrival-league --career-discovery league-career-discovery.json --source-package prospect-sources.json --require-complete-population --conversion-archive examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json --forecast-season 20262027 --json --out league-arrival.json
+```
+
+Project any team from that league artifact into the shared two-page card
+contract. The Depth Chart contains the sorted calibrated players; The Insider
+retains population authority, exclusions, methodology, warnings, and the
+fingerprint of the full league artifact before team selection:
+
+```bash
+icelines icecast prospect-arrival-card --input league-arrival.json --team NYR --team-name "New York Rangers" --evidence-at 2026-09-15T12:00:00Z --out nyr-arrival-card.json
+```
+
+Build the UI-neutral all-team board from the same artifact. Expected arrivals
+and established roles are sums of player probabilities, not guaranteed counts.
+The board keeps the original intake auditable but routes players who already
+have NHL games to established-role forecasting. They no longer masquerade as
+missing prospect calibrations. Typed blocker summaries distinguish those
+non-blocking reroutes from source-control, study-quality, comparable-distance,
+and other calibration remediation. The current coverage draft has 8 of 10
+eligible skaters calibrated, 157 established-player reroutes, and two true
+calibration blockers; it retains all values but withholds ordinal ranks:
+
+```bash
+icelines icecast prospect-arrival-board --input league-arrival.json --generated-at 2026-09-15T12:00:00Z --json --out prospect-arrival-board.json
+```
+
+The separate prospect census exposes why an all-team top-ten board can or
+cannot publish. Its compact readiness projection preserves the complete
+census fingerprint, all 32 team funnel totals, typed authority gaps and player
+loss summaries, without copying the full player-level audit ledger into every
+UI. Population authority and ranking depth remain independent gates:
+
+```bash
+icelines icecast prospect-census-readiness --input prospect-census.json --json --out prospect-census-readiness.json
+```
+
+The retained 2026-27 readiness board is served as HTML at
+`/icecast/20262027/prospect-census-readiness` and as fingerprinted JSON at
+`/api/v1/prospect-census-readiness/20262027`. In the TUI,
+`prospect-census-readiness` opens the same 32 teams across two pages. The Web
+`?team=SEA` filter changes presentation only; it never recomputes or republishes
+the league artifact.
+
+Convert that readiness artifact into machine-actionable authority closure
+recipes. The closure board distinguishes control blockers from population
+blockers and names only already-supported ledger/snapshot ingestion boundaries;
+it does not guess player rights or mark acquisition complete:
+
+```bash
+icelines icecast prospect-authority-closure --input prospect-census-readiness.json --json --out prospect-authority-closure.json
+```
+
+The retained current closure plan is served as HTML at
+`/icecast/20262027/prospect-authority-closure` and as fingerprinted JSON at
+`/api/v1/prospect-authority-closure/20262027`. Optional team focus such as
+`?team=NYR` filters the two displayed recipes without changing the league ETag.
+In the TUI, `prospect-authority-closure` preserves all 64 exact cells across
+four 16-cell pages; `p` advances and wraps without applying any recipe.
+All closure consumers use the same core validator for canonical teams, unique
+cells, source boundaries, state/disposition recipes, summaries, cutoffs, and
+fingerprints.
+
+Compare two sealed closure boards to measure exactly what closed, opened, or
+changed state. The delta verifies both source fingerprints and their internal
+totals, requires one season and chronological knowledge cutoffs, and reports
+integer basis points so renderers do not introduce floating-point drift:
+
+```bash
+icelines icecast prospect-authority-progress --prior prior-closure.json --current current-closure.json --json --out authority-progress.json
+```
+
+The retained 2026-27 plan now has 64 cells: 32 contract-control cells requiring
+`contract_control_ledger.v1` and 32 camp cells requiring
+`camp_participation_ledger.v1`. A sealed official `ahl_roster_stats.v1`
+snapshot with explicit coverage for every affiliate closed all 32 AHL source
+cells. Its zero preseason player rows establish authoritative-empty source
+coverage, not player assignments or organizational control.
+The retained pre/post AHL delta is 96 to 64 cells: 32 population-authority
+cells closed, zero opened, zero changed state, and 3,333 basis points of the
+starting backlog retired. The progress artifact does not itself approve the
+underlying evidence or declare the census publishable.
+The retained delta is also served as HTML at
+`/icecast/20262027/prospect-authority-progress` and as fingerprinted JSON at
+`/api/v1/prospect-authority-progress/20262027`. The optional `?team=SEA`
+filter changes presentation only; the response ETag remains the complete
+league artifact fingerprint.
+In the TUI, `prospect-authority-progress` renders those same 32 exact changes
+across two 16-team pages; `p` switches pages without rebuilding the delta.
+
+All 32 team cards are projected from the same sealed league artifact and served
+through the generic web renderer at
+`/icecast/20262027/{team}/prospect-arrivals`; their sealed JSON is available at
+`/api/v1/cards/prospect-arrival/20262027/{team}`. The TUI command bar opens the
+same document with `prospect-arrival-card <team>`; `p` switches between The
+Depth Chart and The Insider, `t` switches the NYR/SEA showcase, and `c`
+compares those two cards. The checked-in Rangers and Kraken documents remain
+golden references for cross-surface parity rather than separate scoring paths.
+The all-team board is available at `/icecast/20262027/prospect-arrivals`, with
+JSON at `/api/v1/prospect-arrivals/20262027`; `prospect-arrival-board` opens the
+same two-page board in the TUI.
 
 IceCast loads the complete official schedule and produces one explained
 baseline probability for every league game. For 2026–27 it enforces 1,344
@@ -624,6 +782,33 @@ longest-win-streak candidates. The Gauntlet finds every team's hardest and
 easiest consecutive five-game window from baseline win probability and reports
 expected wins, opponents, road games, back-to-backs, and itinerary distance.
 JSON exposes the same products in `league_leaders` and `schedule_stretches`.
+
+**The Matchup** adds a player-and-line evidence layer without creating a
+second probability engine. `icelines icecast line-matchup --input
+player-line-matchup-input.json --json --out matchup.json` scores two complete
+dressed lineups from dated player profiles, explicitly typed pair/trio
+evidence, opponent style, and manager execution. Player rates shrink toward
+neutral using games, minutes, observed shifts, recency, and component coverage.
+Official shared-ice intervals remain deployment affinity and cannot become a
+causal chemistry bonus without a separate shift-adjusted outcome residual.
+`icecast edge-evidence --line-matchup matchup.json` attaches the sealed 5-on-5
+values to the existing prediction edge. PP-versus-PK suitability is reported
+separately so special teams are not counted twice.
+`line-matchup-profiles` builds the dated profile inputs from current lineup,
+role, EV-minute, and exact-shift authorities; `line-chemistry` accepts only
+shift-aligned xG residuals against a declared deployment/opponent baseline.
+`line-chemistry-moneypuck` normalizes published pair/trio game files and builds
+the same evidence from strictly prior 5-on-5 score/venue-adjusted xG, but only
+when every modeled game has a separately sealed pregame baseline declaring
+individual, opponent, and deployment components. Coverage and exclusions stay
+visible in the UI-neutral result.
+`line-chemistry-moneypuck-auto` performs unit discovery and baseline generation
+from a caller-supplied season summary plus local line, skater, and team-game CSV
+directories. It requires a retained `--rights-basis`; IceLines does not automate
+MoneyPuck bulk scraping where the provider requests a separate license.
+`line-matchup-compare` ranks frozen lineup alternatives, while
+`line-matchup-validate` measures the five cumulative profile/pair/trio/manager
+ablations with chronological Brier, log-loss, and leave-one-team/season checks.
 
 When the official schedule contains final scores, **The Review** grades the
 frozen game picks overall and by `strong`, `lean`, and `toss_up` confidence.

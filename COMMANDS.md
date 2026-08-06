@@ -1059,6 +1059,15 @@ icelines icecast prospect-league --snapshot ahl-2024-25.json --snapshot ahl-2025
 icelines icecast prospect-league --snapshot ahl-2023-24.json --snapshot ahl-2024-25.json --snapshot ahl-2025-26.json --crosswalk reviewed-league-2023-24.json --crosswalk reviewed-league-2024-25.json --crosswalk reviewed-league-2025-26.json --context prospect-context.json --json --out league-discovery.json
 icelines icecast prospect-population-audit --input examples/icecast-league-candidate-overlay-2026-27.json --require-fully-classified --json --out prospect-population-audit.json
 icelines icecast prospect-census --source-package target/prospect-sources-2026-27-final.json --json --out prospect-census.json
+icelines icecast prospect-census-readiness --input prospect-census.json --json --out prospect-census-readiness.json
+icelines icecast prospect-authority-closure --input prospect-census-readiness.json --json --out prospect-authority-closure.json
+icelines icecast prospect-authority-progress --prior prior-authority-closure.json --current current-authority-closure.json --json --out prospect-authority-progress.json
+# TUI command bar: open the same retained 32-team readiness board
+prospect-census-readiness
+# TUI command bar: open the same retained two-page authority delta
+prospect-authority-progress
+# TUI command bar: inspect every retained closure recipe across four pages
+prospect-authority-closure
 icelines icecast identity-review-workboard --source-package target/prospect-sources-2026-27-landings.v2.json --json --out identity-review-workboard.json
 icelines icecast official-identity-candidates --workboard identity-review-workboard.json --json --out official-identity-candidates.json
 icelines icecast official-identity-candidates --workboard identity-review-workboard.json --refresh --json --out official-identity-candidates-refreshed.json
@@ -1070,6 +1079,10 @@ icelines icecast prospect-census --source-package source-package.json --pipeline
 icelines icecast prospect-census --source-package source-package.json --league-discovery ahl-discovery.json --career-discovery multi-league-discovery.json --program-board prospect-programs.json --pipeline-out prospect-census-pipeline.json --json --out prospect-census.json
 icelines icecast prospect-program --league-discovery league-discovery.json --prospects-per-team 10 --require-complete-rankings --json --out prospect-programs.json
 icelines icecast prospect-program --league-discovery league-discovery.json --study college-prospect-study.json --prior-board prior-prospect-programs.json --out prospect-programs.txt
+icelines icecast prospect-arrival-league --camp-forecast league-camp.json --career-history ~/.icelines/career_history.json --conversion-archive conversion-archive.json --forecast-season 20262027 --discovery-out league-career-discovery.json --out league-arrival.txt
+icelines icecast prospect-arrival-league --career-discovery league-career-discovery.json --source-package prospect-sources.json --require-complete-population --conversion-archive conversion-archive.json --forecast-season 20262027 --json --out league-arrival.json
+icelines icecast prospect-arrival-card --input league-arrival.json --team NYR --team-name "New York Rangers" --evidence-at 2026-09-15T12:00:00Z --out nyr-arrival-card.json
+icelines icecast prospect-arrival-board --input league-arrival.json --generated-at 2026-09-15T12:00:00Z --json --out prospect-arrival-board.json
 icelines icecast prospect-program-sensitivity --league-discovery league-discovery.json --thresholds 25,50,82 --json --out prospect-program-sensitivity.json
 icelines icecast prospect-program-history --board prospect-programs-2024.json --board prospect-programs-2025.json --board prospect-programs-2026.json --json --out prospect-program-history.json
 icelines icecast prospect-conversion --league-discovery frozen-2022-23-prospects.json --career-history ~/.icelines/career_history.json --baseline-season 20222023 --through-season 20252026 --performance-out nhl-performance.json --json --out prospect-conversion.json
@@ -1165,6 +1178,14 @@ icelines icecast edge --forecast games.json --evidence morning-evidence.json --j
 icelines icecast edge --forecast games.json --evidence confirmed-evidence.json --model promoted-edge-model.json --json --out confirmed-edge.json
 icelines icecast edge-preseason-evidence --forecast games-2026-27.json --created-at 2026-07-31T12:00:00Z --out preseason-evidence-2026-27.json
 icelines icecast edge-evidence --forecast games.json --input dated-assembly-input.json --out morning-evidence.json
+icelines icecast line-matchup-profiles --lineup lineup.json --role-evidence roles.json --shift-report shifts.json --evidence-cutoff-at 2026-04-18T23:00:00Z --source-fingerprint sha256:<64-hex> --json --out profiles.json
+icelines icecast line-chemistry --team NYR --forecast-at 2026-04-19T12:00:00Z --input shift-adjusted-outcomes.json --out chemistry.json
+icelines icecast line-chemistry-moneypuck --team NYR --forecast-at 2026-04-19T12:00:00Z --line-game 84784028482888.csv --line-game 84784028490001.csv --baselines pregame-unit-baselines.json --minimum-shared-minutes 30 --out chemistry.json
+icelines icecast line-chemistry-moneypuck-auto --team NYR --season-start 2025 --forecast-at 2026-04-19T12:00:00Z --summary licensed/lines.csv --line-game-dir licensed/line-games --skater-game-dir licensed/skaters --team-game-dir licensed/teams --rights-basis "MoneyPuck license/local authorized export" --out automatic-chemistry.json
+icelines icecast line-matchup --input player-line-matchup-input.json --home-bench-plan nyr-plan.json --away-bench-plan sea-plan.json --json --out matchup-2026020001.json
+icelines icecast line-matchup-compare --input lineup-scenarios.json --focus-team NYR --baseline baseline --out lineup-comparison.json
+icelines icecast line-matchup-validate --input ablation-observations.json --created-at 2026-04-20T12:00:00Z --out matchup-validation.json
+icelines icecast edge-evidence --forecast games.json --input dated-assembly-input.json --line-matchup matchup-2026020001.json --out morning-evidence.json
 icelines icecast edge-outcomes --season 20252026 --captured-at 2026-07-30T20:00:00Z --refresh --out outcomes-2025-26.json
 icelines icecast edge-replay-xg --forecast games-2025-26.json --moneypuck-dir moneypuck-team-games --retrieved-at 2026-07-30T20:00:00Z --out xg-evidence-2025-26.json
 icelines icecast edge-replay-confirmed --forecast games-2025-26.json --morning-evidence xg-evidence-2025-26.json --boxscore-dir official-boxscores/2025-26 --retrieved-at 2026-07-30T20:00:00Z --refresh --out confirmed-evidence-2025-26.json
@@ -1197,6 +1218,54 @@ row for every scheduled team, freezes before opening day, binds the exact
 forecast and selected roster snapshot, and leaves unavailable xG, goalie,
 lineup, special-teams, and matchup inputs absent. It does not synthesize those
 signals from the schedule or closing results.
+
+`line-matchup` builds `player_line_matchup_forecast.v1` from two complete
+dressed lineups, dated multi-dimensional player profiles, explicitly typed
+pair/trio evidence, opponent styles, and manager execution confidence. Games,
+minutes, shift volume, recency, and component coverage shrink player profiles
+toward neutral. Exact shared deployment is reported as affinity and contributes
+zero causal chemistry unless a separate shift-adjusted outcome residual exists.
+PP-versus-PK suitability remains visible but outside the 5-on-5 feature so the
+edge does not count special teams twice. Repeat `edge-evidence --line-matchup`
+to attach each sealed game document; identity, timestamps, and fingerprints
+must match the raw assembly exactly.
+Optional `--home-bench-plan` and `--away-bench-plan` inputs copy the existing
+Bench opponent style, hard-match confidence, and forward-line shares into the
+forecast after verifying that all four assignments match the dressed lineup;
+the Bench schedule edge itself is not copied or counted twice.
+
+`line-matchup-profiles` adapts the existing complete lineup, player-role
+evidence, and exact official shift report into dated player profiles. Its
+shared-ice rows remain deployment affinity and have zero chemistry effect.
+`line-chemistry` separately converts shift-aligned xG share relative to a
+declared individual/opponent/deployment baseline into pair/trio residuals; it
+rejects rows after `--forecast-at`. `line-matchup-validate` evaluates the five
+frozen ablations chronologically and requires pooled plus per-season/per-team
+Brier and log-loss stability before marking a challenger eligible.
+`line-matchup-compare` ranks two or more complete lineup/manager alternatives
+at the same frozen game boundary and reports their 5-on-5 score delta from the
+named baseline. Win-probability movement still comes from running each sealed
+scenario through the registered edge model.
+
+`line-chemistry-moneypuck` reads one or more published MoneyPuck pair/trio
+game-by-game CSVs, recovers the concatenated NHL player IDs, and includes only
+positive-minute 5-on-5 rows dated strictly before the forecast. Its baseline
+file is an array of `pregame_unit_xg_baseline.v1` rows keyed by game/team/unit;
+each must have been computed before that game and include `individual`,
+`opponent`, and `deployment` components plus source fingerprints. The command
+reports baseline coverage and zero-xG/missing-baseline exclusions and carries
+MoneyPuck's credit/usage disclosure. It never treats raw shared ice as causal
+chemistry.
+
+`line-chemistry-moneypuck-auto` discovers eligible pair/trio IDs from a local
+season summary, joins local line-game, career-skater, and career-team CSV
+directories, and automatically constructs each strictly pregame baseline. The
+individual component uses every unit member's prior adjusted on-ice xG, the
+opponent component uses prior team xG, and the deployment component uses prior
+offensive/defensive-zone shift starts. Missing rookie or opponent history is an
+explicit exclusion. The command requires `--rights-basis` and does not perform
+bulk network acquisition because MoneyPuck's live license gate asks bulk users
+to arrange an agreement.
 
 `icecast edge-train` fits the regularized Elo-plus-evidence ensemble from
 frozen observations. `--validate` holds out each season chronologically and
@@ -1585,6 +1654,21 @@ The TUI commands `season-card`, `season-card NYR`, and `season-card SEA` open
 the same sealed season-simulation documents. Press `p` to switch between The
 Scoreboard and The Insider, `t` to switch teams, or `c` for side-by-side NYR
 and SEA projections from the same league run.
+
+The TUI command `prospect-arrival-card <NHL team>` opens any of the 32
+prospect-arrival documents projected from the same sealed league artifact as
+the CLI and Web API. Press `p` to switch between The Depth Chart and The
+Insider, `t` to switch the NYR/SEA showcase, or `c` for their side-by-side
+arrival outlooks from the same league calibration.
+
+The TUI command `prospect-arrival-board` opens the shared all-team board in two
+16-team pages. The board preserves audited intake totals while reporting
+coverage against the true eligible prospect cohort. Players with NHL games are
+counted as non-blocking established-role reroutes; typed source-control,
+study-quality, comparable-distance, and other calibration failures include
+remediation and remain blocking. It displays `NR` for every team until complete
+population authority and comparable eligible-cohort coverage permit a real
+league ranking.
 
 For the sealed completed-season replay, use `replay-card NYR` or
 `replay-card SEA`. Its Insider page adds confirmed actual records and points,

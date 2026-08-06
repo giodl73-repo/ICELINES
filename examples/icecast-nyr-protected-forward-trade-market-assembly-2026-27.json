@@ -1,0 +1,46 @@
+{
+  "as_of": "2026-08-02",
+  "current_draft_year": 2026,
+  "authority": {
+    "teams": [
+      {"team":"NYR","upper_limit":104000000,"committed_cap_hit":101597024,"active_roster_players":22,"max_active_roster_players":23,"retained_salary_slots_available":3,"source_url":"https://puckpedia.com/team/new-york-rangers","observed_at":"2026-08-02"},
+      {"team":"VAN","upper_limit":104000000,"committed_cap_hit":86185833,"active_roster_players":23,"max_active_roster_players":23,"retained_salary_slots_available":2,"source_url":"https://puckpedia.com/team/vancouver-canucks","observed_at":"2026-08-02"},
+      {"team":"ANA","upper_limit":104000000,"committed_cap_hit":94926605,"active_roster_players":22,"max_active_roster_players":23,"retained_salary_slots_available":3,"source_url":"https://puckpedia.com/team/anaheim-ducks","observed_at":"2026-08-02"}
+    ],
+    "players": [
+      {"player_id":8478444,"organization":"VAN","cap_hit":7250000,"contract_confirmed":true,"clause_reviewed":true,"destination_allowed":null,"source_url":"https://puckpedia.com/player/brock-boeser","observed_at":"2026-08-02"},
+      {"player_id":8478498,"organization":"VAN","cap_hit":5500000,"contract_confirmed":true,"clause_reviewed":true,"destination_allowed":null,"source_url":"https://puckpedia.com/player/jake-debrusk","observed_at":"2026-08-02"},
+      {"player_id":8478366,"organization":"ANA","cap_hit":4571189,"contract_confirmed":true,"clause_reviewed":true,"destination_allowed":null,"source_url":"https://puckpedia.com/player/frank-vatrano","observed_at":"2026-08-02"},
+      {"player_id":8477416,"organization":"NYR","cap_hit":4500000,"contract_confirmed":true,"clause_reviewed":true,"destination_allowed":true,"source_url":"https://puckpedia.com/player/oliver-bjorkstrand","observed_at":"2026-08-02"}
+    ],
+    "draft_picks": [
+      {"asset_id":"BOS-2027-2-owned-by-NYR","owner":"NYR","confirmed":true,"source_url":"https://puckpedia.com/team/new-york-rangers","observed_at":"2026-08-02"}
+    ]
+  },
+  "proposals": [
+    {
+      "buyer":{"team":"NYR","current_weight":1.4,"future_weight":0.4,"cap_weight":2.0,"season_impact_weight":10.0,"needs":{"top_six_forward":100.0}},
+      "seller":{"team":"VAN","current_weight":0.7,"future_weight":1.1,"cap_weight":2.0,"season_impact_weight":1.0,"needs":{"future_asset":80.0,"middle_six_forward":40.0}},
+      "assets_to_buyer":[{"kind":"player","player_id":8478444,"retained_cap_hit":500000,"asset":{"id":"8478444","label":"Brock Boeser ($500K retained)","position":"top_six_forward","value_basis":{"outcome_measure":"nhl_regular_season_games_played","horizon_years":7,"method":"mature-cohort fixed-horizon outcomes with weighted monotone regression"},"market_value":150.0,"current_value":88.0,"future_value":62.0,"season_points_impact":0.36,"uncertainty":48.0,"availability":{"kind":"speculative_fit","probability":0.12,"source_url":null,"observed_at":null,"destination_allowed":null},"draft_pick":null,"disclosures":["Control value, retention, and isolated season impact are authored scenario assumptions; the current NMC requires affirmative destination authority."]}}],
+      "assets_to_seller":[
+        {"kind":"player","player_id":8477416,"retained_cap_hit":null,"asset":{"id":"8477416","label":"Oliver Bjorkstrand","position":"middle_six_forward","value_basis":{"outcome_measure":"nhl_regular_season_games_played","horizon_years":7,"method":"mature-cohort fixed-horizon outcomes with weighted monotone regression"},"market_value":65.0,"current_value":55.0,"future_value":10.0,"season_points_impact":0.18,"uncertainty":22.0,"availability":{"kind":"depth_surplus","probability":0.7,"source_url":null,"observed_at":null,"destination_allowed":null},"draft_pick":null,"disclosures":["Bjorkstrand value is an authored one-season control estimate."]}},
+        {"kind":"draft_pick","asset":{"id":"BOS-2027-2-owned-by-NYR","draft_year":2027,"slot_outcomes":[{"overall_pick":33,"probability":0.10},{"overall_pick":40,"probability":0.15},{"overall_pick":48,"probability":0.25},{"overall_pick":56,"probability":0.25},{"overall_pick":64,"probability":0.25}]}}
+      ]
+    },
+    {
+      "buyer":{"team":"NYR","current_weight":1.4,"future_weight":0.4,"cap_weight":2.0,"season_impact_weight":10.0,"needs":{"top_six_forward":100.0}},
+      "seller":{"team":"VAN","current_weight":0.7,"future_weight":1.1,"cap_weight":2.0,"season_impact_weight":1.0,"needs":{"future_asset":80.0,"middle_six_forward":40.0}},
+      "assets_to_buyer":[{"kind":"player","player_id":8478498,"retained_cap_hit":null,"asset":{"id":"8478498","label":"Jake DeBrusk","position":"top_six_forward","value_basis":{"outcome_measure":"nhl_regular_season_games_played","horizon_years":7,"method":"mature-cohort fixed-horizon outcomes with weighted monotone regression"},"market_value":140.0,"current_value":82.0,"future_value":58.0,"season_points_impact":0.29,"uncertainty":44.0,"availability":{"kind":"speculative_fit","probability":0.12,"source_url":null,"observed_at":null,"destination_allowed":null},"draft_pick":null,"disclosures":["Control value and isolated season impact are authored scenario assumptions; the current NMC requires affirmative destination authority."]}}],
+      "assets_to_seller":[
+        {"kind":"player","player_id":8477416,"retained_cap_hit":null,"asset":{"id":"8477416","label":"Oliver Bjorkstrand","position":"middle_six_forward","value_basis":{"outcome_measure":"nhl_regular_season_games_played","horizon_years":7,"method":"mature-cohort fixed-horizon outcomes with weighted monotone regression"},"market_value":65.0,"current_value":55.0,"future_value":10.0,"season_points_impact":0.18,"uncertainty":22.0,"availability":{"kind":"depth_surplus","probability":0.7,"source_url":null,"observed_at":null,"destination_allowed":null},"draft_pick":null,"disclosures":["Bjorkstrand value is an authored one-season control estimate."]}},
+        {"kind":"draft_pick","asset":{"id":"BOS-2027-2-owned-by-NYR","draft_year":2027,"slot_outcomes":[{"overall_pick":33,"probability":0.10},{"overall_pick":40,"probability":0.15},{"overall_pick":48,"probability":0.25},{"overall_pick":56,"probability":0.25},{"overall_pick":64,"probability":0.25}]}}
+      ]
+    },
+    {
+      "buyer":{"team":"NYR","current_weight":1.4,"future_weight":0.4,"cap_weight":2.0,"season_impact_weight":10.0,"needs":{"top_six_forward":100.0}},
+      "seller":{"team":"ANA","current_weight":0.5,"future_weight":1.4,"cap_weight":2.0,"season_impact_weight":1.0,"needs":{"future_asset":100.0}},
+      "assets_to_buyer":[{"kind":"player","player_id":8478366,"retained_cap_hit":2285594,"asset":{"id":"8478366","label":"Frank Vatrano (50% retained)","position":"top_six_forward","value_basis":{"outcome_measure":"nhl_regular_season_games_played","horizon_years":7,"method":"mature-cohort fixed-horizon outcomes with weighted monotone regression"},"market_value":55.0,"current_value":45.0,"future_value":10.0,"season_points_impact":0.0,"uncertainty":35.0,"availability":{"kind":"speculative_fit","probability":0.25,"source_url":null,"observed_at":null,"destination_allowed":null},"draft_pick":null,"disclosures":["Recent evidence produces no Rangers lineup upgrade; the current modified no-trade clause requires affirmative destination authority."]}}],
+      "assets_to_seller":[{"kind":"draft_pick","asset":{"id":"BOS-2027-2-owned-by-NYR","draft_year":2027,"slot_outcomes":[{"overall_pick":33,"probability":0.10},{"overall_pick":40,"probability":0.15},{"overall_pick":48,"probability":0.25},{"overall_pick":56,"probability":0.25},{"overall_pick":64,"probability":0.25}]}}]
+    }
+  ]
+}

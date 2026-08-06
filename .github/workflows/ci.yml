@@ -236,10 +236,6 @@ jobs:
             artifact: icelines-linux-x86_64
             binary: icelines
           - os: macos-latest
-            target: aarch64-apple-darwin
-            artifact: icelines-macos-arm64
-            binary: icelines
-          - os: macos-latest
             target: x86_64-apple-darwin
             artifact: icelines-macos-x86_64
             binary: icelines

@@ -182,6 +182,46 @@ pub fn router(state: WebState) -> Router {
             "/api/v1/cards/organization-window/:season/:team",
             get(handlers::team_card::get_organization_window_card_json),
         )
+        .route(
+            "/icecast/:season/:team/prospect-arrivals",
+            get(handlers::team_card::get_prospect_arrival_card),
+        )
+        .route(
+            "/api/v1/cards/prospect-arrival/:season/:team",
+            get(handlers::team_card::get_prospect_arrival_card_json),
+        )
+        .route(
+            "/icecast/:season/prospect-arrivals",
+            get(handlers::prospect_arrival::get_prospect_arrival_board),
+        )
+        .route(
+            "/api/v1/prospect-arrivals/:season",
+            get(handlers::prospect_arrival::get_prospect_arrival_board_json),
+        )
+        .route(
+            "/icecast/:season/prospect-census-readiness",
+            get(handlers::prospect_census::get_prospect_census_readiness),
+        )
+        .route(
+            "/api/v1/prospect-census-readiness/:season",
+            get(handlers::prospect_census::get_prospect_census_readiness_json),
+        )
+        .route(
+            "/icecast/:season/prospect-authority-closure",
+            get(handlers::prospect_census::get_prospect_authority_closure),
+        )
+        .route(
+            "/api/v1/prospect-authority-closure/:season",
+            get(handlers::prospect_census::get_prospect_authority_closure_json),
+        )
+        .route(
+            "/icecast/:season/prospect-authority-progress",
+            get(handlers::prospect_census::get_prospect_authority_progress),
+        )
+        .route(
+            "/api/v1/prospect-authority-progress/:season",
+            get(handlers::prospect_census::get_prospect_authority_progress_json),
+        )
         .route("/window/:frame/:season", get(handlers::window::get_window))
         .route(
             "/api/v1/window/:frame/:season",
@@ -653,6 +693,8 @@ mod handlers {
     /// `/docs` — King.8.1. Renders COMMANDS.md as HTML.
     pub mod docs;
 
+    pub mod prospect_arrival;
+    pub mod prospect_census;
     /// `/team/:abbrev` — King.4.1 roster page.
     pub mod team;
     pub mod team_card;

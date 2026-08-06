@@ -1,0 +1,8 @@
+{
+  "name": "NYR tests the Shane Wright breakout threshold for ten-percent Cup odds",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {"id":"nyr-wright-cup-threshold","kind":"trade","team":"NYR","player":"Shane Wright","effective_date":"2026-09-29","strength_delta":16.3,"occurrence_probability":1.0,"correlation_key":"nyr-sea-wright-schneider-threshold","label":"Wright reaches a 43.2 lineup score; the +17.9 development increment lifts NYR trade impact from -1.6 to +16.3"},
+    {"id":"sea-schneider-threshold-counterpart","kind":"trade","team":"SEA","player":"Braden Schneider","effective_date":"2026-09-29","strength_delta":0.5,"occurrence_probability":1.0,"correlation_key":"nyr-sea-wright-schneider-threshold","label":"Seattle retains the sealed Schneider-for-Wright lineup impact; Wright's extra development is an NYR-specific threshold scenario"}
+  ]
+}

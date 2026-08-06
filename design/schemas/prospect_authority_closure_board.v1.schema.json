@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/prospect_authority_closure_board.v1.schema.json",
+  "title": "IceLines Prospect Authority Closure Board v1",
+  "type": "object",
+  "required": [
+    "schema", "method_version", "evaluation_season", "effective_cutoff",
+    "knowledge_cutoff", "source_readiness_fingerprint", "organizations",
+    "affected_organizations", "cells", "control_blocking_cells",
+    "population_blocking_cells", "family_summary", "closure_cells",
+    "disclosures", "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "prospect_authority_closure_board.v1" },
+    "method_version": { "const": "prospect_authority_closure_board.v1" },
+    "evaluation_season": { "type": "integer", "minimum": 19001901 },
+    "effective_cutoff": { "type": "string", "format": "date-time" },
+    "knowledge_cutoff": { "type": "string", "format": "date-time" },
+    "source_readiness_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "organizations": { "const": 32 },
+    "affected_organizations": { "type": "integer", "minimum": 0, "maximum": 32 },
+    "cells": { "type": "integer", "minimum": 0 },
+    "control_blocking_cells": { "type": "integer", "minimum": 0 },
+    "population_blocking_cells": { "type": "integer", "minimum": 0 },
+    "family_summary": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/familySummary" }
+    },
+    "closure_cells": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/closureCell" }
+    },
+    "disclosures": { "$ref": "#/$defs/messages" },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "messages": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "gate": {
+      "type": "string",
+      "enum": ["population_authority", "organizational_control"]
+    },
+    "gapState": {
+      "type": "string",
+      "enum": ["failed", "quarantined", "incomplete_pagination"]
+    },
+    "disposition": {
+      "type": "string",
+      "enum": ["acquire", "resolve_quarantine", "complete_pagination"]
+    },
+    "familySummary": {
+      "type": "object",
+      "required": ["source_family", "cells", "organizations", "gate"],
+      "properties": {
+        "source_family": { "type": "string", "minLength": 1 },
+        "cells": { "type": "integer", "minimum": 1 },
+        "organizations": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "gate": { "$ref": "#/$defs/gate" },
+        "required_artifact_schema": { "type": "string", "minLength": 1 },
+        "ingestion_option": { "type": "string", "pattern": "^--[a-z0-9-]+$" }
+      },
+      "additionalProperties": false
+    },
+    "closureCell": {
+      "type": "object",
+      "required": [
+        "organization", "source_family", "state", "gate", "disposition",
+        "reason", "remediation"
+      ],
+      "properties": {
+        "organization": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "source_family": { "type": "string", "minLength": 1 },
+        "state": { "$ref": "#/$defs/gapState" },
+        "gate": { "$ref": "#/$defs/gate" },
+        "disposition": { "$ref": "#/$defs/disposition" },
+        "required_artifact_schema": { "type": "string", "minLength": 1 },
+        "ingestion_option": { "type": "string", "pattern": "^--[a-z0-9-]+$" },
+        "reason": { "type": "string", "minLength": 1 },
+        "remediation": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -410,6 +410,95 @@ quartile comparison. These are descriptive associations over the frozen cohort,
 not causal claims or fitted probabilities. The performance score remains a
 separate optional authority and is not inferred from arrival or role.
 
+## Prospect arrival calibration
+
+`prospect_arrival_calibration.v1` converts one current, attention-free prospect
+signal into a historical NHL-arrival base rate without using NHL development
+cohorts. It requires a frozen `prospect_conversion_board.v2` whose outcome
+season strictly precedes the target forecast season. The target player must not
+appear anywhere in that historical board and must have zero authoritative NHL
+games. Players who already appeared in the NHL require established-role
+forecasting; they must never be relabeled as arrival successes.
+
+The default method selects the 50 nearest players from the same position group
+(forward, defense, or goalie), requires at least 30 observations, and rejects a
+mean signal distance above 15 points. The local empirical arrival rate is
+shrunk toward the complete same-position board rate with 20 pseudo-observations.
+Output retains candidate and neighbor counts, signal range and mean distance,
+raw arrival and establishment counts, empirical rates, the shrunken probability,
+source seasons, policy, and disclosures. Arrival means at least one NHL game
+inside the frozen horizon; establishment remains a separate descriptive rate.
+
+```text
+icelines icecast prospect-arrival-calibrate \
+  --input current-prospect.json \
+  --conversion-board frozen-conversion.json \
+  --json --out prospect-arrival.json
+
+icelines icecast prospect-arrival-calibrate \
+  --career-discovery current-career-discovery.json \
+  --player-id 8485957 \
+  --event-id nyr-smits-defense-hit \
+  --forecast-season 20262027 \
+  --conversion-archive frozen-conversion-archive.json \
+  --input-out derived-arrival-input.json \
+  --json --out prospect-arrival.json
+
+icelines icecast prospect-arrival-league \
+  --camp-forecast league-camp.json \
+  --conversion-archive frozen-conversion-archive.json \
+  --forecast-season 20262027 \
+  --discovery-out league-career-discovery.json \
+  --json --out league-arrival.json
+```
+
+`prospect_arrival_league_calibration.v1` requires the exact canonical NHL team
+set. It retains one row for every organization, including zero-target and
+zero-success teams, and reconciles target skaters as calibrated plus excluded.
+Each skater uses one shared cohort and policy. Adapter, self-overlap, sample,
+and comparable-distance failures remain attached to the player and team rather
+than disappearing from league totals. Goalies remain outside this skater
+cohort until a separately calibrated goalie-arrival authority exists.
+Every newly generated exclusion carries a stable `kind` alongside its raw
+reason. The enum distinguishes established-role reroutes, control and study
+failures, historical-cohort leakage, position and horizon mismatches,
+comparable-sample and distance gates, and unknown calibration failures. Older
+v1 artifacts without `kind` remain readable and are classified once at the
+core boundary.
+
+The camp-derived route is a coverage draft. The authority-backed route accepts
+one or more canonical career discoveries and a sealed prospect source package,
+then applies `select_controlled_prospect_studies`, the same current-control
+resolver used by the prospect census and program board. Its population block
+retains the package fingerprint, completeness state, supplied studies,
+controlled studies, and control exclusions. `--require-complete-population`
+fails before output when the package manifest is incomplete. Without strict
+mode, incomplete authority remains inspectable but must not be presented as a
+complete prospect census.
+
+`prospect_arrival_board.v1` is the league summary of that same artifact. It
+retains all 32 organizations, the original audited intake, the actual eligible
+prospect cohort, calibration coverage, summed horizon-adjusted arrival and
+establishment probabilities, and each team's highest calibrated arrival
+probability. Exclusions are aggregated into typed remediation classes.
+Established NHL players remain reconciled to the intake ledger but are routed
+to established-role forecasting, so they neither dilute prospect coverage nor
+block ranks. Source-control, study-quality, comparable-distance, and other
+calibration failures remain rank-blocking. These sums are expected values, not
+guaranteed player counts. Ordinal ranks are withheld for the entire cohort
+unless population authority is complete and every eligible skater has a
+comparable calibration; when withheld, every renderer uses canonical team
+order rather than sorting partial values into a shadow ranking.
+
+The primitive never reconstructs an absent historical board. It accepts either
+an authored current signal or derives one from a canonical skater career study;
+goalies, missing IDs, and duplicate IDs fail closed. Historical proof runs
+intended for future forecasting must retain their conversion board, frozen
+adapted input, and performance authority. The preferred durable contract is
+`prospect_conversion_archive.v1`: it stores all three, fingerprints every
+member, replays the board from the input during validation, and is accepted
+directly by both conversion replay and arrival calibration.
+
 The default method requires a three-season horizon, treats 82 skater games or
 40 goalie games as established, and caps the efficiency index while applying a
 baseline denominator floor. A program also needs at least five players, 0.50
@@ -426,6 +515,23 @@ five-player slice remained unranked for 0.44 baseline confidence, and Seattle's
 three-player slice remained unranked for insufficient cohort size. Those rows
 are useful side-by-side validation examples precisely because their rank
 blockers remain visible.
+
+The separately named August 2026 retrospective cohort is not presented as the
+lost July proof. It begins with the frozen 2022-23 AHL snapshot, applies a
+September 15, 2023 age-24 ceiling, and retains 543 players across all 32 NHL
+organizations through 2025-26. Its fingerprinted archive is checked in as
+`examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json`.
+The cohort includes 164 defensemen; Alberts Smits' derived 29.06 signal selects
+50 neighbors with a 62% empirical arrival rate and a 45.7317% full-position
+rate, producing a shrunken 57.3519% arrival probability. Arrival still means at
+least one NHL game and must not be described as establishment or full-impact
+breakout probability. Establishment is calibrated separately: the 22% neighbor
+rate shrinks toward the 18.9024% complete-defenseman rate, producing 21.1150%
+cumulatively over the three-season source horizon. The one-season 2026-27
+projection is 7.6015% under the disclosed constant-hazard transform; the
+three-season arrival rate similarly becomes 24.7280% for one season. The
+11-of-31 established-given-arrival share is retained only as descriptive
+context.
 
 On the July 2026 all-organization proof, Seattle ranked first at all three
 default boundaries; its score ranged only from 56.04 to 57.05. The Rangers

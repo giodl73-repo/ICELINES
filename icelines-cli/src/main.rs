@@ -1816,9 +1816,119 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 commands::fantasy::run_serve(port, league).await?
             }
         },
+        Commands::Icecast(IceCastSubcommand::DraftPickCurve {
+            start_year,
+            cutoff_year,
+            completed_season_start_year,
+            horizon,
+            max_pick,
+            annual_future_discount,
+            generated_at,
+            json,
+            out,
+        }) => {
+            commands::icecast::run_draft_pick_curve(
+                start_year,
+                cutoff_year,
+                completed_season_start_year,
+                horizon,
+                max_pick,
+                annual_future_discount,
+                generated_at,
+                json,
+                out,
+            )
+            .await?
+        }
+        Commands::Icecast(IceCastSubcommand::TradeMarketAssemble {
+            input,
+            curve,
+            baseline_forecast,
+            scenario_forecast,
+            buyer_lineup,
+            seller_lineup,
+            json,
+            out,
+        }) => commands::icecast::run_trade_market_assemble(
+            commands::icecast::IceCastTradeMarketAssembleArgs {
+                input,
+                curve,
+                baseline_forecast,
+                scenario_forecast,
+                buyer_lineup,
+                seller_lineup,
+                json,
+                out,
+            },
+        )?,
+        Commands::Icecast(IceCastSubcommand::TradeMarket { input, json, out }) => {
+            commands::icecast::run_trade_market(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::TradeScout { input, json, out }) => {
+            commands::icecast::run_trade_scout(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::TradeScoutLeague { input, json, out }) => {
+            commands::icecast::run_trade_scout_league(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::TradeScoutPopulate {
+            camp,
+            input,
+            pick_assets,
+            board_out,
+            json,
+            out,
+        }) => commands::icecast::run_trade_scout_populate(
+            camp,
+            input,
+            pick_assets,
+            board_out,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::TradeCalibrate { input, json, out }) => {
+            commands::icecast::run_trade_calibrate(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::TradeFeatures { input, json, out }) => {
+            commands::icecast::run_trade_features(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::TradePickPopulate {
+            ownership,
+            curve,
+            policy,
+            season_forecast,
+            json,
+            out,
+        }) => commands::icecast::run_trade_pick_populate(
+            ownership,
+            curve,
+            policy,
+            season_forecast,
+            json,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::TradePickCoverage {
+            ownership,
+            draft_year,
+            as_of,
+            json,
+            out,
+        }) => commands::icecast::run_trade_pick_coverage(ownership, draft_year, as_of, json, out)?,
+        Commands::Icecast(IceCastSubcommand::TradeLineup {
+            lineup,
+            change,
+            json,
+            out,
+        }) => commands::icecast::run_trade_lineup(lineup, change, json, out)?,
+        Commands::Icecast(IceCastSubcommand::TradeLineupBoard {
+            lineup,
+            input,
+            json,
+            out,
+        }) => commands::icecast::run_trade_lineup_board(lineup, input, json, out)?,
         Commands::Icecast(IceCastSubcommand::Season {
             season,
             stats_season,
+            candidate_overlay,
             teams,
             trials,
             seed,
@@ -1840,6 +1950,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             commands::icecast::run_season(commands::icecast::IceCastSeasonArgs {
                 season,
                 stats_season,
+                candidate_overlay,
                 teams,
                 trials,
                 seed,
@@ -1910,8 +2021,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::EdgeEvidence {
             forecast,
             input,
+            line_matchups,
             out,
-        }) => commands::icecast::run_edge_evidence(forecast, input, out)?,
+        }) => commands::icecast::run_edge_evidence(forecast, input, line_matchups, out)?,
         Commands::Icecast(IceCastSubcommand::EdgeObserve {
             edges,
             outcomes,
@@ -2112,6 +2224,8 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             candidates,
             discover_official,
             refresh,
+            as_of,
+            max_age,
             json,
             out,
         }) => {
@@ -2120,6 +2234,8 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 candidates,
                 discover_official,
                 refresh,
+                as_of,
+                max_age,
                 json,
                 out,
                 &cfg,
@@ -2717,6 +2833,99 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         })?,
+        Commands::Icecast(IceCastSubcommand::LineMatchup {
+            input,
+            away_bench_plan,
+            home_bench_plan,
+            json,
+            out,
+        }) => commands::icecast::run_line_matchup(commands::icecast::IceCastLineMatchupArgs {
+            input,
+            away_bench_plan,
+            home_bench_plan,
+            json,
+            out,
+        })?,
+        Commands::Icecast(IceCastSubcommand::LineMatchupProfiles {
+            lineup,
+            role_evidence,
+            shift_report,
+            evidence_cutoff_at,
+            recency,
+            source_fingerprints,
+            json,
+            out,
+        }) => commands::icecast::run_line_matchup_profiles(
+            commands::icecast::IceCastLineMatchupProfilesArgs {
+                lineup,
+                role_evidence,
+                shift_report,
+                evidence_cutoff_at,
+                recency,
+                source_fingerprints,
+                json,
+                out,
+            },
+        )?,
+        Commands::Icecast(IceCastSubcommand::LineChemistry {
+            team,
+            forecast_at,
+            input,
+            out,
+        }) => commands::icecast::run_line_chemistry(team, forecast_at, input, out)?,
+        Commands::Icecast(IceCastSubcommand::LineChemistryMoneyPuck {
+            team,
+            forecast_at,
+            line_games,
+            baselines,
+            minimum_shared_minutes,
+            out,
+        }) => commands::icecast::run_line_chemistry_moneypuck(
+            team,
+            forecast_at,
+            line_games,
+            baselines,
+            minimum_shared_minutes,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::LineChemistryMoneyPuckAuto {
+            team,
+            season_start,
+            forecast_at,
+            trailing_games,
+            minimum_player_games,
+            minimum_shared_minutes,
+            summary,
+            line_game_dir,
+            skater_game_dir,
+            team_game_dir,
+            rights_basis,
+            out,
+        }) => commands::icecast::run_line_chemistry_moneypuck_auto(
+            team,
+            season_start,
+            forecast_at,
+            trailing_games,
+            minimum_player_games,
+            minimum_shared_minutes,
+            summary,
+            line_game_dir,
+            skater_game_dir,
+            team_game_dir,
+            rights_basis,
+            out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::LineMatchupValidate {
+            input,
+            created_at,
+            out,
+        }) => commands::icecast::run_line_matchup_validate(input, created_at, out)?,
+        Commands::Icecast(IceCastSubcommand::LineMatchupCompare {
+            input,
+            focus_team,
+            baseline,
+            out,
+        }) => commands::icecast::run_line_matchup_compare(input, focus_team, baseline, out)?,
         Commands::Icecast(IceCastSubcommand::SeasonCard {
             input,
             team,
@@ -3067,6 +3276,81 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::CalibrateScenarioDevelopment {
+            input,
+            calibration,
+            json,
+            out,
+        }) => {
+            commands::icecast::run_scenario_development_calibration(input, calibration, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::ProspectArrivalCalibrate {
+            input,
+            career_discovery,
+            player_id,
+            event_id,
+            forecast_season,
+            conversion_board,
+            conversion_archive,
+            json,
+            out,
+            input_out,
+        }) => commands::icecast::run_prospect_arrival_calibration(
+            input,
+            career_discovery,
+            player_id,
+            event_id,
+            forecast_season,
+            conversion_board,
+            conversion_archive,
+            json,
+            out,
+            input_out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::ProspectArrivalLeague {
+            camp_forecast,
+            career_discoveries,
+            career_history,
+            source_package,
+            require_complete_population,
+            conversion_board,
+            conversion_archive,
+            forecast_season,
+            as_of,
+            max_age,
+            json,
+            out,
+            discovery_out,
+        }) => commands::icecast::run_prospect_arrival_league(
+            camp_forecast,
+            career_discoveries,
+            career_history,
+            source_package,
+            require_complete_population,
+            conversion_board,
+            conversion_archive,
+            forecast_season,
+            as_of,
+            max_age,
+            json,
+            out,
+            discovery_out,
+        )?,
+        Commands::Icecast(IceCastSubcommand::ProspectArrivalCard {
+            input,
+            team,
+            team_name,
+            evidence_at,
+            out,
+        }) => {
+            commands::icecast::run_prospect_arrival_card(input, team, team_name, evidence_at, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::ProspectArrivalBoard {
+            input,
+            generated_at,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_arrival_board(input, generated_at, json, out)?,
         Commands::Icecast(IceCastSubcommand::WindowStandings {
             target_season,
             date,
@@ -3232,6 +3516,18 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::ProspectCensusReadiness { input, json, out }) => {
+            commands::icecast::run_prospect_census_readiness(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::ProspectAuthorityClosure { input, json, out }) => {
+            commands::icecast::run_prospect_authority_closure(input, json, out)?
+        }
+        Commands::Icecast(IceCastSubcommand::ProspectAuthorityProgress {
+            prior,
+            current,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_authority_progress(prior, current, json, out)?,
         Commands::Icecast(IceCastSubcommand::ProspectCareerContext {
             camp_forecast,
             rosters,
@@ -3316,6 +3612,8 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             through_season,
             performance,
             performance_out,
+            input_out,
+            archive_out,
             json,
             out,
         }) => commands::icecast::run_prospect_conversion(
@@ -3327,9 +3625,17 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             through_season,
             performance,
             performance_out,
+            input_out,
+            archive_out,
             json,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::ProspectConversionReplay {
+            input,
+            archive,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_conversion_replay(input, archive, json, out)?,
         Commands::Icecast(IceCastSubcommand::ProspectBoard { studies, json, out }) => {
             commands::icecast::run_prospect_board(studies, json, out)?
         }

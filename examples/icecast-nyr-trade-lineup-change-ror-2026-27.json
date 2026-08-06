@@ -1,0 +1,49 @@
+{
+  "incoming_players": [
+    {
+      "player_id": 8475158,
+      "label": "Ryan O'Reilly",
+      "natural_positions": ["center"],
+      "alternate_positions": ["left_wing", "right_wing"],
+      "projected_score": 60.0,
+      "alternate_position_penalty": 3.0
+    }
+  ],
+  "projection_incoming_players": [
+    {
+      "player_id": 8475158,
+      "display_name": "Ryan O'Reilly",
+      "team": "NYR",
+      "prior_team": "NSH",
+      "primary_position": "Center",
+      "eligible_positions": ["LeftWing", "Center", "RightWing"],
+      "headshot_canonical_url": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8475158.png",
+      "games_played": 81,
+      "lens_scores": {
+        "points_pace": 72.0,
+        "goal_scoring": 36.0,
+        "fantasy": 270.0,
+        "upside": 72.0
+      },
+      "score_evidence": "simulated",
+      "power_play_role_score": 172.05,
+      "penalty_kill_role_score": 116.31,
+      "special_teams_evidence": "confirmed",
+      "requested_slot": null,
+      "assignment_evidence": "scenario"
+    }
+  ],
+  "outgoing_player_ids": [],
+  "limits": {
+    "centers": 4,
+    "left_wings": 4,
+    "right_wings": 4,
+    "defense": 6,
+    "goalies": 2
+  },
+  "disclosures": [
+    "Ryan O'Reilly's 60.0 projected score is an explicit scenario assumption based on his 2025-26 production and role, not yet a sealed IceLines player projection.",
+    "The 3.0 alternate-position penalty represents manager-permitted wing usage; the optimizer still selects O'Reilly at his natural center position.",
+    "The full-lineup bridge encodes the same 60.0 score across the four documented forward lenses; PP and PK role scores use official 2025-26 NHL seconds per game."
+  ]
+}

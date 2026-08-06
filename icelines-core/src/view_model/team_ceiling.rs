@@ -4,7 +4,35 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub const TEAM_CEILING_SCHEMA: &str = "team_ceiling.v1";
 pub const TEAM_CEILING_METHOD: &str =
-    "current-roster depth ensemble over prior-season NHL production";
+    "current-roster depth ensemble over GP-confidence-weighted prior-season NHL production";
+
+/// Prior NHL games required for observed rate statistics to receive 50% weight.
+///
+/// This is shared with preseason depth selection so a short, hot sample cannot
+/// outrank an established player solely because its per-game rate is higher.
+pub const NHL_SAMPLE_PRIOR_GAMES: f64 = 20.0;
+
+pub fn nhl_sample_confidence(games_played: u32) -> f64 {
+    let games = f64::from(games_played);
+    games / (games + NHL_SAMPLE_PRIOR_GAMES)
+}
+
+/// Blend bounded player lens scores with NHL games-played confidence.
+///
+/// Individual lenses are capped before averaging so one rate statistic from a
+/// very small sample can preserve upside without overwhelming every other
+/// roster candidate.
+pub fn confidence_weighted_player_value(scores: &[f64], games_played: u32) -> Option<f64> {
+    if scores.is_empty() {
+        return None;
+    }
+    let average = scores
+        .iter()
+        .map(|score| score.clamp(0.0, 100.0))
+        .sum::<f64>()
+        / scores.len() as f64;
+    Some(average * nhl_sample_confidence(games_played))
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -292,6 +320,10 @@ pub fn build_team_ceiling(
             "Depth aggregation retains the best 12 forwards, 6 defensemen, and 2 goalies under each lens.".to_owned(),
             "The previous-season comparison uses each player's final listed team and a 23-player depth selection (14 forwards, 7 defensemen, 2 goalies).".to_owned(),
             "All lens scores are normalized 0-100 across current and previous team totals, so deltas are comparable within this report.".to_owned(),
+            format!(
+                "Depth aggregation weights every observed player rate by GP/(GP+{}); raw per-82 player lens values remain visible for audit.",
+                NHL_SAMPLE_PRIOR_GAMES as u32
+            ),
             "Playoff chance ranges are transparent logistic scenarios widened for missing player samples; they are not calibrated probabilities or betting odds.".to_owned(),
             "Players without a prior-season NHL sample remain on the roster and reduce coverage; they are not silently scored as zero.".to_owned(),
         ],
@@ -329,8 +361,16 @@ fn scores_for(
     players
         .iter()
         .filter(|player| predicate(player.position))
-        .filter_map(|player| team_ceiling_player_lens_score(player, lens))
+        .filter_map(|player| team_ceiling_player_modeled_lens_score(player, lens))
         .collect()
+}
+
+pub fn team_ceiling_player_modeled_lens_score(
+    player: &TeamCeilingPlayerInput,
+    lens: TeamCeilingLens,
+) -> Option<f64> {
+    team_ceiling_player_lens_score(player, lens)
+        .map(|score| score * nhl_sample_confidence(player.games_played))
 }
 
 pub fn team_ceiling_player_lens_score(
@@ -445,6 +485,60 @@ mod tests {
             fantasy_per_82: pace.map(|value| value * 3.0),
             goalie_quality: None,
         }
+    }
+
+    fn goalie(id: u32, games_played: u32, quality: f64) -> TeamCeilingPlayerInput {
+        TeamCeilingPlayerInput {
+            player_id: id,
+            player: format!("Goalie {id}"),
+            team: "NYR".to_owned(),
+            prior_team: Some("NYR".to_owned()),
+            position: Position::Goalie,
+            age: 27,
+            games_played,
+            points_per_82: None,
+            goals_per_82: None,
+            shots_per_82: None,
+            fantasy_per_82: None,
+            goalie_quality: Some(quality),
+        }
+    }
+
+    #[test]
+    fn l0_sample_confidence_prevents_hot_three_game_goalie_from_outranking_starter() {
+        let hot_sample = goalie(1, 3, 98.66);
+        let established = goalie(2, 51, 74.07);
+
+        let hot_modeled =
+            team_ceiling_player_modeled_lens_score(&hot_sample, TeamCeilingLens::Upside).unwrap();
+        let established_modeled =
+            team_ceiling_player_modeled_lens_score(&established, TeamCeilingLens::Upside).unwrap();
+
+        assert!(hot_modeled < established_modeled);
+        assert!((nhl_sample_confidence(20) - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn l0_bounded_player_value_preserves_short_sample_upside_without_certainty() {
+        let value = confidence_weighted_player_value(&[320.0], 9).unwrap();
+        assert!((value - 31.034_482_758_620_69).abs() < 1e-9);
+        assert!(confidence_weighted_player_value(&[], 9).is_none());
+    }
+
+    #[test]
+    fn l0_partial_nine_game_lens_is_shrunk_below_full_season_depth_value() {
+        let prospect = skater(1, "NYR", None, 21);
+        let mut prospect = prospect;
+        prospect.games_played = 9;
+        prospect.fantasy_per_82 = Some(95.67);
+        let veteran = skater(2, "NYR", Some(35.0), 29);
+
+        let prospect_modeled =
+            team_ceiling_player_modeled_lens_score(&prospect, TeamCeilingLens::Fantasy).unwrap();
+        let veteran_modeled =
+            team_ceiling_player_modeled_lens_score(&veteran, TeamCeilingLens::Fantasy).unwrap();
+
+        assert!(prospect_modeled < veteran_modeled);
     }
 
     #[test]

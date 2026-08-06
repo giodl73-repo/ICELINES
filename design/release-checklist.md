@@ -156,8 +156,7 @@ GitHub release workflow artifacts:
 | Platform | Artifact |
 |---|---|
 | Windows x64 | `icelines-windows-x86_64.zip` |
-| macOS Apple Silicon | `icelines-macos-arm64.tar.gz` |
-| macOS Intel | `icelines-macos-x86_64.tar.gz` |
+| macOS Intel, or Apple Silicon through Rosetta 2 | `icelines-macos-x86_64.tar.gz` |
 | Linux x64 | `icelines-linux-x86_64.tar.gz` |
 
 Each archive should contain the single `icelines` binary (`icelines.exe` on

@@ -7,9 +7,10 @@ use icelines_core::source_facts::{
     PlayerOrganizationEvent, SourceFact, SourceObjectState, SourcePackage,
 };
 use icelines_core::view_model::prospect_census::{
-    build_prospect_census, ProspectCensusCandidateInput, ProspectCensusFreshnessStatus,
-    ProspectCensusInput, ProspectCensusLossReason, ProspectCensusOrganizationInput,
-    ProspectCensusStage, ProspectCensusView, ProspectPopulationAuthorityStatus,
+    build_prospect_census, ProspectCensusAuthorityGap, ProspectCensusAuthorityGapState,
+    ProspectCensusCandidateInput, ProspectCensusFreshnessStatus, ProspectCensusInput,
+    ProspectCensusLossReason, ProspectCensusOrganizationInput, ProspectCensusStage,
+    ProspectCensusView, ProspectPopulationAuthorityStatus,
 };
 use icelines_core::{
     ProspectDevelopmentStudyView, ProspectGoalieDevelopmentStudyView, ProspectProgramBoardView,
@@ -673,11 +674,39 @@ fn organization_inputs(
                     SourceObjectState::Acquired { .. } => None,
                 })
                 .collect();
+            let mut authority_gaps = objects
+                .iter()
+                .filter_map(|object| match &object.state {
+                    SourceObjectState::Failed { reason } => Some(ProspectCensusAuthorityGap {
+                        source_family: object.source_family.clone(),
+                        state: ProspectCensusAuthorityGapState::Failed,
+                        reason: reason.clone(),
+                    }),
+                    SourceObjectState::Quarantined { reason } => Some(ProspectCensusAuthorityGap {
+                        source_family: object.source_family.clone(),
+                        state: ProspectCensusAuthorityGapState::Quarantined,
+                        reason: reason.clone(),
+                    }),
+                    SourceObjectState::IncompletePagination => Some(ProspectCensusAuthorityGap {
+                        source_family: object.source_family.clone(),
+                        state: ProspectCensusAuthorityGapState::IncompletePagination,
+                        reason: "source pagination did not reach a terminal page".to_owned(),
+                    }),
+                    SourceObjectState::Acquired { .. }
+                    | SourceObjectState::NotApplicable { .. } => None,
+                })
+                .collect::<Vec<_>>();
+            authority_gaps.sort_by(|left, right| {
+                left.source_family
+                    .cmp(&right.source_family)
+                    .then_with(|| left.state.cmp(&right.state))
+            });
             ProspectCensusOrganizationInput {
                 organization,
                 population_authority_status: status,
                 requested_ranking_depth,
                 authority_disclosures,
+                authority_gaps,
             }
         })
         .collect()
@@ -901,6 +930,13 @@ mod tests {
             view.organizations[0].population_authority_status,
             ProspectPopulationAuthorityStatus::Incomplete
         );
+        assert_eq!(view.organizations[0].authority_gaps.len(), 1);
+        assert_eq!(
+            view.organizations[0].authority_gaps[0].source_family,
+            "ahl_current_assignment"
+        );
+        assert_eq!(view.authority_gap_summary.len(), 1);
+        assert_eq!(view.authority_gap_summary[0].organizations, 1);
         assert_eq!(view.losses.len(), 1);
         assert_eq!(
             view.losses[0].reason,

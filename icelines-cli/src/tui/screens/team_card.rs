@@ -5,10 +5,16 @@
 
 use std::{collections::BTreeMap, sync::OnceLock};
 
+use chrono::{DateTime, Utc};
 use icelines_core::{
-    load_organization_window_profile_inventory, parse_card_document,
-    project_organization_window_card, validate_organization_window_board, CardDocumentView,
-    CardSectionView, OrganizationWindowBoardView, CANONICAL_TEAMS,
+    build_prospect_arrival_card, load_organization_window_profile_inventory, parse_card_document,
+    project_organization_window_card, season_stats::SeasonType, validate_organization_window_board,
+    validate_prospect_authority_closure_board, CardDocumentView, CardSectionView,
+    OrganizationWindowBoardView, ProspectArrivalBoardView, ProspectArrivalCardInput,
+    ProspectArrivalLeagueCalibrationView, ProspectAuthorityClosureBoardView,
+    ProspectAuthorityClosureDisposition, ProspectAuthorityProgressChangeKind,
+    ProspectAuthorityProgressView, ProspectCensusAuthorityGapState,
+    ProspectCensusReadinessBoardView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -40,6 +46,22 @@ const NYR_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-sea-2024-25.json");
+#[cfg(test)]
+const NYR_PROSPECT_ARRIVAL_CARD_JSON: &str =
+    include_str!("../../../../examples/prospect-arrival-card-nyr-2026-27.json");
+#[cfg(test)]
+const SEA_PROSPECT_ARRIVAL_CARD_JSON: &str =
+    include_str!("../../../../examples/prospect-arrival-card-sea-2026-27.json");
+const PROSPECT_ARRIVAL_LEAGUE_JSON: &str =
+    include_str!("../../../../examples/icecast-prospect-arrival-league-2026-27.json");
+const PROSPECT_ARRIVAL_BOARD_JSON: &str =
+    include_str!("../../../../examples/prospect-arrival-board-2026-27.json");
+const PROSPECT_CENSUS_READINESS_BOARD_JSON: &str =
+    include_str!("../../../../examples/prospect-census-readiness-2026-27.json");
+const PROSPECT_AUTHORITY_CLOSURE_BOARD_JSON: &str =
+    include_str!("../../../../examples/prospect-authority-closure-2026-27.json");
+const PROSPECT_AUTHORITY_PROGRESS_JSON: &str =
+    include_str!("../../../../examples/prospect-authority-progress-2026-27-ahl.json");
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
     include_str!("../../../../examples/organization-window-board-partial-2026-07-28.json");
 const FANTASY_CARD_JSON: &str =
@@ -53,6 +75,11 @@ const FANTASY_TRADE_CARD_JSON: &str =
 
 fn card(team: &str) -> &'static CardDocumentView {
     let upper = team.to_ascii_uppercase();
+    if let Some(arrival_team) = upper.strip_prefix("ARRIVAL-") {
+        return prospect_arrival_cards()
+            .get(arrival_team)
+            .expect("canonical prospect arrival team");
+    }
     if let Some(window_team) = upper.strip_prefix("WINDOW-") {
         return organization_window_cards()
             .get(window_team)
@@ -123,6 +150,45 @@ fn card(team: &str) -> &'static CardDocumentView {
     }
 }
 
+fn prospect_arrival_cards() -> &'static BTreeMap<String, CardDocumentView> {
+    static CARDS: OnceLock<BTreeMap<String, CardDocumentView>> = OnceLock::new();
+    CARDS.get_or_init(|| {
+        let arrival: ProspectArrivalLeagueCalibrationView =
+            serde_json::from_str(PROSPECT_ARRIVAL_LEAGUE_JSON)
+                .expect("sealed prospect arrival league calibration");
+        let evidence_at = DateTime::parse_from_rfc3339("2026-09-15T12:00:00Z")
+            .expect("fixed prospect arrival evidence time")
+            .with_timezone(&Utc);
+        CANONICAL_TEAMS
+            .iter()
+            .map(|(team, team_name)| {
+                let mut view = ViewContext::new(ViewWindow::new(
+                    Season(arrival.forecast_season),
+                    SeasonType::Regular,
+                ));
+                view.generated_at = Some(evidence_at);
+                let card = build_prospect_arrival_card(ProspectArrivalCardInput {
+                    arrival: arrival.clone(),
+                    focus_team: (*team).to_owned(),
+                    team_name: (*team_name).to_owned(),
+                    view,
+                    evidence_at: Some(evidence_at),
+                })
+                .expect("canonical prospect arrival card projection");
+                ((*team).to_owned(), card)
+            })
+            .collect()
+    })
+}
+
+pub(crate) fn page_count(team: &str) -> usize {
+    if team.eq_ignore_ascii_case("AUTHORITY-CLOSURE-BOARD") {
+        4
+    } else {
+        2
+    }
+}
+
 pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::ScreenChrome {
     use crate::tui::chrome::{KeyHint, ScreenChrome};
     if team.eq_ignore_ascii_case("WINDOW-BOARD") {
@@ -130,6 +196,42 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
             title: format!("The Window - 32-team board - page {}", page + 1),
             keybinds: vec![
                 KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
+    if team.eq_ignore_ascii_case("ARRIVAL-BOARD") {
+        return ScreenChrome {
+            title: format!("Prospect Arrival Board - page {}", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
+    if team.eq_ignore_ascii_case("CENSUS-BOARD") {
+        return ScreenChrome {
+            title: format!("Prospect Census Readiness - page {}", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
+    if team.eq_ignore_ascii_case("AUTHORITY-PROGRESS-BOARD") {
+        return ScreenChrome {
+            title: format!("Prospect Authority Progress - page {}", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "teams 1-16/17-32"),
+                KeyHint::new(":", "command"),
+            ],
+        };
+    }
+    if team.eq_ignore_ascii_case("AUTHORITY-CLOSURE-BOARD") {
+        return ScreenChrome {
+            title: format!("Prospect Authority Closure - page {} of 4", page + 1),
+            keybinds: vec![
+                KeyHint::new("p", "next 16 cells"),
                 KeyHint::new(":", "command"),
             ],
         };
@@ -159,6 +261,8 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
             "NYR vs SEA Season Simulation"
         } else if team.to_ascii_uppercase().starts_with("WINDOW-") {
             "NYR vs SEA Organization Window"
+        } else if team.to_ascii_uppercase().starts_with("ARRIVAL-") {
+            "NYR vs SEA Prospect Arrivals"
         } else {
             "NYR vs SEA"
         }
@@ -178,9 +282,25 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
 }
 
 pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
-    let page = app.selected.min(1);
+    let page = app.selected.min(page_count(team) - 1);
     if team.eq_ignore_ascii_case("WINDOW-BOARD") {
         render_organization_window_board(f, area, page);
+        return;
+    }
+    if team.eq_ignore_ascii_case("ARRIVAL-BOARD") {
+        render_prospect_arrival_board(f, area, page);
+        return;
+    }
+    if team.eq_ignore_ascii_case("CENSUS-BOARD") {
+        render_prospect_census_readiness_board(f, area, page);
+        return;
+    }
+    if team.eq_ignore_ascii_case("AUTHORITY-PROGRESS-BOARD") {
+        render_prospect_authority_progress(f, area, page);
+        return;
+    }
+    if team.eq_ignore_ascii_case("AUTHORITY-CLOSURE-BOARD") {
+        render_prospect_authority_closure(f, area, page);
         return;
     }
     if compare
@@ -200,6 +320,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
             "SIM-NYR"
         } else if upper.starts_with("WINDOW-") {
             "WINDOW-NYR"
+        } else if upper.starts_with("ARRIVAL-") {
+            "ARRIVAL-NYR"
         } else {
             "NYR"
         };
@@ -213,6 +335,8 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
             "SIM-SEA"
         } else if upper.starts_with("WINDOW-") {
             "WINDOW-SEA"
+        } else if upper.starts_with("ARRIVAL-") {
+            "ARRIVAL-SEA"
         } else {
             "SEA"
         };
@@ -262,6 +386,352 @@ fn organization_window_cards() -> &'static BTreeMap<String, CardDocumentView> {
             })
             .collect()
     })
+}
+
+fn prospect_arrival_board() -> &'static ProspectArrivalBoardView {
+    static BOARD: OnceLock<ProspectArrivalBoardView> = OnceLock::new();
+    BOARD.get_or_init(|| {
+        serde_json::from_str(PROSPECT_ARRIVAL_BOARD_JSON)
+            .expect("sealed 32-team prospect arrival board")
+    })
+}
+
+fn prospect_census_readiness_board() -> &'static ProspectCensusReadinessBoardView {
+    static BOARD: OnceLock<ProspectCensusReadinessBoardView> = OnceLock::new();
+    BOARD.get_or_init(|| {
+        let board: ProspectCensusReadinessBoardView =
+            serde_json::from_str(PROSPECT_CENSUS_READINESS_BOARD_JSON)
+                .expect("sealed 32-team prospect census readiness board");
+        assert_eq!(
+            board
+                .calculate_fingerprint()
+                .expect("readiness fingerprint"),
+            board.fingerprint,
+            "sealed prospect census readiness board must remain canonical"
+        );
+        board
+    })
+}
+
+fn prospect_authority_progress() -> &'static ProspectAuthorityProgressView {
+    static PROGRESS: OnceLock<ProspectAuthorityProgressView> = OnceLock::new();
+    PROGRESS.get_or_init(|| {
+        let progress: ProspectAuthorityProgressView =
+            serde_json::from_str(PROSPECT_AUTHORITY_PROGRESS_JSON)
+                .expect("sealed prospect authority progress");
+        assert_eq!(
+            progress
+                .calculate_fingerprint()
+                .expect("authority progress fingerprint"),
+            progress.fingerprint,
+            "sealed prospect authority progress must remain canonical"
+        );
+        progress
+    })
+}
+
+fn prospect_authority_closure_board() -> &'static ProspectAuthorityClosureBoardView {
+    static BOARD: OnceLock<ProspectAuthorityClosureBoardView> = OnceLock::new();
+    BOARD.get_or_init(|| {
+        let board: ProspectAuthorityClosureBoardView =
+            serde_json::from_str(PROSPECT_AUTHORITY_CLOSURE_BOARD_JSON)
+                .expect("sealed prospect authority closure board");
+        validate_prospect_authority_closure_board(&board)
+            .expect("sealed prospect authority closure board must remain canonical");
+        board
+    })
+}
+
+fn render_prospect_authority_closure(f: &mut Frame, area: Rect, page: usize) {
+    let board = prospect_authority_closure_board();
+    let title = format!(
+        " PROSPECT AUTHORITY CLOSURE | {} | {} | {}/4 ",
+        board.evaluation_season,
+        &board.fingerprint[..8],
+        page + 1
+    );
+    let lines = prospect_authority_closure_lines(board, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+pub(crate) fn prospect_authority_closure_lines(
+    board: &ProspectAuthorityClosureBoardView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let start = page.min(3) * 16;
+    let mut lines = vec![format!(
+        "{} blockers · {} population · {} control · {}/{} teams affected",
+        board.cells,
+        board.population_blocking_cells,
+        board.control_blocking_cells,
+        board.affected_organizations,
+        board.organizations,
+    )];
+    if width >= 72 {
+        lines.extend([
+            "CAMP · camp_participation_ledger.v1 · --camp-participation-ledger".to_owned(),
+            "CONTRACT · contract_control_ledger.v1 · --contract-control-ledger".to_owned(),
+        ]);
+    } else {
+        lines.extend([
+            "CAMP · camp_participation_ledger.v1".to_owned(),
+            "CONTRACT · contract_control_ledger.v1".to_owned(),
+        ]);
+    }
+    lines.push("TEAM SOURCE FAMILY               GATE       STATE      ACTION".to_owned());
+    for row in board.closure_cells.iter().skip(start).take(16) {
+        lines.push(format!(
+            "{:<4} {:<27} {:<10} {:<10} {}",
+            row.organization,
+            fit_authority_cell(&row.source_family, 27),
+            authority_gate_label(row.gate),
+            authority_gap_state_label(row.state),
+            authority_disposition_label(row.disposition),
+        ));
+    }
+    lines
+}
+
+fn render_prospect_authority_progress(f: &mut Frame, area: Rect, page: usize) {
+    let progress = prospect_authority_progress();
+    let title = format!(
+        " PROSPECT AUTHORITY PROGRESS | {} | {} ",
+        progress.evaluation_season,
+        &progress.fingerprint[..8]
+    );
+    let lines = prospect_authority_progress_lines(progress, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+pub(crate) fn prospect_authority_progress_lines(
+    progress: &ProspectAuthorityProgressView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let start = page.min(1) * 16;
+    let mut lines = vec![format!(
+        "{}→{} blockers · {} closed · {} opened · {:.2}% retired",
+        progress.prior_cells,
+        progress.current_cells,
+        progress.closed_cells,
+        progress.opened_cells,
+        f64::from(progress.closure_basis_points) / 100.0,
+    )];
+    if width >= 72 {
+        lines.push(
+            "TEAM SOURCE FAMILY            GATE       CHANGE        PRIOR      → CURRENT"
+                .to_owned(),
+        );
+    } else {
+        lines.push("TEAM SOURCE FAMILY          CHANGE        PRIOR      → CURRENT".to_owned());
+    }
+    for row in progress.changes.iter().skip(start).take(16) {
+        let family = fit_authority_cell(&row.source_family, 22);
+        let prior = row
+            .prior_state
+            .map(authority_gap_state_label)
+            .unwrap_or("absent");
+        let current = row
+            .current_state
+            .map(authority_gap_state_label)
+            .unwrap_or("resolved");
+        if width >= 72 {
+            lines.push(format!(
+                "{:<4} {:<22} {:<10} {:<13} {:<10} → {}",
+                row.organization,
+                family,
+                authority_gate_label(row.gate),
+                authority_change_label(row.kind),
+                prior,
+                current,
+            ));
+        } else {
+            lines.push(format!(
+                "{:<4} {:<22} {:<13} {:<10} → {}",
+                row.organization,
+                family,
+                authority_change_label(row.kind),
+                prior,
+                current,
+            ));
+        }
+    }
+    lines
+}
+
+fn fit_authority_cell(value: &str, width: usize) -> String {
+    value.chars().take(width).collect()
+}
+
+fn authority_change_label(kind: ProspectAuthorityProgressChangeKind) -> &'static str {
+    match kind {
+        ProspectAuthorityProgressChangeKind::Closed => "closed",
+        ProspectAuthorityProgressChangeKind::Opened => "opened",
+        ProspectAuthorityProgressChangeKind::StateChanged => "state changed",
+    }
+}
+
+fn authority_disposition_label(disposition: ProspectAuthorityClosureDisposition) -> &'static str {
+    match disposition {
+        ProspectAuthorityClosureDisposition::Acquire => "acquire",
+        ProspectAuthorityClosureDisposition::ResolveQuarantine => "resolve quarantine",
+        ProspectAuthorityClosureDisposition::CompletePagination => "complete pagination",
+    }
+}
+
+fn authority_gap_state_label(state: ProspectCensusAuthorityGapState) -> &'static str {
+    match state {
+        ProspectCensusAuthorityGapState::Failed => "failed",
+        ProspectCensusAuthorityGapState::Quarantined => "quarantine",
+        ProspectCensusAuthorityGapState::IncompletePagination => "pagination",
+    }
+}
+
+fn authority_gate_label(gate: icelines_core::ProspectAuthorityClosureGate) -> &'static str {
+    match gate {
+        icelines_core::ProspectAuthorityClosureGate::PopulationAuthority => "population",
+        icelines_core::ProspectAuthorityClosureGate::OrganizationalControl => "control",
+    }
+}
+
+fn render_prospect_census_readiness_board(f: &mut Frame, area: Rect, page: usize) {
+    let board = prospect_census_readiness_board();
+    let title = format!(
+        " PROSPECT CENSUS READINESS | {} | {} ",
+        board.evaluation_season,
+        &board.fingerprint[..8]
+    );
+    let lines = prospect_census_readiness_board_lines(board, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+pub(crate) fn prospect_census_readiness_board_lines(
+    board: &ProspectCensusReadinessBoardView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let start = page.min(1) * 16;
+    let mut lines = vec![format!(
+        "{}/32 population · {}/32 depth · {}/32 published · {} authority gaps",
+        board.population_complete_organizations,
+        board.depth_complete_organizations,
+        board.published_organizations,
+        board
+            .authority_gap_summary
+            .iter()
+            .map(|row| row.organizations)
+            .sum::<usize>()
+    )];
+    if width >= 72 {
+        lines.push("TEAM AUTH       PUBLICATION           CAN CTRL RANK/TGT GAPS".to_owned());
+    } else {
+        lines.push("TEAM AUTH       CAN CTRL RANK/TGT GAPS".to_owned());
+    }
+    for row in board.teams.iter().skip(start).take(16) {
+        if width >= 72 {
+            lines.push(format!(
+                "{:<4} {:<10?} {:<21?} {:>3} {:>4} {:>4}/{:<3} {:>4}",
+                row.organization,
+                row.population_authority_status,
+                row.publication_status,
+                row.counts.canonical_identity,
+                row.counts.controlled_relationship,
+                row.counts.ranked,
+                row.requested_ranking_depth,
+                row.authority_gaps.len(),
+            ));
+        } else {
+            lines.push(format!(
+                "{:<4} {:<10?} {:>3} {:>4} {:>4}/{:<3} {:>4}",
+                row.organization,
+                row.population_authority_status,
+                row.counts.canonical_identity,
+                row.counts.controlled_relationship,
+                row.counts.ranked,
+                row.requested_ranking_depth,
+                row.authority_gaps.len(),
+            ));
+        }
+    }
+    lines
+}
+
+fn render_prospect_arrival_board(f: &mut Frame, area: Rect, page: usize) {
+    let board = prospect_arrival_board();
+    let title = format!(
+        " PROSPECT ARRIVALS | {} | {:?} | {} ",
+        board.forecast_season,
+        board.rank_state,
+        &board.fingerprint[..8]
+    );
+    let lines = prospect_arrival_board_lines(board, page, area.width.saturating_sub(2));
+    let paragraph = Paragraph::new(lines.into_iter().map(Line::from).collect::<Vec<_>>())
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
+    f.render_widget(paragraph, area);
+}
+
+pub(crate) fn prospect_arrival_board_lines(
+    board: &ProspectArrivalBoardView,
+    page: usize,
+    width: u16,
+) -> Vec<String> {
+    let rows = board.teams_in_display_order();
+    let start = page.min(1) * 16;
+    let mut lines = vec![format!(
+        "32 teams · {}/{} eligible · {} rerouted · {} blocked · ranks {:?}",
+        board.calibrated_skaters,
+        board.eligible_skaters,
+        board.routed_established_skaters,
+        board.blocking_exclusions,
+        board.rank_state
+    )];
+    if width >= 72 {
+        lines.push("RK TEAM CAL/ELG COV  EXP ARR EXP ROLE TOP".to_owned());
+    } else {
+        lines.push("RK TEAM CAL/ELG COV  EXP ARR TOP".to_owned());
+    }
+    for row in rows.into_iter().skip(start).take(16) {
+        let rank = row
+            .rank
+            .map(|rank| format!("{rank:>2}"))
+            .unwrap_or_else(|| "NR".to_owned());
+        let top = row
+            .top_arrival_probability
+            .map(|value| format!("{:>4.0}%", value * 100.0))
+            .unwrap_or_else(|| "  NR".to_owned());
+        if width >= 72 {
+            lines.push(format!(
+                "{rank:<2} {:<4} {:>2}/{:<2}    {:>3.0}%  {:>7.2} {:>8.2} {top}",
+                row.organization,
+                row.calibrated_skaters,
+                row.eligible_skaters,
+                row.calibration_coverage * 100.0,
+                row.expected_arrivals,
+                row.expected_established_roles,
+            ));
+        } else {
+            lines.push(format!(
+                "{rank:<2} {:<4} {:>2}/{:<2}    {:>3.0}%  {:>7.2} {top}",
+                row.organization,
+                row.calibrated_skaters,
+                row.eligible_skaters,
+                row.calibration_coverage * 100.0,
+                row.expected_arrivals,
+            ));
+        }
+    }
+    lines
 }
 
 fn render_organization_window_board(f: &mut Frame, area: Rect, page: usize) {
@@ -918,6 +1388,81 @@ mod tests {
     }
 
     #[test]
+    fn l1_prospect_arrival_projects_depth_chart_insider_and_card_controls() {
+        let nyr = card("ARRIVAL-NYR");
+        let sea = card("ARRIVAL-SEA");
+        assert_eq!(nyr.card_kind, icelines_core::CardKind::ProspectArrival);
+        assert_eq!(sea.card_kind, icelines_core::CardKind::ProspectArrival);
+        assert_eq!(
+            nyr.context.simulation.parameter_fingerprint,
+            sea.context.simulation.parameter_fingerprint
+        );
+        assert_eq!(nyr.provenance[0].fingerprint, sea.provenance[0].fingerprint);
+        assert_ne!(nyr.fingerprint, sea.fingerprint);
+        assert_eq!(prospect_arrival_cards().len(), CANONICAL_TEAMS.len());
+        assert_eq!(
+            *nyr,
+            parse_card_document(NYR_PROSPECT_ARRIVAL_CARD_JSON)
+                .expect("sealed NYR prospect arrival fixture")
+        );
+        assert_eq!(
+            *sea,
+            parse_card_document(SEA_PROSPECT_ARRIVAL_CARD_JSON)
+                .expect("sealed SEA prospect arrival fixture")
+        );
+        for (team, team_name) in CANONICAL_TEAMS {
+            let card = card(&format!("ARRIVAL-{team}"));
+            assert_eq!(card.context.joins.team_ids, [*team]);
+            assert_eq!(card.title, format!("{team_name} prospect arrivals"));
+        }
+
+        for width in [80, 120, 160] {
+            let depth_chart = document_lines(nyr, 0, width).join("\n");
+            assert!(depth_chart.contains("Cole Beaudoin"));
+            assert!(depth_chart.contains("Calibrated arrival outlook"));
+            assert!(depth_chart.contains("Arrival"));
+
+            let insider = document_lines(nyr, 1, width).join("\n");
+            assert!(insider.contains("Coverage draft"));
+            assert!(insider.contains("Exclusion ledger"));
+            assert!(insider.contains("Source authority"));
+            assert!(insider.contains("No sealed prospect population source package"));
+        }
+
+        assert_eq!(
+            parse_command("prospect-arrival-card SEA").unwrap(),
+            Command::TeamCard {
+                team: "ARRIVAL-SEA".to_owned()
+            }
+        );
+        assert_eq!(
+            parse_command("prospect-arrival-card BOS").unwrap(),
+            Command::TeamCard {
+                team: "ARRIVAL-BOS".to_owned()
+            }
+        );
+        assert!(parse_command("prospect-arrival-card XYZ").is_err());
+
+        let mut app = App::new(true);
+        execute_command(
+            parse_command("prospect-arrival-card SEA").unwrap(),
+            &mut app,
+        );
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
+        app.handle(Action::Char('t'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard { ref team, .. } if team == "ARRIVAL-NYR"
+        ));
+        app.handle(Action::Char('c'));
+        assert!(matches!(app.screen, Screen::TeamCard { compare: true, .. }));
+        assert!(chrome("ARRIVAL-NYR", 0, true)
+            .title
+            .contains("NYR vs SEA Prospect Arrivals"));
+    }
+
+    #[test]
     fn l1_organization_window_projects_shared_values_and_toggles() {
         let nyr = card("WINDOW-NYR");
         let sea = card("WINDOW-SEA");
@@ -1013,6 +1558,224 @@ mod tests {
         ));
         app.handle(Action::Char('p'));
         assert_eq!(app.selected, 1);
+    }
+
+    #[test]
+    fn l1_prospect_arrival_board_pages_cover_all_32_without_shadow_ranks() {
+        let board = prospect_arrival_board();
+        let first = prospect_arrival_board_lines(board, 0, 80);
+        let second = prospect_arrival_board_lines(board, 1, 80);
+        assert_eq!(first.len(), 18);
+        assert_eq!(second.len(), 18);
+        assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
+        assert!(first[0].contains("8/10 eligible"));
+        assert!(first[0].contains("157 rerouted"));
+        assert!(first[0].contains("2 blocked"));
+        assert!(first[0].contains("ranks Withheld"));
+        assert!(first.iter().skip(2).all(|line| line.starts_with("NR")));
+        assert!(second.iter().skip(2).all(|line| line.starts_with("NR")));
+        let teams = first
+            .iter()
+            .skip(2)
+            .chain(second.iter().skip(2))
+            .filter_map(|line| line.split_whitespace().nth(1))
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(teams.len(), CANONICAL_TEAMS.len());
+        assert!(teams.contains("NYR"));
+        assert!(teams.contains("SEA"));
+        assert_eq!(
+            parse_command("prospect-arrival-board").unwrap(),
+            Command::TeamCard {
+                team: "ARRIVAL-BOARD".to_owned()
+            }
+        );
+
+        let mut app = App::new(true);
+        execute_command(parse_command("prospect-arrival-board").unwrap(), &mut app);
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('c'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard {
+                ref team,
+                compare: false
+            } if team == "ARRIVAL-BOARD"
+        ));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
+    }
+
+    #[test]
+    fn l1_prospect_census_readiness_pages_cover_all_32_without_shadow_rankings() {
+        let board = prospect_census_readiness_board();
+        let first = prospect_census_readiness_board_lines(board, 0, 80);
+        let second = prospect_census_readiness_board_lines(board, 1, 80);
+        assert_eq!(first.len(), 18);
+        assert_eq!(second.len(), 18);
+        assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
+        assert!(first[0].contains("0/32 population"));
+        assert!(first[0].contains("0/32 depth"));
+        assert!(first[0].contains("0/32 published"));
+        assert!(first[0].contains("64 authority gaps"));
+        let teams = first
+            .iter()
+            .skip(2)
+            .chain(second.iter().skip(2))
+            .filter_map(|line| line.split_whitespace().next())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(teams.len(), CANONICAL_TEAMS.len());
+        assert!(teams.contains("NYR"));
+        assert!(teams.contains("SEA"));
+        assert_eq!(
+            parse_command("prospect-census-readiness").unwrap(),
+            Command::TeamCard {
+                team: "CENSUS-BOARD".to_owned()
+            }
+        );
+
+        let mut app = App::new(true);
+        execute_command(
+            parse_command("prospect-census-readiness").unwrap(),
+            &mut app,
+        );
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('c'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard {
+                ref team,
+                compare: false
+            } if team == "CENSUS-BOARD"
+        ));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
+    }
+
+    #[test]
+    fn l1_prospect_authority_progress_pages_cover_every_exact_change() {
+        let progress = prospect_authority_progress();
+        let first = prospect_authority_progress_lines(progress, 0, 80);
+        let second = prospect_authority_progress_lines(progress, 1, 80);
+        assert_eq!(first.len(), 18);
+        assert_eq!(second.len(), 18);
+        assert!(first.iter().chain(&second).all(|line| line.len() <= 80));
+        assert!(first[0].contains("96→64 blockers"));
+        assert!(first[0].contains("32 closed"));
+        assert!(first[0].contains("0 opened"));
+        assert!(first[0].contains("33.33% retired"));
+        let teams = first
+            .iter()
+            .skip(2)
+            .chain(second.iter().skip(2))
+            .filter_map(|line| line.split_whitespace().next())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(teams.len(), CANONICAL_TEAMS.len());
+        assert!(teams.contains("NYR"));
+        assert!(teams.contains("SEA"));
+        assert!(first
+            .iter()
+            .chain(&second)
+            .all(|line| !line.contains("Some(") && !line.contains("None")));
+        assert_eq!(
+            parse_command("prospect-authority-progress").unwrap(),
+            Command::TeamCard {
+                team: "AUTHORITY-PROGRESS-BOARD".to_owned()
+            }
+        );
+
+        let mut app = App::new(true);
+        execute_command(
+            parse_command("prospect-authority-progress").unwrap(),
+            &mut app,
+        );
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('c'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard {
+                ref team,
+                compare: false
+            } if team == "AUTHORITY-PROGRESS-BOARD"
+        ));
+        let rendered = render_app(&app, 80, 30);
+        assert!(rendered.contains("PROSPECT AUTHORITY PROGRESS"));
+        assert!(rendered.contains("96→64 blockers"));
+        assert!(rendered.contains("ANA"));
+        assert!(!rendered.contains("SJS"));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 1);
+        let rendered = render_app(&app, 80, 30);
+        assert!(rendered.contains("SJS"));
+        assert!(!rendered.contains("ANA  "));
+    }
+
+    #[test]
+    fn l1_prospect_authority_closure_pages_preserve_all_64_exact_cells() {
+        let board = prospect_authority_closure_board();
+        let pages = (0..4)
+            .map(|page| prospect_authority_closure_lines(board, page, 80))
+            .collect::<Vec<_>>();
+        assert!(pages.iter().all(|page| page.len() == 20));
+        assert!(pages
+            .iter()
+            .flat_map(|page| page.iter())
+            .all(|line| line.len() <= 80));
+        assert!(pages[0][0].contains("64 blockers"));
+        assert!(pages[0][0].contains("32 population"));
+        assert!(pages[0][0].contains("32 control"));
+        assert!(pages[0][1].contains("camp_participation_ledger.v1"));
+        assert!(pages[0][1].contains("--camp-participation-ledger"));
+        assert!(pages[0][2].contains("contract_control_ledger.v1"));
+        assert!(pages[0][2].contains("--contract-control-ledger"));
+        let keys = pages
+            .iter()
+            .flat_map(|page| page.iter().skip(4))
+            .filter_map(|line| {
+                let mut cells = line.split_whitespace();
+                Some(format!("{}:{}", cells.next()?, cells.next()?))
+            })
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(keys.len(), board.closure_cells.len());
+        assert!(keys.contains("NYR:nhl_club_camp_publication"));
+        assert!(keys.contains("NYR:nhl_contract_publication"));
+        assert!(keys.contains("SEA:nhl_club_camp_publication"));
+        assert!(keys.contains("SEA:nhl_contract_publication"));
+        assert_eq!(page_count("AUTHORITY-CLOSURE-BOARD"), 4);
+        assert_eq!(page_count("NYR"), 2);
+        assert_eq!(
+            parse_command("prospect-authority-closure").unwrap(),
+            Command::TeamCard {
+                team: "AUTHORITY-CLOSURE-BOARD".to_owned()
+            }
+        );
+
+        let mut app = App::new(true);
+        execute_command(
+            parse_command("prospect-authority-closure").unwrap(),
+            &mut app,
+        );
+        app.handle(Action::Char('t'));
+        app.handle(Action::Char('c'));
+        assert!(matches!(
+            app.screen,
+            Screen::TeamCard {
+                ref team,
+                compare: false
+            } if team == "AUTHORITY-CLOSURE-BOARD"
+        ));
+        let first = render_app(&app, 80, 30);
+        assert!(first.contains("PROSPECT AUTHORITY CLOSURE"));
+        assert!(first.contains("ANA"));
+        assert!(!first.contains("WSH"));
+        for expected_page in 1..=3 {
+            app.handle(Action::Char('p'));
+            assert_eq!(app.selected, expected_page);
+        }
+        let fourth = render_app(&app, 80, 30);
+        assert!(fourth.contains("WSH"));
+        assert!(!fourth.contains("ANA  "));
+        app.handle(Action::Char('p'));
+        assert_eq!(app.selected, 0);
     }
 
     #[tokio::test]
@@ -1122,5 +1885,211 @@ mod tests {
             .unwrap();
         let cells = nyr_row.split_whitespace().collect::<Vec<_>>();
         assert_eq!(&cells[..5], &["NR", "NYR", "59.7", "64%", "85%"]);
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_arrival_golden_parity_across_cli_tui_and_web() {
+        let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let input = manifest_dir.join("../examples/icecast-prospect-arrival-league-2026-27.json");
+        let expected = card("ARRIVAL-NYR").clone();
+        let temp = tempfile::tempdir().unwrap();
+        let cli_path = temp.path().join("prospect-arrival-card.json");
+
+        crate::commands::icecast::run_prospect_arrival_card(
+            input,
+            "NYR".to_owned(),
+            Some("New York Rangers".to_owned()),
+            Some("2026-09-15T12:00:00Z".to_owned()),
+            Some(cli_path.clone()),
+        )
+        .unwrap();
+        let cli_card: CardDocumentView =
+            serde_json::from_slice(&std::fs::read(cli_path).unwrap()).unwrap();
+        assert_eq!(cli_card, expected);
+
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/cards/prospect-arrival/20262027/NYR")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(response.into_body(), 4 * 1024 * 1024)
+            .await
+            .unwrap();
+        let web_card: CardDocumentView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_card, expected);
+
+        let depth_chart = document_lines(&expected, 0, 80).join("\n");
+        let insider = document_lines(&expected, 1, 80).join("\n");
+        assert!(depth_chart.contains("Cole Beaudoin"));
+        assert!(depth_chart.contains("Arrival 29.0%"));
+        assert!(insider.contains("Coverage draft"));
+        assert!(insider.contains("Exclusion ledger"));
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_arrival_board_golden_parity_across_cli_tui_and_web() {
+        let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let input = manifest_dir.join("../examples/icecast-prospect-arrival-league-2026-27.json");
+        let expected = prospect_arrival_board().clone();
+        let temp = tempfile::tempdir().unwrap();
+        let cli_path = temp.path().join("prospect-arrival-board.json");
+
+        crate::commands::icecast::run_prospect_arrival_board(
+            input,
+            "2026-09-15T12:00:00Z".to_owned(),
+            true,
+            Some(cli_path.clone()),
+        )
+        .unwrap();
+        let cli_board: ProspectArrivalBoardView =
+            serde_json::from_slice(&std::fs::read(cli_path).unwrap()).unwrap();
+        assert_eq!(cli_board, expected);
+
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/prospect-arrivals/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(response.into_body(), 4 * 1024 * 1024)
+            .await
+            .unwrap();
+        let web_board: ProspectArrivalBoardView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_board, expected);
+
+        let first = prospect_arrival_board_lines(&expected, 0, 80);
+        let second = prospect_arrival_board_lines(&expected, 1, 80);
+        let nyr = first
+            .iter()
+            .chain(&second)
+            .find(|line| line.split_whitespace().any(|cell| cell == "NYR"))
+            .unwrap();
+        assert!(nyr.starts_with("NR"));
+        assert!(nyr.contains("2/2"));
+        assert!(nyr.contains("100%"));
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_census_readiness_golden_parity_across_tui_and_web() {
+        let expected = prospect_census_readiness_board().clone();
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/prospect-census-readiness/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let web_board: ProspectCensusReadinessBoardView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_board, expected);
+
+        let first = prospect_census_readiness_board_lines(&expected, 0, 80);
+        let second = prospect_census_readiness_board_lines(&expected, 1, 80);
+        let nyr = first
+            .iter()
+            .chain(&second)
+            .find(|line| line.split_whitespace().any(|cell| cell == "NYR"))
+            .unwrap();
+        assert!(nyr.contains("Incomplete"));
+        assert!(nyr.contains("PopulationIncomplete"));
+        assert!(nyr.contains("26"));
+        assert!(nyr.contains("0/10"));
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_authority_progress_golden_parity_across_tui_and_web() {
+        let expected = prospect_authority_progress().clone();
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/prospect-authority-progress/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers()["etag"].to_str().unwrap(),
+            format!("\"{}\"", expected.fingerprint)
+        );
+        let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let web_progress: ProspectAuthorityProgressView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_progress, expected);
+
+        let first = prospect_authority_progress_lines(&expected, 0, 80);
+        let second = prospect_authority_progress_lines(&expected, 1, 80);
+        let nyr = first
+            .iter()
+            .chain(&second)
+            .find(|line| line.starts_with("NYR"))
+            .unwrap();
+        assert!(nyr.contains("ahl_current_assignment"));
+        assert!(nyr.contains("population"));
+        assert!(nyr.contains("closed"));
+        assert!(nyr.contains("failed"));
+        assert!(nyr.contains("resolved"));
+    }
+
+    #[tokio::test]
+    async fn l2_prospect_authority_closure_golden_parity_across_tui_and_web() {
+        let expected = prospect_authority_closure_board().clone();
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/prospect-authority-closure/20262027")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers()["etag"].to_str().unwrap(),
+            format!("\"{}\"", expected.fingerprint)
+        );
+        let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let web_board: ProspectAuthorityClosureBoardView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_board, expected);
+
+        let lines = (0..4)
+            .flat_map(|page| prospect_authority_closure_lines(&expected, page, 80))
+            .collect::<Vec<_>>();
+        let nyr = lines
+            .iter()
+            .filter(|line| line.starts_with("NYR"))
+            .collect::<Vec<_>>();
+        assert_eq!(nyr.len(), 2);
+        assert!(nyr
+            .iter()
+            .any(|line| line.contains("nhl_club_camp_publication")));
+        assert!(nyr
+            .iter()
+            .any(|line| line.contains("nhl_contract_publication")));
+        assert!(nyr.iter().all(|line| line.contains("failed")));
+        assert!(nyr.iter().all(|line| line.contains("acquire")));
     }
 }

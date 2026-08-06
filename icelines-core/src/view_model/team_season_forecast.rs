@@ -16,9 +16,9 @@ use super::matchup_evidence::{
 use super::scenario_registry::{scenario_content_sha256, ScenarioRegistryReferenceView};
 use super::team_game_forecast::{
     TeamForecastParameters, TeamGameForecastAccuracySummary, TeamGameForecastRow,
-    TeamGameForecastView, TeamGameMembershipAnomalyRow, TeamGameMembershipIntervalRow,
-    TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow, TeamGamePairedTradeRow,
-    TeamGamePersonnelEvidenceRow,
+    TeamGameForecastSummaryRow, TeamGameForecastView, TeamGameMembershipAnomalyRow,
+    TeamGameMembershipIntervalRow, TeamGameOpeningRosterAuthorityRow, TeamGameOpeningStrengthRow,
+    TeamGamePairedTradeRow, TeamGamePersonnelEvidenceRow, TEAM_GAME_FORECAST_SCHEMA,
 };
 use super::team_lineup::TeamLineupProjectionView;
 
@@ -27,6 +27,11 @@ pub const TEAM_SEASON_FORECAST_MOVEMENT_SCHEMA: &str = "team_season_forecast_mov
 pub const TEAM_SEASON_FORECAST_HISTORY_SCHEMA: &str = "team_season_forecast_history.v1";
 pub const TEAM_SEASON_SCENARIO_SCHEMA: &str = "team_season_scenario.v1";
 pub const TEAM_SEASON_GAME_PLAN_SCHEDULE_SCHEMA: &str = "team_season_game_plan_schedule.v1";
+pub const TEAM_SEASON_DRAFT_ORDER_POLICY_SCHEMA: &str = "team_season_draft_order_policy.v1";
+
+const NHL_DRAFT_LOTTERY_ODDS: [u16; 16] = [
+    185, 135, 115, 95, 85, 75, 65, 60, 50, 35, 30, 25, 20, 15, 5, 5,
+];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -757,6 +762,37 @@ impl Default for TeamSeasonSimulationConfig {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamSeasonLeagueRankProbability {
+    pub league_rank: u8,
+    pub probability: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamSeasonDraftSlotProbability {
+    pub draft_slot: u8,
+    pub probability: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamSeasonDraftLotterySeedOdds {
+    pub seed: u8,
+    pub probability: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TeamSeasonDraftOrderPolicyView {
+    pub schema: String,
+    pub ruleset: String,
+    pub draft_year: u16,
+    pub non_playoff_teams: u8,
+    pub first_round_lottery_draws: u8,
+    pub maximum_move_up: u8,
+    pub lottery_odds: Vec<TeamSeasonDraftLotterySeedOdds>,
+    pub later_rounds_use_lottery: bool,
+    pub authority_urls: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TeamSeasonForecastRow {
     pub team: String,
     pub conference: String,
@@ -769,6 +805,18 @@ pub struct TeamSeasonForecastRow {
     pub points_p50: u16,
     pub points_p90: u16,
     pub average_league_rank: f64,
+    /// Trial-level regular-season rank distribution, where 1 is best in the league.
+    /// Older archived forecasts deserialize with an empty distribution.
+    #[serde(default)]
+    pub league_rank_probabilities: Vec<TeamSeasonLeagueRankProbability>,
+    /// Trial-level first-round selection distribution after the two-draw lottery
+    /// and playoff-finish ordering.
+    #[serde(default)]
+    pub first_round_draft_slot_probabilities: Vec<TeamSeasonDraftSlotProbability>,
+    /// Trial-level selection distribution for rounds 2-7, where lottery movement
+    /// does not apply.
+    #[serde(default)]
+    pub later_round_draft_slot_probabilities: Vec<TeamSeasonDraftSlotProbability>,
     pub playoff_probability: f64,
     pub second_round_probability: f64,
     pub conference_final_probability: f64,
@@ -1074,6 +1122,8 @@ pub struct TeamSeasonForecastView {
     pub replay_checkpoint: Option<TeamSeasonReplayCheckpointView>,
     pub trials: u32,
     pub seed: u64,
+    #[serde(default)]
+    pub draft_order_policy: Option<TeamSeasonDraftOrderPolicyView>,
     pub schedule_games: usize,
     pub scenario: Option<TeamSeasonScenario>,
     #[serde(default)]
@@ -1115,6 +1165,100 @@ pub struct TeamSeasonForecastView {
     pub schedule_stretches: Vec<TeamSeasonScheduleStretchRow>,
     pub warnings: Vec<String>,
     pub disclosures: Vec<String>,
+}
+
+/// Rehydrate the game-forecast envelope retained inside an archived season
+/// simulation so it can be replayed with a new scenario. Season artifacts
+/// intentionally keep every game and evidence row, but the v1 schema predates
+/// retention of the forecast parameters and summary envelope. Callers must
+/// therefore provide the parameters explicitly.
+pub fn rehydrate_team_game_forecast(
+    season: &TeamSeasonForecastView,
+    parameters: TeamForecastParameters,
+) -> Result<TeamGameForecastView, String> {
+    if season.schema != TEAM_SEASON_FORECAST_SCHEMA {
+        return Err("IceCast season replay requires team_season_forecast.v1".to_owned());
+    }
+    let schedule_start = season
+        .games
+        .iter()
+        .map(|game| game.date)
+        .min()
+        .ok_or_else(|| "IceCast season replay requires at least one retained game".to_owned())?;
+    let schedule_end = season
+        .games
+        .iter()
+        .map(|game| game.date)
+        .max()
+        .expect("non-empty retained games validated");
+    if season.schedule_games != season.games.len() {
+        return Err(format!(
+            "IceCast season replay expected {} retained games but found {}",
+            season.schedule_games,
+            season.games.len()
+        ));
+    }
+
+    let mut summaries = BTreeMap::<String, TeamGameForecastSummaryRow>::new();
+    for game in &season.games {
+        let home =
+            summaries
+                .entry(game.home_team.clone())
+                .or_insert_with(|| TeamGameForecastSummaryRow {
+                    team: game.home_team.clone(),
+                    games: 0,
+                    home_games: 0,
+                    away_games: 0,
+                    favored_games: 0,
+                    expected_standings_points: 0.0,
+                });
+        home.games += 1;
+        home.home_games += 1;
+        home.favored_games += usize::from(game.favored_team == game.home_team);
+        home.expected_standings_points += game.home_expected_standings_points;
+
+        let away =
+            summaries
+                .entry(game.away_team.clone())
+                .or_insert_with(|| TeamGameForecastSummaryRow {
+                    team: game.away_team.clone(),
+                    games: 0,
+                    home_games: 0,
+                    away_games: 0,
+                    favored_games: 0,
+                    expected_standings_points: 0.0,
+                });
+        away.games += 1;
+        away.away_games += 1;
+        away.favored_games += usize::from(game.favored_team == game.away_team);
+        away.expected_standings_points += game.away_expected_standings_points;
+    }
+
+    let mut warnings = season.warnings.clone();
+    warnings.push(format!(
+        "Rehydrated from an archived season simulation; forecast parameters were supplied explicitly as '{}'.",
+        parameters.name
+    ));
+    Ok(TeamGameForecastView {
+        schema: TEAM_GAME_FORECAST_SCHEMA.to_owned(),
+        season: season.season,
+        schedule_games: season.schedule_games,
+        schedule_start,
+        schedule_end,
+        parameters,
+        forecast_mode: "rehydrated-season-artifact".to_owned(),
+        games: season.games.clone(),
+        teams: summaries.into_values().collect(),
+        accuracy: season.accuracy.clone(),
+        personnel_evidence: season.personnel_evidence.clone(),
+        membership_intervals: season.membership_intervals.clone(),
+        membership_anomalies: season.membership_anomalies.clone(),
+        opening_roster_authority: season.opening_roster_authority.clone(),
+        opening_strengths: season.opening_strengths.clone(),
+        paired_trades: season.paired_trades.clone(),
+        warnings,
+        disclosures: season.disclosures.clone(),
+    })
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1178,6 +1322,9 @@ struct AggregateTeam {
     overtime_losses: u64,
     points: Vec<u16>,
     league_rank_sum: u64,
+    league_rank_counts: BTreeMap<u8, u64>,
+    first_round_draft_slot_counts: BTreeMap<u8, u64>,
+    later_round_draft_slot_counts: BTreeMap<u8, u64>,
     playoffs: u64,
     second_rounds: u64,
     conference_finals: u64,
@@ -1388,6 +1535,7 @@ fn simulate_team_season_forecast_impl(
         .iter()
         .map(|game| (game.game_id, (0_u64, 0_u64)))
         .collect::<BTreeMap<_, _>>();
+    let draft_order_policy = draft_order_policy(forecast.season, teams.len());
 
     for trial in 0..config.trials {
         let seed = trial_seed(config.seed, trial);
@@ -1525,6 +1673,17 @@ fn simulate_team_season_forecast_impl(
             &forecast.parameters,
             &mut rng,
         );
+        let draft_slots = draft_order_policy.as_ref().map(|_| {
+            let mut lottery_rng =
+                SimRng::new(trial_seed(config.seed ^ 0xD12A_F70D_3A17_2022, trial));
+            simulate_draft_slots(
+                &ranked,
+                &state,
+                &playoff_teams,
+                &playoff_result,
+                &mut lottery_rng,
+            )
+        });
         for (team, adaptive_state) in &adaptive_states {
             let aggregate = adaptive_aggregates
                 .get_mut(team)
@@ -1557,6 +1716,15 @@ fn simulate_team_season_forecast_impl(
             row.overtime_losses += u64::from(trial_team.overtime_losses);
             row.points.push(trial_team.points());
             row.league_rank_sum += rank as u64 + 1;
+            *row.league_rank_counts.entry(rank as u8 + 1).or_default() += 1;
+            if let Some((first_round, later_rounds)) = &draft_slots {
+                *row.first_round_draft_slot_counts
+                    .entry(first_round[team])
+                    .or_default() += 1;
+                *row.later_round_draft_slot_counts
+                    .entry(later_rounds[team])
+                    .or_default() += 1;
+            }
             row.longest_win_streaks.push(trial_team.longest_win_streak);
             if playoff_teams.contains(team) {
                 row.playoffs += 1;
@@ -1635,6 +1803,30 @@ fn simulate_team_season_forecast_impl(
                 points_p50: percentile(&aggregate.points, 0.50),
                 points_p90: percentile(&aggregate.points, 0.90),
                 average_league_rank: aggregate.league_rank_sum as f64 / denominator,
+                league_rank_probabilities: aggregate
+                    .league_rank_counts
+                    .into_iter()
+                    .map(|(league_rank, count)| TeamSeasonLeagueRankProbability {
+                        league_rank,
+                        probability: count as f64 / denominator,
+                    })
+                    .collect(),
+                first_round_draft_slot_probabilities: aggregate
+                    .first_round_draft_slot_counts
+                    .into_iter()
+                    .map(|(draft_slot, count)| TeamSeasonDraftSlotProbability {
+                        draft_slot,
+                        probability: count as f64 / denominator,
+                    })
+                    .collect(),
+                later_round_draft_slot_probabilities: aggregate
+                    .later_round_draft_slot_counts
+                    .into_iter()
+                    .map(|(draft_slot, count)| TeamSeasonDraftSlotProbability {
+                        draft_slot,
+                        probability: count as f64 / denominator,
+                    })
+                    .collect(),
                 playoff_probability: aggregate.playoffs as f64 / denominator,
                 second_round_probability: aggregate.second_rounds as f64 / denominator,
                 conference_final_probability: aggregate.conference_finals as f64 / denominator,
@@ -1806,6 +1998,7 @@ fn simulate_team_season_forecast_impl(
         replay_checkpoint,
         trials: config.trials,
         seed: config.seed,
+        draft_order_policy,
         schedule_games: forecast.schedule_games,
         scenario,
         scenario_reference: None,
@@ -3361,6 +3554,163 @@ fn percentile(values: &[u16], percentile: f64) -> u16 {
     values[index]
 }
 
+fn draft_order_policy(season: u32, team_count: usize) -> Option<TeamSeasonDraftOrderPolicyView> {
+    if season < 20212022 || team_count != 32 {
+        return None;
+    }
+    Some(TeamSeasonDraftOrderPolicyView {
+        schema: TEAM_SEASON_DRAFT_ORDER_POLICY_SCHEMA.to_owned(),
+        ruleset: "nhl-2022-current".to_owned(),
+        draft_year: (season % 10_000) as u16,
+        non_playoff_teams: 16,
+        first_round_lottery_draws: 2,
+        maximum_move_up: 10,
+        lottery_odds: NHL_DRAFT_LOTTERY_ODDS
+            .iter()
+            .enumerate()
+            .map(|(index, weight)| TeamSeasonDraftLotterySeedOdds {
+                seed: index as u8 + 1,
+                probability: f64::from(*weight) / 1_000.0,
+            })
+            .collect(),
+        later_rounds_use_lottery: false,
+        authority_urls: vec![
+            "https://www.nhl.com/news/2026-nhl-draft-lottery-set-for-may-5".to_owned(),
+            "https://www.nhl.com/news/2026-nhl-draft-1st-round-set-through-pick-no-27".to_owned(),
+        ],
+    })
+}
+
+fn simulate_draft_slots(
+    ranked: &[String],
+    state: &BTreeMap<String, TrialTeam>,
+    playoff_teams: &BTreeSet<String>,
+    playoff_result: &TrialPlayoffResult,
+    lottery_rng: &mut SimRng,
+) -> (BTreeMap<String, u8>, BTreeMap<String, u8>) {
+    let division_winners = ["Atlantic", "Metropolitan", "Central", "Pacific"]
+        .into_iter()
+        .filter_map(|division| {
+            ranked
+                .iter()
+                .find(|team| alignment(team).is_some_and(|value| value.1 == division))
+                .cloned()
+        })
+        .collect::<BTreeSet<_>>();
+    let mut later_order = ranked
+        .iter()
+        .rev()
+        .filter(|team| !playoff_teams.contains(*team))
+        .cloned()
+        .collect::<Vec<_>>();
+    for division_winner in [false, true] {
+        later_order.extend(
+            ranked
+                .iter()
+                .rev()
+                .filter(|team| {
+                    playoff_teams.contains(*team)
+                        && !playoff_result.conference_final.contains(*team)
+                        && division_winners.contains(*team) == division_winner
+                })
+                .cloned(),
+        );
+    }
+    later_order.extend(
+        ranked
+            .iter()
+            .rev()
+            .filter(|team| {
+                playoff_result.conference_final.contains(*team)
+                    && !playoff_result.stanley_cup_final.contains(*team)
+            })
+            .cloned(),
+    );
+    if let Some(runner_up) = playoff_result
+        .stanley_cup_final
+        .iter()
+        .find(|team| playoff_result.champion.as_ref() != Some(*team))
+    {
+        later_order.push(runner_up.clone());
+    }
+    if let Some(champion) = &playoff_result.champion {
+        later_order.push(champion.clone());
+    }
+    debug_assert_eq!(later_order.len(), state.len());
+
+    let mut first_order = later_order[..16].to_vec();
+    apply_two_draw_lottery(&mut first_order, lottery_rng);
+    first_order.extend_from_slice(&later_order[16..]);
+    let to_slots = |order: Vec<String>| {
+        order
+            .into_iter()
+            .enumerate()
+            .map(|(index, team)| (team, index as u8 + 1))
+            .collect::<BTreeMap<_, _>>()
+    };
+    (to_slots(first_order), to_slots(later_order))
+}
+
+fn apply_two_draw_lottery(order: &mut Vec<String>, rng: &mut SimRng) {
+    debug_assert_eq!(order.len(), NHL_DRAFT_LOTTERY_ODDS.len());
+    let original = order.clone();
+    let mut eligible = (0..order.len()).collect::<Vec<_>>();
+    let mut winners = Vec::with_capacity(2);
+    for draw_index in 0..2 {
+        let total = eligible
+            .iter()
+            .map(|index| u32::from(NHL_DRAFT_LOTTERY_ODDS[*index]))
+            .sum::<u32>();
+        let mut draw = rng.unit() * f64::from(total);
+        let selected_position = eligible
+            .iter()
+            .position(|index| {
+                draw -= f64::from(NHL_DRAFT_LOTTERY_ODDS[*index]);
+                draw < 0.0
+            })
+            .unwrap_or(eligible.len() - 1);
+        let original_seed = eligible.remove(selected_position);
+        winners.push(original_seed);
+        if draw_index == 0 && original_seed >= 11 {
+            eligible.retain(|seed| *seed != 0);
+        }
+    }
+    apply_lottery_winners(order, &original, &winners);
+}
+
+fn apply_lottery_winners(order: &mut Vec<String>, original: &[String], winners: &[usize]) {
+    let mut fixed = BTreeMap::<usize, String>::new();
+    let first_seed = winners[0];
+    let first_slot = first_seed.saturating_sub(10);
+    if first_slot > 0 {
+        fixed.insert(0, original[0].clone());
+    }
+    fixed.insert(first_slot, original[first_seed].clone());
+
+    let second_seed = winners[1];
+    let second_team = &original[second_seed];
+    if !fixed.values().any(|team| team == second_team) {
+        let mut second_slot = second_seed.saturating_sub(10).max(1);
+        while fixed.contains_key(&second_slot) {
+            second_slot += 1;
+        }
+        fixed.insert(second_slot, second_team.clone());
+    }
+
+    let fixed_teams = fixed.values().cloned().collect::<BTreeSet<_>>();
+    let mut remaining = original.iter().filter(|team| !fixed_teams.contains(*team));
+    *order = (0..original.len())
+        .map(|slot| {
+            fixed.remove(&slot).unwrap_or_else(|| {
+                remaining
+                    .next()
+                    .expect("draft order has enough teams")
+                    .clone()
+            })
+        })
+        .collect();
+}
+
 fn trial_seed(seed: u64, trial: u32) -> u64 {
     seed ^ (u64::from(trial) + 1).wrapping_mul(0x9E37_79B9_7F4A_7C15)
 }
@@ -3572,6 +3922,28 @@ mod tests {
             );
             assert!((0.0..=1.0).contains(&team.playoff_probability));
         }
+    }
+
+    #[test]
+    fn archived_season_rehydrates_to_the_same_seeded_team_results() {
+        let forecast = fixture();
+        let config = TeamSeasonSimulationConfig {
+            trials: 25,
+            seed: 20262027,
+        };
+        let archived = simulate_team_season_forecast(&forecast, config).unwrap();
+        let rehydrated =
+            rehydrate_team_game_forecast(&archived, TeamForecastParameters::default()).unwrap();
+        let replayed = simulate_team_season_forecast(&rehydrated, config).unwrap();
+
+        assert_eq!(rehydrated.games, forecast.games);
+        assert_eq!(rehydrated.schedule_start, forecast.schedule_start);
+        assert_eq!(rehydrated.schedule_end, forecast.schedule_end);
+        assert_eq!(replayed.teams, archived.teams);
+        assert!(rehydrated
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("parameters were supplied explicitly")));
     }
 
     #[test]
@@ -4104,6 +4476,34 @@ mod tests {
         .unwrap();
         let playoff_sum: f64 = view.teams.iter().map(|team| team.playoff_probability).sum();
         assert!((playoff_sum - 16.0).abs() < 1e-9);
+        let draft_policy = view.draft_order_policy.as_ref().unwrap();
+        assert_eq!(draft_policy.ruleset, "nhl-2022-current");
+        assert_eq!(draft_policy.lottery_odds.len(), 16);
+        for team in &view.teams {
+            let probability_sum = team
+                .league_rank_probabilities
+                .iter()
+                .map(|outcome| outcome.probability)
+                .sum::<f64>();
+            let expected_rank = team
+                .league_rank_probabilities
+                .iter()
+                .map(|outcome| f64::from(outcome.league_rank) * outcome.probability)
+                .sum::<f64>();
+            assert!((probability_sum - 1.0).abs() < 1e-9);
+            assert!((expected_rank - team.average_league_rank).abs() < 1e-9);
+            for outcomes in [
+                &team.first_round_draft_slot_probabilities,
+                &team.later_round_draft_slot_probabilities,
+            ] {
+                assert!(
+                    (outcomes.iter().map(|row| row.probability).sum::<f64>() - 1.0).abs() < 1e-9
+                );
+                assert!(outcomes
+                    .iter()
+                    .all(|row| (1..=32).contains(&row.draft_slot)));
+            }
+        }
         let second_round_sum: f64 = view
             .teams
             .iter()
@@ -4160,6 +4560,72 @@ mod tests {
             assert!(hardest.average_win_probability <= easiest.average_win_probability);
             assert!((hardest.expected_wins / 5.0 - hardest.average_win_probability).abs() < 1e-12);
         }
+    }
+
+    #[test]
+    fn two_draw_lottery_preserves_teams_and_move_limits() {
+        let original = (1..=16)
+            .map(|seed| format!("T{seed:02}"))
+            .collect::<Vec<_>>();
+        for seed in 1..=1_000 {
+            let mut order = original.clone();
+            apply_two_draw_lottery(&mut order, &mut SimRng::new(seed));
+            assert_eq!(
+                order.iter().collect::<BTreeSet<_>>(),
+                original.iter().collect()
+            );
+            for (original_index, team) in original.iter().enumerate() {
+                let final_index = order
+                    .iter()
+                    .position(|candidate| candidate == team)
+                    .unwrap();
+                assert!(original_index.saturating_sub(final_index) <= 10);
+                assert!(final_index <= original_index + 2);
+            }
+        }
+    }
+
+    #[test]
+    fn two_draw_lottery_matches_official_seed_seven_scenarios() {
+        let original = (1..=16)
+            .map(|seed| format!("T{seed:02}"))
+            .collect::<Vec<_>>();
+        let mut probabilities = BTreeMap::<usize, f64>::new();
+        for (first, first_weight) in NHL_DRAFT_LOTTERY_ODDS.iter().enumerate() {
+            for (second, second_weight) in NHL_DRAFT_LOTTERY_ODDS.iter().enumerate() {
+                if first == second || (first >= 11 && second == 0) {
+                    continue;
+                }
+                let second_denominator = 1_000
+                    - *first_weight
+                    - if first >= 11 {
+                        NHL_DRAFT_LOTTERY_ODDS[0]
+                    } else {
+                        0
+                    };
+                let probability = f64::from(*first_weight) / 1_000.0 * f64::from(*second_weight)
+                    / f64::from(second_denominator);
+                let mut order = original.clone();
+                apply_lottery_winners(&mut order, &original, &[first, second]);
+                let slot = order.iter().position(|team| team == "T07").unwrap() + 1;
+                *probabilities.entry(slot).or_default() += probability;
+            }
+        }
+        for (slot, official) in [
+            (1, 0.065),
+            (2, 0.067),
+            (3, 0.002),
+            (7, 0.445),
+            (8, 0.365),
+            (9, 0.056),
+        ] {
+            assert!(
+                (probabilities[&slot] - official).abs() < 0.001,
+                "slot {slot}: modeled {:.6}, official {official:.6}",
+                probabilities[&slot]
+            );
+        }
+        assert!((probabilities.values().sum::<f64>() - 1.0).abs() < 1e-12);
     }
 
     #[test]

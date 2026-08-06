@@ -1,0 +1,250 @@
+{
+  "schema": "prospect_authority_progress.v1",
+  "method_version": "prospect_authority_progress.v1",
+  "evaluation_season": 20262027,
+  "prior_knowledge_cutoff": "2026-08-01T04:24:22.663724900+00:00",
+  "current_knowledge_cutoff": "2026-08-06T02:10:31.768176500+00:00",
+  "prior_closure_fingerprint": "e539a988429643d67be78452c0266eedca035ea0d498f2ceb73cf63cbb26ecf9",
+  "current_closure_fingerprint": "00930ad770c7783545453f906a58c637da016dee48516575cd2a47356a3fa021",
+  "prior_cells": 96,
+  "current_cells": 64,
+  "closed_cells": 32,
+  "opened_cells": 0,
+  "state_changed_cells": 0,
+  "persisting_cells": 64,
+  "control_cells_closed": 0,
+  "population_cells_closed": 32,
+  "closure_basis_points": 3333,
+  "changes": [
+    {
+      "organization": "ANA",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "BOS",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "BUF",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "CAR",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "CBJ",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "CGY",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "CHI",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "COL",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "DAL",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "DET",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "EDM",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "FLA",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "LAK",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "MIN",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "MTL",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "NJD",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "NSH",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "NYI",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "NYR",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "OTT",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "PHI",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "PIT",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "SEA",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "SJS",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "STL",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "TBL",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "TOR",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "UTA",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "VAN",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "VGK",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "WPG",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    },
+    {
+      "organization": "WSH",
+      "source_family": "ahl_current_assignment",
+      "gate": "population_authority",
+      "kind": "closed",
+      "prior_state": "failed"
+    }
+  ],
+  "disclosures": [
+    "A closed cell is absent from the later sealed closure board; this delta does not independently approve source evidence.",
+    "Opened cells are regressions or newly required authority and remain separate from state changes on persisting cells.",
+    "Closure percentage uses the prior board as its denominator and does not imply census publication readiness."
+  ],
+  "fingerprint": "82eedbe279caaed3614e36be5b7a8bcefd0ca1e1d17eeb42e420ea1ef4e2b78f"
+}

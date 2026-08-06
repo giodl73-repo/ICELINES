@@ -67,7 +67,7 @@ pub enum FletchPlayerLandingArtifact {
 }
 
 impl FletchPlayerLandingArtifact {
-    fn id_segment(self) -> &'static str {
+    pub(crate) fn id_segment(self) -> &'static str {
         match self {
             Self::Landing => "landing",
         }

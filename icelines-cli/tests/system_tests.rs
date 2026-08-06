@@ -48,6 +48,18 @@ fn l2_prediction_edge_commands_expose_replayable_surfaces() {
         "edge-replay-xg",
         "edge-train",
         "season-simulate",
+        "trade-market",
+        "trade-market-assemble",
+        "trade-scout",
+        "trade-scout-league",
+        "trade-scout-populate",
+        "trade-calibrate",
+        "trade-features",
+        "trade-pick-populate",
+        "trade-pick-coverage",
+        "trade-lineup",
+        "trade-lineup-board",
+        "draft-pick-curve",
     ] {
         let out = run(&["icecast", command, "--help"]);
         assert!(
@@ -58,6 +70,220 @@ fn l2_prediction_edge_commands_expose_replayable_surfaces() {
         let stdout = String::from_utf8_lossy(&out.stdout);
         assert!(stdout.contains("--out"));
     }
+}
+
+#[test]
+fn l2_trade_scout_populates_the_full_camp_inventory() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let camp = repo.join("examples/icecast-league-training-camp-2026-27.json");
+    let policy = repo.join("examples/icecast-sea-trade-scout-population-2026-27.json");
+    let picks = repo.join("examples/icecast-sea-draft-pick-population-2027.json");
+    let out = run(&[
+        "icecast",
+        "trade-scout-populate",
+        "--camp",
+        camp.to_str().expect("UTF-8 camp path"),
+        "--input",
+        policy.to_str().expect("UTF-8 policy path"),
+        "--pick-assets",
+        picks.to_str().expect("UTF-8 pick assets path"),
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade scout population failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("32/32 teams, 933 players (147 prospects)"));
+    assert!(stdout.contains("7 picks"));
+    assert!(stdout.contains("0 coverage gaps"));
+}
+
+#[test]
+fn l2_trade_completion_calibration_reports_proper_scores() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let input = repo.join("icelines-cli/tests/fixtures/trade-completion-calibration.json");
+    let out = run(&[
+        "icecast",
+        "trade-calibrate",
+        "--input",
+        input.to_str().expect("UTF-8 calibration path"),
+        "--json",
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade completion calibration failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let view: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(view["schema"], "trade_completion_calibration.v1");
+    assert_eq!(view["observations"], 2);
+    assert_eq!(view["completions"], 1);
+    assert_eq!(view["model_id"], "trade-completion-evaluation-v1");
+    assert!((view["brier_score"].as_f64().unwrap() - 0.04).abs() < 1e-12);
+    assert!((view["expected_calibration_error"].as_f64().unwrap() - 0.2).abs() < 1e-12);
+    assert!(view["disclosures"][1]
+        .as_str()
+        .unwrap()
+        .contains("cannot establish failed negotiations"));
+}
+
+#[test]
+fn l2_trade_features_expand_scout_without_inventing_completion_odds() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let input = repo.join("examples/icecast-sea-trade-scout-board-2026-27.json");
+    let out = run(&[
+        "icecast",
+        "trade-features",
+        "--input",
+        input.to_str().expect("UTF-8 trade scout path"),
+        "--json",
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade feature export failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let view: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(view["schema"], "trade_completion_feature_set.v1");
+    assert_eq!(view["candidates"], 3);
+    assert_eq!(view["rows"].as_array().unwrap().len(), 9);
+    assert!(view["rows"][0].get("completed").is_none());
+    assert!(view["rows"][0].get("completion_probability").is_none());
+}
+
+#[test]
+fn l2_trade_pick_population_keeps_conditional_rights_unresolved() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let ownership = repo.join("examples/icecast-sea-draft-pick-ownership-2027.csv");
+    let curve = repo.join("examples/icecast-draft-pick-value-curve-2005-2018.json");
+    let policy = repo.join("examples/icecast-sea-draft-pick-population-policy-2027.json");
+    let season_forecast = repo.join("examples/icecast-nyr-ror-trade-season-2026-27.json");
+    let out = run(&[
+        "icecast",
+        "trade-pick-populate",
+        "--ownership",
+        ownership.to_str().expect("UTF-8 ownership path"),
+        "--curve",
+        curve.to_str().expect("UTF-8 curve path"),
+        "--policy",
+        policy.to_str().expect("UTF-8 policy path"),
+        "--season-forecast",
+        season_forecast
+            .to_str()
+            .expect("UTF-8 season forecast path"),
+        "--json",
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade pick population failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let view: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(view["picks_populated"], 7);
+    assert_eq!(view["unresolved_asset_ids"].as_array().unwrap().len(), 1);
+    let conditional = view["conditional_valuations"].as_array().unwrap();
+    assert_eq!(conditional.len(), 1);
+    assert_eq!(conditional[0]["selection"], "later_of");
+    assert_eq!(conditional[0]["offer_eligible"], false);
+    let assets = view["assets"].as_array().unwrap();
+    let pick_value = |id: &str| {
+        assets.iter().find(|row| row["asset"]["id"] == id).unwrap()["asset"]["future_value"]
+            .as_f64()
+            .unwrap()
+    };
+    assert!(pick_value("SEA-2027-1") > pick_value("TBL-2027-1-owned-by-SEA"));
+}
+
+#[test]
+fn l2_trade_pick_population_composes_selection_protection_and_deferral() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let fixtures = repo.join("icelines-cli/tests/fixtures");
+    let ownership = fixtures.join("compound-draft-pick-ownership.csv");
+    let policy = fixtures.join("compound-draft-pick-policy.json");
+    let curve = repo.join("examples/icecast-draft-pick-value-curve-2005-2018.json");
+    let season_forecast = repo.join("examples/icecast-nyr-ror-trade-season-2026-27.json");
+    let out = run(&[
+        "icecast",
+        "trade-pick-populate",
+        "--ownership",
+        ownership.to_str().expect("UTF-8 ownership path"),
+        "--curve",
+        curve.to_str().expect("UTF-8 curve path"),
+        "--policy",
+        policy.to_str().expect("UTF-8 policy path"),
+        "--season-forecast",
+        season_forecast
+            .to_str()
+            .expect("UTF-8 season forecast path"),
+        "--json",
+    ]);
+
+    assert!(
+        out.status.success(),
+        "compound trade pick population failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let view: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(view["picks_populated"], 0);
+    assert_eq!(view["unresolved_asset_ids"].as_array().unwrap().len(), 1);
+    let chains = view["protection_chain_valuations"].as_array().unwrap();
+    assert_eq!(chains.len(), 1);
+    let chain = &chains[0];
+    assert_eq!(chain["offer_eligible"], false);
+    assert_eq!(chain["legs"].as_array().unwrap().len(), 2);
+    assert_eq!(chain["legs"][0]["selection"]["selection"], "later_of");
+    let first_conveys = chain["legs"][0]["conveyance_probability"].as_f64().unwrap();
+    let second_reach = chain["legs"][1]["reach_probability"].as_f64().unwrap();
+    let second_conveys = chain["legs"][1]["conveyance_probability"].as_f64().unwrap();
+    assert!(first_conveys > 0.0 && first_conveys < 1.0);
+    assert!((second_reach - (1.0 - first_conveys)).abs() < 1e-9);
+    assert!((first_conveys + second_conveys - 1.0).abs() < 1e-9);
+    let expected = chain["blended_expected_value"].as_f64().unwrap();
+    let dependence_low = chain["dependence_expected_value_low"].as_f64().unwrap();
+    let dependence_high = chain["dependence_expected_value_high"].as_f64().unwrap();
+    assert!(dependence_low <= expected && expected <= dependence_high);
+}
+
+#[test]
+fn l2_trade_pick_coverage_refuses_to_claim_league_completeness() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let ownership = repo.join("examples/icecast-sea-draft-pick-ownership-2027.csv");
+    let out = run(&[
+        "icecast",
+        "trade-pick-coverage",
+        "--ownership",
+        ownership.to_str().expect("UTF-8 ownership path"),
+        "--draft-year",
+        "2027",
+        "--as-of",
+        "2026-08-03",
+    ]);
+
+    assert!(
+        out.status.success(),
+        "trade pick coverage failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("8/224 coordinates"));
+    assert!(stdout.contains("coordinate_complete=false offer_ready=false"));
 }
 
 #[test]

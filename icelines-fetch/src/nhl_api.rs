@@ -1,6 +1,7 @@
 use crate::error::FetchError;
 use crate::schema::{
-    PagedResponse, PlayerContract, RosterResponse, SkaterBio, SkaterRealtime, SkaterStats,
+    GoalieBio, PagedResponse, PlayerContract, RosterResponse, SkaterBio, SkaterRealtime,
+    SkaterStats,
 };
 use crate::shift_chart::{OfficialShiftChartResponse, OfficialShiftChartRow};
 use crate::teams::nhl_teams_for_season;
@@ -296,6 +297,22 @@ impl NhlApiClient {
         let gt = game_type_id(season_type);
         let endpoint = format!(
             "{}/goalie/summary?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D{gt}",
+            self.base_stats
+        );
+        self.fetch_all_paged(&endpoint).await
+    }
+
+    /// Fetch all goalie bios for a season. Unlike `/goalie/summary`, this
+    /// endpoint carries draft year/round/overall and can therefore join
+    /// goalie appearances to a complete draft population without names.
+    pub async fn fetch_all_goalie_bios(
+        &self,
+        season: &str,
+        season_type: SeasonType,
+    ) -> Result<Vec<GoalieBio>, FetchError> {
+        let gt = game_type_id(season_type);
+        let endpoint = format!(
+            "{}/goalie/bios?cayenneExp=seasonId%3D{season}%20and%20gameTypeId%3D{gt}",
             self.base_stats
         );
         self.fetch_all_paged(&endpoint).await

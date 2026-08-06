@@ -562,6 +562,45 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
                 team: format!("HISTORY-{team}"),
             })
         }
+        "arrival-card" | "prospect-arrival-card" if args.trim().is_empty() => {
+            Ok(Command::TeamCard {
+                team: "ARRIVAL-NYR".to_string(),
+            })
+        }
+        "arrival-board" | "prospect-arrival-board" if args.trim().is_empty() => {
+            Ok(Command::TeamCard {
+                team: "ARRIVAL-BOARD".to_string(),
+            })
+        }
+        "census-readiness" | "prospect-census-readiness" if args.trim().is_empty() => {
+            Ok(Command::TeamCard {
+                team: "CENSUS-BOARD".to_string(),
+            })
+        }
+        "authority-progress" | "prospect-authority-progress" if args.trim().is_empty() => {
+            Ok(Command::TeamCard {
+                team: "AUTHORITY-PROGRESS-BOARD".to_string(),
+            })
+        }
+        "authority-closure" | "prospect-authority-closure" if args.trim().is_empty() => {
+            Ok(Command::TeamCard {
+                team: "AUTHORITY-CLOSURE-BOARD".to_string(),
+            })
+        }
+        "arrival-card" | "prospect-arrival-card" => {
+            let team = args.trim().to_ascii_uppercase();
+            if !CANONICAL_TEAMS
+                .iter()
+                .any(|(abbreviation, _)| *abbreviation == team)
+            {
+                return Err(ParseError::BadFilter {
+                    details: format!("prospect-arrival-card requires an NHL team, got '{team}'"),
+                });
+            }
+            Ok(Command::TeamCard {
+                team: format!("ARRIVAL-{team}"),
+            })
+        }
         "window-card" if args.trim().is_empty() => Ok(Command::TeamCard {
             team: "WINDOW-NYR".to_string(),
         }),
@@ -589,28 +628,35 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
                 args.trim()
             }
             .to_ascii_uppercase();
-            if !matches!(
-                team.as_str(),
-                "NYR"
-                    | "SEA"
-                    | "SIM-NYR"
-                    | "SIM-SEA"
-                    | "REPLAY-NYR"
-                    | "REPLAY-SEA"
-                    | "MOVE-NYR"
-                    | "MOVE-SEA"
-                    | "HISTORY-NYR"
-                    | "HISTORY-SEA"
-                    | "WINDOW-NYR"
-                    | "WINDOW-SEA"
-                    | "DEX"
-                    | "DRAFT"
-                    | "MORNING"
-                    | "TRADE"
-            ) {
+            let canonical_arrival = team.strip_prefix("ARRIVAL-").is_some_and(|abbreviation| {
+                CANONICAL_TEAMS
+                    .iter()
+                    .any(|(team, _)| *team == abbreviation)
+            });
+            if !canonical_arrival
+                && !matches!(
+                    team.as_str(),
+                    "NYR"
+                        | "SEA"
+                        | "SIM-NYR"
+                        | "SIM-SEA"
+                        | "REPLAY-NYR"
+                        | "REPLAY-SEA"
+                        | "MOVE-NYR"
+                        | "MOVE-SEA"
+                        | "HISTORY-NYR"
+                        | "HISTORY-SEA"
+                        | "WINDOW-NYR"
+                        | "WINDOW-SEA"
+                        | "DEX"
+                        | "DRAFT"
+                        | "MORNING"
+                        | "TRADE"
+                )
+            {
                 return Err(ParseError::BadFilter {
                     details: format!(
-                        "team-card supports NYR, SEA, SIM-NYR, SIM-SEA, REPLAY-NYR, REPLAY-SEA, MOVE-NYR, MOVE-SEA, HISTORY-NYR, HISTORY-SEA, WINDOW-NYR, WINDOW-SEA, DEX, DRAFT, MORNING, or TRADE, got '{team}'"
+                        "team-card supports the sealed card families, including ARRIVAL-<NHL team>, got '{team}'"
                     ),
                 });
             }

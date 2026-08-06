@@ -1,0 +1,1364 @@
+{
+  "schema": "prospect_census_readiness_board.v1",
+  "method_version": "prospect_census_readiness_board.v1",
+  "evaluation_season": 20262027,
+  "effective_cutoff": "2026-08-06T02:10:31.768176500+00:00",
+  "knowledge_cutoff": "2026-08-06T02:10:31.768176500+00:00",
+  "source_package_fingerprint": "dcc7a347b6b17fe4723545cdc7886031b096b1c131fa3371e85d318d3183a142",
+  "source_census_fingerprint": "e6b07ba7197facbeec8f2011c29f481db7b5524ab1e0df1be8a9c9388eb37bed",
+  "organizations": 32,
+  "population_complete_organizations": 0,
+  "depth_complete_organizations": 0,
+  "published_organizations": 0,
+  "league_counts": {
+    "discovered": 2477,
+    "canonical_identity": 807,
+    "controlled_relationship": 0,
+    "prospect_eligible": 0,
+    "career_evidence_usable": 0,
+    "study_built": 0,
+    "ranked": 0
+  },
+  "authority_gap_summary": [
+    {
+      "source_family": "nhl_club_camp_publication",
+      "state": "failed",
+      "organizations": 32
+    },
+    {
+      "source_family": "nhl_contract_publication",
+      "state": "failed",
+      "organizations": 32
+    }
+  ],
+  "loss_summary": [
+    {
+      "reason": "unresolved_identity",
+      "players": 1670
+    },
+    {
+      "reason": "unsupported_control",
+      "players": 807
+    }
+  ],
+  "teams": [
+    {
+      "organization": "ANA",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 90,
+        "canonical_identity": 35,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 55
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 35
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "BOS",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 73,
+        "canonical_identity": 24,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 49
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 24
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "BUF",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 85,
+        "canonical_identity": 32,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 53
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 32
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "CAR",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 95,
+        "canonical_identity": 22,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 73
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 22
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "CBJ",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 72,
+        "canonical_identity": 23,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 49
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 23
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "CGY",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 82,
+        "canonical_identity": 29,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 53
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 29
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "CHI",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 81,
+        "canonical_identity": 26,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 55
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 26
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "COL",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 70,
+        "canonical_identity": 22,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 48
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 22
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "DAL",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 69,
+        "canonical_identity": 24,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 45
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 24
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "DET",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 95,
+        "canonical_identity": 20,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 75
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 20
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "EDM",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 69,
+        "canonical_identity": 25,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 44
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 25
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "FLA",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 80,
+        "canonical_identity": 27,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 53
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 27
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "LAK",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 81,
+        "canonical_identity": 24,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 57
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 24
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "MIN",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 74,
+        "canonical_identity": 30,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 44
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 30
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "MTL",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 96,
+        "canonical_identity": 27,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 69
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 27
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "NJD",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 78,
+        "canonical_identity": 24,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 54
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 24
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "NSH",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 83,
+        "canonical_identity": 23,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 60
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 23
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "NYI",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 72,
+        "canonical_identity": 22,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 50
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 22
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "NYR",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 81,
+        "canonical_identity": 26,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 55
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 26
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "OTT",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 77,
+        "canonical_identity": 28,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 49
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 28
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "PHI",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 77,
+        "canonical_identity": 30,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 47
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 30
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "PIT",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 75,
+        "canonical_identity": 23,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 52
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 23
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "SEA",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 67,
+        "canonical_identity": 22,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 45
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 22
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "SJS",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 84,
+        "canonical_identity": 20,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 64
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 20
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "STL",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 72,
+        "canonical_identity": 23,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 49
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 23
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "TBL",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 85,
+        "canonical_identity": 26,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 59
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 26
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "TOR",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 80,
+        "canonical_identity": 25,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 55
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 25
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "UTA",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 52,
+        "canonical_identity": 27,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 25
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 27
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "VAN",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 73,
+        "canonical_identity": 22,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 51
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 22
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "VGK",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 76,
+        "canonical_identity": 30,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 46
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 30
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "WPG",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 64,
+        "canonical_identity": 21,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 43
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 21
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    },
+    {
+      "organization": "WSH",
+      "population_authority_status": "incomplete",
+      "publication_status": "population_incomplete",
+      "requested_ranking_depth": 10,
+      "ranking_depth_shortfall": 10,
+      "counts": {
+        "discovered": 69,
+        "canonical_identity": 25,
+        "controlled_relationship": 0,
+        "prospect_eligible": 0,
+        "career_evidence_usable": 0,
+        "study_built": 0,
+        "ranked": 0
+      },
+      "authority_gaps": [
+        {
+          "source_family": "nhl_club_camp_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        },
+        {
+          "source_family": "nhl_contract_publication",
+          "state": "failed",
+          "reason": "requested source object was not acquired"
+        }
+      ],
+      "loss_summary": [
+        {
+          "reason": "unresolved_identity",
+          "players": 44
+        },
+        {
+          "reason": "unsupported_control",
+          "players": 25
+        }
+      ],
+      "remediation": [
+        "Acquire or resolve missing source families: nhl_club_camp_publication, nhl_contract_publication."
+      ]
+    }
+  ],
+  "disclosures": [
+    "Readiness is a compact projection of the sealed prospect census; it does not add, remove, or reclassify player evidence.",
+    "Population completeness and requested ranking depth remain independent publication gates.",
+    "Authority gaps identify missing source work; they are not permission to infer current organizational control."
+  ],
+  "fingerprint": "591be971256cd1a7b11fa6f449045f07288166e36824d507078a1f931b09b5cc"
+}

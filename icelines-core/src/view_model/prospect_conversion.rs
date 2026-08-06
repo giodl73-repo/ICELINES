@@ -7,6 +7,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::career_history::{CareerGameType, CareerHistory};
 
@@ -19,6 +20,7 @@ use super::prospect_study::{
 pub const PROSPECT_CONVERSION_INPUT_SCHEMA: &str = "prospect_conversion_input.v2";
 pub const PROSPECT_CONVERSION_BOARD_SCHEMA: &str = "prospect_conversion_board.v2";
 pub const PROSPECT_CONVERSION_PERFORMANCE_SCHEMA: &str = "prospect_conversion_performance.v2";
+pub const PROSPECT_CONVERSION_ARCHIVE_SCHEMA: &str = "prospect_conversion_archive.v1";
 pub const PROSPECT_CONVERSION_METHOD: &str = "prospect_conversion_observed.v2";
 pub const PROSPECT_NHL_PERFORMANCE_METHOD: &str = "position_normalized_nhl_horizon.v1";
 
@@ -273,6 +275,112 @@ pub struct ProspectConversionBoardView {
     pub signal_calibration: Vec<ProspectConversionSignalCalibrationView>,
     pub programs: Vec<ProspectConversionOrganizationView>,
     pub disclosures: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectConversionArchiveFingerprints {
+    pub input_sha256: String,
+    pub performance_sha256: String,
+    pub board_sha256: String,
+}
+
+/// Atomic replay authority for historical prospect conversion. Keeping the
+/// adapted input, NHL-performance authority, and derived board in one document
+/// prevents a published calibration result from outliving its source cohort.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProspectConversionArchive {
+    pub schema: String,
+    pub fingerprints: ProspectConversionArchiveFingerprints,
+    pub input: ProspectConversionInput,
+    pub performance: ProspectConversionPerformanceDocument,
+    pub board: ProspectConversionBoardView,
+}
+
+pub fn build_prospect_conversion_archive(
+    input: ProspectConversionInput,
+    performance: ProspectConversionPerformanceDocument,
+) -> Result<ProspectConversionArchive, String> {
+    validate_conversion_performance_alignment(&input, &performance)?;
+    let board = build_prospect_conversion_board(&input)?;
+    let fingerprints = ProspectConversionArchiveFingerprints {
+        input_sha256: json_sha256(&input)?,
+        performance_sha256: json_sha256(&performance)?,
+        board_sha256: json_sha256(&board)?,
+    };
+    Ok(ProspectConversionArchive {
+        schema: PROSPECT_CONVERSION_ARCHIVE_SCHEMA.to_owned(),
+        fingerprints,
+        input,
+        performance,
+        board,
+    })
+}
+
+pub fn validate_prospect_conversion_archive(
+    archive: &ProspectConversionArchive,
+) -> Result<(), String> {
+    if archive.schema != PROSPECT_CONVERSION_ARCHIVE_SCHEMA {
+        return Err("invalid prospect conversion archive schema".to_owned());
+    }
+    validate_conversion_performance_alignment(&archive.input, &archive.performance)?;
+    let rebuilt = build_prospect_conversion_board(&archive.input)?;
+    if rebuilt != archive.board {
+        return Err("prospect conversion archive board does not replay from input".to_owned());
+    }
+    let expected = ProspectConversionArchiveFingerprints {
+        input_sha256: json_sha256(&archive.input)?,
+        performance_sha256: json_sha256(&archive.performance)?,
+        board_sha256: json_sha256(&archive.board)?,
+    };
+    if archive.fingerprints != expected {
+        return Err("prospect conversion archive fingerprint mismatch".to_owned());
+    }
+    Ok(())
+}
+
+fn validate_conversion_performance_alignment(
+    input: &ProspectConversionInput,
+    performance: &ProspectConversionPerformanceDocument,
+) -> Result<(), String> {
+    if performance.schema != PROSPECT_CONVERSION_PERFORMANCE_SCHEMA
+        || performance.method != PROSPECT_NHL_PERFORMANCE_METHOD
+        || performance.players != performance.scores.len()
+        || performance.players != input.baselines.len()
+        || input.outcomes.len() != input.baselines.len()
+        || input
+            .baselines
+            .iter()
+            .any(|row| row.baseline_season != performance.baseline_season)
+        || input
+            .outcomes
+            .iter()
+            .any(|row| row.through_season != performance.through_season)
+    {
+        return Err("prospect conversion archive horizon or population mismatch".to_owned());
+    }
+    let scores = performance
+        .scores
+        .iter()
+        .map(|row| (row.player_id, row))
+        .collect::<BTreeMap<_, _>>();
+    if scores.len() != performance.scores.len()
+        || input.outcomes.iter().any(|outcome| {
+            scores.get(&outcome.player_id).is_none_or(|score| {
+                outcome.performance_score != Some(score.score)
+                    || outcome.performance_basis.as_deref() != Some(score.basis.as_str())
+                    || outcome.nhl_games_played != score.games_played
+            })
+        })
+    {
+        return Err("prospect conversion archive performance does not match outcomes".to_owned());
+    }
+    Ok(())
+}
+
+fn json_sha256(value: &impl Serialize) -> Result<String, String> {
+    let bytes = serde_json::to_vec(value)
+        .map_err(|error| format!("serialize prospect conversion archive member: {error}"))?;
+    Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
 }
 
 /// Build the canonical NHL-performance authority used by conversion studies.
@@ -1435,6 +1543,67 @@ mod tests {
                 source_url: format!("https://api-web.nhle.com/v1/player/{player_id}/landing"),
             }],
         }
+    }
+
+    fn performance_document(
+        player_id: u32,
+        games_played: u32,
+        score: f64,
+    ) -> ProspectConversionPerformanceDocument {
+        ProspectConversionPerformanceDocument {
+            schema: PROSPECT_CONVERSION_PERFORMANCE_SCHEMA.to_owned(),
+            method: PROSPECT_NHL_PERFORMANCE_METHOD.to_owned(),
+            baseline_season: 20222023,
+            through_season: 20252026,
+            players: 1,
+            source_coverage: 1.0,
+            scores: vec![ProspectConversionPerformanceInput {
+                player_id,
+                score,
+                basis: "Canonical NHL value score".to_owned(),
+                position_group: "F".to_owned(),
+                games_played,
+                sample_confidence: 1.0,
+                raw_quality_score: score,
+                components: vec![],
+                evidence: vec![ProspectStudyEvidenceInput {
+                    label: "Official NHL outcome".to_owned(),
+                    source_url: format!("https://api-web.nhle.com/v1/player/{player_id}/landing"),
+                }],
+            }],
+            disclosures: vec!["Test performance authority.".to_owned()],
+        }
+    }
+
+    #[test]
+    fn conversion_archive_replays_and_rejects_tampering() {
+        let input = ProspectConversionInput {
+            schema: PROSPECT_CONVERSION_INPUT_SCHEMA.to_owned(),
+            baseline_basis: PROSPECT_PROGRAM_SCORING_METHOD.to_owned(),
+            baselines: vec![baseline(1, "SEA", "RW", 60.0)],
+            outcomes: vec![outcome(1, 82, 900, Some(80.0))],
+            calibration_signals: vec![],
+            config: ProspectConversionConfig {
+                minimum_rankable_players: 1,
+                ..ProspectConversionConfig::default()
+            },
+        };
+        let archive =
+            build_prospect_conversion_archive(input, performance_document(1, 82, 80.0)).unwrap();
+        validate_prospect_conversion_archive(&archive).unwrap();
+        assert!(archive.fingerprints.input_sha256.starts_with("sha256:"));
+
+        let mut tampered = archive.clone();
+        tampered.board.players = 2;
+        assert!(validate_prospect_conversion_archive(&tampered)
+            .unwrap_err()
+            .contains("does not replay"));
+
+        let mut mismatched = archive;
+        mismatched.performance.scores[0].score = 79.0;
+        assert!(validate_prospect_conversion_archive(&mismatched)
+            .unwrap_err()
+            .contains("does not match outcomes"));
     }
 
     #[test]

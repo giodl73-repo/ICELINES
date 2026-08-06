@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/prospect_authority_progress.v1.schema.json",
+  "title": "IceLines Prospect Authority Progress v1",
+  "type": "object",
+  "required": [
+    "schema", "method_version", "evaluation_season",
+    "prior_knowledge_cutoff", "current_knowledge_cutoff",
+    "prior_closure_fingerprint", "current_closure_fingerprint",
+    "prior_cells", "current_cells", "closed_cells", "opened_cells",
+    "state_changed_cells", "persisting_cells", "control_cells_closed",
+    "population_cells_closed", "closure_basis_points", "changes",
+    "disclosures", "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "prospect_authority_progress.v1" },
+    "method_version": { "const": "prospect_authority_progress.v1" },
+    "evaluation_season": { "type": "integer", "minimum": 19001901 },
+    "prior_knowledge_cutoff": { "type": "string", "format": "date-time" },
+    "current_knowledge_cutoff": { "type": "string", "format": "date-time" },
+    "prior_closure_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "current_closure_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "prior_cells": { "type": "integer", "minimum": 0 },
+    "current_cells": { "type": "integer", "minimum": 0 },
+    "closed_cells": { "type": "integer", "minimum": 0 },
+    "opened_cells": { "type": "integer", "minimum": 0 },
+    "state_changed_cells": { "type": "integer", "minimum": 0 },
+    "persisting_cells": { "type": "integer", "minimum": 0 },
+    "control_cells_closed": { "type": "integer", "minimum": 0 },
+    "population_cells_closed": { "type": "integer", "minimum": 0 },
+    "closure_basis_points": { "type": "integer", "minimum": 0, "maximum": 10000 },
+    "changes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/change" }
+    },
+    "disclosures": { "$ref": "#/$defs/messages" },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "messages": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "gate": {
+      "type": "string",
+      "enum": ["population_authority", "organizational_control"]
+    },
+    "gapState": {
+      "type": "string",
+      "enum": ["failed", "quarantined", "incomplete_pagination"]
+    },
+    "change": {
+      "type": "object",
+      "required": ["organization", "source_family", "gate", "kind"],
+      "properties": {
+        "organization": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "source_family": { "type": "string", "minLength": 1 },
+        "gate": { "$ref": "#/$defs/gate" },
+        "kind": { "type": "string", "enum": ["closed", "opened", "state_changed"] },
+        "prior_state": { "$ref": "#/$defs/gapState" },
+        "current_state": { "$ref": "#/$defs/gapState" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "closed" } } },
+          "then": {
+            "required": ["prior_state"],
+            "properties": { "current_state": false }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "opened" } } },
+          "then": {
+            "required": ["current_state"],
+            "properties": { "prior_state": false }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "state_changed" } } },
+          "then": { "required": ["prior_state", "current_state"] }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
+}

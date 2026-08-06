@@ -533,11 +533,45 @@ positional-balance ranks remain withheld when required goalie authority fails.
 Consumers receive a UI-neutral `ProspectCensusView`, not the raw source package.
 It includes evaluation organization/season, both cutoffs, authority and
 freshness state, funnel and positional counts, typed exclusions/disclosures,
-policy versions, and remediation guidance. The first required surface is
+policy versions, and remediation guidance. Failed, quarantined, and
+incomplete-pagination source objects are retained as typed per-team authority
+gaps. A league summary groups those gaps by source family and state and counts
+affected organizations, allowing every renderer to distinguish a missing
+all-32 provider family from isolated team failures without parsing disclosure
+text. The first required surface is
 `icecast prospect-census --source-package PATH [--json]`. TUI/Web/card
 renderers are explicitly deferred until their
 `surface-parity.md` rows and row-identity/partial-state tests are added; no
 surface reimplements census logic.
+
+`prospect_census_readiness_board.v1` is the compact, UI-neutral publication
+projection of that census. It retains the 32-team funnel totals, independent
+population/depth/publication gates, typed authority-gap and player-loss
+summaries, remediation, the sealed package fingerprint, and a fingerprint of
+the complete source census. It intentionally omits player-level loss rows so a
+renderer can load the league readiness state without loading the full audit
+ledger. `icecast prospect-census-readiness --input PATH [--json]` builds this
+projection only after team, league, loss, and authority-gap totals reconcile.
+It does not replace the census or grant publication authority. The retained
+board is projected without re-scoring through CLI, a two-page TUI league view,
+and Web HTML/JSON routes. Web team focus is a row filter over the same sealed
+artifact; every surface preserves its fingerprint and withheld publication
+state.
+
+`prospect_authority_closure_board.v1` turns those typed gaps into an operator
+workboard without crossing the acquisition boundary. Each team/family cell
+retains its failed, quarantined, or incomplete-pagination state; names the
+population or organizational-control gate it blocks; and, where registered,
+names the exact provider-neutral artifact schema and existing ingestion option.
+The builder validates the source readiness fingerprint and reconciles family,
+team, and league cell counts. Closing a recipe requires a new source-package
+and census replay; editing the closure board cannot change readiness.
+
+The retained August 5 replay demonstrates that lifecycle. An official
+2026-27 AHL snapshot supplied exact affiliate coverage with explicit empty
+preseason rosters. Replay raised acquired manifest objects from 128 to 160 and
+removed all 32 AHL source gaps, while controlled-player counts correctly stayed
+at zero. The remaining 64 cells are the 32-team camp and contract families.
 
 ## Compatibility and migration
 
@@ -600,6 +634,19 @@ retaining the original source and classification disclosure.
 ### L2 — consumer behavior
 
 - all-32 prospect census coverage funnel;
+- per-team authority gaps reconcile exactly into league source-family/state
+  counts and actionable remediation;
+- compact readiness output reconciles to the complete census, preserves its
+  fingerprint, and refuses partial league envelopes;
+- authority closure recipes reconcile to readiness gaps, preserve their source
+  fingerprint, and never promote a recipe into acquired evidence;
+- one core closure-board validator is mandatory at build, comparison, and
+  retained-artifact load boundaries; it rejects duplicate cells, non-canonical
+  teams, recipe drift, summary drift, invalid cutoffs, and fingerprint drift;
+- authority progress validates and compares two sealed closure boards from the
+  same season, requires chronological knowledge cutoffs, and reconciles exact
+  closed, opened, persisting, and state-changed cells without treating the
+  delta as evidence approval;
 - strict publication independently refuses incomplete population authority and
   incomplete ranking depth;
 - camp-only invite remains usable by camp simulation but not prospect ranking;

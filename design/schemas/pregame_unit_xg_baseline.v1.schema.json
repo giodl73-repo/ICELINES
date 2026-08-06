@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/pregame_unit_xg_baseline.v1.schema.json",
+  "title": "IceLines pregame unit xG baseline",
+  "type": "object",
+  "required": ["schema", "game_id", "team", "player_ids", "computed_at", "expected_xg_share", "components", "method", "source_fingerprints"],
+  "properties": {
+    "schema": { "const": "pregame_unit_xg_baseline.v1" },
+    "game_id": { "type": "integer", "minimum": 1 },
+    "team": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "player_ids": {
+      "type": "array", "minItems": 2, "maxItems": 3, "uniqueItems": true,
+      "items": { "type": "integer", "minimum": 1 }
+    },
+    "computed_at": { "type": "string", "format": "date-time" },
+    "expected_xg_share": { "type": "number", "minimum": 0, "maximum": 1 },
+    "components": {
+      "type": "array", "minItems": 3, "uniqueItems": true,
+      "allOf": [
+        { "contains": { "const": "individual" } },
+        { "contains": { "const": "opponent" } },
+        { "contains": { "const": "deployment" } }
+      ],
+      "items": { "enum": ["individual", "opponent", "deployment"] }
+    },
+    "method": { "type": "string", "minLength": 1 },
+    "source_fingerprints": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^sha256:[0-9a-fA-F]{64}$" }
+    }
+  },
+  "additionalProperties": false
+}

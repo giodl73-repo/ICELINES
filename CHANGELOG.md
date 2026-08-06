@@ -2,13 +2,224 @@
 
 ## Unreleased
 
+- Added `prospect_authority_progress.v1` and
+  `icecast prospect-authority-progress` to compare two fingerprinted closure
+  boards without UI-specific logic. It validates board reconciliation and
+  chronological cutoffs, then separates closed, opened, persisting, and
+  state-changed cells by authority gate. The retained AHL replay measures a
+  clean 96-to-64 reduction: 32 population cells closed, no regressions, and
+  3,333 basis points of the starting backlog retired. Web HTML and JSON now
+  serve that same sealed artifact with full-fingerprint caching and optional
+  presentation-only team focus. The TUI renders the identical fingerprinted
+  delta across two 16-team pages with no scoring or state transition logic.
+
+- Added `prospect_authority_closure_board.v1` and
+  `icecast prospect-authority-closure` to convert a sealed census-readiness
+  board into exact, fingerprinted acquisition recipes. The retained 2026-27
+  initial plan reconciled 96 cells across 32 teams. A subsequent sealed replay
+  admitted an official AHL snapshot with all 32 affiliate rows, raising acquired
+  manifest objects from 128 to 160 and closing every AHL source cell. The
+  retained plan now has 64 cells: 32 organizational-control blockers require
+  the contract ledger boundary and 32 population blockers require camp
+  authority. Failed, quarantined, and incomplete-page
+  states receive different dispositions; no recipe acquires data or approves
+  evidence by itself. Web HTML and JSON expose the same sealed 64-cell plan,
+  including exact artifact and ingestion boundaries, with presentation-only
+  team focus and full-artifact ETags. The TUI preserves every exact cell across
+  four pages and shares the same sealed fingerprint. A single public core
+  validator now guards the builder, progress comparison, Web store, and TUI
+  store against fingerprint-valid but unreconciled or inconsistent recipes.
+
+- Added the compact, UI-neutral `prospect_census_readiness_board.v1` and
+  `icecast prospect-census-readiness`. The 32-team projection retains census
+  fingerprints, funnel totals, independent population/depth/publication gates,
+  typed authority gaps, summarized player losses, and remediation while
+  leaving the full player-level audit ledger in the source census. It refuses
+  partial league envelopes or unreconciled team, league, loss, and gap totals.
+  A retained real-data 2026-27 board is 97.49% smaller than its complete audit
+  census and exposes the remaining all-32 authority backlog without inventing
+  publishable rankings. Web HTML/JSON and the two-page TUI now render that same
+  fingerprinted artifact, with team filtering constrained to presentation and
+  cross-surface parity tests preserving all publication gates.
+- Fixed prospect-arrival board aggregate probabilities to use the contract's
+  six-decimal precision before fingerprinting. In-memory, retained JSON, CLI,
+  TUI, and Web values now compare exactly after serialization instead of
+  differing by one floating-point unit.
+
+- Added `prospect_arrival_league_calibration.v1` and
+  `icecast prospect-arrival-league` to run one horizon-aligned historical
+  arrival policy across the canonical 32-team camp envelope. All team rows and
+  player failures remain visible and totals reconcile. Arrival adaptation now
+  rejects players with authoritative NHL games and directs them to
+  established-role forecasting, exposing young-NHLer contamination in camp
+  prospect pools instead of scoring it as a new arrival. The league command
+  now also accepts canonical career discoveries and a sealed prospect source
+  package, reuses the census current-control resolver, retains its exclusions
+  and population fingerprint in the output, and can fail closed on incomplete
+  population authority. Human-readable arrival and program output now labels
+  complete, incomplete, missing, and camp-derived coverage states instead of
+  leaving population authority visible only in JSON. Added the UI-neutral
+  `prospect_arrival` card and `icecast prospect-arrival-card`: The Depth Chart
+  ranks one team's calibrated outlook while The Insider retains authority,
+  exclusions, methodology, warnings, and the full league-artifact fingerprint.
+  The generic web renderer serves prospect-arrival HTML and JSON routes with
+  shared card fingerprints, ETags, and explicit 404s for invalid teams. Web
+  and TUI now project all 32 team cards from the one
+  sealed league artifact; `prospect-arrival-card <NHL team>` opens any team,
+  while the checked-in NYR/SEA cards remain golden parity references with page,
+  showcase-toggle, and side-by-side comparison controls. Added the UI-neutral
+  `prospect_arrival_board.v1` and `icecast prospect-arrival-board`; CLI, Web,
+  and TUI share one 32-team board with expected arrivals/established roles,
+  team-card drill-down, deterministic fingerprints, and fail-closed ranks.
+  The board now separates its audited intake from the eligible arrival cohort:
+  established NHL players are typed non-blocking reroutes to established-role
+  forecasting, while comparable-distance, source-control, study-quality, and
+  other failures retain typed remediation and block publication. This corrects
+  the retained draft from a misleading 8/167 coverage view to 8/10 eligible,
+  with 157 reroutes and two true calibration blockers. New league-calibration
+  exclusions now persist the same stable kind beside their raw reason;
+  backward-compatible readers classify older v1 rows once in core rather than
+  requiring downstream renderers to parse prose.
+- Added a retained 543-player, all-32-organization retrospective prospect
+  conversion archive from the frozen 2022-23 AHL baseline through 2025-26.
+  `prospect-arrival-calibrate --career-discovery` now derives an attention-free
+  target signal through IceLines core, selects a player by canonical ID, and
+  can retain the derived input with `--input-out`. The Rangers Smits scenario
+  now retains a 57.3519% historical arrival authority from 50 nearest
+  defensemen. Its full +2.2 impact event is separately bound to
+  `established_role`: its three-season probability is 21.1150% after shrinkage,
+  then horizon-adjusted to 7.6015% for the one-season 2026-27 scenario. The
+  11-of-31 established-given-arrival share remains descriptive rather than an
+  unshrunk forecasting input.
+- Added age-bounded official identity discovery to
+  `affiliate-identities-league` through paired `--as-of` and `--max-age`
+  options. Official landing acquisition now batches verified FLETCH cache
+  reads and fetches only missing identities, while AHL canonical catalog merges
+  accumulate evidence without repeated whole-vector sorting.
+- Added `icecast prospect-conversion --input-out` so historical conversion
+  proofs can retain the exact adapted cohort together with their performance
+  authority and output board, closing a reproducibility gap exposed by prospect
+  arrival calibration. `icecast prospect-conversion-replay` rebuilds the board
+  from that retained input without reacquiring or re-adapting source facts.
+  `--archive-out` emits a fingerprinted `prospect_conversion_archive.v1` that
+  binds input, performance authority, and board; replay and prospect-arrival
+  calibration accept and validate that archive directly.
+
+- Added `trade_completion_feature_set.v1` and `icecast trade-features` to export point-in-time negotiation features while explicitly omitting outcome labels and untrained completion odds.
+- Added a leakage-safe trade-completion calibration primitive and `icecast trade-calibrate` CLI with frozen model authority, Brier score, log loss, reliability bins, and explicit refusal to infer failed proposals from absent transactions.
+- Compose earlier/later-of draft-pick selection with protected multi-year conveyance chains while preserving separate curve and dependence uncertainty.
+- Added the UI-neutral Automatic Trade Scout and Package Negotiator with buyer-specific discovery scoring, protected-asset policy, bounded opening/fair/maximum offer ladders, walk-away values, and a `trade-scout` CLI. Generated offers remain transaction-blocked until full execution authority is attached.
+- Added `trade_scout_league.v1` and `trade-scout-league` to derive targets and buyer offer assets from normalized organization inventories. Need matching, seller surplus/availability, destination vetoes, protection policy, and explicit complete/partial league coverage are enforced before package generation.
+- Added `trade_scout_population.v1` and `trade-scout-populate` to translate the existing all-team training-camp roster/prospect authority into Trade Scout inventory. Player values and role thresholds use an explicit policy; dated availability, protection, and ownership-scoped pick inputs remain separate overlays. The CLI can write both the reusable populated inventory and its immediately evaluated league board.
+- Added sourced player-value timing overlays so young established NHL players can carry explicit future/control utility without being mislabeled as prospects or changing their total market value. The Seattle control scenario now reflects Shane Wright's reported availability and contract-control timing.
+- Added a sourced Rangers/Kraken Shane Wright-for-Braden Schneider control package with current cap and contract gates, recomputed two-team lineup effects, and a bounded Trade Scout ladder that stops at Schneider rather than inventing a pick sweetener.
+- Added a same-schedule, same-seed 10,000-trial Wright/Schneider season comparison and attached its Rangers/Kraken standings, playoff, and Cup deltas directly to the evaluated package.
+- Added sealed 25.3, moderate 30, strong 35, and star 40 Shane Wright score branches as UI-neutral season-movement artifacts. Regression coverage requires the Rangers' points, playoff, and Cup effects to remain paired and monotone across the breakout curve.
+- Added a 43.2 Shane Wright threshold branch that clears the Rangers' 10% Cup target at 10.04% in the sealed 10,000-trial run; score 43.0 reached only 9.98% and is not rounded into a passing claim.
+- Added a probability-weighted Rangers breakout portfolio across Wright, Perreault, Laba, Lafreniere, and Smits. The paired forecast separates its improved expected outlook from the 0.21% independent all-hit ceiling instead of presenting five breakouts as certainties.
+- Added `team_season_scenario_development_calibration.v1` and `icecast calibrate-scenario-development`. Scenario breakout probabilities can now be replaced by matching age/position/workload/value cohort rates from 11,156 completed-season transitions while every unsupported probability remains labeled as an uncalibrated assumption. `season` and `season-simulate` consume the calibrated wrapper directly.
+- Added fail-closed `prospect_arrival_calibration.v1` and `icecast prospect-arrival-calibrate`. A target prospect is compared only with nearest same-position signals from a frozen earlier `prospect_conversion_board.v2`; the empirical arrival rate is shrunk toward the complete position cohort and rejected for self-leakage, future outcomes, thin samples, or distant comparables. Scenario calibration accepts the resulting authority separately from workload-conditional NHL development cohorts.
+- Added reviewed future-pick ownership ingestion and `trade_scout_draft_pick_population.v1`. `trade-pick-populate` values confirmed-unconditional rights through the existing mature-cohort curve, retains full-round slot uncertainty, and refuses to flatten conditional or encumbered rights into offer inventory. `trade-scout-populate --pick-assets` merges the resulting assets while preserving pick protection.
+- Added `trade_draft_pick_ownership_coverage.v1` and `trade-pick-coverage`. League completeness is audited against all 224 original-team/round coordinates for one draft year; missing coordinates remain unknown, while sourced conditional/encumbered coordinates count toward coverage but not offer readiness. Duplicate coordinate claims are rejected at ingestion.
+- Team-season forecasts now retain trial-level 1–32 league-rank probabilities. `trade-pick-populate --season-forecast` always follows the pick's original team; rank-only archived artifacts use an explicit pre-lottery proxy and missing team evidence uses a uniform fallback.
+- Added season-scoped NHL draft-order simulation. Forecasts now retain distinct Round 1 lottery/playoff-order and Rounds 2-7 playoff-order distributions; Trade Scout consumes the correct distribution for each pick while older artifacts retain explicit proxy/fallback behavior.
+- Added structured `earlier_of`/`later_of` conditional-pick valuation. Conditional rights receive an independence estimate and dependence sensitivity range from explicit candidate teams while remaining unresolved and ineligible for generated offers.
+- Added ordered protected-pick conveyance chains with per-leg reach probability, conveyance probability, conditional value, future-year discounting, and mandatory unprotected terminal conveyance. Future legs use an explicit current-team-strength persistence proxy and remain offer-ineligible.
+- Sourced trade-availability states now require both a valid source URL and observation time; exact negotiation boundaries use scale-aware floating-point tolerance.
+- IceCast `season-simulate` now replays an archived `team_season_forecast.v1` directly, rehydrating its retained game forecast with explicit baseline-v1 parameters so paired trade scenarios do not require regenerating the schedule.
+
+- Trade Desk markets now reject mixed valuation measures, horizons, or methods
+  and keep projected next-season standings impact separate from control-value
+  fairness. Retained salary now changes both clubs' cap math and is gated by
+  the 50% contract limit plus sourced remaining club retention slots. Cap
+  utility now consumes each club's derived package-level cap-space delta.
+- Added a reproducible Rangers/Predators example that evaluates a speculative
+  50%-retained Ryan O'Reilly package against Boston's 2027 second-round pick,
+  including sourced cap, roster, contract, clause-review, retention-slot, and
+  pick-ownership authority plus visible player-value assumptions.
+- Trade Desk packages can now attach paired baseline/trade season forecasts
+  and expose both clubs' average-points, playoff, and Cup-probability deltas.
+  `trade-market-assemble` accepts optional same-seed baseline and scenario
+  forecasts and reports the residual versus the isolated buyer estimate.
+- Added Trade Desk lineup optimization across configurable C/LW/RW/D/G slots,
+  natural multi-position eligibility, and penalized alternate-side permission.
+  Buyer and seller attachments expose net lineup strength, additions, explicit
+  trade removals, and players displaced only by competition; CLI accepts paired
+  `--buyer-lineup` and `--seller-lineup` inputs.
+- Added `icecast trade-lineup`, which adapts an existing UI-neutral team lineup
+  plus a compact change document. The initial NYR/O'Reilly scenario adds him at
+  C, displaces Joe Veleno, excludes an unscored extra with disclosure, and keeps
+  the authored incoming score and alternate-side penalty visible.
+- Trade lineup changes can now carry full incoming-player lens and PP/PK role
+  evidence. Core preserves incumbent evidence, uses the optimizer's exact
+  dressed assignments, and regenerates four forward lines, three defense pairs,
+  goalies, PP1/PP2, and PK1/PK2 in the UI-neutral result. The CLI renders those
+  units directly and can explicitly adapt the top retained training-camp branch;
+  missing deployment evidence still fails visibly as unit warnings.
+- Added the UI-neutral `trade_lineup_board.v1` and `icecast trade-lineup-board`
+  comparison surface. It runs every candidate against one baseline, keeps pure
+  hockey rank separate from transaction-gated actionable rank, and refuses to
+  promote blocked rumors. The initial NYR board compares O'Reilly, Rust, Boeser,
+  DeBrusk, and Vatrano using official 2025-26 PP/PK deployment; Vatrano's weak
+  recent evidence correctly produces no modeled lineup upgrade.
+- Hardened Trade Board actionability: any candidate claiming transaction-ready
+  status must embed the matching Trade Desk package evaluation. Core rejects
+  missing evidence or mismatched buyer, feasibility, and gate results instead
+  of trusting an authored boolean.
+- Added an authority-backed NYR/PIT package for Bryan Rust at 50% retention in
+  exchange for Joe Veleno and Boston's 2027 second-round pick. The modeled deal
+  passes cap, roster, retention, contract, and pick gates, scores 95.4% market
+  fairness, and becomes Trade Board actionable rank 2 behind O'Reilly.
+- Added cap-balanced Boeser, DeBrusk, and Vatrano package tests. Each passes cap,
+  roster, retention, and pick gates but remains non-executable because current
+  NMC/M-NTC destination authority is absent. Trade Board now displays candidate
+  availability separately from executable feasibility, preserving a rumor
+  signal without mislabeling a protected transaction as possible today.
+- Added source-neutral Trade Desk package assembly. Raw player and pick assets
+  now join to dated team cap/roster evidence, player contract/clause evidence,
+  and pick-ownership evidence; picks are valued from the sealed historical
+  curve and both clubs' post-trade cap and roster states are derived in core.
+  `icecast trade-market-assemble` accepts the reusable curve artifact and emits
+  the existing UI-neutral market evaluation without recomputing logic in CLI.
+- Fixed Trade Desk execution gates so missing or failed cap compliance, roster
+  compliance, contract/clause authority, or required pick ownership can no
+  longer receive transaction-ready, nonzero-feasibility, or mutual-benefit
+  labels. Hockey utility remains visible for scenario analysis.
+- Added the IceCast Trade Desk foundation: mature-cohort monotone draft-pick
+  curves, probabilistic pick slots, future-pick discounting, needs/timeline/cap
+  utility for both clubs, sourced availability states, destination-control
+  gates, market fairness, balancing-pick selection, and explicit
+  rounding-versus-principal pick labels. `icecast trade-market` renders the
+  same UI-neutral evaluation contract consumed by other surfaces.
+- Added survivorship-safe historical pick calibration from complete terminal
+  NHL draft classes plus both skater and goalie bios. Players with no NHL
+  appearance remain zero outcomes, identity joins use draft coordinates rather
+  than names, byte-identical source duplicates are disclosed and collapsed,
+  conflicting duplicates fail closed, and `icecast draft-pick-curve` emits the
+  reusable outcome population and monotone value curve. The initial sealed
+  2005-2018 seven-season cohort contains 2,930 selections, including 1,491
+  zero-NHL-game outcomes.
+- Fixed preseason depth confidence so per-game player rates are weighted by
+  `GP/(GP+20)` in team aggregation, opening-lineup selection, and simulated
+  personnel values after each lens is bounded to 0–100. Three-game goalie
+  heaters and partial-lens prospect samples retain upside without outranking
+  established full-season players at full weight; raw per-82 values remain
+  visible for audit. `icecast season --candidate-overlay` now reuses the
+  sourced camp/prospect population contract to complete thin official roster
+  snapshots without hardcoded team exceptions or invented player production.
 - Added the reusable `icelines-sources` crate and moved deterministic NHL,
   AHL, MoneyPuck, CapWages, Yahoo, transaction, bundled-artifact, and identity
   parsing behind compatibility facades. Source-neutral fact/package contracts,
   explicit identity review, honest all-32 prospect census gates, and fantasy
   eligibility reuse now share the same transport-free boundary; authorized
   identity, contract-control, and camp ledgers remain required before strict
-  population authority can publish.
+  population authority can publish. Prospect census output now promotes failed,
+  quarantined, and incomplete-pagination manifest cells into typed per-team
+  authority gaps and reconciled league family/state counts. The current sealed
+  package initially reported 32 AHL assignment, 32 club camp, and 32 contract
+  publication cells rather than only a generic population-incomplete message.
+  The later official AHL authoritative-empty replay closes the assignment
+  family; camp and contract remain the exact 64-cell backlog.
 - Improved official draft-identity discovery for provider nicknames,
   parentheticals, diacritics, and transliterations. Surname fallback remains
   discovery-only and requires one exact official landing/draft-coordinate

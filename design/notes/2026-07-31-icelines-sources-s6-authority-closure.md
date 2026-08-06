@@ -267,6 +267,38 @@ explicit validation limitation.
 
 ## Next measured closure
 
+### August 5 AHL authority replay
+
+The local official 2026-27 `ahl_roster_stats.v1` snapshot captured at
+`2026-07-29T03:51:30Z` contains exactly 32 AHL teams, 32 unique NHL affiliate
+codes, no missing affiliate, and zero published preseason roster players. Its
+SHA-256 is
+`b0c70318981fa2582607d34720c09ebe0b1207620e1ff0f101bc0c767cb18978`.
+The source audit admitted each explicit empty affiliate row through the existing
+adapter and raised the sealed manifest from 128 to 160 acquired objects. The
+new package fingerprint is
+`dcc7a347b6b17fe4723545cdc7886031b096b1c131fa3371e85d318d3183a142`.
+
+The replayed census retains 2,477 discoveries, 807 canonical identities, and
+zero controlled relationships. Its compact readiness fingerprint is
+`591be971256cd1a7b11fa6f449045f07288166e36824d507078a1f931b09b5cc`.
+All 32 `ahl_current_assignment` source gaps are closed; this proves acquisition
+coverage only and does not assign a player or establish control. NYR and SEA
+now each expose two remaining gaps. The closure board falls from 96 to 64 cells
+with fingerprint
+`00930ad770c7783545453f906a58c637da016dee48516575cd2a47356a3fa021`:
+32 club camp and 32 contract publication cells.
+
+The UI-neutral `prospect_authority_progress.v1` delta verifies both the
+96-cell and 64-cell closure fingerprints, their internal reconciliation, the
+matching season, and chronological knowledge cutoffs. Its retained replay
+reports 32 closed population-authority cells, zero opened cells, zero state
+changes, 64 persisting cells, and 3,333 closure basis points. The progress
+fingerprint is
+`82eedbe279caaed3614e36be5b7a8bcefd0ca1e1d17eeb42e420ea1ef4e2b78f`.
+This measurement does not independently approve evidence or make the census
+publishable.
+
 1. Connect an authorized current all-32 provider to
    `contract_control_ledger.v1`; do not treat draft, affiliate, roster, or
    current-team observations as legal control.

@@ -1,0 +1,28 @@
+{
+  "as_of": "2025-04-01T00:00:00-04:00",
+  "evaluation_start": "2025-02-01T00:00:00-05:00",
+  "evaluation_end": "2025-03-07T15:00:00-05:00",
+  "model_id": "trade-completion-evaluation-v1",
+  "model_method": "frozen logistic completion model",
+  "model_trained_through": "2025-01-31T23:59:59-05:00",
+  "training_fingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "bin_count": 5,
+  "observations": [
+    {
+      "proposal_id": "reviewed-likely-completed",
+      "proposal_at": "2025-03-01T12:00:00-05:00",
+      "evidence_as_of": "2025-03-01T11:00:00-05:00",
+      "resolved_at": "2025-03-07T15:00:00-05:00",
+      "predicted_probability": 0.8,
+      "completed": true
+    },
+    {
+      "proposal_id": "reviewed-unlikely-failed",
+      "proposal_at": "2025-03-01T12:00:00-05:00",
+      "evidence_as_of": "2025-03-01T11:00:00-05:00",
+      "resolved_at": "2025-03-07T15:00:00-05:00",
+      "predicted_probability": 0.2,
+      "completed": false
+    }
+  ]
+}

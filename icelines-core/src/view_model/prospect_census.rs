@@ -37,7 +37,7 @@ impl ProspectCensusStage {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProspectCensusLossReason {
     UnresolvedIdentity,
@@ -91,6 +91,28 @@ pub enum ProspectCensusFreshnessStatus {
     Unknown,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProspectCensusAuthorityGapState {
+    Failed,
+    Quarantined,
+    IncompletePagination,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectCensusAuthorityGap {
+    pub source_family: String,
+    pub state: ProspectCensusAuthorityGapState,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProspectCensusAuthorityGapSummary {
+    pub source_family: String,
+    pub state: ProspectCensusAuthorityGapState,
+    pub organizations: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProspectCensusCandidateInput {
     pub candidate_key: String,
@@ -114,6 +136,8 @@ pub struct ProspectCensusOrganizationInput {
     pub requested_ranking_depth: usize,
     #[serde(default)]
     pub authority_disclosures: Vec<String>,
+    #[serde(default)]
+    pub authority_gaps: Vec<ProspectCensusAuthorityGap>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -195,6 +219,8 @@ pub struct ProspectCensusOrganizationView {
     pub score_status: ProspectScorePublicationStatus,
     pub rank_status: ProspectRankPublicationStatus,
     pub counts: ProspectCensusCounts,
+    #[serde(default)]
+    pub authority_gaps: Vec<ProspectCensusAuthorityGap>,
     pub losses: Vec<ProspectCensusLossRow>,
     pub disclosures: Vec<String>,
     pub remediation: Vec<String>,
@@ -212,6 +238,8 @@ pub struct ProspectCensusView {
     pub eligibility_policy_version: String,
     pub organizations: Vec<ProspectCensusOrganizationView>,
     pub league_counts: ProspectCensusCounts,
+    #[serde(default)]
+    pub authority_gap_summary: Vec<ProspectCensusAuthorityGapSummary>,
     pub dimensions: Vec<ProspectCensusDimensionRow>,
     pub losses: Vec<ProspectCensusLossRow>,
     pub disclosures: Vec<String>,
@@ -297,10 +325,20 @@ pub fn build_prospect_census(input: ProspectCensusInput) -> Result<ProspectCensu
         if !publish {
             disclosures.push(match publication_status {
                 ProspectCensusPublicationStatus::PopulationIncomplete => {
-                    remediation.push(
+                    let families = organization
+                        .authority_gaps
+                        .iter()
+                        .map(|gap| gap.source_family.as_str())
+                        .collect::<BTreeSet<_>>();
+                    remediation.push(if families.is_empty() {
                         "Acquire, validate, or explicitly mark every requested source-family object; then resolve or exclude every control conflict."
-                            .to_owned(),
-                    );
+                            .to_owned()
+                    } else {
+                        format!(
+                            "Acquire or resolve missing source families: {}.",
+                            families.into_iter().collect::<Vec<_>>().join(", ")
+                        )
+                    });
                     "Program score and rank are withheld until the enumerated population source matrix is complete and conflict-free.".to_owned()
                 }
                 ProspectCensusPublicationStatus::DepthIncomplete => format!(
@@ -334,6 +372,7 @@ pub fn build_prospect_census(input: ProspectCensusInput) -> Result<ProspectCensu
                 ProspectRankPublicationStatus::RankWithheld
             },
             counts,
+            authority_gaps: organization.authority_gaps.clone(),
             losses,
             disclosures,
             remediation,
@@ -346,6 +385,25 @@ pub fn build_prospect_census(input: ProspectCensusInput) -> Result<ProspectCensu
             .then_with(|| left.candidate_key.cmp(&right.candidate_key))
     });
 
+    let mut authority_gap_counts = BTreeMap::new();
+    for organization in &input.organizations {
+        for gap in &organization.authority_gaps {
+            *authority_gap_counts
+                .entry((gap.source_family.clone(), gap.state))
+                .or_insert(0usize) += 1;
+        }
+    }
+    let authority_gap_summary = authority_gap_counts
+        .into_iter()
+        .map(
+            |((source_family, state), organizations)| ProspectCensusAuthorityGapSummary {
+                source_family,
+                state,
+                organizations,
+            },
+        )
+        .collect();
+
     Ok(ProspectCensusView {
         schema: PROSPECT_CENSUS_SCHEMA.to_owned(),
         evaluation_season: input.evaluation_season,
@@ -357,6 +415,7 @@ pub fn build_prospect_census(input: ProspectCensusInput) -> Result<ProspectCensu
         eligibility_policy_version: input.eligibility_policy_version,
         organizations,
         league_counts,
+        authority_gap_summary,
         dimensions: build_dimensions(&input.candidates),
         losses: all_losses,
         disclosures: vec![
@@ -425,9 +484,15 @@ fn validate_input(input: &ProspectCensusInput) -> Result<(), String> {
     }
     let mut organizations = BTreeSet::new();
     for organization in &input.organizations {
+        let mut gap_keys = BTreeSet::new();
         if organization.organization.trim().is_empty()
             || organization.requested_ranking_depth == 0
             || !organizations.insert(organization.organization.as_str())
+            || organization.authority_gaps.iter().any(|gap| {
+                gap.source_family.trim().is_empty()
+                    || gap.reason.trim().is_empty()
+                    || !gap_keys.insert((gap.source_family.as_str(), gap.state))
+            })
         {
             return Err(
                 "prospect census organizations must be unique, named, and request non-zero depth"
@@ -528,6 +593,7 @@ mod tests {
             population_authority_status: authority,
             requested_ranking_depth: 2,
             authority_disclosures: Vec::new(),
+            authority_gaps: Vec::new(),
         }
     }
 
@@ -652,5 +718,41 @@ mod tests {
         invalid.candidates[2].loss_reason = None;
         invalid.candidates[2].loss_message = None;
         assert!(build_prospect_census(invalid).is_err());
+    }
+
+    #[test]
+    fn authority_gaps_reconcile_into_actionable_league_summary() {
+        let mut input = input();
+        let sea = input
+            .organizations
+            .iter_mut()
+            .find(|row| row.organization == "SEA")
+            .unwrap();
+        sea.authority_gaps = vec![
+            ProspectCensusAuthorityGap {
+                source_family: "ahl_current_assignment".to_owned(),
+                state: ProspectCensusAuthorityGapState::Failed,
+                reason: "not acquired".to_owned(),
+            },
+            ProspectCensusAuthorityGap {
+                source_family: "nhl_contract_publication".to_owned(),
+                state: ProspectCensusAuthorityGapState::Failed,
+                reason: "not acquired".to_owned(),
+            },
+        ];
+        let view = build_prospect_census(input).unwrap();
+        assert_eq!(view.authority_gap_summary.len(), 2);
+        assert!(view
+            .authority_gap_summary
+            .iter()
+            .all(|row| row.organizations == 1));
+        let sea = view
+            .organizations
+            .iter()
+            .find(|row| row.organization == "SEA")
+            .unwrap();
+        assert_eq!(sea.authority_gaps.len(), 2);
+        assert!(sea.remediation[0].contains("ahl_current_assignment"));
+        assert!(sea.remediation[0].contains("nhl_contract_publication"));
     }
 }

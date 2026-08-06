@@ -1,0 +1,39 @@
+{
+  "as_of": "2026-08-02",
+  "current_draft_year": 2026,
+  "authority": {
+    "teams": [
+      {"team":"NYR","upper_limit":104000000,"committed_cap_hit":101597024,"active_roster_players":22,"max_active_roster_players":23,"retained_salary_slots_available":3,"source_url":"https://puckpedia.com/team/new-york-rangers","observed_at":"2026-08-02"},
+      {"team":"PIT","upper_limit":104000000,"committed_cap_hit":90322360,"active_roster_players":23,"max_active_roster_players":23,"retained_salary_slots_available":2,"source_url":"https://puckpedia.com/team/pittsburgh-penguins","observed_at":"2026-08-02"}
+    ],
+    "players": [
+      {"player_id":8475810,"organization":"PIT","cap_hit":5125000,"contract_confirmed":true,"clause_reviewed":true,"destination_allowed":true,"source_url":"https://puckpedia.com/player/bryan-rust","observed_at":"2026-08-02"},
+      {"player_id":8480813,"organization":"NYR","cap_hit":1200000,"contract_confirmed":true,"clause_reviewed":true,"destination_allowed":true,"source_url":"https://puckpedia.com/player/joe-veleno","observed_at":"2026-08-02"}
+    ],
+    "draft_picks": [
+      {"asset_id":"BOS-2027-2-owned-by-NYR","owner":"NYR","confirmed":true,"source_url":"https://puckpedia.com/team/new-york-rangers","observed_at":"2026-08-02"}
+    ]
+  },
+  "proposals": [
+    {
+      "buyer": {"team":"NYR","current_weight":1.4,"future_weight":0.4,"cap_weight":2.0,"season_impact_weight":10.0,"needs":{"top_six_forward":100.0}},
+      "seller": {"team":"PIT","current_weight":0.5,"future_weight":1.4,"cap_weight":2.0,"season_impact_weight":1.0,"needs":{"future_asset":100.0,"younger_forward":40.0}},
+      "assets_to_buyer": [
+        {
+          "kind":"player","player_id":8475810,"retained_cap_hit":2562500,
+          "asset":{"id":"8475810","label":"Bryan Rust (50% retained)","position":"top_six_forward","value_basis":{"outcome_measure":"nhl_regular_season_games_played","horizon_years":7,"method":"mature-cohort fixed-horizon outcomes with weighted monotone regression"},"market_value":110.0,"current_value":92.0,"future_value":18.0,"season_points_impact":0.65,"uncertainty":28.0,"availability":{"kind":"speculative_fit","probability":0.15,"source_url":null,"observed_at":null,"destination_allowed":null},"draft_pick":null,"disclosures":["The 110-game control value and +0.65 isolated standings impact are explicit scenario assumptions pending learned player valuation and paired simulation."]}
+        }
+      ],
+      "assets_to_seller": [
+        {
+          "kind":"player","player_id":8480813,"retained_cap_hit":null,
+          "asset":{"id":"8480813","label":"Joe Veleno","position":"younger_forward","value_basis":{"outcome_measure":"nhl_regular_season_games_played","horizon_years":7,"method":"mature-cohort fixed-horizon outcomes with weighted monotone regression"},"market_value":35.0,"current_value":25.0,"future_value":10.0,"season_points_impact":0.1,"uncertainty":18.0,"availability":{"kind":"depth_surplus","probability":0.8,"source_url":null,"observed_at":null,"destination_allowed":null},"draft_pick":null,"disclosures":["Veleno value is an authored control-value assumption; the lineup scenario explicitly removes him rather than counting him as competition displacement."]}
+        },
+        {
+          "kind":"draft_pick",
+          "asset":{"id":"BOS-2027-2-owned-by-NYR","draft_year":2027,"slot_outcomes":[{"overall_pick":33,"probability":0.10},{"overall_pick":40,"probability":0.15},{"overall_pick":48,"probability":0.25},{"overall_pick":56,"probability":0.25},{"overall_pick":64,"probability":0.25}]}
+        }
+      ]
+    }
+  ]
+}

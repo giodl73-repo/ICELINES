@@ -63,6 +63,25 @@ inside the existing all-32 season simulator.
 
 ## Current historical result
 
+### 2026-08-06 preseason refresh
+
+- A fresh seeded 10,000-trial baseline retained all 1,344 games, all 32 teams,
+  and exactly 84 games with a 42/42 home-road split for every team. The run
+  emitted zero warnings and selected the authoritative July 29 official-roster
+  snapshot with 32/32 verified clubs and player-value effects enabled.
+- The frozen baseline projects NYR at 94.76 points (84/95/106 P10/P50/P90),
+  49.72% playoffs, and 2.52% Stanley Cup; SEA is 89.54 points
+  (78/90/101), 39.68% playoffs, and 1.16% Stanley Cup.
+- Same-seed five-player internal-breakout branches move NYR to 99.26 points,
+  69.13% playoffs, and 5.85% Stanley Cup, while SEA moves to 94.03 points,
+  59.24% playoffs, and 3.30% Stanley Cup. These are authored ceiling branches,
+  not unconditional forecasts.
+- The retained UI-neutral baseline cards are
+  `examples/season-simulation-card-nyr-baseline-2026-27.json` and
+  `examples/season-simulation-card-sea-baseline-2026-27.json`. Both preserve
+  full-league run fingerprint `1afdc479e23aaa46f7bfdb4e84f600c1c479a5e42b9291118d9b0aa63bd6c8a0`;
+  the richer development-variance showcase cards remain separate.
+
 - 2019-20 through 2025-26: 8,510 official regular-season results.
 - Five season-forward holdouts (6,560 scored games): pooled Brier gain 0.001028
   and log-loss gain 0.002113 versus chronological Elo; four holdouts improve.

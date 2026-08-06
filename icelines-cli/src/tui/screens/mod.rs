@@ -1031,9 +1031,11 @@ fn active_chrome(app: &App) -> crate::tui::chrome::ScreenChrome {
         // Phase Adams.10 — Team screen now publishes chrome with
         // sort + position filter keybinds.
         Screen::Team(_) => team::chrome(&app.team),
-        Screen::TeamCard { team, compare } => {
-            team_card::chrome(team, app.selected.min(1), *compare)
-        }
+        Screen::TeamCard { team, compare } => team_card::chrome(
+            team,
+            app.selected.min(team_card::page_count(team) - 1),
+            *compare,
+        ),
         // Phase Adams.11 — Depth + Favorites chrome.
         Screen::Depth | Screen::DepthTeam(_) => depth::chrome(app.depth_mode, &app.depth_filters),
         Screen::Favorites => favorites::chrome(&app.favorites),
