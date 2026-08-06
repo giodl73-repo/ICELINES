@@ -3430,6 +3430,18 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Compare two sealed authority closure boards and measure cell movement.
+    #[command(name = "prospect-authority-progress")]
+    ProspectAuthorityProgress {
+        #[arg(long, value_name = "PATH")]
+        prior: PathBuf,
+        #[arg(long, value_name = "PATH")]
+        current: PathBuf,
+        #[arg(long)]
+        json: bool,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Generate neutral multi-league prospect context from the league camp pool.
     #[command(name = "prospect-career-context")]
     ProspectCareerContext {
@@ -7447,6 +7459,34 @@ mod tui_surface_tests {
                 out: Some(out),
             }) if input == PathBuf::from("readiness.json")
                 && out == PathBuf::from("closure.json")
+        ));
+    }
+
+    #[test]
+    fn l0_icecast_prospect_authority_progress_surface_parses() {
+        let cli = Cli::try_parse_from([
+            "icelines",
+            "icecast",
+            "prospect-authority-progress",
+            "--prior",
+            "prior.json",
+            "--current",
+            "current.json",
+            "--json",
+            "--out",
+            "progress.json",
+        ])
+        .expect("IceCast prospect authority progress command should parse");
+        assert!(matches!(
+            cli.command,
+            Commands::Icecast(IceCastSubcommand::ProspectAuthorityProgress {
+                prior,
+                current,
+                json: true,
+                out: Some(out),
+            }) if prior == PathBuf::from("prior.json")
+                && current == PathBuf::from("current.json")
+                && out == PathBuf::from("progress.json")
         ));
     }
 

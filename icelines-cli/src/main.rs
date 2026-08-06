@@ -3522,6 +3522,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Icecast(IceCastSubcommand::ProspectAuthorityClosure { input, json, out }) => {
             commands::icecast::run_prospect_authority_closure(input, json, out)?
         }
+        Commands::Icecast(IceCastSubcommand::ProspectAuthorityProgress {
+            prior,
+            current,
+            json,
+            out,
+        }) => commands::icecast::run_prospect_authority_progress(prior, current, json, out)?,
         Commands::Icecast(IceCastSubcommand::ProspectCareerContext {
             camp_forecast,
             rosters,

@@ -64,6 +64,7 @@ pub mod poach;
 pub mod prospect_arrival_board;
 pub mod prospect_arrival_calibration;
 pub mod prospect_authority_closure;
+pub mod prospect_authority_progress;
 pub mod prospect_census;
 pub mod prospect_census_readiness;
 pub mod prospect_conversion;
@@ -514,6 +515,12 @@ pub use prospect_authority_closure::{
     ProspectAuthorityClosureError, ProspectAuthorityClosureFamilySummary,
     ProspectAuthorityClosureGate, PROSPECT_AUTHORITY_CLOSURE_METHOD,
     PROSPECT_AUTHORITY_CLOSURE_SCHEMA,
+};
+pub use prospect_authority_progress::{
+    build_prospect_authority_progress, ProspectAuthorityProgressChange,
+    ProspectAuthorityProgressChangeKind, ProspectAuthorityProgressError,
+    ProspectAuthorityProgressView, PROSPECT_AUTHORITY_PROGRESS_METHOD,
+    PROSPECT_AUTHORITY_PROGRESS_SCHEMA,
 };
 pub use prospect_census::{
     build_prospect_census, require_publishable_prospect_census, ProspectCensusAuthorityGap,

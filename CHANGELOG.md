@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Added `prospect_authority_progress.v1` and
+  `icecast prospect-authority-progress` to compare two fingerprinted closure
+  boards without UI-specific logic. It validates board reconciliation and
+  chronological cutoffs, then separates closed, opened, persisting, and
+  state-changed cells by authority gate. The retained AHL replay measures a
+  clean 96-to-64 reduction: 32 population cells closed, no regressions, and
+  3,333 basis points of the starting backlog retired.
+
 - Added `prospect_authority_closure_board.v1` and
   `icecast prospect-authority-closure` to convert a sealed census-readiness
   board into exact, fingerprinted acquisition recipes. The retained 2026-27

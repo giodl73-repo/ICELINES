@@ -674,12 +674,25 @@ it does not guess player rights or mark acquisition complete:
 icelines icecast prospect-authority-closure --input prospect-census-readiness.json --json --out prospect-authority-closure.json
 ```
 
+Compare two sealed closure boards to measure exactly what closed, opened, or
+changed state. The delta verifies both source fingerprints and their internal
+totals, requires one season and chronological knowledge cutoffs, and reports
+integer basis points so renderers do not introduce floating-point drift:
+
+```bash
+icelines icecast prospect-authority-progress --prior prior-closure.json --current current-closure.json --json --out authority-progress.json
+```
+
 The retained 2026-27 plan now has 64 cells: 32 contract-control cells requiring
 `contract_control_ledger.v1` and 32 camp cells requiring
 `camp_participation_ledger.v1`. A sealed official `ahl_roster_stats.v1`
 snapshot with explicit coverage for every affiliate closed all 32 AHL source
 cells. Its zero preseason player rows establish authoritative-empty source
 coverage, not player assignments or organizational control.
+The retained pre/post AHL delta is 96 to 64 cells: 32 population-authority
+cells closed, zero opened, zero changed state, and 3,333 basis points of the
+starting backlog retired. The progress artifact does not itself approve the
+underlying evidence or declare the census publishable.
 
 All 32 team cards are projected from the same sealed league artifact and served
 through the generic web renderer at

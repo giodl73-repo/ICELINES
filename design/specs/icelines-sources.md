@@ -640,6 +640,10 @@ retaining the original source and classification disclosure.
   fingerprint, and refuses partial league envelopes;
 - authority closure recipes reconcile to readiness gaps, preserve their source
   fingerprint, and never promote a recipe into acquired evidence;
+- authority progress validates and compares two sealed closure boards from the
+  same season, requires chronological knowledge cutoffs, and reconciles exact
+  closed, opened, persisting, and state-changed cells without treating the
+  delta as evidence approval;
 - strict publication independently refuses incomplete population authority and
   incomplete ranking depth;
 - camp-only invite remains usable by camp simulation but not prospect ranking;

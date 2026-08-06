@@ -1061,6 +1061,7 @@ icelines icecast prospect-population-audit --input examples/icecast-league-candi
 icelines icecast prospect-census --source-package target/prospect-sources-2026-27-final.json --json --out prospect-census.json
 icelines icecast prospect-census-readiness --input prospect-census.json --json --out prospect-census-readiness.json
 icelines icecast prospect-authority-closure --input prospect-census-readiness.json --json --out prospect-authority-closure.json
+icelines icecast prospect-authority-progress --prior prior-authority-closure.json --current current-authority-closure.json --json --out prospect-authority-progress.json
 # TUI command bar: open the same retained 32-team readiness board
 prospect-census-readiness
 icelines icecast identity-review-workboard --source-package target/prospect-sources-2026-27-landings.v2.json --json --out identity-review-workboard.json

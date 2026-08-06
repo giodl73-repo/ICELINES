@@ -289,6 +289,16 @@ with fingerprint
 `00930ad770c7783545453f906a58c637da016dee48516575cd2a47356a3fa021`:
 32 club camp and 32 contract publication cells.
 
+The UI-neutral `prospect_authority_progress.v1` delta verifies both the
+96-cell and 64-cell closure fingerprints, their internal reconciliation, the
+matching season, and chronological knowledge cutoffs. Its retained replay
+reports 32 closed population-authority cells, zero opened cells, zero state
+changes, 64 persisting cells, and 3,333 closure basis points. The progress
+fingerprint is
+`82eedbe279caaed3614e36be5b7a8bcefd0ca1e1d17eeb42e420ea1ef4e2b78f`.
+This measurement does not independently approve evidence or make the census
+publishable.
+
 1. Connect an authorized current all-32 provider to
    `contract_control_ledger.v1`; do not treat draft, affiliate, roster, or
    current-team observations as legal control.

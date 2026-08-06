@@ -10021,6 +10021,93 @@ pub fn run_prospect_authority_closure(
     Ok(())
 }
 
+pub fn run_prospect_authority_progress(
+    prior: PathBuf,
+    current: PathBuf,
+    json: bool,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let prior: icelines_core::ProspectAuthorityClosureBoardView =
+        read_icecast_json(&prior, "prior prospect authority closure board")?;
+    let current: icelines_core::ProspectAuthorityClosureBoardView =
+        read_icecast_json(&current, "current prospect authority closure board")?;
+    let progress = icelines_core::build_prospect_authority_progress(&prior, &current)?;
+    let output = if json {
+        format!("{}\n", serde_json::to_string_pretty(&progress)?)
+    } else {
+        render_prospect_authority_progress(&progress)
+    };
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "prospect authority progress")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+fn render_prospect_authority_progress(
+    progress: &icelines_core::ProspectAuthorityProgressView,
+) -> String {
+    let mut output = format!(
+        "PROSPECT AUTHORITY PROGRESS · {} · {}→{} cells · {} closed · {} opened · {:.2}% closure\n",
+        progress.evaluation_season,
+        progress.prior_cells,
+        progress.current_cells,
+        progress.closed_cells,
+        progress.opened_cells,
+        f64::from(progress.closure_basis_points) / 100.0,
+    );
+    let _ = writeln!(
+        output,
+        "CONTROL CLOSED · {} · POPULATION CLOSED · {} · STATE CHANGED · {}",
+        progress.control_cells_closed,
+        progress.population_cells_closed,
+        progress.state_changed_cells
+    );
+    for change in &progress.changes {
+        let prior_state = change
+            .prior_state
+            .map(prospect_authority_gap_state_label)
+            .unwrap_or("absent");
+        let current_state = change
+            .current_state
+            .map(prospect_authority_gap_state_label)
+            .unwrap_or("resolved");
+        let _ = writeln!(
+            output,
+            "{:<4} {:<30} {:<13} {} → {}",
+            change.organization,
+            change.source_family,
+            prospect_authority_change_label(change.kind),
+            prior_state,
+            current_state
+        );
+    }
+    output
+}
+
+fn prospect_authority_change_label(
+    kind: icelines_core::ProspectAuthorityProgressChangeKind,
+) -> &'static str {
+    match kind {
+        icelines_core::ProspectAuthorityProgressChangeKind::Closed => "closed",
+        icelines_core::ProspectAuthorityProgressChangeKind::Opened => "opened",
+        icelines_core::ProspectAuthorityProgressChangeKind::StateChanged => "state changed",
+    }
+}
+
+fn prospect_authority_gap_state_label(
+    state: icelines_core::ProspectCensusAuthorityGapState,
+) -> &'static str {
+    match state {
+        icelines_core::ProspectCensusAuthorityGapState::Failed => "failed",
+        icelines_core::ProspectCensusAuthorityGapState::Quarantined => "quarantined",
+        icelines_core::ProspectCensusAuthorityGapState::IncompletePagination => {
+            "incomplete pagination"
+        }
+    }
+}
+
 fn render_prospect_authority_closure(
     board: &icelines_core::ProspectAuthorityClosureBoardView,
 ) -> String {

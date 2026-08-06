@@ -344,6 +344,12 @@ pub use view_model::prospect_authority_closure::{
     ProspectAuthorityClosureGate, PROSPECT_AUTHORITY_CLOSURE_METHOD,
     PROSPECT_AUTHORITY_CLOSURE_SCHEMA,
 };
+pub use view_model::prospect_authority_progress::{
+    build_prospect_authority_progress, ProspectAuthorityProgressChange,
+    ProspectAuthorityProgressChangeKind, ProspectAuthorityProgressError,
+    ProspectAuthorityProgressView, PROSPECT_AUTHORITY_PROGRESS_METHOD,
+    PROSPECT_AUTHORITY_PROGRESS_SCHEMA,
+};
 pub use view_model::prospect_census::{
     build_prospect_census, require_publishable_prospect_census, ProspectCensusAuthorityGap,
     ProspectCensusAuthorityGapState, ProspectCensusAuthorityGapSummary,
