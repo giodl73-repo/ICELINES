@@ -71,8 +71,10 @@ the existing game-probability model and all-32 season simulator.
      read. **Edge composition implemented:** the same command can accept a sealed
      prediction edge, require that edge to cite the exact matchup fingerprint,
      and display edge-owned win probability, matchup-factor movement, and
-     evidence confidence without recomputing probability arithmetic. Headshot
-     assets remain separate.
+     evidence confidence without recomputing probability arithmetic. **Headshot
+     assets implemented:** sealed profiles retain lineup-owned portrait
+     references, and the card emits shared headshot assets with deterministic
+     initials fallbacks without renderer URL construction.
    - Add Web/TUI discovery while preserving the same UI-neutral document.
    - Pilot Rangers/Kraken, then run the identical all-32 pipeline.
 

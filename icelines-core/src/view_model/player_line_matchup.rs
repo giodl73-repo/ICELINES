@@ -13,7 +13,8 @@ use super::management_behavior::{
 };
 use super::team_game_prediction_edge::{TeamGameEvidenceState, TeamGameForecastVintage};
 use super::team_lineup::{
-    TeamLineupPlayerView, TeamLineupProjectionView, TeamLineupSpecialTeamsKind,
+    headshot_url_matches_player_id, TeamLineupPlayerView, TeamLineupPortraitView,
+    TeamLineupProjectionView, TeamLineupSpecialTeamsKind,
 };
 
 pub const PLAYER_LINE_MATCHUP_FORECAST_SCHEMA: &str = "player_line_matchup_forecast.v1";
@@ -93,6 +94,8 @@ pub struct PlayerForecastProfileView {
     pub player_id: u32,
     pub display_name: String,
     pub team: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub portrait: Option<TeamLineupPortraitView>,
     pub evidence_cutoff_at: DateTime<Utc>,
     pub games_played: u32,
     pub even_strength_minutes: f64,
@@ -694,6 +697,7 @@ pub fn validate_player_line_matchup_forecast(
                 profile.schema != PLAYER_FORECAST_PROFILE_SCHEMA
                     || profile.player_id == 0
                     || profile.display_name.trim().is_empty()
+                    || !valid_profile_portrait(profile)
                     || profile.evidence_cutoff_at > view.forecast_at
                     || profile.even_strength_minutes < 0.0
                     || !profile.even_strength_minutes.is_finite()
@@ -1194,6 +1198,7 @@ fn build_profile_view(
         player_id: profile.player_id,
         display_name: player.display_name.clone(),
         team: profile.team.trim().to_ascii_uppercase(),
+        portrait: Some(player.portrait.clone()),
         evidence_cutoff_at: profile.evidence_cutoff_at,
         games_played: profile.games_played,
         even_strength_minutes: profile.even_strength_minutes,
@@ -1216,6 +1221,7 @@ fn neutral_profile(
         player_id: player.player_id,
         display_name: player.display_name.clone(),
         team: team.to_owned(),
+        portrait: Some(player.portrait.clone()),
         evidence_cutoff_at: forecast_at,
         games_played: 0,
         even_strength_minutes: 0.0,
@@ -1226,6 +1232,17 @@ fn neutral_profile(
         reliability_adjusted_score: 50.0,
         adjusted_dimensions: PlayerForecastProfileDimensions::default(),
     }
+}
+
+fn valid_profile_portrait(profile: &PlayerForecastProfileView) -> bool {
+    profile.portrait.as_ref().is_none_or(|portrait| {
+        portrait.asset_id == format!("player:{}:headshot", profile.player_id)
+            && !portrait.fallback_initials.trim().is_empty()
+            && portrait
+                .headshot_canonical_url
+                .as_ref()
+                .is_none_or(|url| headshot_url_matches_player_id(url, profile.player_id))
+    })
 }
 
 fn build_unit(
@@ -1894,6 +1911,19 @@ mod tests {
         assert!(validate_player_line_matchup_forecast(&view)
             .unwrap_err()
             .contains("fingerprint"));
+    }
+
+    #[test]
+    fn legacy_profile_without_portrait_remains_readable() {
+        let view = build_player_line_matchup_forecast(input()).unwrap();
+        let mut value = serde_json::to_value(&view.home.profiles[0]).unwrap();
+        value
+            .as_object_mut()
+            .expect("profile object")
+            .remove("portrait");
+
+        let profile: PlayerForecastProfileView = serde_json::from_value(value).unwrap();
+        assert!(profile.portrait.is_none());
     }
 
     #[test]

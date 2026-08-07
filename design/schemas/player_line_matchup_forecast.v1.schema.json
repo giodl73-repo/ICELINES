@@ -94,6 +94,7 @@
         "player_id": { "type": "integer", "minimum": 1 },
         "display_name": { "type": "string", "minLength": 1 },
         "team": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "portrait": { "$ref": "#/$defs/portrait" },
         "evidence_cutoff_at": { "type": "string", "format": "date-time" },
         "games_played": { "type": "integer", "minimum": 0 },
         "even_strength_minutes": { "type": "number", "minimum": 0 },
@@ -103,6 +104,26 @@
         "raw_overall_score": { "type": "number", "minimum": 0, "maximum": 100 },
         "reliability_adjusted_score": { "type": "number", "minimum": 0, "maximum": 100 },
         "adjusted_dimensions": { "$ref": "#/$defs/dimensions" }
+      },
+      "additionalProperties": false
+    },
+    "portrait": {
+      "type": "object",
+      "required": [
+        "asset_id",
+        "headshot_canonical_url",
+        "fallback_initials"
+      ],
+      "properties": {
+        "asset_id": {
+          "type": "string",
+          "pattern": "^player:[1-9][0-9]*:headshot$"
+        },
+        "headshot_canonical_url": {
+          "type": ["string", "null"],
+          "pattern": "^https?://"
+        },
+        "fallback_initials": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
