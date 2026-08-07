@@ -15,9 +15,9 @@ use icelines_core::{
     build_forecast_history_card, build_forecast_movement_card, build_isolated_scenario_impact,
     build_isolated_scenario_impact_as_of, build_line_combination_forecast,
     build_organization_lineup_forecast, build_organization_profile_history,
-    build_organization_window_history, build_player_line_matchup_forecast,
-    build_player_line_matchup_validation, build_prospect_arrival_board,
-    build_prospect_arrival_card, build_prospect_conversion_archive,
+    build_organization_window_history, build_player_line_matchup_card,
+    build_player_line_matchup_forecast, build_player_line_matchup_validation,
+    build_prospect_arrival_board, build_prospect_arrival_card, build_prospect_conversion_archive,
     build_prospect_conversion_board, build_prospect_development_study,
     build_prospect_discovery_board, build_prospect_nhl_performance_document,
     build_prospect_program_board_with_goalies, build_prospect_program_history,
@@ -57,8 +57,8 @@ use icelines_core::{
     OrganizationWindowBridgeView, OrganizationWindowManifestView,
     OrganizationWindowScenarioDistributionInput, OrganizationWindowSourceCoverageView,
     OrganizationWindowSourcePackageView, OrganizationalProspectPolicy,
-    PlayerLineMatchupAblationObservation, PlayerLineMatchupForecastInput,
-    PlayerLineMatchupForecastView, PlayerLineMatchupScenarioInput,
+    PlayerLineMatchupAblationObservation, PlayerLineMatchupCardInput,
+    PlayerLineMatchupForecastInput, PlayerLineMatchupForecastView, PlayerLineMatchupScenarioInput,
     ProspectArrivalCalibrationConfig, ProspectArrivalCalibrationInput,
     ProspectArrivalCalibrationView, ProspectArrivalCardInput,
     ProspectArrivalLeaguePopulationAuthorityView, ProspectArrivalLeagueSourceExclusionInput,
@@ -5037,6 +5037,45 @@ pub fn run_line_matchup(args: IceCastLineMatchupArgs) -> anyhow::Result<()> {
     };
     if let Some(path) = args.out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "player-line matchup forecast")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_line_matchup_card(
+    input: PathBuf,
+    team: String,
+    team_name: Option<String>,
+    generated_at: Option<String>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let matchup: PlayerLineMatchupForecastView =
+        read_icecast_json(&input, "player-line matchup forecast")?;
+    let generated_at = generated_at
+        .as_deref()
+        .map(DateTime::parse_from_rfc3339)
+        .transpose()
+        .context("--generated-at must be RFC 3339")?
+        .map(|value| value.with_timezone(&Utc))
+        .unwrap_or(matchup.forecast_at);
+    if generated_at < matchup.forecast_at {
+        bail!("--generated-at cannot be earlier than the matchup forecast time");
+    }
+    let mut view = ViewContext::new(ViewWindow::new(Season(matchup.season), SeasonType::Regular));
+    view.generated_at = Some(generated_at);
+    let team = team.trim().to_ascii_uppercase();
+    let evidence_at = Some(matchup.captured_at);
+    let card = build_player_line_matchup_card(PlayerLineMatchupCardInput {
+        matchup,
+        focus_team: team.clone(),
+        team_name: team_name.unwrap_or_else(|| team.clone()),
+        view,
+        evidence_at,
+    })?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&card)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "player-line matchup card")?;
     } else {
         print!("{output}");
     }

@@ -2247,6 +2247,23 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Project one sealed player-line matchup into `card_document.v1`.
+    #[command(name = "line-matchup-card")]
+    LineMatchupCard {
+        /// Sealed `player_line_matchup_forecast.v1` document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+        /// Focus team participating in the game.
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        team_name: Option<String>,
+        /// RFC 3339 card generation time; defaults to the matchup capture time.
+        #[arg(long)]
+        generated_at: Option<String>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Build dated player profiles and deployment-affinity evidence for The Matchup.
     #[command(name = "line-matchup-profiles")]
     LineMatchupProfiles {
@@ -5146,6 +5163,37 @@ mod tui_surface_tests {
                 }) if input == PathBuf::from("matchup-input.json")
                     && home_bench_plan == PathBuf::from("nyr-plan.json")
                     && out == PathBuf::from("matchup.json")
+            ));
+
+            let card = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup-card",
+                "--input",
+                "matchup.json",
+                "--team",
+                "NYR",
+                "--team-name",
+                "New York Rangers",
+                "--generated-at",
+                "2026-10-10T16:00:00Z",
+                "--out",
+                "matchup-card.json",
+            ])
+            .expect("IceCast line-matchup-card command should parse");
+            assert!(matches!(
+                card.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchupCard {
+                    input,
+                    team,
+                    team_name: Some(team_name),
+                    generated_at: Some(generated_at),
+                    out: Some(out),
+                }) if input == PathBuf::from("matchup.json")
+                    && team == "NYR"
+                    && team_name == "New York Rangers"
+                    && generated_at == "2026-10-10T16:00:00Z"
+                    && out == PathBuf::from("matchup-card.json")
             ));
 
             let profiles = Cli::try_parse_from([
