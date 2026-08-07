@@ -647,21 +647,146 @@ pub fn validate_player_line_matchup_forecast(
         return Err("invalid player-line matchup identity, method, timing, or sources".to_owned());
     }
     for team in [&view.away, &view.home] {
-        if team
-            .matchup_suitability
-            .is_some_and(|value| !value.is_finite() || !(-1.0..=1.0).contains(&value))
-            || !team.five_on_five_matchup_score.is_finite()
-            || !(0.0..=100.0).contains(&team.five_on_five_matchup_score)
+        let profile_ids = team
+            .profiles
+            .iter()
+            .map(|profile| profile.player_id)
+            .collect::<BTreeSet<_>>();
+        let expected_units = [(0, 1), (0, 2), (0, 3), (0, 4), (1, 1), (1, 2), (1, 3)]
+            .into_iter()
+            .collect::<BTreeSet<_>>();
+        let actual_units = team
+            .units
+            .iter()
+            .map(|unit| {
+                (
+                    match unit.kind {
+                        PlayerLineMatchupUnitKind::ForwardLine => 0,
+                        PlayerLineMatchupUnitKind::DefensePair => 1,
+                    },
+                    unit.unit,
+                )
+            })
+            .collect::<BTreeSet<_>>();
+        let unit_player_ids = team
+            .units
+            .iter()
+            .flat_map(|unit| unit.player_ids.iter().copied())
+            .collect::<BTreeSet<_>>();
+        if !valid_optional_range(team.matchup_suitability, -1.0, 1.0)
+            || !matches!(
+                (team.matchup_state, team.matchup_suitability),
+                (TeamGameEvidenceState::Modeled, Some(_))
+                    | (TeamGameEvidenceState::Unavailable, None)
+            )
+            || !valid_range(team.profile_coverage, 0.0, 1.0)
+            || !valid_range(team.average_profile_confidence, 0.0, 1.0)
+            || !valid_range(team.offense_score, 0.0, 100.0)
+            || !valid_range(team.defense_score, 0.0, 100.0)
+            || !valid_range(team.opponent_style_response, 0.0, 100.0)
+            || !valid_range(team.chemistry_effect, -4.0, 4.0)
+            || !valid_range(team.pair_chemistry_effect, -4.0, 4.0)
+            || !valid_range(team.trio_chemistry_effect, -4.0, 4.0)
+            || !valid_range(team.manager_execution_confidence, 0.0, 1.0)
+            || !valid_range(team.last_change_adjustment, 0.0, 0.75)
+            || !valid_range(team.five_on_five_matchup_score, 0.0, 100.0)
+            || team.profiles.iter().any(|profile| {
+                profile.schema != PLAYER_FORECAST_PROFILE_SCHEMA
+                    || profile.player_id == 0
+                    || profile.display_name.trim().is_empty()
+                    || profile.evidence_cutoff_at > view.forecast_at
+                    || profile.even_strength_minutes < 0.0
+                    || !profile.even_strength_minutes.is_finite()
+                    || !valid_range(profile.component_coverage, 0.0, 1.0)
+                    || !valid_range(profile.sample_confidence, 0.0, 1.0)
+                    || !valid_range(profile.raw_overall_score, 0.0, 100.0)
+                    || !valid_range(profile.reliability_adjusted_score, 0.0, 100.0)
+                    || !valid_dimensions(&profile.adjusted_dimensions)
+            })
+            || team.units.iter().any(|unit| {
+                !valid_range(unit.offense_score, 0.0, 100.0)
+                    || !valid_range(unit.defense_score, 0.0, 100.0)
+                    || !valid_range(unit.opponent_style_response, 0.0, 100.0)
+                    || !valid_range(unit.chemistry_effect, -4.0, 4.0)
+                    || !valid_range(unit.pair_chemistry_effect, -4.0, 4.0)
+                    || !valid_range(unit.trio_chemistry_effect, -4.0, 4.0)
+                    || !valid_optional_range(unit.deployment_affinity, 0.0, 1.0)
+                    || !valid_range(unit.evidence_confidence, 0.0, 1.0)
+            })
+            || !valid_optional_range(team.special_teams.power_play_score, 0.0, 100.0)
+            || !valid_optional_range(team.special_teams.penalty_kill_score, 0.0, 100.0)
+            || !valid_optional_range(team.special_teams.suitability, -1.0, 1.0)
+            || team.special_teams.attacking_team != team.team
+            || team.special_teams.defending_team != team.opponent
+            || team.special_teams.included_in_five_on_five_matchup
             || team.units.len() != 7
             || team.profiles.len() != 18
         {
             return Err("invalid player-line matchup team scores or unit shape".to_owned());
         }
+        if profile_ids.len() != team.profiles.len()
+            || team
+                .profiles
+                .iter()
+                .any(|profile| profile.team != team.team)
+            || actual_units != expected_units
+            || team.units.iter().any(|unit| {
+                unit.player_ids.len()
+                    != match unit.kind {
+                        PlayerLineMatchupUnitKind::ForwardLine => 3,
+                        PlayerLineMatchupUnitKind::DefensePair => 2,
+                    }
+                    || unit.player_ids.iter().collect::<BTreeSet<_>>().len()
+                        != unit.player_ids.len()
+            })
+            || unit_player_ids != profile_ids
+        {
+            return Err("invalid player-line matchup unit/profile shape".to_owned());
+        }
+    }
+    let away_player_ids = view
+        .away
+        .profiles
+        .iter()
+        .map(|profile| profile.player_id)
+        .collect::<BTreeSet<_>>();
+    if view
+        .home
+        .profiles
+        .iter()
+        .any(|profile| away_player_ids.contains(&profile.player_id))
+    {
+        return Err("player-line matchup teams cannot share player IDs".to_owned());
     }
     if fingerprint(view)? != view.fingerprint {
         return Err("player-line matchup fingerprint mismatch".to_owned());
     }
     Ok(())
+}
+
+fn valid_range(value: f64, minimum: f64, maximum: f64) -> bool {
+    value.is_finite() && (minimum..=maximum).contains(&value)
+}
+
+fn valid_optional_range(value: Option<f64>, minimum: f64, maximum: f64) -> bool {
+    value.is_none_or(|value| valid_range(value, minimum, maximum))
+}
+
+fn valid_dimensions(dimensions: &PlayerForecastProfileDimensions) -> bool {
+    [
+        dimensions.scoring_creation,
+        dimensions.finishing,
+        dimensions.passing_transition,
+        dimensions.forecheck_retrieval,
+        dimensions.defensive_suppression,
+        dimensions.physical_matchup,
+        dimensions.discipline_puck_security,
+        dimensions.faceoffs,
+        dimensions.power_play,
+        dimensions.penalty_kill,
+    ]
+    .into_iter()
+    .all(|value| valid_optional_range(value, 0.0, 100.0))
 }
 
 /// Project independently ablatable, frozen features from one sealed Matchup.

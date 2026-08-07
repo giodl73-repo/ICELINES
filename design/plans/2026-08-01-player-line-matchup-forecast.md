@@ -63,7 +63,13 @@ the existing game-probability model and all-32 season simulator.
 
 6. **Product surfaces**
    - Add The Matchup card with player faces, unit scores, evidence confidence,
-     probability movement, and why-the-line-works explanations.
+     probability movement, and why-the-line-works explanations. **Initial
+     UI-neutral/CLI slice implemented:** `line-matchup-card` projects one sealed
+     forecast into the shared two-page card contract without recomputing hockey
+     values. It preserves all 36 player joins, dressed-unit membership, evidence
+     state, warnings, source fingerprint, methodology, and separate special-teams
+     read. Headshot assets and direct game-probability movement remain with the
+     card/edge composition follow-up.
    - Add Web/TUI discovery while preserving the same UI-neutral document.
    - Pilot Rangers/Kraken, then run the identical all-32 pipeline.
 

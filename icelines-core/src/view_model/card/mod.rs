@@ -30,6 +30,8 @@ mod season_simulation;
 pub use season_simulation::*;
 mod team_game_prediction_edge;
 pub use team_game_prediction_edge::*;
+mod player_line_matchup;
+pub use player_line_matchup::*;
 mod forecast_movement;
 pub use forecast_movement::*;
 mod forecast_history;
@@ -65,6 +67,7 @@ pub enum CardKind {
     FantasyTrade,
     OrganizationWindow,
     TeamGamePredictionEdge,
+    PlayerLineMatchup,
     ProspectArrival,
 }
 
