@@ -31,7 +31,11 @@
                 <div class="team-card-slots">
                 {% for slot in group.slots %}
                     <article class="team-card-player-tile">
+                        {% if !slot.asset_url.is_empty() %}
+                        <img src="{{ slot.asset_url }}" alt="" loading="lazy" width="96" height="96">
+                        {% else %}
                         <span class="team-card-fallback" aria-hidden="true">{{ slot.fallback }}</span>
+                        {% endif %}
                         <span class="team-card-position">{{ slot.label }}</span>
                         <strong>{{ slot.name }}</strong>
                         <span class="team-card-score">{{ slot.score }}</span>
@@ -70,7 +74,11 @@
             <h3>{{ group.title }}</h3>
             {% for player in group.players %}
             <article class="team-card-insider-player">
+                {% if !player.asset_url.is_empty() %}
+                <img src="{{ player.asset_url }}" alt="" loading="lazy" width="72" height="72">
+                {% else %}
                 <span class="team-card-fallback" aria-hidden="true">{{ player.fallback }}</span>
+                {% endif %}
                 <div><strong>{{ player.name }}</strong>{% if !player.role.is_empty() %}<span>{{ player.role }}</span>{% endif %}</div>
                 <dl>{% for metric in player.metrics %}<div><dt>{{ metric.label }}</dt><dd>{{ metric.value }}</dd></div>{% endfor %}</dl>
             </article>

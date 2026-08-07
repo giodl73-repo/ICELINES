@@ -46,6 +46,8 @@ const NYR_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY_CARD_JSON: &str =
     include_str!("../../../../examples/forecast-history-card-sea-2024-25.json");
+const NYR_VS_SEA_PLAYER_LINE_MATCHUP_CARD_JSON: &str =
+    include_str!("../../../../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json");
 #[cfg(test)]
 const NYR_PROSPECT_ARRIVAL_CARD_JSON: &str =
     include_str!("../../../../examples/prospect-arrival-card-nyr-2026-27.json");
@@ -99,6 +101,7 @@ fn card(team: &str) -> &'static CardDocumentView {
     static SEA_2024_MOVEMENT: OnceLock<CardDocumentView> = OnceLock::new();
     static NYR_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
     static SEA_2024_HISTORY: OnceLock<CardDocumentView> = OnceLock::new();
+    static NYR_VS_SEA_PLAYER_LINE_MATCHUP: OnceLock<CardDocumentView> = OnceLock::new();
     match upper.as_str() {
         "SIM-NYR" => NYR_SEASON_SIMULATION.get_or_init(|| {
             parse_card_document(NYR_SEASON_SIMULATION_CARD_JSON)
@@ -129,6 +132,10 @@ fn card(team: &str) -> &'static CardDocumentView {
         "HISTORY-SEA" => SEA_2024_HISTORY.get_or_init(|| {
             parse_card_document(SEA_2024_HISTORY_CARD_JSON)
                 .expect("sealed SEA 2024-25 forecast history card")
+        }),
+        "MATCHUP-NYR" => NYR_VS_SEA_PLAYER_LINE_MATCHUP.get_or_init(|| {
+            parse_card_document(NYR_VS_SEA_PLAYER_LINE_MATCHUP_CARD_JSON)
+                .expect("sealed NYR vs SEA player-line matchup card")
         }),
         "SEA" => SEA.get_or_init(|| parse_card_document(SEA_CARD_JSON).expect("sealed SEA card")),
         "DEX" | "DEXTERS-DAWGS" | "FANTASY" => FANTASY.get_or_init(|| {
@@ -1105,6 +1112,60 @@ mod tests {
         app.handle(Action::Char('c'));
         assert!(matches!(app.screen, Screen::TeamCard { compare: true, .. }));
         assert_eq!(card("SEA").fingerprint, fingerprint);
+    }
+
+    #[test]
+    fn l1_matchup_card_command_opens_the_shared_sealed_document() {
+        assert_eq!(
+            parse_command("matchup-card").unwrap(),
+            Command::TeamCard {
+                team: "MATCHUP-NYR".to_string()
+            }
+        );
+        assert!(parse_command("matchup-card SEA").is_err());
+
+        let document = card("MATCHUP-NYR");
+        assert_eq!(
+            document.card_kind,
+            icelines_core::CardKind::PlayerLineMatchup
+        );
+        let matchup = document_lines(document, 0, 100).join("\n");
+        let insider = document_lines(document, 1, 100).join("\n");
+        assert!(matchup.contains("SEA at NYR"));
+        assert!(matchup.contains("Game probability"));
+        assert!(matchup.contains("NYR Player 2"));
+        assert!(insider.contains("NYR player profile evidence"));
+    }
+
+    #[tokio::test]
+    async fn l2_matchup_web_and_tui_use_the_identical_document() {
+        let expected = card("MATCHUP-NYR").clone();
+        let app = icelines_web::router(icelines_web::WebState::new());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/cards/player-line-matchup/20262027/2026020001/NYR")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers()["etag"].to_str().unwrap(),
+            format!("\"{}\"", expected.fingerprint)
+        );
+        let body = axum::body::to_bytes(response.into_body(), 4 * 1024 * 1024)
+            .await
+            .unwrap();
+        let web_card: CardDocumentView = serde_json::from_slice(&body).unwrap();
+        assert_eq!(web_card, expected);
+
+        let matchup = document_lines(&expected, 0, 100).join("\n");
+        let insider = document_lines(&expected, 1, 100).join("\n");
+        assert!(matchup.contains("Game probability"));
+        assert!(matchup.contains("NYR dressed units"));
+        assert!(insider.contains("Sealed matchup source"));
     }
 
     #[test]

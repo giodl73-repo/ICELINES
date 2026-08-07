@@ -75,7 +75,11 @@ the existing game-probability model and all-32 season simulator.
      assets implemented:** sealed profiles retain lineup-owned portrait
      references, and the card emits shared headshot assets with deterministic
      initials fallbacks without renderer URL construction.
-   - Add Web/TUI discovery while preserving the same UI-neutral document.
+   - **Web/TUI discovery implemented:** the sealed NYR/SEA game-morning example
+     is available through game-ID-scoped HTML/JSON GET routes and the TUI
+     `matchup-card` command. Both surfaces parse the same checked-in
+     `CardDocumentView`, preserve its fingerprint and ETag, resolve its shared
+     headshot assets, and do not recompute matchup or probability values.
    - Pilot Rangers/Kraken, then run the identical all-32 pipeline.
 
 ## Current boundary

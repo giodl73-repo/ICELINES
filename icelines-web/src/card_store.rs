@@ -33,6 +33,8 @@ const NYR_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-nyr-2024-25.json");
 const SEA_2024_HISTORY: &str =
     include_str!("../../examples/forecast-history-card-sea-2024-25.json");
+const NYR_VS_SEA_PLAYER_LINE_MATCHUP: &str =
+    include_str!("../../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json");
 #[cfg(test)]
 const NYR_PROSPECT_ARRIVAL: &str =
     include_str!("../../examples/prospect-arrival-card-nyr-2026-27.json");
@@ -73,6 +75,10 @@ pub enum CardStoreError {
     UnsupportedForecastMovementTeam(String),
     #[error("forecast history card is not available for team {0}")]
     UnsupportedForecastHistoryTeam(String),
+    #[error("player-line matchup card is not available for game {0}")]
+    UnsupportedPlayerLineMatchupGame(u64),
+    #[error("player-line matchup card is not available for focus team {0}")]
+    UnsupportedPlayerLineMatchupTeam(String),
     #[error("prospect arrival card is not available for team {0}")]
     UnsupportedProspectArrivalTeam(String),
     #[error("organization Window card is not available for team {0}")]
@@ -127,6 +133,24 @@ pub fn forecast_history_card(season: u32, team: &str) -> Result<CardDocumentView
         (20242025, _) => Err(CardStoreError::UnsupportedForecastHistoryTeam(team)),
         _ => Err(CardStoreError::UnsupportedSeason(season)),
     }
+}
+
+pub fn player_line_matchup_card(
+    season: u32,
+    game_id: u64,
+    team: &str,
+) -> Result<CardDocumentView, CardStoreError> {
+    if season != 20262027 {
+        return Err(CardStoreError::UnsupportedSeason(season));
+    }
+    if game_id != 2026020001 {
+        return Err(CardStoreError::UnsupportedPlayerLineMatchupGame(game_id));
+    }
+    let team = team.trim().to_ascii_uppercase();
+    if team != "NYR" {
+        return Err(CardStoreError::UnsupportedPlayerLineMatchupTeam(team));
+    }
+    Ok(nyr_vs_sea_player_line_matchup_card().clone())
 }
 
 pub fn prospect_arrival_card(season: u32, team: &str) -> Result<CardDocumentView, CardStoreError> {
@@ -395,6 +419,14 @@ fn sea_2024_history_card() -> &'static CardDocumentView {
     })
 }
 
+fn nyr_vs_sea_player_line_matchup_card() -> &'static CardDocumentView {
+    static CARD: OnceLock<CardDocumentView> = OnceLock::new();
+    CARD.get_or_init(|| {
+        parse_card_document(NYR_VS_SEA_PLAYER_LINE_MATCHUP)
+            .expect("sealed NYR vs SEA player-line matchup card")
+    })
+}
+
 fn prospect_arrival_cards() -> &'static BTreeMap<String, CardDocumentView> {
     static CARDS: OnceLock<BTreeMap<String, CardDocumentView>> = OnceLock::new();
     CARDS.get_or_init(|| {
@@ -505,6 +537,17 @@ mod tests {
             sea_history.context.simulation.parameter_fingerprint
         );
         assert_eq!(nyr_history.provenance, sea_history.provenance);
+        let matchup = player_line_matchup_card(20262027, 2026020001, "nyr").unwrap();
+        assert_eq!(matchup.context.joins.game_ids, ["2026020001"]);
+        assert_eq!(matchup.context.joins.team_ids, ["SEA", "NYR"]);
+        assert!(matches!(
+            player_line_matchup_card(20262027, 2026020002, "NYR"),
+            Err(CardStoreError::UnsupportedPlayerLineMatchupGame(2026020002))
+        ));
+        assert!(matches!(
+            player_line_matchup_card(20262027, 2026020001, "SEA"),
+            Err(CardStoreError::UnsupportedPlayerLineMatchupTeam(_))
+        ));
         let nyr_arrival = prospect_arrival_card(20262027, "NYR").unwrap();
         let sea_arrival = prospect_arrival_card(20262027, "SEA").unwrap();
         assert_eq!(
