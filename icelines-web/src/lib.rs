@@ -175,6 +175,14 @@ pub fn router(state: WebState) -> Router {
             get(handlers::team_card::get_forecast_history_card_json),
         )
         .route(
+            "/icecast/:season/games/:game_id/:team/matchup",
+            get(handlers::team_card::get_player_line_matchup_card),
+        )
+        .route(
+            "/api/v1/cards/player-line-matchup/:season/:game_id/:team",
+            get(handlers::team_card::get_player_line_matchup_card_json),
+        )
+        .route(
             "/icecast/:season/:team/window",
             get(handlers::team_card::get_organization_window_card),
         )

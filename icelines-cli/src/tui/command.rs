@@ -562,6 +562,22 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
                 team: format!("HISTORY-{team}"),
             })
         }
+        "matchup-card" | "line-matchup-card" if args.trim().is_empty() => Ok(Command::TeamCard {
+            team: "MATCHUP-NYR".to_string(),
+        }),
+        "matchup-card" | "line-matchup-card" => {
+            let team = args.trim().to_ascii_uppercase();
+            if team != "NYR" {
+                return Err(ParseError::BadFilter {
+                    details: format!(
+                        "matchup-card supports NYR for sealed game 2026020001, got '{team}'"
+                    ),
+                });
+            }
+            Ok(Command::TeamCard {
+                team: "MATCHUP-NYR".to_string(),
+            })
+        }
         "arrival-card" | "prospect-arrival-card" if args.trim().is_empty() => {
             Ok(Command::TeamCard {
                 team: "ARRIVAL-NYR".to_string(),
@@ -646,6 +662,7 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
                         | "MOVE-SEA"
                         | "HISTORY-NYR"
                         | "HISTORY-SEA"
+                        | "MATCHUP-NYR"
                         | "WINDOW-NYR"
                         | "WINDOW-SEA"
                         | "DEX"

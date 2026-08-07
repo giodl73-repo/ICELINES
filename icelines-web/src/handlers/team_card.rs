@@ -14,7 +14,8 @@ use icelines_core::{
 use crate::card_store::{
     default_scenario, fantasy_draft_card, fantasy_morning_card, fantasy_roster_card,
     fantasy_trade_card, forecast_history_card, forecast_movement_card, organization_window_card,
-    prospect_arrival_card, season_simulation_card, team_prognosis_card, CardStoreError,
+    player_line_matchup_card, prospect_arrival_card, season_simulation_card, team_prognosis_card,
+    CardStoreError,
 };
 use crate::state::WebState;
 use crate::templates::{
@@ -33,6 +34,43 @@ pub struct TeamCardQuery {
 #[derive(Debug, Default, Deserialize)]
 pub struct FantasyRosterCardQuery {
     pub page: Option<String>,
+}
+
+pub async fn get_player_line_matchup_card_json(
+    Path((season, game_id, team)): Path<(u32, u64, String)>,
+    headers: HeaderMap,
+) -> Response {
+    match player_line_matchup_card(season, game_id, &team) {
+        Ok(card) => {
+            let fingerprint = card.fingerprint.clone();
+            cached_response(axum::Json(card).into_response(), &fingerprint, &headers)
+        }
+        Err(error) => card_error(error, false),
+    }
+}
+
+pub async fn get_player_line_matchup_card(
+    State(state): State<WebState>,
+    Path((season, game_id, team)): Path<(u32, u64, String)>,
+    Query(query): Query<FantasyRosterCardQuery>,
+    headers: HeaderMap,
+) -> Response {
+    let card = match player_line_matchup_card(season, game_id, &team) {
+        Ok(card) => card,
+        Err(error) => return card_error(error, true),
+    };
+    let active_label = state.config.read().await.active_label.clone();
+    let show_first = !matches!(query.page.as_deref(), Some("insider"));
+    let fingerprint = card.fingerprint.clone();
+    let template = project_fantasy_template(active_label, &card, show_first);
+    match template.render() {
+        Ok(html) => cached_response(Html(html).into_response(), &fingerprint, &headers),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html(format!("template render failed: {error}")),
+        )
+            .into_response(),
+    }
 }
 
 pub async fn get_season_simulation_card_json(
@@ -602,6 +640,23 @@ fn project_fantasy_template(
     let mut methodology_title = String::new();
     let mut limitations = Vec::new();
     let mut provenance_groups = Vec::new();
+    let assets = card
+        .assets
+        .iter()
+        .map(|asset| {
+            let url = match &asset.reference {
+                Some(CardAssetReference::ExternalUrl(url)) => url.clone(),
+                _ => String::new(),
+            };
+            let fallback = match &asset.fallback {
+                CardAssetFallback::Initials(value) | CardAssetFallback::Abbreviation(value) => {
+                    value.clone()
+                }
+                CardAssetFallback::None => String::new(),
+            };
+            (asset.id.as_str(), (url, fallback))
+        })
+        .collect::<BTreeMap<_, _>>();
     for section in &page.sections {
         match section {
             CardSectionView::Lineup(lineup) => {
@@ -618,16 +673,22 @@ fn project_fantasy_template(
                                     .subject_label
                                     .clone()
                                     .unwrap_or_else(|| "Open".to_string());
+                                let (asset_url, fallback) = slot
+                                    .asset_id
+                                    .as_deref()
+                                    .and_then(|id| assets.get(id))
+                                    .cloned()
+                                    .unwrap_or_else(|| (String::new(), initials(&name)));
                                 TeamCardLineupSlot {
                                     label: slot.label.clone(),
-                                    fallback: initials(&name),
                                     name,
                                     score: slot
                                         .metrics
                                         .first()
                                         .map(|metric| metric.display_text.clone())
                                         .unwrap_or_else(|| "NR".to_string()),
-                                    asset_url: String::new(),
+                                    asset_url,
+                                    fallback,
                                 }
                             })
                             .collect(),
@@ -681,12 +742,20 @@ fn project_fantasy_template(
                     players: players
                         .rows
                         .iter()
-                        .map(|row| TeamCardPlayer {
-                            name: row.name.clone(),
-                            role: row.role.clone().unwrap_or_default(),
-                            asset_url: String::new(),
-                            fallback: initials(&row.name),
-                            metrics: row.metrics.iter().map(project_metric).collect(),
+                        .map(|row| {
+                            let (asset_url, fallback) = row
+                                .asset_id
+                                .as_deref()
+                                .and_then(|id| assets.get(id))
+                                .cloned()
+                                .unwrap_or_else(|| (String::new(), initials(&row.name)));
+                            TeamCardPlayer {
+                                name: row.name.clone(),
+                                role: row.role.clone().unwrap_or_default(),
+                                asset_url,
+                                fallback,
+                                metrics: row.metrics.iter().map(project_metric).collect(),
+                            }
                         })
                         .collect(),
                 });
@@ -749,11 +818,10 @@ fn project_fantasy_template(
     warnings.sort();
     warnings.dedup();
     let team = card
-        .context
-        .joins
-        .team_ids
-        .first()
-        .map(String::as_str)
+        .theme
+        .team_abbreviation
+        .as_deref()
+        .or_else(|| card.context.joins.team_ids.first().map(String::as_str))
         .unwrap_or("unknown");
     let (kicker, nav_label, json_href, first_href, insider_href, first_label) = match card.card_kind
     {
@@ -815,6 +883,23 @@ fn project_fantasy_template(
             "?page=line".to_string(),
             "?page=insider".to_string(),
             "The Line",
+        ),
+        CardKind::PlayerLineMatchup => (
+            "ICECAST · PLAYER-LINE MATCHUP",
+            "Player-line matchup card pages",
+            format!(
+                "/api/v1/cards/player-line-matchup/{}/{}/{team}",
+                card.context.view.window.season.0,
+                card.context
+                    .joins
+                    .game_ids
+                    .first()
+                    .map(String::as_str)
+                    .unwrap_or("unknown")
+            ),
+            "?page=matchup".to_string(),
+            "?page=insider".to_string(),
+            "The Matchup",
         ),
         CardKind::OrganizationWindow => (
             "THE RINK · ORGANIZATION WINDOW",
@@ -979,6 +1064,8 @@ fn card_error(error: CardStoreError, html: bool) -> Response {
         | CardStoreError::UnsupportedSeasonSimulationTeam(_)
         | CardStoreError::UnsupportedForecastMovementTeam(_)
         | CardStoreError::UnsupportedForecastHistoryTeam(_)
+        | CardStoreError::UnsupportedPlayerLineMatchupGame(_)
+        | CardStoreError::UnsupportedPlayerLineMatchupTeam(_)
         | CardStoreError::UnsupportedProspectArrivalTeam(_)
         | CardStoreError::UnsupportedOrganizationWindowTeam(_)
         | CardStoreError::UnsupportedOrganizationWindowFrame(_)

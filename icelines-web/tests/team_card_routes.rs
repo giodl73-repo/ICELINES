@@ -142,6 +142,93 @@ async fn kraken_and_unsupported_dimensions_are_explicit() {
 }
 
 #[tokio::test]
+async fn player_line_matchup_routes_preserve_the_sealed_card_and_assets() {
+    let app = router(WebState::new());
+    let uri = "/api/v1/cards/player-line-matchup/20262027/2026020001/NYR";
+    let response = app
+        .clone()
+        .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let etag = response.headers()["etag"].to_str().unwrap().to_owned();
+    let routed = parse_card_document(&body(response).await).unwrap();
+    let fixture = parse_card_document(include_str!(
+        "../../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json"
+    ))
+    .unwrap();
+    assert_eq!(routed, fixture);
+    assert_eq!(etag, format!("\"{}\"", fixture.fingerprint));
+
+    let matchup = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/games/2026020001/NYR/matchup?page=matchup")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(matchup.status(), StatusCode::OK);
+    let matchup = body(matchup).await;
+    assert!(matchup.contains("The Matchup"));
+    assert!(matchup.contains("SEA at NYR"));
+    assert!(matchup.contains("NYR Player 2"));
+    assert!(matchup.contains("https://assets.nhle.com/mugs/nhl/20262027/NYR/2.png"));
+    assert!(matchup.contains(uri));
+
+    let insider = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icecast/20262027/games/2026020001/NYR/matchup?page=insider")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(insider.status(), StatusCode::OK);
+    let insider = body(insider).await;
+    assert!(insider.contains("The Insider"));
+    assert!(insider.contains("NYR player profile evidence"));
+    assert!(insider.contains("Sealed matchup source"));
+
+    let not_modified = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(uri)
+                .header("if-none-match", etag)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(not_modified.status(), StatusCode::NOT_MODIFIED);
+
+    for unsupported in [
+        "/api/v1/cards/player-line-matchup/20252026/2026020001/NYR",
+        "/api/v1/cards/player-line-matchup/20262027/2026020002/NYR",
+        "/api/v1/cards/player-line-matchup/20262027/2026020001/SEA",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(unsupported)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND, "{unsupported}");
+        let error: serde_json::Value = serde_json::from_str(&body(response).await).unwrap();
+        assert_eq!(error["schema"], "card_error.v1");
+    }
+}
+
+#[tokio::test]
 async fn prospect_arrival_routes_render_the_same_sealed_card() {
     let app = router(WebState::new());
     let uri = "/api/v1/cards/prospect-arrival/20262027/NYR";
