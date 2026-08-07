@@ -4,6 +4,10 @@ This directory holds dated, reviewable outputs from ICELINES durable report
 commands. Each report must preserve its schema/methodology disclosures and keep
 confirmed source values distinct from modeled scenarios.
 
+## 2026-27 preseason
+
+- [Division forecast](2026-08-06-preseason-division-forecast.md)
+
 ## Five-year cap positioning
 
 - [League market-cost forecast](2026-07-15-cap-forecast-league.txt)
