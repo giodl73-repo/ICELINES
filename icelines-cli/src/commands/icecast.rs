@@ -5045,6 +5045,7 @@ pub fn run_line_matchup(args: IceCastLineMatchupArgs) -> anyhow::Result<()> {
 
 pub fn run_line_matchup_card(
     input: PathBuf,
+    edge: Option<PathBuf>,
     team: String,
     team_name: Option<String>,
     generated_at: Option<String>,
@@ -5052,15 +5053,24 @@ pub fn run_line_matchup_card(
 ) -> anyhow::Result<()> {
     let matchup: PlayerLineMatchupForecastView =
         read_icecast_json(&input, "player-line matchup forecast")?;
+    let prediction_edge: Option<TeamGamePredictionEdgeView> = edge
+        .as_deref()
+        .map(|path| read_icecast_json(path, "team-game prediction edge"))
+        .transpose()?;
+    let minimum_generated_at = prediction_edge
+        .as_ref()
+        .map_or(matchup.forecast_at, |edge| {
+            matchup.forecast_at.max(edge.generated_at)
+        });
     let generated_at = generated_at
         .as_deref()
         .map(DateTime::parse_from_rfc3339)
         .transpose()
         .context("--generated-at must be RFC 3339")?
         .map(|value| value.with_timezone(&Utc))
-        .unwrap_or(matchup.forecast_at);
-    if generated_at < matchup.forecast_at {
-        bail!("--generated-at cannot be earlier than the matchup forecast time");
+        .unwrap_or(minimum_generated_at);
+    if generated_at < minimum_generated_at {
+        bail!("--generated-at cannot be earlier than the latest attached forecast source");
     }
     let mut view = ViewContext::new(ViewWindow::new(Season(matchup.season), SeasonType::Regular));
     view.generated_at = Some(generated_at);
@@ -5068,6 +5078,7 @@ pub fn run_line_matchup_card(
     let evidence_at = Some(matchup.captured_at);
     let card = build_player_line_matchup_card(PlayerLineMatchupCardInput {
         matchup,
+        prediction_edge,
         focus_team: team.clone(),
         team_name: team_name.unwrap_or_else(|| team.clone()),
         view,

@@ -305,6 +305,10 @@ pub struct TeamGamePredictionEdgeGameRow {
     pub available_features: usize,
     pub expected_features: usize,
     pub factors: Vec<TeamGamePredictionFactorRow>,
+    /// Exact sealed evidence documents consumed for this game. Older edge
+    /// documents may omit this join metadata.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub evidence_fingerprints: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -473,6 +477,18 @@ pub fn build_team_game_prediction_edge(
             available_features,
             expected_features,
             factors,
+            evidence_fingerprints: evidence
+                .into_iter()
+                .flat_map(|row| {
+                    row.away
+                        .source_fingerprints
+                        .iter()
+                        .chain(&row.home.source_fingerprints)
+                })
+                .cloned()
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect(),
         });
     }
     enhanced_forecast.teams = summarize_teams(&enhanced_forecast.games);
@@ -528,6 +544,16 @@ impl TeamGamePredictionEdgeView {
                     > 1e-12
                 || edge.available_features > edge.expected_features
                 || !valid_stability(edge)
+                || edge
+                    .evidence_fingerprints
+                    .iter()
+                    .any(|fingerprint| !valid_sha256(Some(fingerprint)))
+                || edge
+                    .evidence_fingerprints
+                    .iter()
+                    .collect::<BTreeSet<_>>()
+                    .len()
+                    != edge.evidence_fingerprints.len()
             {
                 return Err(TeamGamePredictionEdgeError::InvalidSource(
                     "edge game rows do not reconcile to the enhanced forecast".to_owned(),

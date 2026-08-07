@@ -11,8 +11,8 @@ use crate::view_model::{
     validate_player_line_matchup_forecast, Completeness, EvidenceLabel, MetricCell, MetricUnit,
     MetricValue, PlayerForecastProfileView, PlayerLineMatchupForecastView,
     PlayerLineMatchupTeamView, PlayerLineMatchupUnitKind, SemanticToken, SourceKind, StatKey,
-    TeamGameEvidenceState, ValuePrecision, ViewContext, ViewWarning, WarningKind,
-    PLAYER_LINE_MATCHUP_FORECAST_METHOD,
+    TeamGameEvidenceState, TeamGamePredictionEdgeView, ValuePrecision, ViewContext, ViewWarning,
+    WarningKind, PLAYER_LINE_MATCHUP_FORECAST_METHOD,
 };
 
 pub const PLAYER_LINE_MATCHUP_CARD_VERSION: &str = "player_line_matchup_card.v1";
@@ -20,6 +20,8 @@ pub const PLAYER_LINE_MATCHUP_CARD_VERSION: &str = "player_line_matchup_card.v1"
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PlayerLineMatchupCardInput {
     pub matchup: PlayerLineMatchupForecastView,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prediction_edge: Option<TeamGamePredictionEdgeView>,
     pub focus_team: String,
     pub team_name: String,
     pub view: ViewContext,
@@ -38,8 +40,30 @@ pub enum PlayerLineMatchupCardError {
     TeamNotInGame { team: String, game_id: u64 },
     #[error("invalid sealed player-line matchup: {0}")]
     InvalidMatchup(String),
+    #[error("invalid sealed prediction edge: {0}")]
+    InvalidPredictionEdge(String),
+    #[error("prediction edge does not match the player-line matchup")]
+    PredictionEdgeMismatch,
+    #[error("prediction edge does not cite the player-line matchup fingerprint")]
+    MissingPredictionEdgeJoin,
+    #[error("prediction edge does not contain an available matchup factor")]
+    MissingPredictionEdgeFactor,
+    #[error("card generation time cannot predate the attached prediction edge")]
+    CardGeneratedBeforePredictionEdge,
     #[error("card document validation failed: {0}")]
     Document(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct PredictionEdgeProjection {
+    fingerprint: String,
+    generated_at: DateTime<Utc>,
+    win_probability: f64,
+    matchup_probability_delta: f64,
+    evidence_confidence: Option<f64>,
+    model_id: String,
+    model_version: String,
+    training_fingerprint: Option<String>,
 }
 
 pub fn build_player_line_matchup_card(
@@ -70,6 +94,19 @@ pub fn build_player_line_matchup_card(
             game_id: input.matchup.game_id,
         });
     };
+    let edge = input
+        .prediction_edge
+        .as_ref()
+        .map(|edge| prediction_edge_projection(edge, &input.matchup, &team))
+        .transpose()?;
+    if edge.as_ref().is_some_and(|edge| {
+        input
+            .view
+            .generated_at
+            .is_none_or(|generated_at| generated_at < edge.generated_at)
+    }) {
+        return Err(PlayerLineMatchupCardError::CardGeneratedBeforePredictionEdge);
+    }
     let evidence_label = evidence_label(focus.matchup_state);
     let evidence_at = input.evidence_at.or(Some(input.matchup.captured_at));
     let source_fingerprint = strip_sha256(&input.matchup.fingerprint);
@@ -82,7 +119,11 @@ pub fn build_player_line_matchup_card(
         "card_projection".to_owned(),
         PLAYER_LINE_MATCHUP_CARD_VERSION.to_owned(),
     );
-    let provenance = vec![CardProvenanceView {
+    if let Some(edge) = input.prediction_edge.as_ref() {
+        methods.insert("prediction_edge".to_owned(), edge.schema.clone());
+        methods.insert("prediction_model".to_owned(), edge.model.method.clone());
+    }
+    let mut provenance = vec![CardProvenanceView {
         id: "sealed-player-line-matchup".to_owned(),
         source: SourceKind::Snapshot,
         label: "Sealed player-line matchup forecast".to_owned(),
@@ -96,6 +137,20 @@ pub fn build_player_line_matchup_card(
             focus.units.len()
         )),
     }];
+    if let Some(edge) = edge.as_ref() {
+        provenance.push(CardProvenanceView {
+            id: "sealed-prediction-edge".to_owned(),
+            source: SourceKind::Snapshot,
+            label: "Sealed prediction edge".to_owned(),
+            state: Completeness::Complete,
+            observed_at: Some(edge.generated_at),
+            fingerprint: Some(strip_sha256(&edge.fingerprint)),
+            note: Some(
+                "Probability and factor movement are edge-owned values; the card does not recompute them."
+                    .to_owned(),
+            ),
+        });
+    }
     let warnings = input
         .matchup
         .warnings
@@ -138,7 +193,10 @@ pub fn build_player_line_matchup_card(
             builder_version: PLAYER_LINE_MATCHUP_CARD_VERSION.to_owned(),
             methodology_versions: methods,
             joins: CardIdentityJoinsView {
-                scenario_comparison_key: Some(input.matchup.fingerprint.clone()),
+                scenario_comparison_key: Some(match edge.as_ref() {
+                    Some(edge) => format!("{}:{}", input.matchup.fingerprint, edge.fingerprint),
+                    None => input.matchup.fingerprint.clone(),
+                }),
                 team_ids: vec![
                     input.matchup.away.team.clone(),
                     input.matchup.home.team.clone(),
@@ -147,13 +205,22 @@ pub fn build_player_line_matchup_card(
                 game_ids: vec![input.matchup.game_id.to_string()],
                 ..CardIdentityJoinsView::default()
             },
-            simulation: CardSimulationContextView {
-                model_id: Some("player-line-matchup".to_owned()),
-                model_version: Some(input.matchup.method.clone()),
-                parameter_fingerprint: Some(source_fingerprint),
-                seed: None,
-                trials: None,
-            },
+            simulation: edge.as_ref().map_or_else(
+                || CardSimulationContextView {
+                    model_id: Some("player-line-matchup".to_owned()),
+                    model_version: Some(input.matchup.method.clone()),
+                    parameter_fingerprint: Some(source_fingerprint),
+                    seed: None,
+                    trials: None,
+                },
+                |edge| CardSimulationContextView {
+                    model_id: Some(edge.model_id.clone()),
+                    model_version: Some(edge.model_version.clone()),
+                    parameter_fingerprint: edge.training_fingerprint.clone(),
+                    seed: None,
+                    trials: None,
+                },
+            ),
         },
         theme: nhl_team_card_theme(&team),
         required_capabilities: Vec::new(),
@@ -175,6 +242,7 @@ pub fn build_player_line_matchup_card(
                     opponent,
                     input.matchup.game_id,
                     evidence_label,
+                    edge.as_ref(),
                 ),
             },
             CardPageView {
@@ -204,6 +272,7 @@ fn matchup_sections(
     opponent: &PlayerLineMatchupTeamView,
     game_id: u64,
     evidence_label: EvidenceLabel,
+    edge: Option<&PredictionEdgeProjection>,
 ) -> Vec<CardSectionView> {
     let suitability = focus.matchup_suitability;
     let mut sections = vec![
@@ -317,6 +386,33 @@ fn matchup_sections(
             ],
         }),
     ];
+    if let Some(edge) = edge {
+        sections.insert(
+            2,
+            CardSectionView::MetricStrip(MetricStripSectionView {
+                id: "prediction-edge".to_owned(),
+                title: Some("Game probability from the sealed prediction edge".to_owned()),
+                metrics: vec![
+                    percentage_metric(
+                        "win_probability",
+                        "Win probability",
+                        edge.win_probability,
+                        EvidenceLabel::Simulated,
+                    ),
+                    signed_percentage_point_metric(
+                        "matchup_probability_delta",
+                        "Matchup factor",
+                        edge.matchup_probability_delta,
+                    ),
+                    optional_percentage_metric(
+                        "edge_evidence_confidence",
+                        "Edge evidence confidence",
+                        edge.evidence_confidence,
+                    ),
+                ],
+            }),
+        );
+    }
     if suitability.is_none() || !focus.warnings.is_empty() {
         sections.push(CardSectionView::StateNotice(StateNoticeSectionView {
             id: "matchup-authority".to_owned(),
@@ -337,6 +433,57 @@ fn matchup_sections(
         }));
     }
     sections
+}
+
+fn prediction_edge_projection(
+    edge: &TeamGamePredictionEdgeView,
+    matchup: &PlayerLineMatchupForecastView,
+    focus_team: &str,
+) -> Result<PredictionEdgeProjection, PlayerLineMatchupCardError> {
+    edge.validate()
+        .map_err(|error| PlayerLineMatchupCardError::InvalidPredictionEdge(error.to_string()))?;
+    let game = edge
+        .games
+        .iter()
+        .find(|game| game.game_id == matchup.game_id)
+        .ok_or(PlayerLineMatchupCardError::PredictionEdgeMismatch)?;
+    if edge.season != matchup.season
+        || edge.vintage != matchup.vintage
+        || game.date != matchup.game_date
+        || game.away_team != matchup.away.team
+        || game.home_team != matchup.home.team
+        || game.forecast_at != Some(matchup.forecast_at)
+        || game.captured_at != Some(matchup.captured_at)
+    {
+        return Err(PlayerLineMatchupCardError::PredictionEdgeMismatch);
+    }
+    if !game.evidence_fingerprints.contains(&matchup.fingerprint) {
+        return Err(PlayerLineMatchupCardError::MissingPredictionEdgeJoin);
+    }
+    let factor = game
+        .factors
+        .iter()
+        .find(|factor| factor.key == "matchup" && factor.available)
+        .ok_or(PlayerLineMatchupCardError::MissingPredictionEdgeFactor)?;
+    let focus_is_home = focus_team == matchup.home.team;
+    Ok(PredictionEdgeProjection {
+        fingerprint: edge.fingerprint.clone(),
+        generated_at: edge.generated_at,
+        win_probability: if focus_is_home {
+            game.enhanced_home_win_probability
+        } else {
+            1.0 - game.enhanced_home_win_probability
+        },
+        matchup_probability_delta: if focus_is_home {
+            factor.home_win_probability_delta
+        } else {
+            -factor.home_win_probability_delta
+        },
+        evidence_confidence: game.evidence_confidence,
+        model_id: edge.model.model_id.clone(),
+        model_version: edge.model.method.clone(),
+        training_fingerprint: edge.model.training_fingerprint.clone(),
+    })
 }
 
 fn lineup_section(
@@ -545,6 +692,50 @@ fn percentage_metric(
     )
 }
 
+fn optional_percentage_metric(key: &str, label: &str, value: Option<f64>) -> CardMetricView {
+    value.map_or_else(
+        || {
+            metric(
+                key,
+                label,
+                MetricValue::Missing,
+                MetricUnit::Percentage,
+                ValuePrecision::PercentOneDecimal,
+                "n/a".to_owned(),
+                format!("{label}: unavailable"),
+                EvidenceLabel::NoRead,
+            )
+        },
+        |value| percentage_metric(key, label, value, EvidenceLabel::Simulated),
+    )
+}
+
+fn signed_percentage_point_metric(key: &str, label: &str, value: f64) -> CardMetricView {
+    let percentage_points = value * 100.0;
+    CardMetricView {
+        metric: MetricCell {
+            key: StatKey(key.to_owned()),
+            label: label.to_owned(),
+            value: MetricValue::Decimal(percentage_points),
+            unit: MetricUnit::Percentage,
+            precision: ValuePrecision::PercentOneDecimal,
+            token: Some(if percentage_points >= 0.0 {
+                SemanticToken::DecisionHighlight
+            } else {
+                SemanticToken::Risk
+            }),
+        },
+        display_text: format!("{percentage_points:+.1} pp"),
+        accessible_text: format!("{label}: {percentage_points:+.1} percentage points"),
+        comparison: Some(CardMetricComparisonView {
+            label: "prediction-edge matchup factor contribution".to_owned(),
+            baseline: MetricValue::Decimal(0.0),
+            delta: MetricValue::Decimal(percentage_points),
+        }),
+        evidence_label: EvidenceLabel::Simulated,
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn metric(
     key: &str,
@@ -613,10 +804,13 @@ mod tests {
         TeamLineupPlayerInput, TeamLineupRequestedSlot,
     };
     use crate::{
-        build_player_line_matchup_forecast, EvidenceLabel, OpponentTacticalStyle,
+        build_player_line_matchup_forecast, build_team_game_forecast,
+        build_team_game_prediction_edge, EvidenceLabel, OpponentTacticalStyle,
         PlayerForecastProfileDimensions, PlayerForecastProfileInput,
-        PlayerLineMatchupForecastInput, PlayerLineMatchupTeamInput, TeamCeilingLens, ViewWindow,
-        PLAYER_FORECAST_PROFILE_SCHEMA,
+        PlayerLineMatchupForecastInput, PlayerLineMatchupTeamInput, TeamCeilingLens,
+        TeamForecastGameInput, TeamForecastParameters, TeamForecastStrengthInput,
+        TeamGamePredictionEvidenceInput, TeamGamePredictionModel, TeamGamePredictionTeamEvidence,
+        ViewWindow, PLAYER_FORECAST_PROFILE_SCHEMA,
     };
 
     fn seal(letter: char) -> String {
@@ -767,11 +961,90 @@ mod tests {
     fn input(matchup: PlayerLineMatchupForecastView) -> PlayerLineMatchupCardInput {
         PlayerLineMatchupCardInput {
             matchup,
+            prediction_edge: None,
             focus_team: "NYR".to_owned(),
             team_name: "New York Rangers".to_owned(),
             view: ViewContext::new(ViewWindow::new(Season(20262027), SeasonType::Regular)),
             evidence_at: None,
         }
+    }
+
+    fn edge_team(
+        team: &PlayerLineMatchupTeamView,
+        matchup_fingerprint: &str,
+    ) -> TeamGamePredictionTeamEvidence {
+        TeamGamePredictionTeamEvidence {
+            team: team.team.clone(),
+            roster_strength: Some(team.offense_score),
+            roster_state: TeamGameEvidenceState::Reported,
+            availability_strength: Some(team.defense_score),
+            availability_state: TeamGameEvidenceState::Reported,
+            lineup_impact: None,
+            lineup_impact_state: TeamGameEvidenceState::Unavailable,
+            goalie_quality: None,
+            goalie_state: TeamGameEvidenceState::Unavailable,
+            goalie_player_id: None,
+            goalie_form_quality: None,
+            goalie_form_appearances: 0,
+            goalie_form_state: TeamGameEvidenceState::Unavailable,
+            goalie_workload_readiness: None,
+            xg_share: None,
+            xg_games: 0,
+            opponent_adjusted_xg_share: None,
+            opponent_adjusted_xg_games: 0,
+            special_teams_strength: None,
+            special_teams_games: 0,
+            matchup_suitability: team.matchup_suitability,
+            matchup_state: team.matchup_state,
+            source_fingerprints: vec![matchup_fingerprint.to_owned()],
+        }
+    }
+
+    fn edge(
+        matchup: &PlayerLineMatchupForecastView,
+        cited_fingerprint: &str,
+    ) -> TeamGamePredictionEdgeView {
+        let source = build_team_game_forecast(
+            matchup.season,
+            vec![TeamForecastGameInput {
+                game_id: matchup.game_id,
+                date: matchup.game_date,
+                away_team: matchup.away.team.clone(),
+                home_team: matchup.home.team.clone(),
+                away_score: None,
+                home_score: None,
+                final_result: false,
+                last_period: None,
+            }],
+            vec![
+                TeamForecastStrengthInput {
+                    team: matchup.away.team.clone(),
+                    strength: 49.0,
+                },
+                TeamForecastStrengthInput {
+                    team: matchup.home.team.clone(),
+                    strength: 53.0,
+                },
+            ],
+            TeamForecastParameters::default(),
+            None,
+            None,
+        )
+        .unwrap();
+        build_team_game_prediction_edge(
+            &source,
+            matchup.vintage,
+            matchup.forecast_at + chrono::Duration::hours(1),
+            TeamGamePredictionModel::evaluation_challenger(),
+            vec![TeamGamePredictionEvidenceInput {
+                game_id: matchup.game_id,
+                forecast_at: matchup.forecast_at,
+                captured_at: matchup.captured_at,
+                away: edge_team(&matchup.away, cited_fingerprint),
+                home: edge_team(&matchup.home, cited_fingerprint),
+            }],
+        )
+        .unwrap()
     }
 
     #[test]
@@ -797,6 +1070,126 @@ mod tests {
         );
         let json = serde_json::to_string(&card).unwrap();
         assert_eq!(parse_card_document(&json).unwrap(), card);
+    }
+
+    #[test]
+    fn cited_prediction_edge_projects_probability_without_recomputing_it() {
+        let matchup = matchup();
+        let edge = edge(&matchup, &matchup.fingerprint);
+        let edge_game = &edge.games[0];
+        let expected_probability = edge_game.enhanced_home_win_probability;
+        let expected_delta = edge_game
+            .factors
+            .iter()
+            .find(|factor| factor.key == "matchup")
+            .unwrap()
+            .home_win_probability_delta
+            * 100.0;
+        let expected_model_id = edge.model.model_id.clone();
+        let expected_model_version = edge.model.method.clone();
+        let expected_training_fingerprint = edge.model.training_fingerprint.clone();
+        let edge_generated_at = edge.generated_at;
+        let mut input = input(matchup);
+        input.prediction_edge = Some(edge);
+        input.view.generated_at = Some(edge_generated_at);
+        let card = build_player_line_matchup_card(input).unwrap();
+
+        let section = card.pages[0]
+            .sections
+            .iter()
+            .find_map(|section| match section {
+                CardSectionView::MetricStrip(section) if section.id == "prediction-edge" => {
+                    Some(section)
+                }
+                _ => None,
+            })
+            .expect("prediction edge metric strip");
+        assert_eq!(
+            section.metrics[0].metric.value,
+            MetricValue::Decimal(expected_probability * 100.0)
+        );
+        assert_eq!(
+            section.metrics[1].metric.value,
+            MetricValue::Decimal(expected_delta)
+        );
+        assert_eq!(card.provenance.len(), 2);
+        assert_eq!(card.context.simulation.model_id, Some(expected_model_id));
+        assert_eq!(
+            card.context.simulation.model_version,
+            Some(expected_model_version)
+        );
+        assert_eq!(
+            card.context.simulation.parameter_fingerprint,
+            expected_training_fingerprint
+        );
+    }
+
+    #[test]
+    fn uncited_prediction_edge_is_rejected_before_projection() {
+        let matchup = matchup();
+        let edge = edge(&matchup, &seal('e'));
+        let mut input = input(matchup);
+        input.prediction_edge = Some(edge);
+
+        assert_eq!(
+            build_player_line_matchup_card(input),
+            Err(PlayerLineMatchupCardError::MissingPredictionEdgeJoin)
+        );
+    }
+
+    #[test]
+    fn card_cannot_predate_its_prediction_edge() {
+        let matchup = matchup();
+        let edge = edge(&matchup, &matchup.fingerprint);
+        let mut input = input(matchup.clone());
+        input.prediction_edge = Some(edge);
+        input.view.generated_at = Some(matchup.forecast_at);
+
+        assert_eq!(
+            build_player_line_matchup_card(input),
+            Err(PlayerLineMatchupCardError::CardGeneratedBeforePredictionEdge)
+        );
+    }
+
+    #[test]
+    fn away_team_probability_and_matchup_factor_are_inverted() {
+        let matchup = matchup();
+        let edge = edge(&matchup, &matchup.fingerprint);
+        let game = &edge.games[0];
+        let expected_probability = (1.0 - game.enhanced_home_win_probability) * 100.0;
+        let expected_delta = -game
+            .factors
+            .iter()
+            .find(|factor| factor.key == "matchup")
+            .unwrap()
+            .home_win_probability_delta
+            * 100.0;
+        let edge_generated_at = edge.generated_at;
+        let mut input = input(matchup);
+        input.focus_team = "SEA".to_owned();
+        input.team_name = "Seattle Kraken".to_owned();
+        input.prediction_edge = Some(edge);
+        input.view.generated_at = Some(edge_generated_at);
+        let card = build_player_line_matchup_card(input).unwrap();
+        let section = card.pages[0]
+            .sections
+            .iter()
+            .find_map(|section| match section {
+                CardSectionView::MetricStrip(section) if section.id == "prediction-edge" => {
+                    Some(section)
+                }
+                _ => None,
+            })
+            .unwrap();
+
+        assert_eq!(
+            section.metrics[0].metric.value,
+            MetricValue::Decimal(expected_probability)
+        );
+        assert_eq!(
+            section.metrics[1].metric.value,
+            MetricValue::Decimal(expected_delta)
+        );
     }
 
     #[test]
