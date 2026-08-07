@@ -2253,12 +2253,15 @@ pub enum IceCastSubcommand {
         /// Sealed `player_line_matchup_forecast.v1` document.
         #[arg(long, value_name = "PATH")]
         input: PathBuf,
+        /// Optional sealed `team_game_prediction_edge.v1` containing this exact matchup fingerprint.
+        #[arg(long, value_name = "PATH")]
+        edge: Option<PathBuf>,
         /// Focus team participating in the game.
         #[arg(long)]
         team: String,
         #[arg(long)]
         team_name: Option<String>,
-        /// RFC 3339 card generation time; defaults to the matchup capture time.
+        /// RFC 3339 card generation time; defaults to the matchup forecast time.
         #[arg(long)]
         generated_at: Option<String>,
         #[arg(long, value_name = "PATH")]
@@ -5171,6 +5174,8 @@ mod tui_surface_tests {
                 "line-matchup-card",
                 "--input",
                 "matchup.json",
+                "--edge",
+                "edge.json",
                 "--team",
                 "NYR",
                 "--team-name",
@@ -5185,11 +5190,13 @@ mod tui_surface_tests {
                 card.command,
                 Commands::Icecast(IceCastSubcommand::LineMatchupCard {
                     input,
+                    edge: Some(edge),
                     team,
                     team_name: Some(team_name),
                     generated_at: Some(generated_at),
                     out: Some(out),
                 }) if input == PathBuf::from("matchup.json")
+                    && edge == PathBuf::from("edge.json")
                     && team == "NYR"
                     && team_name == "New York Rangers"
                     && generated_at == "2026-10-10T16:00:00Z"

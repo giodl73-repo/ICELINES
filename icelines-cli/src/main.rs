@@ -2848,11 +2848,19 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         })?,
         Commands::Icecast(IceCastSubcommand::LineMatchupCard {
             input,
+            edge,
             team,
             team_name,
             generated_at,
             out,
-        }) => commands::icecast::run_line_matchup_card(input, team, team_name, generated_at, out)?,
+        }) => commands::icecast::run_line_matchup_card(
+            input,
+            edge,
+            team,
+            team_name,
+            generated_at,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::LineMatchupProfiles {
             lineup,
             role_evidence,

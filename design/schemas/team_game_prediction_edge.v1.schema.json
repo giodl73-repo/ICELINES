@@ -11,7 +11,19 @@
     "generated_at": { "type": "string", "format": "date-time" },
     "model": { "type": "object" },
     "source_forecast_fingerprint": { "$ref": "#/$defs/fingerprint" },
-    "games": { "type": "array", "items": { "type": "object" } },
+    "games": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "evidence_fingerprints": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/fingerprint" }
+          }
+        }
+      }
+    },
     "enhanced_forecast": { "type": "object" },
     "warnings": { "type": "array", "items": { "type": "string" } },
     "disclosures": { "type": "array", "items": { "type": "string" } },

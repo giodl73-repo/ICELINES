@@ -1183,7 +1183,7 @@ icelines icecast line-chemistry --team NYR --forecast-at 2026-04-19T12:00:00Z --
 icelines icecast line-chemistry-moneypuck --team NYR --forecast-at 2026-04-19T12:00:00Z --line-game 84784028482888.csv --line-game 84784028490001.csv --baselines pregame-unit-baselines.json --minimum-shared-minutes 30 --out chemistry.json
 icelines icecast line-chemistry-moneypuck-auto --team NYR --season-start 2025 --forecast-at 2026-04-19T12:00:00Z --summary licensed/lines.csv --line-game-dir licensed/line-games --skater-game-dir licensed/skaters --team-game-dir licensed/teams --rights-basis "MoneyPuck license/local authorized export" --out automatic-chemistry.json
 icelines icecast line-matchup --input player-line-matchup-input.json --home-bench-plan nyr-plan.json --away-bench-plan sea-plan.json --json --out matchup-2026020001.json
-icelines icecast line-matchup-card --input matchup-2026020001.json --team NYR --team-name "New York Rangers" --out matchup-card-nyr.json
+icelines icecast line-matchup-card --input matchup-2026020001.json --edge edge-2026020001.json --team NYR --team-name "New York Rangers" --out matchup-card-nyr.json
 icelines icecast line-matchup-compare --input lineup-scenarios.json --focus-team NYR --baseline baseline --out lineup-comparison.json
 icelines icecast line-matchup-validate --input ablation-observations.json --created-at 2026-04-20T12:00:00Z --out matchup-validation.json
 icelines icecast edge-evidence --forecast games.json --input dated-assembly-input.json --line-matchup matchup-2026020001.json --out morning-evidence.json
