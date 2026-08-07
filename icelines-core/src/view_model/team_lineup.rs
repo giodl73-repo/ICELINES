@@ -1012,7 +1012,7 @@ fn validate_players(
         if player
             .headshot_canonical_url
             .as_ref()
-            .is_some_and(|url| !url.contains(&player.player_id.to_string()))
+            .is_some_and(|url| !headshot_url_matches_player_id(url, player.player_id))
         {
             return Err(TeamLineupProjectionError::HeadshotIdentityMismatch(
                 player.player_id,
@@ -1141,6 +1141,17 @@ fn initials(name: &str) -> String {
         .filter_map(|part| part.chars().next())
         .flat_map(char::to_uppercase)
         .collect()
+}
+
+pub(crate) fn headshot_url_matches_player_id(url: &str, player_id: u32) -> bool {
+    let path = url.split(['?', '#']).next().unwrap_or(url);
+    let Some(file_name) = path.rsplit('/').next() else {
+        return false;
+    };
+    let Some((stem, _extension)) = file_name.rsplit_once('.') else {
+        return false;
+    };
+    stem == player_id.to_string()
 }
 
 fn valid_team(team: &str) -> bool {
@@ -1380,7 +1391,7 @@ mod tests {
             Err(TeamLineupProjectionError::MixedGoalieEligibility(3))
         ));
         let mut bad_face = player(4, "Four Player", Position::Defense);
-        bad_face.headshot_canonical_url = Some("https://assets.nhle.com/999.png".to_string());
+        bad_face.headshot_canonical_url = Some("https://assets.nhle.com/104.png".to_string());
         assert!(matches!(
             build_team_lineup_projection("NYR", 20262027, vec![bad_face]),
             Err(TeamLineupProjectionError::HeadshotIdentityMismatch(4))

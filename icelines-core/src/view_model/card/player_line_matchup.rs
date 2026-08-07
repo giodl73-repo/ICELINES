@@ -223,6 +223,7 @@ pub fn build_player_line_matchup_card(
             ),
         },
         theme: nhl_team_card_theme(&team),
+        // Every headshot has an initials fallback, so raster support remains optional.
         required_capabilities: Vec::new(),
         pages: vec![
             CardPageView {
@@ -256,7 +257,7 @@ pub fn build_player_line_matchup_card(
                 sections: insider_sections(&input.matchup, focus),
             },
         ],
-        assets: Vec::new(),
+        assets: player_assets(focus, input.matchup.captured_at),
         provenance,
         warnings,
         empty_state: None,
@@ -549,7 +550,10 @@ fn lineup_slot(
         label: label.to_owned(),
         subject_id: Some(format!("player:{}", profile.player_id)),
         subject_label: Some(profile.display_name.clone()),
-        asset_id: None,
+        asset_id: profile
+            .portrait
+            .as_ref()
+            .map(|portrait| portrait.asset_id.clone()),
         metrics: vec![
             score_metric(
                 "profile_score",
@@ -566,6 +570,38 @@ fn lineup_slot(
         ],
         evidence_label,
     }
+}
+
+fn player_assets(
+    team: &PlayerLineMatchupTeamView,
+    observed_at: DateTime<Utc>,
+) -> Vec<CardAssetView> {
+    team.profiles
+        .iter()
+        .filter_map(|profile| {
+            let portrait = profile.portrait.as_ref()?;
+            let reference = portrait
+                .headshot_canonical_url
+                .clone()
+                .map(CardAssetReference::ExternalUrl);
+            Some(CardAssetView {
+                id: portrait.asset_id.clone(),
+                subject_id: format!("player:{}", profile.player_id),
+                kind: CardAssetKind::Headshot,
+                state: if reference.is_some() {
+                    CardAssetState::Available
+                } else {
+                    CardAssetState::Missing
+                },
+                reference,
+                source: SourceKind::Roster,
+                observed_at: Some(observed_at),
+                integrity_sha256: None,
+                alt: format!("{} headshot", profile.display_name),
+                fallback: CardAssetFallback::Initials(portrait.fallback_initials.clone()),
+            })
+        })
+        .collect()
 }
 
 fn insider_sections(
@@ -588,7 +624,10 @@ fn insider_sections(
                         profile.even_strength_minutes,
                         profile.observed_shifts
                     )),
-                    asset_id: None,
+                    asset_id: profile
+                        .portrait
+                        .as_ref()
+                        .map(|portrait| portrait.asset_id.clone()),
                     metrics: vec![
                         score_metric(
                             "profile_score",
@@ -830,7 +869,8 @@ mod tests {
             prior_team: None,
             primary_position: position,
             eligible_positions: vec![position],
-            headshot_canonical_url: None,
+            headshot_canonical_url: (id % 10 != 1)
+                .then(|| format!("https://assets.nhle.com/mugs/nhl/20262027/{team}/{id}.png")),
             games_played: 82,
             lens_scores: TeamCeilingLens::ALL
                 .into_iter()
@@ -1060,6 +1100,39 @@ mod tests {
         );
         assert_eq!(card.context.joins.player_ids.len(), 36);
         assert_eq!(card.pages[0].display_label.as_deref(), Some("The Matchup"));
+        assert_eq!(card.assets.len(), 18);
+        let missing = card
+            .assets
+            .iter()
+            .find(|asset| asset.subject_id == "player:1")
+            .expect("missing headshot asset");
+        assert_eq!(missing.state, CardAssetState::Missing);
+        assert!(missing.reference.is_none());
+        assert!(matches!(
+            missing.fallback,
+            CardAssetFallback::Initials(ref initials) if initials == "NP1"
+        ));
+        let available = card
+            .assets
+            .iter()
+            .find(|asset| asset.subject_id == "player:2")
+            .expect("available headshot asset");
+        assert_eq!(available.state, CardAssetState::Available);
+        assert!(matches!(
+            available.reference,
+            Some(CardAssetReference::ExternalUrl(ref url)) if url.ends_with("/2.png")
+        ));
+        assert!(card
+            .pages
+            .iter()
+            .flat_map(|page| &page.sections)
+            .any(|section| matches!(
+                section,
+                CardSectionView::Lineup(lineup)
+                    if lineup.groups.iter().flat_map(|group| &group.slots).any(
+                        |slot| slot.asset_id.as_deref() == Some("player:1:headshot")
+                    )
+            )));
         let headline = match &card.pages[0].sections[1] {
             CardSectionView::MetricStrip(section) => section,
             other => panic!("expected metric strip, got {other:?}"),
@@ -1205,6 +1278,23 @@ mod tests {
     }
 
     #[test]
+    fn mismatched_headshot_identity_is_rejected_before_projection() {
+        let mut matchup = matchup();
+        matchup.home.profiles[0]
+            .portrait
+            .as_mut()
+            .expect("generated profile portrait")
+            .headshot_canonical_url =
+            Some("https://assets.nhle.com/mugs/nhl/20262027/NYR/101.png".to_owned());
+
+        assert!(matches!(
+            build_player_line_matchup_card(input(matchup)),
+            Err(PlayerLineMatchupCardError::InvalidMatchup(message))
+                if message == "invalid player-line matchup team scores or unit shape"
+        ));
+    }
+
+    #[test]
     fn incomplete_unit_is_rejected_before_projection() {
         let mut matchup = matchup();
         matchup.home.units[0].player_ids.pop();
@@ -1222,6 +1312,12 @@ mod tests {
         let duplicate = matchup.home.profiles[0].player_id;
         let replaced = matchup.away.profiles[0].player_id;
         matchup.away.profiles[0].player_id = duplicate;
+        if let Some(portrait) = matchup.away.profiles[0].portrait.as_mut() {
+            portrait.asset_id = format!("player:{duplicate}:headshot");
+            portrait.headshot_canonical_url = Some(format!(
+                "https://assets.nhle.com/mugs/nhl/20262027/SEA/{duplicate}.png"
+            ));
+        }
         for unit in &mut matchup.away.units {
             for player_id in &mut unit.player_ids {
                 if *player_id == replaced {
