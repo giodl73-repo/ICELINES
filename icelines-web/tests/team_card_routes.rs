@@ -1,7 +1,10 @@
 use axum::body::{to_bytes, Body};
 use axum::http::{Request, StatusCode};
+use chrono::{TimeZone, Utc};
 use icelines_core::{parse_card_document, CardDocumentView, CANONICAL_TEAMS};
+use icelines_fetch::CardPublicationStore;
 use icelines_web::{router, WebState};
+use std::sync::Arc;
 use tower::util::ServiceExt;
 
 async fn body(response: axum::response::Response) -> String {
@@ -226,6 +229,71 @@ async fn player_line_matchup_routes_preserve_the_sealed_card_and_assets() {
         let error: serde_json::Value = serde_json::from_str(&body(response).await).unwrap();
         assert_eq!(error["schema"], "card_error.v1");
     }
+}
+
+#[tokio::test]
+async fn player_line_matchup_route_prefers_the_published_catalog() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut published = parse_card_document(include_str!(
+        "../../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json"
+    ))
+    .unwrap();
+    published.title = "Published Matchup".to_owned();
+    published = published.seal().unwrap();
+    CardPublicationStore::under_data_root(directory.path())
+        .publish(
+            &published,
+            Utc.with_ymd_and_hms(2026, 10, 10, 18, 0, 0).unwrap(),
+        )
+        .unwrap();
+    let state = WebState {
+        card_data_root: Arc::new(Some(directory.path().to_path_buf())),
+        ..WebState::new()
+    };
+    let response = router(state)
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/cards/player-line-matchup/20262027/2026020001/NYR")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response.headers()["etag"].to_str().unwrap(),
+        format!("\"{}\"", published.fingerprint)
+    );
+    assert_eq!(
+        parse_card_document(&body(response).await).unwrap(),
+        published
+    );
+}
+
+#[tokio::test]
+async fn player_line_matchup_route_fails_closed_on_a_corrupt_catalog() {
+    let directory = tempfile::tempdir().unwrap();
+    let cards = directory.path().join("cards");
+    std::fs::create_dir_all(&cards).unwrap();
+    std::fs::write(cards.join("catalog.json"), b"{}").unwrap();
+    let state = WebState {
+        card_data_root: Arc::new(Some(directory.path().to_path_buf())),
+        ..WebState::new()
+    };
+    let response = router(state)
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/cards/player-line-matchup/20262027/2026020001/NYR")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    let error: serde_json::Value = serde_json::from_str(&body(response).await).unwrap();
+    assert_eq!(error["schema"], "card_error.v1");
 }
 
 #[tokio::test]

@@ -2943,6 +2943,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             created_at,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::LineMatchupPublish {
+            card,
+            published_at,
+            data_root,
+            out,
+        }) => commands::icecast::run_line_matchup_publish(card, published_at, data_root, out)?,
         Commands::Icecast(IceCastSubcommand::LineMatchupValidate {
             input,
             created_at,

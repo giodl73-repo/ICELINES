@@ -94,6 +94,9 @@ pub async fn run(
         repo: std::sync::Arc::new(tokio::sync::RwLock::new(repo)),
         config: std::sync::Arc::new(tokio::sync::RwLock::new(web_config.clone())),
         snapshots_root: std::sync::Arc::new(Some(cfg.snapshot_dir())),
+        card_data_root: std::sync::Arc::new(Some(
+            icelines_fetch::CardPublicationStore::default_root(),
+        )),
     };
 
     let app = router(state);

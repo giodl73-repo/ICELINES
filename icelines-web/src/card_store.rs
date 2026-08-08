@@ -1,6 +1,10 @@
 //! Read-only web provider for sealed UI-neutral card documents.
 
-use std::{collections::BTreeMap, sync::OnceLock};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+    sync::OnceLock,
+};
 
 use chrono::{DateTime, Utc};
 use icelines_core::{
@@ -13,6 +17,7 @@ use icelines_core::{
     ProspectAuthorityProgressView, ProspectCensusReadinessBoardView, Season, ViewContext,
     ViewWindow, CANONICAL_TEAMS,
 };
+use icelines_fetch::{CardPublicationStore, CardPublicationStoreError};
 use thiserror::Error;
 
 const NYR: &str = include_str!("../../examples/team-prognosis-card-nyr-2026-27.json");
@@ -79,6 +84,8 @@ pub enum CardStoreError {
     UnsupportedPlayerLineMatchupGame(u64),
     #[error("player-line matchup card is not available for focus team {0}")]
     UnsupportedPlayerLineMatchupTeam(String),
+    #[error("published player-line matchup card is invalid: {0}")]
+    InvalidPlayerLineMatchupPublication(String),
     #[error("prospect arrival card is not available for team {0}")]
     UnsupportedProspectArrivalTeam(String),
     #[error("organization Window card is not available for team {0}")]
@@ -140,17 +147,52 @@ pub fn player_line_matchup_card(
     game_id: u64,
     team: &str,
 ) -> Result<CardDocumentView, CardStoreError> {
+    let data_root = publication_data_root();
+    player_line_matchup_card_from_data_root(season, game_id, team, data_root.as_deref())
+}
+
+pub fn player_line_matchup_card_from_data_root(
+    season: u32,
+    game_id: u64,
+    team: &str,
+    data_root: Option<&Path>,
+) -> Result<CardDocumentView, CardStoreError> {
+    let team = team.trim().to_ascii_uppercase();
+    if let Some(data_root) = data_root {
+        let store = CardPublicationStore::under_data_root(data_root);
+        match store.load_player_line_matchup(season, game_id, &team) {
+            Ok(card) => return Ok(card),
+            Err(
+                CardPublicationStoreError::MissingCatalog
+                | CardPublicationStoreError::MissingEntry { .. },
+            ) => {}
+            Err(error) => {
+                return Err(CardStoreError::InvalidPlayerLineMatchupPublication(
+                    error.to_string(),
+                ));
+            }
+        }
+    }
     if season != 20262027 {
         return Err(CardStoreError::UnsupportedSeason(season));
     }
     if game_id != 2026020001 {
         return Err(CardStoreError::UnsupportedPlayerLineMatchupGame(game_id));
     }
-    let team = team.trim().to_ascii_uppercase();
     if team != "NYR" {
         return Err(CardStoreError::UnsupportedPlayerLineMatchupTeam(team));
     }
     Ok(nyr_vs_sea_player_line_matchup_card().clone())
+}
+
+fn publication_data_root() -> Option<PathBuf> {
+    std::env::var_os("ICELINES_DATA_ROOT")
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("USERPROFILE")
+                .or_else(|| std::env::var_os("HOME"))
+                .map(|home| PathBuf::from(home).join(".icelines").join("data"))
+        })
 }
 
 pub fn prospect_arrival_card(season: u32, team: &str) -> Result<CardDocumentView, CardStoreError> {
@@ -493,6 +535,8 @@ fn dexters_dawgs_trade_card() -> &'static CardDocumentView {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::TimeZone;
+    use tempfile::TempDir;
 
     #[test]
     fn resolves_only_sealed_supported_dimensions() {
@@ -561,6 +605,7 @@ mod tests {
             assert_eq!(card.context.joins.team_ids, [*team]);
             assert_eq!(card.title, format!("{team_name} prospect arrivals"));
         }
+
         let sealed_nyr = parse_card_document(NYR_PROSPECT_ARRIVAL)
             .expect("sealed NYR prospect arrival card fixture");
         let sealed_sea = parse_card_document(SEA_PROSPECT_ARRIVAL)
@@ -615,5 +660,31 @@ mod tests {
             fantasy_trade_card("unknown"),
             Err(CardStoreError::UnsupportedFantasyTradeTeam(_))
         ));
+    }
+
+    #[test]
+    fn published_matchup_card_supersedes_the_bundled_fixture() {
+        let directory = TempDir::new().unwrap();
+        let store = CardPublicationStore::under_data_root(directory.path());
+        let mut published = nyr_vs_sea_player_line_matchup_card().clone();
+        published.title = "Published Matchup".to_owned();
+        published = published.seal().unwrap();
+        store
+            .publish(
+                &published,
+                Utc.with_ymd_and_hms(2026, 10, 10, 18, 0, 0).unwrap(),
+            )
+            .unwrap();
+
+        let loaded = player_line_matchup_card_from_data_root(
+            20262027,
+            2026020001,
+            "NYR",
+            Some(directory.path()),
+        )
+        .unwrap();
+
+        assert_eq!(loaded.title, "Published Matchup");
+        assert_eq!(loaded.fingerprint, published.fingerprint);
     }
 }

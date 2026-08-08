@@ -20,6 +20,7 @@ pub mod boxscore_to_night_line;
 pub mod bundled;
 pub mod cache;
 pub mod capwages;
+pub mod card_publication_store;
 pub mod career;
 pub mod career_landing;
 pub mod chunkstore;
@@ -99,6 +100,11 @@ pub use bundled::{
     load_stats_with_fallback, BUNDLED_SEASONS,
 };
 pub use cache::Cache;
+pub use card_publication_store::{
+    CardPublicationCatalog, CardPublicationEntry, CardPublicationKey, CardPublicationStore,
+    CardPublicationStoreError, CARD_PUBLICATION_CATALOG_JSON_SCHEMA,
+    CARD_PUBLICATION_CATALOG_SCHEMA,
+};
 pub use career::load_career;
 pub use draft_pick_history::{
     acquire_draft_pick_value_curve, build_draft_pick_outcome_set, DraftPickCurveAcquisitionView,

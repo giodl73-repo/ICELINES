@@ -106,6 +106,7 @@ use icelines_core::{
     WindowCalibrationEvaluationOriginInput, WindowCalibrationOriginInput,
     WindowCalibrationOriginRole,
 };
+use icelines_fetch::CardPublicationStore;
 use icelines_fetch::{
     ahl::{
         affiliate_projection_input_from_reviewed_crosswalk, ahl_identity_search_name_variants,
@@ -5298,6 +5299,30 @@ pub fn run_line_matchup_validate(
     let output = format!("{}\n", serde_json::to_string_pretty(&view)?);
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "player-line matchup validation")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_line_matchup_publish(
+    card_path: PathBuf,
+    published_at: String,
+    data_root: Option<PathBuf>,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let card: icelines_core::CardDocumentView =
+        read_icecast_json(&card_path, "sealed player-line matchup card")?;
+    let published_at = DateTime::parse_from_rfc3339(&published_at)
+        .context("--published-at must be RFC 3339, for example 2026-10-10T18:00:00Z")?
+        .with_timezone(&Utc);
+    let data_root = data_root.unwrap_or_else(CardPublicationStore::default_root);
+    let entry = CardPublicationStore::under_data_root(&data_root)
+        .publish(&card, published_at)
+        .context("publish sealed player-line matchup card")?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&entry)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(path, output.as_bytes(), "player-line matchup publication")?;
     } else {
         print!("{output}");
     }
@@ -15000,6 +15025,29 @@ mod tests {
         let validation: serde_json::Value =
             serde_json::from_slice(&std::fs::read(validation_path).unwrap()).unwrap();
         assert_eq!(validation["games"], 1);
+    }
+
+    #[test]
+    fn line_matchup_publish_writes_a_discoverable_catalog_entry() {
+        let dir = tempdir().unwrap();
+        let card = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json");
+        let output = dir.path().join("publication.json");
+
+        super::run_line_matchup_publish(
+            card,
+            "2026-10-10T18:00:00Z".to_owned(),
+            Some(dir.path().to_path_buf()),
+            Some(output.clone()),
+        )
+        .unwrap();
+
+        let entry: icelines_fetch::CardPublicationEntry =
+            serde_json::from_slice(&std::fs::read(output).unwrap()).unwrap();
+        let published = icelines_fetch::CardPublicationStore::under_data_root(dir.path())
+            .load_player_line_matchup(20262027, 2026020001, "NYR")
+            .unwrap();
+        assert_eq!(published.fingerprint, entry.fingerprint);
     }
 
     #[test]

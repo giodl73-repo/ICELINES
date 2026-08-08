@@ -566,11 +566,37 @@ fn parse_verb(input: &str) -> Result<Command, ParseError> {
             team: "MATCHUP-NYR".to_string(),
         }),
         "matchup-card" | "line-matchup-card" => {
+            let values = args.split_whitespace().collect::<Vec<_>>();
+            if values.len() == 3 {
+                let season = values[0]
+                    .parse::<u32>()
+                    .map_err(|_| ParseError::BadFilter {
+                        details: "matchup-card season must be an 8-digit value".to_owned(),
+                    })?;
+                let game_id = values[1]
+                    .parse::<u64>()
+                    .map_err(|_| ParseError::BadFilter {
+                        details: "matchup-card game ID must be numeric".to_owned(),
+                    })?;
+                let team = values[2].to_ascii_uppercase();
+                if season < 20_000_000
+                    || game_id == 0
+                    || team.len() != 3
+                    || !team.bytes().all(|byte| byte.is_ascii_uppercase())
+                {
+                    return Err(ParseError::BadFilter {
+                        details: "matchup-card requires <season> <game-id> <team>".to_owned(),
+                    });
+                }
+                return Ok(Command::TeamCard {
+                    team: format!("MATCHUP:{season}:{game_id}:{team}"),
+                });
+            }
             let team = args.trim().to_ascii_uppercase();
-            if team != "NYR" {
+            if values.len() != 1 || team != "NYR" {
                 return Err(ParseError::BadFilter {
                     details: format!(
-                        "matchup-card supports NYR for sealed game 2026020001, got '{team}'"
+                        "matchup-card requires NYR or <season> <game-id> <team>, got '{args}'"
                     ),
                 });
             }

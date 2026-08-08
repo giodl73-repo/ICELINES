@@ -82,6 +82,14 @@ the existing game-probability model and all-32 season simulator.
      `matchup-card` command. Both surfaces parse the same checked-in
      `CardDocumentView`, preserve its fingerprint and ETag, resolve its shared
      headshot assets, and do not recompute matchup or probability values.
+   - **Local publication catalog implemented:** `line-matchup-publish` validates
+     and content-addresses a sealed Matchup card, then atomically advances a
+     fingerprinted catalog under the IceLines data root. Web discovery and the
+     TUI `matchup-card <season> <game-id> <team>` command resolve published
+     season/game/focus-team keys and fail closed on catalog or blob corruption.
+     The legacy TUI pilot command and Web route retain the bundled fixture only
+     when no publication catalog entry exists. Publication never rebuilds hockey
+     values; producer-owned card semantics remain authoritative.
    - Pilot Rangers/Kraken, then run the identical all-32 pipeline.
 
 ## Current boundary

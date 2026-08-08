@@ -2373,6 +2373,21 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Publish one sealed Matchup card into the local discovery catalog.
+    #[command(name = "line-matchup-publish")]
+    LineMatchupPublish {
+        /// Sealed `card_document.v1` with `player_line_matchup` card kind.
+        #[arg(long, value_name = "PATH")]
+        card: PathBuf,
+        /// RFC 3339 publication time; must not predate the sealed card.
+        #[arg(long)]
+        published_at: String,
+        /// Data root containing the `cards/` publication layout.
+        #[arg(long, value_name = "DIR")]
+        data_root: Option<PathBuf>,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Evaluate frozen player/profile/chemistry/manager forecast ablations.
     #[command(name = "line-matchup-validate")]
     LineMatchupValidate {
