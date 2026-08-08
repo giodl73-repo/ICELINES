@@ -2930,6 +2930,19 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             rights_basis,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::LineMatchupObserve {
+            forecasts,
+            predictions,
+            outcomes,
+            created_at,
+            out,
+        }) => commands::icecast::run_line_matchup_observe(
+            forecasts,
+            predictions,
+            outcomes,
+            created_at,
+            out,
+        )?,
         Commands::Icecast(IceCastSubcommand::LineMatchupValidate {
             input,
             created_at,

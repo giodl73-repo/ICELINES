@@ -15,9 +15,10 @@ use icelines_core::{
     build_forecast_history_card, build_forecast_movement_card, build_isolated_scenario_impact,
     build_isolated_scenario_impact_as_of, build_line_combination_forecast,
     build_organization_lineup_forecast, build_organization_profile_history,
-    build_organization_window_history, build_player_line_matchup_card,
-    build_player_line_matchup_forecast, build_player_line_matchup_validation,
-    build_prospect_arrival_board, build_prospect_arrival_card, build_prospect_conversion_archive,
+    build_organization_window_history, build_player_line_matchup_ablation_observations,
+    build_player_line_matchup_card, build_player_line_matchup_forecast,
+    build_player_line_matchup_validation, build_prospect_arrival_board,
+    build_prospect_arrival_card, build_prospect_conversion_archive,
     build_prospect_conversion_board, build_prospect_development_study,
     build_prospect_discovery_board, build_prospect_nhl_performance_document,
     build_prospect_program_board_with_goalies, build_prospect_program_history,
@@ -57,10 +58,10 @@ use icelines_core::{
     OrganizationWindowBridgeView, OrganizationWindowManifestView,
     OrganizationWindowScenarioDistributionInput, OrganizationWindowSourceCoverageView,
     OrganizationWindowSourcePackageView, OrganizationalProspectPolicy,
-    PlayerLineMatchupAblationObservation, PlayerLineMatchupCardInput,
-    PlayerLineMatchupForecastInput, PlayerLineMatchupForecastView, PlayerLineMatchupScenarioInput,
-    ProspectArrivalCalibrationConfig, ProspectArrivalCalibrationInput,
-    ProspectArrivalCalibrationView, ProspectArrivalCardInput,
+    PlayerLineMatchupAblationObservation, PlayerLineMatchupAblationPredictionInput,
+    PlayerLineMatchupCardInput, PlayerLineMatchupForecastInput, PlayerLineMatchupForecastView,
+    PlayerLineMatchupScenarioInput, ProspectArrivalCalibrationConfig,
+    ProspectArrivalCalibrationInput, ProspectArrivalCalibrationView, ProspectArrivalCardInput,
     ProspectArrivalLeaguePopulationAuthorityView, ProspectArrivalLeagueSourceExclusionInput,
     ProspectConversionArchive, ProspectConversionBoardView, ProspectConversionConfig,
     ProspectConversionPerformanceDocument, ProspectDevelopmentStudyConfig,
@@ -5297,6 +5298,59 @@ pub fn run_line_matchup_validate(
     let output = format!("{}\n", serde_json::to_string_pretty(&view)?);
     if let Some(path) = out.as_deref() {
         write_icecast_file(path, output.as_bytes(), "player-line matchup validation")?;
+    } else {
+        print!("{output}");
+    }
+    Ok(())
+}
+
+pub fn run_line_matchup_observe(
+    forecast_paths: Vec<PathBuf>,
+    predictions_path: PathBuf,
+    outcome_paths: Vec<PathBuf>,
+    created_at: String,
+    out: Option<PathBuf>,
+) -> anyhow::Result<()> {
+    let created_at = DateTime::parse_from_rfc3339(&created_at)
+        .context("--created-at must be RFC 3339, for example 2026-04-20T12:00:00Z")?
+        .with_timezone(&Utc);
+    let forecasts = forecast_paths
+        .iter()
+        .map(|path| read_icecast_json(path, "frozen player-line matchup forecast"))
+        .collect::<anyhow::Result<Vec<PlayerLineMatchupForecastView>>>()?;
+    let predictions: Vec<PlayerLineMatchupAblationPredictionInput> = read_icecast_json(
+        &predictions_path,
+        "player-line matchup ablation predictions",
+    )?;
+    let mut outcomes = Vec::new();
+    for outcomes_path in &outcome_paths {
+        let outcome_bytes = std::fs::read(outcomes_path)
+            .with_context(|| format!("read outcomes {}", outcomes_path.display()))?;
+        let mut rows = match serde_json::from_slice::<OfficialGameOutcomeSet>(&outcome_bytes) {
+            Ok(set) => {
+                set.validate().with_context(|| {
+                    format!("validate official outcomes {}", outcomes_path.display())
+                })?;
+                set.outcomes
+            }
+            Err(_) => serde_json::from_slice(&outcome_bytes)
+                .with_context(|| format!("parse outcomes {}", outcomes_path.display()))?,
+        };
+        outcomes.append(&mut rows);
+    }
+    let observations = build_player_line_matchup_ablation_observations(
+        &forecasts,
+        &predictions,
+        &outcomes,
+        created_at,
+    )?;
+    let output = format!("{}\n", serde_json::to_string_pretty(&observations)?);
+    if let Some(path) = out.as_deref() {
+        write_icecast_file(
+            path,
+            output.as_bytes(),
+            "player-line matchup ablation observations",
+        )?;
     } else {
         print!("{output}");
     }
@@ -14365,8 +14419,10 @@ mod tests {
 
     use chrono::NaiveDate;
     use icelines_core::{
-        build_prospect_development_study, simulate_training_camp, OrganizationWindowBoardView,
-        Position, ProspectArrivalLeagueCalibrationView,
+        build_prospect_development_study, seal_player_line_matchup_ablation_prediction,
+        simulate_training_camp, OrganizationWindowBoardView, PlayerLineMatchupAblationObservation,
+        PlayerLineMatchupAblationPredictionInput, PlayerLineMatchupAblationProbabilities,
+        PlayerLineMatchupForecastView, Position, ProspectArrivalLeagueCalibrationView,
         ProspectArrivalLeaguePopulationAuthorityView, ProspectAvailabilityStatus,
         ProspectDevelopmentSeasonInput, ProspectDevelopmentStudyConfig,
         ProspectDevelopmentStudyInput, ProspectOpportunityStatus, TeamCeilingLens,
@@ -14861,6 +14917,122 @@ mod tests {
         OFFICIAL_NHL_LIVE_ROSTER_SCHEMA, OFFICIAL_NHL_LIVE_ROSTER_SOURCE,
         OPENING_ROSTER_ARCHIVE_SCHEMA, OPENING_ROSTER_ARCHIVE_SOURCE,
     };
+
+    fn write_matchup_observation_inputs(
+        dir: &std::path::Path,
+        home_team: &str,
+        outcome_at: &str,
+    ) -> (std::path::PathBuf, std::path::PathBuf, std::path::PathBuf) {
+        let forecast_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../examples/player-line-matchup-forecast-nyr-vs-sea-2026-27.json");
+        let forecast: PlayerLineMatchupForecastView =
+            serde_json::from_slice(&std::fs::read(&forecast_path).unwrap()).unwrap();
+        let predictions_path = dir.join("predictions.json");
+        let outcomes_path = dir.join("outcomes.json");
+        let prediction = seal_player_line_matchup_ablation_prediction(
+            PlayerLineMatchupAblationPredictionInput {
+                schema: "player_line_matchup_ablation_prediction.v1".to_owned(),
+                game_id: forecast.game_id,
+                season: forecast.season,
+                away_team: forecast.away.team.clone(),
+                home_team: home_team.to_owned(),
+                forecast_at: forecast.forecast_at,
+                probabilities: PlayerLineMatchupAblationProbabilities {
+                    team_strength_only: 0.50,
+                    player_profiles: 0.52,
+                    profiles_plus_pairs: 0.54,
+                    profiles_plus_pairs_trios: 0.56,
+                    full_matchup_manager: 0.58,
+                },
+                forecast_fingerprint: forecast.fingerprint.clone(),
+                source_fingerprint: format!("sha256:{}", "b".repeat(64)),
+                fingerprint: String::new(),
+            },
+        )
+        .unwrap();
+        std::fs::write(
+            &predictions_path,
+            serde_json::to_vec_pretty(&[prediction]).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            &outcomes_path,
+            serde_json::to_vec_pretty(&serde_json::json!([{
+                "season": forecast.season,
+                "game_id": forecast.game_id,
+                "outcome_recorded_at": outcome_at,
+                "home_won": true,
+                "source_fingerprint": format!("sha256:{}", "c".repeat(64))
+            }]))
+            .unwrap(),
+        )
+        .unwrap();
+        (forecast_path, predictions_path, outcomes_path)
+    }
+
+    #[test]
+    fn line_matchup_observe_emits_validation_ready_rows() {
+        let dir = tempdir().unwrap();
+        let (forecast, predictions, outcomes) =
+            write_matchup_observation_inputs(dir.path(), "NYR", "2026-10-11T04:00:00Z");
+        let observations_path = dir.path().join("observations.json");
+        let validation_path = dir.path().join("validation.json");
+
+        super::run_line_matchup_observe(
+            vec![forecast],
+            predictions,
+            vec![outcomes],
+            "2026-10-11T05:00:00Z".to_owned(),
+            Some(observations_path.clone()),
+        )
+        .unwrap();
+        let rows: Vec<PlayerLineMatchupAblationObservation> =
+            serde_json::from_slice(&std::fs::read(&observations_path).unwrap()).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert!(rows[0].prediction_fingerprint.is_some());
+
+        super::run_line_matchup_validate(
+            observations_path,
+            "2026-10-11T05:00:00Z".to_owned(),
+            Some(validation_path.clone()),
+        )
+        .unwrap();
+        let validation: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(validation_path).unwrap()).unwrap();
+        assert_eq!(validation["games"], 1);
+    }
+
+    #[test]
+    fn line_matchup_observe_rejects_mismatched_prediction_and_early_outcome() {
+        let dir = tempdir().unwrap();
+        let (forecast, predictions, outcomes) =
+            write_matchup_observation_inputs(dir.path(), "BOS", "2026-10-11T04:00:00Z");
+        let error = super::run_line_matchup_observe(
+            vec![forecast],
+            predictions,
+            vec![outcomes],
+            "2026-10-11T05:00:00Z".to_owned(),
+            Some(dir.path().join("mismatch.json")),
+        )
+        .unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("does not exactly cite frozen matchup game"));
+
+        let (forecast, predictions, outcomes) =
+            write_matchup_observation_inputs(dir.path(), "NYR", "2026-10-10T16:00:00Z");
+        let error = super::run_line_matchup_observe(
+            vec![forecast],
+            predictions,
+            vec![outcomes],
+            "2026-10-11T05:00:00Z".to_owned(),
+            Some(dir.path().join("early.json")),
+        )
+        .unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("does not postdate the frozen forecast"));
+    }
 
     #[test]
     fn league_camp_candidate_overlay_is_sourced_and_rejects_duplicates() {

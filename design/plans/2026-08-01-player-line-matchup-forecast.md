@@ -53,13 +53,15 @@ the existing game-probability model and all-32 season simulator.
      adaptation without duplicating schedule effects — Bench adapter implemented.
    - Connect selected mid-season Bench lineups to subsequent game forecasts.
 
-5. **Historical calibration — validation contract implemented**
+5. **Historical calibration — observation harvesting and validation implemented**
    - Freeze every feature before the game.
    - Run player-only, pair, pair/trio, and manager/matchup ablations.
    - Require Brier/log-loss improvement plus leave-one-season and leave-one-team
      stability before registering a challenger.
-   - Chronological five-stage metrics and stability are implemented; historical
-     observation harvesting remains.
+   - `line-matchup-observe` exactly joins sealed Matchup forecasts,
+     trainer-owned five-stage probabilities, and separately sealed official
+     outcomes without recomputing model values.
+   - The emitted chronological rows feed `line-matchup-validate` directly.
 
 6. **Product surfaces**
    - Add The Matchup card with player faces, unit scores, evidence confidence,
