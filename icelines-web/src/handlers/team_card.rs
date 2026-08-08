@@ -14,8 +14,8 @@ use icelines_core::{
 use crate::card_store::{
     default_scenario, fantasy_draft_card, fantasy_morning_card, fantasy_roster_card,
     fantasy_trade_card, forecast_history_card, forecast_movement_card, organization_window_card,
-    player_line_matchup_card, prospect_arrival_card, season_simulation_card, team_prognosis_card,
-    CardStoreError,
+    player_line_matchup_card_from_data_root, prospect_arrival_card, season_simulation_card,
+    team_prognosis_card, CardStoreError,
 };
 use crate::state::WebState;
 use crate::templates::{
@@ -37,10 +37,16 @@ pub struct FantasyRosterCardQuery {
 }
 
 pub async fn get_player_line_matchup_card_json(
+    State(state): State<WebState>,
     Path((season, game_id, team)): Path<(u32, u64, String)>,
     headers: HeaderMap,
 ) -> Response {
-    match player_line_matchup_card(season, game_id, &team) {
+    match player_line_matchup_card_from_data_root(
+        season,
+        game_id,
+        &team,
+        state.card_data_root.as_deref(),
+    ) {
         Ok(card) => {
             let fingerprint = card.fingerprint.clone();
             cached_response(axum::Json(card).into_response(), &fingerprint, &headers)
@@ -55,7 +61,12 @@ pub async fn get_player_line_matchup_card(
     Query(query): Query<FantasyRosterCardQuery>,
     headers: HeaderMap,
 ) -> Response {
-    let card = match player_line_matchup_card(season, game_id, &team) {
+    let card = match player_line_matchup_card_from_data_root(
+        season,
+        game_id,
+        &team,
+        state.card_data_root.as_deref(),
+    ) {
         Ok(card) => card,
         Err(error) => return card_error(error, true),
     };
@@ -1073,7 +1084,10 @@ fn card_error(error: CardStoreError, html: bool) -> Response {
         | CardStoreError::UnsupportedFantasyDraftTeam(_)
         | CardStoreError::UnsupportedFantasyMorningTeam(_)
         | CardStoreError::UnsupportedFantasyTradeTeam(_) => StatusCode::NOT_FOUND,
-        CardStoreError::InvalidOrganizationWindowCard(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        CardStoreError::InvalidOrganizationWindowCard(_)
+        | CardStoreError::InvalidPlayerLineMatchupPublication(_) => {
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
     };
     if html {
         (

@@ -1314,8 +1314,9 @@ impl App {
                     if let Screen::TeamCard { team, .. } = &mut self.screen {
                         if matches!(
                             team.to_ascii_uppercase().as_str(),
-                            "DEX" | "DRAFT" | "MORNING" | "TRADE" | "MATCHUP-NYR"
-                        ) {
+                            "DEX" | "DRAFT" | "MORNING" | "TRADE"
+                        ) || team.to_ascii_uppercase().starts_with("MATCHUP")
+                        {
                             self.status = "This sealed card has no team toggle".to_string();
                         } else {
                             let upper = team.to_ascii_uppercase();
@@ -1349,8 +1350,9 @@ impl App {
                     if let Screen::TeamCard { team, compare } = &mut self.screen {
                         if matches!(
                             team.to_ascii_uppercase().as_str(),
-                            "DEX" | "DRAFT" | "MORNING" | "TRADE" | "MATCHUP-NYR"
-                        ) {
+                            "DEX" | "DRAFT" | "MORNING" | "TRADE"
+                        ) || team.to_ascii_uppercase().starts_with("MATCHUP")
+                        {
                             *compare = false;
                             self.status = "Fantasy card comparison is not available".to_string();
                         } else {

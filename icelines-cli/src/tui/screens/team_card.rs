@@ -5,6 +5,8 @@
 
 use std::{collections::BTreeMap, sync::OnceLock};
 
+#[cfg(test)]
+use chrono::TimeZone;
 use chrono::{DateTime, Utc};
 use icelines_core::{
     build_prospect_arrival_card, load_organization_window_profile_inventory, parse_card_document,
@@ -16,6 +18,7 @@ use icelines_core::{
     ProspectAuthorityProgressView, ProspectCensusAuthorityGapState,
     ProspectCensusReadinessBoardView, Season, ViewContext, ViewWindow, CANONICAL_TEAMS,
 };
+use icelines_fetch::{CardPublicationStore, CardPublicationStoreError};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -359,8 +362,61 @@ pub fn render(f: &mut Frame, app: &App, area: Rect, team: &str, compare: bool) {
         render_document(f, panes[0], card(left), page);
         render_document(f, panes[1], card(right), page);
     } else {
-        render_document(f, area, card(team), page);
+        match published_matchup_card(team, None) {
+            Ok(Some(document)) => render_document(f, area, &document, page),
+            Ok(None) => render_document(f, area, card(team), page),
+            Err(error) => render_card_error(f, area, &error),
+        }
     }
+}
+
+fn published_matchup_card(
+    token: &str,
+    data_root: Option<&std::path::Path>,
+) -> Result<Option<CardDocumentView>, String> {
+    let upper = token.to_ascii_uppercase();
+    let (season, game_id, team, explicit) = if upper == "MATCHUP-NYR" {
+        (20262027, 2026020001, "NYR".to_owned(), false)
+    } else if let Some(value) = upper.strip_prefix("MATCHUP:") {
+        let parts = value.split(':').collect::<Vec<_>>();
+        if parts.len() != 3 {
+            return Err("published Matchup key is invalid".to_owned());
+        }
+        (
+            parts[0]
+                .parse::<u32>()
+                .map_err(|_| "published Matchup season is invalid".to_owned())?,
+            parts[1]
+                .parse::<u64>()
+                .map_err(|_| "published Matchup game ID is invalid".to_owned())?,
+            parts[2].to_owned(),
+            true,
+        )
+    } else {
+        return Ok(None);
+    };
+    let data_root = data_root
+        .map(std::path::Path::to_path_buf)
+        .unwrap_or_else(CardPublicationStore::default_root);
+    match CardPublicationStore::under_data_root(data_root)
+        .load_player_line_matchup(season, game_id, &team)
+    {
+        Ok(card) => Ok(Some(card)),
+        Err(
+            CardPublicationStoreError::MissingCatalog
+            | CardPublicationStoreError::MissingEntry { .. },
+        ) if !explicit => Ok(None),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+fn render_card_error(f: &mut Frame, area: Rect, error: &str) {
+    f.render_widget(
+        Paragraph::new(format!("Matchup card unavailable\n\n{error}"))
+            .block(Block::default().title("The Matchup").borders(Borders::ALL))
+            .wrap(Wrap { trim: true }),
+        area,
+    );
 }
 
 fn organization_window_board() -> &'static OrganizationWindowBoardView {
@@ -1123,6 +1179,12 @@ mod tests {
             }
         );
         assert!(parse_command("matchup-card SEA").is_err());
+        assert_eq!(
+            parse_command("matchup-card 20262027 2026020001 NYR").unwrap(),
+            Command::TeamCard {
+                team: "MATCHUP:20262027:2026020001:NYR".to_owned()
+            }
+        );
 
         let document = card("MATCHUP-NYR");
         assert_eq!(
@@ -1135,6 +1197,26 @@ mod tests {
         assert!(matchup.contains("Game probability"));
         assert!(matchup.contains("NYR Player 2"));
         assert!(insider.contains("NYR player profile evidence"));
+    }
+
+    #[test]
+    fn l1_matchup_card_loads_the_published_catalog_without_recomputation() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut published = card("MATCHUP-NYR").clone();
+        published.title = "Published Matchup".to_owned();
+        published = published.seal().unwrap();
+        CardPublicationStore::under_data_root(temp.path())
+            .publish(
+                &published,
+                Utc.with_ymd_and_hms(2026, 10, 10, 18, 0, 0).unwrap(),
+            )
+            .unwrap();
+
+        let loaded = published_matchup_card("MATCHUP:20262027:2026020001:NYR", Some(temp.path()))
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(loaded, published);
     }
 
     #[tokio::test]

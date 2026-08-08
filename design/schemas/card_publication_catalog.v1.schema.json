@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/card_publication_catalog.v1.schema.json",
+  "title": "IceLines sealed card publication catalog",
+  "type": "object",
+  "required": ["schema", "updated_at", "entries", "fingerprint"],
+  "properties": {
+    "schema": { "const": "card_publication_catalog.v1" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["key", "document_id", "fingerprint", "published_at"],
+        "properties": {
+          "key": {
+            "type": "object",
+            "required": ["card_kind", "season", "game_id", "focus_team"],
+            "properties": {
+              "card_kind": { "const": "player_line_matchup" },
+              "season": { "type": "integer", "minimum": 20000000 },
+              "game_id": { "type": "integer", "minimum": 1 },
+              "focus_team": { "type": "string", "pattern": "^[A-Z]{3}$" }
+            },
+            "additionalProperties": false
+          },
+          "document_id": { "type": "string", "minLength": 1 },
+          "fingerprint": { "$ref": "#/$defs/fingerprint" },
+          "published_at": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
