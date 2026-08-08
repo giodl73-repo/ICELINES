@@ -317,11 +317,15 @@ pub use view_model::player_line_matchup::{
     PLAYER_LINE_MATCHUP_FORECAST_SCHEMA, PLAYER_LINE_MATCHUP_SCENARIO_COMPARISON_SCHEMA,
 };
 pub use view_model::player_line_matchup_validation::{
-    build_player_line_matchup_validation, validate_player_line_matchup_validation,
+    build_player_line_matchup_ablation_observations, build_player_line_matchup_validation,
+    seal_player_line_matchup_ablation_prediction, validate_player_line_matchup_validation,
     PlayerLineMatchupAblationMetric, PlayerLineMatchupAblationObservation,
-    PlayerLineMatchupAblationProbabilities, PlayerLineMatchupStabilityRow,
+    PlayerLineMatchupAblationPredictionInput, PlayerLineMatchupAblationProbabilities,
+    PlayerLineMatchupObservationError, PlayerLineMatchupStabilityRow,
     PlayerLineMatchupValidationView, PLAYER_LINE_MATCHUP_ABLATION_OBSERVATION_SCHEMA,
-    PLAYER_LINE_MATCHUP_VALIDATION_JSON_SCHEMA, PLAYER_LINE_MATCHUP_VALIDATION_SCHEMA,
+    PLAYER_LINE_MATCHUP_ABLATION_PREDICTION_JSON_SCHEMA,
+    PLAYER_LINE_MATCHUP_ABLATION_PREDICTION_SCHEMA, PLAYER_LINE_MATCHUP_VALIDATION_JSON_SCHEMA,
+    PLAYER_LINE_MATCHUP_VALIDATION_SCHEMA,
 };
 pub use view_model::prospect_arrival_board::{
     build_prospect_arrival_board, ProspectArrivalBoardError, ProspectArrivalBoardTeamView,

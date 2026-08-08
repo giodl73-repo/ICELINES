@@ -1,15 +1,23 @@
 //! Chronological ablation evaluation for player/line matchup forecasts.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use thiserror::Error;
 
-use crate::CANONICAL_TEAMS;
+use crate::{
+    validate_player_line_matchup_forecast, PlayerLineMatchupForecastView,
+    TeamGamePredictionOutcomeInput, CANONICAL_TEAMS,
+};
 
 pub const PLAYER_LINE_MATCHUP_ABLATION_OBSERVATION_SCHEMA: &str =
     "player_line_matchup_ablation_observation.v1";
+pub const PLAYER_LINE_MATCHUP_ABLATION_PREDICTION_SCHEMA: &str =
+    "player_line_matchup_ablation_prediction.v1";
+pub const PLAYER_LINE_MATCHUP_ABLATION_PREDICTION_JSON_SCHEMA: &str =
+    include_str!("../../../design/schemas/player_line_matchup_ablation_prediction.v1.schema.json");
 pub const PLAYER_LINE_MATCHUP_VALIDATION_SCHEMA: &str = "player_line_matchup_validation.v1";
 pub const PLAYER_LINE_MATCHUP_VALIDATION_JSON_SCHEMA: &str =
     include_str!("../../../design/schemas/player_line_matchup_validation.v1.schema.json");
@@ -35,7 +43,53 @@ pub struct PlayerLineMatchupAblationObservation {
     pub home_win: bool,
     pub probabilities: PlayerLineMatchupAblationProbabilities,
     pub forecast_fingerprint: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prediction_fingerprint: Option<String>,
     pub outcome_fingerprint: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlayerLineMatchupAblationPredictionInput {
+    pub schema: String,
+    pub game_id: u64,
+    pub season: u32,
+    pub away_team: String,
+    pub home_team: String,
+    pub forecast_at: DateTime<Utc>,
+    pub probabilities: PlayerLineMatchupAblationProbabilities,
+    pub forecast_fingerprint: String,
+    pub source_fingerprint: String,
+    pub fingerprint: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+pub enum PlayerLineMatchupObservationError {
+    #[error("matchup observation harvesting requires frozen forecasts")]
+    MissingForecasts,
+    #[error("invalid frozen matchup forecast for game {game_id}: {message}")]
+    InvalidForecast { game_id: u64, message: String },
+    #[error("duplicate frozen matchup forecast for season {season} game {game_id}")]
+    DuplicateForecast { season: u32, game_id: u64 },
+    #[error("invalid ablation prediction for game {game_id}: {message}")]
+    InvalidPrediction { game_id: u64, message: String },
+    #[error("duplicate ablation prediction for season {season} game {game_id}")]
+    DuplicatePrediction { season: u32, game_id: u64 },
+    #[error("invalid official outcome for game {game_id}: {message}")]
+    InvalidOutcome { game_id: u64, message: String },
+    #[error("duplicate official outcome for season {season} game {game_id}")]
+    DuplicateOutcome { season: u32, game_id: u64 },
+    #[error("frozen matchup game {game_id} has no ablation prediction")]
+    MissingPrediction { game_id: u64 },
+    #[error("frozen matchup game {game_id} has no official outcome")]
+    MissingOutcome { game_id: u64 },
+    #[error("ablation prediction does not exactly cite frozen matchup game {game_id}")]
+    PredictionMismatch { game_id: u64 },
+    #[error("official outcome for game {game_id} does not postdate the frozen forecast")]
+    OutcomeBeforeForecast { game_id: u64 },
+    #[error("ablation prediction input contains games absent from the frozen forecasts")]
+    UnmatchedPredictions,
+    #[error("official outcome input contains games absent from the frozen forecasts")]
+    UnmatchedOutcomes,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -70,6 +124,145 @@ pub struct PlayerLineMatchupValidationView {
     pub fingerprint: String,
 }
 
+pub fn build_player_line_matchup_ablation_observations(
+    forecasts: &[PlayerLineMatchupForecastView],
+    predictions: &[PlayerLineMatchupAblationPredictionInput],
+    outcomes: &[TeamGamePredictionOutcomeInput],
+    created_at: DateTime<Utc>,
+) -> Result<Vec<PlayerLineMatchupAblationObservation>, PlayerLineMatchupObservationError> {
+    if forecasts.is_empty() {
+        return Err(PlayerLineMatchupObservationError::MissingForecasts);
+    }
+    let mut prediction_by_key = BTreeMap::new();
+    for prediction in predictions {
+        let sealed_prediction = prediction_fingerprint(prediction).map_err(|message| {
+            PlayerLineMatchupObservationError::InvalidPrediction {
+                game_id: prediction.game_id,
+                message,
+            }
+        })?;
+        if prediction.schema != PLAYER_LINE_MATCHUP_ABLATION_PREDICTION_SCHEMA
+            || prediction.game_id == 0
+            || prediction.season < 20_000_000
+            || prediction.away_team == prediction.home_team
+            || !canonical_team(&prediction.away_team)
+            || !canonical_team(&prediction.home_team)
+            || prediction.forecast_at > created_at
+            || probabilities_from_values(prediction.probabilities)
+                .iter()
+                .any(|probability| !valid_probability(*probability))
+            || !valid_fingerprint(&prediction.forecast_fingerprint)
+            || !valid_fingerprint(&prediction.source_fingerprint)
+            || prediction.fingerprint != sealed_prediction
+        {
+            return Err(PlayerLineMatchupObservationError::InvalidPrediction {
+                game_id: prediction.game_id,
+                message: "prediction identity, time, probabilities, or provenance is invalid"
+                    .to_owned(),
+            });
+        }
+        let key = (prediction.season, prediction.game_id);
+        if prediction_by_key.insert(key, prediction).is_some() {
+            return Err(PlayerLineMatchupObservationError::DuplicatePrediction {
+                season: prediction.season,
+                game_id: prediction.game_id,
+            });
+        }
+    }
+    let mut outcome_by_key = BTreeMap::new();
+    for outcome in outcomes {
+        if outcome.game_id == 0
+            || outcome.season < 20_000_000
+            || outcome.outcome_recorded_at > created_at
+            || !valid_fingerprint(&outcome.source_fingerprint)
+        {
+            return Err(PlayerLineMatchupObservationError::InvalidOutcome {
+                game_id: outcome.game_id,
+                message: "outcome identity, time, or provenance is invalid".to_owned(),
+            });
+        }
+        let key = (outcome.season, outcome.game_id);
+        if outcome_by_key.insert(key, outcome).is_some() {
+            return Err(PlayerLineMatchupObservationError::DuplicateOutcome {
+                season: outcome.season,
+                game_id: outcome.game_id,
+            });
+        }
+    }
+    let mut forecast_keys = BTreeSet::new();
+    let mut observations = Vec::with_capacity(forecasts.len());
+    for forecast in forecasts {
+        validate_player_line_matchup_forecast(forecast).map_err(|message| {
+            PlayerLineMatchupObservationError::InvalidForecast {
+                game_id: forecast.game_id,
+                message,
+            }
+        })?;
+        let key = (forecast.season, forecast.game_id);
+        if !forecast_keys.insert(key) {
+            return Err(PlayerLineMatchupObservationError::DuplicateForecast {
+                season: forecast.season,
+                game_id: forecast.game_id,
+            });
+        }
+        let prediction = prediction_by_key.get(&key).ok_or(
+            PlayerLineMatchupObservationError::MissingPrediction {
+                game_id: forecast.game_id,
+            },
+        )?;
+        if prediction.away_team != forecast.away.team
+            || prediction.home_team != forecast.home.team
+            || prediction.forecast_at != forecast.forecast_at
+            || prediction.forecast_fingerprint != forecast.fingerprint
+        {
+            return Err(PlayerLineMatchupObservationError::PredictionMismatch {
+                game_id: forecast.game_id,
+            });
+        }
+        let outcome =
+            outcome_by_key
+                .get(&key)
+                .ok_or(PlayerLineMatchupObservationError::MissingOutcome {
+                    game_id: forecast.game_id,
+                })?;
+        if outcome.outcome_recorded_at <= forecast.forecast_at {
+            return Err(PlayerLineMatchupObservationError::OutcomeBeforeForecast {
+                game_id: forecast.game_id,
+            });
+        }
+        observations.push(PlayerLineMatchupAblationObservation {
+            schema: PLAYER_LINE_MATCHUP_ABLATION_OBSERVATION_SCHEMA.to_owned(),
+            game_id: forecast.game_id,
+            season: forecast.season,
+            away_team: forecast.away.team.clone(),
+            home_team: forecast.home.team.clone(),
+            forecast_at: forecast.forecast_at,
+            outcome_at: outcome.outcome_recorded_at,
+            home_win: outcome.home_won,
+            probabilities: prediction.probabilities,
+            forecast_fingerprint: forecast.fingerprint.clone(),
+            prediction_fingerprint: Some(prediction.fingerprint.clone()),
+            outcome_fingerprint: outcome.source_fingerprint.clone(),
+        });
+    }
+    if forecast_keys.len() != prediction_by_key.len() {
+        return Err(PlayerLineMatchupObservationError::UnmatchedPredictions);
+    }
+    if forecast_keys.len() != outcome_by_key.len() {
+        return Err(PlayerLineMatchupObservationError::UnmatchedOutcomes);
+    }
+    observations.sort_by_key(|row| (row.season, row.game_id));
+    Ok(observations)
+}
+
+pub fn seal_player_line_matchup_ablation_prediction(
+    mut prediction: PlayerLineMatchupAblationPredictionInput,
+) -> Result<PlayerLineMatchupAblationPredictionInput, String> {
+    prediction.fingerprint.clear();
+    prediction.fingerprint = prediction_fingerprint(&prediction)?;
+    Ok(prediction)
+}
+
 pub fn build_player_line_matchup_validation(
     observations: Vec<PlayerLineMatchupAblationObservation>,
     created_at: DateTime<Utc>,
@@ -93,6 +286,10 @@ pub fn build_player_line_matchup_validation(
                 .iter()
                 .any(|probability| !valid_probability(*probability))
             || !valid_fingerprint(&row.forecast_fingerprint)
+            || row
+                .prediction_fingerprint
+                .as_deref()
+                .is_some_and(|value| !valid_fingerprint(value))
             || !valid_fingerprint(&row.outcome_fingerprint)
         {
             return Err(
@@ -101,6 +298,9 @@ pub fn build_player_line_matchup_validation(
             );
         }
         sources.insert(row.forecast_fingerprint.clone());
+        if let Some(fingerprint) = &row.prediction_fingerprint {
+            sources.insert(fingerprint.clone());
+        }
         sources.insert(row.outcome_fingerprint.clone());
     }
     let stages = [
@@ -234,12 +434,16 @@ pub fn validate_player_line_matchup_validation(
 }
 
 fn probabilities(row: &PlayerLineMatchupAblationObservation) -> [f64; 5] {
+    probabilities_from_values(row.probabilities)
+}
+
+fn probabilities_from_values(probabilities: PlayerLineMatchupAblationProbabilities) -> [f64; 5] {
     [
-        row.probabilities.team_strength_only,
-        row.probabilities.player_profiles,
-        row.probabilities.profiles_plus_pairs,
-        row.probabilities.profiles_plus_pairs_trios,
-        row.probabilities.full_matchup_manager,
+        probabilities.team_strength_only,
+        probabilities.player_profiles,
+        probabilities.profiles_plus_pairs,
+        probabilities.profiles_plus_pairs_trios,
+        probabilities.full_matchup_manager,
     ]
 }
 
@@ -291,6 +495,15 @@ fn valid_fingerprint(value: &str) -> bool {
         && value[7..].bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
+fn prediction_fingerprint(
+    prediction: &PlayerLineMatchupAblationPredictionInput,
+) -> Result<String, String> {
+    let mut canonical = prediction.clone();
+    canonical.fingerprint.clear();
+    let bytes = serde_json::to_vec(&canonical).map_err(|error| error.to_string())?;
+    Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
+}
+
 fn fingerprint(value: &PlayerLineMatchupValidationView) -> Result<String, String> {
     let mut material = serde_json::to_value(value).map_err(|error| error.to_string())?;
     if let Some(object) = material.as_object_mut() {
@@ -336,8 +549,141 @@ mod tests {
                 full_matchup_manager: good,
             },
             forecast_fingerprint: seal('a'),
+            prediction_fingerprint: None,
             outcome_fingerprint: seal('b'),
         }
+    }
+
+    fn forecast() -> PlayerLineMatchupForecastView {
+        serde_json::from_str(include_str!(
+            "../../../examples/player-line-matchup-forecast-nyr-vs-sea-2026-27.json"
+        ))
+        .unwrap()
+    }
+
+    fn prediction(
+        forecast: &PlayerLineMatchupForecastView,
+    ) -> PlayerLineMatchupAblationPredictionInput {
+        seal_player_line_matchup_ablation_prediction(PlayerLineMatchupAblationPredictionInput {
+            schema: PLAYER_LINE_MATCHUP_ABLATION_PREDICTION_SCHEMA.to_owned(),
+            game_id: forecast.game_id,
+            season: forecast.season,
+            away_team: forecast.away.team.clone(),
+            home_team: forecast.home.team.clone(),
+            forecast_at: forecast.forecast_at,
+            probabilities: PlayerLineMatchupAblationProbabilities {
+                team_strength_only: 0.5,
+                player_profiles: 0.54,
+                profiles_plus_pairs: 0.56,
+                profiles_plus_pairs_trios: 0.58,
+                full_matchup_manager: 0.6,
+            },
+            forecast_fingerprint: forecast.fingerprint.clone(),
+            source_fingerprint: seal('c'),
+            fingerprint: String::new(),
+        })
+        .unwrap()
+    }
+
+    fn outcome(forecast: &PlayerLineMatchupForecastView) -> TeamGamePredictionOutcomeInput {
+        TeamGamePredictionOutcomeInput {
+            season: forecast.season,
+            game_id: forecast.game_id,
+            outcome_recorded_at: forecast.forecast_at + chrono::Duration::hours(6),
+            home_won: true,
+            source_fingerprint: seal('d'),
+        }
+    }
+
+    #[test]
+    fn sealed_inputs_harvest_one_chronological_observation() {
+        let forecast = forecast();
+        let prediction = prediction(&forecast);
+        let outcome = outcome(&forecast);
+        let rows = build_player_line_matchup_ablation_observations(
+            std::slice::from_ref(&forecast),
+            std::slice::from_ref(&prediction),
+            std::slice::from_ref(&outcome),
+            outcome.outcome_recorded_at,
+        )
+        .unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].forecast_fingerprint, forecast.fingerprint);
+        assert_eq!(
+            rows[0].prediction_fingerprint.as_deref(),
+            Some(prediction.fingerprint.as_str())
+        );
+        assert_eq!(rows[0].outcome_fingerprint, outcome.source_fingerprint);
+        let report =
+            build_player_line_matchup_validation(rows, outcome.outcome_recorded_at).unwrap();
+        assert_eq!(report.source_fingerprints.len(), 3);
+    }
+
+    #[test]
+    fn legacy_observation_without_prediction_fingerprint_remains_readable() {
+        let mut value = serde_json::to_value(observation(1, true)).unwrap();
+        value
+            .as_object_mut()
+            .unwrap()
+            .remove("prediction_fingerprint");
+
+        let row: PlayerLineMatchupAblationObservation = serde_json::from_value(value).unwrap();
+
+        assert_eq!(row.prediction_fingerprint, None);
+    }
+
+    #[test]
+    fn mutated_prediction_probabilities_fail_the_prediction_seal() {
+        let forecast = forecast();
+        let mut prediction = prediction(&forecast);
+        prediction.probabilities.full_matchup_manager = 0.99;
+        let outcome = outcome(&forecast);
+
+        assert!(matches!(
+            build_player_line_matchup_ablation_observations(
+                std::slice::from_ref(&forecast),
+                std::slice::from_ref(&prediction),
+                std::slice::from_ref(&outcome),
+                outcome.outcome_recorded_at,
+            ),
+            Err(PlayerLineMatchupObservationError::InvalidPrediction { .. })
+        ));
+    }
+
+    #[test]
+    fn mismatched_prediction_identity_and_early_outcome_fail_explicitly() {
+        let forecast = forecast();
+        let mut mismatched_prediction = prediction(&forecast);
+        mismatched_prediction.home_team = "BOS".to_owned();
+        let mismatched_prediction =
+            seal_player_line_matchup_ablation_prediction(mismatched_prediction).unwrap();
+        let official_outcome = outcome(&forecast);
+        assert_eq!(
+            build_player_line_matchup_ablation_observations(
+                std::slice::from_ref(&forecast),
+                std::slice::from_ref(&mismatched_prediction),
+                std::slice::from_ref(&official_outcome),
+                official_outcome.outcome_recorded_at,
+            ),
+            Err(PlayerLineMatchupObservationError::PredictionMismatch {
+                game_id: forecast.game_id
+            })
+        );
+
+        let prediction = prediction(&forecast);
+        let mut outcome = outcome(&forecast);
+        outcome.outcome_recorded_at = forecast.forecast_at;
+        assert_eq!(
+            build_player_line_matchup_ablation_observations(
+                std::slice::from_ref(&forecast),
+                std::slice::from_ref(&prediction),
+                std::slice::from_ref(&outcome),
+                forecast.forecast_at,
+            ),
+            Err(PlayerLineMatchupObservationError::OutcomeBeforeForecast {
+                game_id: forecast.game_id
+            })
+        );
     }
 
     #[test]

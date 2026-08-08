@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://icelines.app/schemas/player_line_matchup_ablation_prediction.v1.schema.json",
+  "title": "IceLines player-line matchup ablation prediction",
+  "type": "object",
+  "required": [
+    "schema",
+    "game_id",
+    "season",
+    "away_team",
+    "home_team",
+    "forecast_at",
+    "probabilities",
+    "forecast_fingerprint",
+    "source_fingerprint",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema": { "const": "player_line_matchup_ablation_prediction.v1" },
+    "game_id": { "type": "integer", "minimum": 1 },
+    "season": { "type": "integer", "minimum": 20000000 },
+    "away_team": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "home_team": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "forecast_at": { "type": "string", "format": "date-time" },
+    "probabilities": {
+      "type": "object",
+      "required": [
+        "team_strength_only",
+        "player_profiles",
+        "profiles_plus_pairs",
+        "profiles_plus_pairs_trios",
+        "full_matchup_manager"
+      ],
+      "properties": {
+        "team_strength_only": { "type": "number", "minimum": 0, "maximum": 1 },
+        "player_profiles": { "type": "number", "minimum": 0, "maximum": 1 },
+        "profiles_plus_pairs": { "type": "number", "minimum": 0, "maximum": 1 },
+        "profiles_plus_pairs_trios": { "type": "number", "minimum": 0, "maximum": 1 },
+        "full_matchup_manager": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "forecast_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "source_fingerprint": { "$ref": "#/$defs/fingerprint" },
+    "fingerprint": { "$ref": "#/$defs/fingerprint" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-fA-F]{64}$"
+    }
+  }
+}

@@ -2355,6 +2355,24 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Join frozen Matchup forecasts and ablation predictions to official outcomes.
+    #[command(name = "line-matchup-observe")]
+    LineMatchupObserve {
+        /// Repeat for each sealed `player_line_matchup_forecast.v1` document.
+        #[arg(long = "forecast", required = true, value_name = "PATH")]
+        forecasts: Vec<PathBuf>,
+        /// JSON array of trainer-owned `player_line_matchup_ablation_prediction.v1` rows.
+        #[arg(long, value_name = "PATH")]
+        predictions: PathBuf,
+        /// Repeat for each sealed official outcome set (or raw outcome array).
+        #[arg(long = "outcomes", required = true, value_name = "PATH")]
+        outcomes: Vec<PathBuf>,
+        /// RFC 3339 time at which the observation rows are harvested.
+        #[arg(long)]
+        created_at: String,
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Evaluate frozen player/profile/chemistry/manager forecast ablations.
     #[command(name = "line-matchup-validate")]
     LineMatchupValidate {
