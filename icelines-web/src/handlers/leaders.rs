@@ -14,7 +14,25 @@ use icelines_core::{
     SourceKind, SourceState, StatKey, TeamAbbr, ValuePrecision, ViewContext, ViewWarning,
     ViewWindow, WarningKind,
 };
-use serde::Deserialize;
+use serde::{de::Error as _, Deserialize, Deserializer};
+use std::{fmt::Display, str::FromStr};
+
+/// HTML number inputs submit an empty string when left blank. Treat that as
+/// an absent optional value instead of rejecting the entire query string.
+fn deserialize_optional_number<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: FromStr,
+    T::Err: Display,
+{
+    let value = String::deserialize(deserializer)?;
+    let value = value.trim();
+    if value.is_empty() {
+        Ok(None)
+    } else {
+        value.parse().map(Some).map_err(D::Error::custom)
+    }
+}
 
 /// Query params accepted by `/leaders`. King.2.2 added
 /// `sort`/`pos`/`top`; King.2.3 adds `filter` (repeatable).
@@ -42,21 +60,53 @@ pub struct LeadersQuery {
     // The dashes-vs-underscores split on `?age-min=` happens
     // because serde_urlencoded normalizes `-` → `_` for field
     // matching when we use serde(rename) below.
-    #[serde(default, rename = "age-min")]
+    #[serde(
+        default,
+        rename = "age-min",
+        deserialize_with = "deserialize_optional_number"
+    )]
     pub age_min: Option<u32>,
-    #[serde(default, rename = "age-max")]
+    #[serde(
+        default,
+        rename = "age-max",
+        deserialize_with = "deserialize_optional_number"
+    )]
     pub age_max: Option<u32>,
-    #[serde(default, rename = "draft-min")]
+    #[serde(
+        default,
+        rename = "draft-min",
+        deserialize_with = "deserialize_optional_number"
+    )]
     pub draft_year_min: Option<u16>,
-    #[serde(default, rename = "draft-max")]
+    #[serde(
+        default,
+        rename = "draft-max",
+        deserialize_with = "deserialize_optional_number"
+    )]
     pub draft_year_max: Option<u16>,
-    #[serde(default, rename = "height-min")]
+    #[serde(
+        default,
+        rename = "height-min",
+        deserialize_with = "deserialize_optional_number"
+    )]
     pub height_min: Option<u32>, // inches
-    #[serde(default, rename = "height-max")]
+    #[serde(
+        default,
+        rename = "height-max",
+        deserialize_with = "deserialize_optional_number"
+    )]
     pub height_max: Option<u32>,
-    #[serde(default, rename = "weight-min")]
+    #[serde(
+        default,
+        rename = "weight-min",
+        deserialize_with = "deserialize_optional_number"
+    )]
     pub weight_min: Option<u32>, // pounds
-    #[serde(default, rename = "weight-max")]
+    #[serde(
+        default,
+        rename = "weight-max",
+        deserialize_with = "deserialize_optional_number"
+    )]
     pub weight_max: Option<u32>,
     /// Three-letter ISO country code, e.g. "CAN", "USA", "SWE".
     /// Case-insensitive. Matched against bio.birth_country.
