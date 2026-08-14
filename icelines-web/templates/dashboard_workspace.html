@@ -120,8 +120,22 @@
                         </span>
                     </label>
                     <label class="compact-label">Country
-                        <input type="text" name="country" placeholder="CAN" maxlength="3" value="{{ leaders_surface.bio_country }}"
-                               class="short-code-input">
+                        <select name="country" class="compact-select" aria-label="Country filter">
+                            <option value="" {% if leaders_surface.bio_country == "" %}selected{% endif %}>Any country</option>
+                            <option value="CAN" {% if leaders_surface.bio_country == "CAN" %}selected{% endif %}>Canada</option>
+                            <option value="USA" {% if leaders_surface.bio_country == "USA" %}selected{% endif %}>United States</option>
+                            <option value="RUS" {% if leaders_surface.bio_country == "RUS" %}selected{% endif %}>Russia</option>
+                            <option value="SWE" {% if leaders_surface.bio_country == "SWE" %}selected{% endif %}>Sweden</option>
+                            <option value="FIN" {% if leaders_surface.bio_country == "FIN" %}selected{% endif %}>Finland</option>
+                            <option value="CZE" {% if leaders_surface.bio_country == "CZE" %}selected{% endif %}>Czechia</option>
+                            <option value="SVK" {% if leaders_surface.bio_country == "SVK" %}selected{% endif %}>Slovakia</option>
+                            <option value="CHE" {% if leaders_surface.bio_country == "CHE" %}selected{% endif %}>Switzerland</option>
+                            <option value="DEU" {% if leaders_surface.bio_country == "DEU" %}selected{% endif %}>Germany</option>
+                            <option value="DNK" {% if leaders_surface.bio_country == "DNK" %}selected{% endif %}>Denmark</option>
+                            <option value="LVA" {% if leaders_surface.bio_country == "LVA" %}selected{% endif %}>Latvia</option>
+                            <option value="NOR" {% if leaders_surface.bio_country == "NOR" %}selected{% endif %}>Norway</option>
+                            <option value="AUT" {% if leaders_surface.bio_country == "AUT" %}selected{% endif %}>Austria</option>
+                        </select>
                     </label>
                     <label class="compact-label">Shoots
                         <select name="shoots" class="compact-select">
