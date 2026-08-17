@@ -3362,9 +3362,6 @@ snapshot values stay absent rather than zero.
 # tonight + schedule accept --date YYYY-MM-DD (verified ≥2014)
 icelines tonight --date 2014-10-08
 icelines schedule --date 2014-10-08
-
-# Deprecated alias (will be removed in v0.15)
-icelines schedule --start 2014-10-08
 ```
 
 ### Windowed filter atoms

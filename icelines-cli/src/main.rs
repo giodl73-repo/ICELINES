@@ -624,12 +624,8 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             json,
             csv,
             date,
-            start,
         } => {
-            // Phase Foster.1 — `--start` is a deprecated alias for `--date`.
-            // CLI flag explicit > deprecated alias > today.
-            let resolved_date = date.or(start);
-            commands::tonight::run_schedule(team, days, json, csv, resolved_date).await?;
+            commands::tonight::run_schedule(team, days, json, csv, date).await?;
         }
         Commands::Playoffs {
             season,

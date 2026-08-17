@@ -31,6 +31,11 @@ without a maintainer tour:
 [ROLES](https://github.com/giodl73-repo/ROLES), the `.roles` convention for
 repository-local review panels.
 
+**Maintenance owner:** Gio (`giodl73-repo`). The hidden
+`schedule --start` compatibility alias was scheduled for removal in v0.15 and
+is removed in v0.26; `schedule --date` remains the supported contract. The
+active `tui --start` and fantasy playoff `--start` surfaces are unaffected.
+
 **Specification baseline:** `docs/vtrace/` is the governing project baseline for
 mission, requirements, design, interfaces, verification, validation, work
 packages, and change control. The older root and design docs are supporting

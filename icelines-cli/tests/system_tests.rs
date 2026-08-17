@@ -5523,9 +5523,7 @@ fn l2_foster1_tonight_invalid_date_clean_error() {
 }
 
 /// L2 / l2_foster1_schedule_accepts_date_flag
-/// — `--date` parses cleanly even with the deprecated `--start`
-///   alias also present. Smoke confirms clap accepts the new flag
-///   without erroring on the old one being hidden.
+/// — `--date` parses cleanly and invalid values return a useful error.
 #[test]
 fn l2_foster1_schedule_invalid_date_clean_error() {
     let out = run(&["schedule", "--date", "2026-13-01"]);
@@ -5542,6 +5540,17 @@ fn l2_foster1_schedule_invalid_date_clean_error() {
     assert!(
         stderr.contains("invalid date"),
         "error must mention 'invalid date', stderr: {stderr}"
+    );
+}
+
+#[test]
+fn l2_schedule_rejects_removed_start_alias() {
+    let out = run(&["schedule", "--start", "2014-10-08"]);
+    assert!(!out.status.success(), "removed alias must fail");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("unexpected argument '--start'"),
+        "stderr: {stderr}"
     );
 }
 
@@ -5991,27 +6000,4 @@ fn l2_foster2_favorites_json_envelope_shape() {
     assert!(parsed["data"]["teams"].is_array());
     assert!(parsed["data"]["events"].is_array());
     assert_eq!(parsed["meta"]["counts"]["players"], 0);
-}
-
-/// L2 / l2_foster1_schedule_deprecated_start_alias_still_accepted
-/// — `--start YYYY-MM-DD` is the deprecated alias for `--date`.
-///   Hidden from --help but must still parse so existing scripts keep
-///   working through the transition window. Garbage value still
-///   surfaces a clean parse error rather than panicking.
-#[test]
-fn l2_foster1_schedule_deprecated_start_alias_still_accepted() {
-    let out = run(&["schedule", "--start", "still-bad"]);
-    assert!(
-        !out.status.success(),
-        "alias still validates the date format"
-    );
-    let stderr = String::from_utf8_lossy(&out.stderr);
-    assert!(
-        !stderr.contains("panicked"),
-        "must not panic, stderr: {stderr}"
-    );
-    assert!(
-        stderr.contains("invalid date"),
-        "alias-routed error must reach the validator, stderr: {stderr}"
-    );
 }

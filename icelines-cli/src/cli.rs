@@ -485,13 +485,8 @@ Output columns (default text + CSV + JSON):
         #[arg(long)]
         csv: bool,
         /// Phase Foster.1 — anchor date (YYYY-MM-DD). Defaults to today.
-        /// Replaces the older `--start`; `--start` is kept as an alias
-        /// for one minor version.
         #[arg(long, value_name = "YYYY-MM-DD")]
         date: Option<String>,
-        /// Deprecated alias for `--date`. Will be removed in v0.15.
-        #[arg(long, value_name = "YYYY-MM-DD", hide = true)]
-        start: Option<String>,
     },
     /// Evaluate a trade — depth chart before/after.
     Trade {

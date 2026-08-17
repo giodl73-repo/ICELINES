@@ -190,26 +190,19 @@ fn p_w6_020_tonight_invalid_team_format_no_panic() {
     no_panic_in(h.path(), &["tonight", "--team", "ZZZZZZ"]);
 }
 
-// ── Schedule --date / --start (15) ──────────────────────────────────────────
+// ── Schedule --date (13) ────────────────────────────────────────────────────
 
 #[test]
-fn p_w6_021_schedule_help_lists_date_and_start() {
+fn p_w6_021_schedule_help_lists_date() {
     let h = fresh();
     let out = ok_in(h.path(), &["schedule", "--help"]);
     assert!(out.contains("--date"));
-    // --start is hidden but still parseable per F+1 deprecation policy
 }
 
 #[test]
 fn p_w6_022_schedule_invalid_date_errors() {
     let h = fresh();
     fail_in(h.path(), &["schedule", "--date", "no-thanks"]);
-}
-
-#[test]
-fn p_w6_023_schedule_invalid_start_alias_errors() {
-    let h = fresh();
-    fail_in(h.path(), &["schedule", "--start", "no-thanks"]);
 }
 
 #[test]
@@ -279,13 +272,6 @@ fn p_w6_033_schedule_team_lowercase_normalizes() {
 fn p_w6_034_schedule_team_unknown_no_panic() {
     let h = fresh();
     no_panic_in(h.path(), &["schedule", "--team", "QQQ"]);
-}
-
-#[test]
-fn p_w6_035_schedule_start_date_format_validated_via_alias() {
-    let h = fresh();
-    let err = fail_in(h.path(), &["schedule", "--start", "2026-13-99"]);
-    assert!(err.contains("invalid date"));
 }
 
 // ── Playoffs (15) ────────────────────────────────────────────────────────────

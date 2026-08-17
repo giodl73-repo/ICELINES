@@ -916,7 +916,6 @@ fn p_w10_069_commands_md_mentions_shifts_lock() {
 fn p_w10_070_commands_md_examples_use_correct_flag_names() {
     // Check that commands.md doesn't reference removed flags.
     let md = read_commands_md();
-    // --start was deprecated but still works, so it's fine to mention.
     // Spot-check that no removed-feature flags appear.
     assert!(!md.contains("--legacy"));
 }

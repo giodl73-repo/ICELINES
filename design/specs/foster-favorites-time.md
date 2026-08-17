@@ -53,7 +53,7 @@ time-travel is achievable without scraping or third-party sources.
 |---|---|---|---|
 | Favorites dashboard | `icelines favorites [--date D] [--week]` | New tab `f` | `/favorites?date=D&view=week` |
 | Time-travel scores | `icelines tonight --date 2014-10-08` | Scores tab `d` opens date picker | `/scores?date=2014-10-08` |
-| Time-travel schedule | `icelines schedule --start 2014-10-08` | Schedule tab `d` | `/schedule?start=2014-10-08` |
+| Time-travel schedule | `icelines schedule --date 2014-10-08` | Schedule tab `d` | `/schedule?date=2014-10-08` |
 | Timeframe selector | `--week` / `--month` flags | Top-bar selector | `?view=week|month` query |
 | Setup hook | `icelines setup` (also auto on first run) | First-run prompt overlay | n/a (server expects local data) |
 | Data manifest | `icelines data status` | Settings overlay (`R`) | `/admin/data` (local-only) |

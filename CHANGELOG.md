@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Removed the overdue hidden `schedule --start` compatibility alias, originally
+  scheduled for deletion in v0.15. Use `schedule --date`; TUI and fantasy
+  `--start` options are unchanged.
+
 - Added `prospect_authority_progress.v1` and
   `icecast prospect-authority-progress` to compare two fingerprinted closure
   boards without UI-specific logic. It validates board reconciliation and
