@@ -1,0 +1,4 @@
+interface:
+  display_name: "Animate Hockey Moment"
+  short_description: "Turn verified hockey plays into animated beats"
+  default_prompt: "Use $icelines-animate-hockey-moment to recreate this verified goal or celebration as a short REEL animation."
