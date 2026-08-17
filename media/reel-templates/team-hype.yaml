@@ -1,0 +1,60 @@
+template_version: icelines.hockey-film.v0.1
+template_id: team-hype
+reel_manifest_version: reel.manifest.v0.2
+format: team-hype-film
+purpose: Build collective anticipation around a team, game, practice, arrival, or season moment without reducing the piece to repeated player portraits.
+default_exports:
+  - { aspect_ratio: "16:9", target_duration_seconds: 60-150, sound_optional: false }
+  - { aspect_ratio: "9:16", target_duration_seconds: 30-60, sound_optional: true }
+data_requirements:
+  required: [roster, positions, current-team-context]
+  optional: [recent-scoring-events, notable-plays, schedule, venue-media, public-team-media]
+editorial_rules:
+  - Keep the stated focus group primary while rotating veterans, depth players, defense, goaltending, coaches, officials, and crowd context.
+  - Vary hockey states: arrival, dressing, warmup, faceoff, forecheck, rush, pass, shot, save, block, hit, penalty box, bench, celebration, handshake, and room.
+  - Use uniforms appropriate to the depicted game unless a flashback is explicitly marked.
+  - Prefer multi-player cause-and-effect action over isolated glamour poses.
+  - Disclose generated likeness-based frames and keep them in public hockey contexts.
+beats:
+  - id: place-awakens
+    required: true
+    narrative_function: Establish city, weather, transit, venue, empty ice, and arriving crowd.
+    target_share: 0.12
+  - id: team-prepares
+    required: true
+    narrative_function: Move through arrival, room, equipment, warmup, goalie stretch, and tunnel rituals.
+    target_share: 0.15
+  - id: puck-drop
+    required: true
+    narrative_function: Orient positions, officials, benches, cameras, scoreboard, and crowd before acceleration.
+    target_share: 0.10
+  - id: game-escalates
+    required: true
+    narrative_function: Chain faceoffs, battles, hits, blocks, penalties, saves, passes, and goals into readable mini-plays.
+    target_share: 0.40
+  - id: ensemble-release
+    required: true
+    narrative_function: Let goals and cellies rotate focus across the roster while preserving the chosen protagonists.
+    target_share: 0.13
+  - id: win-and-room
+    required: true
+    narrative_function: Complete the game with team-on-ice and locker-room celebration.
+    target_share: 0.10
+audio_blueprint:
+  chapter_rule: Compose distinct entrances, builds, breaks, and returns tied to picture events.
+  effects_rule: Preserve rink, boards, skates, crowd, whistle, horn, and room texture where sources allow.
+  avoid: [continuous-beep, wall-to-wall-pulse, accents-on-every-cut, unlicensed-team-theme]
+quality_gates:
+  - roster-balance
+  - position-and-hockey-state-variety
+  - uniform-and-venue-continuity
+  - action-causality
+  - audio-hooks-and-breaks
+  - rights-provenance-and-disclosure
+reel_handoff:
+  production_binding: required-after-conform
+  score_plan: required-when-scored
+  choreography: recommended-for-animated-plays
+  craft_plan: recommended
+  production_package_components: [production-manifest, score-plan, choreography, craft-plan, render-artifact-report, render-video, review-evidence]
+  review_gates: [roster-and-uniform-continuity, editorial, rights-provenance, accessibility]

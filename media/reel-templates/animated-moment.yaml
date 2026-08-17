@@ -1,0 +1,50 @@
+template_version: icelines.hockey-film.v0.1
+template_id: animated-moment
+reel_manifest_version: reel.manifest.v0.2
+format: animated-hockey-moment
+purpose: Reconstruct one verified public hockey event as a readable 5–15 second animation without inventing the play or implying that the reconstruction is broadcast footage.
+default_exports:
+  - { aspect_ratio: "16:9", target_duration_seconds: 5-15, sound_optional: false }
+  - { aspect_ratio: "9:16", target_duration_seconds: 5-15, sound_optional: true }
+data_requirements:
+  required: [game-identity, play-event, participants, score-state, source-video-or-observation]
+  optional: [play-by-play, shift-context, on-ice-roster, player-handedness, official-call]
+editorial_rules:
+  - Keep puck possession, pass order, attacking direction, decisive action, result, and reaction consistent with evidence.
+  - Label observations as verified, visible, inferred, or unknown; never promote inference into documentary fact.
+  - Use helmets during live play and preserve rink, bench, penalty-box, goalie, and official geometry.
+  - Prefer stepped player poses with smooth puck travel when economical; use authored cels when contact, perspective, or composition changes materially.
+  - Disclose the reconstruction and do not copy broadcast graphics or a named animation's characters, frames, or signature compositions.
+beat_recipes:
+  goal: [establish, possession, pass-or-carry, release, puck-travel, net-response, recognition, celly, bench-or-crowd]
+  celly: [recognition, first-gesture, teammate-arrival, group-shape, bench-or-crowd, release-pose]
+  save: [shot-setup, release, goalie-read, goalie-move, contact, rebound-control, whistle-or-continuation, reaction]
+  hit-or-penalty: [approach, contact, impact, loose-puck-or-player-response, whistle, official-signal, escort, box-reaction]
+  faceoff: [formation, official-ready, puck-drop, stick-battle, possession-result, breakout]
+animation_blueprint:
+  timing_fps: 24
+  sprite_preference: stable rink and camera with separately moving players, goalie, officials, and puck
+  cel_preference: material camera-angle, contact-geometry, crowd, or perspective changes
+  camera_actions: [hold, follow, whip, settle]
+  camera_rule: Bind camera phrases to the same verified action beats and test crop safety at every delivery aspect ratio.
+  pose_budget:
+    five_seconds: 8-12
+    ten_seconds: 12-24
+    fifteen_seconds: 18-30
+audio_blueprint:
+  structure: Preserve useful rink, stick, boards, whistle, horn, call, and crowd transitions; use original or licensed score only.
+  avoid: [continuous-beep, wall-to-wall-pulse, accents-on-every-pose, unlicensed-broadcast-call]
+quality_gates:
+  - event-and-participant-identity
+  - puck-and-pass-causality
+  - hockey-geometry-and-handedness
+  - animation-timing-and-camera-crop-safety
+  - reconstruction-disclosure
+  - rights-provenance-and-audio
+reel_handoff:
+  production_binding: required-after-conform
+  score_plan: optional
+  choreography: required-for-sprite-animation
+  craft_plan: recommended-for-multi-department-production
+  production_package_components: [production-manifest, choreography, craft-plan, render-artifact-report, render-video, review-evidence]
+  review_gates: [hockey-fact, animation-direction, editorial, rights-provenance, accessibility]

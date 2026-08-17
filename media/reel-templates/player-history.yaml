@@ -1,0 +1,76 @@
+template_version: icelines.hockey-film.v0.1
+template_id: player-history
+reel_manifest_version: reel.manifest.v0.2
+format: biographical-hockey-film
+purpose: Trace a player's public hockey development through earned transitions, relationships, setbacks, and present-tense possibility.
+default_exports:
+  - { aspect_ratio: "16:9", target_duration_seconds: 240-360, sound_optional: false }
+  - { aspect_ratio: "9:16", target_duration_seconds: 45-90, sound_optional: true }
+data_requirements:
+  required: [player-bio, career-history, transactions, scoring-events]
+  optional: [draft-history, awards, roster-events, public-interviews, team-media, notable-plays]
+editorial_rules:
+  - Keep public chronology accurate; mark retrospective interview clips in manifest notes when they are repositioned thematically.
+  - Prefer complete setup-payoff-celebration sequences over isolated goal frames.
+  - Show teammates, coaches, venues, travel, and changing roles so the subject exists inside hockey communities.
+  - Use generated imagery only as disclosed connective reconstruction, never as invented private access.
+  - Treat setbacks as career context, not grievance or humiliation.
+beats:
+  - id: origin
+    required: true
+    narrative_function: Establish the earliest verified team, place, and development context.
+    source_priority: [public-record, team-media, licensed-photo, disclosed-reconstruction]
+    target_share: 0.08
+  - id: obstacle
+    required: false
+    narrative_function: State one public obstacle or missed route without overstating motive or emotion.
+    source_priority: [public-record, attributed-reporting, disclosed-reconstruction]
+    target_share: 0.07
+  - id: development
+    required: true
+    narrative_function: Show practice, team play, and accumulating evidence of improvement.
+    source_priority: [game-action, public-interview, team-media, disclosed-reconstruction]
+    target_share: 0.22
+  - id: first-professional-room
+    required: true
+    narrative_function: Make the contract, assignment, or debut transition visually legible.
+    source_priority: [official-transaction, team-media, game-action]
+    target_share: 0.12
+  - id: relationships-and-recognition
+    required: false
+    narrative_function: Humanize the professional chapter through teammates, public personality, awards, and team rituals.
+    source_priority: [public-interview, team-media, game-action]
+    target_share: 0.16
+  - id: breakthrough
+    required: true
+    narrative_function: Give the defining play enough lead-in, finish, call, and celebration to land.
+    source_priority: [game-action]
+    target_share: 0.14
+  - id: longer-work
+    required: true
+    narrative_function: Show that becoming established includes role changes, ordinary games, setbacks, and continued contribution.
+    source_priority: [game-action, roster-events, public-interview, disclosed-reconstruction]
+    target_share: 0.12
+  - id: present-tense-release
+    required: true
+    narrative_function: End on a current contribution, recognition, or open next chapter rather than a completed destiny.
+    source_priority: [game-action, team-media, public-interview]
+    target_share: 0.09
+audio_blueprint:
+  chapter_rule: Change orchestration, rhythm density, and room tone at meaningful career transitions; do not merely rename one continuous loop.
+  documentary_rule: Duck music for complete calls and interview thoughts.
+  avoid: [continuous-beep, wall-to-wall-pulse, rapid-marimba-ostinato, accents-on-every-cut]
+quality_gates:
+  - chronology-and-attribution
+  - subject-readable-framing
+  - team-and-relationship-context
+  - setup-payoff-celebration-coverage
+  - chapter-audio-differentiation
+  - rights-provenance-and-disclosure
+reel_handoff:
+  production_binding: required-after-conform
+  score_plan: required-when-scored
+  choreography: optional-for-reconstructed-moments
+  craft_plan: recommended
+  production_package_components: [production-manifest, score-plan, craft-plan, render-artifact-report, render-video, review-evidence]
+  review_gates: [chronology-and-attribution, editorial, rights-provenance, accessibility]
