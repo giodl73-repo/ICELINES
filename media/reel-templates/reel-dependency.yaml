@@ -1,0 +1,17 @@
+dependency_version: icelines.reel-dependency.v0.1
+provider:
+  repository: https://github.com/giodl73-repo/REEL
+  revision: 0216bbe8f1870de49e9f30889b5e80c888fab40c
+  cli_version: 0.2.27
+contract:
+  manifest_version: reel.manifest.v0.2
+  role: pre-conform-template
+  acceptance: convert to a production manifest, then pass the pinned REEL validate and plan commands
+consumer_templates:
+  - animated-moment.yaml
+  - player-history.yaml
+  - team-hype.yaml
+boundary:
+  - ICELINES owns hockey facts, editorial rules, rights decisions, and release authority.
+  - These templates are not valid REEL production manifests before conversion.
+  - REEL internal Rust modules, personas, scores, and work assets are not dependencies.
