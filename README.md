@@ -35,6 +35,9 @@ repository-local review panels.
 `schedule --start` compatibility alias was scheduled for removal in v0.15 and
 is removed in v0.26; `schedule --date` remains the supported contract. The
 active `tui --start` and fantasy playoff `--start` surfaces are unaffected.
+IceCast season JSON written with `--out` is compact rather than pretty-printed,
+keeping full machine-readable forecasts without carrying generated formatting
+as repository source lines; JSON printed to the terminal remains readable.
 
 **Specification baseline:** `docs/vtrace/` is the governing project baseline for
 mission, requirements, design, interfaces, verification, validation, work

@@ -5640,7 +5640,12 @@ fn render_blender(view: &LineCombinationForecastView) -> String {
 pub async fn run_season(args: IceCastSeasonArgs) -> anyhow::Result<()> {
     let (view, focus, _) = build_season_view(&args).await?;
     let output = if args.json {
-        format!("{}\n", serde_json::to_string_pretty(&view)?)
+        let json = if args.out.is_some() {
+            serde_json::to_string(&view)?
+        } else {
+            serde_json::to_string_pretty(&view)?
+        };
+        format!("{json}\n")
     } else {
         render(&view, &focus, args.all_games)
     };

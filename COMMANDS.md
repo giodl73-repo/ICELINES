@@ -1203,6 +1203,10 @@ icelines icecast season-simulate --forecast enhanced-game-forecast.json --trials
 icelines icecast movement --earlier baseline-season.json --later edge-season.json --earlier-label "July baseline" --later-label "Preseason edge v1 (evaluation)" --team NYR --team SEA --json --out edge-movement.json
 ```
 
+`icecast season --json --out PATH` writes compact JSON because complete league
+forecasts are generated machine artifacts. Omitting `--out` keeps pretty JSON
+for terminal inspection.
+
 `icecast edge` applies one sealed forecast vintage (`preseason`,
 `game_morning`, or `pregame_confirmed`) to the exact
 `team_game_forecast.v1` named by the evidence package. Each source has its own

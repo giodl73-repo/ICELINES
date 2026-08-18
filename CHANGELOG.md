@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- IceCast `season --json --out` now writes compact JSON while terminal JSON
+  remains pretty-printed, removing generated indentation from retained complete
+  league forecasts without removing forecast data or evidence.
 - Removed the overdue hidden `schedule --start` compatibility alias, originally
   scheduled for deletion in v0.15. Use `schedule --date`; TUI and fantasy
   `--start` options are unchanged.

@@ -5,3 +5,6 @@ icelines-fetch/tests/fixtures/legacy_schemes/*.toml text eol=lf
 
 # Phase Lindsay L.3.0 — pre-L.3 stdout-golden fixtures (same reason).
 icelines-cli/tests/fixtures/lindsay_l3_pre/*.txt text eol=lf
+
+# Complete IceCast season forecasts are compact machine artifacts.
+examples/icecast-*-season*.json text eol=lf
