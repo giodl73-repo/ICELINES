@@ -5924,6 +5924,21 @@ fn l2_trace_events_fetch_play_by_play_invalid_date_clean_error() {
     );
 }
 
+/// L2 / l2_goal_visualizer_requires_game_id_without_network
+/// — the scoped tracking command must fail in clap before any network call
+/// when its required game identity is absent.
+#[test]
+fn l2_goal_visualizer_requires_game_id_without_network() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let out = run_isolated(home.path(), &["fetch", "goal-visualizer", "--dry-run"]);
+    assert!(!out.status.success(), "missing game id must non-zero exit");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("--game-id") && !stderr.contains("panicked"),
+        "clap must identify the missing scoped game id, stderr: {stderr}"
+    );
+}
+
 // ── Phase Foster.2 — favorites dashboard L2 ──────────────────────────────────
 
 /// L2 / l2_foster2_favorites_empty_group_renders_empty_state

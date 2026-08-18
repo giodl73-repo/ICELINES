@@ -1,0 +1,62 @@
+schema: reel.sprite-profile.v0.1
+profile: icelines-hockey-action-v1
+version: "0.1"
+domain: ice-hockey
+library: generic-athletic-figures-v1
+library_sha256: 1e4367c1b582c2fce74659bd2579179e177f6329a87e375554e73b743dfe88f4
+selector_dimensions: [role, action, phase, facing, handedness, possession]
+bindings:
+  - id: skater-skate-touch-left
+    selectors: { role: skater, action: skate-touch, phase: contact, facing: left, handedness: left, possession: controlled }
+    pose: lateral-one-foot-touch
+    mirror_x: true
+    quality: exact
+    required_anchors: [pivot, head, chest-decal, prop-contact]
+  - id: skater-carry-left
+    selectors: { role: skater, action: carry, phase: action, facing: left, handedness: left, possession: controlled }
+    pose: lateral-stick-carry
+    mirror_x: true
+    quality: exact
+    required_anchors: [pivot, head, chest-decal, prop-contact]
+  - id: skater-pass-left
+    selectors: { role: skater, action: pass, phase: release, facing: left, handedness: left, possession: controlled }
+    pose: lateral-two-hand-sweep
+    mirror_x: true
+    quality: exact
+    required_anchors: [pivot, head, chest-decal, prop-contact]
+  - id: skater-receive-left
+    selectors: { role: skater, action: receive, phase: ready, facing: left, handedness: left, possession: receiving }
+    pose: lateral-low-ready
+    mirror_x: true
+    quality: exact
+    required_anchors: [pivot, head, chest-decal, prop-contact]
+  - id: skater-shot-left
+    selectors: { role: skater, action: shot, phase: release, facing: left, handedness: left, possession: controlled }
+    pose: lateral-torso-twist-release
+    mirror_x: true
+    quality: exact
+    required_anchors: [pivot, head, chest-decal, prop-contact]
+  - id: skater-defend-right
+    selectors: { role: skater, action: defend, phase: action, facing: right, handedness: unknown, possession: contested }
+    pose: lateral-defensive-brace
+    mirror_x: false
+    quality: exact
+    required_anchors: [pivot, head, chest-decal, prop-contact]
+  - id: goalie-set-front
+    selectors: { role: goalie, action: set, phase: action, facing: front, handedness: unknown, possession: defending }
+    pose: front-wide-set
+    mirror_x: false
+    quality: exact
+    required_anchors: [pivot, head, chest-decal]
+  - id: goalie-react-front
+    selectors: { role: goalie, action: react, phase: recovery, facing: front, handedness: unknown, possession: defending }
+    pose: front-wide-recoil
+    mirror_x: false
+    quality: exact
+    required_anchors: [pivot, head, chest-decal]
+  - id: skater-celebrate-front
+    selectors: { role: skater, action: celebrate, phase: reaction, facing: front, handedness: left, possession: none }
+    pose: front-arms-raised
+    mirror_x: false
+    quality: exact
+    required_anchors: [pivot, head, chest-decal]

@@ -1118,28 +1118,58 @@ pub fn fetch_generic_http_bytes(
     cache_root: &Path,
     force: bool,
 ) -> Result<Vec<u8>> {
-    let (bytes, entry) =
-        fetch_generic_http_bytes_unindexed(fletch_id.into(), source_url.into(), cache_root, force)?;
+    fetch_generic_http_bytes_with_headers(fletch_id, source_url, BTreeMap::new(), cache_root, force)
+}
+
+/// Fetch one HTTP resource through FLETCH with source-owned request headers.
+/// Headers participate in the FLETCH cache key and lineage. This is required
+/// for public feeds such as NHL's Goal Visualizer sprites, which may reject a
+/// generic non-browser request while accepting the public NHL web context.
+pub fn fetch_generic_http_bytes_with_headers(
+    fletch_id: impl Into<String>,
+    source_url: impl Into<String>,
+    headers: BTreeMap<String, String>,
+    cache_root: &Path,
+    force: bool,
+) -> Result<Vec<u8>> {
+    let (bytes, entry) = fetch_generic_http_bytes_unindexed_with_headers_policy(
+        fletch_id.into(),
+        source_url.into(),
+        headers,
+        cache_root,
+        force,
+        30_000,
+        5,
+    )?;
     if let Some(entry) = entry {
         upsert_fletch_cache_manifest_entries(cache_root, [entry])?;
     }
     Ok(bytes)
 }
 
-fn fetch_generic_http_bytes_unindexed(
+fn fetch_generic_http_bytes_unindexed_with_policy(
     fletch_id: String,
     source_url: String,
     cache_root: &Path,
     force: bool,
+    timeout_ms: u64,
+    retry_attempts: u32,
 ) -> Result<(Vec<u8>, Option<CacheEntry>)> {
-    fetch_generic_http_bytes_unindexed_with_policy(
-        fletch_id, source_url, cache_root, force, 30_000, 5,
+    fetch_generic_http_bytes_unindexed_with_headers_policy(
+        fletch_id,
+        source_url,
+        BTreeMap::new(),
+        cache_root,
+        force,
+        timeout_ms,
+        retry_attempts,
     )
 }
 
-fn fetch_generic_http_bytes_unindexed_with_policy(
+fn fetch_generic_http_bytes_unindexed_with_headers_policy(
     fletch_id: String,
     source_url: String,
+    headers: BTreeMap<String, String>,
     cache_root: &Path,
     force: bool,
     timeout_ms: u64,
@@ -1154,6 +1184,7 @@ fn fetch_generic_http_bytes_unindexed_with_policy(
     }
     let mut plan = fetch_plan_with_kind(fletch_id.clone(), source_url, SourceKind::Http)
         .with_context(|| format!("building FLETCH fetch plan for {fletch_id}"))?;
+    plan.source.headers = headers;
     plan.cache_policy = CachePolicy {
         freshness: FreshnessPolicy::AlwaysCheck,
         allow_offline: true,
@@ -1319,6 +1350,23 @@ pub async fn fetch_generic_http_batch_with_policy_async(
     }
     fetched.sort_by(|a, b| a.0.cmp(&b.0));
     fetched
+}
+
+pub async fn fetch_generic_http_bytes_with_headers_async(
+    fletch_id: impl Into<String>,
+    source_url: impl Into<String>,
+    headers: BTreeMap<String, String>,
+    cache_root: impl Into<std::path::PathBuf>,
+    force: bool,
+) -> Result<Vec<u8>> {
+    let fletch_id = fletch_id.into();
+    let source_url = source_url.into();
+    let cache_root = cache_root.into();
+    tokio::task::spawn_blocking(move || {
+        fetch_generic_http_bytes_with_headers(fletch_id, source_url, headers, &cache_root, force)
+    })
+    .await
+    .context("joining FLETCH header-aware fetch task")?
 }
 
 pub fn stats_report_url(kind: ReportKind, season: &str, season_type: &str) -> String {

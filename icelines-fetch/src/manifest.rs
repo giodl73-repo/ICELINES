@@ -49,6 +49,7 @@ pub enum DataKind {
     Transactions,
     Boxscore,
     PlayByPlay,
+    GoalVisualizer,
     CareerHistory,
     Schedule,
     Score,
@@ -66,6 +67,7 @@ impl DataKind {
             Self::Transactions => "transactions.json",
             Self::Boxscore => "boxscores.json",
             Self::PlayByPlay => "play_by_play.json",
+            Self::GoalVisualizer => "goal_visualizer.json",
             Self::CareerHistory => "career_history.json",
             Self::Schedule => "schedule.json",
             Self::Score => "score.json",
@@ -81,6 +83,7 @@ impl DataKind {
             Self::Transactions,
             Self::Boxscore,
             Self::PlayByPlay,
+            Self::GoalVisualizer,
             Self::CareerHistory,
             Self::Schedule,
             Self::Score,
@@ -176,6 +179,15 @@ impl Shard {
             datasets,
             _extra: self.extra.read().expect("shard poisoned").clone(),
         }
+    }
+
+    fn replace_from_file(&self, file: ShardFile) {
+        let mut entries = HashMap::with_capacity(file.datasets.len());
+        for entry in file.datasets {
+            entries.insert(entry.key.clone(), entry);
+        }
+        *self.entries.write().expect("shard poisoned") = entries;
+        *self.extra.write().expect("shard poisoned") = file._extra;
     }
 }
 
@@ -290,6 +302,7 @@ impl ManifestSet {
     /// Holds the cross-process lock for the duration of the write.
     pub fn upsert(&self, kind: DataKind, entry: ManifestEntry) -> Result<(), ManifestError> {
         let _guard = self.lock()?;
+        self.reload_shard(kind)?;
         let shard = self
             .shards
             .get(&kind)
@@ -305,6 +318,7 @@ impl ManifestSet {
     /// Remove an entry, then persist the affected shard.
     pub fn remove(&self, kind: DataKind, key: &DataKey) -> Result<bool, ManifestError> {
         let _guard = self.lock()?;
+        self.reload_shard(kind)?;
         let shard = self
             .shards
             .get(&kind)
@@ -317,6 +331,23 @@ impl ManifestSet {
             self.write_shard(kind)?;
         }
         Ok(removed)
+    }
+
+    fn reload_shard(&self, kind: DataKind) -> Result<(), ManifestError> {
+        let path = self.root.join(kind.shard_filename());
+        let file = match std::fs::read(&path) {
+            Ok(bytes) => serde_json::from_slice(&bytes).map_err(|e| ManifestError::Corrupt {
+                path: path.clone(),
+                source: e,
+            })?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => ShardFile::default(),
+            Err(e) => return Err(ManifestError::Io { path, source: e }),
+        };
+        self.shards
+            .get(&kind)
+            .ok_or(ManifestError::UnknownKind(format!("{kind:?}")))?
+            .replace_from_file(file);
+        Ok(())
     }
 
     fn write_shard(&self, kind: DataKind) -> Result<(), ManifestError> {
@@ -506,5 +537,27 @@ mod tests {
         // Same key under a different kind is independent.
         assert!(m.get(DataKind::Stats, &key).is_none());
         assert!(m.get(DataKind::Bios, &key).is_some());
+    }
+
+    #[test]
+    fn l0_foster03_stale_writers_merge_under_lock() {
+        let dir = tempfile::tempdir().unwrap();
+        let first = ManifestSet::open(dir.path()).unwrap();
+        let second = ManifestSet::open(dir.path()).unwrap();
+        let first_key = DataKey::Game(GameId(2025020001));
+        let second_key = DataKey::Game(GameId(2025020002));
+
+        first
+            .upsert(DataKind::GoalVisualizer, entry_for(first_key.clone()))
+            .unwrap();
+        second
+            .upsert(DataKind::GoalVisualizer, entry_for(second_key.clone()))
+            .unwrap();
+
+        let reopened = ManifestSet::open(dir.path()).unwrap();
+        assert!(reopened.get(DataKind::GoalVisualizer, &first_key).is_some());
+        assert!(reopened
+            .get(DataKind::GoalVisualizer, &second_key)
+            .is_some());
     }
 }

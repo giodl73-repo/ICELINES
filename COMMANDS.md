@@ -3316,6 +3316,31 @@ against and fight opponents, and for Rocket Richard scoring reports built from
 goal, shot-on-goal, missed-shot, and blocked-shot events. Empty-net goals remain
 no-goalie rows; the records layer must not infer a goalie from the boxscore.
 
+### `icelines fetch goal-visualizer` — goal-level player and puck tracking
+
+```bash
+# Discover and preview Goal Visualizer coverage for one game
+icelines fetch goal-visualizer --game-id 2025021167 --dry-run
+
+# Fetch one goal's timestamped player/puck movement
+icelines fetch goal-visualizer --game-id 2025021167 --event-id 996
+
+# Intentionally refresh the verified FLETCH cache object
+icelines fetch goal-visualizer --game-id 2025021167 --event-id 996 --force
+```
+
+The command discovers `pptReplayUrl` from the official Gamecenter landing
+response and fetches the public NHL EDGE Goal Visualizer sprite payload through
+FLETCH with the NHL web headers required by that source. It is deliberately
+scoped to one game. Some goals, especially shootout attempts, have no replay
+URL; those are reported as unavailable rather than inferred.
+
+The resulting `goal_visualizer` manifest shard stores a per-game validated
+bundle of timestamped `onIce` objects. Coordinates remain in the feed's native,
+undocumented coordinate system. IceLines does not convert them to feet or infer
+orientation without a separately verified specification. Review NHL terms
+before bulk collection or public redistribution.
+
 ### `icelines fetch sync` — refresh stale entries
 
 ```bash
@@ -3350,7 +3375,7 @@ icelines data-status --json
 ```
 
 Recognized `--shard` values: `bios`, `stats`, `goalie_stats`,
-`transactions`, `boxscore`, `play_by_play`, `career_history`, `schedule`,
+`transactions`, `boxscore`, `play_by_play`, `goal_visualizer`, `career_history`, `schedule`,
 `score`, `playoff_bracket`. Source labels: Bundle / Setup / Live /
 DataInstall / Manual.
 

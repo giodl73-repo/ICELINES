@@ -574,6 +574,18 @@ impl NhlApiClient {
         let parsed = parse_play_by_play(&raw, game_id);
         Ok((parsed, raw))
     }
+
+    /// Fetch the public Gamecenter landing payload for one game. Goal summary
+    /// rows may expose `pptReplayUrl`, which points to a separate NHL EDGE Goal
+    /// Visualizer tracking feed. That URL is intentionally discovered here
+    /// rather than derived from a guessed season/event path.
+    pub async fn fetch_game_landing_raw(
+        &self,
+        game_id: u64,
+    ) -> Result<serde_json::Value, FetchError> {
+        let url = format!("{}/gamecenter/{game_id}/landing", self.base_web);
+        self.get_json(&url).await
+    }
 }
 
 pub use icelines_sources::nhl::playoff_bracket::{
