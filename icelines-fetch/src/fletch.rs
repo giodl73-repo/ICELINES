@@ -1147,17 +1147,6 @@ pub fn fetch_generic_http_bytes_with_headers(
     Ok(bytes)
 }
 
-fn fetch_generic_http_bytes_unindexed(
-    fletch_id: String,
-    source_url: String,
-    cache_root: &Path,
-    force: bool,
-) -> Result<(Vec<u8>, Option<CacheEntry>)> {
-    fetch_generic_http_bytes_unindexed_with_policy(
-        fletch_id, source_url, cache_root, force, 30_000, 5,
-    )
-}
-
 fn fetch_generic_http_bytes_unindexed_with_policy(
     fletch_id: String,
     source_url: String,
