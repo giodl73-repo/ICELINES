@@ -1623,6 +1623,17 @@ icelines-site    deferred mkdocs/static-site generator; no active CLI entry poin
 
 6-crate Rust workspace. Scenario coverage now includes **2,000+ persona/harness tests** plus broad L0/L1/L2 integration, system, mock NHL API, TUI, query, and web gates. See `design/notes/2026-05-09-scenario-harness-inventory.md` for the current harness map.
 
+### Portfolio reuse posture
+
+ICELINES is intentionally a specialist NHL product, not a portfolio foundation.
+Its hockey models, ranking policy, historical data, command UX, and forecast
+contracts remain ICELINES-owned. Generic selector and fold-plan reuse belongs in
+[SLICE](design/specs/slice-selectors.md); fetch and cacheline mechanics belong in
+FLETCH. Other repositories should not depend directly on `icelines-*` crates
+unless they are a real NHL-facing adopter prepared to carry contract tests.
+Revisit this boundary only when such an adopter exists; do not extract generic
+APIs from hypothetical reuse.
+
 Current product intent and evidence posture live in
 [`docs/vtrace/MISSION.md`](docs/vtrace/MISSION.md),
 [`docs/vtrace/REQUIREMENTS.md`](docs/vtrace/REQUIREMENTS.md), and
