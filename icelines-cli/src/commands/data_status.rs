@@ -98,12 +98,13 @@ fn parse_kind(s: &str) -> Result<DataKind> {
         "transactions" => DataKind::Transactions,
         "boxscore" | "boxscores" => DataKind::Boxscore,
         "play_by_play" | "play-by-play" | "pbp" => DataKind::PlayByPlay,
+        "goal_visualizer" | "goal-visualizer" | "goal-tracking" => DataKind::GoalVisualizer,
         "career_history" | "career" => DataKind::CareerHistory,
         "schedule" => DataKind::Schedule,
         "score" | "scores" => DataKind::Score,
         "playoff_bracket" | "playoffs" => DataKind::PlayoffBracket,
         other => anyhow::bail!(
-            "unknown shard '{other}' - try one of: bios, stats, goalie_stats, transactions, boxscore, play_by_play, career_history, schedule, score, playoff_bracket"
+            "unknown shard '{other}' - try one of: bios, stats, goalie_stats, transactions, boxscore, play_by_play, goal_visualizer, career_history, schedule, score, playoff_bracket"
         ),
     })
 }

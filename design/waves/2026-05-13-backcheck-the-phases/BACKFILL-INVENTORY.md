@@ -61,7 +61,7 @@ pulse plan.
 | Phase 8h - Chunked snapshots / Norris | Chunked snapshot/object-store design is shipped and documented. | Uniform installed-bundle fallback for bios/stats is a known architecture asymmetry. | defer | Future data architecture pulse, not this wave's surface backfill. |
 | Goalies / Vezina | Goalie repository, 38-season bundled data, CLI/TUI/web parity, and goalie filter rewrites are documented. | No active residual found. | done | n/a |
 | Transactions / Selke | ESPN transactions source, classifier, bundled transactions, CLI/TUI/web parity are documented. | No active residual found outside admin/source hardening already covered by operational partials. | done | n/a |
-| Edge speed / Maurice Richard | Parked because no public NHL Edge JSON endpoint is known. | NHL Edge skating speed remains externally blocked. | defer | No pulse until a public fixture/source exists. |
+| Edge speed / Maurice Richard | Parked because no supported NHL EDGE skating-speed summary endpoint is known. | Goal-level Goal Visualizer movement is separately available and does not resolve the speed-summary source. | defer | No speed-summary pulse until a supported source exists. |
 | Hart normalization | `StatsRepository`, `PlayerView`, `(player_id, season, type)` key axis, and loader contracts are implemented. | Hart.5c contract-helper followup is not surfaced as an active user gap in current parity docs. | done | n/a |
 | Calder multi-league career | Career history store, player-card development arc, web/CLI career views, and Art Ross league atoms are implemented. | Dedicated TUI cohort board/report affordance remains partial. | pulse | Pulse 08 / Career/docs parity |
 | Foster favorites/time/data layer | Favorites, date axes, DataStore, EventStream, sync engine, capability matrix, and windowed atoms are implemented. | `shifts=off` remains intentionally locked; no live residual without a source/fixture. | done | n/a |
@@ -99,7 +99,7 @@ pulse plan.
 
 | Item | Decision | Reason |
 |---|---|---|
-| NHL Edge skating speed / Maurice Richard | defer | No public JSON endpoint or fixture; stop condition forbids network-only tests. |
+| NHL Edge skating speed summaries / Maurice Richard | defer | No supported summary endpoint or fixture; goal-level Goal Visualizer tracking is separately fixture-tested. |
 | Proof dashboard integration / TUI proof renderer | delete | Plans index marks proof integration cancelled; current product uses IceLines-native docs/site surfaces. |
 | Old Phase S season-type plan | delete | Folded into Hart's `(season, season_type)` primary key axis. |
 | Dashboard-engine proof path | delete | Explicitly cut; no longer part of shipped architecture. |

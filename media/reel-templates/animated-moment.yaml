@@ -8,7 +8,12 @@ default_exports:
   - { aspect_ratio: "9:16", target_duration_seconds: 5-15, sound_optional: true }
 data_requirements:
   required: [game-identity, play-event, participants, score-state, source-video-or-observation]
-  optional: [play-by-play, shift-context, on-ice-roster, player-handedness, official-call]
+  optional: [play-by-play, goal-visualizer-tracking, shift-context, on-ice-roster, player-handedness, official-call]
+evidence_rules:
+  - Use Gamecenter landing pptReplayUrl only when present; absence is unavailable coverage, not permission to synthesize tracking.
+  - Preserve Goal Visualizer timestamped onIce coordinates in the feed-native coordinate system unless an authoritative transform is separately established.
+  - Treat credited scorer and assists as official metadata; label an uncredited touch seen in source video as video-observed rather than an official point.
+  - Use tracking for player and puck paths, play-by-play for event state, and source video for visible actions not represented as official events.
 editorial_rules:
   - Keep puck possession, pass order, attacking direction, decisive action, result, and reaction consistent with evidence.
   - Label observations as verified, visible, inferred, or unknown; never promote inference into documentary fact.
@@ -36,6 +41,8 @@ audio_blueprint:
   avoid: [continuous-beep, wall-to-wall-pulse, accents-on-every-pose, unlicensed-broadcast-call]
 quality_gates:
   - event-and-participant-identity
+  - official-credit-vs-video-observation
+  - tracking-coverage-and-coordinate-disclosure
   - puck-and-pass-causality
   - hockey-geometry-and-handedness
   - animation-timing-and-camera-crop-safety

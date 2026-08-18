@@ -9775,6 +9775,25 @@ pub enum FetchSubcommand {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Fetch NHL EDGE Goal Visualizer tracking frames for one game's goals.
+    /// Discovers public replay URLs from Gamecenter landing; coordinates stay
+    /// in the feed's undocumented native coordinate system.
+    #[command(name = "goal-visualizer", alias = "goal-tracking")]
+    GoalVisualizer {
+        /// NHL game id, for example 2025021167.
+        #[arg(long)]
+        game_id: u64,
+        /// Restrict the fetch to one goal event id. Without this option, all
+        /// goals with available visualizer URLs in this one game are fetched.
+        #[arg(long)]
+        event_id: Option<u32>,
+        /// Refresh the FLETCH cache even when a verified object exists.
+        #[arg(long)]
+        force: bool,
+        /// Discover and report coverage without fetching frames or writing.
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Refresh every stale entry in the manifest (Phase Foster.4).
     /// Walks the manifest, filters by `Freshness::is_stale`, and
     /// re-fetches via the configured Fetcher. Non-blocking when

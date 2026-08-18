@@ -208,6 +208,12 @@ pub async fn run(args: FetchSubcommand) -> anyhow::Result<()> {
             for_favorites,
             dry_run,
         } => do_play_by_play(date, for_favorites, dry_run).await,
+        FetchSubcommand::GoalVisualizer {
+            game_id,
+            event_id,
+            force,
+            dry_run,
+        } => do_goal_visualizer(game_id, event_id, force, dry_run).await,
         FetchSubcommand::Sync { dry_run, force } => do_sync(dry_run, force).await,
         FetchSubcommand::Report {
             kind,
@@ -582,6 +588,133 @@ async fn do_ahl(
     if let Some(out) = out {
         println!("Exported {}", out.display());
     }
+    Ok(())
+}
+
+async fn do_goal_visualizer(
+    game_id: u64,
+    event_id: Option<u32>,
+    force: bool,
+    dry_run: bool,
+) -> anyhow::Result<()> {
+    use icelines_core::identity::GameId;
+    use icelines_fetch::goal_visualizer::{
+        build_event, discover_goals, fetch_replay_bytes, merge_bundle, sha256_hex,
+    };
+    use icelines_fetch::manifest::{DataKey, DataKind, ManifestEntry};
+
+    let client = NhlApiClient::production();
+    let landing = client
+        .fetch_game_landing_raw(game_id)
+        .await
+        .with_context(|| format!("fetching Gamecenter landing for game {game_id}"))?;
+    let mut goals = discover_goals(&landing)
+        .with_context(|| format!("discovering Goal Visualizer rows for game {game_id}"))?;
+    if let Some(event_id) = event_id {
+        goals.retain(|goal| goal.event_id == event_id);
+        if goals.is_empty() {
+            anyhow::bail!("game {game_id} has no goal event {event_id} in Gamecenter landing");
+        }
+    }
+    if goals.is_empty() {
+        println!("Game {game_id} has no goals in Gamecenter landing.");
+        return Ok(());
+    }
+
+    println!(
+        "Goal Visualizer discovery — game {game_id} · {} goal(s){}",
+        goals.len(),
+        event_id
+            .map(|id| format!(" · event {id}"))
+            .unwrap_or_default()
+    );
+    for goal in &goals {
+        println!(
+            "  · event {} P{} {} {} — {}",
+            goal.event_id,
+            goal.period,
+            goal.time_in_period,
+            goal.scorer_name.as_deref().unwrap_or("unknown scorer"),
+            if goal.replay_url.is_some() {
+                "tracking available"
+            } else {
+                "tracking unavailable"
+            }
+        );
+    }
+    if dry_run {
+        println!("(dry run — no tracking frames fetched or written)");
+        return Ok(());
+    }
+
+    let data_root = icelines_data_root()?;
+    let store = icelines_fetch::datastore::DataStore::open(&data_root).context("open DataStore")?;
+    let path = data_root
+        .join("goal_visualizer")
+        .join(format!("{game_id}.json"));
+
+    let mut fetched_events = Vec::new();
+    let mut unavailable = 0usize;
+    for goal in goals {
+        let Some(replay_url) = goal.replay_url.clone() else {
+            unavailable += 1;
+            continue;
+        };
+        let bytes = fetch_replay_bytes(
+            game_id,
+            goal.event_id,
+            &replay_url,
+            data_root.join(".fletch"),
+            force,
+        )
+        .await?;
+        let raw: serde_json::Value = serde_json::from_slice(&bytes).with_context(|| {
+            format!(
+                "parsing Goal Visualizer game {game_id} event {}",
+                goal.event_id
+            )
+        })?;
+        let source_sha256 = sha256_hex(&bytes);
+        let event = build_event(goal, &raw, source_sha256)?;
+        println!(
+            "  · event {} validated: {} frames, {} tracked players, puck={}",
+            event.goal.event_id,
+            event.frame_count,
+            event.tracked_player_ids.len(),
+            if event.puck_object_observed {
+                "observed"
+            } else {
+                "not observed"
+            }
+        );
+        fetched_events.push(event);
+    }
+
+    let persisted = fetched_events.len();
+    if persisted > 0 {
+        let lock_root = data_root
+            .join("goal_visualizer")
+            .join(".locks")
+            .join(game_id.to_string());
+        let _guard =
+            icelines_fetch::fetch_lock::acquire(&lock_root, std::time::Duration::from_secs(120))
+                .with_context(|| format!("locking Goal Visualizer bundle for game {game_id}"))?;
+        merge_bundle(&path, game_id, chrono::Utc::now(), fetched_events)?;
+        store.manifest().upsert(
+            DataKind::GoalVisualizer,
+            ManifestEntry {
+                key: DataKey::Game(GameId(game_id)),
+                path: path.clone(),
+                freshness: icelines_core::Freshness {
+                    fetched_at: chrono::Utc::now(),
+                    source: icelines_core::FetchSource::Live,
+                    ttl: icelines_core::Ttl::Static,
+                },
+            },
+        )?;
+        println!("Wrote {}", path.display());
+    }
+    println!("Done. Goal Visualizer persisted: {persisted}; unavailable: {unavailable}");
     Ok(())
 }
 

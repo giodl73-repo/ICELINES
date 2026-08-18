@@ -168,7 +168,8 @@ In order:
 3. **Pick from backlog** — `INDEX.md` has 10 backlog items. After Hart, the highest-
    value next moves are probably (in some order): `mates` / `peers` against real
    shift data, fantasy daily delta scoring, deeper fantasy matchup simulation,
-   NHL Edge skating speed (parked on data availability).
+   NHL Edge skating speed summaries (still parked on data availability). Goal-level
+   Goal Visualizer tracking is a separate supported source.
 
 ## Non-goals (where IceLines does not go)
 
@@ -183,7 +184,9 @@ In order:
 - **proof / mdpath / DASHBOARD-SPEC integration**: cut 2026-05-01.
   `design/specs/dashboard-engine.md` and `design/specs/export-markdown.md` references
   to proof are stale.
-- **NHL Edge skating speed**: parked indefinitely (no public JSON endpoint).
+- **NHL Edge skating speed summaries**: parked indefinitely (no supported public
+  summary endpoint). This does not include goal-level player/puck movement,
+  which is available through Gamecenter landing `pptReplayUrl`.
 - **Cap-hit / contract value modeling**: no cap math. Contract data is expiry-year +
   expiry-type only (UFA/RFA/ELC).
 - **Trade-deadline rumor aggregation**: not in scope. The transactions feed shows

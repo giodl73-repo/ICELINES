@@ -39,6 +39,7 @@ pub mod game_cache;
 pub mod game_prediction_edge_assembler;
 pub mod game_prediction_edge_package;
 pub mod game_prediction_outcomes;
+pub mod goal_visualizer;
 pub mod historical_goalie_prediction_edge;
 pub mod historical_official_prediction_edge;
 pub mod historical_prediction_edge;

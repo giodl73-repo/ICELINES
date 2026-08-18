@@ -193,7 +193,7 @@ The mock NHL API fixture is at `src/icelines-fetch/tests/mock_nhl_api.rs` — us
 - ~2050 tests across L0/L1/L2 + 4 persona-scenario waves (`persona_scenarios.rs` + `persona_wave2.rs/wave3/wave4`) plus `persona_foster.rs` (30 scenarios) including mock NHL API fixture
 
 ## Pending (see design/plans/INDEX.md)
-- NHL Edge skating speed stats — blocked, no public JSON endpoint (memory `nhl_edge_data_blocked.md`)
+- NHL EDGE skating-speed summary stats remain blocked on a supported public endpoint. Goal-level movement is separately available through Gamecenter landing `pptReplayUrl` and `icelines fetch goal-visualizer`; do not conflate the two sources.
 - Fantasy daily delta scoring
 
 ---

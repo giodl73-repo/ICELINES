@@ -224,7 +224,7 @@ Cleared in Clear the Unblocks:
 
 | Item | Value | Blocked on |
 |------|-------|------------|
-| NHL Edge skating speed (Phase Maurice Richard) | ⭐⭐ | **Parked** — no public JSON endpoint discovered |
+| NHL Edge skating speed summaries (Phase Maurice Richard) | ⭐⭐ | **Parked** — no supported public summary endpoint; goal-level Goal Visualizer tracking is separately implemented |
 | Strength-state 5v5/PP/PK splits (`query-engine` Phase 5C) | ⭐⭐ | Tier 3 shifts + play-by-play join |
 | Tier 4 advanced metrics (NST, Evolving Hockey RAPM) | ⭐ | External scraping; large lift |
 | Historical shift-data bundles | ⭐⭐ | Parked — no supported `fetch shifts` command, fixtures, or source/bundle policy; `sync.capabilities.shifts=off` is enforced |
