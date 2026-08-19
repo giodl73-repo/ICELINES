@@ -6,7 +6,8 @@ Passed. Phase Devils is opened as the post-Islanders dashboard visual QA gate.
 
 ## Work completed
 
-- Created `design/plans/2026-06-20-phaseDevils-dashboard-visual-qa.md`.
+- Created the plan now archived at
+  `design/archive/plans/2026-06/2026-06-20-phaseDevils-dashboard-visual-qa.md`.
 - Created `context/waves/2026-06-20-phase-devils/WAVE.md`.
 - Created `context/waves/2026-06-20-phase-devils/DEVILS-INVENTORY.md`.
 - Recorded that the existing capture harness proves selected browser rendering

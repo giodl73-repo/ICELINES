@@ -5,7 +5,8 @@
 
 ## Work Completed
 
-- Created `design/plans/2026-06-20-phaseCapitals-signals-cache-promotion.md`.
+- Created the plan now archived at
+  `design/archive/plans/2026-06/2026-06-20-phaseCapitals-signals-cache-promotion.md`.
 - Created `context/waves/2026-06-20-phase-capitals/WAVE.md`.
 - Created `context/waves/2026-06-20-phase-capitals/CAPITALS-INVENTORY.md`.
 - Recorded the current Signals surfaces, inherited Hurricane/Rangers

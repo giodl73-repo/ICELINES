@@ -6,7 +6,8 @@ Passed. Phase Flyers is opened as the admin operation safety gate.
 
 ## Work completed
 
-- Created `design/plans/2026-06-20-phaseFlyers-admin-safety.md`.
+- Created the plan now archived at
+  `design/archive/plans/2026-06/2026-06-20-phaseFlyers-admin-safety.md`.
 - Created `context/waves/2026-06-20-phase-flyers/WAVE.md`.
 - Created `context/waves/2026-06-20-phase-flyers/FLYERS-INVENTORY.md`.
 - Recorded the implemented safe admin routes and the remaining web

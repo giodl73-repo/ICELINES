@@ -36,7 +36,7 @@ cache-backed partial rollups without promoting new analytics claims.
 | 03 | Admin/docs truth pass | passed; see `design/specs/surface-parity.md`, `icelines serve --help`, and `pulses/pulse-03.md` |
 | 04 | Dashboard selected capture proof/fence | passed with selected capture evidence; see `scripts/web-dashboard-capture.ps1`, `dist/web-dashboard-captures/`, and `pulses/pulse-04.md` |
 | 05 | Cache-backed partial rollup | passed with WP-009 first-route evidence fenced from broader workflow claims; see `design/specs/surface-parity.md` and `pulses/pulse-05.md` |
-| 06 | Phase closeout | passed; see `design/plans/2026-06-20-phaseIslanders-surface-parity.md`, `design/specs/surface-parity.md`, and `pulses/pulse-06.md` |
+| 06 | Phase closeout | passed; see `design/archive/plans/2026-06/2026-06-20-phaseIslanders-surface-parity.md`, `design/specs/surface-parity.md`, and `pulses/pulse-06.md` |
 
 ## Validation posture
 

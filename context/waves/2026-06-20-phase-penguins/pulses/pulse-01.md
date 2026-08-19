@@ -5,7 +5,8 @@
 
 ## Work Completed
 
-- Created `design/plans/2026-06-20-phasePenguins-analytics-workflow-promotion.md`.
+- Created the plan now archived at
+  `design/archive/plans/2026-06/2026-06-20-phasePenguins-analytics-workflow-promotion.md`.
 - Created `context/waves/2026-06-20-phase-penguins/WAVE.md`.
 - Created `context/waves/2026-06-20-phase-penguins/PENGUINS-INVENTORY.md`.
 - Recorded current WP-009 route families, first-route evidence, non-claims, and
