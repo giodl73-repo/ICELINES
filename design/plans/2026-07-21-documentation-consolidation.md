@@ -19,6 +19,10 @@ with legacy header or index issues for the archive migration; those known
 issues are why strict zero-drift mode is a later-wave gate rather than a claim
 of current cleanliness.
 
+Wave D batch 1 archived the 15 closed June 20 promotion and cleanup micro-plans
+under `design/archive/plans/2026-06/`. Their historical index rows now point to
+the archive, and `design/archive/plans/2026-06/INDEX.md` records the migration.
+
 ## Outcome
 
 Reduce the active IceLines reading surface to a small, truthful canonical set

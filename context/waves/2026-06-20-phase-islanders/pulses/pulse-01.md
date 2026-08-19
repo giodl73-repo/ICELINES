@@ -7,7 +7,8 @@ round.
 
 ## Work completed
 
-- Added `design/plans/2026-06-20-phaseIslanders-surface-parity.md`.
+- Added the plan now archived at
+  `design/archive/plans/2026-06/2026-06-20-phaseIslanders-surface-parity.md`.
 - Added the wave record and inventory under
   `context/waves/2026-06-20-phase-islanders/`.
 - Identified the active cleanup lanes:
