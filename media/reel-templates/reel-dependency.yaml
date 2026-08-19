@@ -1,8 +1,8 @@
 dependency_version: icelines.reel-dependency.v0.1
 provider:
   repository: https://github.com/giodl73-repo/REEL
-  revision: 0216bbe8f1870de49e9f30889b5e80c888fab40c
-  cli_version: 0.2.27
+  revision: 1c4cfaf1dcfdefbba7a7143d1a46747048a1f654
+  cli_version: 0.2.36
 contract:
   manifest_version: reel.manifest.v0.2
   role: pre-conform-template
