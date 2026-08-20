@@ -2262,6 +2262,13 @@ pub enum IceCastSubcommand {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
+    /// Render one sealed player-line Matchup card as read-only CLI text.
+    #[command(name = "line-matchup-show")]
+    LineMatchupShow {
+        /// Sealed `card_document.v1` player-line Matchup document.
+        #[arg(long, value_name = "PATH")]
+        input: PathBuf,
+    },
     /// Build dated player profiles and deployment-affinity evidence for The Matchup.
     #[command(name = "line-matchup-profiles")]
     LineMatchupProfiles {
@@ -5229,6 +5236,20 @@ mod tui_surface_tests {
                     && team_name == "New York Rangers"
                     && generated_at == "2026-10-10T16:00:00Z"
                     && out == PathBuf::from("matchup-card.json")
+            ));
+
+            let show = Cli::try_parse_from([
+                "icelines",
+                "icecast",
+                "line-matchup-show",
+                "--input",
+                "matchup-card.json",
+            ])
+            .expect("IceCast line-matchup-show command should parse");
+            assert!(matches!(
+                show.command,
+                Commands::Icecast(IceCastSubcommand::LineMatchupShow { input })
+                    if input == PathBuf::from("matchup-card.json")
             ));
 
             let profiles = Cli::try_parse_from([

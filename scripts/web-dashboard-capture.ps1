@@ -2,6 +2,7 @@ param(
     [string]$BinaryPath = "",
     [int]$ServePort = 18988,
     [string]$OutputDir = "",
+    [string]$CaptureName = "",
     [switch]$SkipBuild
 )
 
@@ -34,14 +35,17 @@ function Resolve-Browser {
 }
 
 function Assert-DashboardReady {
-    param([string]$Url)
+    param(
+        [string]$Url,
+        [string]$Marker = 'class="jaw-shell"'
+    )
 
     $response = Invoke-WebRequest -UseBasicParsing -Uri $Url -TimeoutSec 10
     if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
         throw "dashboard route readiness failed for ${Url}: HTTP $($response.StatusCode)"
     }
-    if (-not ($response.Content -like '*class="jaw-shell"*')) {
-        throw "dashboard route readiness failed for ${Url}: dashboard shell marker missing"
+    if (-not ($response.Content.Contains($Marker))) {
+        throw "dashboard route readiness failed for ${Url}: expected marker '$Marker' missing"
     }
 }
 
@@ -147,15 +151,23 @@ try {
         @{ Name = "dashboard-favorites-tablet"; Url = "$baseUrl/dashboard?workspace=/favorites"; Size = $viewports.Tablet },
         @{ Name = "dashboard-watchlist-tablet"; Url = "$baseUrl/dashboard?workspace=/watchlist"; Size = $viewports.Tablet },
         @{ Name = "dashboard-schedule-tablet"; Url = "$baseUrl/dashboard?workspace=/schedule"; Size = $viewports.Tablet },
+        @{ Name = "icecast-line-matchup-desktop"; Url = "$baseUrl/icecast/20262027/games/2026020001/NYR/matchup"; Size = $viewports.Desktop; Marker = 'class="team-prognosis-card' },
         @{ Name = "dashboard-fantasy-mobile"; Url = "$baseUrl/dashboard?workspace=/fantasy"; Size = $viewports.Mobile },
         @{ Name = "dashboard-team-season-mobile"; Url = "$baseUrl/dashboard?workspace=/team/EDM/season"; Size = $viewports.Mobile },
         @{ Name = "dashboard-player-mobile"; Url = "$baseUrl/dashboard?workspace=/player/8478402"; Size = $viewports.Mobile }
     )
+    if (-not [string]::IsNullOrWhiteSpace($CaptureName)) {
+        $captures = @($captures | Where-Object { $_.Name -eq $CaptureName })
+        if ($captures.Count -ne 1) {
+            throw "unknown capture name '$CaptureName'"
+        }
+    }
 
     foreach ($capture in $captures) {
         $path = Join-Path $OutputDir "$($capture.Name).png"
         Write-Host "capture: $($capture.Name) $($capture.Size)" -ForegroundColor Cyan
-        Assert-DashboardReady -Url $capture.Url
+        $marker = if ($capture.ContainsKey("Marker")) { $capture.Marker } else { 'class="jaw-shell"' }
+        Assert-DashboardReady -Url $capture.Url -Marker $marker
         & $Browser `
             "--headless=new" `
             "--disable-gpu" `

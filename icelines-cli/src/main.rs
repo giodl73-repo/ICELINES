@@ -2857,6 +2857,9 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             generated_at,
             out,
         )?,
+        Commands::Icecast(IceCastSubcommand::LineMatchupShow { input }) => {
+            commands::icecast::run_line_matchup_show(input)?
+        }
         Commands::Icecast(IceCastSubcommand::LineMatchupProfiles {
             lineup,
             role_evidence,

@@ -5095,6 +5095,22 @@ pub fn run_line_matchup_card(
     Ok(())
 }
 
+pub fn run_line_matchup_show(input: PathBuf) -> anyhow::Result<()> {
+    let source = std::fs::read_to_string(&input).with_context(|| {
+        format!(
+            "reading sealed player-line Matchup card {}",
+            input.display()
+        )
+    })?;
+    let card = icelines_core::parse_card_document(&source)
+        .context("validate sealed player-line Matchup card")?;
+    if card.card_kind != icelines_core::CardKind::PlayerLineMatchup {
+        bail!("line-matchup-show requires a player-line Matchup card");
+    }
+    print!("{}", super::card_renderer::render_card(&card));
+    Ok(())
+}
+
 pub struct IceCastLineMatchupProfilesArgs {
     pub lineup: PathBuf,
     pub role_evidence: PathBuf,
