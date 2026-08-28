@@ -4,15 +4,16 @@ topic: yahoo-fantasy-hockey-league-setup
 date: 2026-08-28
 roles_used: [pace, bench, edge, scout, glass, broadcast]
 p1_count: 0
-verdict: NEEDS-WORK
+verdict: APPROVED
 ---
 
 # Roles Check: Yahoo Fantasy Hockey League Setup Guide
 
 ## Artifact identification
 
-- **Artifact:** `docs/guides/07-yahoo-fantasy-hockey-league-setup.md` at
-  `origin/master` commit `1f5286f5`
+- **Initial artifact:** `docs/guides/07-yahoo-fantasy-hockey-league-setup.md`
+  at `origin/master` commit `1f5286f5`
+- **Final artifact:** revised guide committed with this remediated review
 - **Type:** public commissioner how-to / decision guide
 - **Domain signals:** Yahoo configuration, numerical scoring rules, draft
   operations, hockey roster construction, browser readability, newcomer UX
@@ -85,7 +86,7 @@ CREST.
 | 2 | The guide recommends desktop but gives no mobile fallback for someone who only has the Yahoo app or mobile browser. | P2 | Opening / create league | Say that basic creation works in the app, while missing commissioner tools require a mobile or desktop browser. |
 | 3 | The public link targets GitHub source rather than a rendered documentation URL, limiting navigation and mobile control over large tables. | P3 | Distribution | Prefer the published MkDocs page when available; retain GitHub as a durable fallback. |
 
-## Synthesis
+## Initial synthesis
 
 ```text
 Roles reviewed: 6
@@ -105,7 +106,7 @@ The guide is directionally correct and substantially better than a single
 prescriptive 14-team setup. The verdict reflects usability and operational
 gaps, not a rejection of the two-path design.
 
-## Amendments
+## Required amendments
 
 1. Add a five-step, 60-second Yahoo-standard setup at the top. Move Kraken
    roster/scoring comparisons under clearly optional detail and remove IceLines
@@ -117,6 +118,57 @@ gaps, not a rejection of the two-path design.
    add a final live-settings comparison step, and validate links plus mobile
    rendering before treating the guide as approved.
 
+## Remediation and second pass
+
+The user authorized all findings to be fixed. The revised guide was reviewed
+again against the same six lenses.
+
+| Finding | Resolution | Status |
+|---|---|---|
+| PACE-1 | Added an August 28, 2026 verification date and live-settings warning. | Resolved |
+| PACE-2 | Added worked power-play-goal and goalie-start calculations. | Resolved |
+| PACE-3 | Framed six playoff teams as Yahoo's default and four as an explicit small-league vote. | Resolved |
+| BENCH-1 | Added dated Yahoo source notes beside the league, roster, and scoring tables. | Resolved |
+| BENCH-2 | All 10 external links returned HTTP 200; the guide passed a strict, guide-scoped MkDocs build. | Resolved |
+| BENCH-3 | Added live Settings comparison and second-manager review to the checklist. | Resolved |
+| EDGE-1 | Added Yahoo's three-goalie-game weekly minimum and explained its effect. | Resolved |
+| EDGE-2 | Added a self-contained five-step, 60-second Yahoo-standard setup. | Resolved |
+| EDGE-3 | Explained the odd-manager Autopick consequence beside the team-count guidance. | Resolved |
+| SCOUT-1 | Added a “Who gains value?” explanation for skaters and goalies. | Resolved |
+| SCOUT-2 | Explained the defenseman-scarcity effect of 4 D versus 3 D plus Util. | Resolved |
+| SCOUT-3 | Connected the goalie-game minimum to carrying two playable goalies. | Resolved |
+| GLASS-1 | Put the quick route before all optional detail. | Resolved |
+| GLASS-2 | Shortened table cells and added phone landscape/swipe guidance. | Resolved |
+| GLASS-3 | Standardized “Yahoo standard” and “Kraken custom” path labels. | Resolved |
+| broadcast-1 | Moved IceLines provenance from the opening to a footer. | Resolved |
+| broadcast-2 | Added app, mobile-browser, and desktop guidance. | Resolved |
+| broadcast-3 | Confirmed the configured published page currently returns 404 and documented GitHub-rendered Markdown as the available fallback. | Resolved |
+
+Validation evidence:
+
+- `git diff --check`: passed.
+- External link check: 10 of 10 returned HTTP 200.
+- Guide-scoped `mkdocs build --strict`: passed.
+- Full-site non-strict MkDocs build: passed and generated the guide with its
+  quick heading, injury section, comparison tables, and mobile viewport.
+- Full-site strict mode remains blocked by four unrelated pre-existing links in
+  `organization-window.md` and `docs/show/`; none point to or originate from
+  this guide.
+
+```text
+Roles reviewed: 6
+Open P1 blockers: 0  |  Open P2 issues: 0  |  Open P3 notes: 0
+
+Final verdict: APPROVED
+
+Top improvement: A first-time commissioner can now stop after the five-step
+Yahoo-standard setup, while experienced leagues can continue into the sourced
+Kraken comparison.
+
+Cross-role consensus: The quick path, operational goalie rule, source dating,
+and draft-impact explanations now satisfy the overlapping role concerns.
+```
+
 ## Authoritative references used
 
 - [Yahoo default Fantasy Hockey settings](https://help.yahoo.com/kb/SLN6815.html)
@@ -124,4 +176,3 @@ gaps, not a rejection of the two-path design.
 - [Yahoo pre-draft rankings and Autopick behavior](https://help.yahoo.com/kb/fantasy-hockey/autopick-draft-sln6163.html)
 - [Yahoo Private League setup](https://help.yahoo.com/kb/fantasy-hockey/create-customize-private-league-sln25711.html)
 - [Yahoo roster-position changes](https://help.yahoo.com/kb/fantasy-hockey/sln6941.html)
-

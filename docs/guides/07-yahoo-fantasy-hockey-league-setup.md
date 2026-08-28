@@ -1,7 +1,6 @@
 # Set Up a Yahoo Fantasy Hockey League
 
-This is a quick commissioner guide for creating a friendly, competitive Yahoo
-Fantasy Hockey league. It supports two approachable paths:
+This guide supports two approachable paths:
 
 - **Quick setup:** keep Yahoo's standard roster and scoring.
 - **Kraken-style setup:** use the optional custom roster and scoring shown
@@ -9,10 +8,31 @@ Fantasy Hockey league. It supports two approachable paths:
 
 The number of teams is flexible. Choose an even number based on how many
 committed managers you have; the 14-team Kraken league is an example, not a
-requirement. IceLines is only hosting this shareable guide.
+requirement.
 
-Use a desktop browser if possible. Yahoo exposes more commissioner and draft
-controls there than it does in the mobile app.
+> **Defaults checked August 28, 2026.** Yahoo can change labels and seasonal
+> defaults. Before draft day, compare this guide with the league's live
+> **Settings** page.
+
+Basic league creation works in the Yahoo Fantasy app. Use a desktop or mobile
+browser if a commissioner control is missing from the app. On a phone, rotate
+to landscape and swipe horizontally across comparison tables.
+
+## The 60-second Yahoo-standard setup
+
+For the simplest league:
+
+1. Create a **Private League** from scratch.
+2. Choose **Head-to-Head Points** and **Live Standard Draft**.
+3. Set the team limit to your confirmed even number of managers and schedule
+   the draft.
+4. Keep Yahoo's standard roster, scoring, waiver, and playoff defaults. Use a
+   **60-second** pick timer; discuss **45 seconds** if everyone is experienced.
+5. Create the league, invite the managers, and ask one manager to compare the
+   league's **Settings** page with the final checklist below.
+
+That is enough for a first league. The remaining sections explain each choice
+and the optional Kraken custom format.
 
 ## 1. Create the league
 
@@ -31,13 +51,12 @@ Yahoo's official flow is also documented in
 
 Under **Commissioner → League Settings → Edit League Settings**, use:
 
-For the easiest setup, keep Yahoo's current-season defaults except for the
-number of teams and agreed draft time. The values below are sensible starting
-points if Yahoo asks you to choose.
+**Yahoo-standard path:** keep the defaults. The table records the current
+Private League defaults and highlights the decisions the group should make.
 
 | Setting | Recommended value |
 |---|---|
-| Maximum teams | **Your confirmed even number of managers**; Yahoo's current Private League default is 12 |
+| Maximum teams | Your confirmed even number; Yahoo defaults to **12** |
 | Roster changes | **Daily – Today** |
 | Maximum acquisitions per week | **4** |
 | Maximum acquisitions per season | **No maximum** |
@@ -48,24 +67,41 @@ points if Yahoo asks you to choose.
 | Trade review | **League votes** |
 | Trade rejection time | **2 days** |
 | Can't Cut List | **Yahoo Sports** |
-| Playoff teams | **6** for most leagues; consider **4** for a small league |
-| Playoff weeks | Yahoo's matching late-season option; the current default is **Weeks 23–25** for six teams |
+| Minimum goalie games per week | **3** |
+| Playoff teams | Yahoo default: **6** |
+| Playoff weeks | Current six-team default: **Weeks 23–25** |
 | Playoff reseeding | **Enabled** |
 | Playoff tiebreaker | **Higher seed wins** |
+
+Source: [Yahoo's default Private Fantasy Hockey settings](https://help.yahoo.com/kb/SLN6815.html),
+checked August 28, 2026.
 
 Leave the trade deadline at Yahoo's current-season default unless the league
 agrees on a different date. Ending playoffs before the final NHL weeks helps
 avoid late-season rest and shutdown chaos.
 
-Head-to-Head leagues need an even number of managers. Ten or 12 teams are easy
-starting points; use 14 only when 14 managers are committed. Do not inflate the
-league size with inactive placeholder teams.
+Head-to-Head leagues need an even number of managers. Yahoo warns that an odd
+manager count during its pre-draft check can force a live Head-to-Head draft to
+Autopick. Ten or 12 teams are easy starting points; use 14 only when 14 managers
+are committed. Do not inflate the league size with inactive placeholder teams.
+
+The three-game goalie minimum means a team must record three goalie appearances
+in the matchup week. It makes carrying two playable goalies prudent and reduces
+the chance that a manager can avoid goalie risk by starting one favorable game.
+
+Six playoff teams is Yahoo's default. For a small league, discuss whether four
+qualifiers would make the regular season more meaningful. Record the decision
+in the league message instead of silently changing it.
+
+See [Yahoo's pre-draft and Autopick behavior](https://help.yahoo.com/kb/fantasy-hockey/autopick-draft-sln6163.html).
 
 ## 3. Set the roster positions
 
 Under **Commissioner → Rosters & Scoring → Edit Roster Positions**, choose one
-complete column. The Yahoo-standard column is the easiest setup; the Kraken
-column preserves that league's custom format.
+complete column.
+
+**Yahoo-standard path:** use **Yahoo standard**. **Kraken custom path:** use
+**Kraken custom**.
 
 | Position | Yahoo standard | Kraken custom |
 |---|---:|---:|
@@ -82,6 +118,14 @@ column preserves that league's custom format.
 Both choices create **12 active slots plus four bench spots**. An em dash means
 the slot is not used. IR and IR+ are injury storage and are not ordinary draft
 targets.
+
+Source for the standard column: [Yahoo's default Private Fantasy Hockey settings](https://help.yahoo.com/kb/SLN6815.html),
+checked August 28, 2026.
+
+The roster choice affects draft strategy. Yahoo standard starts four
+defensemen, making dependable defensemen scarcer. Kraken custom replaces the
+fourth defense slot with a Utility slot, letting managers start any extra
+non-goalie skater.
 
 ### IR versus IR+
 
@@ -106,13 +150,11 @@ but removing or restructuring slots can require resetting the draft. See
 
 First, make a league decision:
 
-- **Use the Kraken league's custom weights:** preserves the established format
+- **Yahoo-standard path:** simpler for new managers and aligned with Yahoo's
+  general rankings and advice. Keep the **Yahoo standard** column.
+- **Kraken custom path:** preserves the established format
   and makes hits, blocks, special-teams production, and goalie volume matter in
-  its particular way. Use the tables below.
-- **Use Yahoo's standard Head-to-Head Points scoring:** simpler for new managers
-  and better aligned with Yahoo's general rankings and advice. Leave Yahoo's
-  default scoring weights unchanged; they are shown beside the Kraken weights
-  below for comparison.
+  its particular way. Enter the **Kraken custom** column.
 
 Announce this choice before managers prepare for the draft. If the league does
 not strongly prefer the established Kraken format, Yahoo standard is the
@@ -153,6 +195,31 @@ to zero. Yahoo adds bonuses to the base event: for example, the Kraken format
 scores a power-play goal as both a Goal and a Power-Play Goal, while Yahoo
 standard scores it as both a Goal and a Power-Play Point.
 
+Source for the standard columns: [Yahoo's default Private Head-to-Head Points settings](https://help.yahoo.com/kb/SLN6815.html),
+checked August 28, 2026.
+
+### Two scoring examples
+
+These totals illustrate the formulas; the two systems use different point
+scales, so compare player value within a column rather than comparing raw totals
+between columns.
+
+- **One power-play goal:** Kraken custom = 3.25 G + 3.00 PPG = **6.25**.
+  Yahoo standard = 6.00 G + 2.00 PPP = **8.00**.
+- **A goalie win with 30 saves and three goals against:** Kraken custom =
+  3.00 W + (30 × 0.20 SV) - (3 × 0.25 GA) = **8.25**. Yahoo standard =
+  5.00 W + (30 × 0.60 SV) - (3 × 3.00 GA) = **14.00**.
+
+### Who gains value under Kraken custom?
+
+- Frequent hitters gain value because Yahoo standard does not score hits.
+- Power-play specialists, short-handed scorers, and game-winning goal scorers
+  receive bonuses from categories that Yahoo standard combines or omits.
+- High-save-volume goalies receive a much lighter goals-against penalty relative
+  to each save than they do under Yahoo standard.
+- Shot-heavy skaters lose a Yahoo-standard advantage because Kraken custom does
+  not score shots on goal. Plus/minus is also omitted.
+
 ### Important: custom scoring and Yahoo rankings
 
 Custom weights change which players are actually most valuable. Yahoo displays
@@ -161,8 +228,9 @@ more than one kind of ranking:
 - Yahoo says its pre-draft **Rank** can reflect league settings.
 - Its **Expert Rank** uses Yahoo's default scoring and determines autopick.
 
-Because those labels and behaviors differ, managers using Kraken scoring should
-not assume every player order shown by Yahoo reflects the custom weights.
+Because those labels and behaviors differ, managers using Kraken custom
+scoring should not assume every player order shown by Yahoo reflects the custom
+weights.
 
 For a custom-scoring league, tell every manager to use a cheat sheet calculated
 with the league's weights and to set personal pre-draft rankings, especially if
@@ -221,15 +289,25 @@ Before draft day, verify:
 - [ ] Every roster position matches the league's selected column above.
 - [ ] Managers get four acquisitions per week.
 - [ ] Waivers last two days and use a continual rolling priority.
+- [ ] The weekly minimum is three goalie games, or the league announced a
+      different choice.
 - [ ] The draft is Live Standard and snaking, with the league's agreed 45- or
       60-second pick timer.
 - [ ] The draft date, time, and time zone are visible to everyone.
 - [ ] All managers have joined before the team list is finalized.
 - [ ] Playoff settings and tiebreakers are visible in the league rules.
+- [ ] The commissioner compared every item with Yahoo's live **Settings** page.
+- [ ] A second manager reviewed the Settings page before draft day.
 
 After creating the league, send everyone the Yahoo league invitation plus a
 link to the league's **Settings** page. That gives managers one place to verify
 the rules before drafting.
+
+## About this guide
+
+IceLines hosts this guide as a durable, shareable reference. The GitHub page is
+the browser-friendly fallback until the repository's published documentation
+site includes this page.
 
 ## Yahoo references
 
