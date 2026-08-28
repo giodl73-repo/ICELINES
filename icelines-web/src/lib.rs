@@ -30,6 +30,8 @@
 //! handler bodies stay free of HTTP boilerplate.
 
 #![deny(unsafe_code)]
+// Axum handler helpers intentionally return concrete responses for direct `IntoResponse` use.
+#![allow(clippy::result_large_err)]
 
 pub mod api;
 pub mod card_store;
