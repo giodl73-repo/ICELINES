@@ -79,42 +79,47 @@ First, make a league decision:
   its particular way. Use the tables below.
 - **Use Yahoo's standard Head-to-Head Points scoring:** simpler for new managers
   and better aligned with Yahoo's general rankings and advice. Leave Yahoo's
-  default scoring weights unchanged and skip the custom tables below.
+  default scoring weights unchanged; they are shown beside the Kraken weights
+  below for comparison.
 
 Announce this choice before managers prepare for the draft. If the league does
 not strongly prefer the established Kraken format, Yahoo standard is the
 simpler commissioner choice.
 
-Under **Commissioner → Rosters & Scoring → Scoring Settings**, use these exact
-weights only when choosing the custom Kraken format.
+Under **Commissioner → Rosters & Scoring → Scoring Settings**, enter the values
+from the column selected by the league.
 
 ### Skaters
 
-| Statistic | Points |
-|---|---:|
-| Goal (G) | **3.25** |
-| Assist (A) | **2.25** |
-| Power-Play Goal (PPG) | **3.00** |
-| Power-Play Assist (PPA) | **2.00** |
-| Short-Handed Goal (SHG) | **1.00** |
-| Short-Handed Assist (SHA) | **1.00** |
-| Game-Winning Goal (GWG) | **1.00** |
-| Hit (HIT) | **0.50** |
-| Block (BLK) | **0.50** |
+| Statistic | Kraken custom | Yahoo standard |
+|---|---:|---:|
+| Goal (G) | **3.25** | **6.00** |
+| Assist (A) | **2.25** | **4.00** |
+| Plus/Minus (+/-) | — | **2.00** |
+| Power-Play Goal (PPG) | **3.00** | — |
+| Power-Play Assist (PPA) | **2.00** | — |
+| Power-Play Point (PPP) | — | **2.00** |
+| Short-Handed Goal (SHG) | **1.00** | — |
+| Short-Handed Assist (SHA) | **1.00** | — |
+| Game-Winning Goal (GWG) | **1.00** | — |
+| Shot on Goal (SOG) | — | **0.90** |
+| Hit (HIT) | **0.50** | — |
+| Block (BLK) | **0.50** | **1.00** |
 
 ### Goalies
 
-| Statistic | Points |
-|---|---:|
-| Win (W) | **3.00** |
-| Loss (L) | **-0.50** |
-| Save (SV) | **0.20** |
-| Goal Against (GA) | **-0.25** |
-| Shutout (SHO) | **3.00** |
+| Statistic | Kraken custom | Yahoo standard |
+|---|---:|---:|
+| Win (W) | **3.00** | **5.00** |
+| Loss (L) | **-0.50** | — |
+| Save (SV) | **0.20** | **0.60** |
+| Goal Against (GA) | **-0.25** | **-3.00** |
+| Shutout (SHO) | **3.00** | **5.00** |
 
-Remove or set to zero any statistic not listed above. Yahoo adds bonuses to the
-base event: for example, a power-play goal earns both the Goal and Power-Play
-Goal values.
+An em dash means that format does not score the category; remove it or set it
+to zero. Yahoo adds bonuses to the base event: for example, the Kraken format
+scores a power-play goal as both a Goal and a Power-Play Goal, while Yahoo
+standard scores it as both a Goal and a Power-Play Point.
 
 ### Important: custom scoring and Yahoo rankings
 
@@ -179,7 +184,7 @@ Before draft day, verify:
 - [ ] Scoring type is Head-to-Head Points.
 - [ ] The league chose either Yahoo standard scoring or the custom Kraken
       scoring before managers prepared for the draft.
-- [ ] If using custom scoring, every scoring weight matches the tables above.
+- [ ] Every scoring weight matches the league's selected column above.
 - [ ] If using custom scoring, managers were warned about Yahoo's ranking and
       autopick limitations and received time to create personal rankings.
 - [ ] The active roster is 2 C / 2 LW / 2 RW / 3 D / 1 Util / 2 G.
