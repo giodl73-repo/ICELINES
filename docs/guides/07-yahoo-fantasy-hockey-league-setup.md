@@ -110,12 +110,17 @@ Under **Commissioner → Draft & Keepers → Edit Draft Settings**:
 |---|---|
 | Draft type | **Live Standard** |
 | Round rotation | **Snaking** |
-| Pick time | **90 seconds** |
+| Pick time | **60 seconds**; use **45 seconds** for an experienced, fast-moving league |
 | Draft order | Random, or a method announced before the draft |
 
 Pick a date when all managers can attend and state the time zone in the league
 message. Wait until all 14 managers have joined before finalizing the team list
 and draft order.
+
+**League discussion point:** agree on either 45 or 60 seconds before draft day.
+Forty-five seconds keeps the draft moving but gives managers less recovery time
+after a surprise pick or connection problem. Sixty seconds is the safer default
+for a 14-team league without making the draft unnecessarily slow.
 
 In a 14-team snake, the manager drafting 14th also drafts 15th, then 42nd and
 43rd, then 70th and 71st. The same turn pattern continues throughout the draft.
@@ -142,7 +147,8 @@ Before draft day, verify:
 - [ ] There are four bench, two IR, and two IR+ slots.
 - [ ] Managers get four acquisitions per week.
 - [ ] Waivers last two days and use a continual rolling priority.
-- [ ] The draft is Live Standard, snaking, and 90 seconds per pick.
+- [ ] The draft is Live Standard and snaking, with the league's agreed 45- or
+      60-second pick timer.
 - [ ] The draft date, time, and time zone are visible to everyone.
 - [ ] All managers have joined before the team list is finalized.
 - [ ] Playoff settings and tiebreakers are visible in the league rules.
