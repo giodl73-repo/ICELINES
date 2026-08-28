@@ -64,6 +64,7 @@ nav:
     - Data: guides/04-data.md
     - Compare and History: guides/05-comps-history.md
     - TUI: guides/06-tui.md
+    - Yahoo Fantasy League Setup: guides/07-yahoo-fantasy-hockey-league-setup.md
     - Tutorial: TUTORIAL.md
   - Teams:
     - TBL — Tampa Bay Lightning: teams/TBL.md
