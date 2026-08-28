@@ -1,9 +1,15 @@
 # Set Up a Yahoo Fantasy Hockey League
 
 This is a quick commissioner guide for creating a friendly, competitive Yahoo
-Fantasy Hockey league. The custom settings below reproduce the **14-team
-head-to-head points format used by the existing Kraken league**. IceLines is
-only hosting this shareable guide.
+Fantasy Hockey league. It supports two approachable paths:
+
+- **Quick setup:** keep Yahoo's standard roster and scoring.
+- **Kraken-style setup:** use the optional custom roster and scoring shown
+  beside Yahoo's defaults.
+
+The number of teams is flexible. Choose an even number based on how many
+committed managers you have; the 14-team Kraken league is an example, not a
+requirement. IceLines is only hosting this shareable guide.
 
 Use a desktop browser if possible. Yahoo exposes more commissioner and draft
 controls there than it does in the mobile app.
@@ -25,9 +31,13 @@ Yahoo's official flow is also documented in
 
 Under **Commissioner → League Settings → Edit League Settings**, use:
 
+For the easiest setup, keep Yahoo's current-season defaults except for the
+number of teams and agreed draft time. The values below are sensible starting
+points if Yahoo asks you to choose.
+
 | Setting | Recommended value |
 |---|---|
-| Maximum teams | **14** |
+| Maximum teams | **Your confirmed even number of managers**; Yahoo's current Private League default is 12 |
 | Roster changes | **Daily – Today** |
 | Maximum acquisitions per week | **4** |
 | Maximum acquisitions per season | **No maximum** |
@@ -38,8 +48,8 @@ Under **Commissioner → League Settings → Edit League Settings**, use:
 | Trade review | **League votes** |
 | Trade rejection time | **2 days** |
 | Can't Cut List | **Yahoo Sports** |
-| Playoff teams | **6** |
-| Playoff weeks | **Weeks 23–25** |
+| Playoff teams | **6** for most leagues; consider **4** for a small league |
+| Playoff weeks | Yahoo's matching late-season option; the current default is **Weeks 23–25** for six teams |
 | Playoff reseeding | **Enabled** |
 | Playoff tiebreaker | **Higher seed wins** |
 
@@ -47,24 +57,31 @@ Leave the trade deadline at Yahoo's current-season default unless the league
 agrees on a different date. Ending playoffs before the final NHL weeks helps
 avoid late-season rest and shutdown chaos.
 
+Head-to-Head leagues need an even number of managers. Ten or 12 teams are easy
+starting points; use 14 only when 14 managers are committed. Do not inflate the
+league size with inactive placeholder teams.
+
 ## 3. Set the roster positions
 
-Under **Commissioner → Rosters & Scoring → Edit Roster Positions**, enter:
+Under **Commissioner → Rosters & Scoring → Edit Roster Positions**, choose one
+complete column. The Yahoo-standard column is the easiest setup; the Kraken
+column preserves that league's custom format.
 
-| Position | Slots |
-|---|---:|
-| Center (C) | 2 |
-| Left Wing (LW) | 2 |
-| Right Wing (RW) | 2 |
-| Defense (D) | 3 |
-| Utility (Util) | 1 |
-| Goalie (G) | 2 |
-| Bench (BN) | 4 |
-| Injured Reserve (IR) | 2 |
-| Injured Reserve Plus (IR+) | 2 |
+| Position | Yahoo standard | Kraken custom |
+|---|---:|---:|
+| Center (C) | **2** | **2** |
+| Left Wing (LW) | **2** | **2** |
+| Right Wing (RW) | **2** | **2** |
+| Defense (D) | **4** | **3** |
+| Utility (Util) | — | **1** |
+| Goalie (G) | **2** | **2** |
+| Bench (BN) | **4** | **4** |
+| Injured Reserve (IR) | **2** | **2** |
+| Injured Reserve Plus (IR+) | — | **2** |
 
-That creates **12 active slots plus four bench spots**. IR and IR+ are injury
-storage and are not ordinary draft targets.
+Both choices create **12 active slots plus four bench spots**. An em dash means
+the slot is not used. IR and IR+ are injury storage and are not ordinary draft
+targets.
 
 Double-check this before the draft. Yahoo allows some post-draft roster changes,
 but removing or restructuring slots can require resetting the draft. See
@@ -124,15 +141,13 @@ standard scores it as both a Goal and a Power-Play Point.
 ### Important: custom scoring and Yahoo rankings
 
 Custom weights change which players are actually most valuable. Yahoo displays
-several different ranking fields, and they should not be treated as
-interchangeable:
+more than one kind of ranking:
 
-- Yahoo says its **Expert Rank** uses the game's default scoring and determines
-  autopick order.
-- Yahoo separately describes a pre-draft **Rank** as league-aware, but also says
-  its **Default Rank** is unavailable in Head-to-Head Points leagues.
-- Therefore, managers in the custom Kraken format should not assume Yahoo's
-  visible player order or autopick order perfectly reflects these weights.
+- Yahoo says its pre-draft **Rank** can reflect league settings.
+- Its **Expert Rank** uses Yahoo's default scoring and determines autopick.
+
+Because those labels and behaviors differ, managers using Kraken scoring should
+not assume every player order shown by Yahoo reflects the custom weights.
 
 For a custom-scoring league, tell every manager to use a cheat sheet calculated
 with the league's weights and to set personal pre-draft rankings, especially if
@@ -154,16 +169,17 @@ Under **Commissioner → Draft & Keepers → Edit Draft Settings**:
 | Draft order | Random, or a method announced before the draft |
 
 Pick a date when all managers can attend and state the time zone in the league
-message. Wait until all 14 managers have joined before finalizing the team list
+message. Wait until all managers have joined before finalizing the team list
 and draft order.
 
 **League discussion point:** agree on either 45 or 60 seconds before draft day.
 Forty-five seconds keeps the draft moving but gives managers less recovery time
 after a surprise pick or connection problem. Sixty seconds is the safer default
-for a 14-team league without making the draft unnecessarily slow.
+for a mixed-experience league without making the draft unnecessarily slow.
 
-In a 14-team snake, the manager drafting 14th also drafts 15th, then 42nd and
-43rd, then 70th and 71st. The same turn pattern continues throughout the draft.
+Snake picks depend on league size. For example, in a 14-team league, the manager
+drafting 14th also drafts 15th, then 42nd and 43rd, then 70th and 71st. In a
+12-team league, the last manager drafts 12th and 13th, then 36th and 37th.
 
 Yahoo's commissioner controls for timing, order, pausing, and undoing picks are
 covered in [Manage your Private League's draft](https://help.yahoo.com/kb/fantasy-football/manage-private-leagues-draft-sln6086.html).
@@ -180,15 +196,14 @@ covered in [Manage your Private League's draft](https://help.yahoo.com/kb/fantas
 
 Before draft day, verify:
 
-- [ ] There are exactly 14 teams.
+- [ ] The team limit matches the confirmed even number of managers.
 - [ ] Scoring type is Head-to-Head Points.
 - [ ] The league chose either Yahoo standard scoring or the custom Kraken
       scoring before managers prepared for the draft.
 - [ ] Every scoring weight matches the league's selected column above.
 - [ ] If using custom scoring, managers were warned about Yahoo's ranking and
       autopick limitations and received time to create personal rankings.
-- [ ] The active roster is 2 C / 2 LW / 2 RW / 3 D / 1 Util / 2 G.
-- [ ] There are four bench, two IR, and two IR+ slots.
+- [ ] Every roster position matches the league's selected column above.
 - [ ] Managers get four acquisitions per week.
 - [ ] Waivers last two days and use a continual rolling priority.
 - [ ] The draft is Live Standard and snaking, with the league's agreed 45- or
