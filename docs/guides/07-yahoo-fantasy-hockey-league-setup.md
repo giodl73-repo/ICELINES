@@ -1,8 +1,9 @@
 # Set Up a Yahoo Fantasy Hockey League
 
 This is a quick commissioner guide for creating a friendly, competitive Yahoo
-Fantasy Hockey league. The recommended settings reproduce the **Dexter's
-Dawgs-style 14-team head-to-head points format** used with IceLines.
+Fantasy Hockey league. The custom settings below reproduce the **14-team
+head-to-head points format used by the existing Kraken league**. IceLines is
+only hosting this shareable guide.
 
 Use a desktop browser if possible. Yahoo exposes more commissioner and draft
 controls there than it does in the mobile app.
@@ -71,8 +72,21 @@ but removing or restructuring slots can require resetting the draft. See
 
 ## 4. Enter the points scoring
 
+First, make a league decision:
+
+- **Use the Kraken league's custom weights:** preserves the established format
+  and makes hits, blocks, special-teams production, and goalie volume matter in
+  its particular way. Use the tables below.
+- **Use Yahoo's standard Head-to-Head Points scoring:** simpler for new managers
+  and better aligned with Yahoo's general rankings and advice. Leave Yahoo's
+  default scoring weights unchanged and skip the custom tables below.
+
+Announce this choice before managers prepare for the draft. If the league does
+not strongly prefer the established Kraken format, Yahoo standard is the
+simpler commissioner choice.
+
 Under **Commissioner → Rosters & Scoring → Scoring Settings**, use these exact
-weights.
+weights only when choosing the custom Kraken format.
 
 ### Skaters
 
@@ -101,6 +115,27 @@ weights.
 Remove or set to zero any statistic not listed above. Yahoo adds bonuses to the
 base event: for example, a power-play goal earns both the Goal and Power-Play
 Goal values.
+
+### Important: custom scoring and Yahoo rankings
+
+Custom weights change which players are actually most valuable. Yahoo displays
+several different ranking fields, and they should not be treated as
+interchangeable:
+
+- Yahoo says its **Expert Rank** uses the game's default scoring and determines
+  autopick order.
+- Yahoo separately describes a pre-draft **Rank** as league-aware, but also says
+  its **Default Rank** is unavailable in Head-to-Head Points leagues.
+- Therefore, managers in the custom Kraken format should not assume Yahoo's
+  visible player order or autopick order perfectly reflects these weights.
+
+For a custom-scoring league, tell every manager to use a cheat sheet calculated
+with the league's weights and to set personal pre-draft rankings, especially if
+they may miss picks. For a low-preparation league where everyone expects to
+follow Yahoo's rankings, use Yahoo's standard scoring instead.
+
+See [Yahoo's explanation of player ranks](https://help.yahoo.com/kb/SLN6287.html)
+and [how to set personal pre-draft rankings](https://help.yahoo.com/kb/fantasy-hockey/autopick-draft-sln6163.html).
 
 ## 5. Configure the draft
 
@@ -142,7 +177,11 @@ Before draft day, verify:
 
 - [ ] There are exactly 14 teams.
 - [ ] Scoring type is Head-to-Head Points.
-- [ ] Every scoring weight matches the tables above.
+- [ ] The league chose either Yahoo standard scoring or the custom Kraken
+      scoring before managers prepared for the draft.
+- [ ] If using custom scoring, every scoring weight matches the tables above.
+- [ ] If using custom scoring, managers were warned about Yahoo's ranking and
+      autopick limitations and received time to create personal rankings.
 - [ ] The active roster is 2 C / 2 LW / 2 RW / 3 D / 1 Util / 2 G.
 - [ ] There are four bench, two IR, and two IR+ slots.
 - [ ] Managers get four acquisitions per week.
@@ -162,4 +201,6 @@ the rules before drafting.
 - [Create and customize a Private League](https://help.yahoo.com/kb/fantasy-hockey/create-customize-private-league-sln25711.html)
 - [Commissioner tools and settings](https://ca.help.yahoo.com/kb/fantasy-football/league-settings-sln7834.html)
 - [Default Fantasy Hockey settings](https://help.yahoo.com/kb/SLN6815.html)
+- [About player ranks in Yahoo Fantasy](https://help.yahoo.com/kb/SLN6287.html)
+- [Set personal pre-draft rankings](https://help.yahoo.com/kb/fantasy-hockey/autopick-draft-sln6163.html)
 - [Fantasy Hockey playoff settings](https://help.yahoo.com/kb/SLN6833.html)
