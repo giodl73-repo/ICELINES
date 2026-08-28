@@ -83,6 +83,21 @@ Both choices create **12 active slots plus four bench spots**. An em dash means
 the slot is not used. IR and IR+ are injury storage and are not ordinary draft
 targets.
 
+### IR versus IR+
+
+- **IR (Injured Reserve):** only accepts a player who is on the NHL team's
+  real-life injured-reserve list and has Yahoo's IR designation.
+- **IR+ (Injured Reserve Plus):** accepts players designated **IR**, **DTD**
+  (day-to-day), or **O** (out). It is more flexible and lets a manager replace
+  a temporarily unavailable player without waiting for an official NHL IR move.
+
+Players in either slot do not earn fantasy points. Yahoo may let a recovered
+player remain in the injury slot, but the manager must move that now-active
+player back onto the regular roster before completing a transaction that adds
+another player.
+
+See [Yahoo's injury-slot eligibility rules](https://help.yahoo.com/kb/fantasy-football/identify-manage-injured-inactive-players-tknproductsportsfantasyname-sports-sln28136.html).
+
 Double-check this before the draft. Yahoo allows some post-draft roster changes,
 but removing or restructuring slots can require resetting the draft. See
 [Yahoo's roster-position warning](https://help.yahoo.com/kb/fantasy-hockey/sln6941.html).
@@ -221,6 +236,7 @@ the rules before drafting.
 - [Create and customize a Private League](https://help.yahoo.com/kb/fantasy-hockey/create-customize-private-league-sln25711.html)
 - [Commissioner tools and settings](https://ca.help.yahoo.com/kb/fantasy-football/league-settings-sln7834.html)
 - [Default Fantasy Hockey settings](https://help.yahoo.com/kb/SLN6815.html)
+- [IR and IR+ eligibility](https://help.yahoo.com/kb/fantasy-football/identify-manage-injured-inactive-players-tknproductsportsfantasyname-sports-sln28136.html)
 - [About player ranks in Yahoo Fantasy](https://help.yahoo.com/kb/SLN6287.html)
 - [Set personal pre-draft rankings](https://help.yahoo.com/kb/fantasy-hockey/autopick-draft-sln6163.html)
 - [Fantasy Hockey playoff settings](https://help.yahoo.com/kb/SLN6833.html)
