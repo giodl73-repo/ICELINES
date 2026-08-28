@@ -285,7 +285,9 @@ pub fn parse_moneypuck_line_id(value: &str) -> Result<Vec<u32>, MoneyPuckLineGam
     }
     let mut ids = value
         .as_bytes()
-        .chunks_exact(7)
+        .as_chunks::<7>()
+        .0
+        .iter()
         .map(|chunk| {
             std::str::from_utf8(chunk)
                 .ok()
