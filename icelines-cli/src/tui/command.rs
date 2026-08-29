@@ -943,7 +943,7 @@ fn parse_class(args: &str) -> Result<Command, ParseError> {
 fn parse_career(args: &str) -> Result<Command, ParseError> {
     let mut parsed = CareerCommandArgs::default();
     for token in args.split_whitespace() {
-        let (key, value) = token.split_once('=').map_or(("league", token), |pair| pair);
+        let (key, value) = token.split_once('=').unwrap_or(("league", token));
         let key = key.trim().to_ascii_lowercase();
         let value = value.trim();
         if value.is_empty() {
