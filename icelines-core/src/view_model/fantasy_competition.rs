@@ -82,9 +82,6 @@ impl FantasyCompetitionRules {
             FantasyCompetitionMode::Points if !self.categories.is_empty() => {
                 return Err("points mode cannot contain category rules".to_owned());
             }
-            FantasyCompetitionMode::Points if self.minimum_goalie_appearances != 0 => {
-                return Err("points mode cannot require category goalie appearances".to_owned());
-            }
             FantasyCompetitionMode::Categories if self.categories.is_empty() => {
                 return Err("category mode requires at least one scored category".to_owned());
             }
@@ -175,5 +172,13 @@ mod tests {
         let mut points = FantasyCompetitionRules::points();
         points.categories.push(category("goals"));
         assert!(points.validate().is_err());
+    }
+
+    #[test]
+    fn points_mode_allows_a_goalie_appearance_minimum() {
+        let mut points = FantasyCompetitionRules::points();
+        points.minimum_goalie_appearances = 2;
+
+        assert!(points.validate().is_ok());
     }
 }

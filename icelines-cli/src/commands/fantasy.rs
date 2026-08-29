@@ -21,13 +21,14 @@ use icelines_core::view_model::{
 };
 use icelines_core::{
     apply_fantasy_pickup_reserve, build_fantasy_category_matchup, build_fantasy_daily_lineup,
-    build_fantasy_draft_board, build_fantasy_draft_card, build_fantasy_goalie_plan,
-    build_fantasy_matchup_strategy, build_fantasy_morning_briefing, build_fantasy_morning_card,
-    build_fantasy_playoff_portfolio, build_fantasy_roster_card, build_fantasy_schedule_view,
-    build_fantasy_simulation_view, build_fantasy_sleeper_board, build_fantasy_trade_card,
-    build_fantasy_week_budget, build_fantasy_weekly_pickups_with_reserve_override,
-    fantasy_acquisition_availability, goalie_scheme_stats_from_view,
-    import_fantasy_platform_eligibility, import_fantasy_taken_players,
+    build_fantasy_draft_board, build_fantasy_draft_card, build_fantasy_draft_simulation,
+    build_fantasy_goalie_plan, build_fantasy_matchup_strategy, build_fantasy_morning_briefing,
+    build_fantasy_morning_card, build_fantasy_playoff_portfolio, build_fantasy_roster_card,
+    build_fantasy_schedule_view, build_fantasy_simulation_view, build_fantasy_sleeper_board,
+    build_fantasy_trade_card, build_fantasy_week_budget,
+    build_fantasy_weekly_pickups_with_reserve_override, fantasy_acquisition_availability,
+    goalie_scheme_stats_from_view, import_fantasy_platform_eligibility,
+    import_fantasy_taken_players,
     model::{Position, Season},
     name::normalize_name,
     rank_fantasy_playoff_candidate_fits, resolve_fantasy_goalie_start,
@@ -43,19 +44,21 @@ use icelines_core::{
     FantasyCategoryRule, FantasyCategoryScope, FantasyCategorySnapshotInput,
     FantasyCategoryTeamInput, FantasyCompetitionMode, FantasyCompetitionRules,
     FantasyDraftCandidateInput, FantasyDraftCardInput, FantasyDraftIdentityInput,
-    FantasyGoalieGameInput, FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput,
-    FantasyGoalieStartObservation, FantasyGoalieStartState, FantasyInjuryPlanView,
-    FantasyLeagueInput, FantasyLeagueTeamInput, FantasyLeagueView, FantasyLineupPlayerInput,
-    FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy, FantasyMatchupStrategyInput,
-    FantasyMatchupStrategyPlayerInput, FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView,
-    FantasyMatchupSwingInput, FantasyMatchupTiePolicy, FantasyMorningCardInput,
-    FantasyObservationConfidence, FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput,
-    FantasyPlayoffPortfolioInput, FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput,
-    FantasyRosterCardInput, FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind,
-    FantasySeasonSimConfig, FantasySeasonSimPlayerInput, FantasySeasonSimView,
-    FantasySimulationBuildInput, FantasySimulationConfidence, FantasySimulationHorizon,
-    FantasySimulationRosterTeamInput, FantasySimulationScenarioRosterInput, FantasySimulationView,
-    FantasySleeperBoardView, FantasySleeperInput, FantasyStatusObservation, FantasyTradeCardInput,
+    FantasyDraftSimulationCandidateInput, FantasyDraftSimulationInput,
+    FantasyDraftSimulationStrategy, FantasyDraftSimulationView, FantasyGoalieGameInput,
+    FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput, FantasyGoalieStartObservation,
+    FantasyGoalieStartState, FantasyInjuryPlanView, FantasyLeagueInput, FantasyLeagueTeamInput,
+    FantasyLeagueView, FantasyLineupPlayerInput, FantasyMatchupPointsSnapshotInput,
+    FantasyMatchupStrategy, FantasyMatchupStrategyInput, FantasyMatchupStrategyPlayerInput,
+    FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView, FantasyMatchupSwingInput,
+    FantasyMatchupTiePolicy, FantasyMorningCardInput, FantasyObservationConfidence,
+    FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput, FantasyPlayoffPortfolioInput,
+    FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput, FantasyRosterCardInput,
+    FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind, FantasySeasonSimConfig,
+    FantasySeasonSimPlayerInput, FantasySeasonSimView, FantasySimulationBuildInput,
+    FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
+    FantasySimulationScenarioRosterInput, FantasySimulationView, FantasySleeperBoardView,
+    FantasySleeperInput, FantasyStatusObservation, FantasyTradeCardInput,
     FantasyTradeEvaluationView, FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation,
     FantasyWeeklyMoveInput, RosterShape, RosterShapeStatus, RosterShapeValidationView, ViewContext,
     ViewWindow, CURRENT_SEASON, FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_TRADE_EVALUATION_SCHEMA,
@@ -132,6 +135,17 @@ pub struct SeasonSimArgs {
     pub season: u32,
     pub stats_season: String,
     pub json: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct DraftSimulationArgs {
+    pub league_size: usize,
+    pub draft_slot: usize,
+    pub rounds: usize,
+    pub max_goalies: Option<usize>,
+    pub market_rank_buffer: Option<usize>,
+    pub strategies: Vec<String>,
+    pub market_file: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -5396,11 +5410,16 @@ pub async fn run_draft_board(
     eligibility_file: Option<PathBuf>,
     hypothetical_pick: Option<String>,
     league_override: Option<String>,
+    league_size: Option<usize>,
     stats_season: String,
     top: usize,
     json: bool,
     card: bool,
+    simulation: Option<DraftSimulationArgs>,
 ) -> anyhow::Result<()> {
+    if league_size.is_some_and(|size| size < 2) {
+        bail!("--league-size must be at least 2");
+    }
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
     let scheme = resolve_scheme(&league.scheme)?;
@@ -5424,6 +5443,15 @@ pub async fn run_draft_board(
     let (outcome, season, _) =
         crate::commands::players::load_repo_for_season(Some(&stats_season), None)?;
     let (skaters, goalies) = pools_views(&outcome.repo, season);
+    let age_as_of = Utc::now().date_naive();
+    let age_by_name = skaters
+        .iter()
+        .chain(&goalies)
+        .filter_map(|view| {
+            player_age_on(view.identity.bio.birth_date.as_deref()?, age_as_of)
+                .map(|age| (view.identity.name_normalized.clone(), age))
+        })
+        .collect::<HashMap<_, _>>();
     let all_player_keys = skaters
         .iter()
         .chain(&goalies)
@@ -5433,15 +5461,25 @@ pub async fn run_draft_board(
         .into_iter()
         .map(|(name, score)| (normalize_name(&name), f64::from(score)))
         .collect::<HashMap<_, _>>();
-    if taken_file
-        .as_ref()
-        .is_some_and(|path| path.to_string_lossy() == "-")
-        && eligibility_file
+    let stdin_inputs = [
+        taken_file.as_ref(),
+        eligibility_file.as_ref(),
+        simulation
             .as_ref()
-            .is_some_and(|path| path.to_string_lossy() == "-")
-    {
-        bail!("--taken-file and --eligibility-file cannot both read stdin");
+            .and_then(|simulation| simulation.market_file.as_ref()),
+    ]
+    .into_iter()
+    .flatten()
+    .filter(|path| path.to_string_lossy() == "-")
+    .count();
+    if stdin_inputs > 1 {
+        bail!("only one of --taken-file, --eligibility-file, and --market-file may read stdin");
     }
+    let market_data = read_market_draft_data(
+        simulation
+            .as_ref()
+            .and_then(|simulation| simulation.market_file.as_ref()),
+    )?;
     let mut identities = skaters
         .iter()
         .chain(&goalies)
@@ -5499,7 +5537,12 @@ pub async fn run_draft_board(
                     .get(&key)
                     .cloned()
                     .unwrap_or_else(|| vec![view.position()]),
-                quality: score_by_name.get(&key).copied().unwrap_or_default(),
+                quality: market_data
+                    .projected_quality
+                    .get(&key)
+                    .copied()
+                    .or_else(|| score_by_name.get(&key).copied())
+                    .unwrap_or_default(),
                 games_played: view.gp(),
             }
         })
@@ -5561,7 +5604,14 @@ pub async fn run_draft_board(
         .filter_map(|player| team_dates.get(&player.team))
         .flat_map(|dates| dates.iter().copied())
         .collect::<BTreeSet<_>>();
-    let replacement_team_count = if teams.len() >= 2 { teams.len() } else { 12 };
+    if league_size.is_some_and(|size| size < teams.len()) {
+        bail!(
+            "--league-size cannot be smaller than the {} imported fantasy teams",
+            teams.len()
+        );
+    }
+    let replacement_team_count =
+        league_size.unwrap_or_else(|| if teams.len() >= 2 { teams.len() } else { 12 });
     let replacement = draft_replacement_levels(&pool, &rules, replacement_team_count);
     let candidates = pool
         .iter()
@@ -5600,13 +5650,23 @@ pub async fn run_draft_board(
             }
         })
         .collect::<Vec<_>>();
+    let board_limit = if simulation.is_some() {
+        candidates.len()
+    } else {
+        top
+    };
+    let scoring_season_label = if market_data.projected_quality.is_empty() {
+        stats_season.clone()
+    } else {
+        format!("{stats_season} + external projections")
+    };
     let mut board = build_fantasy_draft_board(
         league.scheme.clone(),
-        stats_season,
+        scoring_season_label,
         open_slots,
         candidates,
         taken_import,
-        top,
+        board_limit,
     )
     .map_err(anyhow::Error::msg)?;
     board.eligibility_import = eligibility_import;
@@ -5615,11 +5675,15 @@ pub async fn run_draft_board(
             .warnings
             .push("no user team is marked; all active roster slots are treated as open".to_owned());
     }
-    if teams.len() < 2 {
+    if teams.len() < 2 && league_size.is_none() {
         board.warnings.push(
             "opponent teams are not imported; positional replacement level assumes a 12-team league"
                 .to_owned(),
         );
+    } else if let Some(size) = league_size {
+        board.warnings.push(format!(
+            "positional replacement level uses the explicit {size}-team league size"
+        ));
     }
     if eligibility.is_empty() {
         board.warnings.push(
@@ -5650,6 +5714,24 @@ pub async fn run_draft_board(
                 .to_owned(),
         );
     }
+    if !market_data.projected_quality.is_empty() {
+        let matched = pool
+            .iter()
+            .filter(|player| market_data.projected_quality.contains_key(&player.key))
+            .count();
+        board.warnings.push(format!(
+            "external league-scored projections override the completed-season quality for {matched} matched player(s)"
+        ));
+    }
+    if !market_data.ranks.is_empty() {
+        let matched = pool
+            .iter()
+            .filter(|player| market_data.ranks.contains_key(&player.key))
+            .count();
+        board.warnings.push(format!(
+            "market order uses imported rank/ADP for {matched} matched player(s); unranked players fall back to IceLines board order"
+        ));
+    }
     board.warnings.push(
         "injury and role risk are not yet deducted; verify late news before drafting".to_owned(),
     );
@@ -5663,7 +5745,73 @@ pub async fn run_draft_board(
         ));
     }
 
-    if card {
+    if let Some(simulation) = simulation {
+        let strategies = simulation
+            .strategies
+            .iter()
+            .map(|strategy| parse_draft_simulation_strategy(strategy))
+            .collect::<anyhow::Result<Vec<_>>>()?;
+        let initial_team_counts = user_roster
+            .iter()
+            .filter_map(|key| pool.iter().find(|player| &player.key == key))
+            .fold(BTreeMap::<String, usize>::new(), |mut counts, player| {
+                *counts.entry(player.team.clone()).or_default() += 1;
+                counts
+            });
+        let initial_goalies = user_roster
+            .iter()
+            .filter_map(|key| pool.iter().find(|player| &player.key == key))
+            .filter(|player| player.positions.contains(&Position::Goalie))
+            .count();
+        let max_goalies = simulation.max_goalies.unwrap_or_else(|| {
+            rules
+                .active_slots
+                .get(&FantasyActiveSlotKind::Goalie)
+                .copied()
+                .unwrap_or_default() as usize
+                + 1
+        });
+        if max_goalies < initial_goalies {
+            bail!(
+                "--max-goalies {max_goalies} is below the {initial_goalies} goalies already rostered"
+            );
+        }
+        let completed_picks = board.taken_import.matched.max(all_rostered.len());
+        let current_overall_pick = completed_picks.saturating_add(1);
+        let mut view = build_fantasy_draft_simulation(FantasyDraftSimulationInput {
+            league_size: simulation.league_size,
+            draft_slot: simulation.draft_slot,
+            rounds: simulation.rounds,
+            current_overall_pick,
+            scoring_scheme: board.scoring_scheme.clone(),
+            scoring_season: board.scoring_season.clone(),
+            open_slots: board.open_slots.clone(),
+            initial_team_counts,
+            initial_goalies,
+            max_goalies: Some(max_goalies),
+            market_rank_buffer: simulation
+                .market_rank_buffer
+                .unwrap_or(simulation.league_size),
+            candidates: board
+                .rows
+                .iter()
+                .cloned()
+                .map(|candidate| FantasyDraftSimulationCandidateInput {
+                    age: age_by_name.get(&candidate.player_key).copied(),
+                    market_rank: market_data.ranks.get(&candidate.player_key).copied(),
+                    candidate,
+                })
+                .collect(),
+            strategies,
+        })
+        .map_err(anyhow::Error::msg)?;
+        view.warnings.extend(board.warnings);
+        if json {
+            println!("{}", serde_json::to_string_pretty(&view)?);
+        } else {
+            print_draft_simulation(&view);
+        }
+    } else if card {
         let generated_at = Utc::now();
         let mut view =
             ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular));
@@ -5708,6 +5856,202 @@ fn read_taken_player_input(path: Option<&PathBuf>) -> anyhow::Result<String> {
         return Ok(input);
     }
     std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))
+}
+
+fn player_age_on(birth_date: &str, as_of: NaiveDate) -> Option<u8> {
+    let birth = NaiveDate::parse_from_str(birth_date, "%Y-%m-%d").ok()?;
+    if birth > as_of {
+        return None;
+    }
+    let mut age = as_of.year() - birth.year();
+    if (as_of.month(), as_of.day()) < (birth.month(), birth.day()) {
+        age -= 1;
+    }
+    u8::try_from(age).ok()
+}
+
+#[derive(Debug, Default)]
+struct MarketDraftData {
+    ranks: HashMap<String, usize>,
+    projected_quality: HashMap<String, f64>,
+}
+
+fn read_market_draft_data(path: Option<&PathBuf>) -> anyhow::Result<MarketDraftData> {
+    let Some(path) = path else {
+        return Ok(MarketDraftData::default());
+    };
+    let input = read_taken_player_input(Some(path))?;
+    let mut reader = csv::ReaderBuilder::new()
+        .flexible(true)
+        .from_reader(input.as_bytes());
+    let headers = reader
+        .headers()
+        .context("invalid market-rank CSV header")?
+        .clone();
+    let player_column = headers
+        .iter()
+        .position(|header| {
+            matches!(
+                normalize_csv_header(header).as_str(),
+                "player" | "player name" | "name" | "full name"
+            )
+        })
+        .context("market-rank CSV requires Player, Player Name, Name, or Full Name")?;
+    let rank_column = headers.iter().position(|header| {
+        matches!(
+            normalize_csv_header(header).as_str(),
+            "rank"
+                | "overall rank"
+                | "pre rank"
+                | "prerank"
+                | "adp"
+                | "average draft position"
+                | "nhl expert rank"
+        )
+    });
+    let quality_column = headers.iter().position(|header| {
+        matches!(
+            normalize_csv_header(header).as_str(),
+            "expected fantasy points"
+                | "projected fantasy points"
+                | "projected points"
+                | "fantasy point projection"
+                | "xfp"
+        )
+    });
+    if rank_column.is_none() && quality_column.is_none() {
+        bail!("market CSV requires a Rank/ADP column, an Expected Fantasy Points column, or both");
+    }
+    let mut ranks = HashMap::<String, usize>::new();
+    let mut projected_quality = HashMap::<String, f64>::new();
+    for (index, row) in reader.records().enumerate() {
+        let row = row.with_context(|| format!("invalid market-rank CSV row {}", index + 2))?;
+        let player = normalize_name(row.get(player_column).unwrap_or_default());
+        if player.is_empty() {
+            continue;
+        }
+        if let Some(column) = rank_column {
+            let rank_text = row.get(column).unwrap_or_default().trim();
+            if !rank_text.is_empty() {
+                let rank = rank_text
+                    .parse::<f64>()
+                    .with_context(|| {
+                        format!("invalid market rank '{rank_text}' on row {}", index + 2)
+                    })?
+                    .round();
+                if !rank.is_finite() || rank < 1.0 || rank > usize::MAX as f64 {
+                    bail!("market rank must be a positive number on row {}", index + 2);
+                }
+                ranks
+                    .entry(player.clone())
+                    .and_modify(|existing| *existing = (*existing).min(rank as usize))
+                    .or_insert(rank as usize);
+            }
+        }
+        if let Some(column) = quality_column {
+            let quality_text = row.get(column).unwrap_or_default().trim();
+            if !quality_text.is_empty() {
+                let quality = quality_text.parse::<f64>().with_context(|| {
+                    format!(
+                        "invalid projected fantasy points '{quality_text}' on row {}",
+                        index + 2
+                    )
+                })?;
+                if !quality.is_finite() || quality < 0.0 {
+                    bail!(
+                        "projected fantasy points must be finite and non-negative on row {}",
+                        index + 2
+                    );
+                }
+                projected_quality.insert(player.clone(), quality);
+            }
+        }
+    }
+    Ok(MarketDraftData {
+        ranks,
+        projected_quality,
+    })
+}
+
+fn normalize_csv_header(value: &str) -> String {
+    value
+        .trim()
+        .to_ascii_lowercase()
+        .replace(['_', '-'], " ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn parse_draft_simulation_strategy(value: &str) -> anyhow::Result<FantasyDraftSimulationStrategy> {
+    match value.trim().to_ascii_lowercase().replace('_', "-").as_str() {
+        "balanced" => Ok(FantasyDraftSimulationStrategy::Balanced),
+        "youth" | "upside" | "youth-upside" => Ok(FantasyDraftSimulationStrategy::YouthUpside),
+        "schedule" | "schedule-first" => Ok(FantasyDraftSimulationStrategy::ScheduleFirst),
+        other => {
+            bail!("unknown draft strategy '{other}'; use balanced, youth-upside, or schedule-first")
+        }
+    }
+}
+
+fn print_draft_simulation(view: &FantasyDraftSimulationView) {
+    println!("THE BENCH — WAR ROOM — SNAKE DRAFT SIMULATION");
+    println!(
+        "{} teams · slot {} · {} rounds · {} scoring on {} stats",
+        view.league_size, view.draft_slot, view.rounds, view.scoring_scheme, view.scoring_season
+    );
+    println!(
+        "Snake turns: {}",
+        view.snake_picks
+            .iter()
+            .map(usize::to_string)
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    for warning in &view.warnings {
+        println!("warning: {warning}");
+    }
+    for path in &view.paths {
+        println!(
+            "\n{} — {:.1} league-scored quality · {} NHL teams",
+            path.label, path.projected_league_scored_quality, path.unique_nhl_teams
+        );
+        println!(
+            "{:<5} {:<6} {:<25} {:<5} {:<11} {:>4} {:>6}  Fallback",
+            "Rnd", "Pick", "Player", "Team", "Pos", "Age", "Market"
+        );
+        for pick in &path.picks {
+            let positions = pick
+                .platform_positions
+                .iter()
+                .map(|position| position.abbreviation())
+                .collect::<Vec<_>>()
+                .join("/");
+            println!(
+                "{:<5} {:<6} {:<25} {:<5} {:<11} {:>4} {:>6}  {}",
+                pick.round,
+                pick.overall_pick,
+                pick.player,
+                pick.nhl_team,
+                positions,
+                pick.age
+                    .map_or_else(|| "—".to_owned(), |age| age.to_string()),
+                pick.market_rank
+                    .map_or_else(|| "—".to_owned(), |rank| rank.to_string()),
+                pick.fallback_player.as_deref().unwrap_or("—")
+            );
+        }
+        if !path.remaining_open_slots.is_empty() {
+            println!(
+                "Open after simulation: {}",
+                path.remaining_open_slots
+                    .iter()
+                    .map(|slot| slot.slot_id.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+    }
 }
 
 fn draft_schedule_metrics(
@@ -8207,6 +8551,41 @@ mod tests {
         assert_eq!(rule.aggregation, FantasyCategoryAggregation::Ratio);
         assert_eq!(rule.tie_epsilon, 0.001);
         assert!(parse_category_rule_spec("goals:higher").is_err());
+    }
+
+    #[test]
+    fn market_csv_accepts_snake_case_rank_and_projection_headers() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "icelines-draft-market-{}-{unique}.csv",
+            std::process::id()
+        ));
+        std::fs::write(
+            &path,
+            "player,nhl_expert_rank,expected_fantasy_points\nNick Suzuki,15,376.9\n",
+        )
+        .unwrap();
+        let data = read_market_draft_data(Some(&path)).unwrap();
+        let _ = std::fs::remove_file(&path);
+
+        assert_eq!(data.ranks["nick suzuki"], 15);
+        assert_eq!(data.projected_quality["nick suzuki"], 376.9);
+    }
+
+    #[test]
+    fn draft_simulation_strategy_aliases_are_explicit() {
+        assert_eq!(
+            parse_draft_simulation_strategy("youth_upside").unwrap(),
+            FantasyDraftSimulationStrategy::YouthUpside
+        );
+        assert_eq!(
+            parse_draft_simulation_strategy("schedule").unwrap(),
+            FantasyDraftSimulationStrategy::ScheduleFirst
+        );
+        assert!(parse_draft_simulation_strategy("reckless").is_err());
     }
 
     #[test]

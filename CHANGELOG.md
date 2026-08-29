@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Added `fantasy draft-sim`, a reusable snake-draft planner that accepts league
+  size, draft slot, rounds, taken-player and eligibility inputs, and optional
+  Rank/ADP plus league-scored projection CSV data. It compares Balanced,
+  Youth-Upside, and Schedule-First paths, models intervening market-order picks,
+  fills legal roster slots, enforces a configurable goalie cap, and reports
+  fallbacks and team distribution in text or `fantasy_draft_simulation.v1` JSON.
+- Fixed points-league competition validation to preserve a configured minimum
+  goalie-appearance rule; Yahoo-style points leagues can now drive the same
+  goalie-safety planner as category leagues.
+
 - IceCast `season --json --out` now writes compact JSON while terminal JSON
   remains pretty-printed, removing generated indentation from retained complete
   league forecasts without removing forecast data or evidence.

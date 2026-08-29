@@ -18,6 +18,7 @@ pub const FANTASY_ASSISTANT_RULES_SCHEMA: &str = "fantasy_assistant_rules.v1";
 pub const FANTASY_DAILY_LINEUP_SCHEMA: &str = "fantasy_daily_lineup.v1";
 pub const FANTASY_TAKEN_IMPORT_SCHEMA: &str = "fantasy_taken_import.v1";
 pub const FANTASY_DRAFT_BOARD_SCHEMA: &str = "fantasy_draft_board.v1";
+pub const FANTASY_DRAFT_SIMULATION_SCHEMA: &str = "fantasy_draft_simulation.v1";
 pub const FANTASY_ELIGIBILITY_IMPORT_SCHEMA: &str = "fantasy_eligibility_import.v1";
 pub const FANTASY_WEEK_BUDGET_SCHEMA: &str = "fantasy_week_budget.v1";
 pub const FANTASY_WEEKLY_PICKUP_SCHEMA: &str = "fantasy_weekly_pickup.v1";
@@ -717,12 +718,19 @@ pub fn import_fantasy_platform_eligibility(
         .headers()
         .map_err(|error| format!("invalid eligibility CSV header: {error}"))?
         .clone();
-    let name_column = headers
+    let name_column = headers.iter().position(is_player_name_header);
+    let first_name_column = headers
         .iter()
-        .position(is_player_name_header)
-        .ok_or_else(|| {
-            "eligibility CSV requires Player, Player Name, Name, or Full Name".to_owned()
-        })?;
+        .position(|header| normalize_name(header) == "first name");
+    let last_name_column = headers
+        .iter()
+        .position(|header| normalize_name(header) == "last name");
+    if name_column.is_none() && (first_name_column.is_none() || last_name_column.is_none()) {
+        return Err(
+            "eligibility CSV requires Player, Player Name, Name, Full Name, or First Name + Last Name"
+                .to_owned(),
+        );
+    }
     let position_column = headers
         .iter()
         .position(is_eligibility_header)
@@ -742,7 +750,19 @@ pub fn import_fantasy_platform_eligibility(
     let mut rows = Vec::new();
     for (index, record) in reader.records().enumerate() {
         let record = record.map_err(|error| format!("invalid eligibility CSV: {error}"))?;
-        let supplied_name = record.get(name_column).unwrap_or("").trim().to_owned();
+        let supplied_name = if let Some(column) = name_column {
+            record.get(column).unwrap_or("").trim().to_owned()
+        } else {
+            let first = record
+                .get(first_name_column.expect("validated first-name column"))
+                .unwrap_or("")
+                .trim();
+            let last = record
+                .get(last_name_column.expect("validated last-name column"))
+                .unwrap_or("")
+                .trim();
+            format!("{first} {last}").trim().to_owned()
+        };
         let normalized = normalize_name(&supplied_name);
         let positions_text = record.get(position_column).unwrap_or("");
         let parsed_positions = parse_platform_positions(positions_text);
@@ -843,6 +863,10 @@ fn parse_platform_positions(value: &str) -> Result<Vec<Position>, String> {
             "RW" | "R" => Position::RightWing,
             "D" => Position::Defense,
             "G" => Position::Goalie,
+            // Yahoo includes the generic roster slot in every skater's
+            // eligibility (for example `C,Util`).  It is not a player
+            // position and must not invalidate the actual positions.
+            "UTIL" => continue,
             other => return Err(format!("unsupported platform position '{other}'")),
         };
         if !positions.contains(&position) {
@@ -930,6 +954,448 @@ pub struct FantasyDraftBoardView {
     pub taken_import: FantasyTakenImportView,
     pub eligibility_import: Option<FantasyEligibilityImportView>,
     pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FantasyDraftSimulationStrategy {
+    Balanced,
+    YouthUpside,
+    ScheduleFirst,
+}
+
+impl FantasyDraftSimulationStrategy {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Balanced => "Balanced",
+            Self::YouthUpside => "Youth-Upside",
+            Self::ScheduleFirst => "Schedule-First",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FantasyDraftSimulationCandidateInput {
+    pub candidate: FantasyDraftCandidateRow,
+    /// Age on the simulation date. Missing age receives no youth adjustment.
+    pub age: Option<u8>,
+    /// Expected public draft order. Lower ranks are selected first by opponents.
+    /// When absent, the IceLines board rank is used as the market proxy.
+    pub market_rank: Option<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FantasyDraftSimulationInput {
+    pub league_size: usize,
+    pub draft_slot: usize,
+    pub rounds: usize,
+    #[serde(default = "default_current_overall_pick")]
+    pub current_overall_pick: usize,
+    pub scoring_scheme: String,
+    pub scoring_season: String,
+    pub open_slots: Vec<FantasyActiveSlot>,
+    #[serde(default)]
+    pub initial_team_counts: BTreeMap<String, usize>,
+    #[serde(default)]
+    pub initial_goalies: usize,
+    /// Maximum goalies allowed in a simulated roster. `None` leaves the bench
+    /// unrestricted; callers should normally use active G slots plus one.
+    #[serde(default)]
+    pub max_goalies: Option<usize>,
+    /// Picks beyond the next user turn treated as the market uncertainty band.
+    /// A one-round buffer is a conservative default for sparse ADP inputs.
+    #[serde(default)]
+    pub market_rank_buffer: usize,
+    pub candidates: Vec<FantasyDraftSimulationCandidateInput>,
+    pub strategies: Vec<FantasyDraftSimulationStrategy>,
+}
+
+fn default_current_overall_pick() -> usize {
+    1
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FantasyDraftSimulationPickRow {
+    pub round: usize,
+    pub overall_pick: usize,
+    pub player_key: String,
+    pub player: String,
+    pub nhl_team: String,
+    pub platform_positions: Vec<Position>,
+    pub age: Option<u8>,
+    pub market_rank: Option<usize>,
+    pub filled_slot: Option<FantasyActiveSlotKind>,
+    pub draft_value: f64,
+    pub strategy_value: f64,
+    pub fallback_player: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FantasyDraftSimulationPath {
+    pub strategy: FantasyDraftSimulationStrategy,
+    pub label: String,
+    pub picks: Vec<FantasyDraftSimulationPickRow>,
+    pub projected_draft_value: f64,
+    pub projected_league_scored_quality: f64,
+    pub unique_nhl_teams: usize,
+    pub team_distribution: BTreeMap<String, usize>,
+    pub remaining_open_slots: Vec<FantasyActiveSlot>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FantasyDraftSimulationView {
+    pub schema: String,
+    pub league_size: usize,
+    pub draft_slot: usize,
+    pub rounds: usize,
+    pub current_overall_pick: usize,
+    pub scoring_scheme: String,
+    pub scoring_season: String,
+    pub snake_picks: Vec<usize>,
+    pub paths: Vec<FantasyDraftSimulationPath>,
+    pub warnings: Vec<String>,
+}
+
+pub fn fantasy_snake_pick_numbers(
+    league_size: usize,
+    draft_slot: usize,
+    rounds: usize,
+) -> Result<Vec<usize>, String> {
+    if league_size < 2 {
+        return Err("league_size must be at least 2".to_owned());
+    }
+    if draft_slot == 0 || draft_slot > league_size {
+        return Err(format!("draft_slot must be between 1 and {league_size}"));
+    }
+    if rounds == 0 {
+        return Err("rounds must be at least 1".to_owned());
+    }
+    Ok((1..=rounds)
+        .map(|round| {
+            let within_round = if round % 2 == 1 {
+                draft_slot
+            } else {
+                league_size - draft_slot + 1
+            };
+            (round - 1) * league_size + within_round
+        })
+        .collect())
+}
+
+pub fn build_fantasy_draft_simulation(
+    input: FantasyDraftSimulationInput,
+) -> Result<FantasyDraftSimulationView, String> {
+    let snake_picks =
+        fantasy_snake_pick_numbers(input.league_size, input.draft_slot, input.rounds)?;
+    let total_picks = input.league_size.saturating_mul(input.rounds);
+    if input.current_overall_pick == 0 || input.current_overall_pick > total_picks {
+        return Err(format!(
+            "current_overall_pick must be between 1 and {total_picks}"
+        ));
+    }
+    if input.candidates.is_empty() {
+        return Err("draft simulation requires at least one candidate".to_owned());
+    }
+    if input.strategies.is_empty() {
+        return Err("draft simulation requires at least one strategy".to_owned());
+    }
+
+    let mut warnings = Vec::new();
+    if input
+        .candidates
+        .iter()
+        .all(|candidate| candidate.market_rank.is_none())
+    {
+        warnings.push(
+            "no market ranks were supplied; opponent picks use the IceLines draft-board order"
+                .to_owned(),
+        );
+    }
+    if input
+        .strategies
+        .contains(&FantasyDraftSimulationStrategy::YouthUpside)
+        && input
+            .candidates
+            .iter()
+            .all(|candidate| candidate.age.is_none())
+    {
+        warnings
+            .push("player ages were unavailable; Youth-Upside has no age adjustment".to_owned());
+    }
+    warnings.push(
+        "opponent selections are deterministic market-order estimates, not calibrated pick probabilities"
+            .to_owned(),
+    );
+
+    let paths = input
+        .strategies
+        .iter()
+        .copied()
+        .map(|strategy| simulate_draft_path(&input, &snake_picks, strategy))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(FantasyDraftSimulationView {
+        schema: FANTASY_DRAFT_SIMULATION_SCHEMA.to_owned(),
+        league_size: input.league_size,
+        draft_slot: input.draft_slot,
+        rounds: input.rounds,
+        current_overall_pick: input.current_overall_pick,
+        scoring_scheme: input.scoring_scheme,
+        scoring_season: input.scoring_season,
+        snake_picks,
+        paths,
+        warnings,
+    })
+}
+
+fn simulate_draft_path(
+    input: &FantasyDraftSimulationInput,
+    snake_picks: &[usize],
+    strategy: FantasyDraftSimulationStrategy,
+) -> Result<FantasyDraftSimulationPath, String> {
+    let user_picks = snake_picks.iter().copied().collect::<BTreeSet<_>>();
+    let mut available = input
+        .candidates
+        .iter()
+        .map(|candidate| (candidate.candidate.player_key.clone(), candidate.clone()))
+        .collect::<BTreeMap<_, _>>();
+    let mut open_slots = input.open_slots.clone();
+    let mut team_distribution = input.initial_team_counts.clone();
+    let mut goalie_count = input.initial_goalies;
+    let mut picks = Vec::new();
+
+    for overall_pick in input.current_overall_pick..=input.league_size * input.rounds {
+        if available.is_empty() {
+            break;
+        }
+        if !user_picks.contains(&overall_pick) {
+            let opponent_pick = available
+                .values()
+                .min_by(|a, b| market_order(a).cmp(&market_order(b)))
+                .map(|candidate| candidate.candidate.player_key.clone())
+                .expect("available candidate exists");
+            available.remove(&opponent_pick);
+            continue;
+        }
+
+        let future_user_picks = user_picks.range((overall_pick + 1)..).count();
+        let next_user_pick = user_picks.range((overall_pick + 1)..).next().copied();
+        let mut ranked = available
+            .values()
+            .filter(|candidate| {
+                let goalie = candidate
+                    .candidate
+                    .platform_positions
+                    .contains(&Position::Goalie);
+                !goalie || input.max_goalies.is_none_or(|limit| goalie_count < limit)
+            })
+            .filter(|candidate| {
+                selection_preserves_slot_feasibility(
+                    &candidate.candidate.platform_positions,
+                    &open_slots,
+                    future_user_picks,
+                )
+            })
+            .collect::<Vec<_>>();
+        if ranked.is_empty() {
+            return Err(format!(
+                "no legal candidate remains for overall pick {overall_pick}; review position and goalie limits"
+            ));
+        }
+        ranked.sort_by(|a, b| {
+            strategy_value(
+                b,
+                strategy,
+                &open_slots,
+                &team_distribution,
+                overall_pick,
+                next_user_pick,
+                input.market_rank_buffer,
+            )
+            .total_cmp(&strategy_value(
+                a,
+                strategy,
+                &open_slots,
+                &team_distribution,
+                overall_pick,
+                next_user_pick,
+                input.market_rank_buffer,
+            ))
+            .then_with(|| market_order(a).cmp(&market_order(b)))
+            .then_with(|| a.candidate.player_key.cmp(&b.candidate.player_key))
+        });
+        let selected = (*ranked[0]).clone();
+        let fallback_player = ranked
+            .get(1)
+            .map(|candidate| candidate.candidate.player.clone());
+        let strategy_value = strategy_value(
+            &selected,
+            strategy,
+            &open_slots,
+            &team_distribution,
+            overall_pick,
+            next_user_pick,
+            input.market_rank_buffer,
+        );
+        let filled_slot =
+            consume_open_slot(&mut open_slots, &selected.candidate.platform_positions);
+        if selected
+            .candidate
+            .platform_positions
+            .contains(&Position::Goalie)
+        {
+            goalie_count += 1;
+        }
+        *team_distribution
+            .entry(selected.candidate.nhl_team.clone())
+            .or_default() += 1;
+        let round = (overall_pick - 1) / input.league_size + 1;
+        picks.push(FantasyDraftSimulationPickRow {
+            round,
+            overall_pick,
+            player_key: selected.candidate.player_key.clone(),
+            player: selected.candidate.player.clone(),
+            nhl_team: selected.candidate.nhl_team.clone(),
+            platform_positions: selected.candidate.platform_positions.clone(),
+            age: selected.age,
+            market_rank: selected.market_rank,
+            filled_slot,
+            draft_value: selected.candidate.draft_value,
+            strategy_value,
+            fallback_player,
+        });
+        available.remove(&selected.candidate.player_key);
+    }
+
+    Ok(FantasyDraftSimulationPath {
+        strategy,
+        label: strategy.label().to_owned(),
+        projected_draft_value: picks.iter().map(|pick| pick.draft_value).sum(),
+        projected_league_scored_quality: picks
+            .iter()
+            .filter_map(|pick| {
+                input
+                    .candidates
+                    .iter()
+                    .find(|candidate| candidate.candidate.player_key == pick.player_key)
+                    .map(|candidate| candidate.candidate.components.league_scored_quality)
+            })
+            .sum(),
+        unique_nhl_teams: team_distribution.len(),
+        team_distribution,
+        remaining_open_slots: open_slots,
+        picks,
+    })
+}
+
+fn selection_preserves_slot_feasibility(
+    positions: &[Position],
+    open_slots: &[FantasyActiveSlot],
+    future_user_picks: usize,
+) -> bool {
+    let mut remaining = open_slots.to_vec();
+    let _ = consume_open_slot(&mut remaining, positions);
+    remaining.len() <= future_user_picks
+}
+
+fn market_order(candidate: &FantasyDraftSimulationCandidateInput) -> (usize, usize, String) {
+    (
+        candidate.market_rank.unwrap_or(candidate.candidate.rank),
+        candidate.candidate.rank,
+        candidate.candidate.player_key.clone(),
+    )
+}
+
+fn strategy_value(
+    candidate: &FantasyDraftSimulationCandidateInput,
+    strategy: FantasyDraftSimulationStrategy,
+    open_slots: &[FantasyActiveSlot],
+    team_distribution: &BTreeMap<String, usize>,
+    overall_pick: usize,
+    next_user_pick: Option<usize>,
+    market_rank_buffer: usize,
+) -> f64 {
+    let row = &candidate.candidate;
+    let fills_open = open_slots
+        .iter()
+        .any(|slot| slot.kind.accepts(&row.platform_positions));
+    let open_slot_value = if fills_open { 8.0 } else { 0.0 };
+    let same_team = team_distribution
+        .get(&row.nhl_team)
+        .copied()
+        .unwrap_or_default() as f64;
+    let availability_value = market_availability_value(
+        candidate.market_rank,
+        overall_pick,
+        next_user_pick,
+        market_rank_buffer,
+    );
+    match strategy {
+        FantasyDraftSimulationStrategy::Balanced => {
+            row.draft_value + open_slot_value + availability_value
+        }
+        FantasyDraftSimulationStrategy::YouthUpside => {
+            let youth_value = candidate.age.map_or(0.0, |age| {
+                (29_i16 - i16::from(age)).clamp(-4, 8) as f64 * 1.5
+            });
+            row.draft_value + open_slot_value + youth_value + availability_value
+        }
+        FantasyDraftSimulationStrategy::ScheduleFirst => {
+            let team_diversity = if same_team == 0.0 {
+                5.0
+            } else {
+                -8.0 * same_team
+            };
+            row.draft_value
+                + open_slot_value
+                + row.components.quiet_slate_value * 0.75
+                + row.components.schedule_diversity
+                - row.components.collision_cost
+                + row.components.multi_position_flexibility * 0.5
+                + team_diversity
+                + availability_value
+        }
+    }
+}
+
+fn market_availability_value(
+    market_rank: Option<usize>,
+    overall_pick: usize,
+    next_user_pick: Option<usize>,
+    market_rank_buffer: usize,
+) -> f64 {
+    let Some(rank) = market_rank else {
+        return 0.0;
+    };
+    if rank <= overall_pick {
+        return 16.0;
+    }
+    let Some(next_pick) = next_user_pick else {
+        return 0.0;
+    };
+    let danger_line = next_pick.saturating_add(market_rank_buffer);
+    if rank <= danger_line {
+        12.0
+    } else {
+        -((rank - danger_line).min(40) as f64 * 0.8)
+    }
+}
+
+fn consume_open_slot(
+    open_slots: &mut Vec<FantasyActiveSlot>,
+    positions: &[Position],
+) -> Option<FantasyActiveSlotKind> {
+    let index = open_slots
+        .iter()
+        .position(|slot| {
+            slot.kind != FantasyActiveSlotKind::Utility && slot.kind.accepts(positions)
+        })
+        .or_else(|| {
+            open_slots
+                .iter()
+                .position(|slot| slot.kind.accepts(positions))
+        })?;
+    Some(open_slots.remove(index).kind)
 }
 
 pub fn build_fantasy_draft_board(
@@ -2900,6 +3366,28 @@ mod tests {
     }
 
     #[test]
+    fn eligibility_csv_ignores_yahoo_util_roster_slot() {
+        let input = "Player Name,Eligible Positions\nConnor McDavid,\"C,Util\"\nDarren Raddysh,\"D,Util\"\n";
+        let view = import_fantasy_platform_eligibility(input, &identities()).unwrap();
+
+        assert_eq!(view.imported, 2);
+        assert_eq!(view.invalid, 0);
+        assert_eq!(view.rows[0].positions, vec![Position::Center]);
+        assert_eq!(view.rows[1].positions, vec![Position::Defense]);
+    }
+
+    #[test]
+    fn eligibility_csv_accepts_yahoo_split_name_columns() {
+        let input = "ID,Last Name,First Name,Eligible Positions\n1,McDavid,Connor,\"C,Util\"\n";
+        let view = import_fantasy_platform_eligibility(input, &identities()).unwrap();
+
+        assert_eq!(view.imported, 1);
+        assert_eq!(view.invalid, 0);
+        assert_eq!(view.rows[0].supplied_name, "Connor McDavid");
+        assert_eq!(view.rows[0].positions, vec![Position::Center]);
+    }
+
+    #[test]
     fn eligibility_csv_retains_unresolved_and_invalid_rows() {
         let input = "Name,Position\nMystery Player,LW/RW\nConnor McDavid,W\n";
         let view = import_fantasy_platform_eligibility(input, &identities()).unwrap();
@@ -3269,6 +3757,76 @@ mod tests {
         assert_eq!(board.rows[0].player_key, "flexible");
         assert!(board.rows[0].fills_open_starter);
         assert_eq!(board.rows[0].components.multi_position_flexibility, 2.0);
+    }
+
+    #[test]
+    fn snake_pick_numbers_cover_first_and_last_draft_slots() {
+        assert_eq!(
+            fantasy_snake_pick_numbers(14, 14, 8).unwrap(),
+            vec![14, 15, 42, 43, 70, 71, 98, 99]
+        );
+        assert_eq!(
+            fantasy_snake_pick_numbers(14, 1, 4).unwrap(),
+            vec![1, 28, 29, 56]
+        );
+        assert!(fantasy_snake_pick_numbers(14, 15, 4).is_err());
+    }
+
+    #[test]
+    fn draft_simulation_uses_market_order_for_opponents_and_dynamic_strategy() {
+        let slots = vec![FantasyActiveSlot {
+            slot_id: "C1".to_owned(),
+            kind: FantasyActiveSlotKind::Center,
+        }];
+        let make =
+            |key: &str, team: &str, quality: f64, age: u8, market_rank: usize, quiet_games: f64| {
+                let mut input = draft_candidate(key, vec![Position::Center], quality);
+                input.nhl_team = team.to_owned();
+                input.quiet_slate_games = quiet_games;
+                FantasyDraftSimulationCandidateInput {
+                    candidate: rank_draft_candidate(input, &slots).unwrap(),
+                    age: Some(age),
+                    market_rank: Some(market_rank),
+                }
+            };
+        let view = build_fantasy_draft_simulation(FantasyDraftSimulationInput {
+            league_size: 2,
+            draft_slot: 2,
+            rounds: 2,
+            current_overall_pick: 1,
+            scoring_scheme: "test".to_owned(),
+            scoring_season: "20252026".to_owned(),
+            open_slots: slots.clone(),
+            initial_team_counts: BTreeMap::from([("OLD".to_owned(), 1)]),
+            initial_goalies: 0,
+            max_goalies: Some(1),
+            market_rank_buffer: 2,
+            candidates: vec![
+                make("market-one", "OLD", 150.0, 31, 1, 0.0),
+                make("veteran", "OLD", 120.0, 34, 2, 0.0),
+                make("prospect", "NEW", 115.0, 20, 3, 0.0),
+                make("depth", "ALT", 80.0, 25, 4, 10.0),
+            ],
+            strategies: vec![
+                FantasyDraftSimulationStrategy::Balanced,
+                FantasyDraftSimulationStrategy::YouthUpside,
+                FantasyDraftSimulationStrategy::ScheduleFirst,
+            ],
+        })
+        .unwrap();
+
+        assert_eq!(view.snake_picks, vec![2, 3]);
+        assert!(view.paths.iter().all(|path| path
+            .picks
+            .iter()
+            .all(|pick| pick.player_key != "market-one")));
+        assert_eq!(view.paths[0].picks[0].player_key, "veteran");
+        assert_eq!(view.paths[1].picks[0].player_key, "prospect");
+        assert_eq!(view.paths[2].picks[0].player_key, "prospect");
+        assert_eq!(
+            view.paths[0].picks[0].filled_slot,
+            Some(FantasyActiveSlotKind::Center)
+        );
     }
 
     #[test]

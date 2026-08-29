@@ -2245,7 +2245,16 @@ icelines fantasy draft-board --taken-file taken.txt --top 20
 icelines fantasy draft-board --taken-file yahoo-draft.csv --json
 icelines fantasy draft-board --eligibility-file yahoo-player-pool.csv
 icelines fantasy draft-board --pick "Connor McDavid"
-icelines fantasy draft-board --stats-season 20252026 --league "My League"
+icelines fantasy draft-board --stats-season 20252026 --league "My League" --league-size 14
+icelines fantasy draft-sim --league-size 14 --draft-slot 14 --rounds 16
+icelines fantasy draft-sim --league-size 14 --draft-slot 14 --market-file rankings.csv
+
+`draft-sim` projects complete snake-draft paths from the live board. By default
+it returns Balanced, Youth-Upside, and Schedule-First builds. A market CSV can
+provide Rank/ADP, Expected Fantasy Points, or both. The simulation fills legal
+starter positions dynamically, uses a one-round market uncertainty buffer,
+and defaults the goalie cap to active G slots plus one. Use `--max-goalies` or
+`--market-rank-buffer` to override those assumptions.
 ```
 
 The draft board uses the active league scoring scheme and completed statistics,
@@ -2257,8 +2266,11 @@ are accepted; ambiguous and unresolved taken rows are reported and never
 silently removed from the available pool. Injury and role deductions remain
 explicitly disabled until the evidence/freshness phase is implemented.
 Supplying `--eligibility-file` explicitly persists resolved platform positions
-for the league; C/LW, C/RW, LW/RW, D, and G are supported, while duplicate,
+for the league; C/LW, C/RW, LW/RW, D, and G are supported, Yahoo's generic
+`Util` roster-slot marker is ignored, and duplicate,
 ambiguous, unresolved, and invalid rows remain visible in the output.
+When opponent rosters are not imported, pass `--league-size` so positional
+replacement level reflects the actual draft rather than the 12-team fallback.
 
 ### Weekly acquisition ledger
 
