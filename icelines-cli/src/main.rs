@@ -1421,6 +1421,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 eligibility_file,
                 pick,
                 league,
+                league_size,
                 stats_season,
                 top,
                 json,
@@ -1430,10 +1431,52 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     eligibility_file,
                     pick,
                     league,
+                    league_size,
                     stats_season,
                     top,
                     json,
                     false,
+                    None,
+                )
+                .await?
+            }
+            FantasySubcommand::DraftSim {
+                taken_file,
+                eligibility_file,
+                market_file,
+                league,
+                league_size,
+                draft_slot,
+                rounds,
+                max_goalies,
+                market_rank_buffer,
+                off_night_max_games,
+                replacement_scenarios,
+                strategies,
+                stats_season,
+                json,
+            } => {
+                commands::fantasy::run_draft_board(
+                    taken_file,
+                    eligibility_file,
+                    None,
+                    league,
+                    Some(league_size),
+                    stats_season,
+                    15,
+                    json,
+                    false,
+                    Some(commands::fantasy::DraftSimulationArgs {
+                        league_size,
+                        draft_slot,
+                        rounds,
+                        max_goalies,
+                        market_rank_buffer,
+                        off_night_max_games,
+                        replacement_scenarios,
+                        strategies,
+                        market_file,
+                    }),
                 )
                 .await?
             }
@@ -1442,6 +1485,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 eligibility_file,
                 pick,
                 league,
+                league_size,
                 stats_season,
                 top,
                 json,
@@ -1451,10 +1495,12 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     eligibility_file,
                     pick,
                     league,
+                    league_size,
                     stats_season,
                     top,
                     json,
                     true,
+                    None,
                 )
                 .await?
             }

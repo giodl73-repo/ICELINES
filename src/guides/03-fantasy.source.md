@@ -26,6 +26,25 @@ icelines fantasy team-add "Hockey Nerds" "Rantanen"
 Creating a league automatically sets it as active — subsequent commands
 target it without needing `--league`.
 
+## Plan a snake draft
+
+```bash
+icelines fantasy draft-sim --league-size 14 --draft-slot 14 --rounds 16
+icelines fantasy draft-sim --league-size 14 --draft-slot 14 \
+  --eligibility-file yahoo-player-pool.csv --market-file rankings.csv
+icelines fantasy draft-sim --league-size 14 --draft-slot 14 \
+  --off-night-max-games 4 --replacement-scenarios 3
+```
+
+The simulator derives every snake turn, models intervening opponent choices,
+and returns Balanced, Youth-Upside, and Schedule-First roster paths. The active
+league supplies scoring and roster slots. Market CSVs can contain Rank/ADP,
+Expected Fantasy Points, or both. The output discloses that opponent selections
+are deterministic market-order scenarios rather than calibrated probabilities.
+It then replays each roster against every official schedule date, surfaces
+stress weeks and goalie-minimum risk, and recommends injury replacements from
+the players still undrafted after the full league simulation.
+
 ---
 
 ## Check your team

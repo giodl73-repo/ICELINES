@@ -3212,6 +3212,29 @@ fn l2_cmd_fantasy_help_exits_zero() {
 }
 
 #[test]
+fn l2_cmd_fantasy_draft_sim_help_exposes_schedule_controls() {
+    let out = run(&["fantasy", "draft-sim", "--help"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "fantasy draft-sim --help must exit 0, stderr: {stderr}"
+    );
+    for expected in [
+        "--league-size",
+        "--draft-slot",
+        "--off-night-max-games",
+        "--replacement-scenarios",
+        "--strategies",
+    ] {
+        assert!(
+            stdout.contains(expected),
+            "draft-sim help must expose {expected}, got: {stdout}"
+        );
+    }
+}
+
+#[test]
 fn l2_cmd_fantasy_league_create_exits_zero() {
     let tmp = tempfile::tempdir().expect("tempdir for isolated fantasy DB");
     let name = unique_league("create");

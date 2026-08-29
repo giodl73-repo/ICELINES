@@ -1094,6 +1094,9 @@ Get-Clipboard | icelines fantasy draft-board --taken-file - --top 12
 icelines fantasy draft-board --taken-file taken.csv --json
 icelines fantasy draft-board --eligibility-file yahoo-player-pool.csv
 icelines fantasy draft-board --pick "Connor McDavid" # dry-run the following pick
+icelines fantasy draft-sim --league-size 14 --draft-slot 14 --rounds 16
+icelines fantasy draft-sim --league-size 14 --draft-slot 14 --market-file rankings.csv
+icelines fantasy draft-sim --league-size 14 --draft-slot 14 --off-night-max-games 4 --replacement-scenarios 3
 icelines fantasy weekly-budget --json                 # Monday-Sunday add budget
 icelines fantasy weekly-pickups --date 2026-10-08 --top 15
 icelines fantasy sleepers --positions D --top 20
@@ -1349,6 +1352,27 @@ unresolved names visible, reads PowerShell clipboard input through
 `--taken-file -`, and supports a non-mutating hypothetical `--pick`. Current
 2026-27 roster snapshots supply NHL team labels; `--stats-season` changes the
 completed performance window without changing the schedule season.
+
+`fantasy draft-sim` layers reusable snake-turn planning over that live board.
+It accepts league size, one-based draft slot, rounds, taken players, platform
+eligibility, and an optional market CSV. Market CSVs may contain Rank/ADP,
+Expected Fantasy Points, or both; spreadsheet headers and snake_case headers
+are accepted. Projection values override the completed-season league total for
+matched players, while market ranks drive deterministic opponent selections
+and a one-round availability buffer. The default output compares Balanced,
+Youth-Upside, and Schedule-First paths, dynamically consumes legal starter
+slots, prevents a finish with required positions open, and caps goalies at the
+configured active G count plus one unless `--max-goalies` overrides it. The
+opponent model is a transparent market-order scenario, not a calibrated pick
+probability forecast.
+When the official schedule is available, every completed path is replayed one
+date at a time through the league's legal lineup optimizer. The output reports
+usable starts, benched games, quiet-slate starts, and empty active slots weighted
+by the share of NHL teams playing that day. It identifies stressed weeks and
+tests injury replacements using only players left after all `teams × rounds`
+simulated selections. Goalie safety compares the league's weekly minimum with
+scheduled team-game opportunities; confirmed starts still require in-season
+goalie evidence.
 `--eligibility-file` accepts common player-name and position columns, safely
 persists resolved C/LW-style eligibility for the selected league, and includes
 duplicate, ambiguous, unresolved, and invalid row diagnostics in JSON.

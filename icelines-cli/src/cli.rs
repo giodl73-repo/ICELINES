@@ -8491,6 +8491,8 @@ mod tui_surface_tests {
                 "taken.txt",
                 "--pick",
                 "Nathan MacKinnon",
+                "--league-size",
+                "14",
                 "--top",
                 "8",
                 "--json",
@@ -8501,6 +8503,7 @@ mod tui_surface_tests {
                 Commands::Fantasy(FantasySubcommand::DraftCard {
                     taken_file,
                     pick,
+                    league_size,
                     top,
                     json,
                     ..
@@ -8510,6 +8513,7 @@ mod tui_surface_tests {
                         Some(std::path::Path::new("taken.txt"))
                     );
                     assert_eq!(pick.as_deref(), Some("Nathan MacKinnon"));
+                    assert_eq!(league_size, Some(14));
                     assert_eq!(top, 8);
                     assert!(json);
                 }
@@ -11060,11 +11064,65 @@ pub enum FantasySubcommand {
         pick: Option<String>,
         #[arg(long)]
         league: Option<String>,
+        /// Number of teams drafting; controls positional replacement level when
+        /// opponent rosters have not been imported.
+        #[arg(long)]
+        league_size: Option<usize>,
         /// Completed stats season evaluated under the active league scheme.
         #[arg(long, default_value = "20252026")]
         stats_season: String,
         #[arg(long, default_value_t = 15)]
         top: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Simulate complete snake-draft roster paths from the live draft board.
+    #[command(name = "draft-sim")]
+    DraftSim {
+        /// Newline or CSV list of players already drafted; use `-` to read stdin.
+        #[arg(long)]
+        taken_file: Option<PathBuf>,
+        /// Yahoo/player-pool CSV containing player names and eligible positions.
+        #[arg(long)]
+        eligibility_file: Option<PathBuf>,
+        /// CSV containing player names and Rank/ADP and/or Expected Fantasy Points.
+        #[arg(long)]
+        market_file: Option<PathBuf>,
+        #[arg(long)]
+        league: Option<String>,
+        /// Number of teams in the snake draft.
+        #[arg(long)]
+        league_size: usize,
+        /// One-based draft position within each round.
+        #[arg(long)]
+        draft_slot: usize,
+        /// Number of roster rounds to simulate.
+        #[arg(long, default_value_t = 16)]
+        rounds: usize,
+        /// Roster goalie cap; defaults to configured active G slots plus one.
+        #[arg(long)]
+        max_goalies: Option<usize>,
+        /// Picks beyond the next turn treated as the market uncertainty band;
+        /// defaults to one full round.
+        #[arg(long)]
+        market_rank_buffer: Option<usize>,
+        /// Maximum NHL games on a date classified as a quiet slate.
+        #[arg(long, default_value_t = 4)]
+        off_night_max_games: usize,
+        /// Number of stressed weeks to test with an injury replacement.
+        #[arg(long, default_value_t = 3)]
+        replacement_scenarios: usize,
+        /// Comma-separated paths: balanced, youth-upside, schedule-first.
+        #[arg(
+            long,
+            value_delimiter = ',',
+            default_value = "balanced,youth-upside,schedule-first"
+        )]
+        strategies: Vec<String>,
+        /// Completed stats season evaluated under the active league scheme.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
         #[arg(long)]
         json: bool,
     },
@@ -11083,6 +11141,10 @@ pub enum FantasySubcommand {
         pick: Option<String>,
         #[arg(long)]
         league: Option<String>,
+        /// Number of teams drafting; controls positional replacement level when
+        /// opponent rosters have not been imported.
+        #[arg(long)]
+        league_size: Option<usize>,
         /// Completed stats season evaluated under the active league scheme.
         #[arg(long, default_value = "20252026")]
         stats_season: String,

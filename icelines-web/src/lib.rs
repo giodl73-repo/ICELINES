@@ -30,6 +30,10 @@
 //! handler bodies stay free of HTTP boilerplate.
 
 #![deny(unsafe_code)]
+// Axum `Response` is intentionally the error channel for HTML handler helpers.
+// Boxing it would add allocation and signature churn without reducing the
+// response constructed at the HTTP boundary.
+#![allow(clippy::result_large_err)]
 
 pub mod api;
 pub mod card_store;
