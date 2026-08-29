@@ -2248,6 +2248,7 @@ icelines fantasy draft-board --pick "Connor McDavid"
 icelines fantasy draft-board --stats-season 20252026 --league "My League" --league-size 14
 icelines fantasy draft-sim --league-size 14 --draft-slot 14 --rounds 16
 icelines fantasy draft-sim --league-size 14 --draft-slot 14 --market-file rankings.csv
+icelines fantasy draft-sim --league-size 14 --draft-slot 14 --off-night-max-games 4 --replacement-scenarios 3
 
 `draft-sim` projects complete snake-draft paths from the live board. By default
 it returns Balanced, Youth-Upside, and Schedule-First builds. A market CSV can
@@ -2255,6 +2256,12 @@ provide Rank/ADP, Expected Fantasy Points, or both. The simulation fills legal
 starter positions dynamically, uses a one-round market uncertainty buffer,
 and defaults the goalie cap to active G slots plus one. Use `--max-goalies` or
 `--market-rank-buffer` to override those assumptions.
+
+With the official schedule loaded, `draft-sim` reruns legal daily assignments
+for every completed roster. It reports usable starts, bench collisions,
+quiet-slate starts, activity-weighted open slots, weekly goalie-minimum risk,
+and stressed-week injury replacements drawn only from the post-draft waiver
+pool. Scheduled goalie opportunities are not treated as confirmed starts.
 ```
 
 The draft board uses the active league scoring scheme and completed statistics,

@@ -11107,6 +11107,12 @@ pub enum FantasySubcommand {
         /// defaults to one full round.
         #[arg(long)]
         market_rank_buffer: Option<usize>,
+        /// Maximum NHL games on a date classified as a quiet slate.
+        #[arg(long, default_value_t = 4)]
+        off_night_max_games: usize,
+        /// Number of stressed weeks to test with an injury replacement.
+        #[arg(long, default_value_t = 3)]
+        replacement_scenarios: usize,
         /// Comma-separated paths: balanced, youth-upside, schedule-first.
         #[arg(
             long,

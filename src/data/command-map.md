@@ -214,7 +214,7 @@ All available values for `--sort`:
 | `fantasy standings [--league L] [--scheme S]` | All teams ranked by score |
 | `fantasy trade <player1> --to-team <team2> --for-player <player2> [--execute] [--league L]` | Simulate or execute trade |
 | `fantasy draft-board [--league-size N] [--taken-file FILE]` | Rank the next legal draft choice |
-| `fantasy draft-sim --league-size N --draft-slot N [--market-file FILE]` | Simulate Balanced, Youth-Upside, and Schedule-First snake-draft paths |
+| `fantasy draft-sim --league-size N --draft-slot N [--market-file FILE]` | Simulate snake-draft paths, exact calendar utilization, and post-draft injury replacements |
 
 ### Web server
 

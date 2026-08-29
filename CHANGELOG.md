@@ -8,6 +8,9 @@
   Youth-Upside, and Schedule-First paths, models intervening market-order picks,
   fills legal roster slots, enforces a configurable goalie cap, and reports
   fallbacks and team distribution in text or `fantasy_draft_simulation.v1` JSON.
+  Completed paths also receive exact daily lineup replay over the official NHL
+  calendar, activity-weighted open-slot and goalie-minimum stress tests, plus
+  midseason injury replacements selected from the simulated undrafted pool.
 - Fixed points-league competition validation to preserve a configured minimum
   goalie-appearance rule; Yahoo-style points leagues can now drive the same
   goalie-safety planner as category leagues.

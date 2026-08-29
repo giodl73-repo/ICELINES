@@ -43,22 +43,22 @@ use icelines_core::{
     FantasyCategoryMatchupView, FantasyCategoryPlayerInput, FantasyCategoryRateInput,
     FantasyCategoryRule, FantasyCategoryScope, FantasyCategorySnapshotInput,
     FantasyCategoryTeamInput, FantasyCompetitionMode, FantasyCompetitionRules,
-    FantasyDraftCandidateInput, FantasyDraftCardInput, FantasyDraftIdentityInput,
-    FantasyDraftSimulationCandidateInput, FantasyDraftSimulationInput,
-    FantasyDraftSimulationStrategy, FantasyDraftSimulationView, FantasyGoalieGameInput,
-    FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput, FantasyGoalieStartObservation,
-    FantasyGoalieStartState, FantasyInjuryPlanView, FantasyLeagueInput, FantasyLeagueTeamInput,
-    FantasyLeagueView, FantasyLineupPlayerInput, FantasyMatchupPointsSnapshotInput,
-    FantasyMatchupStrategy, FantasyMatchupStrategyInput, FantasyMatchupStrategyPlayerInput,
-    FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView, FantasyMatchupSwingInput,
-    FantasyMatchupTiePolicy, FantasyMorningCardInput, FantasyObservationConfidence,
-    FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput, FantasyPlayoffPortfolioInput,
-    FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput, FantasyRosterCardInput,
-    FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind, FantasySeasonSimConfig,
-    FantasySeasonSimPlayerInput, FantasySeasonSimView, FantasySimulationBuildInput,
-    FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
-    FantasySimulationScenarioRosterInput, FantasySimulationView, FantasySleeperBoardView,
-    FantasySleeperInput, FantasyStatusObservation, FantasyTradeCardInput,
+    FantasyDraftCalendarDateInput, FantasyDraftCalendarPlayerInput, FantasyDraftCandidateInput,
+    FantasyDraftCardInput, FantasyDraftIdentityInput, FantasyDraftSimulationCandidateInput,
+    FantasyDraftSimulationInput, FantasyDraftSimulationStrategy, FantasyDraftSimulationView,
+    FantasyGoalieGameInput, FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput,
+    FantasyGoalieStartObservation, FantasyGoalieStartState, FantasyInjuryPlanView,
+    FantasyLeagueInput, FantasyLeagueTeamInput, FantasyLeagueView, FantasyLineupPlayerInput,
+    FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy, FantasyMatchupStrategyInput,
+    FantasyMatchupStrategyPlayerInput, FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView,
+    FantasyMatchupSwingInput, FantasyMatchupTiePolicy, FantasyMorningCardInput,
+    FantasyObservationConfidence, FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput,
+    FantasyPlayoffPortfolioInput, FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput,
+    FantasyRosterCardInput, FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind,
+    FantasySeasonSimConfig, FantasySeasonSimPlayerInput, FantasySeasonSimView,
+    FantasySimulationBuildInput, FantasySimulationConfidence, FantasySimulationHorizon,
+    FantasySimulationRosterTeamInput, FantasySimulationScenarioRosterInput, FantasySimulationView,
+    FantasySleeperBoardView, FantasySleeperInput, FantasyStatusObservation, FantasyTradeCardInput,
     FantasyTradeEvaluationView, FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation,
     FantasyWeeklyMoveInput, RosterShape, RosterShapeStatus, RosterShapeValidationView, ViewContext,
     ViewWindow, CURRENT_SEASON, FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_TRADE_EVALUATION_SCHEMA,
@@ -144,6 +144,8 @@ pub struct DraftSimulationArgs {
     pub rounds: usize,
     pub max_goalies: Option<usize>,
     pub market_rank_buffer: Option<usize>,
+    pub off_night_max_games: usize,
+    pub replacement_scenarios: usize,
     pub strategies: Vec<String>,
     pub market_file: Option<PathBuf>,
 }
@@ -1035,7 +1037,7 @@ pub async fn run_season_sim(args: SeasonSimArgs) -> anyhow::Result<()> {
     let scheme = resolve_scheme(&league.scheme)?;
     let season = Season(args.season);
     let schedule = load_fantasy_schedule(season, false).await?;
-    let (team_dates, _) = draft_schedule_metrics(&schedule);
+    let (team_dates, _, _) = draft_schedule_metrics(&schedule, 4);
     let current_teams = load_current_player_team_map(season).ok();
     let eligibility = db
         .list_player_eligibility(&league.id)?
@@ -2488,7 +2490,7 @@ pub async fn run_matchup_plan(
         })
         .collect::<HashMap<_, _>>();
     let schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
-    let (team_dates, _) = draft_schedule_metrics(&schedule);
+    let (team_dates, _, _) = draft_schedule_metrics(&schedule, 4);
     let build_team = |team: &TeamRow, roster: &[String]| -> anyhow::Result<_> {
         let mut players = Vec::with_capacity(roster.len());
         for key in roster {
@@ -4197,7 +4199,7 @@ async fn build_injury_plan_view(
         .collect::<HashMap<_, _>>();
     let current_teams = load_current_player_team_map(Season(CURRENT_SEASON)).ok();
     let schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
-    let (team_dates, _) = draft_schedule_metrics(&schedule);
+    let (team_dates, _, _) = draft_schedule_metrics(&schedule, 4);
     let views = skaters
         .iter()
         .chain(&goalies)
@@ -4878,7 +4880,7 @@ async fn build_weekly_pickups_view(
     }
 
     let schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
-    let (team_dates, _) = draft_schedule_metrics(&schedule);
+    let (team_dates, _, _) = draft_schedule_metrics(&schedule, 4);
     let dates = (0..=(sunday - evaluation_date).num_days())
         .map(|offset| evaluation_date + Duration::days(offset))
         .collect::<Vec<_>>();
@@ -5242,7 +5244,7 @@ async fn build_sleepers_view(
         .collect::<HashMap<_, _>>();
     let current_teams = load_current_player_team_map(Season(CURRENT_SEASON)).ok();
     let schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
-    let (team_dates, quiet_games) = draft_schedule_metrics(&schedule);
+    let (team_dates, quiet_games, _) = draft_schedule_metrics(&schedule, 4);
 
     let inputs = current
         .iter()
@@ -5420,12 +5422,25 @@ pub async fn run_draft_board(
     if league_size.is_some_and(|size| size < 2) {
         bail!("--league-size must be at least 2");
     }
+    if simulation
+        .as_ref()
+        .is_some_and(|simulation| !(1..=16).contains(&simulation.off_night_max_games))
+    {
+        bail!("--off-night-max-games must be between 1 and 16");
+    }
+    if simulation
+        .as_ref()
+        .is_some_and(|simulation| simulation.replacement_scenarios > 10)
+    {
+        bail!("--replacement-scenarios cannot exceed 10");
+    }
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
     let scheme = resolve_scheme(&league.scheme)?;
     let rules = db
         .get_assistant_rules(&league.id)?
         .unwrap_or_else(FantasyAssistantRules::configured_2026);
+    let competition = db.get_competition_rules(&league.id)?;
     let teams = db.list_teams(&league.id)?;
     let user_team = teams.iter().find(|team| team.is_user_team);
     let all_rostered = teams
@@ -5592,7 +5607,11 @@ pub async fn run_draft_board(
     let schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false)
         .await
         .ok();
-    let (team_dates, quiet_games) = draft_schedule_metrics(schedule.as_deref().unwrap_or(&[]));
+    let off_night_max_games = simulation
+        .as_ref()
+        .map_or(4, |simulation| simulation.off_night_max_games);
+    let (team_dates, quiet_games, calendar) =
+        draft_schedule_metrics(schedule.as_deref().unwrap_or(&[]), off_night_max_games);
     let playoff_fit = if rules.playoff_start.is_some() {
         draft_playoff_fit_metrics(&user_roster, &pool, &team_dates, &rules)?
     } else {
@@ -5763,6 +5782,22 @@ pub async fn run_draft_board(
             .filter_map(|key| pool.iter().find(|player| &player.key == key))
             .filter(|player| player.positions.contains(&Position::Goalie))
             .count();
+        let initial_roster = user_roster
+            .iter()
+            .filter_map(|key| pool.iter().find(|player| &player.key == key))
+            .map(|player| FantasyDraftCalendarPlayerInput {
+                player_key: player.key.clone(),
+                player: player.player.clone(),
+                nhl_team: player.team.clone(),
+                platform_positions: player.positions.clone(),
+                projected_per_game: player.quality
+                    / team_dates
+                        .get(&player.team)
+                        .map_or_else(|| player.games_played.max(1) as usize, BTreeSet::len)
+                        .max(1) as f64,
+                scheduled_dates: team_dates.get(&player.team).cloned().unwrap_or_default(),
+            })
+            .collect::<Vec<_>>();
         let max_goalies = simulation.max_goalies.unwrap_or_else(|| {
             rules
                 .active_slots
@@ -5785,7 +5820,12 @@ pub async fn run_draft_board(
             current_overall_pick,
             scoring_scheme: board.scoring_scheme.clone(),
             scoring_season: board.scoring_season.clone(),
+            rules: rules.clone(),
             open_slots: board.open_slots.clone(),
+            initial_roster,
+            calendar,
+            minimum_goalie_appearances: competition.minimum_goalie_appearances as usize,
+            replacement_scenarios: simulation.replacement_scenarios,
             initial_team_counts,
             initial_goalies,
             max_goalies: Some(max_goalies),
@@ -5799,6 +5839,15 @@ pub async fn run_draft_board(
                 .map(|candidate| FantasyDraftSimulationCandidateInput {
                     age: age_by_name.get(&candidate.player_key).copied(),
                     market_rank: market_data.ranks.get(&candidate.player_key).copied(),
+                    projected_per_game: candidate.components.league_scored_quality
+                        / team_dates
+                            .get(&candidate.nhl_team)
+                            .map_or(82, BTreeSet::len)
+                            .max(1) as f64,
+                    scheduled_dates: team_dates
+                        .get(&candidate.nhl_team)
+                        .cloned()
+                        .unwrap_or_default(),
                     candidate,
                 })
                 .collect(),
@@ -6041,6 +6090,56 @@ fn print_draft_simulation(view: &FantasyDraftSimulationView) {
                 pick.fallback_player.as_deref().unwrap_or("—")
             );
         }
+        if !path.calendar_weeks.is_empty() {
+            println!(
+                "Calendar: {} usable starts · {} benched games · {} quiet-slate starts · {:.1} activity-weighted open slots · {} goalie-risk weeks",
+                path.total_usable_starts,
+                path.total_benched_player_games,
+                path.total_quiet_slate_starts,
+                path.activity_weighted_open_slots,
+                path.goalie_minimum_risk_weeks
+            );
+            println!("Stress weeks:");
+            for week in &path.stress_weeks {
+                println!(
+                    "  {}: {} usable / {} scheduled, {} benched, {:.1} weighted-open, {} goalie opportunities{}",
+                    week.week_start,
+                    week.usable_starts,
+                    week.scheduled_player_games,
+                    week.benched_player_games,
+                    week.activity_weighted_open_slots,
+                    week.goalie_start_opportunities,
+                    if week.goalie_minimum_met { "" } else { " — BELOW MINIMUM" }
+                );
+            }
+        }
+        if !path.replacement_scenarios.is_empty() {
+            println!("Injury replacements from the post-draft waiver pool:");
+            for scenario in &path.replacement_scenarios {
+                println!(
+                    "  {}: if {} is out, add {} ({}, {}) — {}→{} usable starts, {:.1}→{:.1} projected points{}",
+                    scenario.week_start,
+                    scenario.injured_player,
+                    scenario.replacement_player,
+                    scenario.replacement_team,
+                    scenario
+                        .replacement_positions
+                        .iter()
+                        .map(|position| position.abbreviation())
+                        .collect::<Vec<_>>()
+                        .join("/"),
+                    scenario.usable_starts_without_replacement,
+                    scenario.usable_starts_with_replacement,
+                    scenario.projected_points_without_replacement,
+                    scenario.projected_points_with_replacement,
+                    if scenario.goalie_minimum_met_with_replacement {
+                        ""
+                    } else {
+                        " — GOALIE MINIMUM AT RISK"
+                    }
+                );
+            }
+        }
         if !path.remaining_open_slots.is_empty() {
             println!(
                 "Open after simulation: {}",
@@ -6056,7 +6155,12 @@ fn print_draft_simulation(view: &FantasyDraftSimulationView) {
 
 fn draft_schedule_metrics(
     games: &[ScheduledGame],
-) -> (HashMap<String, BTreeSet<NaiveDate>>, HashMap<String, usize>) {
+    off_night_max_games: usize,
+) -> (
+    HashMap<String, BTreeSet<NaiveDate>>,
+    HashMap<String, usize>,
+    Vec<FantasyDraftCalendarDateInput>,
+) {
     let mut dates = HashMap::<String, BTreeSet<NaiveDate>>::new();
     let mut games_per_date = HashMap::<NaiveDate, usize>::new();
     for game in games.iter().filter(|game| game.game_type == 2) {
@@ -6078,12 +6182,22 @@ fn draft_schedule_metrics(
         .map(|(team, dates)| {
             let count = dates
                 .iter()
-                .filter(|date| games_per_date.get(date).copied().unwrap_or_default() <= 4)
+                .filter(|date| {
+                    games_per_date.get(date).copied().unwrap_or_default() <= off_night_max_games
+                })
                 .count();
             (team.clone(), count)
         })
         .collect();
-    (dates, quiet_games)
+    let calendar = games_per_date
+        .into_iter()
+        .map(|(date, nhl_games)| FantasyDraftCalendarDateInput {
+            date,
+            nhl_games,
+            quiet_slate: nhl_games <= off_night_max_games,
+        })
+        .collect();
+    (dates, quiet_games, calendar)
 }
 
 fn draft_playoff_fit_metrics(
