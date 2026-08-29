@@ -28,6 +28,7 @@ const EXCEPTIONAL_RESERVE_MIN_VALUE: f64 = 6.0;
 const EXCEPTIONAL_RESERVE_MIN_STARTS: f64 = 3.0;
 const DRAFT_REPLACEMENT_POOL_LIMIT: usize = 120;
 const DRAFT_REPLACEMENT_WEEK_LIMIT: usize = 32;
+const DRAFT_EXACT_CALENDAR_CANDIDATE_LIMIT: usize = 8;
 pub const FANTASY_SLEEPER_BOARD_SCHEMA: &str = "fantasy_sleeper_board.v1";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1231,6 +1232,15 @@ pub fn build_fantasy_draft_simulation(
             "injury replacements screen the best {DRAFT_REPLACEMENT_POOL_LIMIT} IceLines values left after every simulated league draft pick, then exactly evaluate the top {DRAFT_REPLACEMENT_WEEK_LIMIT} scheduled fits for each stress week"
         ));
     }
+    if input
+        .strategies
+        .contains(&FantasyDraftSimulationStrategy::ScheduleFirst)
+        && !input.calendar.is_empty()
+    {
+        warnings.push(format!(
+            "Schedule-First exactly evaluates the top {DRAFT_EXACT_CALENDAR_CANDIDATE_LIMIT} proxy-ranked legal candidates at each user pick within the market uncertainty band"
+        ));
+    }
 
     let paths = input
         .strategies
@@ -1332,9 +1342,12 @@ fn simulate_draft_path(
                 strategy,
                 &open_slots,
                 &team_distribution,
-                overall_pick,
-                next_user_pick,
-                input.market_rank_buffer,
+                market_availability_value(
+                    b.market_rank,
+                    overall_pick,
+                    next_user_pick,
+                    input.market_rank_buffer,
+                ),
                 0.0,
             )
             .total_cmp(&strategy_value(
@@ -1342,13 +1355,16 @@ fn simulate_draft_path(
                 strategy,
                 &open_slots,
                 &team_distribution,
-                overall_pick,
-                next_user_pick,
-                input.market_rank_buffer,
+                market_availability_value(
+                    a.market_rank,
+                    overall_pick,
+                    next_user_pick,
+                    input.market_rank_buffer,
+                ),
                 0.0,
             ))
         });
-        exact_candidates.truncate(8);
+        exact_candidates.truncate(DRAFT_EXACT_CALENDAR_CANDIDATE_LIMIT);
         let exact_candidate_keys = exact_candidates
             .into_iter()
             .map(|candidate| candidate.candidate.player_key.as_str())
@@ -1371,9 +1387,12 @@ fn simulate_draft_path(
                     strategy,
                     &open_slots,
                     &team_distribution,
-                    overall_pick,
-                    next_user_pick,
-                    input.market_rank_buffer,
+                    market_availability_value(
+                        candidate.market_rank,
+                        overall_pick,
+                        next_user_pick,
+                        input.market_rank_buffer,
+                    ),
                     exact_calendar_value,
                 );
                 (candidate, value)
@@ -1490,9 +1509,7 @@ fn strategy_value(
     strategy: FantasyDraftSimulationStrategy,
     open_slots: &[FantasyActiveSlot],
     team_distribution: &BTreeMap<String, usize>,
-    overall_pick: usize,
-    next_user_pick: Option<usize>,
-    market_rank_buffer: usize,
+    availability_value: f64,
     exact_calendar_value: f64,
 ) -> f64 {
     let row = &candidate.candidate;
@@ -1504,12 +1521,6 @@ fn strategy_value(
         .get(&row.nhl_team)
         .copied()
         .unwrap_or_default() as f64;
-    let availability_value = market_availability_value(
-        candidate.market_rank,
-        overall_pick,
-        next_user_pick,
-        market_rank_buffer,
-    );
     match strategy {
         FantasyDraftSimulationStrategy::Balanced => {
             row.draft_value + open_slot_value + availability_value
@@ -1847,10 +1858,10 @@ fn build_replacement_scenarios<'a>(
                     })
                     .then_with(|| a.usable_starts.cmp(&b.usable_starts))
                     .then_with(|| {
-                        b_candidate
+                        a_candidate
                             .candidate
                             .draft_value
-                            .total_cmp(&a_candidate.candidate.draft_value)
+                            .total_cmp(&b_candidate.candidate.draft_value)
                     })
             });
         let Some((replacement, with)) = replacement else {
@@ -4538,6 +4549,63 @@ mod tests {
             evaluate_calendar_weeks(&input, &[goalie("one", monday), goalie("two", tuesday)]);
         assert_eq!(safe[0].goalie_start_opportunities, 2);
         assert!(safe[0].goalie_minimum_met);
+    }
+
+    #[test]
+    fn replacement_ties_prefer_the_higher_draft_value() {
+        let monday = NaiveDate::from_ymd_opt(2026, 11, 2).unwrap();
+        let mut rules = FantasyAssistantRules::configured_2026();
+        rules.active_slots = BTreeMap::from([(FantasyActiveSlotKind::Center, 1)]);
+        let roster = vec![FantasyDraftCalendarPlayerInput {
+            player_key: "injured".to_owned(),
+            player: "Injured Center".to_owned(),
+            nhl_team: "OLD".to_owned(),
+            platform_positions: vec![Position::Center],
+            projected_per_game: 5.0,
+            scheduled_dates: BTreeSet::from([monday]),
+        }];
+        let replacement = |key: &str, quality: f64| {
+            let mut input = draft_candidate(key, vec![Position::Center], quality);
+            input.nhl_team = "NEW".to_owned();
+            FantasyDraftSimulationCandidateInput {
+                candidate: rank_draft_candidate(input, &[]).unwrap(),
+                age: Some(24),
+                market_rank: None,
+                projected_per_game: 2.0,
+                scheduled_dates: BTreeSet::from([monday]),
+            }
+        };
+        let candidates = vec![replacement("higher", 100.0), replacement("lower", 90.0)];
+        let input = FantasyDraftSimulationInput {
+            league_size: 2,
+            draft_slot: 1,
+            rounds: 1,
+            current_overall_pick: 1,
+            scoring_scheme: "test".to_owned(),
+            scoring_season: "projection".to_owned(),
+            rules,
+            open_slots: Vec::new(),
+            initial_roster: roster.clone(),
+            calendar: vec![FantasyDraftCalendarDateInput {
+                date: monday,
+                nhl_games: 8,
+                quiet_slate: false,
+            }],
+            minimum_goalie_appearances: 0,
+            replacement_scenarios: 1,
+            initial_team_counts: BTreeMap::new(),
+            initial_goalies: 0,
+            max_goalies: Some(0),
+            market_rank_buffer: 2,
+            candidates: Vec::new(),
+            strategies: Vec::new(),
+        };
+        let stress_weeks = evaluate_calendar_weeks(&input, &roster);
+        let scenarios =
+            build_replacement_scenarios(&input, &roster, candidates.iter(), &stress_weeks);
+
+        assert_eq!(scenarios.len(), 1);
+        assert_eq!(scenarios[0].replacement_player_key, "higher");
     }
 
     #[test]

@@ -171,28 +171,31 @@ pub fn calibrate_ahl_cross_league_value(
         ));
     }
 
-    let translation_kind;
-    let translation_value;
-    if position_group == AhlPlayerValuePositionGroup::Goalie {
-        translation_kind = AhlCrossLeagueTranslationKind::AdditiveSavePercentage;
-        let weighted_delta = pairs
-            .iter()
-            .map(|pair| f64::from(pair.paired_workload) * (pair.ahl_rate - pair.source_rate));
-        translation_value = weighted_delta.sum::<f64>() / paired_workload as f64;
-    } else {
-        translation_kind = AhlCrossLeagueTranslationKind::MultiplicativeRate;
-        let numerator = pairs
-            .iter()
-            .map(|pair| f64::from(pair.paired_workload) * pair.source_rate * pair.ahl_rate);
-        let denominator = pairs
-            .iter()
-            .map(|pair| f64::from(pair.paired_workload) * pair.source_rate * pair.source_rate);
-        let denominator = denominator.sum::<f64>();
-        if denominator <= f64::EPSILON {
-            return Err("cross-league calibration has no skater rate variation".to_owned());
-        }
-        translation_value = numerator.sum::<f64>() / denominator;
-    }
+    let (translation_kind, translation_value) =
+        if position_group == AhlPlayerValuePositionGroup::Goalie {
+            let weighted_delta = pairs
+                .iter()
+                .map(|pair| f64::from(pair.paired_workload) * (pair.ahl_rate - pair.source_rate));
+            (
+                AhlCrossLeagueTranslationKind::AdditiveSavePercentage,
+                weighted_delta.sum::<f64>() / paired_workload as f64,
+            )
+        } else {
+            let numerator = pairs
+                .iter()
+                .map(|pair| f64::from(pair.paired_workload) * pair.source_rate * pair.ahl_rate);
+            let denominator = pairs
+                .iter()
+                .map(|pair| f64::from(pair.paired_workload) * pair.source_rate * pair.source_rate);
+            let denominator = denominator.sum::<f64>();
+            if denominator <= f64::EPSILON {
+                return Err("cross-league calibration has no skater rate variation".to_owned());
+            }
+            (
+                AhlCrossLeagueTranslationKind::MultiplicativeRate,
+                numerator.sum::<f64>() / denominator,
+            )
+        };
     if !translation_value.is_finite()
         || (translation_kind == AhlCrossLeagueTranslationKind::MultiplicativeRate
             && translation_value <= 0.0)

@@ -5630,7 +5630,7 @@ pub async fn run_draft_board(
         );
     }
     let replacement_team_count =
-        league_size.unwrap_or_else(|| if teams.len() >= 2 { teams.len() } else { 12 });
+        league_size.unwrap_or(if teams.len() >= 2 { teams.len() } else { 12 });
     let replacement = draft_replacement_levels(&pool, &rules, replacement_team_count);
     let candidates = pool
         .iter()
@@ -6153,14 +6153,16 @@ fn print_draft_simulation(view: &FantasyDraftSimulationView) {
     }
 }
 
-fn draft_schedule_metrics(
-    games: &[ScheduledGame],
-    off_night_max_games: usize,
-) -> (
+type DraftScheduleMetrics = (
     HashMap<String, BTreeSet<NaiveDate>>,
     HashMap<String, usize>,
     Vec<FantasyDraftCalendarDateInput>,
-) {
+);
+
+fn draft_schedule_metrics(
+    games: &[ScheduledGame],
+    off_night_max_games: usize,
+) -> DraftScheduleMetrics {
     let mut dates = HashMap::<String, BTreeSet<NaiveDate>>::new();
     let mut games_per_date = HashMap::<NaiveDate, usize>::new();
     for game in games.iter().filter(|game| game.game_type == 2) {
