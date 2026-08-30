@@ -2,7 +2,7 @@
 
 ## Status
 
-Hosted structural evidence accepted; native measured rerun pending - 2026-08-30
+Native measured three-platform evidence accepted - 2026-08-30
 
 ## Frame
 
@@ -52,7 +52,7 @@ shadow therefore composes rather than duplicates the two systems:
 | Lens | Finding | Disposition |
 | --- | --- | --- |
 | ICELINES `KEEL` | The slice reuses the canonical package and release-verification chain and changes no product surface or data path. | `pass` |
-| ICELINES `BENCH` | Local positive proof covers native measured qualification, two-consumer fan-in, manifest/source binding, binary hash, and binary smoke. The original structural mode also passed hosted evidence on all three platforms. | `pass-with-condition` |
+| ICELINES `BENCH` | Local positive proof covers native measured qualification, two-consumer fan-in, manifest/source binding, binary hash, and binary smoke. Both structural and native measured modes passed hosted evidence on all three platforms. | `pass` |
 | ICELINES `EDGE` | Artifact-byte tampering and platform/target mismatch fail closed. Missing archive, sidecar, manifest, consumer, or executable also blocks the job. | `pass` |
 | Ferris `native-platform-adopter` | The same owner contract is projected on Linux, macOS, and Windows without changing ICELINES build semantics. | `pass-with-condition` |
 | Ferris `ai-assurance-skeptic` | The report is structural compatibility evidence, not authenticated provenance or execution authenticity. | `pass` |
@@ -87,7 +87,20 @@ Windows package with qualification
 A tampered package retained rejected qualification
 `sha256:dd3c9e1016408ba4a4a6ef4dee4ca7f69b3adf065c444c3332ba939b5c4500e1`,
 with only `artifact_digest_matches` false. Hosted confirmation of this native
-mode remains the final condition.
+mode was the final condition.
+
+Run `33316361372` passed every owner job and all three native Ferris consumers:
+
+| Platform | Package job | Consumer job | Qualification | Bytes |
+| --- | ---: | ---: | --- | ---: |
+| Linux x86_64 | 8m33s | 48s | `sha256:021289282ab5a352682c6fa7880f5dba066e6185303afafc62e15a765039dd82` | 31,985,400 |
+| macOS x86_64 | 8m48s | 1m37s | `sha256:de78db2c61c2ab5dff67739989b7c53be394c10be40c4ba449b10d8c8fc6e4ec` | 30,833,245 |
+| Windows x86_64 | 15m42s | 2m13s | `sha256:6e95248ced301473ac5be4f609488069a07671c2ad43b4806626daed59f4a753` | 28,616,879 |
+
+Every report uses `ferris.artifact-qualification-report/v1`, has status
+`qualified`, matches both producer identities, and completes the exact integrity
+and smoke consumer set. The external manifest sidecar is also byte-compared
+with the copy extracted from the archive by the owner verifier.
 
 ## Slice and stop conditions
 
