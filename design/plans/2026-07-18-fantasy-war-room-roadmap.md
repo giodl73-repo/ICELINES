@@ -19,6 +19,11 @@ matchup strategist designed to reduce single-week playoff upset risk after
 Dexter's Dawgs' authoritative 18-2, all-category-leading regular season ended
 in a first-round loss.
 
+The reviewed [`Yahoo Fantasy OAuth Sync`](2026-08-25-yahoo-fantasy-oauth-sync.md)
+plan is a child workstream of this roadmap. It replaces repeated CSV/manual
+league-context refreshes with explicit read-only provider ingestion while
+keeping official NHL data authoritative for hockey statistics.
+
 ## Existing Foundation
 
 The roadmap reuses these implemented contracts:
@@ -435,7 +440,7 @@ foreign-key behavior, and failure rollback tests.
 |---|---|---|
 | NHL schedule/results | official cached NHL feeds | game/date/result only |
 | Player rates | selected completed or current sealed stats sample | projection input, not guaranteed outcome |
-| Fantasy rosters/eligibility | exact Yahoo CSV/clipboard sync | current only as of import time |
+| Fantasy rosters/eligibility | read-only Yahoo API sync when connected; exact Yahoo CSV/clipboard fallback | current only as of the disclosed successful sync/import time |
 | Matchup-to-date totals | labeled user/platform paste | no live continuity claim |
 | Injury/goalie/role state | saved sourced observations | confidence and freshness required |
 | Other-manager behavior | saved league events when available | no calibrated probability before sample gate |
