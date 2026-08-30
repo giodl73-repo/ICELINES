@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ArtifactPath,
     [string]$ChecksumPath = "",
+    [string]$ManifestPath = "",
     [string]$ExpectedSourceRevision = "",
     [switch]$Smoke
 )
@@ -14,6 +15,10 @@ if ([string]::IsNullOrWhiteSpace($ChecksumPath)) {
     $ChecksumPath = "$($Artifact.FullName).sha256"
 }
 $Checksum = Get-Item -LiteralPath (Resolve-Path $ChecksumPath)
+$ExpectedManifest = $null
+if (-not [string]::IsNullOrWhiteSpace($ManifestPath)) {
+    $ExpectedManifest = Get-Item -LiteralPath (Resolve-Path $ManifestPath)
+}
 
 $expected = ((Get-Content -LiteralPath $Checksum.FullName -TotalCount 1) -split '\s+')[0].ToLowerInvariant()
 $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $Artifact.FullName).Hash.ToLowerInvariant()
@@ -39,6 +44,13 @@ try {
     $manifest = Get-ChildItem -LiteralPath $VerifyDir -Recurse -File -Filter "ICELINES-PACKAGE.txt" | Select-Object -First 1
     if ($null -eq $manifest) {
         Write-Error "Archive does not contain ICELINES-PACKAGE.txt"
+    }
+    if ($null -ne $ExpectedManifest) {
+        $expectedManifestHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $ExpectedManifest.FullName).Hash
+        $actualManifestHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $manifest.FullName).Hash
+        if ($expectedManifestHash -ne $actualManifestHash) {
+            Write-Error "External package manifest does not match the archived ICELINES-PACKAGE.txt"
+        }
     }
 
     $binary = Get-ChildItem -LiteralPath $VerifyDir -Recurse -File |

@@ -72,7 +72,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   FERRIS_REPOSITORY: giodl73-repo/FERRIS
-  FERRIS_REVISION: 3138f4d3d23094e91b7d143fe2548df97617794d
+  FERRIS_REVISION: 4d9e68f571fe2a649e29625d4a0de519ea18d524
   # The generated Clap graph exceeds Rust's default Windows test-thread stack.
   RUST_MIN_STACK: 16777216
 
@@ -303,11 +303,13 @@ jobs:
             tar tzf "${archive_name}" | grep -F "./${{ matrix.binary }}"
             tar tzf "${archive_name}" | grep -F "./ICELINES-PACKAGE.txt"
           fi
+          cp dist/ICELINES-PACKAGE.txt "${archive_name}.manifest.txt"
 
       - name: Record Ferris producer envelope
         run: >
           python scripts/ferris-artifact.py produce
           --artifact "${{ matrix.archive }}"
+          --manifest "${{ matrix.archive }}.manifest.txt"
           --artifact-id "${{ matrix.artifact }}"
           --target "${{ matrix.target }}"
           --platform-os "${{ matrix.platform }}"
@@ -323,6 +325,7 @@ jobs:
           path: |
             ${{ matrix.archive }}
             ${{ matrix.archive }}.sha256
+            ${{ matrix.archive }}.manifest.txt
             ${{ matrix.archive }}.ferris-producer.json
           retention-days: 1
 
@@ -381,6 +384,7 @@ jobs:
         run: >
           python scripts/ferris-artifact.py consume
           --artifact "artifact-input/${{ matrix.archive }}"
+          --manifest "artifact-input/${{ matrix.archive }}.manifest.txt"
           --producer "artifact-input/${{ matrix.archive }}.ferris-producer.json"
           --ferris "_ferris-source/target/release/ferris${{ runner.os == 'Windows' && '.exe' || '' }}"
           --target "${{ matrix.target }}"
@@ -397,6 +401,7 @@ jobs:
         run: >
           ./scripts/verify-release-artifact.ps1
           -ArtifactPath "artifact-input/${{ matrix.archive }}"
+          -ManifestPath "artifact-input/${{ matrix.archive }}.manifest.txt"
           -ExpectedSourceRevision "${{ github.sha }}"
           -Smoke
 
