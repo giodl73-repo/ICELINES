@@ -32,7 +32,7 @@ already downloads equivalent owner artifacts before publication.
 
 Ferris first supplied an observation-only `artifacts --request` contract. The
 ICELINES shadow proved that contract, then motivated Ferris commit
-`4d9e68f571fe2a649e29625d4a0de519ea18d524`, which adds bounded local artifact
+`73ee870fd7e7689637a93bfb835fcbf8d1ccda4e`, which adds bounded local artifact
 and manifest measurement plus opt-in fail-closed qualification. Ferris still
 does not store, transfer, execute, sign, or publish artifacts. The revised
 shadow therefore composes rather than duplicates the two systems:

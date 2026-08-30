@@ -72,7 +72,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   FERRIS_REPOSITORY: giodl73-repo/FERRIS
-  FERRIS_REVISION: 4d9e68f571fe2a649e29625d4a0de519ea18d524
+  FERRIS_REVISION: 73ee870fd7e7689637a93bfb835fcbf8d1ccda4e
   # The generated Clap graph exceeds Rust's default Windows test-thread stack.
   RUST_MIN_STACK: 16777216
 
