@@ -55,6 +55,14 @@ The shadow therefore composes rather than duplicates the two systems:
 | Ferris `scope-keeper` | The workflow has no tag, release, write permission, secret, NHL API fetch, data mutation, or deployment step. | `pass` |
 | Ferris `product-value-governor` | This closes named macOS and real artifact-handoff gaps rather than repeating PARLOR package selection. | `authorize` |
 
+The first hosted run exposed a Windows integration defect before Ferris could
+execute: a full nested checkout of the pinned Ferris revision exceeded Git for
+Windows' default path limit on deeply named simulation evidence. The adopter
+now sparsely checks out only `Cargo.toml`, `Cargo.lock`, and `crates/`, which are
+the inputs required to build Ferris. This is a bounded consumer workaround;
+Ferris still carries repository-layout debt for ordinary full Windows
+checkouts.
+
 ## Slice and stop conditions
 
 The hosted slice succeeds only when all three platform packages are downloaded

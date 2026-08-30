@@ -362,6 +362,11 @@ jobs:
           repository: ${{ env.FERRIS_REPOSITORY }}
           ref: ${{ env.FERRIS_REVISION }}
           path: _ferris-source
+          sparse-checkout: |
+            Cargo.toml
+            Cargo.lock
+            crates
+          sparse-checkout-cone-mode: false
 
       - name: Build exact Ferris revision
         run: cargo build --locked --release --manifest-path _ferris-source/Cargo.toml -p ferris-cli --bin ferris
