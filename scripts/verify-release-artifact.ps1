@@ -1,7 +1,9 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$ArtifactPath,
-    [string]$ChecksumPath = ""
+    [string]$ChecksumPath = "",
+    [string]$ExpectedSourceRevision = "",
+    [switch]$Smoke
 )
 
 Set-StrictMode -Version Latest
@@ -63,10 +65,40 @@ try {
     if (-not $manifestRows.ContainsKey("binary_sha256")) {
         Write-Error "Manifest does not contain binary_sha256"
     }
+    if (-not $manifestRows.ContainsKey("version")) {
+        Write-Error "Manifest does not contain version"
+    }
+    if (-not $manifestRows.ContainsKey("source_commit")) {
+        Write-Error "Manifest does not contain source_commit"
+    }
+    if (
+        -not [string]::IsNullOrWhiteSpace($ExpectedSourceRevision) -and
+        $manifestRows["source_commit"] -ne $ExpectedSourceRevision
+    ) {
+        Write-Error "Manifest source_commit mismatch: expected $ExpectedSourceRevision, got $($manifestRows["source_commit"])"
+    }
     $expectedBinaryHash = $manifestRows["binary_sha256"].ToLowerInvariant()
     $actualBinaryHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $binary.FullName).Hash.ToLowerInvariant()
     if ($expectedBinaryHash -ne $actualBinaryHash) {
         Write-Error "Manifest binary_sha256 mismatch for $($binary.Name): expected $expectedBinaryHash, got $actualBinaryHash"
+    }
+
+    if ($Smoke) {
+        $isWindowsHost = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
+        if (-not $isWindowsHost) {
+            & chmod +x $binary.FullName
+            if ($LASTEXITCODE -ne 0) {
+                exit $LASTEXITCODE
+            }
+        }
+        $actualVersion = (& $binary.FullName --version) -join " "
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Downloaded binary smoke failed for $($binary.Name)"
+        }
+        if ($actualVersion.Trim() -ne $manifestRows["version"].Trim()) {
+            Write-Error "Downloaded binary version mismatch: expected $($manifestRows["version"]), got $actualVersion"
+        }
+        Write-Host "downloaded binary smoke passed: $actualVersion" -ForegroundColor Green
     }
 
     Write-Host "checksum verified: $($Artifact.Name)" -ForegroundColor Green
