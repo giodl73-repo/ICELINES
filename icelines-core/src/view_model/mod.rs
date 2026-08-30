@@ -30,6 +30,7 @@ pub mod fantasy_league;
 pub mod fantasy_matchup;
 pub mod fantasy_matchup_strategy;
 pub mod fantasy_playoff_portfolio;
+pub mod fantasy_provider;
 pub mod fantasy_schedule;
 pub mod fantasy_season_sim;
 pub mod fantasy_sim;
@@ -273,6 +274,12 @@ pub use fantasy_playoff_portfolio::{
     FantasyPlayoffPlayerRow, FantasyPlayoffPortfolioInput, FantasyPlayoffPortfolioView,
     FantasyPlayoffRoundInput, FantasyPlayoffRoundRow, FantasyPlayoffTeamRow,
     FANTASY_PLAYOFF_PORTFOLIO_SCHEMA,
+};
+pub use fantasy_provider::{
+    FantasyProviderAccessState, FantasyProviderCapability, FantasyProviderCapabilityRow,
+    FantasyProviderCapabilityState, FantasyProviderConnectionState, FantasyProviderKind,
+    FantasyProviderPlayerMappingCounts, FantasyProviderStatusError, FantasyProviderStatusView,
+    FANTASY_PROVIDER_STATUS_SCHEMA,
 };
 pub use fantasy_schedule::{
     build_fantasy_schedule_view, FantasyDailySlateRow, FantasyRosterScheduleView,

@@ -48,6 +48,11 @@ Room roadmap for active navigation. Its durable league rules remain canonical
 in the linked feature specification until the consolidation migration rewrites
 that plan's status and archive metadata.
 
+Yahoo Fantasy OAuth Sync is a reviewed child workstream of Fantasy War Room and
+does not consume another top-level active-plan slot. It adds secure read-only
+provider ingestion while keeping NHL statistics authoritative: see
+[`2026-08-25-yahoo-fantasy-oauth-sync.md`](2026-08-25-yahoo-fantasy-oauth-sync.md).
+
 ## Roadmap Ledger
 
 Jennings restored the measured baseline, Campbell established the shared
