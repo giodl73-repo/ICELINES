@@ -78,8 +78,8 @@ fn l2_trade_scout_populates_the_full_camp_inventory() {
         .parent()
         .expect("workspace root");
     let camp = repo.join("examples/icecast-league-training-camp-2026-27.json");
-    let policy = repo.join("examples/icecast-sea-trade-scout-population-2026-27.json");
-    let picks = repo.join("examples/icecast-sea-draft-pick-population-2027.json");
+    let policy = repo.join("examples/icecast-brv-trade-scout-population-2026-27.json");
+    let picks = repo.join("examples/icecast-brv-draft-pick-population-2027.json");
     let out = run(&[
         "icecast",
         "trade-scout-populate",
@@ -139,7 +139,7 @@ fn l2_trade_features_expand_scout_without_inventing_completion_odds() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("workspace root");
-    let input = repo.join("examples/icecast-sea-trade-scout-board-2026-27.json");
+    let input = repo.join("examples/icecast-brv-trade-scout-board-2026-27.json");
     let out = run(&[
         "icecast",
         "trade-features",
@@ -166,10 +166,11 @@ fn l2_trade_pick_population_keeps_conditional_rights_unresolved() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("workspace root");
-    let ownership = repo.join("examples/icecast-sea-draft-pick-ownership-2027.csv");
+    let ownership = repo.join("examples/icecast-brv-draft-pick-ownership-2027.csv");
     let curve = repo.join("examples/icecast-draft-pick-value-curve-2005-2018.json");
-    let policy = repo.join("examples/icecast-sea-draft-pick-population-policy-2027.json");
-    let season_forecast = repo.join("examples/icecast-nyr-ror-trade-season-2026-27.json");
+    let policy = repo.join("examples/icecast-brv-draft-pick-population-policy-2027.json");
+    let season_forecast =
+        repo.join("examples/icecast-alp-veteran-center-trade-season-2026-27.json");
     let out = run(&[
         "icecast",
         "trade-pick-populate",
@@ -216,7 +217,8 @@ fn l2_trade_pick_population_composes_selection_protection_and_deferral() {
     let ownership = fixtures.join("compound-draft-pick-ownership.csv");
     let policy = fixtures.join("compound-draft-pick-policy.json");
     let curve = repo.join("examples/icecast-draft-pick-value-curve-2005-2018.json");
-    let season_forecast = repo.join("examples/icecast-nyr-ror-trade-season-2026-27.json");
+    let season_forecast =
+        repo.join("examples/icecast-alp-veteran-center-trade-season-2026-27.json");
     let out = run(&[
         "icecast",
         "trade-pick-populate",
@@ -264,7 +266,7 @@ fn l2_trade_pick_coverage_refuses_to_claim_league_completeness() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("workspace root");
-    let ownership = repo.join("examples/icecast-sea-draft-pick-ownership-2027.csv");
+    let ownership = repo.join("examples/icecast-brv-draft-pick-ownership-2027.csv");
     let out = run(&[
         "icecast",
         "trade-pick-coverage",

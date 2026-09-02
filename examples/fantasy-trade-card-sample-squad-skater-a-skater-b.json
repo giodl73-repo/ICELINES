@@ -1,0 +1,640 @@
+{
+  "schema": "card_document.v1",
+  "card_kind": "fantasy_trade",
+  "document_id": "fantasy-trade:sample-multicategory-league:sample-multicategory:blue-line-bandits",
+  "fingerprint": "4e7534fcf0ddc36318c8292e02e9791a898358382464e277968c3c200d6cdce8",
+  "title": "Sample Multicategory ↔ Blue Line Bandits trade board",
+  "subtitle": "Sample 2026-27 League · Sample Multicategory league scoring · evaluated 2026-11-12T15:00:00+00:00",
+  "context": {
+    "view": {
+      "window": {
+        "season": 20262027,
+        "season_type": "regular"
+      },
+      "generated_at": "2026-11-12T15:00:00Z",
+      "source_state": [],
+      "completeness": "complete",
+      "data_generation": null
+    },
+    "evidence_at": "2026-11-12T15:00:00Z",
+    "evidence_label": "estimated",
+    "builder_version": "fantasy_trade_card.v1",
+    "methodology_versions": {
+      "trade_evaluation": "fantasy_trade_evaluation.v1"
+    },
+    "joins": {
+      "league_id": "sample-multicategory-league",
+      "roster_snapshot_id": null,
+      "calendar_fingerprint": null,
+      "scoring_scheme_id": "sample-multicategory",
+      "scenario_id": null,
+      "team_ids": [
+        "sample-multicategory",
+        "blue-line-bandits"
+      ],
+      "player_ids": [
+        "sample-player-027",
+        "sample-player-028"
+      ],
+      "game_ids": []
+    },
+    "simulation": {
+      "model_id": null,
+      "model_version": null,
+      "parameter_fingerprint": null,
+      "seed": null,
+      "trials": null
+    }
+  },
+  "theme": {
+    "theme_key": "fantasy-trade",
+    "primary": "#17324D",
+    "secondary": "#E7EEF5",
+    "accent": "#E09F3E",
+    "surface": "#FFFFFF",
+    "text": "#102A43",
+    "team_abbreviation": null,
+    "ascii_identity": "Trade Board",
+    "minimum_text_contrast_x100": 450
+  },
+  "required_capabilities": [],
+  "pages": [
+    {
+      "id": "trade-board",
+      "literal_label": "Trade recommendation and packages",
+      "display_label": "The Trade Board",
+      "order": 1,
+      "accessible_summary": "Recommendation, fairness gap, legality, and players exchanged.",
+      "sections": [
+        {
+          "section_type": "identity_header",
+          "id": "fantasy-trade-identity",
+          "eyebrow": "Sample 2026-27 League",
+          "title": "Sample Multicategory ↔ Blue Line Bandits",
+          "subtitle": "Sample Multicategory league scoring",
+          "identities": [
+            {
+              "kind": "team",
+              "subject_id": "sample-multicategory",
+              "label": "Sample Multicategory",
+              "asset_id": null
+            },
+            {
+              "kind": "team",
+              "subject_id": "blue-line-bandits",
+              "label": "Blue Line Bandits",
+              "asset_id": null
+            }
+          ]
+        },
+        {
+          "section_type": "decision",
+          "id": "trade-recommendation",
+          "title": "Trade call",
+          "recommendation": "Reasonable offer range; Sample Multicategory gains elite wing flexibility while Blue Line Bandits gains a top defense anchor",
+          "rationale": [
+            "Package value gap: -1.9%",
+            "Roster legality: Legal / Legal"
+          ],
+          "alternatives": [],
+          "action_id": null,
+          "token": "primary_action",
+          "evidence_label": "estimated"
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "trade-package-balance",
+          "title": "Package balance",
+          "metrics": [
+            {
+              "metric": {
+                "key": "package_value_gap",
+                "label": "Value gap",
+                "value": {
+                  "decimal": -3.51
+                },
+                "unit": "score",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-3.51",
+              "accessible_text": "Value gap -3.51",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "package_value_gap_percent",
+                "label": "Value gap percent",
+                "value": {
+                  "decimal": -1.85
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-1.85",
+              "accessible_text": "Value gap percent -1.85",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "sending_legal",
+                "label": "Sample Multicategory legal",
+                "value": {
+                  "text": "Legal"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "Legal",
+              "accessible_text": "Sample Multicategory legal Legal",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "receiving_legal",
+                "label": "Blue Line Bandits legal",
+                "value": {
+                  "text": "Legal"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "Legal",
+              "accessible_text": "Blue Line Bandits legal Legal",
+              "comparison": null,
+              "evidence_label": "estimated"
+            }
+          ]
+        },
+        {
+          "section_type": "player_list",
+          "id": "sending-package",
+          "title": "Sample Multicategory sends",
+          "rows": [
+            {
+              "player_id": "sample-player-028",
+              "name": "Sample Player 028",
+              "role": "NYR · D",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "projected_remaining_value",
+                    "label": "Remaining value",
+                    "value": {
+                      "decimal": 190.06
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "+190.06",
+                  "accessible_text": "Remaining value +190.06",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "league_value_per_game",
+                    "label": "Value/game",
+                    "value": {
+                      "decimal": 4.42
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "+4.42",
+                  "accessible_text": "Value/game +4.42",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "remaining_games",
+                    "label": "Games left",
+                    "value": {
+                      "integer": 43
+                    },
+                    "unit": "count",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "43",
+                  "accessible_text": "Games left 43",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "supporting_evidence"
+              ],
+              "evidence_label": "estimated"
+            }
+          ]
+        },
+        {
+          "section_type": "player_list",
+          "id": "receiving-package",
+          "title": "Blue Line Bandits sends",
+          "rows": [
+            {
+              "player_id": "sample-player-027",
+              "name": "Sample Player 027",
+              "role": "DAL · LW/RW",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "projected_remaining_value",
+                    "label": "Remaining value",
+                    "value": {
+                      "decimal": 186.54999999999998
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "+186.55",
+                  "accessible_text": "Remaining value +186.55",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "league_value_per_game",
+                    "label": "Value/game",
+                    "value": {
+                      "decimal": 4.55
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "+4.55",
+                  "accessible_text": "Value/game +4.55",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "remaining_games",
+                    "label": "Games left",
+                    "value": {
+                      "integer": 41
+                    },
+                    "unit": "count",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "41",
+                  "accessible_text": "Games left 41",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "supporting_evidence"
+              ],
+              "evidence_label": "estimated"
+            }
+          ]
+        },
+        {
+          "section_type": "state_notice",
+          "id": "trade-board-warnings",
+          "title": "Trade evidence warnings",
+          "detail": "Refresh roster, injury, role, and schedule evidence before accepting.",
+          "empty_state": null,
+          "warnings": [
+            {
+              "kind": "partial_source",
+              "source": "fantasy_import",
+              "message": "Player values, team totals, and remaining games are deterministic fixture inputs, not current trade advice.",
+              "recovery": []
+            },
+            {
+              "kind": "partial_source",
+              "source": "fantasy_import",
+              "message": "Refresh injury, role, schedule, and playoff evidence before accepting.",
+              "recovery": []
+            }
+          ],
+          "token": "warning"
+        }
+      ]
+    },
+    {
+      "id": "trade-insider",
+      "literal_label": "Trade impact and evidence",
+      "display_label": "The Insider",
+      "order": 2,
+      "accessible_summary": "Before-and-after value, schedule, roster coverage, warnings, and methodology for both teams.",
+      "sections": [
+        {
+          "section_type": "player_list",
+          "id": "trade-team-impacts",
+          "title": "Before and after",
+          "rows": [
+            {
+              "player_id": "sample-multicategory",
+              "name": "Sample Multicategory",
+              "role": "Roster 16/16 · Legal",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "before_value",
+                    "label": "Before",
+                    "value": {
+                      "decimal": 4021.8
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "+4021.80",
+                  "accessible_text": "Before +4021.80",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "after_value",
+                    "label": "After",
+                    "value": {
+                      "decimal": 4017.9
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "+4017.90",
+                  "accessible_text": "After +4017.90",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "value_delta",
+                    "label": "Value delta",
+                    "value": {
+                      "decimal": -3.900000000000091
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "-3.90",
+                  "accessible_text": "Value delta -3.90",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "remaining_games_delta",
+                    "label": "Games delta",
+                    "value": {
+                      "integer": -2
+                    },
+                    "unit": "count",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "-2",
+                  "accessible_text": "Games delta -2",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "missing_slots_before",
+                    "label": "Open slots before",
+                    "value": {
+                      "integer": 0
+                    },
+                    "unit": "count",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "0",
+                  "accessible_text": "Open slots before 0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "missing_slots_after",
+                    "label": "Open slots after",
+                    "value": {
+                      "integer": 0
+                    },
+                    "unit": "count",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "0",
+                  "accessible_text": "Open slots after 0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "supporting_evidence"
+              ],
+              "evidence_label": "estimated"
+            },
+            {
+              "player_id": "blue-line-bandits",
+              "name": "Blue Line Bandits",
+              "role": "Roster 16/16 · Legal",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "before_value",
+                    "label": "Before",
+                    "value": {
+                      "decimal": 3884.2
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "+3884.20",
+                  "accessible_text": "Before +3884.20",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "after_value",
+                    "label": "After",
+                    "value": {
+                      "decimal": 3888.1
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "+3888.10",
+                  "accessible_text": "After +3888.10",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "value_delta",
+                    "label": "Value delta",
+                    "value": {
+                      "decimal": 3.900000000000091
+                    },
+                    "unit": "score",
+                    "precision": "two_decimals",
+                    "token": null
+                  },
+                  "display_text": "+3.90",
+                  "accessible_text": "Value delta +3.90",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "remaining_games_delta",
+                    "label": "Games delta",
+                    "value": {
+                      "integer": 2
+                    },
+                    "unit": "count",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "2",
+                  "accessible_text": "Games delta 2",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "missing_slots_before",
+                    "label": "Open slots before",
+                    "value": {
+                      "integer": 0
+                    },
+                    "unit": "count",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "0",
+                  "accessible_text": "Open slots before 0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "missing_slots_after",
+                    "label": "Open slots after",
+                    "value": {
+                      "integer": 0
+                    },
+                    "unit": "count",
+                    "precision": "integer",
+                    "token": null
+                  },
+                  "display_text": "0",
+                  "accessible_text": "Open slots after 0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "supporting_evidence"
+              ],
+              "evidence_label": "estimated"
+            }
+          ]
+        },
+        {
+          "section_type": "state_notice",
+          "id": "trade-insider-warnings",
+          "title": "Trade evidence warnings",
+          "detail": "Refresh roster, injury, role, and schedule evidence before accepting.",
+          "empty_state": null,
+          "warnings": [
+            {
+              "kind": "partial_source",
+              "source": "fantasy_import",
+              "message": "Player values, team totals, and remaining games are deterministic fixture inputs, not current trade advice.",
+              "recovery": []
+            },
+            {
+              "kind": "partial_source",
+              "source": "fantasy_import",
+              "message": "Refresh injury, role, schedule, and playoff evidence before accepting.",
+              "recovery": []
+            }
+          ],
+          "token": "warning"
+        },
+        {
+          "section_type": "methodology",
+          "id": "fantasy-trade-methodology",
+          "title": "Methodology",
+          "methods": [
+            {
+              "key": "trade-evaluation",
+              "label": "Trade evaluation",
+              "version": "fantasy_trade_evaluation.v1",
+              "summary": "League scoring, remaining schedule value, roster capacity, and active-slot coverage are evaluated for both teams before a recommendation is issued."
+            }
+          ],
+          "limitations": [
+            "The card is advisory and does not execute, accept, reject, or save an offer.",
+            "Injury, role, schedule, and playoff context should be refreshed before either manager accepts."
+          ]
+        },
+        {
+          "section_type": "provenance",
+          "id": "fantasy-trade-source",
+          "title": "Source authority",
+          "provenance_ids": [
+            "fantasy-trade-evaluation"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "provenance": [
+    {
+      "id": "fantasy-trade-evaluation",
+      "source": "fantasy_import",
+      "label": "League roster, scoring, eligibility, and remaining-schedule trade evaluation",
+      "state": "complete",
+      "observed_at": "2026-11-12T15:00:00Z",
+      "fingerprint": "2d4ca04a2b192af1331dd4c152208a6f65f412919c8aa5c85c5e922b827f0510",
+      "note": null
+    }
+  ],
+  "warnings": [
+    {
+      "kind": "partial_source",
+      "source": "fantasy_import",
+      "message": "Player values, team totals, and remaining games are deterministic fixture inputs, not current trade advice.",
+      "recovery": []
+    },
+    {
+      "kind": "partial_source",
+      "source": "fantasy_import",
+      "message": "Refresh injury, role, schedule, and playoff evidence before accepting.",
+      "recovery": []
+    }
+  ],
+  "empty_state": null
+}

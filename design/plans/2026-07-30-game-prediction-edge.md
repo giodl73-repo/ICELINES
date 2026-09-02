@@ -77,8 +77,8 @@ inside the existing all-32 season simulator.
   59.24% playoffs, and 3.30% Stanley Cup. These are authored ceiling branches,
   not unconditional forecasts.
 - The retained UI-neutral baseline cards are
-  `examples/season-simulation-card-nyr-baseline-2026-27.json` and
-  `examples/season-simulation-card-sea-baseline-2026-27.json`. Both preserve
+  `examples/season-simulation-card-alp-baseline-2026-27.json` and
+  `examples/season-simulation-card-brv-baseline-2026-27.json`. Both preserve
   full-league run fingerprint `1afdc479e23aaa46f7bfdb4e84f600c1c479a5e42b9291118d9b0aa63bd6c8a0`;
   the richer development-variance showcase cards remain separate.
 

@@ -2695,7 +2695,7 @@ mod tests {
     #[test]
     fn team_season_authorities_cover_league_simulation_consequences() {
         let forecast: TeamSeasonForecastView = serde_json::from_str(include_str!(
-            "../../../examples/icecast-nyr-development-variance-10000-result.json"
+            "../../../examples/icecast-alp-development-variance-10000-result.json"
         ))
         .unwrap();
         let authorities = adapt_team_season_window_scenario_authorities(&forecast).unwrap();

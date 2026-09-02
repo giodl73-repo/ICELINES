@@ -1,0 +1,56 @@
+{
+  "name": "NYR internal breakout path to the ten-percent Cup tier",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "NYR-sample-prospect-top-four-hit",
+      "kind": "custom",
+      "team": "NYR",
+      "player": "Sample Player 010",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.0,
+      "occurrence_probability": 1.0,
+      "label": "Sample Prospect immediately contributes at positive top-four quality"
+    },
+    {
+      "id": "NYR-perreault-top-six-breakout",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 128",
+      "effective_date": "2026-09-29",
+      "strength_delta": 4.0,
+      "occurrence_probability": 1.0,
+      "label": "Perreault becomes a strong top-six producer"
+    },
+    {
+      "id": "NYR-laba-middle-six-breakout",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 280",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.0,
+      "occurrence_probability": 1.0,
+      "label": "Laba becomes a positive middle-six two-way center"
+    },
+    {
+      "id": "NYR-sample-forward-a-middle-six-breakout",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 392",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.0,
+      "occurrence_probability": 1.0,
+      "label": "Sample Forward converts his forechecking and physicality into positive middle-six value"
+    },
+    {
+      "id": "NYR-sample-wing-b-star-step",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 019",
+      "effective_date": "2026-09-29",
+      "strength_delta": 4.0,
+      "occurrence_probability": 1.0,
+      "label": "Sample Scorer takes another star-level scoring step"
+    }
+  ]
+}

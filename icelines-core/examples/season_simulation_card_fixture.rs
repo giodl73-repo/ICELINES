@@ -9,7 +9,7 @@ use icelines_core::{
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     write_cards(
-        "examples/icecast-nyr-development-variance-10000-result.json",
+        "examples/icecast-alp-development-variance-10000-result.json",
         Utc.with_ymd_and_hms(2026, 7, 22, 12, 0, 0).single(),
         "nhl-2026-27-1344-games",
     )?;

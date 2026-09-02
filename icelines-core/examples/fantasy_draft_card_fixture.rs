@@ -44,11 +44,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output = std::env::args_os()
         .nth(1)
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("examples/fantasy-draft-card-dexters-dawgs-pick-7.json"));
+        .unwrap_or_else(|| PathBuf::from("examples/fantasy-draft-card-sample-squad-pick-7.json"));
     let candidates = vec![
         candidate(
-            "connor-mcdavid",
-            "Connor McDavid",
+            "sample-player-001",
+            "Sample Player 001",
             "EDM",
             vec![Position::Center],
             96.0,
@@ -61,8 +61,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             1.0,
         ),
         candidate(
-            "nathan-mackinnon",
-            "Nathan MacKinnon",
+            "sample-player-002",
+            "Sample Player 002",
             "COL",
             vec![Position::Center],
             92.0,
@@ -75,8 +75,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             1.0,
         ),
         candidate(
-            "jason-robertson",
-            "Jason Robertson",
+            "sample-player-003",
+            "Sample Player 003",
             "DAL",
             vec![Position::LeftWing],
             78.0,
@@ -89,8 +89,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             1.0,
         ),
         candidate(
-            "william-nylander",
-            "William Nylander",
+            "sample-player-004",
+            "Sample Player 004",
             "TOR",
             vec![Position::LeftWing, Position::RightWing],
             75.0,
@@ -103,8 +103,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             1.5,
         ),
         candidate(
-            "cale-makar",
-            "Cale Makar",
+            "sample-player-005",
+            "Sample Player 005",
             "COL",
             vec![Position::Defense],
             81.0,
@@ -117,8 +117,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             2.0,
         ),
         candidate(
-            "igor-shesterkin",
-            "Igor Shesterkin",
+            "sample-player-006",
+            "Sample Player 006",
             "NYR",
             vec![Position::Goalie],
             73.0,
@@ -131,8 +131,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             2.5,
         ),
         candidate(
-            "macklin-celebrini",
-            "Macklin Celebrini",
+            "sample-player-007",
+            "Sample Player 007",
             "SJS",
             vec![Position::Center],
             76.0,
@@ -145,8 +145,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             2.0,
         ),
         candidate(
-            "quinn-hughes",
-            "Quinn Hughes",
+            "sample-player-008",
+            "Sample Player 008",
             "VAN",
             vec![Position::Defense],
             77.0,
@@ -167,10 +167,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             aliases: Vec::new(),
         })
         .collect::<Vec<_>>();
-    let taken = import_fantasy_taken_players("Connor McDavid\nNathan MacKinnon", &identities)
+    let taken = import_fantasy_taken_players("Sample Player 001\nSample Player 002", &identities)
         .map_err(std::io::Error::other)?;
     let mut board = build_fantasy_draft_board(
-        "dexters-dawgs",
+        "sample-multicategory",
         "20252026",
         vec![
             FantasyActiveSlot {
@@ -200,10 +200,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut view = ViewContext::new(ViewWindow::new(Season(20262027), SeasonType::Regular));
     view.generated_at = Some(timestamp);
     let card = build_fantasy_draft_card(FantasyDraftCardInput {
-        league_id: "dexters-dawgs-league".to_string(),
-        league_name: "Dexter's 2026-27 League".to_string(),
-        fantasy_team_id: "dexters-dawgs".to_string(),
-        fantasy_team_name: "Dexter's Dawgs".to_string(),
+        league_id: "sample-multicategory-league".to_string(),
+        league_name: "Sample 2026-27 League".to_string(),
+        fantasy_team_id: "sample-multicategory".to_string(),
+        fantasy_team_name: "Sample Multicategory".to_string(),
         roster_snapshot_id: Some("draft-fixture-pick-7".to_string()),
         calendar_fingerprint: Some("deterministic-draft-calendar-v1".to_string()),
         board,

@@ -54,20 +54,20 @@ fn team(
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output = env::args_os().nth(1).map(PathBuf::from).unwrap_or_else(|| {
-        PathBuf::from("examples/fantasy-trade-card-dexters-dawgs-fox-rantanen.json")
+        PathBuf::from("examples/fantasy-trade-card-sample-squad-skater-a-skater-b.json")
     });
     let evaluated_at = Utc.with_ymd_and_hms(2026, 11, 12, 15, 0, 0).unwrap();
     let evaluation = FantasyTradeEvaluationView {
         schema: FANTASY_TRADE_EVALUATION_SCHEMA.to_string(),
         executed: false,
         saved_offer_id: None,
-        league: "Dexter's 2026-27 League".to_string(),
-        scoring_scheme: "Dexter's Dawgs league scoring".to_string(),
-        sending_team: "Dexter's Dawgs".to_string(),
+        league: "Sample 2026-27 League".to_string(),
+        scoring_scheme: "Sample Multicategory league scoring".to_string(),
+        sending_team: "Sample Multicategory".to_string(),
         receiving_team: "Blue Line Bandits".to_string(),
         sends: vec![player(
-            "adam-fox",
-            "Adam Fox",
+            "sample-player-028",
+            "Sample Player 028",
             "NYR",
             &[Position::Defense],
             318.0,
@@ -75,19 +75,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             43,
         )],
         receives: vec![player(
-            "mikko-rantanen",
-            "Mikko Rantanen",
+            "sample-player-027",
+            "Sample Player 027",
             "DAL",
             &[Position::LeftWing, Position::RightWing],
             334.0,
             4.55,
             41,
         )],
-        sending_team_result: team("Dexter's Dawgs", 4_021.8, 4_017.9, -2, 0, 0),
+        sending_team_result: team("Sample Multicategory", 4_021.8, 4_017.9, -2, 0, 0),
         receiving_team_result: team("Blue Line Bandits", 3_884.2, 3_888.1, 2, 0, 0),
         package_value_gap: -3.51,
         package_value_gap_percent: -1.85,
-        recommendation: "Reasonable offer range; Dexter's Dawgs gains elite wing flexibility while Blue Line Bandits gains a top defense anchor".to_string(),
+        recommendation: "Reasonable offer range; Sample Multicategory gains elite wing flexibility while Blue Line Bandits gains a top defense anchor".to_string(),
         warnings: vec![
             "Player values, team totals, and remaining games are deterministic fixture inputs, not current trade advice.".to_string(),
             "Refresh injury, role, schedule, and playoff evidence before accepting.".to_string(),
@@ -96,9 +96,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut view = ViewContext::new(ViewWindow::new(Season(20262027), SeasonType::Regular));
     view.generated_at = Some(evaluated_at);
     let card = build_fantasy_trade_card(FantasyTradeCardInput {
-        league_id: "dexters-dawgs-league".to_string(),
-        scoring_scheme_id: "dexters-dawgs".to_string(),
-        sending_team_id: "dexters-dawgs".to_string(),
+        league_id: "sample-multicategory-league".to_string(),
+        scoring_scheme_id: "sample-multicategory".to_string(),
+        sending_team_id: "sample-multicategory".to_string(),
         receiving_team_id: "blue-line-bandits".to_string(),
         offer_id: None,
         evaluated_at,

@@ -206,7 +206,7 @@ mod tests {
     #[test]
     fn example_scout_expands_every_candidate_to_three_unlabeled_rows() {
         let scout: TradeScoutView = serde_json::from_str(include_str!(
-            "../../../examples/icecast-sea-trade-scout-board-2026-27.json"
+            "../../../examples/icecast-brv-trade-scout-board-2026-27.json"
         ))
         .unwrap();
         let view = build_trade_completion_feature_set(&scout).unwrap();
@@ -224,7 +224,7 @@ mod tests {
     #[test]
     fn feature_builder_rejects_duplicate_candidates_and_wrong_package_teams() {
         let scout: TradeScoutView = serde_json::from_str(include_str!(
-            "../../../examples/icecast-sea-trade-scout-board-2026-27.json"
+            "../../../examples/icecast-brv-trade-scout-board-2026-27.json"
         ))
         .unwrap();
         let mut invalid = scout.clone();

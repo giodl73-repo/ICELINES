@@ -167,13 +167,13 @@ renumbering its completed pulses.
 - Allow a marked or explicitly selected partial roster to seed team one; rotate
   its draft-seat filler across trials and lock imported players before the
   season begins.
-- Use Dexter's Dawgs' authoritative 18-2, all-category-leading regular season
+- Use Sample Multicategory' authoritative 18-2, all-category-leading regular season
   followed by a first-round loss as the historical stress case. Treat the
   January workbook as an incomplete snapshot, not the final record or roster path.
 
 ## Validation Matrix
 
-Reserve calibration on Dexter's Dawgs uses paired seed `20262027`. At 120
+Reserve calibration on Sample Multicategory uses paired seed `20262027`. At 120
 trials, all-in produced a 5.73 average seed and 63.3% playoff rate; strict
 Friday reserve produced 5.67 and 65.8%; adaptive +6 value/+3 games produced
 5.76 and 65.0%. This supports +6/+3 as a deliberately rare review threshold,

@@ -11,7 +11,6 @@ confirmed source values distinct from modeled scenarios.
 ## Five-year cap positioning
 
 - [League market-cost forecast](2026-07-15-cap-forecast-league.txt)
-- [New York Rangers market-cost forecast](2026-07-15-cap-forecast-nyr.txt)
 - [Shareable five-year positioning tier card](2026-07-15-cap-positioning-tier-card.png)
 - [Five-year tier outlook grid (card back)](2026-07-15-cap-positioning-tier-card-back.png)
 

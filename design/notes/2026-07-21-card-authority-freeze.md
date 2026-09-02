@@ -43,8 +43,8 @@ because later snapshots may not be complete.
 
 | Artifact | Role | SHA-256 |
 |---|---|---|
-| `examples/icecast-nyr-development-variance.json` | NYR scenario events | `8a8c769dfedfb847a510507261a0184ad008d85312d2a34464fa9269334178f9` |
-| `examples/icecast-sea-development-variance.json` | SEA scenario events | `8211c6f2a7b3273b45c5cd311f07d928a73c60a653d2cf881da6790235f09c7f` |
+| `examples/icecast-alp-development-variance.json` | NYR scenario events | `8a8c769dfedfb847a510507261a0184ad008d85312d2a34464fa9269334178f9` |
+| `examples/icecast-brv-development-variance.json` | SEA scenario events | `8211c6f2a7b3273b45c5cd311f07d928a73c60a653d2cf881da6790235f09c7f` |
 | NYR calibrated multilens report | NYR forecast evidence | `652878f85a7e755db07e0a84cfb3932301aa99482b76805c22656a51587d6ceb` |
 | SEA calibrated multilens report | SEA forecast evidence | `3561efcb35b7810016ce3fb4df36497c1e48a2997951e917b6c16e0d62c639a4` |
 | Development calibration v2 report | player-event priors | `2b3c115c0cd3905a9a1cdc0f33471189d34194c8cb2b5991293fe1996d31d814` |

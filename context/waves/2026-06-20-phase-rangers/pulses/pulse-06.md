@@ -7,7 +7,7 @@ without rebuilding the schema or overstating interactive TUI/browser evidence.
 
 ## Scope
 
-Added `scripts/rangers-layout-proof.ps1`, a temp-home proof that exercises the
+Added `scripts/layout-proof.ps1`, a temp-home proof that exercises the
 durable layout CLI:
 
 ```powershell
@@ -32,7 +32,7 @@ The script asserts stable center and pane IDs plus the
 
 | Command | Result |
 |---|---|
-| `powershell -ExecutionPolicy Bypass -File scripts\rangers-layout-proof.ps1` | passed |
+| `powershell -ExecutionPolicy Bypass -File scripts\layout-proof.ps1` | passed |
 | `cargo fmt --check` | passed |
 | `cargo test -p icelines-core workbench_layout --lib` | passed |
 | `cargo test -p icelines-cli --bin icelines layout` | passed |

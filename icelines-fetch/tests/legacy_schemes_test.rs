@@ -3,7 +3,7 @@
 //! Per DI-25: every pre-Lindsay scheme TOML loads byte-identical to its
 //! frozen golden via the legacy-key alias map. This test covers the
 //! complete built-in corpus (currently yahoo-standard, espn-standard,
-//! simple-pts, and dexters-dawgs). Three supplemental hand-authored fixtures
+//! simple-pts, and sample-multicategory). Three supplemental hand-authored fixtures
 //! (`custom-points-only`, `head-to-head-9cat`, and
 //! `rotisserie-with-goalie`) retain the broader FORGE-R3 / BENCH-R2 L2-B24
 //! loader coverage.

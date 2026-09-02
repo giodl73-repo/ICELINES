@@ -34,9 +34,9 @@ requirement and validation record.
 |---|---|---|---|
 | 1 | **Rangers Goal 1 - Signals discovery lane** | Hurricane shipped Signals, but they remain mostly player-card/export driven. Users need a controlled path to find inspectable roster evidence. | Shipped in pulse 04: `icelines signals-roster --team NYR` and `--json` render a team-scoped matrix with methodology/non-claim copy, unavailable evidence states, and no zero-filled missing values; catalog/filter/leaderboard/cache promotion remains explicitly disallowed. |
 | 2 | **Rangers Goal 2 - Evidence card envelope reuse** | WP-009 already has selected analytics cache/evidence-card consumers. Rangers should reuse that contract instead of creating a second evidence model. | Passed in pulse 05: `signals-roster` remains outside analytics cache because Signals have no accepted cache metric keys; future bridge work requires a separate Signals cache-promotion gate. |
-| 3 | **Rangers Goal 3 - Workbench layout hardening** | WP-002 already shipped named layout persistence with accepted risk. Rangers should use or harden it, not rebuild it. | Passed in pulse 06: `scripts/rangers-layout-proof.ps1` saves, lists, shows, and deletes a temp-home `rangers-stats` layout while asserting stable pane IDs and preserve-active-context policy. |
-| 4 | **Rangers Goal 4 - Lean offline CLI path** | REQ-DEP-001 and REQ-LEAN-001 remain target states. A lean CLI gives the repo a cleaner distributable story. | Passed in pulse 07 as a target-not-met audit: `scripts/rangers-lean-audit.ps1` verifies FLETCH/SLICE seams, FLETCH command surfaces, SLICE selector usage, and missing `cli` feature without claiming lean support. |
-| 5 | **Rangers Goal 5 - Rangers team workflow proof** | The round needs one concrete user workflow instead of abstract platform cleanup. NYR can serve as a representative team path using existing bundled data. | Shipped in pulse 02: `scripts/rangers-workflow.ps1` runs team depth, leaders, goalie workload, player Signals, team export, and Signals export offline with disclosure assertions and no team-specific hardcoded claims. |
+| 3 | **Rangers Goal 3 - Workbench layout hardening** | WP-002 already shipped named layout persistence with accepted risk. Rangers should use or harden it, not rebuild it. | Passed in pulse 06: `scripts/layout-proof.ps1` saves, lists, shows, and deletes a temp-home `rangers-stats` layout while asserting stable pane IDs and preserve-active-context policy. |
+| 4 | **Rangers Goal 4 - Lean offline CLI path** | REQ-DEP-001 and REQ-LEAN-001 remain target states. A lean CLI gives the repo a cleaner distributable story. | Passed in pulse 07 as a target-not-met audit: `scripts/lean-audit.ps1` verifies FLETCH/SLICE seams, FLETCH command surfaces, SLICE selector usage, and missing `cli` feature without claiming lean support. |
+| 5 | **Rangers Goal 5 - Rangers team workflow proof** | The round needs one concrete user workflow instead of abstract platform cleanup. NYR can serve as a representative team path using existing bundled data. | Shipped in pulse 02: `scripts/team-workflow.ps1` runs team depth, leaders, goalie workload, player Signals, team export, and Signals export offline with disclosure assertions and no team-specific hardcoded claims. |
 
 ---
 
@@ -61,7 +61,7 @@ requirement and validation record.
    `context/waves/2026-06-20-phase-rangers/RANGERS-INVENTORY.md`.
 2. **Pulse 02 - NYR workflow proof.** Build the smallest repeatable script or
    docs-backed workflow that exercises existing surfaces and reveals gaps.
-   Result: passed 2026-06-20; see `scripts/rangers-workflow.ps1`.
+   Result: passed 2026-06-20; see `scripts/team-workflow.ps1`.
 3. **Pulse 03 - Signals discovery design gate.** Decide the allowed discovery
    shape before implementation. Result: passed 2026-06-20; use a roster matrix,
    not a leaderboard.
@@ -86,7 +86,7 @@ the evidence contract was in place.
 
 Phase Rangers is wrapped. All planned post-Hurricane goals have been dispositioned:
 
-- The NYR workflow proof shipped through `scripts/rangers-workflow.ps1`.
+- The NYR workflow proof shipped through `scripts/team-workflow.ps1`.
 - Signals discovery shipped as the gated, team-scoped `signals-roster` matrix.
 - The evidence bridge decision keeps Signals roster discovery outside the
   analytics cache until a separate Signals cache-promotion gate exists.

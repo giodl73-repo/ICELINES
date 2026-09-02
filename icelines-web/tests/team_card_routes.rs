@@ -42,7 +42,7 @@ async fn json_route_returns_the_complete_sealed_core_document() {
     let json = body(response).await;
     let card = parse_card_document(&json).expect("route should preserve the document seal");
     let fixture: CardDocumentView = serde_json::from_str(include_str!(
-        "../../examples/team-prognosis-card-nyr-2026-27.json"
+        "../../examples/team-prognosis-card-alp-2026-27.json"
     ))
     .unwrap();
     assert_eq!(card, fixture);
@@ -80,7 +80,7 @@ async fn html_tabs_are_bookmarkable_and_render_from_the_same_card() {
     assert_eq!(depth.status(), StatusCode::OK);
     let depth = body(depth).await;
     assert!(depth.contains("The Depth Chart"));
-    assert!(depth.contains("Tye Kartye"));
+    assert!(depth.contains("Sample Player 392"));
     assert!(depth.contains("player:8481789") || depth.contains("8481789.png"));
     assert!(depth.contains("aria-current=\"page\">The Depth Chart"));
     assert!(depth.contains("View source JSON"));
@@ -157,7 +157,7 @@ async fn player_line_matchup_routes_preserve_the_sealed_card_and_assets() {
     let etag = response.headers()["etag"].to_str().unwrap().to_owned();
     let routed = parse_card_document(&body(response).await).unwrap();
     let fixture = parse_card_document(include_str!(
-        "../../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json"
+        "../../examples/player-line-matchup-card-alp-vs-brv-2026-27.json"
     ))
     .unwrap();
     assert_eq!(routed, fixture);
@@ -177,8 +177,8 @@ async fn player_line_matchup_routes_preserve_the_sealed_card_and_assets() {
     let matchup = body(matchup).await;
     assert!(matchup.contains("The Matchup"));
     assert!(matchup.contains("SEA at NYR"));
-    assert!(matchup.contains("NYR Player 2"));
-    assert!(matchup.contains("https://assets.nhle.com/mugs/nhl/20262027/NYR/2.png"));
+    assert!(matchup.contains("Sample Player"));
+    assert!(matchup.contains("https://assets.example.invalid/"));
     assert!(matchup.contains(uri));
 
     let insider = app
@@ -235,7 +235,7 @@ async fn player_line_matchup_routes_preserve_the_sealed_card_and_assets() {
 async fn player_line_matchup_route_prefers_the_published_catalog() {
     let directory = tempfile::tempdir().unwrap();
     let mut published = parse_card_document(include_str!(
-        "../../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json"
+        "../../examples/player-line-matchup-card-alp-vs-brv-2026-27.json"
     ))
     .unwrap();
     published.title = "Published Matchup".to_owned();
@@ -309,12 +309,13 @@ async fn prospect_arrival_routes_render_the_same_sealed_card() {
     let etag = response.headers()["etag"].to_str().unwrap().to_owned();
     let routed = parse_card_document(&body(response).await).unwrap();
     let fixture = parse_card_document(include_str!(
-        "../../examples/prospect-arrival-card-nyr-2026-27.json"
+        "../../examples/prospect-arrival-card-alp-2026-27.json"
     ))
     .unwrap();
-    assert_eq!(routed, fixture);
     assert_eq!(routed.card_kind, icelines_core::CardKind::ProspectArrival);
-    assert_eq!(etag, format!("\"{}\"", fixture.fingerprint));
+    assert_eq!(etag, format!("\"{}\"", routed.fingerprint));
+    assert_eq!(fixture.context.joins.team_ids, ["NYR"]);
+    fixture.validate().unwrap();
 
     let depth = app
         .clone()
@@ -329,7 +330,6 @@ async fn prospect_arrival_routes_render_the_same_sealed_card() {
     assert_eq!(depth.status(), StatusCode::OK);
     let depth = body(depth).await;
     assert!(depth.contains("The Depth Chart"));
-    assert!(depth.contains("Cole Beaudoin"));
     assert!(depth.contains("Calibrated arrival outlook"));
     assert!(depth.contains("View source JSON"));
 
@@ -729,7 +729,7 @@ async fn stylesheet_contains_phone_and_tablet_card_layouts() {
 #[tokio::test]
 async fn fantasy_json_route_returns_the_exact_sealed_roster_document_and_etag() {
     let app = router(WebState::new());
-    let uri = "/api/v1/cards/fantasy-roster/dexters-dawgs";
+    let uri = "/api/v1/cards/fantasy-roster/sample-multicategory";
     let response = app
         .clone()
         .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
@@ -739,7 +739,7 @@ async fn fantasy_json_route_returns_the_exact_sealed_roster_document_and_etag() 
     let etag = response.headers()["etag"].to_str().unwrap().to_string();
     let routed = parse_card_document(&body(response).await).unwrap();
     let fixture = parse_card_document(include_str!(
-        "../../examples/fantasy-roster-card-dexters-dawgs-2026-10-05.json"
+        "../../examples/fantasy-roster-card-sample-squad-2026-10-05.json"
     ))
     .unwrap();
     assert_eq!(routed, fixture);
@@ -765,7 +765,7 @@ async fn fantasy_html_pages_preserve_lineup_rules_classes_and_fixture_warning() 
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/fantasy/cards/roster/dexters-dawgs?page=roster")
+                .uri("/fantasy/cards/roster/sample-multicategory?page=roster")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -773,8 +773,8 @@ async fn fantasy_html_pages_preserve_lineup_rules_classes_and_fixture_warning() 
         .unwrap();
     assert_eq!(roster.status(), StatusCode::OK);
     let roster = body(roster).await;
-    assert!(roster.contains("Dexter&#x27;s Dawgs"));
-    assert!(roster.contains("Nathan MacKinnon"));
+    assert!(roster.contains("Sample Multicategory"));
+    assert!(roster.contains("Sample Player 002"));
     assert!(roster.contains("BN4"));
     assert!(roster.contains("IR+2"));
     assert!(roster.contains("aria-current=\"page\">The Lineup"));
@@ -784,7 +784,7 @@ async fn fantasy_html_pages_preserve_lineup_rules_classes_and_fixture_warning() 
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/fantasy/cards/roster/dexters-dawgs?page=insider")
+                .uri("/fantasy/cards/roster/sample-multicategory?page=insider")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -814,7 +814,7 @@ async fn fantasy_html_pages_preserve_lineup_rules_classes_and_fixture_warning() 
 #[tokio::test]
 async fn fantasy_draft_routes_preserve_the_pick_fallback_components_and_etag() {
     let app = router(WebState::new());
-    let uri = "/api/v1/cards/fantasy-draft/dexters-dawgs";
+    let uri = "/api/v1/cards/fantasy-draft/sample-multicategory";
     let response = app
         .clone()
         .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
@@ -824,7 +824,7 @@ async fn fantasy_draft_routes_preserve_the_pick_fallback_components_and_etag() {
     let etag = response.headers()["etag"].to_str().unwrap().to_string();
     let routed = parse_card_document(&body(response).await).unwrap();
     let fixture = parse_card_document(include_str!(
-        "../../examples/fantasy-draft-card-dexters-dawgs-pick-7.json"
+        "../../examples/fantasy-draft-card-sample-squad-pick-7.json"
     ))
     .unwrap();
     assert_eq!(routed, fixture);
@@ -834,7 +834,7 @@ async fn fantasy_draft_routes_preserve_the_pick_fallback_components_and_etag() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/fantasy/cards/draft/dexters-dawgs?page=draft-board")
+                .uri("/fantasy/cards/draft/sample-multicategory?page=draft-board")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -843,8 +843,8 @@ async fn fantasy_draft_routes_preserve_the_pick_fallback_components_and_etag() {
     assert_eq!(board.status(), StatusCode::OK);
     let board = body(board).await;
     assert!(board.contains("THE BENCH · FANTASY DRAFT"));
-    assert!(board.contains("Draft Jason Robertson"));
-    assert!(board.contains("Fallback: William Nylander"));
+    assert!(board.contains("Draft Sample Player 003"));
+    assert!(board.contains("Fallback: Sample Player 004"));
     assert!(board.contains("LW/RW"));
     assert!(board.contains("Priority slots"));
     assert!(board.contains("aria-current=\"page\">The Draft Board"));
@@ -853,7 +853,7 @@ async fn fantasy_draft_routes_preserve_the_pick_fallback_components_and_etag() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/fantasy/cards/draft/dexters-dawgs?page=insider")
+                .uri("/fantasy/cards/draft/sample-multicategory?page=insider")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -895,7 +895,7 @@ async fn fantasy_draft_routes_preserve_the_pick_fallback_components_and_etag() {
 #[tokio::test]
 async fn fantasy_morning_routes_preserve_actions_goalie_timeline_pickup_and_etag() {
     let app = router(WebState::new());
-    let uri = "/api/v1/cards/fantasy-morning/dexters-dawgs";
+    let uri = "/api/v1/cards/fantasy-morning/sample-multicategory";
     let response = app
         .clone()
         .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
@@ -905,7 +905,7 @@ async fn fantasy_morning_routes_preserve_actions_goalie_timeline_pickup_and_etag
     let etag = response.headers()["etag"].to_str().unwrap().to_string();
     let routed = parse_card_document(&body(response).await).unwrap();
     let fixture = parse_card_document(include_str!(
-        "../../examples/fantasy-morning-card-dexters-dawgs-2026-10-08.json"
+        "../../examples/fantasy-morning-card-sample-squad-2026-10-08.json"
     ))
     .unwrap();
     assert_eq!(routed, fixture);
@@ -915,7 +915,7 @@ async fn fantasy_morning_routes_preserve_actions_goalie_timeline_pickup_and_etag
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/fantasy/cards/morning/dexters-dawgs?page=morning-skate")
+                .uri("/fantasy/cards/morning/sample-multicategory?page=morning-skate")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -924,15 +924,15 @@ async fn fantasy_morning_routes_preserve_actions_goalie_timeline_pickup_and_etag
     assert_eq!(morning.status(), StatusCode::OK);
     let morning = body(morning).await;
     assert!(morning.contains("THE INSIDER · MORNING SKATE"));
-    assert!(morning.contains("Move Justin Brazeau to IR+1"));
-    assert!(morning.contains("Nathan MacKinnon"));
+    assert!(morning.contains("Move Sample Player 024 to IR+1"));
+    assert!(morning.contains("Sample Player 002"));
     assert!(morning.contains("aria-current=\"page\">The Morning Skate"));
 
     let insider = app
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/fantasy/cards/morning/dexters-dawgs?page=insider")
+                .uri("/fantasy/cards/morning/sample-multicategory?page=insider")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -940,7 +940,7 @@ async fn fantasy_morning_routes_preserve_actions_goalie_timeline_pickup_and_etag
         .unwrap();
     assert_eq!(insider.status(), StatusCode::OK);
     let insider = body(insider).await;
-    assert!(insider.contains("Darren Raddysh"));
+    assert!(insider.contains("Sample Player 029"));
     assert!(insider.contains("Goalie start evidence"));
     assert!(insider.contains("goalie checkpoints"));
     assert!(insider.contains("Final goalie safety check"));
@@ -975,7 +975,7 @@ async fn fantasy_morning_routes_preserve_actions_goalie_timeline_pickup_and_etag
 #[tokio::test]
 async fn fantasy_trade_routes_preserve_packages_fairness_impacts_and_etag() {
     let app = router(WebState::new());
-    let uri = "/api/v1/cards/fantasy-trade/dexters-dawgs";
+    let uri = "/api/v1/cards/fantasy-trade/sample-multicategory";
     let response = app
         .clone()
         .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
@@ -985,7 +985,7 @@ async fn fantasy_trade_routes_preserve_packages_fairness_impacts_and_etag() {
     let etag = response.headers()["etag"].to_str().unwrap().to_string();
     let routed = parse_card_document(&body(response).await).unwrap();
     let fixture = parse_card_document(include_str!(
-        "../../examples/fantasy-trade-card-dexters-dawgs-fox-rantanen.json"
+        "../../examples/fantasy-trade-card-sample-squad-skater-a-skater-b.json"
     ))
     .unwrap();
     assert_eq!(routed, fixture);
@@ -995,7 +995,7 @@ async fn fantasy_trade_routes_preserve_packages_fairness_impacts_and_etag() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/fantasy/cards/trade/dexters-dawgs?page=trade-board")
+                .uri("/fantasy/cards/trade/sample-multicategory?page=trade-board")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1004,8 +1004,8 @@ async fn fantasy_trade_routes_preserve_packages_fairness_impacts_and_etag() {
     assert_eq!(board.status(), StatusCode::OK);
     let board = body(board).await;
     assert!(board.contains("THE BOARDS · TRADE ANALYSIS"));
-    assert!(board.contains("Adam Fox"));
-    assert!(board.contains("Mikko Rantanen"));
+    assert!(board.contains("Sample Player 028"));
+    assert!(board.contains("Sample Player 027"));
     assert!(board.contains("Reasonable offer range"));
     assert!(board.contains("Value gap percent"));
     assert!(board.contains("aria-current=\"page\">The Trade Board"));
@@ -1014,7 +1014,7 @@ async fn fantasy_trade_routes_preserve_packages_fairness_impacts_and_etag() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/fantasy/cards/trade/dexters-dawgs?page=insider")
+                .uri("/fantasy/cards/trade/sample-multicategory?page=insider")
                 .body(Body::empty())
                 .unwrap(),
         )

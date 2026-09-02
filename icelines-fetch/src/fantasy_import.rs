@@ -782,7 +782,7 @@ mod tests {
     #[test]
     fn l1_fantasy_import_parses_pasted_csv_text_with_bom() {
         let rows = parse_yahoo_roster_csv_text(
-            "\u{feff}Player,Fantasy Team,Owner\nConnor McDavid,Dexter's Dawgs,Gio\n",
+            "\u{feff}Player,Fantasy Team,Owner\nConnor McDavid,Sample Multicategory,Gio\n",
             "stdin",
         )
         .expect("parse pasted roster csv");
@@ -790,7 +790,7 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].row_number, 2);
         assert_eq!(rows[0].player_name, "Connor McDavid");
-        assert_eq!(rows[0].fantasy_team, "Dexter's Dawgs");
+        assert_eq!(rows[0].fantasy_team, "Sample Multicategory");
         assert_eq!(rows[0].owner.as_deref(), Some("Gio"));
     }
 

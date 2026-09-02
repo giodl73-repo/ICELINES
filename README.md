@@ -266,8 +266,8 @@ icelines report team-lineup --team NYR       # projected lines, faces, and IceLi
 icelines report team-lineup --team SEA --json
 icelines report team-card --team NYR --scenario-id nyr-development-variance
 icelines report team-card --team SEA --scenario-id sea-development-variance --json
-pwsh -NoProfile -File scripts/validate-card-document.ps1 -Path examples/team-prognosis-card-nyr-2026-27.json -Summary
-pwsh -NoProfile -File scripts/render-card-document.ps1 -Path examples/team-prognosis-card-nyr-2026-27.json -OutDir dist/cards
+pwsh -NoProfile -File scripts/validate-card-document.ps1 -Path examples/team-prognosis-card-alp-2026-27.json -Summary
+pwsh -NoProfile -File scripts/render-card-document.ps1 -Path examples/team-prognosis-card-alp-2026-27.json -OutDir dist/cards
 ```
 
 The sealed cards are also available from the web server at
@@ -275,7 +275,7 @@ The sealed cards are also available from the web server at
 `/api/v1/cards/team-prognosis/20262027/NYR?scenario=nyr-development-variance`.
 Launch directly with `icelines tui team-card NYR`, or use `:team-card NYR` and
 `:team-card SEA` in the TUI command bar. `icelines tui team-card DEX` and
-`:team-card DEX` open the sealed Dexter's Dawgs roster/Insider fixture. Press
+`:team-card DEX` open the sealed Sample Multicategory roster/Insider fixture. Press
 `p` to switch semantic pages; NHL cards also support `t` to switch teams and
 `c` for an adaptive NYR/SEA comparison.
 Use `icelines tui team-card DRAFT` or `:draft-card` for the sealed draft-board
@@ -290,8 +290,8 @@ source-derived string against the sealed document. Add `-Pdf` for PDF output.
 Add `-ResolveAssets` to verify and embed only official HTTPS references already
 present in the document; unavailable images fall back to player initials. For
 multiple cards, invoke the script from PowerShell with
-`-Path @('examples/team-prognosis-card-nyr-2026-27.json',
-'examples/team-prognosis-card-sea-2026-27.json')`. Generated artifacts and the
+`-Path @('examples/team-prognosis-card-alp-2026-27.json',
+'examples/team-prognosis-card-brv-2026-27.json')`. Generated artifacts and the
 render manifest live under ignored `dist/cards/`.
 
 Players are color-coded by **cross-team fit** — how they'd rank on each of the other 31 teams:
@@ -324,11 +324,11 @@ icelines mates "Beniers" --top 5          # roster fallback; shift bundles parke
 ### IceCast season forecasts
 
 ```bash
-icelines icecast camp --input examples/icecast-nyr-training-camp.json --json --out nyr-camp.json --lineup-set-out nyr-camp-lineups.json --blender-set-out nyr-camp-blenders.json --season-scenario-out nyr-camp-season.json --max-lineup-branches 5 --season-max-roster-branches 3000
-icelines icecast camp-league --candidate-overlay examples/icecast-league-candidate-overlay-2026-27.json --authored-input examples/icecast-nyr-training-camp.json --authored-input examples/icecast-sea-training-camp.json --trials 1000 --json --out league-camp.json
+icelines icecast camp --input examples/icecast-alp-training-camp.json --json --out nyr-camp.json --lineup-set-out nyr-camp-lineups.json --blender-set-out nyr-camp-blenders.json --season-scenario-out nyr-camp-season.json --max-lineup-branches 5 --season-max-roster-branches 3000
+icelines icecast camp-league --candidate-overlay examples/icecast-league-candidate-overlay-2026-27.json --authored-input examples/icecast-alp-training-camp.json --authored-input examples/icecast-brv-training-camp.json --trials 1000 --json --out league-camp.json
 icelines icecast bubble --input league-camp.json --top 10 --json --out league-bubble.json
 icelines icecast bubble --input league-camp.json --transaction-context transaction-context.json --top 10 --json --out league-bubble.json
-icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.json --transaction-context examples/icecast-transaction-context-nyr-sea-2026-27.json --top 10 --json --out league-bubble-sourced.json
+icelines icecast bubble --input examples/icecast-league-training-camp-2026-27.json --transaction-context examples/icecast-transaction-context-alp-brv-2026-27.json --top 10 --json --out league-bubble-sourced.json
 icelines icecast affiliate --input affiliate-scenario.json --json --out affiliate-lines.json
 icelines icecast affiliate-identities --snapshot ahl-roster-stats.json --team "Hartford Wolf Pack" --candidates examples/icecast-league-candidate-overlay-2026-27.json --json --out hartford-identity-review.json
 icelines icecast affiliate-identities --snapshot prior-ahl.json --team "Hartford Wolf Pack" --discover-official --json --out hartford-official-identity-review.json
@@ -386,16 +386,16 @@ icelines icecast affiliate-map --json --out ahl-affiliations.json
 icelines icecast organization --input organization.json --json --out the-system.json
 icelines icecast season --team NYR --scenario nyr-camp-season.json --trials 10000 --json --out nyr-camp-season-forecast.json
 icelines icecast season --team NYR --all-games --game-forecast-out nyr-games.json
-icelines icecast bench --forecast nyr-games.json --lineup examples/team-lineup-nyr-2026-27.json --profile nyr-decision-profile.json --style-evidence opponent-styles.json --scenario-out nyr-game-plans.json --json --out nyr-bench-schedule.json
-icelines icecast blender --lineup examples/team-lineup-nyr-2026-27.json --json --out nyr-lines.json --scenario-out nyr-bench.json
-icelines icecast blender --lineup examples/team-lineup-nyr-2026-27.json --shift-season 20252026 --shift-report-out nyr-shifts.json --json --out nyr-lines.json
-icelines icecast blender --lineup examples/team-lineup-nyr-2026-27.json --shift-season 20252026 --allow-off-wing --json --out nyr-lines.json
+icelines icecast bench --forecast nyr-games.json --lineup examples/team-lineup-alp-2026-27.json --profile nyr-decision-profile.json --style-evidence opponent-styles.json --scenario-out nyr-game-plans.json --json --out nyr-bench-schedule.json
+icelines icecast blender --lineup examples/team-lineup-alp-2026-27.json --json --out nyr-lines.json --scenario-out nyr-bench.json
+icelines icecast blender --lineup examples/team-lineup-alp-2026-27.json --shift-season 20252026 --shift-report-out nyr-shifts.json --json --out nyr-lines.json
+icelines icecast blender --lineup examples/team-lineup-alp-2026-27.json --shift-season 20252026 --allow-off-wing --json --out nyr-lines.json
 icelines icecast season --team NYR --scenario nyr-bench.json --trials 10000 --json --out nyr-adaptive-lines.json
 icelines icecast season                              # Rangers + Kraken summary
 icelines icecast season --team NYR --team SEA --all-games
 icelines icecast season --team NYR --trials 25000 --seed 20262027
 icelines icecast season --scenario examples/icecast-scenario.json
-icelines icecast scenario import --id nyr-development-variance --path examples/icecast-nyr-development-variance.json --season 20262027 --evidence estimated
+icelines icecast scenario import --id nyr-development-variance --path examples/icecast-alp-development-variance.json --season 20262027 --evidence estimated
 icelines icecast scenario list
 icelines icecast scenario show nyr-development-variance
 icelines icecast season --scenario-id nyr-development-variance --team NYR
@@ -439,13 +439,13 @@ icelines icecast season --season 20212022 --stats-season 20202021 --replay-mode 
 icelines icecast season --team NYR --team SEA --all-games --trials 10000
 icelines icecast season --team NYR --team SEA --scenario examples/icecast-showcase-injury-downside.json --trials 10000
 icelines icecast season --team NYR --team SEA --trade-mode plausible --trials 10000
-icelines icecast season --team NYR --scenario examples/icecast-nyr-ten-percent-cup-preseason.json --trials 10000
-icelines icecast season --team NYR --scenario examples/icecast-nyr-ten-percent-cup-deadline.json --trials 10000
-icelines icecast season --team NYR --scenario examples/icecast-nyr-smits-hits.json --trials 10000
-icelines icecast season --team NYR --scenario examples/icecast-nyr-internal-breakout-path.json --trials 10000
-icelines icecast season --team NYR --scenario examples/icecast-nyr-development-variance.json --trials 10000
-icelines icecast season --team SEA --scenario examples/icecast-sea-development-variance.json --trials 10000
-icelines icecast season --team SEA --scenario examples/icecast-sea-internal-breakout-path.json --trials 10000
+icelines icecast season --team NYR --scenario examples/icecast-alp-ten-percent-cup-preseason.json --trials 10000
+icelines icecast season --team NYR --scenario examples/icecast-alp-ten-percent-cup-deadline.json --trials 10000
+icelines icecast season --team NYR --scenario examples/icecast-alp-sample-prospect-hits.json --trials 10000
+icelines icecast season --team NYR --scenario examples/icecast-alp-internal-breakout-path.json --trials 10000
+icelines icecast season --team NYR --scenario examples/icecast-alp-development-variance.json --trials 10000
+icelines icecast season --team SEA --scenario examples/icecast-brv-development-variance.json --trials 10000
+icelines icecast season --team SEA --scenario examples/icecast-brv-internal-breakout-path.json --trials 10000
 icelines icecast calibrate-development --start-season 20052006 --end-season 20252026
 icelines icecast calibrate-development --json --out development-calibration.json
 ```
@@ -608,7 +608,7 @@ canonical ID, computes the attention-free production/trajectory/opportunity
 signal in core, and can retain that input for review:
 
 ```bash
-icelines icecast prospect-arrival-calibrate --career-discovery examples/icecast-nyr-smits-prospect-career-discovery-2026-27.json --player-id 8485957 --event-id nyr-smits-defense-hit --forecast-season 20262027 --conversion-archive examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json --input-out smits-arrival-input.json --json --out smits-arrival.json
+icelines icecast prospect-arrival-calibrate --career-discovery examples/icecast-alp-sample-prospect-career-discovery-2026-27.json --player-id 8485957 --event-id nyr-smits-defense-hit --forecast-season 20262027 --conversion-archive examples/prospect-conversion-archive-retrospective-2022-23-through-2025-26.json --input-out smits-arrival-input.json --json --out smits-arrival.json
 ```
 
 For a complete league audit, `icecast prospect-arrival-league` composes a
@@ -1124,7 +1124,7 @@ icelines fantasy morning-card --date 2026-10-08 --current-goalie-appearances 2 -
 icelines fantasy team-show "My Team"       # roster with per-player fantasy scores
 icelines fantasy standings                 # league standings
 icelines fantasy league-switch "My League" # switch active league
-icelines fantasy league-scheme-set dexters-dawgs --league "My League"
+icelines fantasy league-scheme-set sample-multicategory --league "My League"
 icelines fantasy team-use "My Team"        # mark your roster for gaps/poach
 icelines fantasy gaps --category hits,blocks,shots
 icelines fantasy simulate --weeks 4
@@ -1201,15 +1201,15 @@ icelines fantasy trade-offers --status pending
 icelines fantasy trade-offers --status pending --actionable-only
 icelines fantasy trade-offer-close OFFER_ID --status accepted # status only; sync or execute separately
 icelines fantasy trade-history --limit 20 # audit locally executed trades
-icelines fantasy trade-finder --team "Dexter's Dawgs" --top 20 # generate fair, legal offers league-wide
+icelines fantasy trade-finder --team "Sample Multicategory" --top 20 # generate fair, legal offers league-wide
 icelines fantasy trade-finder --to-team "Other" --fairness-percent 8 --json # target one manager
 icelines fantasy trade-finder --protect "McDavid,Kucherov" # keep named anchors out of every offer
 icelines fantasy trade-readiness --league "My League" # prove every roster is actionable
 icelines fantasy trade-finder --require-complete --top 20 # refuse provisional offers
 
 # Sealed showcase routes:
-# /fantasy/cards/trade/dexters-dawgs
-# /api/v1/cards/fantasy-trade/dexters-dawgs
+# /fantasy/cards/trade/sample-multicategory
+# /api/v1/cards/fantasy-trade/sample-multicategory
 
 # Web dashboard
 icelines serve --port 8000
@@ -1249,8 +1249,8 @@ multi-position, usable-start, quiet-slate, collision, playoff-fit, and risk
 components plus taken/eligibility import resolution. Pasted taken players are
 therefore reflected before the card is built, not filtered by a renderer.
 The sealed showcase is served at
-`/fantasy/cards/draft/dexters-dawgs` and
-`/api/v1/cards/fantasy-draft/dexters-dawgs`, with the document fingerprint used
+`/fantasy/cards/draft/sample-multicategory` and
+`/api/v1/cards/fantasy-draft/sample-multicategory`, with the document fingerprint used
 as its ETag.
 
 `fantasy morning-card` runs the same evidence-aware morning pipeline as
@@ -1260,15 +1260,15 @@ The Insider carries the protected four-pickup budget, goalie checkpoint
 timeline and starter evidence, injury refreshes, and ranked weekly moves. The
 card is advisory and never mutates the fantasy platform.
 The identical showcase is served at
-`/fantasy/cards/morning/dexters-dawgs` and
-`/api/v1/cards/fantasy-morning/dexters-dawgs`, with its sealed fingerprint used
+`/fantasy/cards/morning/sample-multicategory` and
+`/api/v1/cards/fantasy-morning/sample-multicategory`, with its sealed fingerprint used
 as the ETag.
 
 The sealed showcase is served without rescoring at
-`/fantasy/cards/roster/dexters-dawgs` and
-`/api/v1/cards/fantasy-roster/dexters-dawgs`. The JSON response is the exact
+`/fantasy/cards/roster/sample-multicategory` and
+`/api/v1/cards/fantasy-roster/sample-multicategory`. The JSON response is the exact
 core document and uses its fingerprint as the ETag. Its historical names come
-from Dexter's prior workbook; fixture status and projection values are clearly
+from Sample prior workbook; fixture status and projection values are clearly
 marked as deterministic examples rather than current claims.
 
 `fantasy schedule-edge` deduplicates all 32 official club schedules into one
@@ -1488,7 +1488,7 @@ target only the canonical `Favorites` group. Create, rename, delete, and arbitra
 group membership edits remain on `icelines group ...` and the TUI Groups surface.
 
 **Fantasy schemes:** `yahoo-standard`, `espn-standard`, `simple-pts`,
-`dexters-dawgs`. The last reproduces Dexter's Dawgs scoring: skater G 3.25,
+`sample-multicategory`. The last reproduces Sample Multicategory scoring: skater G 3.25,
 A 2.25, PPG 3, PPA 2, SHG/SHA/GWG 1, HIT/BLK 0.5; goalie W 3, L -0.5,
 GA -0.25, SV 0.2, and SHO 3.
 

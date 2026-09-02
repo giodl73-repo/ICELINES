@@ -1,0 +1,56 @@
+{
+  "name": "SEA internal five-player breakout ceiling",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "SEA-catton-ceiling",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 038",
+      "effective_date": "2026-09-29",
+      "strength_delta": 4.0,
+      "occurrence_probability": 1.0,
+      "label": "Catton immediately becomes a dynamic top-six creator"
+    },
+    {
+      "id": "SEA-target-forward-ceiling",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 371",
+      "effective_date": "2026-09-29",
+      "strength_delta": 4.0,
+      "occurrence_probability": 1.0,
+      "label": "Sample Center takes a first-line center scoring step"
+    },
+    {
+      "id": "SEA-sample-center-b-ceiling",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 248",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.0,
+      "occurrence_probability": 1.0,
+      "label": "Sample Center rebounds into a high-impact two-way center"
+    },
+    {
+      "id": "SEA-samoskevich-ceiling",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 230",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.0,
+      "occurrence_probability": 1.0,
+      "label": "Samoskevich establishes himself as a top-six scorer"
+    },
+    {
+      "id": "SEA-evans-ceiling",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 338",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.0,
+      "occurrence_probability": 1.0,
+      "label": "Evans becomes a dependable positive-value top-four defenseman"
+    }
+  ]
+}

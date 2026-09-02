@@ -547,7 +547,7 @@ mod tests {
 
     fn load_input() -> OrganizationLineupForecastInput {
         let nhl_lineup = serde_json::from_str(include_str!(
-            "../../../examples/team-lineup-nyr-2026-27.json"
+            "../../../examples/team-lineup-alp-2026-27.json"
         ))
         .unwrap();
         let mut players = Vec::new();

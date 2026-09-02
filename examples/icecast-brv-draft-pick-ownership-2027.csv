@@ -1,0 +1,9 @@
+asset_id,owner,original_team,draft_year,round,status,conditions,source_url,checked_at
+SEA-2027-1,SEA,SEA,2027,1,confirmed_unconditional,,https://example.invalid/draft-picks,2026-08-03T12:00:00Z
+TBL-2027-1-owned-by-SEA,SEA,TBL,2027,1,confirmed_unconditional,,https://example.invalid/draft-picks,2026-08-03T12:00:00Z
+CBJ-WPG-2027-2-lower-owned-by-SEA,SEA,CBJ,2027,2,conditional,Boreal retains the lower selection of the Columbus or Winnipeg 2027 second-round picks,https://example.invalid/conditional-pick-source,2026-08-03T12:00:00Z
+SEA-2027-3,SEA,SEA,2027,3,confirmed_unconditional,,https://example.invalid/draft-picks,2026-08-03T12:00:00Z
+SEA-2027-4,SEA,SEA,2027,4,confirmed_unconditional,,https://example.invalid/draft-picks,2026-08-03T12:00:00Z
+SEA-2027-5,SEA,SEA,2027,5,confirmed_unconditional,,https://example.invalid/draft-picks,2026-08-03T12:00:00Z
+SEA-2027-6,SEA,SEA,2027,6,confirmed_unconditional,,https://example.invalid/draft-picks,2026-08-03T12:00:00Z
+SEA-2027-7,SEA,SEA,2027,7,confirmed_unconditional,,https://example.invalid/draft-picks,2026-08-03T12:00:00Z

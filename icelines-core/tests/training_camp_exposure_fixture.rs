@@ -12,43 +12,49 @@ fn close(actual: f64, expected: f64) -> bool {
 }
 
 #[test]
-fn sourced_rangers_kraken_context_is_protected_and_team_scoped() {
+fn sourced_alpha_bravo_context_is_protected_and_team_scoped() {
     let board: TrainingCampExposureBoardView = serde_json::from_str(include_str!(
-        "../../examples/icecast-league-bubble-sourced-nyr-sea-2026-27.json"
+        "../../examples/icecast-league-bubble-sourced-alp-brv-2026-27.json"
     ))
     .expect("sourced Bubble reference must remain valid UI-neutral JSON");
-    let rangers = board.teams.iter().find(|team| team.team == "NYR").unwrap();
-    let korpisalo = rangers
+    let alpha = board.teams.iter().find(|team| team.team == "NYR").unwrap();
+    let transaction_review = alpha
         .rows
         .iter()
-        .find(|row| row.display_name == "Joonas Korpisalo")
+        .find(|row| row.display_name == "Sample Player 195")
         .unwrap();
-    assert_eq!(korpisalo.cap_hit, Some(3_000_000));
+    assert_eq!(transaction_review.cap_hit, Some(3_000_000));
     assert_eq!(
-        korpisalo.trade_protection,
+        transaction_review.trade_protection,
         TrainingCampTradeProtection::ModifiedNoTrade
     );
-    assert_eq!(korpisalo.lane, TrainingCampExposureLane::TransactionReview);
+    assert_eq!(
+        transaction_review.lane,
+        TrainingCampExposureLane::TransactionReview
+    );
 
-    let pettersson = rangers
+    let protected_player = alpha
         .rows
         .iter()
-        .find(|row| row.display_name == "Marcus Pettersson")
+        .find(|row| row.display_name == "Sample Player 235")
         .unwrap();
     assert_eq!(
-        pettersson.trade_protection,
+        protected_player.trade_protection,
         TrainingCampTradeProtection::NoMove
     );
-    assert_eq!(pettersson.lane, TrainingCampExposureLane::ContractProtected);
+    assert_eq!(
+        protected_player.lane,
+        TrainingCampExposureLane::ContractProtected
+    );
 
-    let kraken = board.teams.iter().find(|team| team.team == "SEA").unwrap();
-    let hayden = kraken
+    let bravo = board.teams.iter().find(|team| team.team == "SEA").unwrap();
+    let sourced_player = bravo
         .rows
         .iter()
-        .find(|row| row.display_name == "John Hayden")
+        .find(|row| row.display_name == "Sample Player 189")
         .unwrap();
     assert_eq!(
-        hayden.transaction_authority_status,
+        sourced_player.transaction_authority_status,
         TrainingCampTransactionAuthorityStatus::Sourced
     );
 
@@ -130,18 +136,21 @@ fn bubble_reference_ranks_all_32_teams_without_turning_injuries_into_waivers() {
             .all(|rows| rows[0].exposure_score >= rows[1].exposure_score));
     }
 
-    let rangers = board.teams.iter().find(|team| team.team == "NYR").unwrap();
-    let raddysh = rangers
+    let alpha = board.teams.iter().find(|team| team.team == "NYR").unwrap();
+    let scratch_candidate = alpha
         .rows
         .iter()
-        .find(|row| row.display_name == "Taylor Raddysh")
+        .find(|row| row.lane == TrainingCampExposureLane::HealthyScratchRotation)
         .unwrap();
     assert_eq!(
-        raddysh.lane,
+        scratch_candidate.lane,
         TrainingCampExposureLane::HealthyScratchRotation
     );
-    assert!(raddysh.healthy_scratch_probability > raddysh.selection_loss_probability);
-    assert!(raddysh.unavailable_probability > 0.0);
+    assert!(
+        scratch_candidate.healthy_scratch_probability
+            > scratch_candidate.selection_loss_probability
+    );
+    assert!(scratch_candidate.unavailable_probability > 0.0);
     assert!(board
         .disclosures
         .iter()

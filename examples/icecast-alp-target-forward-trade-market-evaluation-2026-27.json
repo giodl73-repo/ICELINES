@@ -1,0 +1,682 @@
+{
+  "schema": "trade_market_evaluation.v1",
+  "as_of": "2026-08-04",
+  "value_basis": {
+    "outcome_measure": "nhl_regular_season_games_played",
+    "horizon_years": 7,
+    "method": "camp-score screening translation v1"
+  },
+  "proposals": [
+    {
+      "buyer": "NYR",
+      "seller": "SEA",
+      "assets_to_buyer": [
+        "Sample Player 371"
+      ],
+      "assets_to_seller": [
+        "Sample Player 042"
+      ],
+      "buyer_utility_delta": 26.711043,
+      "seller_utility_delta": 31.604165999999964,
+      "market_value_to_buyer": 44.85,
+      "market_value_to_seller": 44.4,
+      "market_value_gap": 0.45000000000000284,
+      "buyer_season_points_delta": 0.0030000000000000027,
+      "seller_season_points_delta": -0.0030000000000000027,
+      "buyer_cap_space_delta": 4.613334,
+      "seller_cap_space_delta": -4.613334,
+      "fairness_score": 0.9899665551839464,
+      "feasibility_probability": 0.16000000000000003,
+      "transaction_ready": true,
+      "transaction_gates": {
+        "cap_compliant": true,
+        "roster_compliant": true,
+        "retention_compliant": true,
+        "contract_authority_complete": true,
+        "pick_ownership_confirmed": null
+      },
+      "mutually_beneficial": true,
+      "pick_roles": [],
+      "season_forecast_impact": {
+        "buyer": {
+          "team": "NYR",
+          "average_points_delta": -0.4591000000000065,
+          "playoff_probability_delta": -0.02100000000000002,
+          "stanley_cup_probability_delta": -0.005700000000000004
+        },
+        "seller": {
+          "team": "SEA",
+          "average_points_delta": 0.14700000000000557,
+          "playoff_probability_delta": 0.0050000000000000044,
+          "stanley_cup_probability_delta": 0.0000999999999999994
+        },
+        "buyer_points_residual_vs_isolated": -0.4621000000000065
+      },
+      "lineup_impact": {
+        "buyer": {
+          "team": "NYR",
+          "before": [
+            {
+              "player_id": 8476459,
+              "label": "Sample Player 257",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 62.8
+            },
+            {
+              "player_id": 8476468,
+              "label": "Sample Player 150",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 48.8
+            },
+            {
+              "player_id": 8483690,
+              "label": "Sample Player 280",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 24.2
+            },
+            {
+              "player_id": 8480813,
+              "label": "Sample Player 183",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 12.7
+            },
+            {
+              "player_id": 8482109,
+              "label": "Alexis Sample Scorer",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 45.8
+            },
+            {
+              "player_id": 8482157,
+              "label": "Sample Player 410",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 40.6
+            },
+            {
+              "player_id": 8483669,
+              "label": "Sample Player 007",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 33.2
+            },
+            {
+              "player_id": 8481789,
+              "label": "Sample Player 392",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 27.7
+            },
+            {
+              "player_id": 8481604,
+              "label": "Sample Player 313",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 54.0
+            },
+            {
+              "player_id": 8484210,
+              "label": "Sample Player 128",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 36.6
+            },
+            {
+              "player_id": 8477416,
+              "label": "Sample Player 300",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 27.3
+            },
+            {
+              "player_id": 8482877,
+              "label": "Sample Player 173",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 21.0
+            },
+            {
+              "player_id": 8479323,
+              "label": "Sample Player 005",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 69.1
+            },
+            {
+              "player_id": 8480434,
+              "label": "Sample Player 368",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 37.9
+            },
+            {
+              "player_id": 8478882,
+              "label": "Sample Player 409",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 31.5
+            },
+            {
+              "player_id": 8482073,
+              "label": "Sample Player 042",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 29.6
+            },
+            {
+              "player_id": 8481525,
+              "label": "Sample Player 246",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 29.3
+            },
+            {
+              "player_id": 8477969,
+              "label": "Sample Player 235",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 24.5
+            },
+            {
+              "player_id": 8482193,
+              "label": "Sample Player 112",
+              "position": "goalie",
+              "assignment_kind": "natural",
+              "effective_score": 98.7
+            },
+            {
+              "player_id": 8478048,
+              "label": "Sample Player 142",
+              "position": "goalie",
+              "assignment_kind": "natural",
+              "effective_score": 74.1
+            }
+          ],
+          "after": [
+            {
+              "player_id": 8476459,
+              "label": "Sample Player 257",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 62.8
+            },
+            {
+              "player_id": 8476468,
+              "label": "Sample Player 150",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 48.8
+            },
+            {
+              "player_id": 8483524,
+              "label": "Sample Player 371",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 25.3
+            },
+            {
+              "player_id": 8483690,
+              "label": "Sample Player 280",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 24.2
+            },
+            {
+              "player_id": 8482109,
+              "label": "Alexis Sample Scorer",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 45.8
+            },
+            {
+              "player_id": 8482157,
+              "label": "Sample Player 410",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 40.6
+            },
+            {
+              "player_id": 8483669,
+              "label": "Sample Player 007",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 33.2
+            },
+            {
+              "player_id": 8481789,
+              "label": "Sample Player 392",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 27.7
+            },
+            {
+              "player_id": 8481604,
+              "label": "Sample Player 313",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 54.0
+            },
+            {
+              "player_id": 8484210,
+              "label": "Sample Player 128",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 36.6
+            },
+            {
+              "player_id": 8477416,
+              "label": "Sample Player 300",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 27.3
+            },
+            {
+              "player_id": 8482877,
+              "label": "Sample Player 173",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 21.0
+            },
+            {
+              "player_id": 8479323,
+              "label": "Sample Player 005",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 69.1
+            },
+            {
+              "player_id": 8480434,
+              "label": "Sample Player 368",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 37.9
+            },
+            {
+              "player_id": 8478882,
+              "label": "Sample Player 409",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 31.5
+            },
+            {
+              "player_id": 8481525,
+              "label": "Sample Player 246",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 29.3
+            },
+            {
+              "player_id": 8477969,
+              "label": "Sample Player 235",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 24.5
+            },
+            {
+              "player_id": 8482861,
+              "label": "Sample Player 408",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 15.4
+            },
+            {
+              "player_id": 8482193,
+              "label": "Sample Player 112",
+              "position": "goalie",
+              "assignment_kind": "natural",
+              "effective_score": 98.7
+            },
+            {
+              "player_id": 8478048,
+              "label": "Sample Player 142",
+              "position": "goalie",
+              "assignment_kind": "natural",
+              "effective_score": 74.1
+            }
+          ],
+          "added_to_lineup": [
+            "Sample Player 408",
+            "Sample Player 371"
+          ],
+          "explicitly_removed_from_lineup": [
+            "Sample Player 042"
+          ],
+          "displaced_by_competition": [
+            "Sample Player 183"
+          ],
+          "before_strength": 829.4,
+          "after_strength": 827.8,
+          "strength_delta": -1.6000000000000227,
+          "disclosures": [
+            "Dressed-player assignment maximizes the supplied confidence-weighted IceLines scores across C/LW/RW/D/G capacity and declared multi-position eligibility.",
+            "Alternate-side assignments apply each player's explicit penalty; chemistry, special teams, opponent matchups, and waiver consequences require downstream recomputation."
+          ]
+        },
+        "seller": {
+          "team": "SEA",
+          "before": [
+            {
+              "player_id": 8482665,
+              "label": "Sample Player 248",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 42.4
+            },
+            {
+              "player_id": 8483524,
+              "label": "Sample Player 371",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 25.3
+            },
+            {
+              "player_id": 8477919,
+              "label": "Sample Player 127",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 18.6
+            },
+            {
+              "player_id": 8484800,
+              "label": "Sample Player 038",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 17.9
+            },
+            {
+              "player_id": 8477955,
+              "label": "Sample Player 171",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 52.4
+            },
+            {
+              "player_id": 8476905,
+              "label": "Sample Player 071",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 42.5
+            },
+            {
+              "player_id": 8482259,
+              "label": "Sample Player 040",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 41.0
+            },
+            {
+              "player_id": 8483570,
+              "label": "Sample Player 037",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 12.7
+            },
+            {
+              "player_id": 8474586,
+              "label": "Sample Player 196",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 47.8
+            },
+            {
+              "player_id": 8481554,
+              "label": "Sample Player 206",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 42.8
+            },
+            {
+              "player_id": 8482713,
+              "label": "Sample Player 230",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 28.9
+            },
+            {
+              "player_id": 8482751,
+              "label": "Sample Player 336",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 18.4
+            },
+            {
+              "player_id": 8478407,
+              "label": "Sample Player 406",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 37.9
+            },
+            {
+              "player_id": 8477986,
+              "label": "Sample Player 048",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 36.0
+            },
+            {
+              "player_id": 8476457,
+              "label": "Sample Player 006",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 24.2
+            },
+            {
+              "player_id": 8482858,
+              "label": "Sample Player 338",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 20.1
+            },
+            {
+              "player_id": 8483684,
+              "label": "Sample Player 397",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 17.4
+            },
+            {
+              "player_id": 8479324,
+              "label": "Sample Player 330",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 13.5
+            },
+            {
+              "player_id": 8478916,
+              "label": "Sample Player 188",
+              "position": "goalie",
+              "assignment_kind": "natural",
+              "effective_score": 64.0
+            },
+            {
+              "player_id": 8475831,
+              "label": "Sample Player 316",
+              "position": "goalie",
+              "assignment_kind": "natural",
+              "effective_score": 61.0
+            }
+          ],
+          "after": [
+            {
+              "player_id": 8482665,
+              "label": "Sample Player 248",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 42.4
+            },
+            {
+              "player_id": 8477919,
+              "label": "Sample Player 127",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 18.6
+            },
+            {
+              "player_id": 8484800,
+              "label": "Sample Player 038",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 17.9
+            },
+            {
+              "player_id": 8483570,
+              "label": "Sample Player 037",
+              "position": "center",
+              "assignment_kind": "natural",
+              "effective_score": 12.7
+            },
+            {
+              "player_id": 8477955,
+              "label": "Sample Player 171",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 52.4
+            },
+            {
+              "player_id": 8476905,
+              "label": "Sample Player 071",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 42.5
+            },
+            {
+              "player_id": 8482259,
+              "label": "Sample Player 040",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 41.0
+            },
+            {
+              "player_id": 8482751,
+              "label": "Sample Player 336",
+              "position": "left_wing",
+              "assignment_kind": "natural",
+              "effective_score": 18.4
+            },
+            {
+              "player_id": 8474586,
+              "label": "Sample Player 196",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 47.8
+            },
+            {
+              "player_id": 8481554,
+              "label": "Sample Player 206",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 42.8
+            },
+            {
+              "player_id": 8482713,
+              "label": "Sample Player 230",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 28.9
+            },
+            {
+              "player_id": 8482874,
+              "label": "Sample Player 158",
+              "position": "right_wing",
+              "assignment_kind": "natural",
+              "effective_score": 9.7
+            },
+            {
+              "player_id": 8478407,
+              "label": "Sample Player 406",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 37.9
+            },
+            {
+              "player_id": 8477986,
+              "label": "Sample Player 048",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 36.0
+            },
+            {
+              "player_id": 8482073,
+              "label": "Sample Player 042",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 29.6
+            },
+            {
+              "player_id": 8476457,
+              "label": "Sample Player 006",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 24.2
+            },
+            {
+              "player_id": 8482858,
+              "label": "Sample Player 338",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 20.1
+            },
+            {
+              "player_id": 8483684,
+              "label": "Sample Player 397",
+              "position": "defense",
+              "assignment_kind": "natural",
+              "effective_score": 17.4
+            },
+            {
+              "player_id": 8478916,
+              "label": "Sample Player 188",
+              "position": "goalie",
+              "assignment_kind": "natural",
+              "effective_score": 64.0
+            },
+            {
+              "player_id": 8475831,
+              "label": "Sample Player 316",
+              "position": "goalie",
+              "assignment_kind": "natural",
+              "effective_score": 61.0
+            }
+          ],
+          "added_to_lineup": [
+            "Sample Player 042",
+            "Sample Player 158"
+          ],
+          "explicitly_removed_from_lineup": [
+            "Sample Player 371"
+          ],
+          "displaced_by_competition": [
+            "Sample Player 330"
+          ],
+          "before_strength": 664.8,
+          "after_strength": 665.3,
+          "strength_delta": 0.5,
+          "disclosures": [
+            "Dressed-player assignment maximizes the supplied confidence-weighted IceLines scores across C/LW/RW/D/G capacity and declared multi-position eligibility.",
+            "Alternate-side assignments apply each player's explicit penalty; chemistry, special teams, opponent matchups, and waiver consequences require downstream recomputation."
+          ]
+        }
+      },
+      "disclosures": [
+        "Mutual utility reflects each club's supplied timeline, need, and cap weights; it is not evidence that either club discussed the proposal.",
+        "A draft pick below 40% of its receiving package is labeled rounding; larger shares are principal assets.",
+        "Unknown cap, roster, retention, contract/clauses, or required pick ownership authority blocks transaction-ready and mutual-benefit labels.",
+        "Shane Sample Center: Camp score 29.90 and GP confidence 0.79 use the shared Trade Scout population policy.",
+        "Shane Sample Center: The sourced 45/55 current/future split changes value timing for Sample Center's age and ELC/RFA control; total market value remains 44.85.",
+        "Braden Sample Defenseman: Camp score 29.60 and GP confidence 0.80 use the shared Trade Scout population policy.",
+        "Braden Sample Defenseman: Top-four role is scenario evidence from 82 games and 20:27 average ice time; the proposal itself is speculative.",
+        "Season deltas use a paired baseline/scenario simulation with the same schedule, trials, and seed; they supersede the isolated points estimate for forecast interpretation.",
+        "Lineup displacement is optimized in core from explicit eligibility and score inputs; paired season simulation must consume the resulting net lineup state."
+      ]
+    }
+  ],
+  "disclosures": [
+    "Proposals are ranked scenarios, not reported negotiations or transaction advice.",
+    "Feasibility and mutual utility are separate: a hockey fit can still fail a clause, cap, roster, or evidence gate."
+  ]
+}

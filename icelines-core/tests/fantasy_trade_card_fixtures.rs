@@ -1,10 +1,10 @@
 use icelines_core::{parse_card_document, CardKind, CardSectionView};
 
 const TRADE: &str =
-    include_str!("../../examples/fantasy-trade-card-dexters-dawgs-fox-rantanen.json");
+    include_str!("../../examples/fantasy-trade-card-sample-squad-skater-a-skater-b.json");
 
 #[test]
-fn dexters_dawgs_trade_fixture_is_sealed_and_renderer_neutral() {
+fn sample_squad_trade_fixture_is_sealed_and_renderer_neutral() {
     let card = parse_card_document(TRADE).unwrap();
     assert_eq!(card.card_kind, CardKind::FantasyTrade);
     assert_eq!(card.calculate_fingerprint().unwrap(), card.fingerprint);
@@ -14,13 +14,13 @@ fn dexters_dawgs_trade_fixture_is_sealed_and_renderer_neutral() {
     assert_eq!(card.pages[1].id, "trade-insider");
     assert_eq!(
         card.context.joins.player_ids,
-        ["adam-fox", "mikko-rantanen"]
+        ["sample-player-027", "sample-player-028"]
     );
 
     let serialized = serde_json::to_string(&card).unwrap();
     for required in [
-        "Adam Fox",
-        "Mikko Rantanen",
+        "Sample Player 028",
+        "Sample Player 027",
         "Package value gap",
         "Before and after",
         "Roster 16/16 · Legal",

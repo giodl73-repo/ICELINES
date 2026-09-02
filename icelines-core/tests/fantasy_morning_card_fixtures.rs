@@ -1,11 +1,11 @@
 use icelines_core::{parse_card_document, CardKind, CardSectionView};
 
-const DEXTERS_DAWGS: &str =
-    include_str!("../../examples/fantasy-morning-card-dexters-dawgs-2026-10-08.json");
+const SAMPLE_SQUAD: &str =
+    include_str!("../../examples/fantasy-morning-card-sample-squad-2026-10-08.json");
 
 #[test]
-fn dexters_dawgs_morning_fixture_is_sealed_and_renderer_neutral() {
-    let card = parse_card_document(DEXTERS_DAWGS).unwrap();
+fn sample_squad_morning_fixture_is_sealed_and_renderer_neutral() {
+    let card = parse_card_document(SAMPLE_SQUAD).unwrap();
     assert_eq!(card.card_kind, CardKind::FantasyMorning);
     assert_eq!(card.calculate_fingerprint().unwrap(), card.fingerprint);
     card.validate().unwrap();
@@ -15,11 +15,11 @@ fn dexters_dawgs_morning_fixture_is_sealed_and_renderer_neutral() {
 
     let serialized = serde_json::to_string(&card).unwrap();
     for required in [
-        "Darren Raddysh",
-        "Igor Shesterkin",
+        "Sample Player 029",
+        "Sample Player 006",
         "Goalie start evidence",
         "Safe proactive adds",
-        "Refresh availability for justin-brazeau before lineup lock",
+        "Refresh availability for sample-player-024 before lineup lock",
         "deterministic fixture evidence",
     ] {
         assert!(serialized.contains(required), "missing {required}");

@@ -574,25 +574,25 @@ mod tests {
             schema: FANTASY_TRADE_EVALUATION_SCHEMA.to_string(),
             executed: false,
             saved_offer_id: None,
-            league: "Dexter's League".to_string(),
-            scoring_scheme: "Dexter's Dawgs".to_string(),
-            sending_team: "Dexter's Dawgs".to_string(),
+            league: "Sample League".to_string(),
+            scoring_scheme: "Sample Multicategory".to_string(),
+            sending_team: "Sample Multicategory".to_string(),
             receiving_team: "Blue Line Bandits".to_string(),
             sends: vec![player(
-                "adam-fox",
-                "Adam Fox",
+                "sample-player-028",
+                "Sample Player 028",
                 "NYR",
                 Position::Defense,
                 320.0,
             )],
             receives: vec![player(
-                "mikko-rantanen",
-                "Mikko Rantanen",
+                "sample-player-027",
+                "Sample Player 027",
                 "DAL",
                 Position::RightWing,
                 330.0,
             )],
-            sending_team_result: team("Dexter's Dawgs", 4_000.0, 4_010.0),
+            sending_team_result: team("Sample Multicategory", 4_000.0, 4_010.0),
             receiving_team_result: team("Blue Line Bandits", 3_900.0, 3_890.0),
             package_value_gap: 4.88,
             package_value_gap_percent: 3.13,
@@ -603,8 +603,8 @@ mod tests {
         };
         let card = build_fantasy_trade_card(FantasyTradeCardInput {
             league_id: "league-1".to_string(),
-            scoring_scheme_id: "dexters-dawgs".to_string(),
-            sending_team_id: "dexters-dawgs".to_string(),
+            scoring_scheme_id: "sample-multicategory".to_string(),
+            sending_team_id: "sample-multicategory".to_string(),
             receiving_team_id: "blue-line-bandits".to_string(),
             offer_id: None,
             evaluated_at,
@@ -617,7 +617,7 @@ mod tests {
         assert_eq!(card.pages.len(), 2);
         assert_eq!(
             card.context.joins.player_ids,
-            ["adam-fox", "mikko-rantanen"]
+            ["sample-player-027", "sample-player-028"]
         );
         assert!(card.pages[0]
             .sections

@@ -62,7 +62,7 @@ release checks as one coordinated rollover.
 ```powershell
 cargo fmt --check
 cargo test -p icelines-fetch bundled
-powershell -ExecutionPolicy Bypass -File scripts/validate-card-document.ps1 -Path examples/season-simulation-card-nyr-2026-27.json
+powershell -ExecutionPolicy Bypass -File scripts/validate-card-document.ps1 -Path examples/season-simulation-card-alp-2026-27.json
 powershell -ExecutionPolicy Bypass -File scripts/test-slice.ps1 ci-release
 ```
 

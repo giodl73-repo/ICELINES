@@ -588,7 +588,7 @@ cannot fork the grammar.
   scheme, and official schedule classes.
 - CLI, TUI, web, SVG, and PDF document renderers preserve decision rationale and all
   schedule-class alternatives without recalculation.
-- Added a sealed Dexter's Dawgs fixture sourced from historical workbook names,
+- Added a sealed Sample Multicategory fixture sourced from historical workbook names,
   with deterministic status/projection disclaimers and a fixture generator.
 - Added fingerprint/ETag-preserving JSON and bookmarkable roster/Insider HTML
   routes plus the `team-card DEX` terminal projection.
@@ -605,7 +605,7 @@ cannot fork the grammar.
   and taken/eligibility import resolution in the sealed document.
 - Added `icelines fantasy draft-card`, including pasted taken-player input and
   JSON or shared text-card output.
-- Added a deterministic Dexter's Dawgs pick-seven fixture plus schema, seal,
+- Added a deterministic Sample Multicategory pick-seven fixture plus schema, seal,
   and reference-SVG regression coverage.
 - Added fingerprint/ETag-preserving draft JSON and bookmarkable Draft
   Board/Insider HTML routes, plus `team-card DRAFT` and `:draft-card` terminal
@@ -621,7 +621,7 @@ cannot fork the grammar.
 - Added `icelines fantasy morning-card`, which runs the same injury, goalie,
   weekly-pickup, sleeper, and material-fingerprint pipeline as `morning` before
   sealing JSON or shared text-card output.
-- Added a deterministic Dexter's Dawgs fixture with an IR+ refresh, protected
+- Added a deterministic Sample Multicategory fixture with an IR+ refresh, protected
   fourth pickup, Darren Raddysh candidate, and uncertain Igor Shesterkin/Juuse
   Saros evidence. Seal and reference-SVG regressions now validate ten pages
   across prognosis, roster, draft, and morning documents.
@@ -642,7 +642,7 @@ cannot fork the grammar.
   slots, warnings, methodology, joins, and source fingerprint.
 - Added read-only `icelines fantasy trade-card`, which runs the existing trade
   evaluator but cannot save or execute the offer.
-- Added a deterministic Dexter's Dawgs/Blue Line Bandits Fox–Rantanen fixture
+- Added a deterministic Sample Multicategory/Blue Line Bandits Fox–Rantanen fixture
   with explicit non-current-advice warnings. Reference SVG now validates twelve
   pages across prognosis, roster, draft, morning, and trade cards.
 - Added fingerprint/ETag-preserving trade JSON and bookmarkable Trade

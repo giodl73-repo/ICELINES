@@ -1,0 +1,96 @@
+{
+  "name": "SEA multi-lens historically calibrated development and regression range",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "SEA-catton-breakout-range",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 038",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.4358,
+      "occurrence_probability": 0.4020,
+      "label": "Catton immediately becomes a dynamic top-six creator"
+    },
+    {
+      "id": "SEA-target-forward-breakout-range",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 371",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.4358,
+      "occurrence_probability": 0.4020,
+      "label": "Sample Center takes a first-line center scoring step"
+    },
+    {
+      "id": "SEA-sample-center-b-breakout-range",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 248",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.5124,
+      "occurrence_probability": 0.2331,
+      "label": "Sample Center rebounds into a high-impact two-way center"
+    },
+    {
+      "id": "SEA-samoskevich-breakout-range",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 230",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.5124,
+      "occurrence_probability": 0.2331,
+      "label": "Samoskevich establishes himself as a top-six scorer"
+    },
+    {
+      "id": "SEA-evans-breakout-range",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 338",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.1705,
+      "occurrence_probability": 0.2551,
+      "label": "Evans becomes a dependable positive-value top-four defenseman"
+    },
+    {
+      "id": "SEA-eberle-downturn-range",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 196",
+      "effective_date": "2026-09-29",
+      "strength_delta": -3.3248,
+      "occurrence_probability": 0.4184,
+      "label": "Eberle experiences an age-related scoring downturn"
+    },
+    {
+      "id": "SEA-larsson-downturn-range",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 006",
+      "effective_date": "2026-09-29",
+      "strength_delta": -2.9894,
+      "occurrence_probability": 0.3108,
+      "label": "Larsson loses some matchup and defensive impact"
+    },
+    {
+      "id": "SEA-montour-downturn-range",
+      "kind": "form",
+      "team": "SEA",
+      "player": "Sample Player 048",
+      "effective_date": "2026-09-29",
+      "strength_delta": -3.3871,
+      "occurrence_probability": 0.3415,
+      "label": "Montour's transition and offensive impact declines"
+    },
+    {
+      "id": "SEA-sample-goaltender-b-downturn-range",
+      "kind": "goalie",
+      "team": "SEA",
+      "player": "Sample Player 188",
+      "effective_date": "2026-09-29",
+      "strength_delta": -4.2949,
+      "occurrence_probability": 0.4074,
+      "label": "Sample Goalie has a material full-season performance downturn"
+    }
+  ]
+}

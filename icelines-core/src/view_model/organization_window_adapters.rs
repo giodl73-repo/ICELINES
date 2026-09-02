@@ -2247,7 +2247,7 @@ mod tests {
     #[test]
     fn affiliate_projection_composes_organization_depth_without_parallel_cli_logic() {
         let lineup: TeamLineupProjectionView = serde_json::from_str(include_str!(
-            "../../../examples/team-lineup-nyr-2026-27.json"
+            "../../../examples/team-lineup-alp-2026-27.json"
         ))
         .unwrap();
         let affiliate = test_nyr_affiliate();
@@ -2565,7 +2565,7 @@ mod tests {
     #[test]
     fn real_source_package_fingerprint_survives_wire_round_trip() {
         let lineup: TeamLineupProjectionView = serde_json::from_str(include_str!(
-            "../../../examples/team-lineup-nyr-2026-27.json"
+            "../../../examples/team-lineup-alp-2026-27.json"
         ))
         .unwrap();
         let camp: TrainingCampLeagueForecastView = serde_json::from_str(include_str!(
@@ -2644,7 +2644,7 @@ mod tests {
     #[test]
     fn line_combination_adapter_preserves_evaluation_boundary() {
         let forecast: LineCombinationForecastView = serde_json::from_str(include_str!(
-            "../../../examples/icecast-nyr-line-combinations.json"
+            "../../../examples/icecast-alp-line-combinations.json"
         ))
         .unwrap();
         let context = OrganizationWindowAdapterContext {

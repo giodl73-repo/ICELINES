@@ -505,7 +505,7 @@ mod tests {
         rules.bench_slots = 2;
         let view = build_fantasy_playoff_portfolio(FantasyPlayoffPortfolioInput {
             season: 20262027,
-            fantasy_team: "Dexter's Dawgs".to_owned(),
+            fantasy_team: "Sample Multicategory".to_owned(),
             rules,
             off_night_max_games: 1,
             rounds: vec![FantasyPlayoffRoundInput {

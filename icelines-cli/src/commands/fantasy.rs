@@ -9402,12 +9402,12 @@ mod tests {
         assert_eq!(
             rewrite_simulated_team_name(
                 "traded Player A to Gio Simulation for Player B",
-                "Dexter's Dawgs"
+                "Sample Multicategory"
             ),
-            "traded Player A to Dexter's Dawgs for Player B"
+            "traded Player A to Sample Multicategory for Player B"
         );
         assert_eq!(
-            rewrite_simulated_team_name("added Player C", "Dexter's Dawgs"),
+            rewrite_simulated_team_name("added Player C", "Sample Multicategory"),
             "added Player C"
         );
     }

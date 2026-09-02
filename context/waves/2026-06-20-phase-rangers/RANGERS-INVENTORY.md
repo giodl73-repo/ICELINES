@@ -49,7 +49,7 @@ keeps Phase Rangers from reopening shipped work or promoting blocked claims.
 
 ## Pulse 02 candidate
 
-Create a `scripts/rangers-workflow.ps1` or documentation-backed command transcript
+Create a `scripts/team-workflow.ps1` or documentation-backed command transcript
 that runs offline against bundled data:
 
 - `icelines team NYR`

@@ -7,7 +7,7 @@ without adding new analytics semantics or team-specific hardcoded claims.
 
 ## Scope
 
-Added `scripts/rangers-workflow.ps1`, a repeatable PowerShell proof that runs
+Added `scripts/team-workflow.ps1`, a repeatable PowerShell proof that runs
 the CLI offline with `--no-setup --no-live` and validates these surfaces:
 
 - `icelines team NYR --no-color`
@@ -34,7 +34,7 @@ non-claim copy, unavailable-state disclosure, and Markdown report disclosures.
 
 | Command | Result |
 |---|---|
-| `powershell -ExecutionPolicy Bypass -File scripts/rangers-workflow.ps1` | passed |
+| `powershell -ExecutionPolicy Bypass -File scripts/team-workflow.ps1` | passed |
 | `C:\src\proof\target\debug\proof.exe check C:\src\TRACKER\repos\applied-systems\icelines\docs\vtrace --errors-only` | passed |
 | `git diff --check` | passed |
 

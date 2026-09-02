@@ -609,7 +609,7 @@ mod tests {
         ];
         let taken = import_fantasy_taken_players("", &identities).unwrap();
         let mut board = build_fantasy_draft_board(
-            "dexters-dawgs",
+            "sample-multicategory",
             "20252026",
             vec![
                 FantasyActiveSlot {
@@ -663,9 +663,9 @@ mod tests {
         view.generated_at = Some(timestamp);
         FantasyDraftCardInput {
             league_id: "dexters-league".to_string(),
-            league_name: "Dexter's 2026-27 League".to_string(),
-            fantasy_team_id: "dexters-dawgs".to_string(),
-            fantasy_team_name: "Dexter's Dawgs".to_string(),
+            league_name: "Sample 2026-27 League".to_string(),
+            fantasy_team_id: "sample-multicategory".to_string(),
+            fantasy_team_name: "Sample Multicategory".to_string(),
             roster_snapshot_id: Some("draft-pick-7".to_string()),
             calendar_fingerprint: Some("calendar-fixture".to_string()),
             board,

@@ -844,8 +844,8 @@ mod tests {
         FantasyRosterCardInput {
             league_id: "league-1".to_string(),
             league_name: "Ice League".to_string(),
-            fantasy_team_id: "dexters-dawgs".to_string(),
-            fantasy_team_name: "Dexter's Dawgs".to_string(),
+            fantasy_team_id: "sample-multicategory".to_string(),
+            fantasy_team_name: "Sample Multicategory".to_string(),
             scoring_scheme_id: "league-scoring-v1".to_string(),
             scoring_scheme_name: "League scoring".to_string(),
             roster_snapshot_id: Some("roster-2026-10-05".to_string()),
@@ -894,7 +894,7 @@ mod tests {
         assert_eq!(card.pages.len(), 2);
         let json = serde_json::to_string(&card).unwrap();
         for expected in [
-            "Dexter's Dawgs",
+            "Sample Multicategory",
             "C1",
             "BN4",
             "IR2",

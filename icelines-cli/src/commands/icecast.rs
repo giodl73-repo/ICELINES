@@ -14970,7 +14970,7 @@ mod tests {
         outcome_at: &str,
     ) -> (std::path::PathBuf, std::path::PathBuf, std::path::PathBuf) {
         let forecast_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../examples/player-line-matchup-forecast-nyr-vs-sea-2026-27.json");
+            .join("../examples/player-line-matchup-forecast-alp-vs-brv-2026-27.json");
         let forecast: PlayerLineMatchupForecastView =
             serde_json::from_slice(&std::fs::read(&forecast_path).unwrap()).unwrap();
         let predictions_path = dir.join("predictions.json");
@@ -15052,7 +15052,7 @@ mod tests {
     fn line_matchup_publish_writes_a_discoverable_catalog_entry() {
         let dir = tempdir().unwrap();
         let card = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json");
+            .join("../examples/player-line-matchup-card-alp-vs-brv-2026-27.json");
         let output = dir.path().join("publication.json");
 
         super::run_line_matchup_publish(
@@ -15236,7 +15236,7 @@ mod tests {
     #[test]
     fn camp_text_distinguishes_active_dressed_scratch_and_cap_no_read() {
         let input: TrainingCampSimulationInput = serde_json::from_str(include_str!(
-            "../../../examples/icecast-sea-training-camp.json"
+            "../../../examples/icecast-brv-training-camp.json"
         ))
         .unwrap();
         let view = simulate_training_camp(&input).unwrap();
@@ -15244,7 +15244,7 @@ mod tests {
 
         assert!(text.contains("ACTIVE   DRESS  SCRATCH  WAIVER"));
         assert!(text.contains("CAP: NO READ"));
-        assert!(text.contains("Ben Meyers"));
+        assert!(text.contains("Sample Player 037"));
     }
 
     #[test]

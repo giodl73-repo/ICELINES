@@ -429,10 +429,10 @@ mod tests {
     fn checked_in_history_cards_round_trip_through_the_shared_document() {
         for json in [
             include_str!(
-                "../../../../examples/organization-profile-history-card-nyr-2024-25-to-2025-26.json"
+                "../../../../examples/organization-profile-history-card-alp-2024-25-to-2025-26.json"
             ),
             include_str!(
-                "../../../../examples/organization-profile-history-card-sea-2024-25-to-2025-26.json"
+                "../../../../examples/organization-profile-history-card-brv-2024-25-to-2025-26.json"
             ),
         ] {
             let card = parse_card_document(json).unwrap();

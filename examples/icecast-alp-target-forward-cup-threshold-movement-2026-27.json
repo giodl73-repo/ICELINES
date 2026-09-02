@@ -1,0 +1,339 @@
+{
+  "schema": "team_season_forecast_movement.v1",
+  "season": 20262027,
+  "trials": 10000,
+  "seed": 20262027,
+  "earlier_label": "No trade baseline",
+  "later_label": "Sample Center 43.2 Cup threshold",
+  "earlier_as_of_date": null,
+  "later_as_of_date": null,
+  "earlier_fingerprint": "b91db3fd2fd1c84d982d60a947dcfaeb0c66641d380af4d8f1640f98a22075a8",
+  "later_fingerprint": "7e6ddb8e7ec7cf5d327aec8f7b19b9d3fe6899adada81f6da9cfd7d3b2b7a783",
+  "teams": [
+    {
+      "team": "NYR",
+      "average_points_delta": 4.567999999999998,
+      "playoff_probability_delta": 0.15759999999999996,
+      "stanley_cup_probability_delta": 0.0483,
+      "average_longest_win_streak_delta": 0.5175000000000001,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "NYI",
+      "average_points_delta": -0.23799999999999955,
+      "playoff_probability_delta": -0.010599999999999998,
+      "stanley_cup_probability_delta": -0.00019999999999999987,
+      "average_longest_win_streak_delta": -0.018200000000000216,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "PIT",
+      "average_points_delta": -0.22500000000000853,
+      "playoff_probability_delta": -0.014599999999999946,
+      "stanley_cup_probability_delta": -0.0030999999999999986,
+      "average_longest_win_streak_delta": -0.021600000000000286,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "CBJ",
+      "average_points_delta": -0.22289999999999566,
+      "playoff_probability_delta": -0.010300000000000031,
+      "stanley_cup_probability_delta": -0.0005999999999999998,
+      "average_longest_win_streak_delta": -0.021700000000000053,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "NJD",
+      "average_points_delta": -0.22209999999999752,
+      "playoff_probability_delta": -0.015500000000000014,
+      "stanley_cup_probability_delta": -0.0022000000000000006,
+      "average_longest_win_streak_delta": -0.024200000000000443,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "WSH",
+      "average_points_delta": -0.22170000000001266,
+      "playoff_probability_delta": -0.009399999999999964,
+      "stanley_cup_probability_delta": -0.0126,
+      "average_longest_win_streak_delta": -0.03080000000000016,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "CAR",
+      "average_points_delta": -0.22060000000000457,
+      "playoff_probability_delta": -0.015900000000000025,
+      "stanley_cup_probability_delta": -0.0025000000000000022,
+      "average_longest_win_streak_delta": -0.025600000000000733,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "PHI",
+      "average_points_delta": -0.2179000000000002,
+      "playoff_probability_delta": -0.016199999999999992,
+      "stanley_cup_probability_delta": -0.0022999999999999965,
+      "average_longest_win_streak_delta": -0.023100000000000342,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "FLA",
+      "average_points_delta": -0.17020000000000834,
+      "playoff_probability_delta": -0.010099999999999998,
+      "stanley_cup_probability_delta": -0.0013999999999999985,
+      "average_longest_win_streak_delta": -0.020400000000000418,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "TBL",
+      "average_points_delta": -0.1688999999999936,
+      "playoff_probability_delta": -0.007199999999999984,
+      "stanley_cup_probability_delta": -0.0023999999999999994,
+      "average_longest_win_streak_delta": -0.016600000000000392,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "OTT",
+      "average_points_delta": -0.16789999999998884,
+      "playoff_probability_delta": -0.010800000000000032,
+      "stanley_cup_probability_delta": 0.0006999999999999992,
+      "average_longest_win_streak_delta": -0.017999999999999794,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "DET",
+      "average_points_delta": -0.1658000000000044,
+      "playoff_probability_delta": -0.005299999999999999,
+      "stanley_cup_probability_delta": -0.0007000000000000001,
+      "average_longest_win_streak_delta": -0.010399999999999743,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "MTL",
+      "average_points_delta": -0.16549999999999443,
+      "playoff_probability_delta": -0.006699999999999928,
+      "stanley_cup_probability_delta": -0.007299999999999994,
+      "average_longest_win_streak_delta": -0.016600000000000392,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "BUF",
+      "average_points_delta": -0.1612999999999971,
+      "playoff_probability_delta": -0.007099999999999995,
+      "stanley_cup_probability_delta": -0.0007999999999999952,
+      "average_longest_win_streak_delta": -0.015400000000000524,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "BOS",
+      "average_points_delta": -0.15810000000000457,
+      "playoff_probability_delta": -0.01100000000000001,
+      "stanley_cup_probability_delta": -0.0011000000000000003,
+      "average_longest_win_streak_delta": -0.012199999999999989,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "TOR",
+      "average_points_delta": -0.15630000000000166,
+      "playoff_probability_delta": -0.006900000000000017,
+      "stanley_cup_probability_delta": -0.002599999999999998,
+      "average_longest_win_streak_delta": -0.011200000000000543,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "EDM",
+      "average_points_delta": -0.12060000000001025,
+      "playoff_probability_delta": -0.0018000000000000238,
+      "stanley_cup_probability_delta": -0.00020000000000000573,
+      "average_longest_win_streak_delta": -0.014499999999999957,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "VAN",
+      "average_points_delta": -0.11959999999999127,
+      "playoff_probability_delta": 0.00009999999999998899,
+      "stanley_cup_probability_delta": 0.0002000000000000001,
+      "average_longest_win_streak_delta": -0.007699999999999818,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "VGK",
+      "average_points_delta": -0.11939999999999884,
+      "playoff_probability_delta": -0.0020000000000000018,
+      "stanley_cup_probability_delta": -0.000900000000000005,
+      "average_longest_win_streak_delta": -0.014600000000000612,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "NSH",
+      "average_points_delta": -0.11820000000000164,
+      "playoff_probability_delta": -0.0014000000000000123,
+      "stanley_cup_probability_delta": -0.00020000000000000052,
+      "average_longest_win_streak_delta": -0.016300000000000203,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "LAK",
+      "average_points_delta": -0.11769999999999925,
+      "playoff_probability_delta": 0.00009999999999998899,
+      "stanley_cup_probability_delta": 0.0002999999999999982,
+      "average_longest_win_streak_delta": -0.012299999999999756,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "ANA",
+      "average_points_delta": -0.1174000000000035,
+      "playoff_probability_delta": -0.0005999999999999894,
+      "stanley_cup_probability_delta": 0.0008999999999999998,
+      "average_longest_win_streak_delta": -0.008999999999999453,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "SJS",
+      "average_points_delta": -0.11660000000000537,
+      "playoff_probability_delta": -0.00019999999999997797,
+      "stanley_cup_probability_delta": -0.0014999999999999996,
+      "average_longest_win_streak_delta": -0.010099999999999554,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "STL",
+      "average_points_delta": -0.11610000000000298,
+      "playoff_probability_delta": 0.00040000000000001146,
+      "stanley_cup_probability_delta": -0.0004000000000000002,
+      "average_longest_win_streak_delta": -0.007699999999999818,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "DAL",
+      "average_points_delta": -0.11560000000000059,
+      "playoff_probability_delta": 0.0004999999999999449,
+      "stanley_cup_probability_delta": -0.000899999999999998,
+      "average_longest_win_streak_delta": -0.01330000000000009,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "COL",
+      "average_points_delta": -0.11320000000000618,
+      "playoff_probability_delta": 0.00009999999999998899,
+      "stanley_cup_probability_delta": -0.0031999999999999945,
+      "average_longest_win_streak_delta": -0.014000000000000234,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "WPG",
+      "average_points_delta": -0.11160000000000991,
+      "playoff_probability_delta": 0.00019999999999997797,
+      "stanley_cup_probability_delta": 0.0,
+      "average_longest_win_streak_delta": -0.007399999999999629,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "CHI",
+      "average_points_delta": -0.1103999999999985,
+      "playoff_probability_delta": 0.0019000000000000128,
+      "stanley_cup_probability_delta": 0.0005999999999999998,
+      "average_longest_win_streak_delta": -0.007299999999999862,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "CGY",
+      "average_points_delta": -0.10960000000000036,
+      "playoff_probability_delta": -0.0013000000000000234,
+      "stanley_cup_probability_delta": -0.0007000000000000001,
+      "average_longest_win_streak_delta": -0.005700000000000038,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "MIN",
+      "average_points_delta": -0.10580000000000211,
+      "playoff_probability_delta": -0.0010999999999999899,
+      "stanley_cup_probability_delta": -0.002600000000000005,
+      "average_longest_win_streak_delta": -0.0138000000000007,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "UTA",
+      "average_points_delta": -0.10550000000000637,
+      "playoff_probability_delta": -0.000300000000000078,
+      "stanley_cup_probability_delta": 0.0005999999999999998,
+      "average_longest_win_streak_delta": -0.007500000000000284,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    },
+    {
+      "team": "SEA",
+      "average_points_delta": 0.03149999999999409,
+      "playoff_probability_delta": 0.005400000000000016,
+      "stanley_cup_probability_delta": -0.0011999999999999997,
+      "average_longest_win_streak_delta": -0.0027999999999996916,
+      "completed_games_delta": null,
+      "observed_standings_points_delta": null,
+      "expected_remaining_points_delta": null
+    }
+  ],
+  "disclosures": [
+    "Movement is later minus earlier. Both league runs must share season, schedule size, trials, seed, and teams.",
+    "Observed and expected-remainder deltas are present only when both runs contain typed replay checkpoints.",
+    "Fingerprints cover each complete league artifact before any team is selected for display."
+  ]
+}
