@@ -1,8 +1,0 @@
-{
-  "name": "NYR unlocks a moderate Shane Wright breakout after the Schneider trade",
-  "trade_deadline": "2027-03-05",
-  "events": [
-    {"id":"nyr-wright-moderate-breakout","kind":"trade","team":"NYR","player":"Shane Wright","effective_date":"2026-09-29","strength_delta":3.1,"occurrence_probability":1.0,"correlation_key":"nyr-sea-wright-schneider-moderate","label":"Wright reaches a 30.0 lineup score; the +4.7 development increment lifts NYR trade impact from -1.6 to +3.1"},
-    {"id":"sea-schneider-moderate-counterpart","kind":"trade","team":"SEA","player":"Braden Schneider","effective_date":"2026-09-29","strength_delta":0.5,"occurrence_probability":1.0,"correlation_key":"nyr-sea-wright-schneider-moderate","label":"Seattle side retains the sealed Schneider-for-Wright lineup impact; Wright's extra development is an NYR-specific unlock scenario"}
-  ]
-}
