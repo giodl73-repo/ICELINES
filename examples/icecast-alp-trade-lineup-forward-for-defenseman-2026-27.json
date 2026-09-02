@@ -1,0 +1,277 @@
+{
+  "team": "NYR",
+  "baseline_roster": [
+    {
+      "player_id": 8476459,
+      "label": "Sample Player 257",
+      "natural_positions": [
+        "center"
+      ],
+      "alternate_positions": [],
+      "projected_score": 62.8,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8476468,
+      "label": "Sample Player 150",
+      "natural_positions": [
+        "center"
+      ],
+      "alternate_positions": [],
+      "projected_score": 48.8,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8483690,
+      "label": "Sample Player 280",
+      "natural_positions": [
+        "center"
+      ],
+      "alternate_positions": [],
+      "projected_score": 24.2,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8480813,
+      "label": "Sample Player 183",
+      "natural_positions": [
+        "center"
+      ],
+      "alternate_positions": [],
+      "projected_score": 12.7,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8482109,
+      "label": "Alexis Sample Scorer",
+      "natural_positions": [
+        "left_wing"
+      ],
+      "alternate_positions": [],
+      "projected_score": 45.8,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8482157,
+      "label": "Sample Player 410",
+      "natural_positions": [
+        "left_wing"
+      ],
+      "alternate_positions": [],
+      "projected_score": 40.6,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8483669,
+      "label": "Sample Player 007",
+      "natural_positions": [
+        "left_wing"
+      ],
+      "alternate_positions": [],
+      "projected_score": 33.2,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8481789,
+      "label": "Sample Player 392",
+      "natural_positions": [
+        "left_wing"
+      ],
+      "alternate_positions": [],
+      "projected_score": 27.7,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8481604,
+      "label": "Sample Player 313",
+      "natural_positions": [
+        "right_wing"
+      ],
+      "alternate_positions": [],
+      "projected_score": 54.0,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8484210,
+      "label": "Sample Player 128",
+      "natural_positions": [
+        "right_wing"
+      ],
+      "alternate_positions": [],
+      "projected_score": 36.6,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8477416,
+      "label": "Sample Player 300",
+      "natural_positions": [
+        "right_wing"
+      ],
+      "alternate_positions": [],
+      "projected_score": 27.3,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8482877,
+      "label": "Sample Player 173",
+      "natural_positions": [
+        "right_wing"
+      ],
+      "alternate_positions": [],
+      "projected_score": 21.0,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8479323,
+      "label": "Sample Player 005",
+      "natural_positions": [
+        "defense"
+      ],
+      "alternate_positions": [],
+      "projected_score": 69.1,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8480434,
+      "label": "Sample Player 368",
+      "natural_positions": [
+        "defense"
+      ],
+      "alternate_positions": [],
+      "projected_score": 37.9,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8478882,
+      "label": "Sample Player 409",
+      "natural_positions": [
+        "defense"
+      ],
+      "alternate_positions": [],
+      "projected_score": 31.5,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8482073,
+      "label": "Sample Player 042",
+      "natural_positions": [
+        "defense"
+      ],
+      "alternate_positions": [],
+      "projected_score": 29.6,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8481525,
+      "label": "Sample Player 246",
+      "natural_positions": [
+        "defense"
+      ],
+      "alternate_positions": [],
+      "projected_score": 29.3,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8477969,
+      "label": "Sample Player 235",
+      "natural_positions": [
+        "defense"
+      ],
+      "alternate_positions": [],
+      "projected_score": 24.5,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8482193,
+      "label": "Sample Player 112",
+      "natural_positions": [
+        "goalie"
+      ],
+      "alternate_positions": [],
+      "projected_score": 98.7,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8478048,
+      "label": "Sample Player 142",
+      "natural_positions": [
+        "goalie"
+      ],
+      "alternate_positions": [],
+      "projected_score": 74.1,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8476914,
+      "label": "Sample Player 195",
+      "natural_positions": [
+        "goalie"
+      ],
+      "alternate_positions": [],
+      "projected_score": 52.0,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8479390,
+      "label": "Sample Player 379",
+      "natural_positions": [
+        "right_wing"
+      ],
+      "alternate_positions": [],
+      "projected_score": 20.3,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8482861,
+      "label": "Sample Player 408",
+      "natural_positions": [
+        "defense"
+      ],
+      "alternate_positions": [],
+      "projected_score": 15.4,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8480001,
+      "label": "Sample Player 399",
+      "natural_positions": [
+        "defense"
+      ],
+      "alternate_positions": [],
+      "projected_score": 14.6,
+      "alternate_position_penalty": 0.0
+    },
+    {
+      "player_id": 8482460,
+      "label": "Sample Player 243",
+      "natural_positions": [
+        "center"
+      ],
+      "alternate_positions": [],
+      "projected_score": 12.0,
+      "alternate_position_penalty": 0.0
+    }
+  ],
+  "incoming_players": [
+    {
+      "player_id": 8483524,
+      "label": "Sample Player 371",
+      "natural_positions": [
+        "center"
+      ],
+      "alternate_positions": [],
+      "projected_score": 25.3,
+      "alternate_position_penalty": 0.0
+    }
+  ],
+  "outgoing_player_ids": [
+    8482073
+  ],
+  "limits": {
+    "centers": 4,
+    "left_wings": 4,
+    "right_wings": 4,
+    "defense": 6,
+    "goalies": 2
+  }
+}

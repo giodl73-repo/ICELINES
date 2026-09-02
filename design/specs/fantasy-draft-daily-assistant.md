@@ -647,7 +647,7 @@ logic.
 - Free-agent adds are same-day before lock.
 - Drops create a two-day waiver period.
 - Scoring authority: active league scheme stored in IceLines.
-- Historical calibration benchmark: Dexter's Dawgs finished 18-2 and first in
+- Historical calibration benchmark: Sample Multicategory finished 18-2 and first in
   every tracked scoring category, then lost in the first playoff round. This is
   authoritative user-supplied outcome context; the available January workbook
   is an incomplete roster/transaction snapshot and must not overwrite it.

@@ -556,7 +556,7 @@ mod tests {
 
     fn forecast() -> PlayerLineMatchupForecastView {
         serde_json::from_str(include_str!(
-            "../../../examples/player-line-matchup-forecast-nyr-vs-sea-2026-27.json"
+            "../../../examples/player-line-matchup-forecast-alp-vs-brv-2026-27.json"
         ))
         .unwrap()
     }

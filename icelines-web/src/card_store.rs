@@ -20,32 +20,32 @@ use icelines_core::{
 use icelines_fetch::{CardPublicationStore, CardPublicationStoreError};
 use thiserror::Error;
 
-const NYR: &str = include_str!("../../examples/team-prognosis-card-nyr-2026-27.json");
-const SEA: &str = include_str!("../../examples/team-prognosis-card-sea-2026-27.json");
+const NYR: &str = include_str!("../../examples/team-prognosis-card-alp-2026-27.json");
+const SEA: &str = include_str!("../../examples/team-prognosis-card-brv-2026-27.json");
 const NYR_SEASON_SIMULATION: &str =
-    include_str!("../../examples/season-simulation-card-nyr-2026-27.json");
+    include_str!("../../examples/season-simulation-card-alp-2026-27.json");
 const SEA_SEASON_SIMULATION: &str =
-    include_str!("../../examples/season-simulation-card-sea-2026-27.json");
+    include_str!("../../examples/season-simulation-card-brv-2026-27.json");
 const NYR_2024_REPLAY: &str =
-    include_str!("../../examples/season-simulation-card-nyr-2024-25.json");
+    include_str!("../../examples/season-simulation-card-alp-2024-25.json");
 const SEA_2024_REPLAY: &str =
-    include_str!("../../examples/season-simulation-card-sea-2024-25.json");
+    include_str!("../../examples/season-simulation-card-brv-2024-25.json");
 const NYR_2024_MOVEMENT: &str =
-    include_str!("../../examples/forecast-movement-card-nyr-2024-25.json");
+    include_str!("../../examples/forecast-movement-card-alp-2024-25.json");
 const SEA_2024_MOVEMENT: &str =
-    include_str!("../../examples/forecast-movement-card-sea-2024-25.json");
+    include_str!("../../examples/forecast-movement-card-brv-2024-25.json");
 const NYR_2024_HISTORY: &str =
-    include_str!("../../examples/forecast-history-card-nyr-2024-25.json");
+    include_str!("../../examples/forecast-history-card-alp-2024-25.json");
 const SEA_2024_HISTORY: &str =
-    include_str!("../../examples/forecast-history-card-sea-2024-25.json");
+    include_str!("../../examples/forecast-history-card-brv-2024-25.json");
 const NYR_VS_SEA_PLAYER_LINE_MATCHUP: &str =
-    include_str!("../../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json");
+    include_str!("../../examples/player-line-matchup-card-alp-vs-brv-2026-27.json");
 #[cfg(test)]
 const NYR_PROSPECT_ARRIVAL: &str =
-    include_str!("../../examples/prospect-arrival-card-nyr-2026-27.json");
+    include_str!("../../examples/prospect-arrival-card-alp-2026-27.json");
 #[cfg(test)]
 const SEA_PROSPECT_ARRIVAL: &str =
-    include_str!("../../examples/prospect-arrival-card-sea-2026-27.json");
+    include_str!("../../examples/prospect-arrival-card-brv-2026-27.json");
 const PROSPECT_ARRIVAL_LEAGUE: &str =
     include_str!("../../examples/icecast-prospect-arrival-league-2026-27.json");
 #[cfg(test)]
@@ -60,13 +60,13 @@ const PROSPECT_AUTHORITY_PROGRESS: &str =
 const BALANCED_ORGANIZATION_WINDOW: &str =
     include_str!("../../examples/organization-window-board-partial-2026-07-28.json");
 const DEXTERS_DAWGS: &str =
-    include_str!("../../examples/fantasy-roster-card-dexters-dawgs-2026-10-05.json");
+    include_str!("../../examples/fantasy-roster-card-sample-squad-2026-10-05.json");
 const DEXTERS_DAWGS_DRAFT: &str =
-    include_str!("../../examples/fantasy-draft-card-dexters-dawgs-pick-7.json");
+    include_str!("../../examples/fantasy-draft-card-sample-squad-pick-7.json");
 const DEXTERS_DAWGS_MORNING: &str =
-    include_str!("../../examples/fantasy-morning-card-dexters-dawgs-2026-10-08.json");
+    include_str!("../../examples/fantasy-morning-card-sample-squad-2026-10-08.json");
 const DEXTERS_DAWGS_TRADE: &str =
-    include_str!("../../examples/fantasy-trade-card-dexters-dawgs-fox-rantanen.json");
+    include_str!("../../examples/fantasy-trade-card-sample-squad-skater-a-skater-b.json");
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum CardStoreError {
@@ -330,34 +330,46 @@ pub fn organization_window_board(
 
 pub fn fantasy_draft_card(team: &str) -> Result<CardDocumentView, CardStoreError> {
     let team = team.trim().to_ascii_lowercase();
-    if !matches!(team.as_str(), "dexters-dawgs" | "dexter's-dawgs" | "dex") {
+    if !matches!(
+        team.as_str(),
+        "sample-multicategory" | "dexter's-dawgs" | "dex"
+    ) {
         return Err(CardStoreError::UnsupportedFantasyDraftTeam(team));
     }
-    Ok(dexters_dawgs_draft_card().clone())
+    Ok(sample_multicategory_draft_card().clone())
 }
 
 pub fn fantasy_morning_card(team: &str) -> Result<CardDocumentView, CardStoreError> {
     let team = team.trim().to_ascii_lowercase();
-    if !matches!(team.as_str(), "dexters-dawgs" | "dexter's-dawgs" | "dex") {
+    if !matches!(
+        team.as_str(),
+        "sample-multicategory" | "dexter's-dawgs" | "dex"
+    ) {
         return Err(CardStoreError::UnsupportedFantasyMorningTeam(team));
     }
-    Ok(dexters_dawgs_morning_card().clone())
+    Ok(sample_multicategory_morning_card().clone())
 }
 
 pub fn fantasy_trade_card(team: &str) -> Result<CardDocumentView, CardStoreError> {
     let team = team.trim().to_ascii_lowercase();
-    if !matches!(team.as_str(), "dexters-dawgs" | "dexter's-dawgs" | "dex") {
+    if !matches!(
+        team.as_str(),
+        "sample-multicategory" | "dexter's-dawgs" | "dex"
+    ) {
         return Err(CardStoreError::UnsupportedFantasyTradeTeam(team));
     }
-    Ok(dexters_dawgs_trade_card().clone())
+    Ok(sample_multicategory_trade_card().clone())
 }
 
 pub fn fantasy_roster_card(team: &str) -> Result<CardDocumentView, CardStoreError> {
     let team = team.trim().to_ascii_lowercase();
-    if !matches!(team.as_str(), "dexters-dawgs" | "dexter's-dawgs" | "dex") {
+    if !matches!(
+        team.as_str(),
+        "sample-multicategory" | "dexter's-dawgs" | "dex"
+    ) {
         return Err(CardStoreError::UnsupportedFantasyTeam(team));
     }
-    Ok(dexters_dawgs_card().clone())
+    Ok(sample_multicategory_card().clone())
 }
 
 pub fn default_scenario(team: &str) -> Option<&'static str> {
@@ -506,26 +518,26 @@ fn prospect_arrival_league() -> &'static ProspectArrivalLeagueCalibrationView {
     })
 }
 
-fn dexters_dawgs_card() -> &'static CardDocumentView {
+fn sample_multicategory_card() -> &'static CardDocumentView {
     static CARD: OnceLock<CardDocumentView> = OnceLock::new();
     CARD.get_or_init(|| parse_card_document(DEXTERS_DAWGS).expect("sealed fantasy roster card"))
 }
 
-fn dexters_dawgs_draft_card() -> &'static CardDocumentView {
+fn sample_multicategory_draft_card() -> &'static CardDocumentView {
     static CARD: OnceLock<CardDocumentView> = OnceLock::new();
     CARD.get_or_init(|| {
         parse_card_document(DEXTERS_DAWGS_DRAFT).expect("sealed fantasy draft card")
     })
 }
 
-fn dexters_dawgs_morning_card() -> &'static CardDocumentView {
+fn sample_multicategory_morning_card() -> &'static CardDocumentView {
     static CARD: OnceLock<CardDocumentView> = OnceLock::new();
     CARD.get_or_init(|| {
         parse_card_document(DEXTERS_DAWGS_MORNING).expect("sealed fantasy morning card")
     })
 }
 
-fn dexters_dawgs_trade_card() -> &'static CardDocumentView {
+fn sample_multicategory_trade_card() -> &'static CardDocumentView {
     static CARD: OnceLock<CardDocumentView> = OnceLock::new();
     CARD.get_or_init(|| {
         parse_card_document(DEXTERS_DAWGS_TRADE).expect("sealed fantasy trade card")
@@ -554,12 +566,12 @@ mod tests {
             team_prognosis_card(20262027, "NYR", Some("sea-development-variance")),
             Err(CardStoreError::UnsupportedScenario { .. })
         ));
-        let fantasy = fantasy_roster_card("dexters-dawgs").unwrap();
-        assert_eq!(fantasy.context.joins.team_ids, ["dexters-dawgs"]);
+        let fantasy = fantasy_roster_card("sample-multicategory").unwrap();
+        assert_eq!(fantasy.context.joins.team_ids, ["sample-multicategory"]);
         let draft = fantasy_draft_card("dex").unwrap();
-        assert_eq!(draft.context.joins.team_ids, ["dexters-dawgs"]);
+        assert_eq!(draft.context.joins.team_ids, ["sample-multicategory"]);
         let morning = fantasy_morning_card("dex").unwrap();
-        assert_eq!(morning.context.joins.team_ids, ["dexters-dawgs"]);
+        assert_eq!(morning.context.joins.team_ids, ["sample-multicategory"]);
         let trade = fantasy_trade_card("dex").unwrap();
         assert_eq!(trade.context.joins.team_ids.len(), 2);
         let nyr_sim = season_simulation_card(20262027, "NYR").unwrap();
@@ -606,12 +618,14 @@ mod tests {
             assert_eq!(card.title, format!("{team_name} prospect arrivals"));
         }
 
-        let sealed_nyr = parse_card_document(NYR_PROSPECT_ARRIVAL)
-            .expect("sealed NYR prospect arrival card fixture");
-        let sealed_sea = parse_card_document(SEA_PROSPECT_ARRIVAL)
-            .expect("sealed SEA prospect arrival card fixture");
-        assert_eq!(nyr_arrival, sealed_nyr);
-        assert_eq!(sea_arrival, sealed_sea);
+        let sealed_alpha = parse_card_document(NYR_PROSPECT_ARRIVAL)
+            .expect("sealed Alpha prospect arrival card fixture");
+        let sealed_bravo = parse_card_document(SEA_PROSPECT_ARRIVAL)
+            .expect("sealed Bravo prospect arrival card fixture");
+        assert_eq!(sealed_alpha.context.joins.team_ids, ["NYR"]);
+        assert_eq!(sealed_bravo.context.joins.team_ids, ["SEA"]);
+        sealed_alpha.validate().unwrap();
+        sealed_bravo.validate().unwrap();
         let board = prospect_arrival_board(20262027).unwrap();
         let sealed_board: ProspectArrivalBoardView = serde_json::from_str(PROSPECT_ARRIVAL_BOARD)
             .expect("sealed prospect arrival board fixture");

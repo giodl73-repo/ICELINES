@@ -1,0 +1,1438 @@
+{
+  "away": {
+    "average_profile_confidence": 0.787721595,
+    "chemistry_effect": -0.0,
+    "defense_score": 50.0,
+    "five_on_five_matchup_score": 47.794379534,
+    "last_change_adjustment": 0.0,
+    "manager_execution_confidence": 0.5,
+    "matchup_state": "modeled",
+    "matchup_suitability": -0.044112409,
+    "offense_score": 50.0,
+    "opponent": "NYR",
+    "opponent_style_response": 50.0,
+    "pair_chemistry_effect": -0.0,
+    "profile_coverage": 1.0,
+    "profiles": [
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 350",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 101,
+        "portrait": {
+          "asset_id": "player:101:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": null
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 351",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 102,
+        "portrait": {
+          "asset_id": "player:102:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/102.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 352",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 103,
+        "portrait": {
+          "asset_id": "player:103:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/103.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 353",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 104,
+        "portrait": {
+          "asset_id": "player:104:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/104.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 354",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 105,
+        "portrait": {
+          "asset_id": "player:105:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/105.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 355",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 106,
+        "portrait": {
+          "asset_id": "player:106:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/106.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 356",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 107,
+        "portrait": {
+          "asset_id": "player:107:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/107.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 357",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 108,
+        "portrait": {
+          "asset_id": "player:108:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/108.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 358",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 109,
+        "portrait": {
+          "asset_id": "player:109:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/109.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 359",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 110,
+        "portrait": {
+          "asset_id": "player:110:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/110.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 360",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 111,
+        "portrait": {
+          "asset_id": "player:111:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": null
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 361",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 112,
+        "portrait": {
+          "asset_id": "player:112:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/112.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 362",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 113,
+        "portrait": {
+          "asset_id": "player:113:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/113.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 363",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 114,
+        "portrait": {
+          "asset_id": "player:114:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/114.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 364",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 115,
+        "portrait": {
+          "asset_id": "player:115:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/115.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 365",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 116,
+        "portrait": {
+          "asset_id": "player:116:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/116.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 366",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 117,
+        "portrait": {
+          "asset_id": "player:117:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/117.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 50.0,
+          "discipline_puck_security": 50.0,
+          "faceoffs": 50.0,
+          "finishing": 50.0,
+          "forecheck_retrieval": 50.0,
+          "passing_transition": 50.0,
+          "penalty_kill": 50.0,
+          "physical_matchup": 50.0,
+          "power_play": 50.0,
+          "scoring_creation": 50.0
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 367",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 118,
+        "portrait": {
+          "asset_id": "player:118:headshot",
+          "fallback_initials": "SP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/SEA/118.png"
+        },
+        "raw_overall_score": 50.0,
+        "reliability_adjusted_score": 50.0,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "SEA"
+      }
+    ],
+    "special_teams": {
+      "attacking_team": "SEA",
+      "defending_team": "NYR",
+      "included_in_five_on_five_matchup": false,
+      "penalty_kill_score": 57.877215951,
+      "power_play_score": 50.0,
+      "suitability": -0.157544319
+    },
+    "team": "SEA",
+    "trio_chemistry_effect": -0.0,
+    "units": [
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 50.0,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "forward_line",
+        "offense_score": 50.0,
+        "opponent_style_response": 50.0,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          101,
+          102,
+          103
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 1
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 50.0,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "forward_line",
+        "offense_score": 50.0,
+        "opponent_style_response": 50.0,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          104,
+          105,
+          106
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 2
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 50.0,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "forward_line",
+        "offense_score": 50.0,
+        "opponent_style_response": 50.0,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          107,
+          108,
+          109
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 3
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 50.0,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "forward_line",
+        "offense_score": 50.0,
+        "opponent_style_response": 50.0,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          110,
+          111,
+          112
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 4
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 50.0,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "defense_pair",
+        "offense_score": 50.0,
+        "opponent_style_response": 50.0,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          113,
+          114
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 1
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 50.0,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "defense_pair",
+        "offense_score": 50.0,
+        "opponent_style_response": 50.0,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          115,
+          116
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 2
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 50.0,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "defense_pair",
+        "offense_score": 50.0,
+        "opponent_style_response": 50.0,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          117,
+          118
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 3
+      }
+    ],
+    "warnings": [
+      "no chemistry evidence supplied; unit effects remain neutral"
+    ]
+  },
+  "captured_at": "2026-10-10T15:00:00Z",
+  "disclosures": [
+    "Player dimensions shrink toward 50 by games, minutes, shift volume, recency, and component coverage.",
+    "Exact shared deployment is affinity only; it contributes zero causal chemistry without a shift-aligned outcome residual.",
+    "Special-teams unit suitability is reported separately and excluded from the 5-on-5 matchup feature to prevent double counting.",
+    "Availability losses belong to the game edge's lineup features; The Matchup evaluates only the submitted dressed units.",
+    "Home last change is a bounded execution adjustment, not an automatic talent bonus."
+  ],
+  "fingerprint": "sha256:bfe28b2c1cb5095ebf8162e519b6fa40121a8828ce6fa7aa5479865706b6d40b",
+  "forecast_at": "2026-10-10T16:00:00Z",
+  "game_date": "2026-10-10",
+  "game_id": 2026020001,
+  "home": {
+    "average_profile_confidence": 0.787721595,
+    "chemistry_effect": -0.0,
+    "defense_score": 57.877215951,
+    "five_on_five_matchup_score": 53.998519337,
+    "last_change_adjustment": 0.375,
+    "manager_execution_confidence": 0.5,
+    "matchup_state": "modeled",
+    "matchup_suitability": 0.079970387,
+    "offense_score": 57.877215951,
+    "opponent": "SEA",
+    "opponent_style_response": 57.877215951,
+    "pair_chemistry_effect": -0.0,
+    "profile_coverage": 1.0,
+    "profiles": [
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 282",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 1,
+        "portrait": {
+          "asset_id": "player:1:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": null
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 292",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 2,
+        "portrait": {
+          "asset_id": "player:2:headshot",
+          "fallback_initials": "NP2",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/2.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 293",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 3,
+        "portrait": {
+          "asset_id": "player:3:headshot",
+          "fallback_initials": "NP3",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/3.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 294",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 4,
+        "portrait": {
+          "asset_id": "player:4:headshot",
+          "fallback_initials": "NP4",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/4.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 295",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 5,
+        "portrait": {
+          "asset_id": "player:5:headshot",
+          "fallback_initials": "NP5",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/5.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 296",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 6,
+        "portrait": {
+          "asset_id": "player:6:headshot",
+          "fallback_initials": "NP6",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/6.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 297",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 7,
+        "portrait": {
+          "asset_id": "player:7:headshot",
+          "fallback_initials": "NP7",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/7.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 298",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 8,
+        "portrait": {
+          "asset_id": "player:8:headshot",
+          "fallback_initials": "NP8",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/8.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 299",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 9,
+        "portrait": {
+          "asset_id": "player:9:headshot",
+          "fallback_initials": "NP9",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/9.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 283",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 10,
+        "portrait": {
+          "asset_id": "player:10:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/10.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 284",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 11,
+        "portrait": {
+          "asset_id": "player:11:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": null
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 285",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 12,
+        "portrait": {
+          "asset_id": "player:12:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/12.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 286",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 13,
+        "portrait": {
+          "asset_id": "player:13:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/13.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 287",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 14,
+        "portrait": {
+          "asset_id": "player:14:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/14.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 288",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 15,
+        "portrait": {
+          "asset_id": "player:15:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/15.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 289",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 16,
+        "portrait": {
+          "asset_id": "player:16:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/16.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 290",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 17,
+        "portrait": {
+          "asset_id": "player:17:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/17.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      },
+      {
+        "adjusted_dimensions": {
+          "defensive_suppression": 57.877215951,
+          "discipline_puck_security": 57.877215951,
+          "faceoffs": 57.877215951,
+          "finishing": 57.877215951,
+          "forecheck_retrieval": 57.877215951,
+          "passing_transition": 57.877215951,
+          "penalty_kill": 57.877215951,
+          "physical_matchup": 57.877215951,
+          "power_play": 57.877215951,
+          "scoring_creation": 57.877215951
+        },
+        "component_coverage": 1.0,
+        "display_name": "Sample Player 291",
+        "even_strength_minutes": 984.0,
+        "evidence_cutoff_at": "2026-10-01T00:00:00Z",
+        "games_played": 82,
+        "observed_shifts": 1476,
+        "player_id": 18,
+        "portrait": {
+          "asset_id": "player:18:headshot",
+          "fallback_initials": "NP1",
+          "headshot_canonical_url": "https://assets.example.invalid/mugs/nhl/20262027/NYR/18.png"
+        },
+        "raw_overall_score": 60.0,
+        "reliability_adjusted_score": 57.877215951,
+        "sample_confidence": 0.787721595,
+        "schema": "player_forecast_profile.v1",
+        "team": "NYR"
+      }
+    ],
+    "special_teams": {
+      "attacking_team": "NYR",
+      "defending_team": "SEA",
+      "included_in_five_on_five_matchup": false,
+      "penalty_kill_score": 50.0,
+      "power_play_score": 57.877215951,
+      "suitability": 0.157544319
+    },
+    "team": "NYR",
+    "trio_chemistry_effect": -0.0,
+    "units": [
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 57.877215951,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "forward_line",
+        "offense_score": 57.877215951,
+        "opponent_style_response": 57.877215951,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          1,
+          2,
+          3
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 1
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 57.877215951,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "forward_line",
+        "offense_score": 57.877215951,
+        "opponent_style_response": 57.877215951,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          4,
+          5,
+          6
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 2
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 57.877215951,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "forward_line",
+        "offense_score": 57.877215951,
+        "opponent_style_response": 57.877215951,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          7,
+          8,
+          9
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 3
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 57.877215951,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "forward_line",
+        "offense_score": 57.877215951,
+        "opponent_style_response": 57.877215951,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          10,
+          11,
+          12
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 4
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 57.877215951,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "defense_pair",
+        "offense_score": 57.877215951,
+        "opponent_style_response": 57.877215951,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          13,
+          14
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 1
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 57.877215951,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "defense_pair",
+        "offense_score": 57.877215951,
+        "opponent_style_response": 57.877215951,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          15,
+          16
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 2
+      },
+      {
+        "chemistry_effect": -0.0,
+        "defense_score": 57.877215951,
+        "deployment_affinity": null,
+        "evidence_confidence": 0.0,
+        "kind": "defense_pair",
+        "offense_score": 57.877215951,
+        "opponent_style_response": 57.877215951,
+        "pair_chemistry_effect": -0.0,
+        "player_ids": [
+          17,
+          18
+        ],
+        "trio_chemistry_effect": -0.0,
+        "unit": 3
+      }
+    ],
+    "warnings": [
+      "no chemistry evidence supplied; unit effects remain neutral"
+    ]
+  },
+  "method": "profile_line_matchup.v1",
+  "schema": "player_line_matchup_forecast.v1",
+  "season": 20262027,
+  "source_fingerprints": [
+    "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  ],
+  "vintage": "game_morning",
+  "warnings": [
+    "SEA: no chemistry evidence supplied; unit effects remain neutral",
+    "NYR: no chemistry evidence supplied; unit effects remain neutral"
+  ]
+}

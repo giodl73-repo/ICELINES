@@ -32,12 +32,12 @@ leaner workflows without making new unverified source claims.
 | Pulse | Scope | Result |
 |---|---|---|
 | 01 | Plan and inventory Phase Rangers goals | passed; see `RANGERS-INVENTORY.md` and `pulses/pulse-01.md` |
-| 02 | NYR workflow proof over existing offline surfaces | passed; see `scripts/rangers-workflow.ps1` and `pulses/pulse-02.md` |
+| 02 | NYR workflow proof over existing offline surfaces | passed; see `scripts/team-workflow.ps1` and `pulses/pulse-02.md` |
 | 03 | Signals discovery design gate | passed; see `SIGNALS-DISCOVERY-GATE.md` and `pulses/pulse-03.md` |
 | 04 | Signals roster matrix CLI surface | passed; see `signals-roster` and `pulses/pulse-04.md` |
 | 05 | Evidence-envelope bridge decision | passed; see `EVIDENCE-BRIDGE.md` and `pulses/pulse-05.md` |
-| 06 | Layout persistence hardening proof | passed; see `scripts/rangers-layout-proof.ps1` and `pulses/pulse-06.md` |
-| 07 | Lean CLI audit/fence | passed as target-not-met audit; see `scripts/rangers-lean-audit.ps1`, `LEAN-AUDIT.md`, and `pulses/pulse-07.md` |
+| 06 | Layout persistence hardening proof | passed; see `scripts/layout-proof.ps1` and `pulses/pulse-06.md` |
+| 07 | Lean CLI audit/fence | passed as target-not-met audit; see `scripts/lean-audit.ps1`, `LEAN-AUDIT.md`, and `pulses/pulse-07.md` |
 
 ## Validation posture
 

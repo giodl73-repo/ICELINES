@@ -343,7 +343,7 @@ mod tests {
 
     fn card() -> CardDocumentView {
         parse_card_document(include_str!(
-            "../../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json"
+            "../../examples/player-line-matchup-card-alp-vs-brv-2026-27.json"
         ))
         .unwrap()
     }

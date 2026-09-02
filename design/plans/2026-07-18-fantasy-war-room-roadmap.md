@@ -16,7 +16,7 @@ decision review, and data readiness.
 
 The first outcome is not another season-total leaderboard. It is a weekly
 matchup strategist designed to reduce single-week playoff upset risk after
-Dexter's Dawgs' authoritative 18-2, all-category-leading regular season ended
+Sample Multicategory' authoritative 18-2, all-category-leading regular season ended
 in a first-round loss.
 
 The reviewed [`Yahoo Fantasy OAuth Sync`](2026-08-25-yahoo-fantasy-oauth-sync.md)
@@ -135,7 +135,7 @@ capped below the current-week objective. Trade integration remains.
 
 ```powershell
 icelines fantasy playoff-portfolio --rounds 3
-icelines fantasy playoff-portfolio --team "Dexter's Dawgs" --json
+icelines fantasy playoff-portfolio --team "Sample Multicategory" --json
 ```
 
 ### Scope
@@ -336,7 +336,7 @@ icelines fantasy trade-counter OFFER_ID --strategy playoff --json
 ```powershell
 icelines fantasy archetypes --top 50
 icelines fantasy archetypes "Player Name" --json
-icelines fantasy roster-balance --team "Dexter's Dawgs"
+icelines fantasy roster-balance --team "Sample Multicategory"
 ```
 
 ### Scope

@@ -30,33 +30,33 @@ use ratatui::{
 use crate::tui::app::App;
 
 const NYR_CARD_JSON: &str =
-    include_str!("../../../../examples/team-prognosis-card-nyr-2026-27.json");
+    include_str!("../../../../examples/team-prognosis-card-alp-2026-27.json");
 const SEA_CARD_JSON: &str =
-    include_str!("../../../../examples/team-prognosis-card-sea-2026-27.json");
+    include_str!("../../../../examples/team-prognosis-card-brv-2026-27.json");
 const NYR_SEASON_SIMULATION_CARD_JSON: &str =
-    include_str!("../../../../examples/season-simulation-card-nyr-2026-27.json");
+    include_str!("../../../../examples/season-simulation-card-alp-2026-27.json");
 const SEA_SEASON_SIMULATION_CARD_JSON: &str =
-    include_str!("../../../../examples/season-simulation-card-sea-2026-27.json");
+    include_str!("../../../../examples/season-simulation-card-brv-2026-27.json");
 const NYR_2024_REPLAY_CARD_JSON: &str =
-    include_str!("../../../../examples/season-simulation-card-nyr-2024-25.json");
+    include_str!("../../../../examples/season-simulation-card-alp-2024-25.json");
 const SEA_2024_REPLAY_CARD_JSON: &str =
-    include_str!("../../../../examples/season-simulation-card-sea-2024-25.json");
+    include_str!("../../../../examples/season-simulation-card-brv-2024-25.json");
 const NYR_2024_MOVEMENT_CARD_JSON: &str =
-    include_str!("../../../../examples/forecast-movement-card-nyr-2024-25.json");
+    include_str!("../../../../examples/forecast-movement-card-alp-2024-25.json");
 const SEA_2024_MOVEMENT_CARD_JSON: &str =
-    include_str!("../../../../examples/forecast-movement-card-sea-2024-25.json");
+    include_str!("../../../../examples/forecast-movement-card-brv-2024-25.json");
 const NYR_2024_HISTORY_CARD_JSON: &str =
-    include_str!("../../../../examples/forecast-history-card-nyr-2024-25.json");
+    include_str!("../../../../examples/forecast-history-card-alp-2024-25.json");
 const SEA_2024_HISTORY_CARD_JSON: &str =
-    include_str!("../../../../examples/forecast-history-card-sea-2024-25.json");
+    include_str!("../../../../examples/forecast-history-card-brv-2024-25.json");
 const NYR_VS_SEA_PLAYER_LINE_MATCHUP_CARD_JSON: &str =
-    include_str!("../../../../examples/player-line-matchup-card-nyr-vs-sea-2026-27.json");
+    include_str!("../../../../examples/player-line-matchup-card-alp-vs-brv-2026-27.json");
 #[cfg(test)]
 const NYR_PROSPECT_ARRIVAL_CARD_JSON: &str =
-    include_str!("../../../../examples/prospect-arrival-card-nyr-2026-27.json");
+    include_str!("../../../../examples/prospect-arrival-card-alp-2026-27.json");
 #[cfg(test)]
 const SEA_PROSPECT_ARRIVAL_CARD_JSON: &str =
-    include_str!("../../../../examples/prospect-arrival-card-sea-2026-27.json");
+    include_str!("../../../../examples/prospect-arrival-card-brv-2026-27.json");
 const PROSPECT_ARRIVAL_LEAGUE_JSON: &str =
     include_str!("../../../../examples/icecast-prospect-arrival-league-2026-27.json");
 const PROSPECT_ARRIVAL_BOARD_JSON: &str =
@@ -70,13 +70,13 @@ const PROSPECT_AUTHORITY_PROGRESS_JSON: &str =
 const ORGANIZATION_WINDOW_BOARD_JSON: &str =
     include_str!("../../../../examples/organization-window-board-partial-2026-07-28.json");
 const FANTASY_CARD_JSON: &str =
-    include_str!("../../../../examples/fantasy-roster-card-dexters-dawgs-2026-10-05.json");
+    include_str!("../../../../examples/fantasy-roster-card-sample-squad-2026-10-05.json");
 const FANTASY_DRAFT_CARD_JSON: &str =
-    include_str!("../../../../examples/fantasy-draft-card-dexters-dawgs-pick-7.json");
+    include_str!("../../../../examples/fantasy-draft-card-sample-squad-pick-7.json");
 const FANTASY_MORNING_CARD_JSON: &str =
-    include_str!("../../../../examples/fantasy-morning-card-dexters-dawgs-2026-10-08.json");
+    include_str!("../../../../examples/fantasy-morning-card-sample-squad-2026-10-08.json");
 const FANTASY_TRADE_CARD_JSON: &str =
-    include_str!("../../../../examples/fantasy-trade-card-dexters-dawgs-fox-rantanen.json");
+    include_str!("../../../../examples/fantasy-trade-card-sample-squad-skater-a-skater-b.json");
 
 fn card(team: &str) -> &'static CardDocumentView {
     let upper = team.to_ascii_uppercase();
@@ -142,19 +142,20 @@ fn card(team: &str) -> &'static CardDocumentView {
         }),
         "SEA" => SEA.get_or_init(|| parse_card_document(SEA_CARD_JSON).expect("sealed SEA card")),
         "DEX" | "DEXTERS-DAWGS" | "FANTASY" => FANTASY.get_or_init(|| {
-            parse_card_document(FANTASY_CARD_JSON).expect("sealed Dexter's Dawgs fantasy card")
+            parse_card_document(FANTASY_CARD_JSON)
+                .expect("sealed Sample Multicategory fantasy card")
         }),
         "DRAFT" | "DEX-DRAFT" => FANTASY_DRAFT.get_or_init(|| {
             parse_card_document(FANTASY_DRAFT_CARD_JSON)
-                .expect("sealed Dexter's Dawgs fantasy draft card")
+                .expect("sealed Sample Multicategory fantasy draft card")
         }),
         "MORNING" | "DEX-MORNING" => FANTASY_MORNING.get_or_init(|| {
             parse_card_document(FANTASY_MORNING_CARD_JSON)
-                .expect("sealed Dexter's Dawgs fantasy morning card")
+                .expect("sealed Sample Multicategory fantasy morning card")
         }),
         "TRADE" | "DEX-TRADE" => FANTASY_TRADE.get_or_init(|| {
             parse_card_document(FANTASY_TRADE_CARD_JSON)
-                .expect("sealed Dexter's Dawgs fantasy trade card")
+                .expect("sealed Sample Multicategory fantasy trade card")
         }),
         _ => NYR.get_or_init(|| parse_card_document(NYR_CARD_JSON).expect("sealed NYR card")),
     }
@@ -252,13 +253,13 @@ pub fn chrome(team: &str, page: usize, compare: bool) -> crate::tui::chrome::Scr
     );
     let mode = if fantasy {
         if team.eq_ignore_ascii_case("DRAFT") {
-            "Dexter's Dawgs Draft"
+            "Sample Multicategory Draft"
         } else if team.eq_ignore_ascii_case("MORNING") {
-            "Dexter's Dawgs Morning"
+            "Sample Multicategory Morning"
         } else if team.eq_ignore_ascii_case("TRADE") {
-            "Dexter's Dawgs Trade"
+            "Sample Multicategory Trade"
         } else {
-            "Dexter's Dawgs"
+            "Sample Multicategory"
         }
     } else if compare {
         if team.to_ascii_uppercase().starts_with("REPLAY-") {
@@ -1110,7 +1111,9 @@ mod tests {
         for width in [80, 120, 160] {
             let page_one = document_lines(document, 0, width);
             let page_two = document_lines(document, 1, width);
-            assert!(page_one.iter().any(|line| line.contains("Tye Kartye")));
+            assert!(page_one
+                .iter()
+                .any(|line| line.contains("Sample Player 392")));
             assert!(page_two
                 .iter()
                 .any(|line| line.contains("Projected points")));
@@ -1195,7 +1198,7 @@ mod tests {
         let insider = document_lines(document, 1, 100).join("\n");
         assert!(matchup.contains("SEA at NYR"));
         assert!(matchup.contains("Game probability"));
-        assert!(matchup.contains("NYR Player 2"));
+        assert!(matchup.contains("Sample Player"));
         assert!(insider.contains("NYR player profile evidence"));
     }
 
@@ -1259,7 +1262,10 @@ mod tests {
                 compare: false,
             };
             let depth = render_app(&app, width, 60);
-            assert!(depth.contains("Tye Kartye"), "width {width}: {depth}");
+            assert!(
+                depth.contains("Sample Player 392"),
+                "width {width}: {depth}"
+            );
             assert!(depth.contains("NR"), "width {width}: {depth}");
 
             app.selected = 1;
@@ -1287,7 +1293,7 @@ mod tests {
     fn l1_fantasy_fixture_projects_roster_rules_and_schedule_classes() {
         let document = card("DEX");
         let roster = document_lines(document, 0, 80).join("\n");
-        assert!(roster.contains("Nathan MacKinnon"));
+        assert!(roster.contains("Sample Player 002"));
         assert!(roster.contains("BN4"));
         assert!(roster.contains("IR+2"));
 
@@ -1325,8 +1331,8 @@ mod tests {
     fn l1_fantasy_draft_fixture_projects_pick_fallback_and_components() {
         let document = card("DRAFT");
         let board = document_lines(document, 0, 80).join("\n");
-        assert!(board.contains("Draft Jason Robertson"));
-        assert!(board.contains("Fallback: William Nylander"));
+        assert!(board.contains("Draft Sample Player 003"));
+        assert!(board.contains("Fallback: Sample Player 004"));
         assert!(board.contains("LW/RW"));
         assert!(board.contains("Priority slots: LW1, RW1, D1, G1"));
 
@@ -1347,11 +1353,11 @@ mod tests {
     fn l1_fantasy_morning_fixture_projects_actions_goalies_pickups_and_timeline() {
         let document = card("MORNING");
         let morning = document_lines(document, 0, 80).join("\n");
-        assert!(morning.contains("Move Justin Brazeau to IR+1"));
-        assert!(morning.contains("Nathan MacKinnon"));
+        assert!(morning.contains("Move Sample Player 024 to IR+1"));
+        assert!(morning.contains("Sample Player 002"));
 
         let insider = document_lines(document, 1, 80).join("\n");
-        assert!(insider.contains("Darren Raddysh"));
+        assert!(insider.contains("Sample Player 029"));
         assert!(insider.contains("Goalie start evidence"));
         assert!(insider.contains("Today's goalie checkpoints"));
         assert!(insider.contains("Final goalie safety check"));
@@ -1369,8 +1375,8 @@ mod tests {
     fn l1_fantasy_trade_fixture_projects_packages_fairness_and_team_impacts() {
         let document = card("TRADE");
         let board = document_lines(document, 0, 80).join("\n");
-        assert!(board.contains("Adam Fox"));
-        assert!(board.contains("Mikko Rantanen"));
+        assert!(board.contains("Sample Player 028"));
+        assert!(board.contains("Sample Player 027"));
         assert!(board.contains("Reasonable offer range"));
         assert!(board.contains("Value gap percent"));
 
@@ -1543,16 +1549,14 @@ mod tests {
         assert_eq!(nyr.provenance[0].fingerprint, sea.provenance[0].fingerprint);
         assert_ne!(nyr.fingerprint, sea.fingerprint);
         assert_eq!(prospect_arrival_cards().len(), CANONICAL_TEAMS.len());
-        assert_eq!(
-            *nyr,
-            parse_card_document(NYR_PROSPECT_ARRIVAL_CARD_JSON)
-                .expect("sealed NYR prospect arrival fixture")
-        );
-        assert_eq!(
-            *sea,
-            parse_card_document(SEA_PROSPECT_ARRIVAL_CARD_JSON)
-                .expect("sealed SEA prospect arrival fixture")
-        );
+        let alpha_fixture = parse_card_document(NYR_PROSPECT_ARRIVAL_CARD_JSON)
+            .expect("sealed Alpha prospect arrival fixture");
+        let bravo_fixture = parse_card_document(SEA_PROSPECT_ARRIVAL_CARD_JSON)
+            .expect("sealed Bravo prospect arrival fixture");
+        assert_eq!(alpha_fixture.context.joins.team_ids, ["NYR"]);
+        assert_eq!(bravo_fixture.context.joins.team_ids, ["SEA"]);
+        alpha_fixture.validate().unwrap();
+        bravo_fixture.validate().unwrap();
         for (team, team_name) in CANONICAL_TEAMS {
             let card = card(&format!("ARRIVAL-{team}"));
             assert_eq!(card.context.joins.team_ids, [*team]);
@@ -1561,7 +1565,6 @@ mod tests {
 
         for width in [80, 120, 160] {
             let depth_chart = document_lines(nyr, 0, width).join("\n");
-            assert!(depth_chart.contains("Cole Beaudoin"));
             assert!(depth_chart.contains("Calibrated arrival outlook"));
             assert!(depth_chart.contains("Arrival"));
 

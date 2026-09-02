@@ -10,7 +10,7 @@ use icelines_core::{
 fn forecast() -> TeamSeasonForecastView {
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../examples/icecast-nyr-development-variance-10000-result.json"
+        "/../examples/icecast-alp-development-variance-10000-result.json"
     );
     serde_json::from_slice(&fs::read(path).expect("read sealed league result"))
         .expect("parse sealed league result")
@@ -76,11 +76,11 @@ fn changing_any_league_row_changes_the_run_fingerprint() {
 #[test]
 fn sealed_nyr_and_sea_fixtures_parse_and_share_the_run() {
     let nyr = icelines_core::parse_card_document(include_str!(
-        "../../examples/season-simulation-card-nyr-2026-27.json"
+        "../../examples/season-simulation-card-alp-2026-27.json"
     ))
     .unwrap();
     let sea = icelines_core::parse_card_document(include_str!(
-        "../../examples/season-simulation-card-sea-2026-27.json"
+        "../../examples/season-simulation-card-brv-2026-27.json"
     ))
     .unwrap();
     assert_eq!(
@@ -93,7 +93,7 @@ fn sealed_nyr_and_sea_fixtures_parse_and_share_the_run() {
 #[test]
 fn completed_2024_replay_preserves_confirmed_actuals_and_calibration() {
     let nyr = icelines_core::parse_card_document(include_str!(
-        "../../examples/season-simulation-card-nyr-2024-25.json"
+        "../../examples/season-simulation-card-alp-2024-25.json"
     ))
     .unwrap();
     assert_eq!(nyr.context.view.window.season.0, 20242025);

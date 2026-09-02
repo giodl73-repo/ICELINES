@@ -661,7 +661,7 @@ GET /api/v1/cards/forecast-history/:season/:team
 ```
 
 The web provider is intentionally read-only and authority-gated to sealed NYR,
-SEA, and Dexter's Dawgs showcase documents. It returns the complete core
+SEA, and Sample Multicategory showcase documents. It returns the complete core
 document directly from JSON routes, uses the document fingerprint as its ETag,
 and rejects unsupported dimensions explicitly. HTML page selection changes
 projection only, never the document.

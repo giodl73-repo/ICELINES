@@ -5519,25 +5519,25 @@ mod tests {
     }
 
     #[test]
-    fn l0_projection_adapter_finds_rangers_center_displaced_by_oreilly() {
+    fn l0_projection_adapter_finds_center_displaced_by_incoming_candidate() {
         let projection: TeamLineupProjectionView = serde_json::from_str(include_str!(
-            "../../../examples/team-lineup-nyr-2026-27.json"
+            "../../../examples/team-lineup-alp-2026-27.json"
         ))
         .unwrap();
-        let mut oreilly = lineup_player(
+        let mut incoming_candidate = lineup_player(
             8_475_158,
-            "Ryan O'Reilly",
+            "Sample Player 332",
             TradeLineupPosition::Center,
             60.0,
         );
-        oreilly.alternate_positions = vec![
+        incoming_candidate.alternate_positions = vec![
             TradeLineupPosition::LeftWing,
             TradeLineupPosition::RightWing,
         ];
-        oreilly.alternate_position_penalty = 3.0;
-        let projection_oreilly = TeamLineupPlayerInput {
+        incoming_candidate.alternate_position_penalty = 3.0;
+        let projection_incoming_candidate = TeamLineupPlayerInput {
             player_id: 8_475_158,
-            display_name: "Ryan O'Reilly".to_owned(),
+            display_name: "Sample Player 332".to_owned(),
             team: "NYR".to_owned(),
             prior_team: Some("NSH".to_owned()),
             primary_position: Position::Center,
@@ -5560,16 +5560,16 @@ mod tests {
         let view = build_trade_lineup_scenario_from_projection(
             &projection,
             TradeLineupProjectionChangeInput {
-                incoming_players: vec![oreilly],
-                projection_incoming_players: vec![projection_oreilly],
+                incoming_players: vec![incoming_candidate],
+                projection_incoming_players: vec![projection_incoming_candidate],
                 outgoing_player_ids: vec![],
                 limits: TradeLineupLimits::default(),
-                disclosures: vec!["Ryan O'Reilly uses a scenario score of 60.".to_owned()],
+                disclosures: vec!["The incoming candidate uses a scenario score of 60.".to_owned()],
             },
         )
         .unwrap();
-        assert_eq!(view.added_to_lineup, vec!["Ryan O'Reilly"]);
-        assert_eq!(view.displaced_by_competition, vec!["Joe Veleno"]);
+        assert_eq!(view.added_to_lineup, vec!["Sample Player 332"]);
+        assert_eq!(view.displaced_by_competition, vec!["Sample Player 183"]);
         assert!((view.strength_delta - 47.3).abs() < 1e-9);
         let assignment = view
             .after
@@ -5600,38 +5600,38 @@ mod tests {
     #[test]
     fn l0_trade_lineup_board_separates_hockey_rank_from_actionability() {
         let set: crate::view_model::TrainingCampLineupSetView = serde_json::from_str(include_str!(
-            "../../../examples/icecast-nyr-training-camp-lineups.json"
+            "../../../examples/icecast-alp-training-camp-lineups.json"
         ))
         .unwrap();
         let input: TradeLineupBoardInput = serde_json::from_str(include_str!(
-            "../../../examples/icecast-nyr-forward-trade-board-2026-27.json"
+            "../../../examples/icecast-alp-forward-trade-board-2026-27.json"
         ))
         .unwrap();
         let board = build_trade_lineup_board(&set.branches[0].lineup, input).unwrap();
 
         assert_eq!(board.schema, TRADE_LINEUP_BOARD_SCHEMA);
-        assert_eq!(board.rows[0].label, "Ryan O'Reilly");
+        assert_eq!(board.rows[0].label, "Sample Player 332");
         assert_eq!(board.rows[0].hockey_rank, 1);
         assert_eq!(board.rows[0].actionable_rank, Some(1));
-        let rust = board
+        let second_candidate = board
             .rows
             .iter()
-            .find(|row| row.label == "Bryan Rust")
+            .find(|row| row.label == "Sample Player 058")
             .unwrap();
-        assert_eq!(rust.actionable_rank, Some(2));
-        assert!(rust.transaction_ready);
+        assert_eq!(second_candidate.actionable_rank, Some(2));
+        assert!(second_candidate.transaction_ready);
         assert!(board
             .rows
             .iter()
-            .filter(|row| row.label != "Ryan O'Reilly" && row.label != "Bryan Rust")
+            .filter(|row| row.label != "Sample Player 332" && row.label != "Sample Player 058")
             .all(|row| row.actionable_rank.is_none() && !row.transaction_ready));
-        let vatrano = board
+        let non_actionable_candidate = board
             .rows
             .iter()
-            .find(|row| row.label == "Frank Vatrano")
+            .find(|row| row.label == "Sample Player 126")
             .unwrap();
-        assert_eq!(vatrano.scenario.strength_delta, 0.0);
-        assert!(vatrano.scenario.added_to_lineup.is_empty());
+        assert_eq!(non_actionable_candidate.scenario.strength_delta, 0.0);
+        assert!(non_actionable_candidate.scenario.added_to_lineup.is_empty());
     }
 
     #[test]

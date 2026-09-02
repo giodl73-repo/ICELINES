@@ -7,7 +7,7 @@ reproducible no-claim check without starting broad Cargo feature surgery.
 
 ## Scope
 
-Added `scripts/rangers-lean-audit.ps1`, which checks:
+Added `scripts/lean-audit.ps1`, which checks:
 
 - FLETCH remains a workspace git dependency consumed by `icelines-fetch`;
 - SLICE remains a workspace git dependency consumed by `icelines-query`;
@@ -27,8 +27,8 @@ wave.
 
 | Command | Result |
 |---|---|
-| `powershell -ExecutionPolicy Bypass -File scripts\rangers-lean-audit.ps1` | passed; target-not-met blockers detected |
-| `powershell -ExecutionPolicy Bypass -File scripts\rangers-lean-audit.ps1 -Json` | passed; JSON blocker summary emitted |
+| `powershell -ExecutionPolicy Bypass -File scripts\lean-audit.ps1` | passed; target-not-met blockers detected |
+| `powershell -ExecutionPolicy Bypass -File scripts\lean-audit.ps1 -Json` | passed; JSON blocker summary emitted |
 | `C:\src\proof\target\debug\proof.exe check C:\src\TRACKER\repos\applied-systems\icelines\docs\vtrace --errors-only` | passed |
 | `git diff --check` | passed |
 

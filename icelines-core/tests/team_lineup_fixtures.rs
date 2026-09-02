@@ -56,17 +56,17 @@ fn assert_fixture(view: &TeamLineupProjectionView, team: &str) {
 }
 
 #[test]
-fn canonical_rangers_lineup_keeps_kartye_and_authoritative_faces() {
-    let view = fixture("team-lineup-nyr-2026-27.json");
+fn alpha_lineup_keeps_complete_roster_and_authoritative_faces() {
+    let view = fixture("team-lineup-alp-2026-27.json");
     assert_fixture(&view, "NYR");
     assert!(players(&view)
         .iter()
-        .any(|player| player.display_name == "Tye Kartye"));
+        .all(|player| player.display_name.starts_with("Sample Player ")));
 }
 
 #[test]
-fn canonical_kraken_lineup_matches_reported_complete_shape() {
-    let view = fixture("team-lineup-sea-2026-27.json");
+fn bravo_lineup_matches_reported_complete_shape() {
+    let view = fixture("team-lineup-brv-2026-27.json");
     assert_fixture(&view, "SEA");
     assert!(!view
         .warnings
@@ -74,10 +74,10 @@ fn canonical_kraken_lineup_matches_reported_complete_shape() {
         .any(|warning| warning.code == "incomplete_roster_shape"));
     assert_eq!(
         view.forward_lines[0].center.as_ref().unwrap().display_name,
-        "Matty Beniers"
+        "Sample Player 248"
     );
     assert_eq!(
         view.goalies.starter.as_ref().unwrap().display_name,
-        "Joey Daccord"
+        "Sample Player 188"
     );
 }

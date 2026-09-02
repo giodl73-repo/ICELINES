@@ -96,7 +96,7 @@ For UI-neutral card or IceCast simulation/replay changes, also run:
 cargo test -p icelines-core --test season_simulation_card
 cargo test -p icelines-web --test team_card_routes
 cargo test -p icelines-cli --bin icelines tui::screens::team_card::tests
-powershell -ExecutionPolicy Bypass -File scripts/validate-card-document.ps1 -Path examples/season-simulation-card-nyr-2026-27.json
+powershell -ExecutionPolicy Bypass -File scripts/validate-card-document.ps1 -Path examples/season-simulation-card-alp-2026-27.json
 powershell -ExecutionPolicy Bypass -File scripts/test-card-reference-renderer.ps1
 ```
 

@@ -1593,7 +1593,7 @@ mod tests {
         AhlPreseasonRolloverConfig,
     ) {
         let mut camp: TrainingCampSimulationInput = serde_json::from_str(include_str!(
-            "../../examples/icecast-nyr-training-camp.json"
+            "../../examples/icecast-alp-training-camp.json"
         ))
         .unwrap();
         camp.config.trials = 100;
@@ -1620,7 +1620,7 @@ mod tests {
                 roster: vec![AhlRosterPlayer {
                     provider: AHL_PROVIDER.to_owned(),
                     provider_player_id: "8430".to_owned(),
-                    name: "Dylan Garand".to_owned(),
+                    name: "Sample Player 112".to_owned(),
                     position_group: "Goalies".to_owned(),
                     position: "G".to_owned(),
                     jersey_number: "31".to_owned(),
@@ -1655,12 +1655,12 @@ mod tests {
             },
             rows: vec![AhlIdentityCrosswalkRow {
                 provider_player_id: "8430".to_owned(),
-                ahl_display_name: "Dylan Garand".to_owned(),
+                ahl_display_name: "Sample Player 112".to_owned(),
                 ahl_birth_date: "2002-06-07".to_owned(),
                 match_basis: AhlIdentityMatchBasis::ExactNameAndBirthDate,
                 review_status: AhlIdentityReviewStatus::Reviewed,
                 nhl_player_id: Some(8_482_193),
-                nhl_display_name: Some("Dylan Garand".to_owned()),
+                nhl_display_name: Some("Sample Player 112".to_owned()),
                 nhl_birth_date: Some("2002-06-07".to_owned()),
                 evidence_urls: vec!["https://www.nhl.com/player/8482193".to_owned()],
                 note: "reviewed fixture".to_owned(),
@@ -1690,14 +1690,14 @@ mod tests {
         assert_eq!(forecast_only, view);
         assert_eq!(view.schema, AHL_PRESEASON_ROLLOVER_SCHEMA);
         assert_eq!(view.counts.reconciled_players, 1);
-        let garand = view
+        let reconciled_player = view
             .players
             .iter()
-            .find(|row| row.display_name == "Dylan Garand")
+            .find(|row| row.display_name == "Sample Player 112")
             .unwrap();
-        assert_eq!(garand.origins.len(), 2);
-        assert_eq!(garand.nhl_player_id, Some(8_482_193));
-        assert!(garand.identity_reviewed);
+        assert_eq!(reconciled_player.origins.len(), 2);
+        assert_eq!(reconciled_player.nhl_player_id, Some(8_482_193));
+        assert!(reconciled_player.identity_reviewed);
     }
 
     #[test]

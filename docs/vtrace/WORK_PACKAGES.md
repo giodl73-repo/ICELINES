@@ -627,7 +627,7 @@ Validation levels:
 
 | Level | Required | Commands / Evidence | Result |
 |---|---|---|---|
-| L0 | yes | Manifest/dependency graph inspection and feature compile checks. | target-not-met_dispositioned; pulse 01 records FLETCH path dependency, direct/transitive SLICE git dependencies, affected FLETCH commands, affected SLICE selector, and missing `cli` feature; Phase Rangers follow-up surfaces `pwsh scripts/rangers-lean-audit.ps1 [-Json]` in `COMMANDS.md` as the operator-visible audit without promoting lean support |
+| L0 | yes | Manifest/dependency graph inspection and feature compile checks. | target-not-met_dispositioned; pulse 01 records FLETCH path dependency, direct/transitive SLICE git dependencies, affected FLETCH commands, affected SLICE selector, and missing `cli` feature; Phase Rangers follow-up surfaces `pwsh scripts/lean-audit.ps1 [-Json]` in `COMMANDS.md` as the operator-visible audit without promoting lean support |
 | L1 | yes | Workspace checks. | pending |
 | L2 | yes | Lean CLI build plus offline smoke and command-surface evidence. | target-not-met |
 

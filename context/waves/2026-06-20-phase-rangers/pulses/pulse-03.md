@@ -20,7 +20,7 @@ metric family.
 |---|---|
 | `design/specs/icelines-signals.md` inspection | Promotion rule requires copy review, source/completeness disclosure, parity evidence when applicable, cache methodology when cached, and explicit non-claims. |
 | `context/waves/2026-06-20-phase-rangers/SIGNALS-DISCOVERY-GATE.md` | Records the approved roster-matrix shape, required fields, required copy, required tests, and explicit non-promotions. |
-| `scripts/rangers-workflow.ps1` from pulse 02 | Provides the NYR product thread for the first implementation target. |
+| `scripts/team-workflow.ps1` from pulse 02 | Provides the NYR product thread for the first implementation target. |
 
 ## Next pulse
 

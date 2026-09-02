@@ -765,8 +765,8 @@ mod tests {
         let lineup = build_fantasy_daily_lineup(
             rules.clone(),
             vec![FantasyLineupPlayerInput {
-                player_key: "nathan-mackinnon".to_string(),
-                display_name: "Nathan MacKinnon".to_string(),
+                player_key: "sample-player-002".to_string(),
+                display_name: "Sample Player 002".to_string(),
                 nhl_team: "COL".to_string(),
                 platform_positions: vec![Position::Center],
                 projected_value: 8.4,
@@ -803,9 +803,9 @@ mod tests {
         );
         let card = build_fantasy_morning_card(FantasyMorningCardInput {
             league_id: "league-1".to_string(),
-            league_name: "Dexter's League".to_string(),
-            fantasy_team_id: "dexters-dawgs".to_string(),
-            fantasy_team_name: "Dexter's Dawgs".to_string(),
+            league_name: "Sample League".to_string(),
+            fantasy_team_id: "sample-multicategory".to_string(),
+            fantasy_team_name: "Sample Multicategory".to_string(),
             scoring_scheme_id: "league-points".to_string(),
             scoring_scheme_name: "League points".to_string(),
             roster_snapshot_id: Some("roster-2026-10-08".to_string()),

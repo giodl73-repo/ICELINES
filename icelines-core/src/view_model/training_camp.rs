@@ -2671,9 +2671,9 @@ mod tests {
     }
 
     #[test]
-    fn rangers_fixture_keeps_greentree_and_beaudoin_as_distinct_battles() {
+    fn neutral_fixture_keeps_two_prospects_as_distinct_battles() {
         let input: TrainingCampSimulationInput = serde_json::from_str(include_str!(
-            "../../../examples/icecast-nyr-training-camp.json"
+            "../../../examples/icecast-alp-training-camp.json"
         ))
         .unwrap();
         let greentree = input
@@ -2687,7 +2687,7 @@ mod tests {
             .find(|player| player.player_id == 8_484_786)
             .unwrap();
 
-        assert_eq!(greentree.display_name, "Liam Greentree");
+        assert_eq!(greentree.display_name, "Sample Player 219");
         assert_eq!(greentree.primary_position, Position::RightWing);
         assert!(greentree.prospect && greentree.rookie_eligible);
         assert_eq!(greentree.pre_camp_make_probability, Some(0.35));
@@ -2695,7 +2695,7 @@ mod tests {
             greentree.minimum_forward_role,
             Some(TrainingCampForwardRole::TopNine)
         );
-        assert_eq!(beaudoin.display_name, "Cole Beaudoin");
+        assert_eq!(beaudoin.display_name, "Sample Player 078");
         assert_eq!(beaudoin.primary_position, Position::Center);
         assert!(beaudoin.prospect && beaudoin.rookie_eligible);
         assert_eq!(beaudoin.pre_camp_make_probability, Some(0.15));
@@ -2703,9 +2703,9 @@ mod tests {
     }
 
     #[test]
-    fn kraken_fixture_preserves_reported_lines_and_separates_roster_from_dress() {
+    fn neutral_fixture_preserves_reported_lines_and_separates_roster_from_dress() {
         let input: TrainingCampSimulationInput = serde_json::from_str(include_str!(
-            "../../../examples/icecast-sea-training-camp.json"
+            "../../../examples/icecast-brv-training-camp.json"
         ))
         .unwrap();
         let forecast = simulate_training_camp(&input).unwrap();
@@ -2713,13 +2713,13 @@ mod tests {
         assert!(forecast.valid_trials > 9_500);
         assert_eq!(forecast.opening_roster_size, 23);
         assert_eq!(forecast.dressed_roster_size, 20);
-        let meyers = forecast
+        let extra_forward = forecast
             .players
             .iter()
-            .find(|player| player.display_name == "Ben Meyers")
+            .find(|player| player.display_name == "Sample Player 037")
             .unwrap();
-        assert!(meyers.make_probability > meyers.dressed_probability);
-        assert!(meyers.healthy_scratch_probability > 0.0);
+        assert!(extra_forward.make_probability > extra_forward.dressed_probability);
+        assert!(extra_forward.healthy_scratch_probability > 0.0);
 
         let lineups = build_training_camp_lineup_set(&input, &forecast, 1).unwrap();
         let lineup = &lineups.branches[0].lineup;
@@ -2731,11 +2731,25 @@ mod tests {
                 row.right_wing.as_ref().unwrap().display_name.as_str(),
             )
         };
-        assert_eq!(names(0), ("Bobby McMann", "Matty Beniers", "Jordan Eberle"));
-        assert_eq!(names(1), ("Jared McCann", "Shane Wright", "Berkly Catton"));
+        assert_eq!(
+            names(0),
+            (
+                "Sample Player 040",
+                "Sample Player 248",
+                "Sample Player 196"
+            )
+        );
+        assert_eq!(
+            names(1),
+            (
+                "Sample Player 171",
+                "Sample Player 371",
+                "Sample Player 038"
+            )
+        );
         assert_eq!(
             lineup.goalies.starter.as_ref().unwrap().display_name,
-            "Joey Daccord"
+            "Sample Player 188"
         );
         assert_eq!(lineup.extras.len(), 3);
     }

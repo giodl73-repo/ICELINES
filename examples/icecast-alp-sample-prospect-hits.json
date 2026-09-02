@@ -1,0 +1,16 @@
+{
+  "name": "Alberts Sample Prospect hits immediately",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "NYR-sample-prospect-immediate-hit",
+      "kind": "custom",
+      "team": "NYR",
+      "player": "Sample Player 010",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.0,
+      "occurrence_probability": 1.0,
+      "label": "Sample Prospect earns an NHL role immediately and performs as a positive top-four-quality defenseman"
+    }
+  ]
+}

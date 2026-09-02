@@ -154,12 +154,12 @@ impl Scheme {
         }
     }
 
-    /// Dexter's Dawgs 2025-26 Yahoo points-league scoring, recovered from the
+    /// Sample Multicategory 2025-26 Yahoo points-league scoring, recovered from the
     /// exported workbook's exact player-stat and fantasy-point totals.
-    pub fn dexters_dawgs() -> Self {
+    pub fn sample_multicategory() -> Self {
         Self {
-            name: "dexters-dawgs".into(),
-            description: "Dexter's Dawgs Yahoo points scoring (2025-26)".into(),
+            name: "sample-multicategory".into(),
+            description: "Sample Multicategory Yahoo points scoring (2025-26)".into(),
             source: SchemeSource::Custom,
             skater: SkaterWeights {
                 goals: 3.25,
@@ -203,7 +203,7 @@ impl Scheme {
         vec![
             Self::yahoo_standard(),
             Self::espn_standard(),
-            Self::dexters_dawgs(),
+            Self::sample_multicategory(),
             Self::simple_pts(),
         ]
     }
@@ -432,7 +432,7 @@ mod tests {
     }
 
     #[test]
-    fn l0_dexters_dawgs_reproduces_exported_mackinnon_total() {
+    fn l0_sample_multicategory_reproduces_exported_mackinnon_total() {
         let stats = SkaterStats {
             goals: 35,
             assists: 39,
@@ -443,7 +443,8 @@ mod tests {
             blocks: 23,
             ..Default::default()
         };
-        let score = compute_fantasy_score(&stats, &Scheme::dexters_dawgs().skater, 80).unwrap();
+        let score =
+            compute_fantasy_score(&stats, &Scheme::sample_multicategory().skater, 80).unwrap();
         assert!((score.total - 278.0).abs() < 0.001);
     }
 

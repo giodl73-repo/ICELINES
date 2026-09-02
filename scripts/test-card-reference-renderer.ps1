@@ -4,16 +4,16 @@ $temp = Join-Path ([System.IO.Path]::GetTempPath()) ("icelines-card-render-" + [
 try {
     & (Join-Path $PSScriptRoot "render-card-document.ps1") `
         -Path @(
-            (Join-Path $root "examples\team-prognosis-card-nyr-2026-27.json"),
-            (Join-Path $root "examples\team-prognosis-card-sea-2026-27.json"),
-            (Join-Path $root "examples\fantasy-roster-card-dexters-dawgs-2026-10-05.json"),
-            (Join-Path $root "examples\fantasy-draft-card-dexters-dawgs-pick-7.json"),
-            (Join-Path $root "examples\fantasy-morning-card-dexters-dawgs-2026-10-08.json"),
-            (Join-Path $root "examples\fantasy-trade-card-dexters-dawgs-fox-rantanen.json"),
-            (Join-Path $root "examples\season-simulation-card-nyr-2026-27.json"),
-            (Join-Path $root "examples\season-simulation-card-sea-2026-27.json"),
-            (Join-Path $root "examples\season-simulation-card-nyr-2024-25.json"),
-            (Join-Path $root "examples\season-simulation-card-sea-2024-25.json")
+            (Join-Path $root "examples\team-prognosis-card-alp-2026-27.json"),
+            (Join-Path $root "examples\team-prognosis-card-brv-2026-27.json"),
+            (Join-Path $root "examples\fantasy-roster-card-sample-squad-2026-10-05.json"),
+            (Join-Path $root "examples\fantasy-draft-card-sample-squad-pick-7.json"),
+            (Join-Path $root "examples\fantasy-morning-card-sample-squad-2026-10-08.json"),
+            (Join-Path $root "examples\fantasy-trade-card-sample-squad-skater-a-skater-b.json"),
+            (Join-Path $root "examples\season-simulation-card-alp-2026-27.json"),
+            (Join-Path $root "examples\season-simulation-card-brv-2026-27.json"),
+            (Join-Path $root "examples\season-simulation-card-alp-2024-25.json"),
+            (Join-Path $root "examples\season-simulation-card-brv-2024-25.json")
         ) `
         -OutDir $temp
 
@@ -79,7 +79,7 @@ try {
         }
     }
     $decisionDocument = [System.IO.File]::ReadAllText(
-        (Join-Path $root "examples\team-prognosis-card-nyr-2026-27.json"),
+        (Join-Path $root "examples\team-prognosis-card-alp-2026-27.json"),
         [System.Text.Encoding]::UTF8
     ) | ConvertFrom-Json
     $decisionDocument.document_id = "renderer-decision-fixture"

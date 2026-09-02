@@ -41,7 +41,7 @@ The command:
 | `cargo fmt --check` | passed |
 | `cargo test -p icelines-cli --bin icelines signals` | passed |
 | `cargo test -p icelines-cli --test signals_system` | passed |
-| `powershell -ExecutionPolicy Bypass -File scripts\rangers-workflow.ps1` | passed |
+| `powershell -ExecutionPolicy Bypass -File scripts\team-workflow.ps1` | passed |
 | `C:\src\proof\target\debug\proof.exe check C:\src\TRACKER\repos\applied-systems\icelines\docs\vtrace --errors-only` | passed |
 | `git diff --check` | passed |
 

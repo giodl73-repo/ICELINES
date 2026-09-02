@@ -1,0 +1,329 @@
+{
+  "schema": "card_document.v1",
+  "card_kind": "forecast_movement",
+  "document_id": "forecast-movement:NYR:20242025:20250131:20250228",
+  "fingerprint": "30a45a0fe388a0be8c84ca1434799b63d97b49f40492828e2a94c0df29be936f",
+  "title": "Aurora Lynx outlook movement",
+  "subtitle": "2025-01-31 → 2025-02-28 · 1000 trials · seed 20242025",
+  "context": {
+    "view": {
+      "window": {
+        "season": 20242025,
+        "season_type": "regular"
+      },
+      "generated_at": "2025-03-01T12:00:00Z",
+      "source_state": [],
+      "completeness": "complete",
+      "data_generation": null
+    },
+    "evidence_at": "2025-03-01T12:00:00Z",
+    "evidence_label": "simulated",
+    "builder_version": "forecast_movement_card.v1",
+    "methodology_versions": {
+      "card_projection": "forecast_movement_card.v1",
+      "forecast_movement": "team_season_forecast_movement.v1"
+    },
+    "joins": {
+      "league_id": null,
+      "roster_snapshot_id": null,
+      "calendar_fingerprint": null,
+      "scoring_scheme_id": null,
+      "scenario_id": null,
+      "scenario_comparison_key": "11cdcfcf9c10338a0384454803ca0aa67abdcb1ddce371c7f0b71c7faf320fef:5f14d35e417c6ca1897e9ebccfbe773fb92452b1b23282b9cc868460db3ac20a",
+      "team_ids": [
+        "NYR"
+      ],
+      "player_ids": [],
+      "game_ids": []
+    },
+    "simulation": {
+      "model_id": "icecast-movement",
+      "model_version": "team_season_forecast_movement.v1",
+      "parameter_fingerprint": "684ad852eaabdc513f31bf109544f791aa2a1467720fc1b45ff6435ba5624d3d",
+      "seed": 20242025,
+      "trials": 1000
+    }
+  },
+  "theme": {
+    "theme_key": "team_nyr",
+    "primary": "#0038A8",
+    "secondary": "#CE1126",
+    "accent": "#FFFFFF",
+    "surface": "#FFFFFF",
+    "text": "#111111",
+    "team_abbreviation": "NYR",
+    "ascii_identity": "NYR",
+    "minimum_text_contrast_x100": 450
+  },
+  "required_capabilities": [],
+  "pages": [
+    {
+      "id": "shift",
+      "literal_label": "Forecast movement between sealed checkpoints",
+      "display_label": "The Shift",
+      "order": 1,
+      "accessible_summary": "Aurora Lynx projected points, playoff odds, Cup odds, observed standings, and remaining-season movement.",
+      "sections": [
+        {
+          "section_type": "identity_header",
+          "id": "movement-team",
+          "eyebrow": "IceCast forecast movement",
+          "title": "Aurora Lynx",
+          "subtitle": "2025-01-31 → 2025-02-28",
+          "identities": [
+            {
+              "kind": "team",
+              "subject_id": "NYR",
+              "label": "Aurora Lynx",
+              "asset_id": null
+            }
+          ]
+        },
+        {
+          "section_type": "scenario_bridge",
+          "id": "forecast-shift",
+          "title": "What changed",
+          "from_label": "2025-01-31",
+          "to_label": "2025-02-28",
+          "metrics": [
+            {
+              "metric": {
+                "key": "projected_points_delta",
+                "label": "Projected points",
+                "value": {
+                  "decimal": 0.06300000000000239
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+0.06",
+              "accessible_text": "Projected points changed by +0.06",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 0.06300000000000239
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "playoff_probability_delta",
+                "label": "Playoff odds",
+                "value": {
+                  "decimal": 1.100000000000001
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+1.10 pp",
+              "accessible_text": "Playoff odds changed by +1.10 pp",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 1.100000000000001
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "cup_probability_delta",
+                "label": "Stanley Cup odds",
+                "value": {
+                  "decimal": 0.7
+                },
+                "unit": "percentage",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+0.70 pp",
+              "accessible_text": "Stanley Cup odds changed by +0.70 pp",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 0.7
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "longest_streak_delta",
+                "label": "Longest win streak",
+                "value": {
+                  "decimal": -0.226
+                },
+                "unit": "games",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-0.23",
+              "accessible_text": "Longest win streak changed by -0.23",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -0.226
+                }
+              },
+              "evidence_label": "simulated"
+            }
+          ],
+          "evidence_label": "simulated"
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "checkpoint-shift",
+          "title": "Actual checkpoint movement",
+          "metrics": [
+            {
+              "metric": {
+                "key": "completed_games_delta",
+                "label": "New games",
+                "value": {
+                  "decimal": 9.0
+                },
+                "unit": "games",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+9.00",
+              "accessible_text": "New games changed by +9.00",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 9.0
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "observed_points_delta",
+                "label": "Observed standings points",
+                "value": {
+                  "decimal": 10.0
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "+10.00",
+              "accessible_text": "Observed standings points changed by +10.00",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": 10.0
+                }
+              },
+              "evidence_label": "simulated"
+            },
+            {
+              "metric": {
+                "key": "remaining_points_delta",
+                "label": "Expected remaining points",
+                "value": {
+                  "decimal": -9.936999999999998
+                },
+                "unit": "points",
+                "precision": "two_decimals",
+                "token": null
+              },
+              "display_text": "-9.94",
+              "accessible_text": "Expected remaining points changed by -9.94",
+              "comparison": {
+                "label": "later minus earlier",
+                "baseline": {
+                  "decimal": 0.0
+                },
+                "delta": {
+                  "decimal": -9.936999999999998
+                }
+              },
+              "evidence_label": "simulated"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "insider",
+      "literal_label": "Movement methodology and source authority",
+      "display_label": "The Insider",
+      "order": 2,
+      "accessible_summary": "How the two checkpoint runs were compared and which complete artifacts support the deltas.",
+      "sections": [
+        {
+          "section_type": "methodology",
+          "id": "movement-methodology",
+          "title": "How to read the movement",
+          "methods": [
+            {
+              "key": "sealed-checkpoint-delta",
+              "label": "Sealed checkpoint delta",
+              "version": "team_season_forecast_movement.v1",
+              "summary": "Every value is later minus earlier. Both complete league artifacts are fingerprinted before this team is selected."
+            }
+          ],
+          "limitations": [
+            "Movement is later minus earlier. Both league runs must share season, schedule size, trials, seed, and teams.",
+            "Observed and expected-remainder deltas are present only when both runs contain typed replay checkpoints.",
+            "Fingerprints cover each complete league artifact before any team is selected for display."
+          ]
+        },
+        {
+          "section_type": "provenance",
+          "id": "movement-sources",
+          "title": "Source authority",
+          "provenance_ids": [
+            "earlier-run",
+            "later-run"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "provenance": [
+    {
+      "id": "earlier-run",
+      "source": "schedule",
+      "label": "Earlier sealed IceCast league run",
+      "state": "complete",
+      "observed_at": null,
+      "fingerprint": "11cdcfcf9c10338a0384454803ca0aa67abdcb1ddce371c7f0b71c7faf320fef",
+      "note": "2025-01-31"
+    },
+    {
+      "id": "later-run",
+      "source": "schedule",
+      "label": "Later sealed IceCast league run",
+      "state": "complete",
+      "observed_at": "2025-03-01T12:00:00Z",
+      "fingerprint": "5f14d35e417c6ca1897e9ebccfbe773fb92452b1b23282b9cc868460db3ac20a",
+      "note": "2025-02-28"
+    }
+  ],
+  "warnings": [],
+  "empty_state": null
+}

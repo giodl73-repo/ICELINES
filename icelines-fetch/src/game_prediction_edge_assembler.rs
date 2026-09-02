@@ -650,10 +650,10 @@ mod tests {
     #[test]
     fn l0_sealed_player_line_matchup_attaches_to_the_exact_game_only() {
         let away: TeamLineupProjectionView =
-            serde_json::from_str(include_str!("../../examples/team-lineup-sea-2026-27.json"))
+            serde_json::from_str(include_str!("../../examples/team-lineup-brv-2026-27.json"))
                 .unwrap();
         let home: TeamLineupProjectionView =
-            serde_json::from_str(include_str!("../../examples/team-lineup-nyr-2026-27.json"))
+            serde_json::from_str(include_str!("../../examples/team-lineup-alp-2026-27.json"))
                 .unwrap();
         let forecast_at = Utc.with_ymd_and_hms(2026, 10, 10, 16, 0, 0).unwrap();
         let captured_at = Utc.with_ymd_and_hms(2026, 10, 10, 15, 0, 0).unwrap();

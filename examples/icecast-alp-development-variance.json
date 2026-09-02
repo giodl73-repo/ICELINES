@@ -1,0 +1,86 @@
+{
+  "name": "NYR multi-lens historically calibrated development and regression range",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "NYR-sample-prospect-breakout-range",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 010",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.0,
+      "occurrence_probability": 0.30,
+      "label": "Sample Prospect immediately performs at positive top-four quality; scouting prior retained because NHL-only history cannot observe non-arrivals"
+    },
+    {
+      "id": "NYR-perreault-breakout-range",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 128",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.4671,
+      "occurrence_probability": 0.3263,
+      "label": "Perreault becomes a strong top-six producer"
+    },
+    {
+      "id": "NYR-sample-wing-b-breakout-range",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 019",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.9810,
+      "occurrence_probability": 0.1666,
+      "label": "Sample Scorer takes another star-level scoring step"
+    },
+    {
+      "id": "NYR-sample-forward-a-breakout-range",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 392",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.0187,
+      "occurrence_probability": 0.2389,
+      "label": "Sample Forward converts his forechecking and physicality into positive middle-six value"
+    },
+    {
+      "id": "NYR-laba-breakout-range",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 280",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.0187,
+      "occurrence_probability": 0.2389,
+      "label": "Laba becomes a positive middle-six two-way center"
+    },
+    {
+      "id": "NYR-miller-downturn-range",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 150",
+      "effective_date": "2026-09-29",
+      "strength_delta": -3.3248,
+      "occurrence_probability": 0.4184,
+      "label": "Miller experiences an age-related top-line downturn"
+    },
+    {
+      "id": "NYR-sample-center-a-downturn-range",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 257",
+      "effective_date": "2026-09-29",
+      "strength_delta": -3.3248,
+      "occurrence_probability": 0.4184,
+      "label": "Sample Center loses another step of even-strength impact"
+    },
+    {
+      "id": "NYR-sample-goaltender-a-downturn-range",
+      "kind": "goalie",
+      "team": "NYR",
+      "player": "Sample Player 142",
+      "effective_date": "2026-09-29",
+      "strength_delta": -4.3692,
+      "occurrence_probability": 0.5592,
+      "label": "Sample Goalie has a material full-season performance downturn"
+    }
+  ]
+}

@@ -1,0 +1,913 @@
+{
+  "schema": "card_document.v1",
+  "card_kind": "fantasy_draft",
+  "document_id": "fantasy-draft:sample-multicategory-league:sample-multicategory:20252026",
+  "fingerprint": "f395b1fb5dc13b4673b09d49794f8de28bb3bccd2a5abeb24e41736105ba45b9",
+  "title": "Sample Multicategory — draft board",
+  "subtitle": "Sample 2026-27 League · sample-multicategory scoring · 20252026 stats",
+  "context": {
+    "view": {
+      "window": {
+        "season": 20262027,
+        "season_type": "regular"
+      },
+      "generated_at": "2026-09-30T19:00:00Z",
+      "source_state": [],
+      "completeness": "complete",
+      "data_generation": null
+    },
+    "evidence_at": "2026-09-30T19:00:00Z",
+    "evidence_label": "estimated",
+    "builder_version": "fantasy_draft_card.v1",
+    "methodology_versions": {
+      "draft_ranking": "fantasy_draft_board.v1",
+      "taken_import": "fantasy_taken_import.v1"
+    },
+    "joins": {
+      "league_id": "sample-multicategory-league",
+      "roster_snapshot_id": "draft-fixture-pick-7",
+      "calendar_fingerprint": "deterministic-draft-calendar-v1",
+      "scoring_scheme_id": "sample-multicategory",
+      "scenario_id": null,
+      "team_ids": [
+        "sample-multicategory"
+      ],
+      "player_ids": [
+        "sample-player-003",
+        "sample-player-004",
+        "sample-player-005",
+        "sample-player-006",
+        "sample-player-007",
+        "sample-player-008"
+      ],
+      "game_ids": []
+    },
+    "simulation": {
+      "model_id": null,
+      "model_version": null,
+      "parameter_fingerprint": null,
+      "seed": null,
+      "trials": null
+    }
+  },
+  "theme": {
+    "theme_key": "fantasy-draft",
+    "primary": "#12355B",
+    "secondary": "#DCEAF5",
+    "accent": "#F4A261",
+    "surface": "#FFFFFF",
+    "text": "#102A43",
+    "team_abbreviation": null,
+    "ascii_identity": "Sample Multicategory",
+    "minimum_text_contrast_x100": 450
+  },
+  "required_capabilities": [],
+  "pages": [
+    {
+      "id": "draft-board",
+      "literal_label": "Draft recommendations",
+      "display_label": "The Draft Board",
+      "order": 1,
+      "accessible_summary": "Best available players and roster-fit recommendation for Sample Multicategory.",
+      "sections": [
+        {
+          "section_type": "identity_header",
+          "id": "fantasy-draft-identity",
+          "eyebrow": "Sample 2026-27 League",
+          "title": "Sample Multicategory",
+          "subtitle": "On the clock",
+          "identities": [
+            {
+              "kind": "team",
+              "subject_id": "fantasy-team:sample-multicategory",
+              "label": "Sample Multicategory",
+              "asset_id": null
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "draft-state",
+          "title": "Draft state",
+          "metrics": [
+            {
+              "metric": {
+                "key": "available_players",
+                "label": "Available",
+                "value": {
+                  "integer": 6
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "6",
+              "accessible_text": "Available 6",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "excluded_taken_players",
+                "label": "Taken",
+                "value": {
+                  "integer": 2
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "2",
+              "accessible_text": "Taken 2",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "open_starter_slots",
+                "label": "Open starters",
+                "value": {
+                  "integer": 4
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "4",
+              "accessible_text": "Open starters 4",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "open_slots",
+                "label": "Priority slots",
+                "value": {
+                  "text": "LW1, RW1, D1, G1"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "LW1, RW1, D1, G1",
+              "accessible_text": "Priority slots LW1, RW1, D1, G1",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            }
+          ]
+        },
+        {
+          "section_type": "decision",
+          "id": "next-pick",
+          "title": "The pick",
+          "recommendation": "Draft Sample Player 003 — 113.4 draft value",
+          "rationale": [
+            "league-scored quality 78.0",
+            "fills open LW starter slot",
+            "10.0 quiet-slate games",
+            "31% exact-date roster collision",
+            "playoff fit +3.0 usable starts / +8.0 active value"
+          ],
+          "alternatives": [
+            {
+              "id": "position-c",
+              "label": "C: Sample Player 007",
+              "detail": "Draft value 100.5"
+            },
+            {
+              "id": "position-lw",
+              "label": "LW: Sample Player 003",
+              "detail": "Draft value 113.4"
+            },
+            {
+              "id": "position-rw",
+              "label": "RW: Sample Player 004",
+              "detail": "Draft value 112.5"
+            },
+            {
+              "id": "position-d",
+              "label": "D: Sample Player 005",
+              "detail": "Draft value 108.1"
+            },
+            {
+              "id": "position-g",
+              "label": "G: Sample Player 006",
+              "detail": "Draft value 96.6"
+            },
+            {
+              "id": "position-util",
+              "label": "UTIL: Sample Player 003",
+              "detail": "Draft value 113.4"
+            },
+            {
+              "id": "fallback-pick",
+              "label": "Fallback: Sample Player 004",
+              "detail": "Draft value 112.5"
+            }
+          ],
+          "action_id": null,
+          "token": "decision_highlight",
+          "evidence_label": "estimated"
+        },
+        {
+          "section_type": "player_list",
+          "id": "best-available",
+          "title": "Best available",
+          "rows": [
+            {
+              "player_id": "sample-player-003",
+              "name": "Sample Player 003",
+              "role": "#1 · DAL · LW · fills LW",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "draft_value",
+                    "label": "Draft value",
+                    "value": {
+                      "decimal": 113.38000000000001
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "113.4",
+                  "accessible_text": "Draft value 113.4",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "league_scored_quality",
+                    "label": "League quality",
+                    "value": {
+                      "decimal": 78.0
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "78.0",
+                  "accessible_text": "League quality 78.0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "incremental_usable_starts",
+                    "label": "Usable-start value",
+                    "value": {
+                      "decimal": 6.0
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "6.0",
+                  "accessible_text": "Usable-start value 6.0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "decision_highlight"
+              ],
+              "evidence_label": "estimated"
+            },
+            {
+              "player_id": "sample-player-004",
+              "name": "Sample Player 004",
+              "role": "#2 · TOR · LW/RW · fills LW",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "draft_value",
+                    "label": "Draft value",
+                    "value": {
+                      "decimal": 112.55
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "112.5",
+                  "accessible_text": "Draft value 112.5",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "league_scored_quality",
+                    "label": "League quality",
+                    "value": {
+                      "decimal": 75.0
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "75.0",
+                  "accessible_text": "League quality 75.0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "incremental_usable_starts",
+                    "label": "Usable-start value",
+                    "value": {
+                      "decimal": 6.25
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "6.2",
+                  "accessible_text": "Usable-start value 6.2",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "supporting_evidence"
+              ],
+              "evidence_label": "estimated"
+            },
+            {
+              "player_id": "sample-player-005",
+              "name": "Sample Player 005",
+              "role": "#3 · COL · D · fills D",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "draft_value",
+                    "label": "Draft value",
+                    "value": {
+                      "decimal": 108.13999999999999
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "108.1",
+                  "accessible_text": "Draft value 108.1",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "league_scored_quality",
+                    "label": "League quality",
+                    "value": {
+                      "decimal": 81.0
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "81.0",
+                  "accessible_text": "League quality 81.0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "incremental_usable_starts",
+                    "label": "Usable-start value",
+                    "value": {
+                      "decimal": 4.75
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "4.8",
+                  "accessible_text": "Usable-start value 4.8",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "supporting_evidence"
+              ],
+              "evidence_label": "estimated"
+            },
+            {
+              "player_id": "sample-player-008",
+              "name": "Sample Player 008",
+              "role": "#4 · VAN · D · fills D",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "draft_value",
+                    "label": "Draft value",
+                    "value": {
+                      "decimal": 107.96000000000001
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "108.0",
+                  "accessible_text": "Draft value 108.0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "league_scored_quality",
+                    "label": "League quality",
+                    "value": {
+                      "decimal": 77.0
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "77.0",
+                  "accessible_text": "League quality 77.0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "incremental_usable_starts",
+                    "label": "Usable-start value",
+                    "value": {
+                      "decimal": 5.25
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "5.2",
+                  "accessible_text": "Usable-start value 5.2",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "supporting_evidence"
+              ],
+              "evidence_label": "estimated"
+            },
+            {
+              "player_id": "sample-player-007",
+              "name": "Sample Player 007",
+              "role": "#5 · SJS · C · best value",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "draft_value",
+                    "label": "Draft value",
+                    "value": {
+                      "decimal": 100.5
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "100.5",
+                  "accessible_text": "Draft value 100.5",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "league_scored_quality",
+                    "label": "League quality",
+                    "value": {
+                      "decimal": 76.0
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "76.0",
+                  "accessible_text": "League quality 76.0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "incremental_usable_starts",
+                    "label": "Usable-start value",
+                    "value": {
+                      "decimal": 5.75
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "5.8",
+                  "accessible_text": "Usable-start value 5.8",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "supporting_evidence"
+              ],
+              "evidence_label": "estimated"
+            },
+            {
+              "player_id": "sample-player-006",
+              "name": "Sample Player 006",
+              "role": "#6 · NYR · G · fills G",
+              "asset_id": null,
+              "metrics": [
+                {
+                  "metric": {
+                    "key": "draft_value",
+                    "label": "Draft value",
+                    "value": {
+                      "decimal": 96.62
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "96.6",
+                  "accessible_text": "Draft value 96.6",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "league_scored_quality",
+                    "label": "League quality",
+                    "value": {
+                      "decimal": 73.0
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "73.0",
+                  "accessible_text": "League quality 73.0",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                },
+                {
+                  "metric": {
+                    "key": "incremental_usable_starts",
+                    "label": "Usable-start value",
+                    "value": {
+                      "decimal": 4.25
+                    },
+                    "unit": "score",
+                    "precision": "one_decimal",
+                    "token": null
+                  },
+                  "display_text": "4.2",
+                  "accessible_text": "Usable-start value 4.2",
+                  "comparison": null,
+                  "evidence_label": "estimated"
+                }
+              ],
+              "tokens": [
+                "supporting_evidence"
+              ],
+              "evidence_label": "estimated"
+            }
+          ]
+        },
+        {
+          "section_type": "state_notice",
+          "id": "draft-warnings",
+          "title": "Draft evidence warnings",
+          "detail": "Resolve changing draft-room state before acting.",
+          "empty_state": null,
+          "warnings": [
+            {
+              "kind": "partial_source",
+              "source": "fantasy_import",
+              "message": "Showcase candidate values, platform eligibility, injuries, and taken-player state are deterministic fixture inputs, not current claims.",
+              "recovery": []
+            }
+          ],
+          "token": "warning"
+        }
+      ]
+    },
+    {
+      "id": "draft-insider",
+      "literal_label": "Draft value evidence",
+      "display_label": "The Insider",
+      "order": 2,
+      "accessible_summary": "Top-pick value components, imported draft state, warnings, and methodology.",
+      "sections": [
+        {
+          "section_type": "metric_strip",
+          "id": "top-pick-components",
+          "title": "Why Sample Player 003 ranks first",
+          "metrics": [
+            {
+              "metric": {
+                "key": "quality",
+                "label": "League quality",
+                "value": {
+                  "decimal": 78.0
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "78.0",
+              "accessible_text": "League quality 78.0",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "starter_gap",
+                "label": "Starter gap",
+                "value": {
+                  "decimal": 12.0
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "12.0",
+              "accessible_text": "Starter gap 12.0",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "scarcity",
+                "label": "Scarcity",
+                "value": {
+                  "decimal": 3.48
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "3.5",
+              "accessible_text": "Scarcity 3.5",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "flexibility",
+                "label": "Position flexibility",
+                "value": {
+                  "decimal": 0.0
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "0.0",
+              "accessible_text": "Position flexibility 0.0",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "usable_starts",
+                "label": "Usable starts",
+                "value": {
+                  "decimal": 6.0
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "6.0",
+              "accessible_text": "Usable starts 6.0",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "quiet_slate",
+                "label": "Quiet slates",
+                "value": {
+                  "decimal": 7.5
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "7.5",
+              "accessible_text": "Quiet slates 7.5",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "schedule_diversity",
+                "label": "Schedule diversity",
+                "value": {
+                  "decimal": 2.76
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "2.8",
+              "accessible_text": "Schedule diversity 2.8",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "playoff_fit",
+                "label": "Playoff fit",
+                "value": {
+                  "decimal": 6.5
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "6.5",
+              "accessible_text": "Playoff fit 6.5",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "collision_cost",
+                "label": "Collision cost",
+                "value": {
+                  "decimal": -1.8599999999999999
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "-1.9",
+              "accessible_text": "Collision cost -1.9",
+              "comparison": null,
+              "evidence_label": "estimated"
+            },
+            {
+              "metric": {
+                "key": "risk_penalty",
+                "label": "Risk penalty",
+                "value": {
+                  "decimal": -1.0
+                },
+                "unit": "score",
+                "precision": "one_decimal",
+                "token": null
+              },
+              "display_text": "-1.0",
+              "accessible_text": "Risk penalty -1.0",
+              "comparison": null,
+              "evidence_label": "estimated"
+            }
+          ]
+        },
+        {
+          "section_type": "metric_strip",
+          "id": "import-state",
+          "title": "Imported draft state",
+          "metrics": [
+            {
+              "metric": {
+                "key": "taken_matched",
+                "label": "Taken matched",
+                "value": {
+                  "integer": 2
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "2",
+              "accessible_text": "Taken matched 2",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "taken_ambiguous",
+                "label": "Taken ambiguous",
+                "value": {
+                  "integer": 0
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "0",
+              "accessible_text": "Taken ambiguous 0",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "taken_unresolved",
+                "label": "Taken unresolved",
+                "value": {
+                  "integer": 0
+                },
+                "unit": "count",
+                "precision": "integer",
+                "token": null
+              },
+              "display_text": "0",
+              "accessible_text": "Taken unresolved 0",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            },
+            {
+              "metric": {
+                "key": "eligibility_state",
+                "label": "Eligibility",
+                "value": {
+                  "text": "Canonical NHL positions"
+                },
+                "unit": "none",
+                "precision": "raw",
+                "token": null
+              },
+              "display_text": "Canonical NHL positions",
+              "accessible_text": "Eligibility Canonical NHL positions",
+              "comparison": null,
+              "evidence_label": "confirmed"
+            }
+          ]
+        },
+        {
+          "section_type": "state_notice",
+          "id": "draft-insider-warnings",
+          "title": "Draft evidence warnings",
+          "detail": "Resolve changing draft-room state before acting.",
+          "empty_state": null,
+          "warnings": [
+            {
+              "kind": "partial_source",
+              "source": "fantasy_import",
+              "message": "Showcase candidate values, platform eligibility, injuries, and taken-player state are deterministic fixture inputs, not current claims.",
+              "recovery": []
+            }
+          ],
+          "token": "warning"
+        },
+        {
+          "section_type": "methodology",
+          "id": "fantasy-draft-methodology",
+          "title": "Methodology",
+          "methods": [
+            {
+              "key": "draft-value",
+              "label": "Draft value",
+              "version": "fantasy_draft_board.v1",
+              "summary": "League-scored quality is adjusted for starter gaps, replacement scarcity, multi-position flexibility, usable starts, quiet slates, schedule collisions, playoff fit, and risk."
+            },
+            {
+              "key": "draft-state",
+              "label": "Availability authority",
+              "version": "fantasy_taken_import.v1",
+              "summary": "Pasted taken players and platform eligibility are resolved before IceLines ranks the remaining pool."
+            }
+          ],
+          "limitations": [
+            "Recommendations are advisory and do not submit a fantasy draft pick.",
+            "Refresh the taken-player list, injuries, roles, and platform eligibility immediately before the pick."
+          ]
+        },
+        {
+          "section_type": "provenance",
+          "id": "fantasy-draft-sources",
+          "title": "Source authority",
+          "provenance_ids": [
+            "fantasy-draft-board"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "provenance": [
+    {
+      "id": "fantasy-draft-board",
+      "source": "fantasy_import",
+      "label": "Scored player pool, roster gaps, taken list, eligibility, and schedule fit",
+      "state": "complete",
+      "observed_at": "2026-09-30T19:00:00Z",
+      "fingerprint": "d65a9c8e5f120c5b8e702663de05bd2ac897c5f004ba78fc8a4a70fc52816387",
+      "note": "6 available players after excluding 2 taken players"
+    }
+  ],
+  "warnings": [
+    {
+      "kind": "partial_source",
+      "source": "fantasy_import",
+      "message": "Showcase candidate values, platform eligibility, injuries, and taken-player state are deterministic fixture inputs, not current claims.",
+      "recovery": []
+    }
+  ],
+  "empty_state": null
+}

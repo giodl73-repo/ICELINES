@@ -23,8 +23,8 @@ dependency surgery wave.
 Run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\rangers-lean-audit.ps1
-powershell -ExecutionPolicy Bypass -File scripts\rangers-lean-audit.ps1 -Json
+powershell -ExecutionPolicy Bypass -File scripts\lean-audit.ps1
+powershell -ExecutionPolicy Bypass -File scripts\lean-audit.ps1 -Json
 ```
 
 The script intentionally verifies the blocker state instead of trying to force a

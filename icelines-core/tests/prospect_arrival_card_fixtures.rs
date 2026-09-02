@@ -1,7 +1,7 @@
 use icelines_core::{parse_card_document, CardKind, CardSectionView, WarningKind};
 
-const NYR_CARD: &str = include_str!("../../examples/prospect-arrival-card-nyr-2026-27.json");
-const SEA_CARD: &str = include_str!("../../examples/prospect-arrival-card-sea-2026-27.json");
+const NYR_CARD: &str = include_str!("../../examples/prospect-arrival-card-alp-2026-27.json");
+const SEA_CARD: &str = include_str!("../../examples/prospect-arrival-card-brv-2026-27.json");
 
 #[test]
 fn nyr_and_sea_arrival_cards_share_the_sealed_league_artifact() {

@@ -1,0 +1,83 @@
+{
+  "name": "NYR Sample Center trade with a probability-weighted internal breakout portfolio",
+  "trade_deadline": "2027-03-05",
+  "events": [
+    {
+      "id": "NYR-target-forward-balanced-trade",
+      "kind": "trade",
+      "team": "NYR",
+      "player": "Sample Player 371",
+      "effective_date": "2026-09-29",
+      "strength_delta": -1.6,
+      "occurrence_probability": 1.0,
+      "correlation_key": "NYR-SEA-target-forward-sample-defenseman-a-balanced",
+      "label": "NYR acquires Sample Center for Sample Defenseman at the sealed no-breakout lineup delta"
+    },
+    {
+      "id": "SEA-sample-defenseman-a-balanced-trade",
+      "kind": "trade",
+      "team": "SEA",
+      "player": "Sample Player 042",
+      "effective_date": "2026-09-29",
+      "strength_delta": 0.5,
+      "occurrence_probability": 1.0,
+      "correlation_key": "NYR-SEA-target-forward-sample-defenseman-a-balanced",
+      "label": "SEA acquires Sample Defenseman for Sample Center at the sealed lineup delta"
+    },
+    {
+      "id": "NYR-target-forward-moderate-hit",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 371",
+      "effective_date": "2026-09-29",
+      "strength_delta": 4.7,
+      "occurrence_probability": 0.40,
+      "correlation_key": null,
+      "label": "Sample Center reaches the moderate 30.0 score branch (+4.7 over sealed)"
+    },
+    {
+      "id": "NYR-perreault-breakout-hit",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 128",
+      "effective_date": "2026-09-29",
+      "strength_delta": 4.5,
+      "occurrence_probability": 0.35,
+      "correlation_key": null,
+      "label": "Perreault supplies a +4.5 confidence-weighted lineup increment"
+    },
+    {
+      "id": "NYR-laba-breakout-hit",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 280",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.5,
+      "occurrence_probability": 0.30,
+      "correlation_key": null,
+      "label": "Laba supplies a +3.5 confidence-weighted lineup increment"
+    },
+    {
+      "id": "NYR-sample-wing-b-rebound-hit",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Alexis Sample Scorer",
+      "effective_date": "2026-09-29",
+      "strength_delta": 3.0,
+      "occurrence_probability": 0.25,
+      "correlation_key": null,
+      "label": "Sample Scorer supplies a +3.0 rebound increment"
+    },
+    {
+      "id": "NYR-sample-prospect-defense-hit",
+      "kind": "form",
+      "team": "NYR",
+      "player": "Sample Player 010",
+      "effective_date": "2026-09-29",
+      "strength_delta": 2.2,
+      "occurrence_probability": 0.20,
+      "correlation_key": null,
+      "label": "Sample Prospect earns enough NHL deployment to create a net +2.2 defense increment after displacement"
+    }
+  ]
+}

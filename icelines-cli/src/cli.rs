@@ -8639,7 +8639,7 @@ mod tui_surface_tests {
                 "--start",
                 "2027-03-15",
                 "--team",
-                "Dexter's Dawgs",
+                "Sample Multicategory",
                 "--season",
                 "20262027",
                 "--json",
@@ -8656,7 +8656,7 @@ mod tui_surface_tests {
                     top: 10,
                     json: true,
                     ..
-                }) if team == "Dexter's Dawgs" && start.to_string() == "2027-03-15"
+                }) if team == "Sample Multicategory" && start.to_string() == "2027-03-15"
             ));
         });
     }

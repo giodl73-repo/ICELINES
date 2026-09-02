@@ -1072,8 +1072,8 @@ mod tests {
                 IsolatedEventImpactRow {
                     event_id: "nyr-kartye-breakout-range".to_string(),
                     team: "NYR".to_string(),
-                    player: Some("Tye Kartye".to_string()),
-                    label: "Kartye reaches middle-six value".to_string(),
+                    player: Some("Sample Player 392".to_string()),
+                    label: "Sample forward reaches middle-six value".to_string(),
                     occurrence_probability: 0.2389,
                     correlation_key: None,
                     raw_team_strength_delta: 3.0187,
@@ -1118,7 +1118,7 @@ mod tests {
 
     fn input() -> TeamPrognosisCardInput {
         let lineup: TeamLineupProjectionView = serde_json::from_str(include_str!(
-            "../../../../examples/team-lineup-nyr-2026-27.json"
+            "../../../../examples/team-lineup-alp-2026-27.json"
         ))
         .unwrap();
         let timestamp = Utc.with_ymd_and_hms(2026, 7, 21, 17, 0, 0).unwrap();
@@ -1147,13 +1147,13 @@ mod tests {
     }
 
     #[test]
-    fn builds_two_page_nyr_card_with_kartye_and_reconciled_ceiling() {
+    fn builds_two_page_team_card_with_reconciled_ceiling() {
         let card = build_team_prognosis_card(input()).unwrap();
         assert_eq!(card.pages.len(), 2);
         assert_eq!(card.pages[0].id, "depth-chart");
         assert_eq!(card.pages[1].id, "insider");
         let json = serde_json::to_string(&card).unwrap();
-        assert!(json.contains("Tye Kartye"));
+        assert!(json.contains("Sample Player 392"));
         assert!(json.contains("+15 Path"));
         assert!(json.contains("15.4855"));
         assert!(json.contains("current_player_score"));

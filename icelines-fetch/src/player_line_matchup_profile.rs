@@ -398,7 +398,7 @@ mod tests {
     #[test]
     fn adapter_builds_complete_profiles_and_noncausal_deployment_evidence() {
         let lineup: TeamLineupProjectionView =
-            serde_json::from_str(include_str!("../../examples/team-lineup-nyr-2026-27.json"))
+            serde_json::from_str(include_str!("../../examples/team-lineup-alp-2026-27.json"))
                 .unwrap();
         let players = dressed_skaters(&lineup).unwrap();
         let facts = players
