@@ -3116,6 +3116,174 @@ pub async fn run_import_yahoo(
     Ok(())
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct FantasyYahooRosterDelta {
+    team: String,
+    added: Vec<String>,
+    removed: Vec<String>,
+    unchanged: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct FantasyYahooReconciliationView {
+    schema: String,
+    league: String,
+    applied: bool,
+    has_changes: bool,
+    deltas: Vec<FantasyYahooRosterDelta>,
+    import: FantasyImportView,
+    warnings: Vec<String>,
+}
+
+/// Reconcile an exact Yahoo roster snapshot. Preview is the safe default; `--apply`
+/// performs the same validated import with replacement semantics.
+pub async fn run_sync_yahoo(
+    file: PathBuf,
+    league_name: String,
+    my_team: Option<String>,
+    apply: bool,
+    allow_provisional: bool,
+    json: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let rows = if file.as_os_str() == "-" {
+        let mut input = String::new();
+        std::io::stdin()
+            .read_to_string(&mut input)
+            .context("read Yahoo roster CSV from stdin")?;
+        parse_yahoo_roster_csv_text(&input, "stdin")?
+    } else {
+        let input = std::fs::read_to_string(&file)
+            .with_context(|| format!("read Yahoo roster CSV from {}", file.display()))?;
+        parse_yahoo_roster_csv_text(&input, &file.display().to_string())?
+    };
+
+    let known_player_positions = known_player_positions()?;
+    let make_options = |mode_apply: bool| {
+        let mut options = if mode_apply {
+            FantasyRosterImportOptions::apply(league_name.clone())
+        } else {
+            FantasyRosterImportOptions::dry_run(league_name.clone())
+        };
+        options.user_team = my_team.clone();
+        options.known_player_keys = Some(known_player_positions.keys().cloned().collect());
+        options.known_player_positions = Some(known_player_positions.clone());
+        options.replace_rosters = true;
+        options.allow_provisional_players = allow_provisional;
+        options
+    };
+    let preview = import_yahoo_roster_rows(&db, rows.clone(), make_options(false))
+        .context("preview Yahoo roster reconciliation")?;
+
+    let existing_league = db
+        .list_leagues()?
+        .into_iter()
+        .find(|league| league.name == league_name);
+    let existing_rosters = if let Some(league) = existing_league.as_ref() {
+        db.list_teams(&league.id)?
+            .into_iter()
+            .map(|team| {
+                let roster = db
+                    .list_roster(&team.id)?
+                    .into_iter()
+                    .collect::<BTreeSet<_>>();
+                Ok((team.name, roster))
+            })
+            .collect::<anyhow::Result<BTreeMap<_, _>>>()?
+    } else {
+        BTreeMap::new()
+    };
+    let display_names = preview
+        .rows
+        .iter()
+        .filter_map(|row| Some((row.normalized_name.clone()?, row.player_name.clone())))
+        .collect::<BTreeMap<_, _>>();
+    let mut deltas = Vec::new();
+    for team in &preview.teams {
+        let desired = preview
+            .rows
+            .iter()
+            .filter(|row| {
+                row.status == FantasyImportRowStatus::Imported
+                    && row.fantasy_team.as_deref() == Some(team.team.as_str())
+            })
+            .filter_map(|row| row.normalized_name.clone())
+            .collect::<BTreeSet<_>>();
+        let existing = existing_rosters
+            .get(&team.team)
+            .cloned()
+            .unwrap_or_default();
+        let label = |key: &String| {
+            display_names
+                .get(key)
+                .cloned()
+                .unwrap_or_else(|| key.clone())
+        };
+        deltas.push(FantasyYahooRosterDelta {
+            team: team.team.clone(),
+            added: desired.difference(&existing).map(label).collect(),
+            removed: existing.difference(&desired).map(label).collect(),
+            unchanged: desired.intersection(&existing).count(),
+        });
+    }
+    let has_changes = deltas
+        .iter()
+        .any(|delta| !delta.added.is_empty() || !delta.removed.is_empty());
+    let import = if apply {
+        import_yahoo_roster_rows(&db, rows, make_options(true))
+            .context("apply Yahoo roster reconciliation")?
+    } else {
+        preview
+    };
+    let view = FantasyYahooReconciliationView {
+        schema: "fantasy_yahoo_reconciliation.v1".to_owned(),
+        league: league_name,
+        applied: apply,
+        has_changes,
+        deltas,
+        import,
+        warnings: vec![
+            "roster membership is synchronized, but acquisition type, waiver priority, and pickup-budget usage are not inferred from a snapshot"
+                .to_owned(),
+        ],
+    };
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&view)?);
+        return Ok(());
+    }
+    println!(
+        "Fantasy Yahoo roster reconciliation - {} / {}",
+        view.league,
+        if view.applied { "APPLIED" } else { "PREVIEW" }
+    );
+    if !view.applied {
+        println!("Preview only: rerun with --apply after reviewing every delta.");
+    }
+    for delta in &view.deltas {
+        println!(
+            "\n{}: +{} / -{} / {} unchanged",
+            delta.team,
+            delta.added.len(),
+            delta.removed.len(),
+            delta.unchanged
+        );
+        if !delta.added.is_empty() {
+            println!("  add: {}", delta.added.join(", "));
+        }
+        if !delta.removed.is_empty() {
+            println!("  remove: {}", delta.removed.join(", "));
+        }
+    }
+    for warning in &view.import.warnings {
+        println!("warning: {}", warning.message);
+    }
+    for warning in &view.warnings {
+        println!("warning: {warning}");
+    }
+    Ok(())
+}
+
 fn known_player_positions() -> anyhow::Result<BTreeMap<String, Vec<Position>>> {
     let (outcome, season) = load_pools()?;
     let (skaters, goalies) = pools_views(&outcome.repo, season);
@@ -3885,10 +4053,15 @@ async fn build_goalie_plan_view_for_context(
         .collect::<HashMap<_, _>>();
     let budget = load_week_budget(db, &league.id, &assistant_rules, budget_at)?;
     let mut goalies = Vec::new();
+    let mut rostered_goalies_in_pool = 0usize;
     for view in goalie_views {
         let Some(stats) = view.stats.goalie.as_ref() else {
             continue;
         };
+        let key = view.name_normalized().to_owned();
+        if roster.contains(&key) {
+            rostered_goalies_in_pool += 1;
+        }
         let Some(score_stats) = goalie_scheme_stats_from_view(&view) else {
             continue;
         };
@@ -3905,7 +4078,6 @@ async fn build_goalie_plan_view_for_context(
             }
         })
         .unwrap_or_default();
-        let key = view.name_normalized().to_owned();
         let nhl_team = current_teams
             .as_ref()
             .and_then(|teams| teams.get(&key))
@@ -3963,8 +4135,12 @@ async fn build_goalie_plan_view_for_context(
                 .to_owned(),
         );
     }
-    if !goalies.iter().any(|goalie| goalie.rostered) {
+    if rostered_goalies_in_pool == 0 {
         warnings.push("no rostered goalies matched the selected stats pool".to_owned());
+    } else if !goalies.iter().any(|goalie| goalie.rostered) {
+        warnings.push(format!(
+            "{rostered_goalies_in_pool} rostered goalie(s) matched the stats pool but have no games in the selected week"
+        ));
     }
     let view = build_fantasy_goalie_plan(FantasyGoaliePlanInput {
         league: league.name.clone(),
@@ -4876,17 +5052,21 @@ async fn build_weekly_pickups_view(
     let unresolved = user_roster
         .iter()
         .filter(|key| !pool_by_key.contains_key(*key))
-        .count();
-    if unresolved > 0 {
-        bail!("{unresolved} roster player(s) are absent from the {stats_season} stats pool");
-    }
+        .cloned()
+        .collect::<Vec<_>>();
+    let modeled_roster = user_roster
+        .iter()
+        .filter(|key| pool_by_key.contains_key(*key))
+        .cloned()
+        .collect::<Vec<_>>();
 
     let schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
     let (team_dates, _, _) = draft_schedule_metrics(&schedule, 4);
     let dates = (0..=(sunday - evaluation_date).num_days())
         .map(|offset| evaluation_date + Duration::days(offset))
         .collect::<Vec<_>>();
-    let baseline = simulate_weekly_roster(&user_roster, &pool_by_key, &team_dates, &dates, &rules)?;
+    let baseline =
+        simulate_weekly_roster(&modeled_roster, &pool_by_key, &team_dates, &dates, &rules)?;
 
     let mut available = pool
         .iter()
@@ -4900,7 +5080,7 @@ async fn build_weekly_pickups_view(
     available.truncate(candidate_limit.max(1));
     let open_roster_slot = user_roster.len() < rules.standard_roster_capacity();
     let playoff_option_values = pickup_playoff_option_values(
-        &user_roster,
+        &modeled_roster,
         &available,
         open_roster_slot,
         &pool_by_key,
@@ -4917,13 +5097,13 @@ async fn build_weekly_pickups_view(
         );
         let drops = if open_roster_slot {
             std::iter::once(None)
-                .chain(user_roster.iter().map(Some))
+                .chain(modeled_roster.iter().map(Some))
                 .collect::<Vec<_>>()
         } else {
-            user_roster.iter().map(Some).collect::<Vec<_>>()
+            modeled_roster.iter().map(Some).collect::<Vec<_>>()
         };
         for drop_key in drops {
-            let mut after_roster = user_roster.clone();
+            let mut after_roster = modeled_roster.clone();
             if let Some(drop_key) = drop_key {
                 after_roster.retain(|key| key != drop_key);
             }
@@ -4976,6 +5156,13 @@ async fn build_weekly_pickups_view(
         "values use completed-season per-game scoring; injuries, confirmed starts, and same-day locks require the morning evidence phase"
             .to_owned(),
     );
+    if !unresolved.is_empty() {
+        view.warnings.push(format!(
+            "{} provisional roster player(s) lack {stats_season} scoring data and were excluded from modeling and protected from drop recommendations: {}",
+            unresolved.len(),
+            unresolved.join(", ")
+        ));
+    }
     if rules.playoff_start.is_some() {
         view.warnings.push(format!(
             "playoff retention value evaluates the top {PICKUP_PLAYOFF_FIT_CANDIDATE_LIMIT} available candidates against every legal drop over the saved calendar and is capped at +6/-4"
@@ -6505,11 +6692,14 @@ pub async fn run_roster_shape_validate(
     } else {
         db.list_teams(&league.id)?
     };
-    let positions = if teams_have_rostered_players(&db, &teams)? {
+    let mut positions = if teams_have_rostered_players(&db, &teams)? {
         known_player_positions()?
     } else {
         BTreeMap::<String, Vec<Position>>::new()
     };
+    for eligibility in db.list_player_eligibility(&league.id)? {
+        positions.insert(eligibility.player_normalized, eligibility.positions);
+    }
     let views = teams
         .iter()
         .map(|team| db.validate_team_roster_shape(&league, team, &positions))
@@ -6538,6 +6728,7 @@ struct FantasyTradeReadinessTeam {
     unvalued_players: Vec<String>,
     ready: bool,
     issues: Vec<String>,
+    advisories: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -6655,8 +6846,9 @@ pub async fn run_trade_readiness(
                 unknown_players.len()
             ));
         }
+        let mut advisories = Vec::new();
         if !unvalued_players.is_empty() {
-            issues.push(format!(
+            advisories.push(format!(
                 "{} player(s) lack {stats_season} scoring data",
                 unvalued_players.len()
             ));
@@ -6672,6 +6864,7 @@ pub async fn run_trade_readiness(
             unvalued_players,
             ready,
             issues,
+            advisories,
         });
     }
     let teams_ready = rows.iter().filter(|team| team.ready).count();
@@ -6719,6 +6912,9 @@ pub async fn run_trade_readiness(
             );
             for issue in &team.issues {
                 println!("      - {issue}");
+            }
+            for advisory in &team.advisories {
+                println!("      advisory: {advisory}");
             }
         }
         for warning in &view.warnings {
@@ -7599,24 +7795,19 @@ pub async fn run_trade_finder(
         let capacity = rules.standard_roster_capacity();
         for team in std::iter::once(&user_team).chain(opponents.iter()) {
             let roster = db.list_roster(&team.id)?;
-            let (unknown, unvalued, missing) = trade_roster_readiness_counts(
+            let (unknown, _unvalued, missing) = trade_roster_readiness_counts(
                 &roster,
                 &readiness_positions,
                 &valued_players,
                 &rules,
             )?;
-            if roster.len() != capacity
-                || !unknown.is_empty()
-                || !unvalued.is_empty()
-                || missing > 0
-            {
+            if roster.len() != capacity || !unknown.is_empty() || missing > 0 {
                 bail!(
-                    "{} is not trade-ready (roster {}/{}, {} unknown, {} unvalued, {} missing active slots); run `icelines fantasy trade-readiness --team \"{}\"`",
+                    "{} is not trade-ready (roster {}/{}, {} unknown, {} missing active slots); run `icelines fantasy trade-readiness --team \"{}\"`",
                     team.name,
                     roster.len(),
                     capacity,
                     unknown.len(),
-                    unvalued.len(),
                     missing,
                     team.name
                 );
@@ -7726,6 +7917,12 @@ pub async fn run_trade_finder(
         ));
     }
     let mut protected_keys = BTreeSet::new();
+    for key in user_roster
+        .iter()
+        .filter(|key| !player_details.contains_key(*key))
+    {
+        protected_keys.insert(key.clone());
+    }
     if !include_anchors {
         if let Some(anchor) = user_roster
             .iter()
@@ -7764,8 +7961,12 @@ pub async fn run_trade_finder(
     }
     let protected_players = protected_keys
         .iter()
-        .filter_map(|key| player_details.get(key))
-        .map(|player| player.player.clone())
+        .map(|key| {
+            player_details
+                .get(key)
+                .map(|player| player.player.clone())
+                .unwrap_or_else(|| key.clone())
+        })
         .collect::<Vec<_>>();
     let user_packages = trade_packages(&user_roster, max_package)
         .into_iter()
@@ -7780,15 +7981,12 @@ pub async fn run_trade_finder(
         &schedule_classes,
     );
     let capacity = rules.standard_roster_capacity();
-    if require_complete
-        && (user_roster.len() != capacity || unresolved_user > 0 || user_missing_before > 0)
-    {
+    if require_complete && (user_roster.len() != capacity || user_missing_before > 0) {
         bail!(
-            "{} is not trade-ready (roster {}/{}, {} unresolved, {} missing active slots); run `icelines fantasy trade-readiness --team \"{}\"`",
+            "{} is not trade-ready (roster {}/{}, {} missing active slots); run `icelines fantasy trade-readiness --team \"{}\"`",
             user_team.name,
             user_roster.len(),
             capacity,
-            unresolved_user,
             user_missing_before,
             user_team.name
         );
@@ -7813,21 +8011,12 @@ pub async fn run_trade_finder(
         let opponent_packages = trade_packages(&opponent_roster, max_package);
         let opponent_missing_before =
             trade_roster_missing_slots(&opponent_roster, &player_details, &rules)?;
-        let opponent_unresolved = opponent_roster
-            .iter()
-            .filter(|key| !player_details.contains_key(*key))
-            .count();
-        if require_complete
-            && (opponent_roster.len() != capacity
-                || opponent_unresolved > 0
-                || opponent_missing_before > 0)
-        {
+        if require_complete && (opponent_roster.len() != capacity || opponent_missing_before > 0) {
             bail!(
-                "{} is not trade-ready (roster {}/{}, {} unresolved, {} missing active slots); synchronize the league or omit --require-complete for provisional analysis",
+                "{} is not trade-ready (roster {}/{}, {} missing active slots); synchronize the league or omit --require-complete for provisional analysis",
                 opponent.name,
                 opponent_roster.len(),
                 capacity,
-                opponent_unresolved,
                 opponent_missing_before
             );
         }
