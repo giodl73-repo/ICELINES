@@ -3074,6 +3074,7 @@ pub async fn run_import_yahoo(
     my_team: Option<String>,
     dry_run: bool,
     replace: bool,
+    allow_provisional: bool,
     json: bool,
 ) -> anyhow::Result<()> {
     let db = FantasyDb::open()?;
@@ -3088,6 +3089,7 @@ pub async fn run_import_yahoo(
     options.known_player_keys = Some(known_player_keys);
     options.known_player_positions = Some(known_player_positions);
     options.replace_rosters = replace;
+    options.allow_provisional_players = allow_provisional;
 
     let view = if file.as_os_str() == "-" {
         let mut input = String::new();

@@ -1390,10 +1390,19 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 my_team,
                 dry_run,
                 replace,
+                allow_provisional,
                 json,
             } => {
-                commands::fantasy::run_import_yahoo(file, league, my_team, dry_run, replace, json)
-                    .await?
+                commands::fantasy::run_import_yahoo(
+                    file,
+                    league,
+                    my_team,
+                    dry_run,
+                    replace,
+                    allow_provisional,
+                    json,
+                )
+                .await?
             }
             FantasySubcommand::RosterShape { league, json } => {
                 commands::fantasy::run_roster_shape_show(league, json).await?

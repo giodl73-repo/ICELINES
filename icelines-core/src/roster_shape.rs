@@ -39,8 +39,29 @@ impl RosterShape {
         )
     }
 
+    /// The 16-player Yahoo league used by the configured 2026 assistant:
+    /// 2 C, 2 LW, 2 RW, 3 D, 1 UTIL, 2 G, and 4 bench slots.
+    ///
+    /// Position-group minima express whether the roster can cover the active
+    /// lineup. Multi-position players may satisfy more than one minimum; exact
+    /// daily slot assignment remains the assistant lineup solver's job.
+    pub fn yahoo_compact_16() -> Self {
+        Self::new(
+            "yahoo-compact-16",
+            "Yahoo 16-player roster: 2C, 2LW, 2RW, 3D, 1UTIL, 2G, 4BN",
+            vec![
+                RosterSlotRule::min(RosterPositionGroup::Center, 2),
+                RosterSlotRule::min(RosterPositionGroup::LeftWing, 2),
+                RosterSlotRule::min(RosterPositionGroup::RightWing, 2),
+                RosterSlotRule::min(RosterPositionGroup::Defense, 3),
+                RosterSlotRule::min(RosterPositionGroup::Goalie, 2),
+                RosterSlotRule::min_max(RosterPositionGroup::Total, 16, Some(16)),
+            ],
+        )
+    }
+
     pub fn all_builtins() -> Vec<Self> {
-        vec![Self::yahoo_standard()]
+        vec![Self::yahoo_standard(), Self::yahoo_compact_16()]
     }
 
     pub fn builtin_named(name: &str) -> Option<Self> {

@@ -4,7 +4,7 @@ use std::path::Path;
 
 use anyhow::{bail, Context};
 use csv::StringRecord;
-use icelines_core::name::normalize_name;
+use icelines_core::name::{aliases::canonical_for, normalize_name};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::view_model::{
     FantasyImportMode, FantasyImportRowInput, FantasyImportRowStatus, FantasyImportTeamInput,
@@ -23,19 +23,20 @@ use crate::fantasy_db::{
 
 const DEFAULT_SCORING_SCHEME: &str = "yahoo-standard";
 
-const PLAYER_ALIASES: &[&str] = &["Player", "Name", "Player Name"];
-const FIRST_NAME_ALIASES: &[&str] = &["First Name", "First"];
-const LAST_NAME_ALIASES: &[&str] = &["Last Name", "Last"];
+const PLAYER_ALIASES: &[&str] = &["Player", "Name", "Player Name", "player_name"];
+const FIRST_NAME_ALIASES: &[&str] = &["First Name", "First", "first_name"];
+const LAST_NAME_ALIASES: &[&str] = &["Last Name", "Last", "last_name"];
 const FANTASY_TEAM_ALIASES: &[&str] = &[
     "Fantasy Team",
     "Team Name",
     "Rostered By",
     "Owner Team",
     "Manager Team",
+    "fantasy_team",
 ];
 const OWNER_ALIASES: &[&str] = &["Owner", "Manager"];
-const NHL_TEAM_ALIASES: &[&str] = &["NHL Team", "Team"];
-const POSITION_ALIASES: &[&str] = &["Eligible Positions", "Positions"];
+const NHL_TEAM_ALIASES: &[&str] = &["NHL Team", "Team", "nhl_team"];
+const POSITION_ALIASES: &[&str] = &["Eligible Positions", "Positions", "eligible_positions"];
 
 #[derive(Debug, Clone)]
 pub struct FantasyRosterImportOptions {
@@ -45,6 +46,11 @@ pub struct FantasyRosterImportOptions {
     pub mode: FantasyImportMode,
     pub known_player_keys: Option<BTreeSet<String>>,
     pub known_player_positions: Option<BTreeMap<String, Vec<Position>>>,
+    /// Permit a preseason roster member that is not yet in the canonical NHL
+    /// stats pool when the import row supplies both NHL-team and position
+    /// evidence. The provisional name key remains unscored until IceLines has
+    /// canonical player data for it.
+    pub allow_provisional_players: bool,
     /// Make every included team's saved roster exactly match its CSV rows.
     pub replace_rosters: bool,
 }
@@ -58,6 +64,7 @@ impl FantasyRosterImportOptions {
             mode: FantasyImportMode::DryRun,
             known_player_keys: None,
             known_player_positions: None,
+            allow_provisional_players: false,
             replace_rosters: false,
         }
     }
@@ -134,7 +141,7 @@ pub fn import_yahoo_roster_rows(
     let existing_teams = existing_teams_by_name(db, existing_league.as_ref())?;
     let existing_rosters = existing_rosters_by_team(db, existing_league.as_ref(), &existing_teams)?;
     let existing_owner_by_player = existing_owner_by_player(&existing_rosters);
-    let duplicate_team_keys = duplicate_player_keys_across_teams(&csv_rows);
+    let duplicate_team_keys = duplicate_player_keys_across_teams(&csv_rows, &options);
     let mut seen_player_team = BTreeSet::<(String, String)>::new();
 
     let rows = csv_rows
@@ -318,14 +325,17 @@ fn existing_owner_by_player(
     owner_by_player
 }
 
-fn duplicate_player_keys_across_teams(rows: &[YahooRosterCsvRow]) -> BTreeSet<String> {
+fn duplicate_player_keys_across_teams(
+    rows: &[YahooRosterCsvRow],
+    options: &FantasyRosterImportOptions,
+) -> BTreeSet<String> {
     let mut teams_by_player = BTreeMap::<String, BTreeSet<String>>::new();
     for row in rows {
         if row.player_name.trim().is_empty() || row.fantasy_team.trim().is_empty() {
             continue;
         }
         teams_by_player
-            .entry(normalize_name(&row.player_name))
+            .entry(resolved_player_key(&row.player_name, options))
             .or_default()
             .insert(row.fantasy_team.trim().to_string());
     }
@@ -344,7 +354,8 @@ fn row_input(
 ) -> FantasyImportRowInput {
     let player_name = row.player_name.trim().to_string();
     let fantasy_team = row.fantasy_team.trim().to_string();
-    let normalized_name = (!player_name.is_empty()).then(|| normalize_name(&player_name));
+    let normalized_name =
+        (!player_name.is_empty()).then(|| resolved_player_key(&player_name, options));
     let mut status = FantasyImportRowStatus::Imported;
     let mut message = None;
 
@@ -365,6 +376,7 @@ fn row_input(
             .known_player_keys
             .as_ref()
             .is_some_and(|known| !known.contains(normalized))
+            && !(options.allow_provisional_players && has_provisional_evidence(row))
         {
             status = FantasyImportRowStatus::Unresolved;
             message = Some(format!(
@@ -398,6 +410,78 @@ fn row_input(
         status,
         message,
     }
+}
+
+fn resolved_player_key(player_name: &str, options: &FantasyRosterImportOptions) -> String {
+    let exact = normalize_name(player_name);
+    let Some(known) = options.known_player_keys.as_ref() else {
+        return exact;
+    };
+    if known.contains(&exact) {
+        return exact;
+    }
+
+    let mut aliases = known
+        .iter()
+        .filter(|candidate| first_name_alias_equivalent(&exact, candidate));
+    let resolved = aliases.next().cloned();
+    if aliases.next().is_some() {
+        return exact;
+    }
+    resolved.unwrap_or(exact)
+}
+
+fn first_name_alias_equivalent(left: &str, right: &str) -> bool {
+    let mut left_parts = left.split_whitespace();
+    let mut right_parts = right.split_whitespace();
+    let (Some(left_first), Some(right_first)) = (left_parts.next(), right_parts.next()) else {
+        return false;
+    };
+    left_parts.eq(right_parts)
+        && canonical_first_token(left_first) == canonical_first_token(right_first)
+}
+
+fn canonical_first_token(token: &str) -> String {
+    let letters = token.chars().filter(|ch| ch.is_ascii_alphabetic()).count();
+    let display = if letters <= 2 {
+        token.to_ascii_uppercase()
+    } else {
+        let mut display = token.to_string();
+        if let Some(initial) = display.get_mut(0..1) {
+            initial.make_ascii_uppercase();
+        }
+        display
+    };
+    normalize_name(canonical_for(&display))
+}
+
+fn has_provisional_evidence(row: &YahooRosterCsvRow) -> bool {
+    row.nhl_team_hint
+        .as_deref()
+        .is_some_and(|team| !team.trim().is_empty())
+        && row
+            .position_hint
+            .as_deref()
+            .and_then(parse_position_hint)
+            .is_some()
+}
+
+fn parse_position_hint(value: &str) -> Option<Vec<Position>> {
+    let mut positions = Vec::new();
+    for token in value.split([',', '/', '|']) {
+        let position = match token.trim().to_ascii_uppercase().as_str() {
+            "C" => Position::Center,
+            "LW" | "L" => Position::LeftWing,
+            "RW" | "R" => Position::RightWing,
+            "D" => Position::Defense,
+            "G" => Position::Goalie,
+            _ => return None,
+        };
+        if !positions.contains(&position) {
+            positions.push(position);
+        }
+    }
+    (!positions.is_empty()).then_some(positions)
 }
 
 fn team_inputs(
@@ -522,6 +606,46 @@ fn import_warnings(
     }
 
     if let Some(player_positions) = options.known_player_positions.as_ref() {
+        if options.allow_provisional_players {
+            let provisional = rows
+                .iter()
+                .filter(|row| row.status == FantasyImportRowStatus::Imported)
+                .filter_map(|row| {
+                    let key = row.normalized_name.as_ref()?;
+                    (!player_positions.contains_key(key)).then(|| row.player_name.clone())
+                })
+                .collect::<Vec<_>>();
+            if !provisional.is_empty() {
+                warnings.push(ViewWarning {
+                    kind: WarningKind::PartialSource,
+                    source: Some(SourceKind::FantasyImport),
+                    message: format!(
+                        "{} preseason player(s) were admitted from explicit CSV team/position evidence and remain unscored until canonical NHL data arrives: {}",
+                        provisional.len(),
+                        provisional.join(", ")
+                    ),
+                    recovery: Vec::new(),
+                });
+            }
+        }
+        let mut validation_positions = player_positions.clone();
+        if options.allow_provisional_players {
+            for row in rows
+                .iter()
+                .filter(|row| row.status == FantasyImportRowStatus::Imported)
+            {
+                let Some(player_key) = row.normalized_name.as_ref() else {
+                    continue;
+                };
+                if validation_positions.contains_key(player_key) {
+                    continue;
+                }
+                if let Some(positions) = row.position_hint.as_deref().and_then(parse_position_hint)
+                {
+                    validation_positions.insert(player_key.clone(), positions);
+                }
+            }
+        }
         let shape_name = existing_league
             .map(|league| league.roster_shape.as_str())
             .unwrap_or(DEFAULT_ROSTER_SHAPE);
@@ -532,7 +656,7 @@ fn import_warnings(
             teams,
             rows,
             existing_rosters,
-            player_positions,
+            &validation_positions,
             options.replace_rosters,
         ) {
             if validation.status == RosterShapeStatus::Invalid {
@@ -694,6 +818,8 @@ fn apply_import(
         }
     }
 
+    persist_platform_eligibility(db, &league_id, options, rows)?;
+
     if options.replace_rosters {
         let replacements = teams
             .iter()
@@ -733,6 +859,39 @@ fn apply_import(
             .get_team_by_name(&league_id, team_name)?
             .ok_or_else(|| anyhow::anyhow!("team '{team_name}' not found during import apply"))?;
         db.add_player(&team.id, player_key)?;
+    }
+    Ok(())
+}
+
+fn persist_platform_eligibility(
+    db: &FantasyDb,
+    league_id: &str,
+    options: &FantasyRosterImportOptions,
+    rows: &[FantasyImportRowInput],
+) -> anyhow::Result<()> {
+    for row in rows
+        .iter()
+        .filter(|row| row.status == FantasyImportRowStatus::Imported)
+    {
+        let (Some(player_key), Some(positions)) = (
+            row.normalized_name.as_deref(),
+            row.position_hint.as_deref().and_then(parse_position_hint),
+        ) else {
+            continue;
+        };
+        let evidence_is_compatible = options
+            .known_player_positions
+            .as_ref()
+            .and_then(|known| known.get(player_key))
+            .map(|canonical| {
+                positions
+                    .iter()
+                    .any(|position| canonical.contains(position))
+            })
+            .unwrap_or(options.allow_provisional_players);
+        if evidence_is_compatible {
+            db.upsert_player_eligibility(league_id, player_key, &positions, "yahoo-roster-import")?;
+        }
     }
     Ok(())
 }
@@ -795,6 +954,21 @@ mod tests {
     }
 
     #[test]
+    fn l1_fantasy_import_parses_normalized_machine_headers() {
+        let rows = parse_yahoo_roster_csv_text(
+            "fantasy_team,player_name,nhl_team,eligible_positions\nAlpha,Connor McDavid,EDM,C\n",
+            "normalized snapshot",
+        )
+        .expect("parse normalized roster snapshot");
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].fantasy_team, "Alpha");
+        assert_eq!(rows[0].player_name, "Connor McDavid");
+        assert_eq!(rows[0].nhl_team_hint.as_deref(), Some("EDM"));
+        assert_eq!(rows[0].position_hint.as_deref(), Some("C"));
+    }
+
+    #[test]
     fn l1_fantasy_import_dry_run_does_not_mutate_db() {
         let file = write_csv("Player,Fantasy Team,Owner\nConnor McDavid,Alpha,Alice\n");
         let db = FantasyDb::open_in_memory().expect("open db");
@@ -845,6 +1019,35 @@ mod tests {
             db.list_roster(&team.id).expect("list roster"),
             vec![normalize_name("Connor McDavid")]
         );
+    }
+
+    #[test]
+    fn l1_fantasy_import_apply_persists_compatible_platform_eligibility() {
+        let file =
+            write_csv("Player,Fantasy Team,NHL Team,Positions\nConnor McDavid,Alpha,EDM,C/RW\n");
+        let db = FantasyDb::open_in_memory().expect("open db");
+        let mut options = FantasyRosterImportOptions::apply("Office League");
+        options.known_player_keys = Some(known(&["Connor McDavid"]));
+        options.known_player_positions = Some(known_positions(&[(
+            "Connor McDavid",
+            vec![Position::Center],
+        )]));
+
+        import_yahoo_roster_csv(&db, file.path(), options).expect("apply import");
+
+        let league = db
+            .get_active_league()
+            .expect("active league query")
+            .expect("league exists");
+        let eligibility = db
+            .list_player_eligibility(&league.id)
+            .expect("list eligibility");
+        assert_eq!(eligibility.len(), 1);
+        assert_eq!(
+            eligibility[0].positions,
+            vec![Position::Center, Position::RightWing]
+        );
+        assert_eq!(eligibility[0].source, "yahoo-roster-import");
     }
 
     #[test]
@@ -985,6 +1188,57 @@ mod tests {
         assert!(view.rows.iter().any(|row| {
             row.player_name == "Connor McDavid" && row.status == FantasyImportRowStatus::Skipped
         }));
+    }
+
+    #[test]
+    fn l1_fantasy_import_resolves_documented_first_name_aliases_to_canonical_keys() {
+        let file = write_csv(
+            "Player,Fantasy Team,NHL Team,Positions\nAleksander Barkov,Alpha,FLA,C\nJT Miller,Alpha,NYR,C/LW/RW\nYegor Chinakhov,Alpha,PIT,LW/RW\n",
+        );
+        let db = FantasyDb::open_in_memory().expect("open db");
+        let known_players = known(&["Alexander Barkov", "J.T. Miller", "Egor Chinakhov"]);
+
+        let view = import_yahoo_roster_csv(
+            &db,
+            file.path(),
+            FantasyRosterImportOptions {
+                known_player_keys: Some(known_players),
+                ..FantasyRosterImportOptions::dry_run("Office League")
+            },
+        )
+        .expect("alias-aware import");
+
+        assert_eq!(view.summary.players_imported, 3);
+        assert_eq!(view.summary.players_unresolved, 0);
+        assert!(view.rows.iter().any(|row| {
+            row.player_name == "JT Miller" && row.normalized_name.as_deref() == Some("j.t. miller")
+        }));
+    }
+
+    #[test]
+    fn l1_fantasy_import_provisional_players_require_explicit_flag_and_evidence() {
+        let file = write_csv(
+            "Player,Fantasy Team,NHL Team,Positions\nIvar Stenberg,Alpha,SJS,LW\nUnknown No Team,Alpha,,C\nUnknown Bad Position,Alpha,SEA,SKATER\n",
+        );
+        let db = FantasyDb::open_in_memory().expect("open db");
+        let mut options = FantasyRosterImportOptions::dry_run("Office League");
+        options.known_player_keys = Some(BTreeSet::new());
+        options.known_player_positions = Some(BTreeMap::new());
+        options.allow_provisional_players = true;
+
+        let view = import_yahoo_roster_csv(&db, file.path(), options)
+            .expect("provisional preseason import");
+
+        assert_eq!(view.summary.players_imported, 1);
+        assert_eq!(view.summary.players_unresolved, 2);
+        assert!(view.rows.iter().any(|row| {
+            row.player_name == "Ivar Stenberg" && row.status == FantasyImportRowStatus::Imported
+        }));
+        assert!(view
+            .warnings
+            .iter()
+            .any(|warning| warning.message.contains("Ivar Stenberg")
+                && warning.message.contains("remain unscored")));
     }
 
     #[test]
