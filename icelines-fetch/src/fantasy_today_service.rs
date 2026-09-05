@@ -51,6 +51,7 @@ pub struct FantasyTodayAssemblyRequest {
     pub league: Option<String>,
     pub team: Option<String>,
     pub stats_season: String,
+    pub season_type: SeasonType,
     pub schedule_season: u32,
     pub evaluated_at_utc: DateTime<Utc>,
     pub local_date: Option<NaiveDate>,
@@ -82,6 +83,7 @@ impl FantasyTodayAssemblyRequest {
             league,
             team,
             stats_season,
+            season_type: SeasonType::Regular,
             schedule_season,
             evaluated_at_utc,
             local_date: None,
@@ -106,6 +108,10 @@ pub enum FantasyTodayAssemblyError {
     TeamMissing(String),
     #[error("no user team is marked; run `icelines fantasy team-use <name>`")]
     UserTeamMissing,
+    #[error("fantasy assistant rules are missing for league '{0}'; run `icelines fantasy assistant-setup`")]
+    RulesMissing(String),
+    #[error("required local cache is missing or incomplete: {0}")]
+    CacheMissing(String),
     #[error("unsupported IANA timezone '{0}'")]
     InvalidTimezone(String),
     #[error("invalid assembly request: {0}")]
@@ -122,6 +128,8 @@ impl FantasyTodayAssemblyError {
                 Some("icelines fantasy league-list")
             }
             Self::TeamMissing(_) | Self::UserTeamMissing => Some("icelines fantasy team-list"),
+            Self::RulesMissing(_) => Some("icelines fantasy assistant-setup"),
+            Self::CacheMissing(_) => Some("icelines fantasy schedule-edge --refresh"),
             Self::Evidence(_) => Some("icelines fantasy readiness"),
             Self::HomeUnavailable | Self::InvalidTimezone(_) | Self::InvalidRequest(_) => None,
         }
@@ -133,6 +141,7 @@ impl FantasyTodayAssemblyError {
 pub enum FantasySavedMatchupRejectionReason {
     MissingMatchup,
     FutureSnapshot,
+    StaleSnapshot,
     WrongWeek,
     WrongTeams,
     MissingThroughDate,
@@ -163,6 +172,7 @@ pub struct FantasySavedMatchupSelection {
     pub rejections: Vec<FantasySavedMatchupRejection>,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn select_saved_points_matchup(
     snapshots: impl IntoIterator<Item = FantasyPlatformSnapshot>,
     user_team: &str,
@@ -171,6 +181,7 @@ pub fn select_saved_points_matchup(
     week_end: NaiveDate,
     evaluated_at_utc: DateTime<Utc>,
     local_date: NaiveDate,
+    max_age_minutes: i64,
 ) -> FantasySavedMatchupSelection {
     let mut snapshots = snapshots.into_iter().collect::<Vec<_>>();
     snapshots.sort_by_key(|snapshot| std::cmp::Reverse(snapshot.captured_at));
@@ -182,6 +193,10 @@ pub fn select_saved_points_matchup(
         };
         if snapshot.captured_at > evaluated_at_utc {
             rejections.push(reject(FantasySavedMatchupRejectionReason::FutureSnapshot));
+            continue;
+        }
+        if evaluated_at_utc - snapshot.captured_at > Duration::minutes(max_age_minutes) {
+            rejections.push(reject(FantasySavedMatchupRejectionReason::StaleSnapshot));
             continue;
         }
         let Some(matchup) = snapshot.matchup.as_ref() else {
@@ -303,6 +318,12 @@ pub fn assemble_fantasy_today(
             FantasyTodayAssemblyError::ActiveLeagueMissing
         } else if message.starts_with("no user team is marked") {
             FantasyTodayAssemblyError::UserTeamMissing
+        } else if message.starts_with("fantasy assistant rules are missing") {
+            FantasyTodayAssemblyError::RulesMissing(league.unwrap_or_default())
+        } else if message.starts_with("load cached NHL schedule")
+            || message.starts_with("cached NHL schedule is empty")
+        {
+            FantasyTodayAssemblyError::CacheMissing(message)
         } else if message.starts_with("unsupported IANA timezone") {
             FantasyTodayAssemblyError::InvalidTimezone(message)
         } else if message.starts_with("league '") {
@@ -360,9 +381,12 @@ fn assemble_fantasy_today_inner(
         db.get_user_team(&league.id)?
             .context("no user team is marked")?
     };
-    let rules = db
-        .get_assistant_rules(&league.id)?
-        .unwrap_or_else(FantasyAssistantRules::configured_2026);
+    let rules = db.get_assistant_rules(&league.id)?.with_context(|| {
+        format!(
+            "fantasy assistant rules are missing for league '{}'",
+            league.name
+        )
+    })?;
     let timezone = rules
         .timezone
         .parse::<chrono_tz::Tz>()
@@ -402,14 +426,14 @@ fn assemble_fantasy_today_inner(
 
     let snapshot_store = crate::snapshot::SnapshotStore::new(&request.snapshots_root);
     let outcome =
-        crate::stats_loader::load_into_repo(stats_season, SeasonType::Regular, &snapshot_store)?;
+        crate::stats_loader::load_into_repo(stats_season, request.season_type, &snapshot_store)?;
     let skaters = outcome
         .repo
-        .skaters(stats_season, SeasonType::Regular)
+        .skaters(stats_season, request.season_type)
         .collect::<Vec<_>>();
     let goalies = outcome
         .repo
-        .goalies(stats_season, SeasonType::Regular)
+        .goalies(stats_season, request.season_type)
         .collect::<Vec<_>>();
     let scheme = load_scheme(&league.scheme, &request.schemes_root)?;
     let (current_teams, current_rosters_ready, current_rosters_detail) =
@@ -573,6 +597,7 @@ fn assemble_fantasy_today_inner(
             week_end,
             request.evaluated_at_utc,
             local_date,
+            request.status_max_age_minutes,
         )
     });
     let current_goalie_appearances = if request.current_goalie_appearances > 0.0 {
@@ -856,7 +881,7 @@ fn assemble_fantasy_today_inner(
             fantasy_team_id: team.id,
             fantasy_team_name: team.name,
             stats_season: request.stats_season,
-            season_type: SeasonType::Regular,
+            season_type: request.season_type,
             competition_mode: competition.mode.label().to_owned(),
             date: local_date,
             week_start,
@@ -1690,6 +1715,7 @@ mod tests {
             week + chrono::Duration::days(6),
             now,
             NaiveDate::from_ymd_opt(2026, 9, 8).unwrap(),
+            180,
         );
         assert_eq!(selection.selected.unwrap().captured_at.hour(), 11);
         assert_eq!(
@@ -1717,6 +1743,7 @@ mod tests {
             week + chrono::Duration::days(6),
             Utc.with_ymd_and_hms(2026, 9, 8, 12, 0, 0).unwrap(),
             NaiveDate::from_ymd_opt(2026, 9, 8).unwrap(),
+            180,
         )
         .selected
         .unwrap();
@@ -1737,6 +1764,7 @@ mod tests {
             week + chrono::Duration::days(6),
             Utc.with_ymd_and_hms(2026, 9, 8, 12, 0, 0).unwrap(),
             NaiveDate::from_ymd_opt(2026, 9, 8).unwrap(),
+            180,
         );
 
         assert!(selection.selected.is_none());
@@ -1744,6 +1772,36 @@ mod tests {
             selection.rejections[0].reason,
             FantasySavedMatchupRejectionReason::WrongTeams
         );
+    }
+
+    #[test]
+    fn stale_and_partial_saved_matchups_are_rejected_explicitly() {
+        let week = NaiveDate::from_ymd_opt(2026, 9, 7).unwrap();
+        let now = Utc.with_ymd_and_hms(2026, 9, 8, 12, 0, 0).unwrap();
+        let stale = snapshot(8, week);
+        let mut partial = snapshot(11, week);
+        partial.matchup.as_mut().unwrap().through = None;
+
+        let selection = select_saved_points_matchup(
+            vec![stale, partial],
+            "Team",
+            "Rival",
+            week,
+            week + Duration::days(6),
+            now,
+            NaiveDate::from_ymd_opt(2026, 9, 8).unwrap(),
+            180,
+        );
+
+        assert!(selection.selected.is_none());
+        assert!(selection
+            .rejections
+            .iter()
+            .any(|row| row.reason == FantasySavedMatchupRejectionReason::StaleSnapshot));
+        assert!(selection
+            .rejections
+            .iter()
+            .any(|row| { row.reason == FantasySavedMatchupRejectionReason::MissingThroughDate }));
     }
 
     #[test]
@@ -1758,6 +1816,7 @@ mod tests {
             league: None,
             team: None,
             stats_season: "20252026".to_owned(),
+            season_type: SeasonType::Regular,
             schedule_season: 20262027,
             evaluated_at_utc: Utc.with_ymd_and_hms(2026, 9, 8, 12, 0, 0).unwrap(),
             local_date: None,
@@ -1773,6 +1832,82 @@ mod tests {
         assert!(!database_path.exists());
         assert!(!database_path.with_extension("db-wal").exists());
         assert!(!database_path.with_extension("db-shm").exists());
+    }
+
+    #[test]
+    fn missing_rules_and_schedule_cache_have_typed_recovery() {
+        let temp = tempfile::tempdir().unwrap();
+        let database_path = temp.path().join("icelines.db");
+        let db = crate::fantasy_db::FantasyDb::open_path(database_path.clone()).unwrap();
+        let league_id = db
+            .create_league("Fixture League", "yahoo-standard")
+            .unwrap();
+        db.create_team(&league_id, "Fixture Team", "Fixture Owner")
+            .unwrap();
+        db.set_active_league("Fixture League").unwrap();
+        assert!(db.set_user_team(&league_id, "Fixture Team").unwrap());
+        drop(db);
+
+        let request = FantasyTodayAssemblyRequest {
+            database_path: database_path.clone(),
+            data_root: temp.path().join("data"),
+            snapshots_root: temp.path().join("snapshots"),
+            schemes_root: temp.path().join("schemes"),
+            league: None,
+            team: None,
+            stats_season: "20252026".to_owned(),
+            season_type: SeasonType::Regular,
+            schedule_season: 20262027,
+            evaluated_at_utc: Utc.with_ymd_and_hms(2026, 9, 8, 12, 0, 0).unwrap(),
+            local_date: None,
+            status_max_age_minutes: 180,
+            current_goalie_appearances: 0.0,
+            candidate_policy: FantasyTodayCandidatePolicy::default(),
+        };
+
+        let mut missing_league = request.clone();
+        missing_league.league = Some("Missing League".to_owned());
+        assert!(matches!(
+            assemble_fantasy_today(missing_league),
+            Err(FantasyTodayAssemblyError::LeagueMissing(_))
+        ));
+
+        let mut missing_team = request.clone();
+        missing_team.league = Some("Fixture League".to_owned());
+        missing_team.team = Some("Missing Team".to_owned());
+        assert!(matches!(
+            assemble_fantasy_today(missing_team),
+            Err(FantasyTodayAssemblyError::TeamMissing(_))
+        ));
+
+        let error = assemble_fantasy_today(request.clone()).unwrap_err();
+        assert!(matches!(error, FantasyTodayAssemblyError::RulesMissing(_)));
+        assert_eq!(
+            error.recovery_command(),
+            Some("icelines fantasy assistant-setup")
+        );
+
+        let db = crate::fantasy_db::FantasyDb::open_path(database_path).unwrap();
+        let mut invalid_timezone_rules = FantasyAssistantRules::configured_2026();
+        invalid_timezone_rules.timezone = "Mars/Olympus".to_owned();
+        db.set_assistant_rules(&league_id, &invalid_timezone_rules)
+            .unwrap();
+        drop(db);
+        assert!(matches!(
+            assemble_fantasy_today(request.clone()),
+            Err(FantasyTodayAssemblyError::InvalidTimezone(_))
+        ));
+
+        let db = crate::fantasy_db::FantasyDb::open_path(request.database_path.clone()).unwrap();
+        db.set_assistant_rules(&league_id, &FantasyAssistantRules::configured_2026())
+            .unwrap();
+        drop(db);
+        let error = assemble_fantasy_today(request).unwrap_err();
+        assert!(matches!(error, FantasyTodayAssemblyError::CacheMissing(_)));
+        assert_eq!(
+            error.recovery_command(),
+            Some("icelines fantasy schedule-edge --refresh")
+        );
     }
 
     #[test]

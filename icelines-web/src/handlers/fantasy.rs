@@ -250,30 +250,30 @@ async fn load_fantasy_today_contract(
 
 fn render_fantasy_today_html(v2: &FantasyTodayV2View) -> String {
     let view = &v2.today;
+    let summary = v2.surface_decision();
     let state = match view.state {
         FantasyTodayState::Ready => "ready",
         FantasyTodayState::Provisional => "provisional",
         FantasyTodayState::Blocked => "blocked",
     };
-    let primary = v2.decisions.primary_decision.as_ref();
-    let decision = primary
-        .map(|row| row.action.message.as_str())
-        .unwrap_or("No action recommended.");
-    let deadline = primary
-        .and_then(|row| row.deadline_utc)
-        .or(view.next_decision_deadline_utc)
+    let decision = summary.primary_display_message();
+    let deadline = summary
+        .deadline_utc
         .map(|value| value.to_rfc3339())
         .unwrap_or_else(|| "No pending deadline".to_owned());
-    let decision_detail = primary
-        .map(|row| {
+    let decision_detail = summary
+        .firmness
+        .map(|firmness| {
             format!(
                 "{:?}; legal now: {}; evidence age: {}{}",
-                row.action.firmness,
-                row.legal_at_evaluation,
-                row.evidence_age_seconds
+                firmness,
+                summary.legal_at_evaluation.unwrap_or(false),
+                summary
+                    .evidence_age_seconds
                     .map(|seconds| format!("{seconds}s"))
                     .unwrap_or_else(|| "not timestamped".to_owned()),
-                row.matchup_impact
+                summary
+                    .matchup_impact
                     .as_ref()
                     .map(|impact| format!("; {impact}"))
                     .unwrap_or_default()
@@ -296,17 +296,25 @@ fn render_fantasy_today_html(v2: &FantasyTodayV2View) -> String {
             )
         })
         .collect::<String>();
+    let alternatives = summary
+        .alternative_messages
+        .iter()
+        .take(3)
+        .map(|message| format!("<li>{}</li>", escape_html(message)))
+        .collect::<String>();
     format!(
-        "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Fantasy Today</title><style>body{{font:16px system-ui;max-width:72rem;margin:auto;padding:1rem}}section{{border:1px solid #888;border-radius:.5rem;padding:1rem;margin-block:1rem}}.state{{font-weight:700;text-transform:uppercase}}@media(max-width:40rem){{body{{padding:.6rem}}}}</style><main><h1>Fantasy Today</h1><p>{} · {} · {} {} · <time>{}</time></p><p class=\"state\" aria-label=\"Cockpit readiness\">{}</p><section aria-labelledby=\"decision\"><h2 id=\"decision\">Do now</h2><p>{}</p><p>{}</p><p>Next deadline: <time>{}</time></p></section><section aria-labelledby=\"lineup\"><h2 id=\"lineup\">Lineup and budget</h2><p>{} usable starts; {} open slots; {} bench players have games.</p><p>{}/{} acquisitions used; {} safe for proactive use.</p></section><section aria-labelledby=\"readiness\"><h2 id=\"readiness\">Readiness</h2><ul>{}</ul></section></main></html>",
+        "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Fantasy Today</title><style>body{{font:16px system-ui;max-width:72rem;margin:auto;padding:1rem}}section{{border:1px solid #888;border-radius:.5rem;padding:1rem;margin-block:1rem}}.state{{font-weight:700;text-transform:uppercase}}code{{overflow-wrap:anywhere}}@media(max-width:40rem){{body{{padding:.6rem}}}}</style><main><h1>Fantasy Today</h1><p>{} · {} · {} {} · <time>{}</time></p><p class=\"state\" aria-label=\"Cockpit readiness\">{}</p><section aria-labelledby=\"decision\"><h2 id=\"decision\">Do now</h2><p>{}</p><p>{}</p><p>Next deadline: <time>{}</time></p><h3>Next options</h3><ol>{}</ol><p><small>Decision fingerprint: <code>{}</code></small></p></section><section aria-labelledby=\"lineup\"><h2 id=\"lineup\">Lineup and budget</h2><p>{} usable starts; {} open slots; {} bench players have games.</p><p>{}/{} acquisitions used; {} safe for proactive use.</p></section><section aria-labelledby=\"readiness\"><h2 id=\"readiness\">Readiness</h2><ul>{}</ul></section></main></html>",
         escape_html(&view.context.league_name),
         escape_html(&view.context.fantasy_team_name),
         escape_html(&view.context.stats_season),
         escape_html(&view.context.season_type.to_string()),
         view.context.date,
         state,
-        escape_html(decision),
+        escape_html(&decision),
         escape_html(&decision_detail),
         escape_html(&deadline),
+        alternatives,
+        escape_html(&summary.material_fingerprint),
         view.lineup.usable_starts,
         view.lineup.open_active_slots,
         view.lineup.bench_players_with_games,
@@ -914,4 +922,22 @@ fn data_root() -> Option<std::path::PathBuf> {
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(std::path::PathBuf::from)
         .map(|home| home.join(".icelines").join("data"))
+}
+
+#[cfg(test)]
+mod fantasy_today_surface_tests {
+    #[test]
+    fn web_consumes_the_sealed_surface_projection() {
+        let fixture: icelines_core::FantasyTodaySurfaceDecision =
+            serde_json::from_str(include_str!(
+                "../../../icelines-core/tests/fixtures/fantasy_today_surface_decision.v1.json"
+            ))
+            .unwrap();
+        let decision = fixture.primary_display_message();
+
+        assert!(decision.contains("evidence age: 90s"));
+        assert!(decision.contains("Fixture Rival"));
+        assert_eq!(fixture.alternative_messages.len(), 2);
+        assert_eq!(fixture.material_fingerprint.len(), 64);
+    }
 }

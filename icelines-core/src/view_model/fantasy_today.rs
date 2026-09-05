@@ -183,11 +183,78 @@ pub struct FantasyTodayV2View {
     pub decisions: super::fantasy_daily_decisions::FantasyDailyDecisionsView,
 }
 
+/// Decision-critical fields rendered by every interactive surface.
+///
+/// Keeping this projection in core prevents CLI, TUI, and Web from deriving
+/// different answers from the same sealed `fantasy_today.v2` contract.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FantasyTodaySurfaceDecision {
+    pub primary_message: Option<String>,
+    pub alternative_messages: Vec<String>,
+    pub deadline_utc: Option<DateTime<Utc>>,
+    pub firmness: Option<FantasyTodayFirmness>,
+    pub legal_at_evaluation: Option<bool>,
+    pub matchup_impact: Option<String>,
+    pub evidence_age_seconds: Option<i64>,
+    pub material_fingerprint: String,
+}
+
+impl FantasyTodaySurfaceDecision {
+    pub fn primary_display_message(&self) -> String {
+        let message = self
+            .primary_message
+            .as_deref()
+            .unwrap_or("No action recommended.");
+        let Some(firmness) = self.firmness else {
+            return message.to_owned();
+        };
+        let firmness = match firmness {
+            FantasyTodayFirmness::Firm => "firm",
+            FantasyTodayFirmness::Conditional => "conditional",
+            FantasyTodayFirmness::RefreshRequired => "refresh_required",
+        };
+        format!(
+            "{} [{}; legal now: {}; evidence age: {}]{}",
+            message,
+            firmness,
+            self.legal_at_evaluation.unwrap_or(false),
+            self.evidence_age_seconds
+                .map(|seconds| format!("{seconds}s"))
+                .unwrap_or_else(|| "not timestamped".to_owned()),
+            self.matchup_impact
+                .as_ref()
+                .map(|impact| format!(" | {impact}"))
+                .unwrap_or_default()
+        )
+    }
+}
+
 impl FantasyTodayV2View {
     pub fn v1_projection(&self) -> FantasyTodayView {
         let mut view = self.today.clone();
         view.schema = FANTASY_TODAY_SCHEMA.to_owned();
         view
+    }
+
+    pub fn surface_decision(&self) -> FantasyTodaySurfaceDecision {
+        let primary = self.decisions.primary_decision.as_ref();
+        FantasyTodaySurfaceDecision {
+            primary_message: primary.map(|row| row.action.message.clone()),
+            alternative_messages: self
+                .decisions
+                .alternatives
+                .iter()
+                .map(|row| row.action.message.clone())
+                .collect(),
+            deadline_utc: primary
+                .and_then(|row| row.deadline_utc)
+                .or(self.today.next_decision_deadline_utc),
+            firmness: primary.map(|row| row.action.firmness),
+            legal_at_evaluation: primary.map(|row| row.legal_at_evaluation),
+            matchup_impact: primary.and_then(|row| row.matchup_impact.clone()),
+            evidence_age_seconds: primary.and_then(|row| row.evidence_age_seconds),
+            material_fingerprint: self.decisions.material_fingerprint.clone(),
+        }
     }
 }
 
@@ -899,6 +966,30 @@ mod tests {
             first.decisions.material_fingerprint,
             second.decisions.material_fingerprint
         );
+        assert_eq!(first.surface_decision(), second.surface_decision());
+        assert_eq!(
+            first.surface_decision().material_fingerprint,
+            first.decisions.material_fingerprint
+        );
+    }
+
+    #[test]
+    fn sealed_surface_projection_preserves_cross_surface_decision_fields() {
+        let fixture: FantasyTodaySurfaceDecision = serde_json::from_str(include_str!(
+            "../../tests/fixtures/fantasy_today_surface_decision.v1.json"
+        ))
+        .unwrap();
+
+        assert_eq!(
+            fixture.primary_display_message(),
+            "Start Fixture Player [firm; legal now: true; evidence age: 90s] | projected +4.5 points against Fixture Rival"
+        );
+        assert_eq!(fixture.alternative_messages.len(), 2);
+        assert_eq!(
+            fixture.deadline_utc.unwrap().to_rfc3339(),
+            "2026-09-08T23:00:00+00:00"
+        );
+        assert_eq!(fixture.material_fingerprint.len(), 64);
     }
 
     #[test]

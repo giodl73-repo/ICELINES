@@ -5717,24 +5717,22 @@ fn run_today_shared(
 }
 
 fn print_fantasy_today_v2(view: &FantasyTodayV2View) {
+    let summary = view.surface_decision();
     let mut projected = view.today.clone();
     if let Some(primary) = &view.decisions.primary_decision {
         let mut action = primary.action.clone();
-        action.message = format!(
-            "{} [{}; legal now: {}]{}",
-            action.message,
-            format!("{:?}", action.firmness).to_ascii_lowercase(),
-            primary.legal_at_evaluation,
-            primary
-                .matchup_impact
-                .as_ref()
-                .map(|impact| format!(" · {impact}"))
-                .unwrap_or_default()
-        );
+        action.message = summary.primary_display_message();
         projected.primary_decision = Some(action);
-        projected.next_decision_deadline_utc = primary.deadline_utc;
     }
+    projected.alternatives = view
+        .decisions
+        .alternatives
+        .iter()
+        .map(|row| row.action.clone())
+        .collect();
+    projected.next_decision_deadline_utc = summary.deadline_utc;
     print_fantasy_today(&projected);
+    print_wrapped("Decision fingerprint: ", &summary.material_fingerprint);
     if let Some(command) = &view.decisions.candidate_recovery_command {
         println!("DEEPER PICKUP SEARCH: {command}");
     }
@@ -9898,6 +9896,20 @@ mod tests {
         );
         assert!(lines.len() > 1);
         assert!(lines.iter().all(|line| line.chars().count() <= 40));
+    }
+
+    #[test]
+    fn l0_fantasy_today_cli_consumes_the_sealed_surface_projection() {
+        let fixture: icelines_core::FantasyTodaySurfaceDecision =
+            serde_json::from_str(include_str!(
+                "../../../icelines-core/tests/fixtures/fantasy_today_surface_decision.v1.json"
+            ))
+            .unwrap();
+        let lines = wrapped_lines("DO NOW: ", &fixture.primary_display_message(), 80);
+
+        assert!(lines.iter().all(|line| line.chars().count() <= 80));
+        assert!(lines.join(" ").contains("Fixture Rival"));
+        assert_eq!(fixture.material_fingerprint.len(), 64);
     }
     use icelines_core::{fixtures, identity::PlayerId};
 

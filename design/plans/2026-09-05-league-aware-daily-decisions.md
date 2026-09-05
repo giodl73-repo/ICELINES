@@ -323,6 +323,23 @@ budget. The global pickup search remains an intentional drill-down.
 Validation evidence is recorded in the implementation role review and
 [`../../signals/performance/fantasy-today-2026-09-05.md`](../../signals/performance/fantasy-today-2026-09-05.md).
 The database and sidecars remained byte-identical during the read-only smoke,
-and no daily surface invokes an IceLines subprocess. A compact sealed L1 parity
-fixture and field-triggered async TUI loading remain optional follow-ups, not
-completion blockers.
+and no daily surface invokes an IceLines subprocess. The completion audit added
+a compact sealed public surface fixture consumed by CLI, TUI, and Web, carried
+the requested season type through the stats load, made missing rules/cache
+failures typed and actionable, rejected stale/partial saved matchups, and made
+all surfaces render the same v2 alternatives and fingerprint. Field-triggered
+async TUI loading remains an optional follow-up because it does not change the
+decision contract and measured warm assembly remains below the interaction
+budget.
+
+## Requirement audit closure
+
+| Requirement family | Closing evidence |
+|---|---|
+| Request identity and typed recovery | `FantasyTodayAssemblyRequest` carries season type; service tests cover missing database, rules, schedule cache, invalid inputs, and exact league/team resolution paths. |
+| Saved matchup trust | Selection tests cover newest coherent, reverse orientation, wrong team, future, stale, and partial snapshots; category components remain explicitly unavailable. |
+| Pure contracts and compatibility | Independent v1/v2 goldens, deterministic fingerprints, exact `v1_projection()`, and bounded-candidate disclosure tests. |
+| Surface convergence | CLI, TUI, and Web call the one service and consume `FantasyTodaySurfaceDecision`; the shared sealed fixture pins decision, alternatives, deadline, firmness, evidence age, matchup impact, and fingerprint. |
+| Interaction and accessibility | CLI wrapping, 80/120-column TUI degradation and refresh entry points, plus semantic responsive no-script Web and typed empty/error routes. |
+| Performance and immutability | Named release cold/warm and bounded-candidate measurements live in `signals/performance/fantasy-today-2026-09-05.md`; database hash/sidecar and zero-subprocess evidence are recorded there. |
+| PUCK boundary | `docs/contracts/fantasy-today-v2.md` documents the generic handoff; no private roster, credential, sentimental weight, or automatic journal is stored here. |

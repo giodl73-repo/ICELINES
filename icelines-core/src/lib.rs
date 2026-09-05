@@ -147,8 +147,8 @@ pub use view_model::fantasy_today::{
     FantasyTodayAction, FantasyTodayContext, FantasyTodayEvidenceRow, FantasyTodayFirmness,
     FantasyTodayGoalieSummary, FantasyTodayInput, FantasyTodayLineupSummary,
     FantasyTodayMatchupInput, FantasyTodayMatchupSummary, FantasyTodayQuietNightSummary,
-    FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayV2View, FantasyTodayView,
-    FANTASY_TODAY_SCHEMA, FANTASY_TODAY_V2_SCHEMA,
+    FantasyTodayReadinessRow, FantasyTodayState, FantasyTodaySurfaceDecision, FantasyTodayV2View,
+    FantasyTodayView, FANTASY_TODAY_SCHEMA, FANTASY_TODAY_V2_SCHEMA,
 };
 pub use view_model::identity_review_workboard::{
     build_identity_review_workboard, IdentityReviewContextInput, IdentityReviewDraftCoordinates,

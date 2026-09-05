@@ -124,3 +124,19 @@ the extra worker complexity.
 - `py C:/src/tracker/repos/standards-protocols/roles/tools/check_roles.py .`:
   pass with the repository's pre-existing role-frontmatter warnings
 - `git diff --check`: pass (Git emitted Windows line-ending notices only)
+
+## Completion-audit addendum
+
+A second requirement-by-requirement pass was performed before merge. HART
+found that the request's season type was documented but the assembler still
+loaded regular-season rows; it now carries the axis through stats loading and
+context. EDGE and WIRE required stale saved snapshots and missing rules/cache
+to have explicit typed outcomes. KEEL, BENCH, and broadcast found a surface
+parity gap: CLI/TUI retained v1 alternatives while Web omitted alternatives and
+none of the human surfaces showed the decision fingerprint.
+
+Those findings are closed by the shared `FantasyTodaySurfaceDecision`, a
+public sealed fixture consumed in core, CLI, TUI, and Web tests, typed recovery
+tests, and stale/partial snapshot tests. Web now renders alternatives and a
+mobile-wrapping fingerprint; CLI keeps fingerprint output within 80 columns;
+TUI renders the same shared decision subset. No new P1 or P2 issue remains.

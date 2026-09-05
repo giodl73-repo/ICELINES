@@ -106,24 +106,26 @@ pub fn load_today_contract(stats_season: &str) -> Result<FantasyTodayV2View, Str
 }
 
 fn today_v2_lines(view: &FantasyTodayV2View) -> Vec<Line<'static>> {
+    let summary = view.surface_decision();
     let mut projected = view.today.clone();
     if let Some(primary) = &view.decisions.primary_decision {
         let mut action = primary.action.clone();
-        action.message = format!(
-            "{} [{:?}; legal now: {}]{}",
-            action.message,
-            action.firmness,
-            primary.legal_at_evaluation,
-            primary
-                .matchup_impact
-                .as_ref()
-                .map(|impact| format!(" | {impact}"))
-                .unwrap_or_default()
-        );
+        action.message = summary.primary_display_message();
         projected.primary_decision = Some(action);
-        projected.next_decision_deadline_utc = primary.deadline_utc;
     }
-    today_lines(&projected)
+    projected.alternatives = view
+        .decisions
+        .alternatives
+        .iter()
+        .map(|row| row.action.clone())
+        .collect();
+    projected.next_decision_deadline_utc = summary.deadline_utc;
+    let mut lines = today_lines(&projected);
+    lines.push(Line::styled(
+        format!("Decision {}", summary.material_fingerprint),
+        tui_meta_style(),
+    ));
+    lines
 }
 
 fn today_lines(view: &FantasyTodayView) -> Vec<Line<'static>> {
@@ -719,6 +721,21 @@ mod tests {
             assert!(output.contains("Fantasy cockpit unavailable"));
             assert!(output.contains("fantasy today"));
         }
+    }
+
+    #[test]
+    fn l0_fantasy_today_tui_consumes_the_sealed_surface_projection() {
+        let fixture: icelines_core::FantasyTodaySurfaceDecision =
+            serde_json::from_str(include_str!(
+                "../../../../icelines-core/tests/fixtures/fantasy_today_surface_decision.v1.json"
+            ))
+            .unwrap();
+
+        assert!(fixture
+            .primary_display_message()
+            .starts_with("Start Fixture Player [firm; legal now: true"));
+        assert_eq!(fixture.alternative_messages[0], "Bench Fixture Goalie");
+        assert!(fixture.deadline_utc.is_some());
     }
 
     #[test]
