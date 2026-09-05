@@ -19,7 +19,8 @@ use icelines_core::{
     build_fantasy_simulation_view, resolve_fantasy_scenario_roster_details, FantasyRosterGapInput,
     FantasyRosterGapView, FantasySimulationBuildInput, FantasySimulationConfidence,
     FantasySimulationHorizon, FantasySimulationRosterTeamInput,
-    FantasySimulationScenarioRosterInput, FantasySimulationView, Scheme,
+    FantasySimulationScenarioRosterInput, FantasySimulationView, FantasyTodayState,
+    FantasyTodayView, Scheme,
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
@@ -161,6 +162,120 @@ pub async fn get_fantasy_roster_shape_json(
         )
             .into_response(),
     }
+}
+
+pub async fn get_fantasy_today_json(Query(q): Query<FantasyWebQuery>) -> Response {
+    match load_fantasy_today_contract(&q).await {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(message) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            axum::Json(serde_json::json!({
+                "schema": "fantasy_today.v1",
+                "state": "blocked",
+                "error": message,
+                "recovery_command": "icelines fantasy today"
+            })),
+        )
+            .into_response(),
+    }
+}
+
+pub async fn get_fantasy_today(Query(q): Query<FantasyWebQuery>) -> Response {
+    match load_fantasy_today_contract(&q).await {
+        Ok(view) => Html(render_fantasy_today_html(&view)).into_response(),
+        Err(message) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Html(format!(
+                "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Fantasy Today unavailable</title><main><h1>Fantasy Today unavailable</h1><p role=\"status\">{}</p><p>Run <code>icelines fantasy today</code> for recovery guidance.</p></main></html>",
+                escape_html(&message)
+            )),
+        )
+            .into_response(),
+    }
+}
+
+async fn load_fantasy_today_contract(q: &FantasyWebQuery) -> Result<FantasyTodayView, String> {
+    let date = q.date.clone();
+    let league = q.league.clone();
+    tokio::task::spawn_blocking(move || {
+        let executable = std::env::current_exe().map_err(|error| error.to_string())?;
+        let mut command = std::process::Command::new(executable);
+        command.args(["fantasy", "today", "--json"]);
+        if let Some(date) = date {
+            command.args(["--date", &date]);
+        }
+        if let Some(league) = league {
+            command.args(["--league", &league]);
+        }
+        let output = command
+            .output()
+            .map_err(|error| format!("start local cockpit adapter: {error}"))?;
+        if !output.status.success() {
+            return Err(String::from_utf8_lossy(&output.stderr).trim().to_owned());
+        }
+        serde_json::from_slice(&output.stdout)
+            .map_err(|error| format!("decode fantasy_today.v1 contract: {error}"))
+    })
+    .await
+    .map_err(|error| format!("join local cockpit adapter: {error}"))?
+}
+
+fn render_fantasy_today_html(view: &FantasyTodayView) -> String {
+    let state = match view.state {
+        FantasyTodayState::Ready => "ready",
+        FantasyTodayState::Provisional => "provisional",
+        FantasyTodayState::Blocked => "blocked",
+    };
+    let decision = view
+        .primary_decision
+        .as_ref()
+        .map(|row| row.message.as_str())
+        .unwrap_or("No action recommended.");
+    let deadline = view
+        .next_decision_deadline_utc
+        .map(|value| value.to_rfc3339())
+        .unwrap_or_else(|| "No pending deadline".to_owned());
+    let readiness = view
+        .readiness
+        .iter()
+        .filter(|row| row.state != FantasyTodayState::Ready)
+        .map(|row| {
+            format!(
+                "<li><strong>{}</strong>: {}{}</li>",
+                escape_html(&row.workflow),
+                escape_html(&row.message),
+                row.recovery_command
+                    .as_ref()
+                    .map(|command| format!(" <code>{}</code>", escape_html(command)))
+                    .unwrap_or_default()
+            )
+        })
+        .collect::<String>();
+    format!(
+        "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Fantasy Today</title><style>body{{font:16px system-ui;max-width:72rem;margin:auto;padding:1rem}}section{{border:1px solid #888;border-radius:.5rem;padding:1rem;margin-block:1rem}}.state{{font-weight:700;text-transform:uppercase}}@media(max-width:40rem){{body{{padding:.6rem}}}}</style><main><h1>Fantasy Today</h1><p>{} · {} · <time>{}</time></p><p class=\"state\" aria-label=\"Cockpit readiness\">{}</p><section aria-labelledby=\"decision\"><h2 id=\"decision\">Do now</h2><p>{}</p><p>Next deadline: <time>{}</time></p></section><section aria-labelledby=\"lineup\"><h2 id=\"lineup\">Lineup and budget</h2><p>{} usable starts; {} open slots; {} bench players have games.</p><p>{}/{} acquisitions used; {} safe for proactive use.</p></section><section aria-labelledby=\"readiness\"><h2 id=\"readiness\">Readiness</h2><ul>{}</ul></section></main></html>",
+        escape_html(&view.context.league_name),
+        escape_html(&view.context.fantasy_team_name),
+        view.context.date,
+        state,
+        escape_html(decision),
+        escape_html(&deadline),
+        view.lineup.usable_starts,
+        view.lineup.open_active_slots,
+        view.lineup.bench_players_with_games,
+        view.acquisitions.used,
+        view.acquisitions.limit,
+        view.acquisitions.proactive_remaining,
+        readiness
+    )
+}
+
+fn escape_html(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
 
 fn render_template(tmpl: FantasyTemplate) -> Response {

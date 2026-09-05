@@ -2347,6 +2347,8 @@ icelines fantasy morning --date 2026-10-08
 icelines fantasy morning --date 2026-10-08 --at 2026-10-08T17:30:00-07:00
 icelines fantasy morning --date 2026-10-08 --current-goalie-appearances 2
 icelines fantasy morning --material-only --json
+icelines fantasy today
+icelines fantasy today --json
 icelines fantasy morning-card --date 2026-10-08
 icelines fantasy morning-card --date 2026-10-08 --current-goalie-appearances 2 --json
 ```
@@ -2841,6 +2843,7 @@ icelines tui depth                   # cross-team depth chart
 icelines tui stats                   # interactive query builder
 icelines tui goalies                 # goalie leaderboard
 icelines tui poach                   # fantasy poacher board
+icelines tui fantasy                 # read-only daily fantasy season cockpit
 icelines tui watchlist               # local fantasy poacher watchlist group
 icelines tui scores                  # tonight's games + boxscores
 icelines tui schedule                # weekly + season schedule

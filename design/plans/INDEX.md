@@ -53,6 +53,12 @@ does not consume another top-level active-plan slot. It adds secure read-only
 provider ingestion while keeping NHL statistics authoritative: see
 [`2026-08-25-yahoo-fantasy-oauth-sync.md`](2026-08-25-yahoo-fantasy-oauth-sync.md).
 
+Fantasy Season Cockpit is an active child workstream of Fantasy War Room and
+does not consume another top-level active-plan slot. It composes the existing
+morning, matchup, lineup, goalie, pickup, and readiness contracts into one fast
+daily decision surface: see
+[`2026-09-05-fantasy-season-cockpit.md`](2026-09-05-fantasy-season-cockpit.md).
+
 ## Roadmap Ledger
 
 Jennings restored the measured baseline, Campbell established the shared
@@ -74,6 +80,7 @@ editorial/stathead workflows, and data freshness authority.
 | [UI-Neutral Card System](2026-07-21-ui-neutral-card-system.md) | Complete | One versioned IceLines-owned document drives prognosis, fantasy, prospective simulation, and historical replay cards across JSON/Web/TUI/reference renderers. |
 | [Documentation Consolidation](2026-07-21-documentation-consolidation.md) | Planned | Classifies the current 57 specs and 157 plans, limits the active set, archives closed micro-plans without losing history, and adds drift checks. |
 | [Fantasy War Room Roadmap](2026-07-18-fantasy-war-room-roadmap.md) | Active | Sequences weekly matchup strategy, playoff portfolio, live draft sessions, four-move pickup planning, injury contingencies, goalie decisions, trade counters, archetypes, decision review, and readiness. |
+| [Fantasy Season Cockpit](2026-09-05-fantasy-season-cockpit.md) | Active child workstream | Composes the existing fantasy decision contracts into `fantasy_today.v1` for one fast CLI/TUI/Web daily operator view. |
 | [Fantasy Draft and Daily Assistant](2026-07-16-fantasy-draft-daily-assistant.md) | Superseded for active navigation | Original execution plan retained pending archive migration; active work is owned by Fantasy War Room. |
 | [Team Season Forecast](2026-07-19-team-season-forecast.md) | Implemented | Forecasts every game, runs seeded standings/playoff/streak trials, models player risks and atomic trades, and supports rolling plus cutoff-conditioned historical replay/calibration. |
 | [Line Combination Simulation](2026-07-23-line-combination-simulation.md) | Active child workstream | Adds The Blender lineup comparison and The Bench adaptive, result-aware coaching policy to IceCast. |

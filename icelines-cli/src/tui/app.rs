@@ -183,6 +183,7 @@ pub enum Screen {
     Transactions, // league-wide moves feed (Phase T.5)
     Favorites,    // Phase Foster.2 — favorites dashboard
     Poach,        // Phase Selke.5 — fantasy poacher board
+    FantasyToday, // Daily fantasy season cockpit
     FantasyGaps,  // Phase Selke — active fantasy roster gap board
     FantasySim,   // Phase Selke — league simulation board
 }

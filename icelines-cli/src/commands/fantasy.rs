@@ -26,10 +26,10 @@ use icelines_core::{
     build_fantasy_morning_briefing, build_fantasy_morning_card,
     build_fantasy_platform_snapshot_view, build_fantasy_playoff_portfolio,
     build_fantasy_roster_card, build_fantasy_schedule_view, build_fantasy_simulation_view,
-    build_fantasy_sleeper_board, build_fantasy_trade_card, build_fantasy_week_budget,
-    build_fantasy_weekly_pickups_with_reserve_override, fantasy_acquisition_availability,
-    goalie_scheme_stats_from_view, import_fantasy_platform_eligibility,
-    import_fantasy_taken_players,
+    build_fantasy_sleeper_board, build_fantasy_today, build_fantasy_trade_card,
+    build_fantasy_week_budget, build_fantasy_weekly_pickups_with_reserve_override,
+    fantasy_acquisition_availability, goalie_scheme_stats_from_view,
+    import_fantasy_platform_eligibility, import_fantasy_taken_players,
     model::{Position, Season},
     name::normalize_name,
     rank_fantasy_playoff_candidate_fits, resolve_fantasy_goalie_start,
@@ -61,10 +61,12 @@ use icelines_core::{
     FantasySeasonSimPlayerInput, FantasySeasonSimView, FantasySimulationBuildInput,
     FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
     FantasySimulationScenarioRosterInput, FantasySimulationView, FantasySleeperBoardView,
-    FantasySleeperInput, FantasyStatusObservation, FantasyTradeCardInput,
-    FantasyTradeEvaluationView, FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation,
-    FantasyWeeklyMoveInput, RosterShape, RosterShapeStatus, RosterShapeValidationView, ViewContext,
-    ViewWindow, CURRENT_SEASON, FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_TRADE_EVALUATION_SCHEMA,
+    FantasySleeperInput, FantasyStatusObservation, FantasyTodayContext, FantasyTodayEvidenceRow,
+    FantasyTodayInput, FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayView,
+    FantasyTradeCardInput, FantasyTradeEvaluationView, FantasyTradePlayerEvaluation,
+    FantasyTradeTeamEvaluation, FantasyWeeklyMoveInput, RosterShape, RosterShapeStatus,
+    RosterShapeValidationView, ViewContext, ViewWindow, CURRENT_SEASON,
+    FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_TRADE_EVALUATION_SCHEMA,
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
@@ -87,6 +89,7 @@ const CREASE_STARTER_EVIDENCE_HEADER: &str = "THE CREASE — STARTER EVIDENCE";
 const CREASE_GOALIE_PLAN_HEADER: &str = "THE CREASE — WHO GETS THE NET?";
 const PENALTY_BOX_AVAILABILITY_HEADER: &str = "THE PENALTY BOX — AVAILABILITY REPORT";
 const INSIDER_MORNING_SKATE_HEADER: &str = "THE INSIDER — MORNING SKATE";
+const FANTASY_TODAY_HEADER: &str = "FANTASY TODAY — SEASON COCKPIT";
 const SCOREBOARD_FANTASY_STANDINGS_HEADER: &str = "THE SCOREBOARD — FANTASY STANDINGS";
 const BENCH_SCHEDULE_EDGE_HEADER: &str = "THE BENCH — THE GAUNTLET — FANTASY SCHEDULE EDGE";
 const BENCH_COVERAGE_HEADER: &str = "THE BENCH — SUBSTITUTION COVERAGE";
@@ -1614,7 +1617,7 @@ pub async fn run_schedule_edge(args: ScheduleEdgeArgs) -> anyhow::Result<()> {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub async fn run_bench_coverage(
+async fn build_bench_coverage_view_for_context(
     week: NaiveDate,
     weeks: usize,
     team_override: Option<String>,
@@ -1623,18 +1626,25 @@ pub async fn run_bench_coverage(
     stats_season: String,
     off_night_max_games: usize,
     refresh: bool,
-    json_output: bool,
-) -> anyhow::Result<()> {
+    db_override: Option<&FantasyDb>,
+    schedule_override: Option<&[ScheduledGame]>,
+) -> anyhow::Result<FantasyBenchCoverageView> {
     if !(1..=26).contains(&weeks) {
         bail!("--weeks must be between 1 and 26");
     }
     if !(1..=16).contains(&off_night_max_games) {
         bail!("--off-night-max-games must be between 1 and 16");
     }
-    let db = FantasyDb::open()?;
-    let league = require_league(&db, &league_override)?;
+    let owned_db;
+    let db = if let Some(db) = db_override {
+        db
+    } else {
+        owned_db = FantasyDb::open()?;
+        &owned_db
+    };
+    let league = require_league(db, &league_override)?;
     let team = if let Some(name) = team_override {
-        require_team(&db, &league.id, &name)?
+        require_team(db, &league.id, &name)?
     } else {
         db.get_user_team(&league.id)?.ok_or_else(|| {
             anyhow::anyhow!(
@@ -1717,10 +1727,17 @@ pub async fn run_bench_coverage(
     }
     let start = week - Duration::days(week.weekday().num_days_from_monday() as i64);
     let end = start + Duration::days(weeks as i64 * 7 - 1);
-    let games = load_fantasy_schedule(Season(season), refresh)
-        .await?
-        .into_iter()
+    let loaded_schedule;
+    let schedule = if let Some(schedule) = schedule_override {
+        schedule
+    } else {
+        loaded_schedule = load_fantasy_schedule(Season(season), refresh).await?;
+        &loaded_schedule
+    };
+    let games = schedule
+        .iter()
         .filter(|game| game.game_type == 2)
+        .cloned()
         .map(|game| {
             Ok(icelines_core::FantasyScheduleGameInput {
                 game_id: game.game_id,
@@ -1741,6 +1758,34 @@ pub async fn run_bench_coverage(
         games,
     })
     .map_err(anyhow::Error::msg)?;
+    Ok(view)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn run_bench_coverage(
+    week: NaiveDate,
+    weeks: usize,
+    team_override: Option<String>,
+    league_override: Option<String>,
+    season: u32,
+    stats_season: String,
+    off_night_max_games: usize,
+    refresh: bool,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    let view = build_bench_coverage_view_for_context(
+        week,
+        weeks,
+        team_override,
+        league_override,
+        season,
+        stats_season,
+        off_night_max_games,
+        refresh,
+        None,
+        None,
+    )
+    .await?;
     if json_output {
         println!("{}", serde_json::to_string_pretty(&view)?);
     } else {
@@ -1806,6 +1851,65 @@ fn print_bench_coverage(view: &FantasyBenchCoverageView) {
     for disclosure in &view.disclosures {
         println!("note: {disclosure}");
     }
+}
+
+fn build_today_bench_coverage(
+    fantasy_team: &str,
+    date: NaiveDate,
+    lineup: &icelines_core::FantasyDailyLineupView,
+    schedule: &[ScheduledGame],
+) -> anyhow::Result<Option<FantasyBenchCoverageView>> {
+    let players = lineup
+        .active
+        .iter()
+        .map(|row| FantasyBenchCoveragePlayerInput {
+            player_key: row.player_key.clone(),
+            player: row.player.clone(),
+            nhl_team: row.nhl_team.clone(),
+            positions: row.platform_positions.clone(),
+            projected_value_per_game: row.projected_value,
+        })
+        .chain(
+            lineup
+                .bench_assignments
+                .iter()
+                .map(|row| FantasyBenchCoveragePlayerInput {
+                    player_key: row.player_key.clone(),
+                    player: row.player.clone(),
+                    nhl_team: row.nhl_team.clone(),
+                    positions: row.platform_positions.clone(),
+                    projected_value_per_game: row.projected_value,
+                }),
+        )
+        .collect::<Vec<_>>();
+    if players.is_empty() {
+        return Ok(None);
+    }
+    let (start, end) = Timeframe::Week.range(date);
+    let games = schedule
+        .iter()
+        .filter(|game| game.game_type == 2)
+        .map(|game| {
+            Ok(icelines_core::FantasyScheduleGameInput {
+                game_id: game.game_id,
+                date: NaiveDate::parse_from_str(&game.date, "%Y-%m-%d")
+                    .with_context(|| format!("invalid NHL schedule date '{}'", game.date))?,
+                away_team: game.away_abbrev.clone(),
+                home_team: game.home_abbrev.clone(),
+            })
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    build_fantasy_bench_coverage(FantasyBenchCoverageInput {
+        fantasy_team: fantasy_team.to_owned(),
+        start,
+        end,
+        off_night_max_games: 4,
+        rules: lineup.rules.clone(),
+        players,
+        games,
+    })
+    .map(Some)
+    .map_err(anyhow::Error::msg)
 }
 
 /// Rank the marked roster by legal usable starts across the final fantasy playoff weeks.
@@ -2160,6 +2264,46 @@ pub(crate) async fn load_fantasy_schedule(
     }
     store.persist_schedule(season, &games)?;
     Ok(games)
+}
+
+fn load_cached_fantasy_schedule(season: Season) -> anyhow::Result<Vec<ScheduledGame>> {
+    let root = default_data_root().ok_or_else(|| anyhow::anyhow!("cannot determine data root"))?;
+    if !root.exists() {
+        bail!(
+            "no cached NHL schedule is available; run `icelines fantasy schedule-edge --season {}` before `icelines fantasy today`",
+            season.0
+        );
+    }
+    let store = DataStore::open(root)?;
+    let games = store.load_schedule(season).with_context(|| {
+        format!(
+            "load cached NHL schedule for {}; run `icelines fantasy schedule-edge --season {} --refresh` to refresh it",
+            season.0, season.0
+        )
+    })?;
+    if games.is_empty() {
+        bail!(
+            "cached NHL schedule for {} is empty; run `icelines fantasy schedule-edge --season {} --refresh`",
+            season.0,
+            season.0
+        );
+    }
+    Ok(games)
+}
+
+fn open_existing_fantasy_db_read_only() -> anyhow::Result<FantasyDb> {
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+    let path = home.join(".icelines").join("icelines.db");
+    if !path.is_file() {
+        bail!(
+            "fantasy database does not exist at {}; run `icelines fantasy league-create` first",
+            path.display()
+        );
+    }
+    FantasyDb::open_existing_read_only_path(path)
 }
 
 fn resolve_user_roster_teams(
@@ -4323,6 +4467,7 @@ pub async fn run_goalie_start_template(
         360,
         evaluated_at,
         evaluated_at,
+        None,
     )
     .await?;
     let latest_states = db
@@ -4482,6 +4627,7 @@ async fn build_goalie_plan_view_for_context(
     max_age_minutes: i64,
     evaluated_at: DateTime<Utc>,
     budget_at: DateTime<Utc>,
+    schedule_override: Option<&[ScheduledGame]>,
 ) -> anyhow::Result<icelines_core::FantasyGoaliePlanView> {
     if max_age_minutes < 0 {
         bail!("--max-age-minutes cannot be negative");
@@ -4509,7 +4655,13 @@ async fn build_goalie_plan_view_for_context(
         crate::commands::players::load_repo_for_season(Some(stats_season), None)?;
     let (skater_views, goalie_views) = pools_views(&outcome.repo, stats_window);
     let current_teams = load_current_player_team_map(Season(CURRENT_SEASON)).ok();
-    let schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
+    let loaded_schedule;
+    let schedule = if let Some(schedule) = schedule_override {
+        schedule
+    } else {
+        loaded_schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
+        &loaded_schedule
+    };
     let mut offense_by_team = HashMap::<String, f64>::new();
     for view in &skater_views {
         if view.gp() == 0 {
@@ -4567,7 +4719,7 @@ async fn build_goalie_plan_view_for_context(
             .cloned()
             .unwrap_or_else(|| view.team_display().to_owned());
         let mut games =
-            goalie_schedule_contexts(&schedule, &nhl_team, week_start, week_end, &offense_index);
+            goalie_schedule_contexts(schedule, &nhl_team, week_start, week_end, &offense_index);
         if games.is_empty() {
             continue;
         }
@@ -4750,6 +4902,7 @@ pub async fn run_goalie_plan(
         max_age_minutes,
         Utc::now(),
         budget_at,
+        None,
     )
     .await?;
     if let Some(evidence) = snapshot_evidence {
@@ -4830,6 +4983,9 @@ fn print_goalie_plan(view: &icelines_core::FantasyGoaliePlanView) {
     }
 }
 
+// The optional clock and schedule are explicit test/offline seams; keeping them
+// beside the command inputs makes the production and hermetic paths identical.
+#[allow(clippy::too_many_arguments)]
 async fn build_injury_plan_view(
     db: &FantasyDb,
     league: &LeagueRow,
@@ -4838,6 +4994,7 @@ async fn build_injury_plan_view(
     stats_season: String,
     max_age_minutes: i64,
     evaluation_at: Option<DateTime<Utc>>,
+    schedule_override: Option<&[ScheduledGame]>,
 ) -> anyhow::Result<FantasyInjuryPlanView> {
     let timezone = rules
         .timezone
@@ -4907,8 +5064,14 @@ async fn build_injury_plan_view(
         .map(|row| (row.player_normalized, row.positions))
         .collect::<HashMap<_, _>>();
     let current_teams = load_current_player_team_map(Season(CURRENT_SEASON)).ok();
-    let schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
-    let (team_dates, _, _) = draft_schedule_metrics(&schedule, 4);
+    let loaded_schedule;
+    let schedule = if let Some(schedule) = schedule_override {
+        schedule
+    } else {
+        loaded_schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
+        &loaded_schedule
+    };
+    let (team_dates, _, _) = draft_schedule_metrics(schedule, 4);
     let views = skaters
         .iter()
         .chain(&goalies)
@@ -5000,6 +5163,7 @@ pub async fn run_injury_plan(
         stats_season,
         max_age_minutes,
         None,
+        None,
     )
     .await?;
     if json {
@@ -5036,6 +5200,7 @@ pub async fn run_roster_card(
         date,
         stats_season,
         max_age_minutes,
+        None,
         None,
     )
     .await?;
@@ -5134,6 +5299,13 @@ fn print_injury_plan(plan: &FantasyInjuryPlanView) {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MorningOutput {
+    Briefing,
+    Today,
+    Card,
+}
+
 #[allow(clippy::too_many_arguments)]
 pub async fn run_morning(
     date: Option<String>,
@@ -5144,15 +5316,21 @@ pub async fn run_morning(
     current_goalie_appearances: f64,
     material_only: bool,
     json: bool,
-    card: bool,
+    output: MorningOutput,
 ) -> anyhow::Result<()> {
-    let db = FantasyDb::open()?;
+    let today = output == MorningOutput::Today;
+    let db = if today {
+        open_existing_fantasy_db_read_only()?
+    } else {
+        FantasyDb::open()?
+    };
     let league = require_league(&db, &league_override)?;
     let rules = db
         .get_assistant_rules(&league.id)?
         .unwrap_or_else(FantasyAssistantRules::configured_2026);
     let pickup_date = date.clone();
     let pickup_stats_season = stats_season.clone();
+    let today_stats_season = stats_season.clone();
     let sleeper_stats_season = stats_season.clone();
     let goalie_stats_season = stats_season.clone();
     let sleeper_baseline_season = previous_season_id(&stats_season)?;
@@ -5164,6 +5342,11 @@ pub async fn run_morning(
                 .with_context(|| format!("invalid RFC3339 timestamp '{value}'"))
         })
         .transpose()?;
+    let cached_schedule = if today {
+        Some(load_cached_fantasy_schedule(Season(CURRENT_SEASON))?)
+    } else {
+        None
+    };
     let plan = build_injury_plan_view(
         &db,
         &league,
@@ -5172,6 +5355,7 @@ pub async fn run_morning(
         stats_season,
         max_age_minutes,
         evaluation_at,
+        cached_schedule.as_deref(),
     )
     .await?;
     let has_uncertain_status = plan
@@ -5214,35 +5398,45 @@ pub async fn run_morning(
         max_age_minutes,
         goalie_evaluation_at,
         goalie_evaluation_at,
+        cached_schedule.as_deref(),
     )
     .await?;
     if let Some(evidence) = snapshot_evidence {
         goalie_plan.warnings.push(evidence);
     }
-    let (pickup_plan, _, _) = build_weekly_pickups_view(
-        &db,
-        &league,
-        rules.clone(),
-        None,
-        pickup_date,
-        pickup_stats_season,
-        50,
-        5,
-        evaluation_at,
-        !plan.lineup.injured_reserve.is_empty() || !plan.lineup.injured_reserve_plus.is_empty(),
-        !has_uncertain_status,
-    )
-    .await?;
-    let budget = pickup_plan.budget.clone();
-    let sleeper_plan = build_sleepers_view(
-        &db,
-        &league,
-        sleeper_stats_season,
-        sleeper_baseline_season,
-        Vec::new(),
-        5,
-    )
-    .await?;
+    let (pickup_plan, budget, sleeper_plan) = if today {
+        (
+            None,
+            load_week_budget(&db, &league.id, &rules, goalie_evaluation_at)?,
+            None,
+        )
+    } else {
+        let (pickup_plan, _, _) = build_weekly_pickups_view(
+            &db,
+            &league,
+            rules.clone(),
+            None,
+            pickup_date,
+            pickup_stats_season,
+            50,
+            5,
+            evaluation_at,
+            !plan.lineup.injured_reserve.is_empty() || !plan.lineup.injured_reserve_plus.is_empty(),
+            !has_uncertain_status,
+        )
+        .await?;
+        let budget = pickup_plan.budget.clone();
+        let sleeper_plan = build_sleepers_view(
+            &db,
+            &league,
+            sleeper_stats_season,
+            sleeper_baseline_season,
+            Vec::new(),
+            5,
+        )
+        .await?;
+        (Some(pickup_plan), budget, Some(sleeper_plan))
+    };
     let generated_at = Utc::now();
     let mut briefing = build_fantasy_morning_briefing(
         generated_at,
@@ -5251,22 +5445,150 @@ pub async fn run_morning(
         plan,
         Some(goalie_plan),
         budget,
-        Some(pickup_plan),
-        Some(sleeper_plan),
+        pickup_plan,
+        sleeper_plan,
     );
-    let prior = db.get_morning_briefing_fingerprint(&league.id, briefing.date)?;
-    briefing.suppressed_unchanged =
-        material_only && prior.as_deref() == Some(briefing.material_fingerprint.as_str());
-    if prior.as_deref() != Some(briefing.material_fingerprint.as_str()) {
-        db.upsert_morning_briefing_fingerprint(
-            &league.id,
+    let bench_coverage = if today {
+        build_today_bench_coverage(
+            &user_team.name,
             briefing.date,
-            &briefing.material_fingerprint,
-            generated_at,
-        )?;
+            &briefing.injury_plan.lineup,
+            cached_schedule
+                .as_deref()
+                .expect("today preloads a schedule"),
+        )?
+    } else {
+        None
+    };
+    if !today {
+        let prior = db.get_morning_briefing_fingerprint(&league.id, briefing.date)?;
+        briefing.suppressed_unchanged =
+            material_only && prior.as_deref() == Some(briefing.material_fingerprint.as_str());
+        if prior.as_deref() != Some(briefing.material_fingerprint.as_str()) {
+            db.upsert_morning_briefing_fingerprint(
+                &league.id,
+                briefing.date,
+                &briefing.material_fingerprint,
+                generated_at,
+            )?;
+        }
     }
 
-    if card {
+    if today {
+        let status_refreshes = briefing
+            .injury_plan
+            .statuses
+            .iter()
+            .filter(|status| status.requires_pregame_refresh)
+            .count();
+        let readiness = vec![
+            FantasyTodayReadinessRow {
+                workflow: "schedule".to_owned(),
+                state: FantasyTodayState::Ready,
+                reason_code: None,
+                message: format!("cached official NHL schedule loaded for {CURRENT_SEASON}"),
+                recovery_command: Some(format!(
+                    "icelines fantasy schedule-edge --season {CURRENT_SEASON} --refresh"
+                )),
+            },
+            FantasyTodayReadinessRow {
+                workflow: "rules_roster".to_owned(),
+                state: FantasyTodayState::Ready,
+                reason_code: None,
+                message: "saved league rules, user team, roster, and eligibility loaded read-only"
+                    .to_owned(),
+                recovery_command: Some("icelines fantasy snapshot-yahoo".to_owned()),
+            },
+            FantasyTodayReadinessRow {
+                workflow: "player_rates".to_owned(),
+                state: FantasyTodayState::Ready,
+                reason_code: None,
+                message: format!("sealed player-rate sample loaded for {today_stats_season}"),
+                recovery_command: Some(format!("icelines fetch all --season {today_stats_season}")),
+            },
+            FantasyTodayReadinessRow {
+                workflow: "player_status".to_owned(),
+                state: if status_refreshes == 0 {
+                    FantasyTodayState::Ready
+                } else {
+                    FantasyTodayState::Provisional
+                },
+                reason_code: (status_refreshes > 0).then(|| "status_refresh_required".to_owned()),
+                message: if status_refreshes == 0 {
+                    "saved status evidence is current for displayed decisions".to_owned()
+                } else {
+                    format!("{status_refreshes} roster status observation(s) require refresh")
+                },
+                recovery_command: (status_refreshes > 0)
+                    .then(|| "icelines fantasy status-show".to_owned()),
+            },
+        ];
+        let evidence = vec![
+            FantasyTodayEvidenceRow {
+                source_family: "nhl_schedule_cache".to_owned(),
+                authority_scope: "NHL schedule and game timing".to_owned(),
+                state: FantasyTodayState::Ready,
+                observed_at: None,
+                fetched_at: None,
+                detail: format!("cached regular-season schedule for {CURRENT_SEASON}"),
+                recovery_command: Some(format!(
+                    "icelines fantasy schedule-edge --season {CURRENT_SEASON} --refresh"
+                )),
+            },
+            FantasyTodayEvidenceRow {
+                source_family: "fantasy_local_state".to_owned(),
+                authority_scope: "league rules, roster, eligibility, and transaction ledger"
+                    .to_owned(),
+                state: FantasyTodayState::Ready,
+                observed_at: Some(briefing.evaluated_at.to_rfc3339()),
+                fetched_at: None,
+                detail: "opened the existing fantasy database without migrations or writes"
+                    .to_owned(),
+                recovery_command: Some("icelines fantasy snapshot-show".to_owned()),
+            },
+            FantasyTodayEvidenceRow {
+                source_family: "sealed_stats".to_owned(),
+                authority_scope: "player scoring rates".to_owned(),
+                state: FantasyTodayState::Ready,
+                observed_at: None,
+                fetched_at: None,
+                detail: format!("selected NHL stats sample {today_stats_season}"),
+                recovery_command: Some(format!("icelines fetch all --season {today_stats_season}")),
+            },
+        ];
+        let today_view = build_fantasy_today(FantasyTodayInput {
+            context: FantasyTodayContext {
+                league_id: league.id.clone(),
+                league_name: league.name.clone(),
+                fantasy_team_id: user_team.id.clone(),
+                fantasy_team_name: user_team.name.clone(),
+                stats_season: today_stats_season,
+                season_type: SeasonType::Regular,
+                competition_mode: db
+                    .get_competition_rules(&league.id)?
+                    .mode
+                    .label()
+                    .to_owned(),
+                date: briefing.date,
+                week_start: briefing.budget.week_start,
+                week_end: briefing.budget.week_end,
+                timezone: briefing.timezone.clone(),
+                generated_at,
+                evaluated_at: briefing.evaluated_at,
+            },
+            morning: briefing,
+            matchup: None,
+            bench_coverage,
+            provider_status: None,
+            readiness,
+            evidence,
+        });
+        if json {
+            println!("{}", serde_json::to_string_pretty(&today_view)?);
+        } else {
+            print_fantasy_today(&today_view);
+        }
+    } else if output == MorningOutput::Card {
         let mut view =
             ViewContext::new(ViewWindow::new(Season(CURRENT_SEASON), SeasonType::Regular));
         view.generated_at = Some(generated_at);
@@ -5336,6 +5658,104 @@ pub async fn run_morning(
         }
     }
     Ok(())
+}
+
+fn print_fantasy_today(view: &FantasyTodayView) {
+    println!("{FANTASY_TODAY_HEADER}");
+    println!(
+        "{} · {}",
+        view.context.league_name, view.context.fantasy_team_name,
+    );
+    println!(
+        "{} · week {} to {} · {:?}",
+        view.context.date, view.context.week_start, view.context.week_end, view.state
+    );
+    if let Some(action) = &view.primary_decision {
+        print_wrapped(
+            &format!("DO NOW [{:?}]: ", action.firmness),
+            &action.message,
+        );
+    } else {
+        println!("DO NOW: No action recommended.");
+    }
+    if let Some(deadline) = view.next_decision_deadline_utc {
+        println!("Next deadline: {}", deadline.to_rfc3339());
+    }
+    println!(
+        "Lineup: {} usable starts · {} open slots · {} bench players have games",
+        view.lineup.usable_starts,
+        view.lineup.open_active_slots,
+        view.lineup.bench_players_with_games
+    );
+    if let Some(goalies) = &view.goalies {
+        println!(
+            "Goalies: {:.1} current / {} minimum · {:.1} expected · {}",
+            goalies.current_appearances,
+            goalies.minimum_appearances,
+            goalies.expected_total_appearances,
+            if goalies.minimum_at_risk {
+                "minimum at risk"
+            } else {
+                "minimum covered"
+            }
+        );
+    }
+    println!(
+        "Adds: {}/{} used · {} remaining · {} safe for proactive use",
+        view.acquisitions.used,
+        view.acquisitions.limit,
+        view.acquisitions.remaining,
+        view.acquisitions.proactive_remaining
+    );
+    for action in view.alternatives.iter().take(3) {
+        print_wrapped(&format!("NEXT [{:?}]: ", action.firmness), &action.message);
+    }
+    for row in view
+        .readiness
+        .iter()
+        .filter(|row| row.state != FantasyTodayState::Ready)
+    {
+        let detail = format!(
+            "{}{}",
+            row.message,
+            row.recovery_command
+                .as_ref()
+                .map(|command| format!(" · run `{command}`"))
+                .unwrap_or_default()
+        );
+        print_wrapped(&format!("{}: ", row.workflow), &detail);
+    }
+    for warning in &view.warnings {
+        print_wrapped("warning: ", warning);
+    }
+}
+
+fn print_wrapped(prefix: &str, text: &str) {
+    for line in wrapped_lines(prefix, text, 80) {
+        println!("{line}");
+    }
+}
+
+fn wrapped_lines(prefix: &str, text: &str, width: usize) -> Vec<String> {
+    let continuation = " ".repeat(prefix.chars().count().min(width.saturating_sub(1)));
+    let mut line = prefix.to_owned();
+    let mut lines = Vec::new();
+    let mut first_word = true;
+    for word in text.split_whitespace() {
+        let separator = usize::from(!first_word);
+        if line.chars().count() + separator + word.chars().count() > width && !first_word {
+            lines.push(line);
+            line = continuation.clone();
+            first_word = true;
+        }
+        if !first_word {
+            line.push(' ');
+        }
+        line.push_str(word);
+        first_word = false;
+    }
+    lines.push(line);
+    lines
 }
 
 fn previous_season_id(season: &str) -> anyhow::Result<String> {
@@ -9388,6 +9808,17 @@ pub async fn run_serve(port: u16, league_override: Option<String>) -> anyhow::Re
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn l0_fantasy_today_text_wraps_to_the_requested_width() {
+        let lines = wrapped_lines(
+            "warning: ",
+            "opponent offense evidence is descriptive and requires a refresh before a definitive decision",
+            40,
+        );
+        assert!(lines.len() > 1);
+        assert!(lines.iter().all(|line| line.chars().count() <= 40));
+    }
     use icelines_core::{fixtures, identity::PlayerId};
 
     #[test]

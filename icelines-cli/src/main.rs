@@ -1798,7 +1798,29 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     current_goalie_appearances,
                     material_only,
                     json,
+                    commands::fantasy::MorningOutput::Briefing,
+                )
+                .await?
+            }
+            FantasySubcommand::Today {
+                date,
+                at,
+                league,
+                stats_season,
+                max_age_minutes,
+                current_goalie_appearances,
+                json,
+            } => {
+                commands::fantasy::run_morning(
+                    date,
+                    at,
+                    league,
+                    stats_season,
+                    max_age_minutes,
+                    current_goalie_appearances,
                     false,
+                    json,
+                    commands::fantasy::MorningOutput::Today,
                 )
                 .await?
             }
@@ -1820,7 +1842,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     current_goalie_appearances,
                     false,
                     json,
-                    true,
+                    commands::fantasy::MorningOutput::Card,
                 )
                 .await?
             }

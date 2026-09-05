@@ -1,0 +1,33 @@
+{
+  "matchup": null,
+  "next_decision_deadline_utc": null,
+  "primary_decision": {
+    "constraint_summary": "Refresh evidence before the next applicable lineup lock",
+    "firmness": "refresh_required",
+    "id": "today-30-52438f4ffa97",
+    "kind": "refresh_status",
+    "message": "Refresh Test Player before lock",
+    "player": "Test Player",
+    "player_key": "8470001",
+    "priority": 30
+  },
+  "quiet_nights": null,
+  "readiness": [
+    {
+      "message": "No matchup strategy was supplied; no margin is inferred",
+      "reason_code": "matchup_unavailable",
+      "recovery_command": "icelines fantasy matchup-plan",
+      "state": "provisional",
+      "workflow": "matchup"
+    },
+    {
+      "message": "Quiet-night substitution coverage was not supplied",
+      "reason_code": "bench_coverage_unavailable",
+      "recovery_command": "icelines fantasy bench-coverage",
+      "state": "provisional",
+      "workflow": "quiet_nights"
+    }
+  ],
+  "schema": "fantasy_today.v1",
+  "state": "provisional"
+}

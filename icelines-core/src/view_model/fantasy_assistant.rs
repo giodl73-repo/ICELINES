@@ -4575,7 +4575,7 @@ mod tests {
                 scheduled_dates: BTreeSet::from([monday]),
             }
         };
-        let candidates = vec![replacement("higher", 100.0), replacement("lower", 90.0)];
+        let candidates = [replacement("higher", 100.0), replacement("lower", 90.0)];
         let input = FantasyDraftSimulationInput {
             league_size: 2,
             draft_slot: 1,

@@ -138,6 +138,13 @@ pub use view_model::fantasy_platform_snapshot::{
     FantasyPlatformPlayerStatusRow, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
     FantasyPlatformStandingDeltaRow, FantasyPlatformStandingRow, FANTASY_PLATFORM_SNAPSHOT_SCHEMA,
 };
+pub use view_model::fantasy_today::{
+    build_fantasy_today, FantasyTodayAcquisitionSummary, FantasyTodayAction, FantasyTodayContext,
+    FantasyTodayEvidenceRow, FantasyTodayFirmness, FantasyTodayGoalieSummary, FantasyTodayInput,
+    FantasyTodayLineupSummary, FantasyTodayMatchupInput, FantasyTodayMatchupSummary,
+    FantasyTodayQuietNightSummary, FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayView,
+    FANTASY_TODAY_SCHEMA,
+};
 pub use view_model::identity_review_workboard::{
     build_identity_review_workboard, IdentityReviewContextInput, IdentityReviewDraftCoordinates,
     IdentityReviewFamilyCount, IdentityReviewProposalInput, IdentityReviewWorkboardInput,

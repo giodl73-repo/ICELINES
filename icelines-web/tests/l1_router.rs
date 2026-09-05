@@ -2284,6 +2284,52 @@ async fn l1_fantasy_daily_json_surfaces_missing_cache_as_warning() {
 }
 
 #[tokio::test]
+async fn l1_fantasy_today_json_has_typed_blocked_degradation_without_local_state() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    let response = router(WebState::new())
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/today")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    let json = response_json(response, 64 * 1024).await;
+    assert_eq!(json["schema"], "fantasy_today.v1");
+    assert_eq!(json["state"], "blocked");
+    assert_eq!(json["recovery_command"], "icelines fantasy today");
+    assert!(!home.path().join(".icelines").exists());
+}
+
+#[tokio::test]
+async fn l1_fantasy_today_html_degrades_as_semantic_no_script_document() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    let response = router(WebState::new())
+        .oneshot(
+            Request::builder()
+                .uri("/fantasy/today")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    let body = response_text(response, 64 * 1024).await;
+    assert!(body.contains("<main>"));
+    assert!(body.contains("<h1>Fantasy Today unavailable</h1>"));
+    assert!(body.contains("role=\"status\""));
+    assert!(body.contains("name=\"viewport\""));
+    assert!(!body.contains("<script"));
+    assert!(!home.path().join(".icelines").exists());
+}
+
+#[tokio::test]
 async fn l1_fantasy_matchup_json_surfaces_missing_schedule_as_empty_state() {
     let _guard = home_env_lock().await;
     let home = HomeEnvFixture::new();
