@@ -12,6 +12,7 @@ use super::{
 use crate::season_stats::SeasonType;
 
 pub const FANTASY_TODAY_SCHEMA: &str = "fantasy_today.v1";
+pub const FANTASY_TODAY_V2_SCHEMA: &str = "fantasy_today.v2";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -173,6 +174,39 @@ pub struct FantasyTodayInput {
     pub provider_status: Option<FantasyProviderStatusView>,
     pub readiness: Vec<FantasyTodayReadinessRow>,
     pub evidence: Vec<FantasyTodayEvidenceRow>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FantasyTodayV2View {
+    #[serde(flatten)]
+    pub today: FantasyTodayView,
+    pub decisions: super::fantasy_daily_decisions::FantasyDailyDecisionsView,
+}
+
+impl FantasyTodayV2View {
+    pub fn v1_projection(&self) -> FantasyTodayView {
+        let mut view = self.today.clone();
+        view.schema = FANTASY_TODAY_SCHEMA.to_owned();
+        view
+    }
+}
+
+pub fn build_fantasy_today_v2(
+    mut today: FantasyTodayView,
+    transaction_candidate: Option<super::fantasy_daily_decisions::FantasyDailyTransactionCandidate>,
+    candidate_state: FantasyTodayState,
+    candidate_recovery_command: Option<String>,
+) -> FantasyTodayV2View {
+    let decisions = super::fantasy_daily_decisions::build_fantasy_daily_decisions(
+        super::fantasy_daily_decisions::FantasyDailyDecisionsInput {
+            today: today.clone(),
+            transaction_candidate,
+            candidate_state,
+            candidate_recovery_command,
+        },
+    );
+    today.schema = FANTASY_TODAY_V2_SCHEMA.to_owned();
+    FantasyTodayV2View { today, decisions }
 }
 
 pub fn build_fantasy_today(input: FantasyTodayInput) -> FantasyTodayView {
@@ -803,5 +837,113 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn v2_serializes_new_decisions_and_projects_exact_v1_schema() {
+        let v1 = build_fantasy_today(input());
+        let v2 = build_fantasy_today_v2(v1.clone(), None, FantasyTodayState::Ready, None);
+        let json = serde_json::to_value(&v2).unwrap();
+
+        assert_eq!(json["schema"], FANTASY_TODAY_V2_SCHEMA);
+        assert_eq!(
+            json["decisions"]["schema"],
+            super::super::fantasy_daily_decisions::FANTASY_DAILY_DECISIONS_SCHEMA
+        );
+        assert_eq!(v2.v1_projection(), v1);
+    }
+
+    #[test]
+    fn v2_decision_projection_matches_its_independent_golden() {
+        let view = build_fantasy_today_v2(
+            build_fantasy_today(input()),
+            None,
+            FantasyTodayState::Ready,
+            None,
+        );
+        let primary = view.decisions.primary_decision.as_ref().unwrap();
+        let actual = serde_json::json!({
+            "schema": view.today.schema,
+            "decision_schema": view.decisions.schema,
+            "decision_state": view.decisions.state,
+            "primary_kind": primary.action.kind,
+            "primary_firmness": primary.action.firmness,
+            "primary_legal_at_evaluation": primary.legal_at_evaluation,
+            "candidate_state": view.decisions.candidate_state,
+            "transaction_candidate": view.decisions.transaction_candidate,
+        });
+        let expected: serde_json::Value = serde_json::from_str(include_str!(
+            "../../tests/fixtures/fantasy_today_v2_decision.golden.json"
+        ))
+        .unwrap();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn v2_decision_fingerprint_is_deterministic() {
+        let first = build_fantasy_today_v2(
+            build_fantasy_today(input()),
+            None,
+            FantasyTodayState::Ready,
+            None,
+        );
+        let second = build_fantasy_today_v2(
+            build_fantasy_today(input()),
+            None,
+            FantasyTodayState::Ready,
+            None,
+        );
+
+        assert_eq!(
+            first.decisions.material_fingerprint,
+            second.decisions.material_fingerprint
+        );
+    }
+
+    #[test]
+    fn v2_keeps_refresh_primary_and_discloses_bounded_transaction() {
+        let candidate = super::super::fantasy_daily_decisions::FantasyDailyTransactionCandidate {
+            add_player_key: "add".to_owned(),
+            add_player: "Add Player".to_owned(),
+            drop_player_key: "drop".to_owned(),
+            drop_player: "Drop Player".to_owned(),
+            modeled_value_delta: 4.5,
+            incremental_usable_starts: 1.0,
+            legal_at_evaluation: true,
+            waiver_clears_at: None,
+            acquisition_cost: 1,
+            acquisitions_remaining_before: 4,
+            candidates_considered: 12,
+            candidate_limit: 12,
+            truncated: true,
+            elapsed_ms: 8,
+            evidence_observed_at: None,
+            reasons: vec!["quiet-night fit".to_owned()],
+        };
+        let view = build_fantasy_today_v2(
+            build_fantasy_today(input()),
+            Some(candidate),
+            FantasyTodayState::Ready,
+            None,
+        );
+
+        assert_eq!(
+            view.decisions
+                .primary_decision
+                .as_ref()
+                .map(|row| row.action.kind),
+            Some(FantasyMorningActionKind::RefreshStatus)
+        );
+        assert!(view.decisions.alternatives.iter().any(|row| {
+            row.action.kind == FantasyMorningActionKind::PickupReview && row.legal_at_evaluation
+        }));
+        assert_eq!(
+            view.decisions
+                .transaction_candidate
+                .as_ref()
+                .map(|row| row.elapsed_ms),
+            Some(8)
+        );
     }
 }

@@ -30,6 +30,13 @@ a new optimizer: `fantasy_today.v1` assembles the existing morning, matchup,
 lineup, goalie, pickup, bench-coverage, and readiness contracts into one fast,
 read-only daily entry point while those deeper waves continue independently.
 
+The reviewed
+[`League-Aware Daily Decisions`](2026-09-05-league-aware-daily-decisions.md)
+plan is its implementation successor. It closes saved-matchup and subprocess
+adapter gaps through one read-only local assembly service, then adds legal,
+bounded daily decisions without importing personal PUCK data or inventing a new
+fantasy optimizer.
+
 ## Existing Foundation
 
 The roadmap reuses these implemented contracts:

@@ -62,10 +62,10 @@ use icelines_core::{
     FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
     FantasySimulationScenarioRosterInput, FantasySimulationView, FantasySleeperBoardView,
     FantasySleeperInput, FantasyStatusObservation, FantasyTodayContext, FantasyTodayEvidenceRow,
-    FantasyTodayInput, FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayView,
-    FantasyTradeCardInput, FantasyTradeEvaluationView, FantasyTradePlayerEvaluation,
-    FantasyTradeTeamEvaluation, FantasyWeeklyMoveInput, RosterShape, RosterShapeStatus,
-    RosterShapeValidationView, ViewContext, ViewWindow, CURRENT_SEASON,
+    FantasyTodayInput, FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayV2View,
+    FantasyTodayView, FantasyTradeCardInput, FantasyTradeEvaluationView,
+    FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation, FantasyWeeklyMoveInput, RosterShape,
+    RosterShapeStatus, RosterShapeValidationView, ViewContext, ViewWindow, CURRENT_SEASON,
     FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_TRADE_EVALUATION_SCHEMA,
 };
 use icelines_fetch::datastore::DataStore;
@@ -75,6 +75,7 @@ use icelines_fetch::fantasy_import::{
     FantasyRosterImportOptions,
 };
 use icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view;
+use icelines_fetch::fantasy_today_service::{assemble_fantasy_today, FantasyTodayAssemblyRequest};
 use icelines_fetch::nhl_api::{NhlApiClient, ScheduledGame};
 use icelines_fetch::schedule_remaining::{default_data_root, remaining_games_by_team_from_cache};
 use icelines_fetch::schema::RosterResponse;
@@ -5318,6 +5319,17 @@ pub async fn run_morning(
     json: bool,
     output: MorningOutput,
 ) -> anyhow::Result<()> {
+    if output == MorningOutput::Today {
+        return run_today_shared(
+            date,
+            at,
+            league_override,
+            stats_season,
+            max_age_minutes,
+            current_goalie_appearances,
+            json,
+        );
+    }
     let today = output == MorningOutput::Today;
     let db = if today {
         open_existing_fantasy_db_read_only()?
@@ -5658,6 +5670,74 @@ pub async fn run_morning(
         }
     }
     Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_today_shared(
+    date: Option<String>,
+    at: Option<String>,
+    league_override: Option<String>,
+    stats_season: String,
+    max_age_minutes: i64,
+    current_goalie_appearances: f64,
+    json: bool,
+) -> anyhow::Result<()> {
+    let evaluated_at = at
+        .as_deref()
+        .map(|value| {
+            DateTime::parse_from_rfc3339(value)
+                .map(|timestamp| timestamp.with_timezone(&Utc))
+                .with_context(|| format!("invalid RFC3339 timestamp '{value}'"))
+        })
+        .transpose()?
+        .unwrap_or_else(Utc::now);
+    let mut request = FantasyTodayAssemblyRequest::from_default_paths(
+        league_override,
+        None,
+        stats_season,
+        CURRENT_SEASON,
+        evaluated_at,
+    )?;
+    request.local_date = date
+        .as_deref()
+        .map(|value| {
+            NaiveDate::parse_from_str(value, "%Y-%m-%d")
+                .with_context(|| format!("invalid date '{value}'; expected YYYY-MM-DD"))
+        })
+        .transpose()?;
+    request.status_max_age_minutes = max_age_minutes;
+    request.current_goalie_appearances = current_goalie_appearances;
+    let view = assemble_fantasy_today(request)?;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&view)?);
+    } else {
+        print_fantasy_today_v2(&view);
+    }
+    Ok(())
+}
+
+fn print_fantasy_today_v2(view: &FantasyTodayV2View) {
+    let mut projected = view.today.clone();
+    if let Some(primary) = &view.decisions.primary_decision {
+        let mut action = primary.action.clone();
+        action.message = format!(
+            "{} [{}; legal now: {}]{}",
+            action.message,
+            format!("{:?}", action.firmness).to_ascii_lowercase(),
+            primary.legal_at_evaluation,
+            primary
+                .matchup_impact
+                .as_ref()
+                .map(|impact| format!(" · {impact}"))
+                .unwrap_or_default()
+        );
+        projected.primary_decision = Some(action);
+        projected.next_decision_deadline_utc = primary.deadline_utc;
+    }
+    print_fantasy_today(&projected);
+    if let Some(command) = &view.decisions.candidate_recovery_command {
+        println!("DEEPER PICKUP SEARCH: {command}");
+    }
 }
 
 fn print_fantasy_today(view: &FantasyTodayView) {

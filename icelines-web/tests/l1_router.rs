@@ -2306,6 +2306,28 @@ async fn l1_fantasy_today_json_has_typed_blocked_degradation_without_local_state
 }
 
 #[tokio::test]
+async fn l1_fantasy_today_v2_has_typed_blocked_degradation_without_local_state() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    let response = router(WebState::new())
+        .oneshot(
+            Request::builder()
+                .uri("/api/v2/fantasy/today")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    let json = response_json(response, 64 * 1024).await;
+    assert_eq!(json["schema"], "fantasy_today.v2");
+    assert_eq!(json["state"], "blocked");
+    assert_eq!(json["recovery_command"], "icelines fantasy today");
+    assert!(!home.path().join(".icelines").exists());
+}
+
+#[tokio::test]
 async fn l1_fantasy_today_html_degrades_as_semantic_no_script_document() {
     let _guard = home_env_lock().await;
     let home = HomeEnvFixture::new();

@@ -67,3 +67,36 @@ A local no-live/no-cache server on loopback returned:
 The server was then stopped cleanly. Hermetic route tests separately verify
 that missing local state returns typed JSON and semantic HTML 503 degradation
 without creating `~/.icelines`.
+
+## League-aware v2 follow-up
+
+The in-process `fantasy_today.v2` implementation was measured on the same
+private local league only as runtime evidence; no roster or player names are
+recorded here. The dated command used a full remaining fantasy week so the
+bounded transaction path executed rather than returning no candidate.
+
+Release-mode ten-process series (milliseconds):
+
+`6143.3, 5540.2, 372.7, 368.4, 377.5, 388.9, 386.3, 363.7, 370.2, 370.3`
+
+The first two processes were cold filesystem/OS-cache samples. For the eight
+warm samples:
+
+- warm release p50: **370.3 ms**
+- warm release p95 (nearest rank): **388.9 ms**
+- bounded candidates considered: **12**
+- candidate evaluation elapsed: **3 ms** release (**20 ms** dev)
+- disclosed population truncation: **yes**
+- supported candidate ceiling: **12 candidates / 250 ms**
+
+The v2 warm p95 remains well inside the two-second interaction gate. Relative
+to the earlier v1 warm p95 of 239.7 ms, the measured in-process league-aware
+assembly adds about 149 ms at p95; this regression is documented and accepted
+for saved matchup, current-roster, legality, quiet-night, and transaction
+composition. The candidate evaluator itself is not the dominant cost.
+
+The fantasy database SHA-256 was checked immediately before and after a
+successful v2 assembly and was byte-identical. The `icelines.db-wal` and
+`icelines.db-shm` inventories were empty before and after. Source inspection
+also found zero `std::process::Command` or `OnceLock` adapters in the TUI and
+Web Fantasy Today paths.

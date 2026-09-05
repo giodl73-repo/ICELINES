@@ -33,6 +33,7 @@ pub mod fantasy_daily;
 pub mod fantasy_db;
 pub mod fantasy_import;
 pub mod fantasy_matchup;
+pub mod fantasy_today_service;
 pub mod fetch_lock;
 pub mod fletch;
 pub mod game_cache;

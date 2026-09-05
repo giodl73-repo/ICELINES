@@ -9,6 +9,9 @@
 **Role review**: [`../../signals/roles/check/fantasy-season-cockpit-roles-check-2026-09-05.md`](../../signals/roles/check/fantasy-season-cockpit-roles-check-2026-09-05.md)
 **Primary contract**: `fantasy_today.v1`
 
+**Implementation successor**:
+[`League-Aware Daily Decisions`](2026-09-05-league-aware-daily-decisions.md)
+
 ## Outcome
 
 Give a fantasy manager one calm, fast answer to “what needs my attention now?”
@@ -290,11 +293,12 @@ The first cross-surface vertical slice is implemented on
 - recorded a 233.7 ms warm release p50 and 239.7 ms warm release p95 on the
   local 16-team fixture.
 
-Remaining before promotion from `partial` to `done`: compose the newest saved
-matchup strategy into the default view without invoking the slow pickup search,
-and replace the TUI/Web local-process adapter with a shared `icelines-fetch`
-local assembly service. These limitations are explicit in the surface-parity
-matrix rather than hidden behind a completion claim.
+The successor
+[`League-Aware Daily Decisions`](2026-09-05-league-aware-daily-decisions.md)
+closed the two remaining P2 limitations: the default view now composes the
+newest coherent saved matchup, and CLI, TUI, and Web use one shared in-process
+`icelines-fetch` assembly service. Its compatible `fantasy_today.v2` contract
+adds legal bounded decisions while preserving an exact v1 projection.
 
 ## Validation checkpoint — 2026-09-05
 

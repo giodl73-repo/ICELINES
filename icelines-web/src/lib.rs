@@ -558,6 +558,10 @@ pub fn router(state: WebState) -> Router {
             get(handlers::fantasy::get_fantasy_today_json),
         )
         .route(
+            "/api/v2/fantasy/today",
+            get(handlers::fantasy::get_fantasy_today_v2_json),
+        )
+        .route(
             "/api/v1/fantasy/gaps",
             get(handlers::fantasy::get_fantasy_gaps_json),
         )

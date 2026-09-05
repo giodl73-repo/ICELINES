@@ -1733,6 +1733,7 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
         Command::PoachKv { args } => exec_poach_kv(app, args),
         Command::FantasyToday => {
             set_workspace_screen(app, Screen::FantasyToday);
+            app.refresh_fantasy_today();
             ExecResult::Continue
         }
         Command::FantasyGaps => {

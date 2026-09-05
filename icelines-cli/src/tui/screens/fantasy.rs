@@ -8,9 +8,12 @@ use icelines_core::{
         FantasySimulationScenarioRosterInput, FantasySimulationView, FantasyTodayState,
         FantasyTodayView,
     },
-    Scheme,
+    FantasyTodayV2View, Scheme,
 };
-use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
+use icelines_fetch::{
+    fantasy_today_service::{assemble_fantasy_today, FantasyTodayAssemblyRequest},
+    schedule_remaining::remaining_games_by_team_from_cache,
+};
 use ratatui::{
     layout::Rect,
     text::{Line, Span},
@@ -54,44 +57,73 @@ pub fn today_chrome() -> crate::tui::chrome::ScreenChrome {
         title: "The Bench - Fantasy Today".to_string(),
         keybinds: vec![
             KeyHint::new("g", "roster gaps"),
+            KeyHint::new("r", "refresh"),
             KeyHint::new(":", "command"),
         ],
     }
 }
 
-pub fn render_today(f: &mut Frame, _app: &App, area: Rect) {
+pub fn render_today(f: &mut Frame, app: &App, area: Rect) {
     let block = tui_panel_block(" The Bench - Fantasy Today ");
     let inner = block.inner(area);
     f.render_widget(block, area);
-    match load_today_contract() {
-        Ok(view) => f.render_widget(Paragraph::new(today_lines(view)), inner),
-        Err(message) => f.render_widget(
+    match (&app.fantasy_today.view, &app.fantasy_today.error) {
+        (Some(view), _) => f.render_widget(Paragraph::new(today_v2_lines(view)), inner),
+        (None, Some(message)) => f.render_widget(
             Paragraph::new(format!(
                 "Fantasy cockpit unavailable\n\n{message}\n\nRun `icelines fantasy today` for recovery guidance."
             ))
             .style(tui_error_style()),
             inner,
         ),
+        (None, None) => f.render_widget(
+            Paragraph::new(
+                "Fantasy cockpit unavailable: it has not loaded yet.\n\nPress r to refresh, or run `icelines fantasy today` for recovery guidance.",
+            )
+            .style(tui_warning_style()),
+            inner,
+        ),
     }
 }
 
-fn load_today_contract() -> &'static Result<FantasyTodayView, String> {
-    static CONTRACT: std::sync::OnceLock<Result<FantasyTodayView, String>> =
-        std::sync::OnceLock::new();
-    CONTRACT.get_or_init(read_today_contract)
+#[derive(Debug, Clone, Default)]
+pub struct FantasyTodayScreenState {
+    pub view: Option<FantasyTodayV2View>,
+    pub error: Option<String>,
+    pub loaded_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-fn read_today_contract() -> Result<FantasyTodayView, String> {
-    let executable = std::env::current_exe().map_err(|error| error.to_string())?;
-    let output = std::process::Command::new(executable)
-        .args(["fantasy", "today", "--json"])
-        .output()
-        .map_err(|error| format!("start local cockpit adapter: {error}"))?;
-    if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_owned());
+pub fn load_today_contract(stats_season: &str) -> Result<FantasyTodayV2View, String> {
+    let request = FantasyTodayAssemblyRequest::from_default_paths(
+        None,
+        None,
+        stats_season.to_owned(),
+        icelines_core::CURRENT_SEASON,
+        chrono::Utc::now(),
+    )
+    .map_err(|error| error.to_string())?;
+    assemble_fantasy_today(request).map_err(|error| error.to_string())
+}
+
+fn today_v2_lines(view: &FantasyTodayV2View) -> Vec<Line<'static>> {
+    let mut projected = view.today.clone();
+    if let Some(primary) = &view.decisions.primary_decision {
+        let mut action = primary.action.clone();
+        action.message = format!(
+            "{} [{:?}; legal now: {}]{}",
+            action.message,
+            action.firmness,
+            primary.legal_at_evaluation,
+            primary
+                .matchup_impact
+                .as_ref()
+                .map(|impact| format!(" | {impact}"))
+                .unwrap_or_default()
+        );
+        projected.primary_decision = Some(action);
+        projected.next_decision_deadline_utc = primary.deadline_utc;
     }
-    serde_json::from_slice(&output.stdout)
-        .map_err(|error| format!("decode fantasy_today.v1 contract: {error}"))
+    today_lines(&projected)
 }
 
 fn today_lines(view: &FantasyTodayView) -> Vec<Line<'static>> {

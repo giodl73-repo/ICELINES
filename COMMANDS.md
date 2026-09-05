@@ -2353,6 +2353,16 @@ icelines fantasy morning-card --date 2026-10-08
 icelines fantasy morning-card --date 2026-10-08 --current-goalie-appearances 2 --json
 ```
 
+`fantasy today` is the read-only, cached-only league-aware entry point. JSON
+uses `fantasy_today.v2`, including the ordered `fantasy_daily_decisions.v1`
+child contract, saved points-matchup context when coherent evidence exists,
+and a bounded transaction screen. The bounded screen considers at most 12
+available players for 250 ms, discloses truncation and elapsed time, and points
+to `icelines fantasy pickups --top 5` for exhaustive lineup optimization.
+Web clients use `/api/v2/fantasy/today`; `/api/v1/fantasy/today` remains the v1
+compatibility projection. The command never refreshes sources or mutates a
+fantasy roster.
+
 Supported statuses are healthy, DTD, GTD, out, IR, LTIR, suspended,
 personal, and unknown. Every observation retains source, optional URL, observed
 and fetched times, confidence, and detail. Stale, future-dated, or missing

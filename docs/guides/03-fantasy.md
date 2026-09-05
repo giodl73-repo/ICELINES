@@ -48,9 +48,12 @@ evidence is absent, the output names a recovery command instead of treating the
 missing value as zero. Deep pickup and sleeper searches remain separate because
 they are slower and may consume refreshed inputs.
 
-The same `fantasy_today.v1` decision contract powers CLI text/JSON, the TUI
-Fantasy workbench, browser HTML at `/fantasy/today`, and JSON at
-`/api/v1/fantasy/today`.
+The default surfaces use the league-aware `fantasy_today.v2` contract: CLI
+text/JSON, the TUI Fantasy workbench, browser HTML at `/fantasy/today`, and JSON
+at `/api/v2/fantasy/today`. The stable `/api/v1/fantasy/today` route remains a
+compatibility projection. PUCK and other private consumers can follow the
+[v2 handoff contract](../contracts/fantasy-today-v2.md) without storing private
+league preferences in IceLines.
 
 ---
 

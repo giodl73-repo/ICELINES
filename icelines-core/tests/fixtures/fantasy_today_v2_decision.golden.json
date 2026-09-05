@@ -1,0 +1,10 @@
+{
+  "schema": "fantasy_today.v2",
+  "decision_schema": "fantasy_daily_decisions.v1",
+  "decision_state": "provisional",
+  "primary_kind": "refresh_status",
+  "primary_firmness": "refresh_required",
+  "primary_legal_at_evaluation": false,
+  "candidate_state": "ready",
+  "transaction_candidate": null
+}
