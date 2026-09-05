@@ -1585,6 +1585,66 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 )
                 .await?
             }
+            FantasySubcommand::WeekPlan {
+                week,
+                league,
+                team,
+                stats_season,
+                candidates,
+                max_moves,
+                beam_width,
+                alternatives,
+                json,
+            } => {
+                commands::fantasy::run_week_plan(
+                    week,
+                    league,
+                    team,
+                    stats_season,
+                    candidates,
+                    max_moves,
+                    beam_width,
+                    alternatives,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::DecisionRecord {
+                chosen,
+                rationale,
+                week,
+                league,
+                team,
+                stats_season,
+                candidates,
+                max_moves,
+                beam_width,
+                alternatives,
+                json,
+            } => {
+                commands::fantasy::run_decision_record(
+                    chosen,
+                    rationale,
+                    week,
+                    league,
+                    team,
+                    stats_season,
+                    candidates,
+                    max_moves,
+                    beam_width,
+                    alternatives,
+                    json,
+                )
+                .await?
+            }
+            FantasySubcommand::DecisionReview {
+                league,
+                limit,
+                include_private,
+                json,
+            } => {
+                commands::fantasy::run_decision_review(league, limit, include_private, json).await?
+            }
             FantasySubcommand::Sleepers {
                 league,
                 stats_season,

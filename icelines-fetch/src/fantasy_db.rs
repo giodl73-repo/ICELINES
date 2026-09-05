@@ -114,6 +114,32 @@ pub struct FantasyTradeOfferRow {
     pub roster_issues: Vec<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct FantasyDecisionRow {
+    pub id: String,
+    pub league_id: String,
+    pub fantasy_team_id: String,
+    pub kind: String,
+    pub recommendation_id: String,
+    pub recommendation_fingerprint: String,
+    pub recorded_at: String,
+    pub evaluated_at: String,
+    pub chosen_alternative: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub manager_rationale: Option<String>,
+    pub projection_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct FantasyDecisionOutcomeRow {
+    pub id: String,
+    pub decision_id: String,
+    pub observed_at: String,
+    pub outcome_kind: String,
+    pub outcome_json: String,
+    pub correction_of: Option<String>,
+}
+
 impl FantasyLeagueSnapshot {
     pub fn all_rostered(&self) -> Vec<String> {
         self.teams
@@ -413,6 +439,41 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
     )
     .context("migration 019: create fl_platform_snapshots table")?;
 
+    // Migration 020 — immutable decision projections and append-only outcomes.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_decisions (
+            id                         TEXT PRIMARY KEY,
+            league_id                  TEXT NOT NULL,
+            fantasy_team_id            TEXT NOT NULL,
+            kind                       TEXT NOT NULL,
+            recommendation_id          TEXT NOT NULL,
+            recommendation_fingerprint TEXT NOT NULL,
+            recorded_at                TEXT NOT NULL,
+            evaluated_at               TEXT NOT NULL,
+            chosen_alternative          INTEGER NOT NULL,
+            manager_rationale           TEXT,
+            projection_json             TEXT NOT NULL,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE,
+            FOREIGN KEY(fantasy_team_id) REFERENCES fl_teams(id) ON DELETE CASCADE,
+            UNIQUE(league_id, fantasy_team_id, recommendation_fingerprint)
+        );
+        CREATE INDEX IF NOT EXISTS idx_fl_decisions_league_recorded
+            ON fl_decisions(league_id, recorded_at DESC, id DESC);
+        CREATE TABLE IF NOT EXISTS fl_decision_outcomes (
+            id            TEXT PRIMARY KEY,
+            decision_id   TEXT NOT NULL,
+            observed_at   TEXT NOT NULL,
+            outcome_kind  TEXT NOT NULL,
+            outcome_json  TEXT NOT NULL,
+            correction_of TEXT,
+            FOREIGN KEY(decision_id) REFERENCES fl_decisions(id) ON DELETE CASCADE,
+            FOREIGN KEY(correction_of) REFERENCES fl_decision_outcomes(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_fl_decision_outcomes_decision_observed
+            ON fl_decision_outcomes(decision_id, observed_at ASC, id ASC);",
+    )
+    .context("migration 020: create fantasy decision journal tables")?;
+
     // Enable foreign-key enforcement (off by default in rusqlite).
     conn.execute_batch("PRAGMA foreign_keys = ON;")
         .context("enable foreign keys")?;
@@ -457,18 +518,27 @@ pub fn open_existing_sqlite_read_only_path(
 // ── FantasyDb impl ────────────────────────────────────────────────────────────
 
 impl FantasyDb {
-    /// Open (or create) `~/.icelines/icelines.db` and run migrations.
-    pub fn open() -> anyhow::Result<Self> {
+    fn default_db_path() -> anyhow::Result<std::path::PathBuf> {
         let home = std::env::var_os("HOME")
             .or_else(|| std::env::var_os("USERPROFILE"))
             .map(std::path::PathBuf::from)
             .ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
+        Ok(home.join(".icelines").join("icelines.db"))
+    }
 
-        let dir = home.join(".icelines");
-        std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
-
-        let db_path = dir.join("icelines.db");
+    /// Open (or create) `~/.icelines/icelines.db` and run migrations.
+    pub fn open() -> anyhow::Result<Self> {
+        let db_path = Self::default_db_path()?;
+        let dir = db_path
+            .parent()
+            .expect("default fantasy database has a parent directory");
+        std::fs::create_dir_all(dir).with_context(|| format!("create {}", dir.display()))?;
         Self::open_path(db_path)
+    }
+
+    /// Open the default fantasy database without creating or migrating it.
+    pub fn open_existing_read_only() -> anyhow::Result<Self> {
+        Self::open_existing_read_only_path(Self::default_db_path()?)
     }
 
     /// Open a database at the given path (used by the HTTP server).
@@ -2029,6 +2099,154 @@ impl FantasyDb {
             .collect();
         snapshots
     }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_decision(
+        &self,
+        league_id: &str,
+        fantasy_team_id: &str,
+        kind: &str,
+        recommendation_id: &str,
+        recommendation_fingerprint: &str,
+        evaluated_at: DateTime<Utc>,
+        chosen_alternative: usize,
+        manager_rationale: Option<&str>,
+        projection_json: &str,
+    ) -> anyhow::Result<(String, bool)> {
+        if kind.trim().is_empty()
+            || recommendation_id.trim().is_empty()
+            || recommendation_fingerprint.trim().is_empty()
+            || projection_json.trim().is_empty()
+        {
+            bail!("decision kind, recommendation, fingerprint, and projection are required");
+        }
+        let existing = self
+            .conn
+            .query_row(
+                "SELECT id FROM fl_decisions
+                 WHERE league_id = ?1 AND fantasy_team_id = ?2
+                   AND recommendation_fingerprint = ?3",
+                rusqlite::params![league_id, fantasy_team_id, recommendation_fingerprint],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?;
+        if let Some(id) = existing {
+            return Ok((id, false));
+        }
+        let id = uuid::Uuid::new_v4().to_string();
+        self.conn.execute(
+            "INSERT INTO fl_decisions (
+                id, league_id, fantasy_team_id, kind, recommendation_id,
+                recommendation_fingerprint, recorded_at, evaluated_at,
+                chosen_alternative, manager_rationale, projection_json
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            rusqlite::params![
+                id,
+                league_id,
+                fantasy_team_id,
+                kind,
+                recommendation_id,
+                recommendation_fingerprint,
+                Utc::now().to_rfc3339(),
+                evaluated_at.to_rfc3339(),
+                chosen_alternative as i64,
+                manager_rationale,
+                projection_json,
+            ],
+        )?;
+        Ok((id, true))
+    }
+
+    pub fn list_decisions(
+        &self,
+        league_id: &str,
+        limit: usize,
+        include_private: bool,
+    ) -> anyhow::Result<Vec<FantasyDecisionRow>> {
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT id, league_id, fantasy_team_id, kind, recommendation_id,
+                    recommendation_fingerprint, recorded_at, evaluated_at,
+                    chosen_alternative, manager_rationale, projection_json
+             FROM fl_decisions WHERE league_id = ?1
+             ORDER BY recorded_at DESC, id DESC LIMIT ?2",
+        )?;
+        let rows = stmt
+            .query_map(rusqlite::params![league_id, limit as i64], |row| {
+                Ok(FantasyDecisionRow {
+                    id: row.get(0)?,
+                    league_id: row.get(1)?,
+                    fantasy_team_id: row.get(2)?,
+                    kind: row.get(3)?,
+                    recommendation_id: row.get(4)?,
+                    recommendation_fingerprint: row.get(5)?,
+                    recorded_at: row.get(6)?,
+                    evaluated_at: row.get(7)?,
+                    chosen_alternative: row.get::<_, i64>(8)? as usize,
+                    manager_rationale: if include_private { row.get(9)? } else { None },
+                    projection_json: row.get(10)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(anyhow::Error::from)?;
+        Ok(rows)
+    }
+
+    pub fn record_decision_outcome(
+        &self,
+        decision_id: &str,
+        outcome_kind: &str,
+        outcome_json: &str,
+        correction_of: Option<&str>,
+    ) -> anyhow::Result<String> {
+        if outcome_kind.trim().is_empty() || outcome_json.trim().is_empty() {
+            bail!("outcome kind and JSON are required");
+        }
+        serde_json::from_str::<serde_json::Value>(outcome_json)
+            .context("decision outcome must be valid JSON")?;
+        let id = uuid::Uuid::new_v4().to_string();
+        self.conn.execute(
+            "INSERT INTO fl_decision_outcomes
+                (id, decision_id, observed_at, outcome_kind, outcome_json, correction_of)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![
+                id,
+                decision_id,
+                Utc::now().to_rfc3339(),
+                outcome_kind,
+                outcome_json,
+                correction_of,
+            ],
+        )?;
+        Ok(id)
+    }
+
+    pub fn list_decision_outcomes(
+        &self,
+        decision_id: &str,
+    ) -> anyhow::Result<Vec<FantasyDecisionOutcomeRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, decision_id, observed_at, outcome_kind, outcome_json, correction_of
+             FROM fl_decision_outcomes WHERE decision_id = ?1
+             ORDER BY observed_at ASC, id ASC",
+        )?;
+        let rows = stmt
+            .query_map([decision_id], |row| {
+                Ok(FantasyDecisionOutcomeRow {
+                    id: row.get(0)?,
+                    decision_id: row.get(1)?,
+                    observed_at: row.get(2)?,
+                    outcome_kind: row.get(3)?,
+                    outcome_json: row.get(4)?,
+                    correction_of: row.get(5)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(anyhow::Error::from)?;
+        Ok(rows)
+    }
 }
 
 fn sqlite_immutable_read_uri(db_path: &std::path::Path) -> String {
@@ -3178,6 +3396,108 @@ mod tests {
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].standings[0].rank, 5);
         assert_eq!(rows[1].standings[0].rank, 8);
+    }
+
+    #[test]
+    fn l1_decision_journal_is_idempotent_private_and_append_only() {
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Journal League", "yahoo-standard")
+            .expect("create league");
+        let team_id = db.create_team(&league_id, "My Team", "Gio").unwrap();
+        let evaluated_at = DateTime::parse_from_rfc3339("2026-11-09T15:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        let first = db
+            .record_decision(
+                &league_id,
+                &team_id,
+                "week_plan",
+                "sequence-a",
+                "fingerprint-a",
+                evaluated_at,
+                0,
+                Some("protect the last add"),
+                r#"{"schema":"fantasy_pickup_sequence.v1","value":7}"#,
+            )
+            .unwrap();
+        let duplicate = db
+            .record_decision(
+                &league_id,
+                &team_id,
+                "week_plan",
+                "sequence-a",
+                "fingerprint-a",
+                evaluated_at,
+                0,
+                Some("different text cannot rewrite history"),
+                r#"{"different":true}"#,
+            )
+            .unwrap();
+        assert!(first.1);
+        assert_eq!(duplicate, (first.0.clone(), false));
+
+        let public = db.list_decisions(&league_id, 10, false).unwrap();
+        assert_eq!(public.len(), 1);
+        assert_eq!(public[0].manager_rationale, None);
+        assert_eq!(
+            public[0].projection_json,
+            r#"{"schema":"fantasy_pickup_sequence.v1","value":7}"#
+        );
+        let private = db.list_decisions(&league_id, 10, true).unwrap();
+        assert_eq!(
+            private[0].manager_rationale.as_deref(),
+            Some("protect the last add")
+        );
+
+        let outcome = db
+            .record_decision_outcome(&first.0, "matchup_result", r#"{"won":true}"#, None)
+            .unwrap();
+        let correction = db
+            .record_decision_outcome(
+                &first.0,
+                "matchup_result",
+                r#"{"won":false}"#,
+                Some(&outcome),
+            )
+            .unwrap();
+        let outcomes = db.list_decision_outcomes(&first.0).unwrap();
+        assert_eq!(outcomes.len(), 2);
+        assert_eq!(outcomes[1].id, correction);
+        assert_eq!(outcomes[1].correction_of.as_deref(), Some(outcome.as_str()));
+    }
+
+    #[test]
+    fn l1_read_only_open_does_not_change_database_or_sidecars() {
+        let temp = tempfile::tempdir().unwrap();
+        let database_path = temp.path().join("icelines.db");
+        let db = FantasyDb::open_path(database_path.clone()).unwrap();
+        db.create_league("Read Only League", "yahoo-standard")
+            .unwrap();
+        drop(db);
+
+        let wal_path = database_path.with_extension("db-wal");
+        let shm_path = database_path.with_extension("db-shm");
+        let snapshot = |path: &std::path::Path| {
+            path.exists()
+                .then(|| std::fs::read(path).expect("snapshot sqlite file"))
+        };
+        let before = (
+            snapshot(&database_path),
+            snapshot(&wal_path),
+            snapshot(&shm_path),
+        );
+
+        let read_only = FantasyDb::open_existing_read_only_path(database_path.clone()).unwrap();
+        assert_eq!(read_only.list_leagues().unwrap().len(), 1);
+        drop(read_only);
+
+        let after = (
+            snapshot(&database_path),
+            snapshot(&wal_path),
+            snapshot(&shm_path),
+        );
+        assert_eq!(before, after);
     }
 
     #[test]

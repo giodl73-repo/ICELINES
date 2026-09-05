@@ -137,6 +137,12 @@ pub use view_model::fantasy_daily_decisions::{
     build_fantasy_daily_decisions, FantasyDailyDecisionRow, FantasyDailyDecisionsInput,
     FantasyDailyDecisionsView, FantasyDailyTransactionCandidate, FANTASY_DAILY_DECISIONS_SCHEMA,
 };
+pub use view_model::fantasy_pickup_sequence::{
+    build_fantasy_pickup_sequence, FantasyPickupCoverageRow, FantasyPickupSequenceContext,
+    FantasyPickupSequenceError, FantasyPickupSequenceInput, FantasyPickupSequenceMoveRow,
+    FantasyPickupSequencePlayerInput, FantasyPickupSequenceRow, FantasyPickupSequenceView,
+    FantasyPickupTransitionInput, FANTASY_PICKUP_SEQUENCE_SCHEMA,
+};
 pub use view_model::fantasy_platform_snapshot::{
     build_fantasy_platform_snapshot_view, FantasyPlatformMatchupSnapshot,
     FantasyPlatformPlayerStatusRow, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
