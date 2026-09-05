@@ -15,6 +15,7 @@ on:
       - 'scripts/release-smoke.ps1'
       - 'scripts/package-release.ps1'
       - 'scripts/verify-release-artifact.ps1'
+      - 'scripts/ferris-artifact.py'
       - 'scripts/window-browser-review.ps1'
       - 'design/release-checklist.md'
       - 'design/data/**'
@@ -47,6 +48,7 @@ on:
       - 'scripts/release-smoke.ps1'
       - 'scripts/package-release.ps1'
       - 'scripts/verify-release-artifact.ps1'
+      - 'scripts/ferris-artifact.py'
       - 'scripts/window-browser-review.ps1'
       - 'design/release-checklist.md'
       - 'design/data/**'
@@ -69,6 +71,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  FERRIS_REPOSITORY: giodl73-repo/FERRIS
+  FERRIS_REVISION: 73ee870fd7e7689637a93bfb835fcbf8d1ccda4e
   # The generated Clap graph exceeds Rust's default Windows test-thread stack.
   RUST_MIN_STACK: 16777216
 
@@ -234,14 +238,20 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact: icelines-linux-x86_64
+            archive: icelines-linux-x86_64.tar.gz
+            platform: linux
             binary: icelines
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact: icelines-macos-x86_64
+            archive: icelines-macos-x86_64.tar.gz
+            platform: macos
             binary: icelines
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact: icelines-windows-x86_64
+            archive: icelines-windows-x86_64.zip
+            platform: windows
             binary: icelines.exe
 
     steps:
@@ -270,11 +280,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" dist/
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            archive_name="${{ matrix.artifact }}.zip"
-          else
-            archive_name="${{ matrix.artifact }}.tar.gz"
-          fi
+          archive_name="${{ matrix.archive }}"
           version="$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"([^"]+)".*/icelines \1/')"
           binary_sha256="$(sha256sum "dist/${{ matrix.binary }}" | awk '{print $1}')"
           {
@@ -297,13 +303,115 @@ jobs:
             tar tzf "${archive_name}" | grep -F "./${{ matrix.binary }}"
             tar tzf "${archive_name}" | grep -F "./ICELINES-PACKAGE.txt"
           fi
+          cp dist/ICELINES-PACKAGE.txt "${archive_name}.manifest.txt"
+
+      - name: Record Ferris producer envelope
+        run: >
+          python scripts/ferris-artifact.py produce
+          --artifact "${{ matrix.archive }}"
+          --manifest "${{ matrix.archive }}.manifest.txt"
+          --artifact-id "${{ matrix.artifact }}"
+          --target "${{ matrix.target }}"
+          --platform-os "${{ matrix.platform }}"
+          --platform-architecture x86_64
+          --source-revision "${{ github.sha }}"
+          --attempt-id "${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.platform }}"
+          --output "${{ matrix.archive }}.ferris-producer.json"
 
       - name: Upload verified package
         uses: actions/upload-artifact@v7
         with:
           name: package-${{ matrix.artifact }}
           path: |
-            ${{ matrix.artifact }}.*
+            ${{ matrix.archive }}
+            ${{ matrix.archive }}.sha256
+            ${{ matrix.archive }}.manifest.txt
+            ${{ matrix.archive }}.ferris-producer.json
+          retention-days: 1
+
+  ferris-artifact-consumer:
+    name: Ferris artifact / ${{ matrix.target }}
+    needs: package-matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: icelines-linux-x86_64
+            archive: icelines-linux-x86_64.tar.gz
+            platform: linux
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: icelines-macos-x86_64
+            archive: icelines-macos-x86_64.tar.gz
+            platform: macos
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: icelines-windows-x86_64
+            archive: icelines-windows-x86_64.zip
+            platform: windows
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Check out exact Ferris revision
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.FERRIS_REPOSITORY }}
+          ref: ${{ env.FERRIS_REVISION }}
+          path: _ferris-source
+          sparse-checkout: |
+            Cargo.toml
+            Cargo.lock
+            crates
+          sparse-checkout-cone-mode: false
+
+      - name: Build exact Ferris revision
+        run: cargo build --locked --release --manifest-path _ferris-source/Cargo.toml -p ferris-cli --bin ferris
+
+      - name: Download owner package
+        uses: actions/download-artifact@v4
+        with:
+          name: package-${{ matrix.artifact }}
+          path: artifact-input
+
+      - name: Qualify downloaded artifact with Ferris
+        run: >
+          python scripts/ferris-artifact.py consume
+          --artifact "artifact-input/${{ matrix.archive }}"
+          --manifest "artifact-input/${{ matrix.archive }}.manifest.txt"
+          --producer "artifact-input/${{ matrix.archive }}.ferris-producer.json"
+          --ferris "_ferris-source/target/release/ferris${{ runner.os == 'Windows' && '.exe' || '' }}"
+          --target "${{ matrix.target }}"
+          --platform-os "${{ matrix.platform }}"
+          --platform-architecture x86_64
+          --source-revision "${{ github.sha }}"
+          --consumer-id "package-integrity-${{ matrix.platform }}"
+          --consumer-id "package-smoke-${{ matrix.platform }}"
+          --request-output "artifact-evidence/${{ matrix.platform }}-request.json"
+          --report-output "artifact-evidence/${{ matrix.platform }}-report.json"
+
+      - name: Verify and smoke downloaded owner package
+        shell: pwsh
+        run: >
+          ./scripts/verify-release-artifact.ps1
+          -ArtifactPath "artifact-input/${{ matrix.archive }}"
+          -ManifestPath "artifact-input/${{ matrix.archive }}.manifest.txt"
+          -ExpectedSourceRevision "${{ github.sha }}"
+          -Smoke
+
+      - name: Upload Ferris artifact evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ferris-artifact-evidence-${{ matrix.artifact }}
+          path: artifact-evidence/*.json
+          if-no-files-found: error
           retention-days: 1
 
   coverage:

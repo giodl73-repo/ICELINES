@@ -57,7 +57,10 @@ Tagged GitHub releases publish the same `.sha256` sidecar pattern for every
 Linux, macOS, and Windows archive, and each release archive includes the same
 `ICELINES-PACKAGE.txt` metadata file. `verify-release-artifact.ps1` verifies the
 sidecar hash and required archive members for downloaded `.zip` or `.tar.gz`
-artifacts.
+artifacts. Pass `-ManifestPath <path>` to require byte identity with an external
+manifest sidecar. Pass `-ExpectedSourceRevision <git-sha> -Smoke` after
+downloading an artifact to bind the package manifest to the expected source and
+execute the packaged binary's `--version` command before accepting it.
 
 Full release checklist: `design/release-checklist.md`.
 `ci-audit` installs `cargo-audit --locked` when missing; RustSec vulnerability
