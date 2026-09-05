@@ -797,8 +797,11 @@ mod tests {
             "next_decision_deadline_utc": view.next_decision_deadline_utc,
             "readiness": view.readiness,
         });
-        let actual = serde_json::to_string_pretty(&projection).unwrap();
-        let expected = include_str!("../../tests/fixtures/fantasy_today_decision.golden.json");
-        assert_eq!(actual.trim(), expected.trim());
+        let actual = serde_json::to_value(&projection).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!(
+            "../../tests/fixtures/fantasy_today_decision.golden.json"
+        ))
+        .unwrap();
+        assert_eq!(actual, expected);
     }
 }
