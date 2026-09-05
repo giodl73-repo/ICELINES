@@ -170,6 +170,7 @@ fn parse_fantasy(args: &str) -> Result<DashboardCommand, DashboardCommandError> 
     let (sub, rest) = split_first_word(args);
     match sub.to_ascii_lowercase().as_str() {
         "" | "roster" => workspace("/fantasy"),
+        "today" => workspace(&query_url("/fantasy/today", rest)),
         "gaps" => workspace(&fantasy_url(rest, FantasyMode::Gaps)),
         "simulate" | "sim" => workspace(&fantasy_url(rest, FantasyMode::Simulation)),
         "daily" => workspace(&fantasy_daily_url(rest)),
@@ -684,6 +685,7 @@ mod tests {
             route("fantasy daily date=2026-01-15"),
             "/api/v1/fantasy/daily?date=2026-01-15"
         );
+        assert_eq!(route("fantasy today"), "/fantasy/today");
         assert_eq!(
             route("fantasy matchup date=2026-01-15"),
             "/api/v1/fantasy/matchup?date=2026-01-15"

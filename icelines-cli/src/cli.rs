@@ -3905,6 +3905,8 @@ pub enum TuiSurface {
     Goalies,
     /// Fantasy poacher board.
     Poach,
+    /// Daily fantasy season cockpit.
+    Fantasy,
     /// Local fantasy poacher watchlist group.
     Watchlist,
     /// Tonight's games + boxscores.
@@ -3957,6 +3959,7 @@ impl TuiSurface {
             TuiSurface::Stats => ScreenSpec::Nav(NavSpec::Queries),
             TuiSurface::Goalies => ScreenSpec::Nav(NavSpec::Goalies),
             TuiSurface::Poach => ScreenSpec::Nav(NavSpec::Poach),
+            TuiSurface::Fantasy => ScreenSpec::Nav(NavSpec::Fantasy),
             TuiSurface::Watchlist => ScreenSpec::Nav(NavSpec::Watchlist),
             TuiSurface::Scores => ScreenSpec::Nav(NavSpec::Tonight),
             TuiSurface::Schedule => ScreenSpec::Nav(NavSpec::Schedule),
@@ -8447,6 +8450,49 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_fantasy_today_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "today",
+                "--date",
+                "2026-10-08",
+                "--at",
+                "2026-10-08T14:00:00Z",
+                "--league",
+                "Ice League",
+                "--stats-season",
+                "20262027",
+                "--current-goalie-appearances",
+                "2.0",
+                "--json",
+            ])
+            .expect("fantasy today should parse");
+
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::Today {
+                    date,
+                    at,
+                    league,
+                    stats_season,
+                    current_goalie_appearances,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(date.as_deref(), Some("2026-10-08"));
+                    assert_eq!(at.as_deref(), Some("2026-10-08T14:00:00Z"));
+                    assert_eq!(league.as_deref(), Some("Ice League"));
+                    assert_eq!(stats_season, "20262027");
+                    assert_eq!(current_goalie_appearances, 2.0);
+                    assert!(json);
+                }
+                other => panic!("expected fantasy today, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
     fn l0_fantasy_trade_card_clap_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -11568,6 +11614,26 @@ pub enum FantasySubcommand {
         /// Suppress text/actions when the decision-bearing fingerprint is unchanged.
         #[arg(long)]
         material_only: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show the highest-priority fantasy decision and today's operating context.
+    Today {
+        #[arg(long)]
+        date: Option<String>,
+        /// RFC3339 evaluation time; omitted means 07:00 local baseline.
+        #[arg(long)]
+        at: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 360)]
+        max_age_minutes: i64,
+        /// Goalie appearances already recorded in the current Monday-Sunday matchup.
+        #[arg(long, default_value_t = 0.0)]
+        current_goalie_appearances: f64,
         #[arg(long)]
         json: bool,
     },

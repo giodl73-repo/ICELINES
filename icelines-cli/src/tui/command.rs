@@ -58,6 +58,8 @@ pub enum Command {
     PoachKv {
         args: PoachCommandArgs,
     },
+    /// `fantasy today` — workspace becomes the daily season cockpit.
+    FantasyToday,
     /// `fantasy gaps` — workspace becomes active roster-gap board.
     FantasyGaps,
     FantasyGapsKv {
@@ -1122,6 +1124,7 @@ fn parse_fantasy(args: &str) -> Result<Command, ParseError> {
     let (sub, rest) = split_first_word(args);
     match sub.to_ascii_lowercase().as_str() {
         "" | "roster" => Ok(Command::Roster),
+        "today" => Ok(Command::FantasyToday),
         "gaps" | "gap" if !rest.trim().is_empty() => Ok(Command::FantasyGapsKv {
             args: parse_fantasy_gaps_kv(rest)?,
         }),
@@ -1728,6 +1731,10 @@ pub fn execute_command(cmd: Command, app: &mut crate::tui::app::App) -> ExecResu
             ExecResult::Continue
         }
         Command::PoachKv { args } => exec_poach_kv(app, args),
+        Command::FantasyToday => {
+            set_workspace_screen(app, Screen::FantasyToday);
+            ExecResult::Continue
+        }
         Command::FantasyGaps => {
             set_workspace_screen(app, Screen::FantasyGaps);
             ExecResult::Continue
@@ -2835,6 +2842,10 @@ mod tests {
     fn l0_parse_fantasy_gap_and_sim_workspaces() {
         assert_eq!(parse_command("gaps").unwrap(), Command::FantasyGaps);
         assert_eq!(parse_command("fantasy gaps").unwrap(), Command::FantasyGaps);
+        assert_eq!(
+            parse_command("fantasy today").unwrap(),
+            Command::FantasyToday
+        );
         assert_eq!(parse_command("simulate").unwrap(), Command::FantasySim);
         assert_eq!(
             parse_command("fantasy simulate").unwrap(),

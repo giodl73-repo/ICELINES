@@ -29,6 +29,31 @@ target it without needing `--league`.
 
 ---
 
+## Start each fantasy day here
+
+The season cockpit gives one prioritized decision, the next goalie or lineup
+deadline, legal lineup and reserve context, acquisition headroom, quiet-night
+bench coverage, and explicit source readiness:
+
+```bash
+icelines fantasy today
+icelines fantasy today --json
+icelines tui fantasy
+```
+
+The default path is advisory and read-only. It uses the existing fantasy
+database, a sealed player-rate sample, and the cached official NHL schedule; it
+does not fetch, add, drop, start, bench, waive, or trade. If required local
+evidence is absent, the output names a recovery command instead of treating the
+missing value as zero. Deep pickup and sleeper searches remain separate because
+they are slower and may consume refreshed inputs.
+
+The same `fantasy_today.v1` decision contract powers CLI text/JSON, the TUI
+Fantasy workbench, browser HTML at `/fantasy/today`, and JSON at
+`/api/v1/fantasy/today`.
+
+---
+
 ## Check your team
 
 ```bash

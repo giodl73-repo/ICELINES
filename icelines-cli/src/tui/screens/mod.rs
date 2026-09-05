@@ -175,6 +175,7 @@ fn render_sdi(f: &mut Frame, app: &App) {
         Screen::GoalieDetailById(pid) => goalies::render_detail_by_id(f, app, chunks[1], *pid),
         Screen::Transactions => transactions::render(f, app, chunks[1]),
         Screen::Favorites => favorites::render(f, app, chunks[1]),
+        Screen::FantasyToday => fantasy::render_today(f, app, chunks[1]),
         Screen::FantasyGaps => fantasy::render(f, app, chunks[1]),
         Screen::FantasySim => fantasy::render_simulation(f, app, chunks[1]),
     }
@@ -407,7 +408,7 @@ fn chrome_screen_label(s: &Screen) -> &'static str {
         Screen::Team(_) => "Team",
         Screen::Depth | Screen::DepthTeam(_) => "Depth Chart",
         Screen::Poach => "Poach",
-        Screen::FantasyGaps => "Fantasy",
+        Screen::FantasyToday | Screen::FantasyGaps => "Fantasy",
         Screen::Favorites => "Favorites",
         Screen::Groups | Screen::GroupDetail(_) => "Groups",
         Screen::Fetch => "Admin",
@@ -529,6 +530,7 @@ fn render_mdi_workspace(f: &mut Frame, app: &App, mdi: &crate::tui::mdi::MdiLayo
         Screen::GoalieDetailById(pid) => goalies::render_detail_by_id(f, app, inner, *pid),
         Screen::Transactions => transactions::render(f, app, inner),
         Screen::Favorites => favorites::render(f, app, inner),
+        Screen::FantasyToday => fantasy::render_today(f, app, inner),
         Screen::FantasyGaps => fantasy::render(f, app, inner),
         Screen::FantasySim => fantasy::render_simulation(f, app, inner),
     }
@@ -949,6 +951,7 @@ fn screen_label(s: &Screen) -> &'static str {
         Screen::GoalieDetailById(_) => "Goalie",
         Screen::Transactions => "The Boards",
         Screen::Favorites => "Favorites",
+        Screen::FantasyToday => "Fantasy Today",
         Screen::FantasyGaps => "Fantasy Gaps",
         Screen::FantasySim => "Fantasy Sim",
     }
@@ -1004,10 +1007,10 @@ fn tab_for_screen(screen: &Screen) -> usize {
         Screen::Queries | Screen::Projections | Screen::Search => 2, // Stats (default: Queries)
         Screen::Goalies | Screen::GoalieDetailById(_) => 3, // Goalies
         Screen::Favorites => 4,       // Favorites (Foster.2)
-        Screen::Poach | Screen::FantasyGaps | Screen::FantasySim => 5, // Poach/Fantasy (Selke)
+        Screen::Poach | Screen::FantasyToday | Screen::FantasyGaps | Screen::FantasySim => 5, // Poach/Fantasy (Selke)
         Screen::Tonight | Screen::GameDetail(_) => 6, // Scores
         Screen::Schedule | Screen::ScheduleTeam(_) | Screen::ScheduleMatchup(..) => 7, // Schedule
-        Screen::Transactions => 8,    // Transactions
+        Screen::Transactions => 8,                    // Transactions
         Screen::Playoffs | Screen::SeriesDetail(_) => 9, // Playoffs
         // Groups is not a tab (Phase T+1): reachable via `g` from anywhere.
         _ => 99, // no tab (Fetch, Help, Groups)
@@ -1040,6 +1043,7 @@ fn active_chrome(app: &App) -> crate::tui::chrome::ScreenChrome {
         Screen::Depth | Screen::DepthTeam(_) => depth::chrome(app.depth_mode, &app.depth_filters),
         Screen::Favorites => favorites::chrome(&app.favorites),
         Screen::Poach => poach::chrome(),
+        Screen::FantasyToday => fantasy::today_chrome(),
         Screen::FantasyGaps => fantasy::chrome(),
         Screen::FantasySim => fantasy::simulation_chrome(),
         // Sub-screens and other screens use empty chrome for now.

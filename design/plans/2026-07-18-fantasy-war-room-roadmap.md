@@ -24,6 +24,12 @@ plan is a child workstream of this roadmap. It replaces repeated CSV/manual
 league-context refreshes with explicit read-only provider ingestion while
 keeping official NHL data authoritative for hockey statistics.
 
+The reviewed [`Fantasy Season Cockpit`](2026-09-05-fantasy-season-cockpit.md)
+plan is the operator-facing composition child for this roadmap. It does not add
+a new optimizer: `fantasy_today.v1` assembles the existing morning, matchup,
+lineup, goalie, pickup, bench-coverage, and readiness contracts into one fast,
+read-only daily entry point while those deeper waves continue independently.
+
 ## Existing Foundation
 
 The roadmap reuses these implemented contracts:

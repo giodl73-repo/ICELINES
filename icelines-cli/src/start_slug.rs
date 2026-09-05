@@ -47,6 +47,7 @@ pub const SLUG_TABLE: &[(&str, NavSpec, Stability)] = &[
     ("moves", NavSpec::Transactions, Stability::Alias),
     ("playoffs", NavSpec::Playoffs, Stability::Canonical),
     ("poach", NavSpec::Poach, Stability::Canonical),
+    ("fantasy", NavSpec::Fantasy, Stability::Canonical),
     ("watchlist", NavSpec::Watchlist, Stability::Canonical),
 ];
 
@@ -62,6 +63,7 @@ pub enum NavSpec {
     Transactions,
     Playoffs,
     Poach,
+    Fantasy,
     Watchlist,
 }
 
@@ -77,6 +79,7 @@ impl NavSpec {
             NavSpec::Transactions => Screen::Transactions,
             NavSpec::Playoffs => Screen::Playoffs,
             NavSpec::Poach => Screen::Poach,
+            NavSpec::Fantasy => Screen::FantasyToday,
             NavSpec::Watchlist => Screen::GroupDetail("Watchlist".to_string()),
         }
     }
@@ -443,6 +446,7 @@ mod tests {
             ("stats", NavSpec::Queries),
             ("goalies", NavSpec::Goalies),
             ("poach", NavSpec::Poach),
+            ("fantasy", NavSpec::Fantasy),
             ("watchlist", NavSpec::Watchlist),
             ("scores", NavSpec::Tonight),
             ("schedule", NavSpec::Schedule),
@@ -593,7 +597,7 @@ mod tests {
     ///   to update too. Drift fence.
     #[test]
     fn l0_canonical_slugs_count() {
-        assert_eq!(canonical_slugs().len(), 10);
+        assert_eq!(canonical_slugs().len(), 11);
     }
 
     /// LB.1 / l0_canonical_slugs_in_declaration_order
@@ -610,6 +614,7 @@ mod tests {
             "transactions",
             "playoffs",
             "poach",
+            "fantasy",
             "watchlist",
         ];
         assert_eq!(canonical_slugs(), expected);
@@ -632,6 +637,7 @@ mod tests {
         let _ = NavSpec::Transactions.into_screen();
         let _ = NavSpec::Playoffs.into_screen();
         let _ = NavSpec::Poach.into_screen();
+        let _ = NavSpec::Fantasy.into_screen();
         let _ = NavSpec::Watchlist.into_screen();
     }
 

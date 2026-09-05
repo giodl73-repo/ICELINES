@@ -1,7 +1,8 @@
 # Fantasy League Management
 
 IceLines includes a complete fantasy hockey system: create leagues and teams,
-add players, score against any scheme, simulate and execute trades.
+add players, score skaters and goalies against any scheme, find roster gaps,
+simulate add/drop scenarios, and execute trades.
 
 ---
 
@@ -26,24 +27,30 @@ icelines fantasy team-add "Hockey Nerds" "Rantanen"
 Creating a league automatically sets it as active — subsequent commands
 target it without needing `--league`.
 
-## Plan a snake draft
+---
+
+## Start each fantasy day here
+
+The season cockpit gives one prioritized decision, the next goalie or lineup
+deadline, legal lineup and reserve context, acquisition headroom, quiet-night
+bench coverage, and explicit source readiness:
 
 ```bash
-icelines fantasy draft-sim --league-size 14 --draft-slot 14 --rounds 16
-icelines fantasy draft-sim --league-size 14 --draft-slot 14 \
-  --eligibility-file yahoo-player-pool.csv --market-file rankings.csv
-icelines fantasy draft-sim --league-size 14 --draft-slot 14 \
-  --off-night-max-games 4 --replacement-scenarios 3
+icelines fantasy today
+icelines fantasy today --json
+icelines tui fantasy
 ```
 
-The simulator derives every snake turn, models intervening opponent choices,
-and returns Balanced, Youth-Upside, and Schedule-First roster paths. The active
-league supplies scoring and roster slots. Market CSVs can contain Rank/ADP,
-Expected Fantasy Points, or both. The output discloses that opponent selections
-are deterministic market-order scenarios rather than calibrated probabilities.
-It then replays each roster against every official schedule date, surfaces
-stress weeks and goalie-minimum risk, and recommends injury replacements from
-the players still undrafted after the full league simulation.
+The default path is advisory and read-only. It uses the existing fantasy
+database, a sealed player-rate sample, and the cached official NHL schedule; it
+does not fetch, add, drop, start, bench, waive, or trade. If required local
+evidence is absent, the output names a recovery command instead of treating the
+missing value as zero. Deep pickup and sleeper searches remain separate because
+they are slower and may consume refreshed inputs.
+
+The same `fantasy_today.v1` decision contract powers CLI text/JSON, the TUI
+Fantasy workbench, browser HTML at `/fantasy/today`, and JSON at
+`/api/v1/fantasy/today`.
 
 ---
 
@@ -86,21 +93,65 @@ Rank  Team                   Owner            Score      Per/G
 
 ---
 
+## Roster gaps
+
+Mark your team as the roster IceLines should evaluate, then ask which categories
+need help:
+
+```bash
+icelines fantasy team-use "Gio's Rangers"
+icelines fantasy gaps --category hits,blocks,shots
+icelines fantasy gaps --category hits,blocks,shots --json
+```
+
+The gap view compares your roster against imported available players, applies
+the active fantasy scheme weights, and returns `add_now`, `watch`, or
+`no_action` recommendations. The same `FantasyRosterGapView` powers CLI text,
+TUI fantasy gaps, web HTML, and `/api/v1/fantasy/gaps`.
+
+---
+
+## Season simulation and scenarios
+
+Project the active league over a schedule horizon:
+
+```bash
+icelines fantasy simulate --weeks 4
+icelines fantasy simulate --weeks 4 --json
+```
+
+Test add/drop decisions without mutating the league:
+
+```bash
+icelines fantasy simulate --add "Connor McDavid" --drop "Evan Bouchard"
+icelines fantasy simulate --add "Connor McDavid"
+icelines fantasy simulate --drop "Evan Bouchard"
+```
+
+Scenario players are resolved to canonical names before projection. Invalid
+drops are rejected explicitly instead of producing a misleading projected
+roster. The same `FantasySimulationView` powers CLI text/JSON, TUI simulation,
+web `/fantasy`, and `/api/v1/fantasy/simulate`.
+
+---
+
 ## Scoring schemes
 
 IceLines ships with three built-in schemes:
 
-```proof:tree kind=org indent-width=2
-root: Scoring Schemes
-- yahoo-standard (default)
-  - goals: 3.0 · assists: 2.0
-  - PPG bonus: 1.0 · hits: 0.5 · blocks: 0.5
-- espn-standard
-  - goals: 6.0 · assists: 4.0
-  - PPG bonus: 2.0 · shots: 1.0 · plus-minus: 2.0
-- simple-pts
-  - goals: 1.0 · assists: 1.0 · no bonuses
+<!-- proof:compiled from="proof:tree kind=org" uri="" -->
+```org
+Scoring Schemes
+├── yahoo-standard (default)
+  ├── goals: 3.0 · assists: 2.0
+  ├── PPG bonus: 1.0 · hits: 0.5 · blocks: 0.5
+├── espn-standard
+  ├── goals: 6.0 · assists: 4.0
+  ├── PPG bonus: 2.0 · shots: 1.0 · plus-minus: 2.0
+└── simple-pts
+  └── goals: 1.0 · assists: 1.0 · no bonuses
 ```
+<!-- /proof:compiled -->
 
 Create a league with any scheme:
 
@@ -162,26 +213,48 @@ icelines fantasy team-show "My Team" --league "My League"
 
 ## Web dashboard
 
-Start a local HTTP server for a browser-based view:
+Start the local web dashboard and open `/dashboard` for the Jack Adams browser
+bench: scores ribbon, Favorites/watchlist pane, central workspace,
+Schedule/context pane, and command bar.
 
 ```bash
-icelines fantasy serve --port 8080
+icelines serve --port 8000
 ```
 
 Available routes:
-- `GET /` — HTML standings dashboard
-- `GET /api/standings` — JSON standings
-- `GET /api/team/:name/roster` — JSON team roster
-- `POST /api/team/:name/add` — add player (body: `{"player": "name"}`)
-- `POST /api/trade` — trade simulation (body: `{"player1": "...", "to_team": "...", "player2": "..."}`)
+- `GET /dashboard` - multi-pane browser dashboard with workspace command bar
+- `GET /fantasy` - HTML roster gaps and simulation scenarios
+- `GET /api/v1/fantasy/gaps` - JSON `FantasyRosterGapView`
+- `GET /api/v1/fantasy/simulate` - JSON `FantasySimulationView`
+- `GET /poach` - HTML poacher board
+- `GET /api/v1/poach` - JSON `PoachBoardView`
 
-Share the URL with your league members for a live view.
+Command examples inside `/dashboard`:
+
+```text
+gaps cats=hits,blocks,shots top=8
+poach rw cats=hits,blocks free top=12
+fantasy poach top=8 available
+fantasy simulate add Connor_McDavid drop Bench_Forward
+report weekly cats=shots,hits top=12
+```
+
+`icelines fantasy serve --port 8080` remains available for the local fantasy
+server workflow, but the main dashboard is the parity surface for fantasy
+read/product views.
 
 ---
 
 ## Finding waiver wire pickups
 
-Use `query leaders` to find available players:
+Use `poach` for fantasy-specific pickup recommendations:
+
+```bash
+icelines poach --availability imported-available --category hits,blocks --top 15
+icelines report weekly --availability imported-available --category shots
+```
+
+You can still use `query leaders` for raw player searches:
 
 ```bash
 # High-pace players with limited GP (just returned from injury / recent callup)
@@ -193,6 +266,39 @@ icelines query leaders --undrafted --ppg-min 0.60 --sort ppg
 # Rookies with strong starts
 icelines query leaders --rookie --sort ppg --top 15
 ```
+
+---
+
+## In-season Yahoo workflow
+
+IceLines can store immutable observations from a private Yahoo league without
+embedding league-specific teams or credentials in this repository. Copy
+`examples/fantasy-yahoo-platform-snapshot.json`, replace the example standings,
+current matchup, goalie appearances, and player statuses, then preview it:
+
+```bash
+icelines fantasy snapshot-yahoo --file yahoo-week.json --league "My League"
+icelines fantasy snapshot-yahoo --file yahoo-week.json --league "My League" --apply
+icelines fantasy snapshot-show --league "My League"
+```
+
+Applying a snapshot records standings history, confirmed platform injury
+statuses, and the included weekly matchup. `matchup-plan`, `goalie-plan`, and
+`morning` then use matching saved matchup points or goalie appearances when a
+manual positive value was not supplied. The source JSON remains the explicit
+boundary for private platform observations; IceLines does not log in to Yahoo.
+
+To evaluate whether the bench actually creates starts rather than merely adding
+games, run the exact-date substitution planner:
+
+```bash
+icelines fantasy bench-coverage --week 2026-10-05 --weeks 3 --league "My League"
+```
+
+The report identifies each inferred baseline bench player, the starter and slot
+they can cover, usable dates, crowded-slate collisions, and starter dates that
+remain uncovered. Saved roster membership does not contain Yahoo's BN labels,
+so the baseline bench is inferred by optimizing a legal full-roster lineup.
 
 ---
 
@@ -209,7 +315,7 @@ Deleting a league cascades — removes all teams and rosters in that league.
 
 ## Notes
 
-- Goalies are not in the skater dataset — only forwards and defensemen
+- Goalies are scored through the goalie side of the active fantasy scheme.
 - Player uniqueness is scoped per-league — the same player can be on teams in different leagues
 - Fantasy scores are cumulative season stats × scheme weights (not daily)
 - For daily delta scoring, run `icelines fetch stats` each day and compare snapshots

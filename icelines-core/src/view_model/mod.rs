@@ -36,6 +36,7 @@ pub mod fantasy_provider;
 pub mod fantasy_schedule;
 pub mod fantasy_season_sim;
 pub mod fantasy_sim;
+pub mod fantasy_today;
 pub mod fantasy_trade;
 pub mod favorites;
 pub mod game;
@@ -314,6 +315,13 @@ pub use fantasy_sim::{
     FantasySimulationInput, FantasySimulationRosterTeamInput, FantasySimulationScenarioInput,
     FantasySimulationScenarioRosterInput, FantasySimulationScenarioRow, FantasySimulationTeamInput,
     FantasySimulationTeamRow, FantasySimulationView,
+};
+pub use fantasy_today::{
+    build_fantasy_today, FantasyTodayAcquisitionSummary, FantasyTodayAction, FantasyTodayContext,
+    FantasyTodayEvidenceRow, FantasyTodayFirmness, FantasyTodayGoalieSummary, FantasyTodayInput,
+    FantasyTodayLineupSummary, FantasyTodayMatchupInput, FantasyTodayMatchupSummary,
+    FantasyTodayQuietNightSummary, FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayView,
+    FANTASY_TODAY_SCHEMA,
 };
 pub use fantasy_trade::{
     FantasyTradeEvaluationView, FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation,

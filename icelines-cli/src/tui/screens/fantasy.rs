@@ -5,7 +5,8 @@ use icelines_core::{
     view_model::{
         FantasyRosterGapInput, FantasyRosterGapView, FantasySimulationBuildInput,
         FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
-        FantasySimulationScenarioRosterInput, FantasySimulationView,
+        FantasySimulationScenarioRosterInput, FantasySimulationView, FantasyTodayState,
+        FantasyTodayView,
     },
     Scheme,
 };
@@ -45,6 +46,125 @@ pub fn simulation_chrome() -> crate::tui::chrome::ScreenChrome {
             KeyHint::new(":", "command"),
         ],
     }
+}
+
+pub fn today_chrome() -> crate::tui::chrome::ScreenChrome {
+    use crate::tui::chrome::{KeyHint, ScreenChrome};
+    ScreenChrome {
+        title: "The Bench - Fantasy Today".to_string(),
+        keybinds: vec![
+            KeyHint::new("g", "roster gaps"),
+            KeyHint::new(":", "command"),
+        ],
+    }
+}
+
+pub fn render_today(f: &mut Frame, _app: &App, area: Rect) {
+    let block = tui_panel_block(" The Bench - Fantasy Today ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+    match load_today_contract() {
+        Ok(view) => f.render_widget(Paragraph::new(today_lines(view)), inner),
+        Err(message) => f.render_widget(
+            Paragraph::new(format!(
+                "Fantasy cockpit unavailable\n\n{message}\n\nRun `icelines fantasy today` for recovery guidance."
+            ))
+            .style(tui_error_style()),
+            inner,
+        ),
+    }
+}
+
+fn load_today_contract() -> &'static Result<FantasyTodayView, String> {
+    static CONTRACT: std::sync::OnceLock<Result<FantasyTodayView, String>> =
+        std::sync::OnceLock::new();
+    CONTRACT.get_or_init(read_today_contract)
+}
+
+fn read_today_contract() -> Result<FantasyTodayView, String> {
+    let executable = std::env::current_exe().map_err(|error| error.to_string())?;
+    let output = std::process::Command::new(executable)
+        .args(["fantasy", "today", "--json"])
+        .output()
+        .map_err(|error| format!("start local cockpit adapter: {error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_owned());
+    }
+    serde_json::from_slice(&output.stdout)
+        .map_err(|error| format!("decode fantasy_today.v1 contract: {error}"))
+}
+
+fn today_lines(view: &FantasyTodayView) -> Vec<Line<'static>> {
+    let state_style = match view.state {
+        FantasyTodayState::Ready => tui_header_style(),
+        FantasyTodayState::Provisional => tui_warning_style(),
+        FantasyTodayState::Blocked => tui_error_style(),
+    };
+    let mut lines = vec![
+        Line::styled(
+            format!(
+                "{} / {} / {}",
+                view.context.league_name, view.context.fantasy_team_name, view.context.date
+            ),
+            tui_title_style(),
+        ),
+        Line::styled(
+            format!("{:?}", view.state).to_ascii_uppercase(),
+            state_style,
+        ),
+        Line::raw(""),
+        Line::styled("DO NOW", tui_header_style()),
+        Line::raw(
+            view.primary_decision
+                .as_ref()
+                .map(|action| action.message.clone())
+                .unwrap_or_else(|| "No action recommended.".to_owned()),
+        ),
+    ];
+    if let Some(deadline) = view.next_decision_deadline_utc {
+        lines.push(Line::styled(
+            format!("Deadline: {}", deadline.to_rfc3339()),
+            tui_warning_style(),
+        ));
+    }
+    lines.extend([
+        Line::raw(""),
+        Line::raw(format!(
+            "Lineup  {} starts | {} open | {} bench games",
+            view.lineup.usable_starts,
+            view.lineup.open_active_slots,
+            view.lineup.bench_players_with_games
+        )),
+        Line::raw(format!(
+            "Adds    {}/{} used | {} proactive",
+            view.acquisitions.used, view.acquisitions.limit, view.acquisitions.proactive_remaining
+        )),
+    ]);
+    if let Some(matchup) = &view.matchup {
+        lines.push(Line::raw(format!(
+            "Matchup {} | {} | {}",
+            matchup.opponent, matchup.matchup_state, matchup.recommendation
+        )));
+    }
+    if let Some(quiet) = &view.quiet_nights {
+        lines.push(Line::raw(format!(
+            "Quiet   {} usable starts | best {} ({})",
+            quiet.usable_substitute_starts,
+            quiet.best_substitute.as_deref().unwrap_or("-"),
+            quiet.best_substitute_team.as_deref().unwrap_or("-")
+        )));
+    }
+    for row in view
+        .readiness
+        .iter()
+        .filter(|row| row.state != FantasyTodayState::Ready)
+    {
+        lines.push(Line::styled(
+            format!("{}: {}", row.workflow, row.message),
+            tui_warning_style(),
+        ));
+    }
+    lines
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -540,6 +660,33 @@ mod tests {
         assert!(chrome.title.contains("league simulation"));
         assert!(chrome.title.contains("The Line Blender"));
         assert!(chrome.keybinds.iter().any(|key| key.key == "a"));
+    }
+
+    #[test]
+    fn l0_fantasy_today_tui_chrome_names_cockpit() {
+        let chrome = super::today_chrome();
+        assert!(chrome.title.contains("Fantasy Today"));
+        assert!(chrome.keybinds.iter().any(|key| key.key == ":"));
+    }
+
+    #[test]
+    fn l0_fantasy_today_tui_has_designed_degradation_at_80_and_120_columns() {
+        for width in [80, 120] {
+            let app = App::new(true);
+            let backend = TestBackend::new(width, 18);
+            let mut term = Terminal::new(backend).unwrap();
+            term.draw(|f| render_today(f, &app, f.area())).unwrap();
+            let buffer = term.backend().buffer();
+            let mut output = String::new();
+            for y in 0..buffer.area.height {
+                for x in 0..buffer.area.width {
+                    output.push_str(buffer[(x, y)].symbol());
+                }
+                output.push('\n');
+            }
+            assert!(output.contains("Fantasy cockpit unavailable"));
+            assert!(output.contains("fantasy today"));
+        }
     }
 
     #[test]
