@@ -40,3 +40,18 @@ to transact.
 Personal rosters, sentimental preferences, watch lists, manager decisions, and
 season history belong in PUCK. IceLines exports the generic decision contract
 but does not automatically write a journal, upload data, or import PUCK state.
+
+## Request and surface parity
+
+The local assembler resolves an exact league and user team, then carries the
+requested stats season **and season type** through the stats load and returned
+context. Missing assistant rules and missing schedule cache are typed failures
+with recovery commands; stale or partial saved matchup snapshots are rejected
+and disclosed rather than silently reused.
+
+CLI, TUI, and Web render the shared `FantasyTodaySurfaceDecision` projection.
+It is the canonical surface subset for primary decision, alternatives,
+deadline, firmness, legality, matchup impact, evidence age, and decision
+fingerprint. The public sealed fixture
+`icelines-core/tests/fixtures/fantasy_today_surface_decision.v1.json` is consumed
+by all three surface test suites.

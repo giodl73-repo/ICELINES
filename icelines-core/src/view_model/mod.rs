@@ -321,8 +321,9 @@ pub use fantasy_today::{
     build_fantasy_today, FantasyTodayAcquisitionSummary, FantasyTodayAction, FantasyTodayContext,
     FantasyTodayEvidenceRow, FantasyTodayFirmness, FantasyTodayGoalieSummary, FantasyTodayInput,
     FantasyTodayLineupSummary, FantasyTodayMatchupInput, FantasyTodayMatchupSummary,
-    FantasyTodayQuietNightSummary, FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayView,
-    FANTASY_TODAY_SCHEMA,
+    FantasyTodayQuietNightSummary, FantasyTodayReadinessRow, FantasyTodayState,
+    FantasyTodaySurfaceDecision, FantasyTodayV2View, FantasyTodayView, FANTASY_TODAY_SCHEMA,
+    FANTASY_TODAY_V2_SCHEMA,
 };
 pub use fantasy_trade::{
     FantasyTradeEvaluationView, FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation,

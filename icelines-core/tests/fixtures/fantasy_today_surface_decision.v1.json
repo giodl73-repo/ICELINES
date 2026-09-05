@@ -1,0 +1,13 @@
+{
+  "primary_message": "Start Fixture Player",
+  "alternative_messages": [
+    "Bench Fixture Goalie",
+    "Review Fixture Pickup"
+  ],
+  "deadline_utc": "2026-09-08T23:00:00Z",
+  "firmness": "firm",
+  "legal_at_evaluation": true,
+  "matchup_impact": "projected +4.5 points against Fixture Rival",
+  "evidence_age_seconds": 90,
+  "material_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
