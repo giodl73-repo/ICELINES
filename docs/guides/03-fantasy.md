@@ -48,6 +48,22 @@ evidence is absent, the output names a recovery command instead of treating the
 missing value as zero. Deep pickup and sleeper searches remain separate because
 they are slower and may consume refreshed inputs.
 
+For a Monday-Sunday transaction sequence, use:
+
+```bash
+icelines fantasy week-plan
+icelines fantasy week-plan --week 2026-11-09 --json
+icelines fantasy decision-record --chosen 0 --rationale "save the final add"
+icelines fantasy decision-review
+```
+
+The plan recomputes actual usable starts after each add/drop instead of adding
+together independent waiver rankings. It keeps the configured injury reserve,
+respects waiver availability, returns a hold when churn is negative, and shows
+fallback sequences. `week-plan` is read-only. Recording is explicit and stores
+the recommendation as it appeared at decision time; private rationale is hidden
+unless requested during review.
+
 The default surfaces use the league-aware `fantasy_today.v2` contract: CLI
 text/JSON, the TUI Fantasy workbench, browser HTML at `/fantasy/today`, and JSON
 at `/api/v2/fantasy/today`. The stable `/api/v1/fantasy/today` route remains a
@@ -302,6 +318,11 @@ The report identifies each inferred baseline bench player, the starter and slot
 they can cover, usable dates, crowded-slate collisions, and starter dates that
 remain uncovered. Saved roster membership does not contain Yahoo's BN labels,
 so the baseline bench is inferred by optimizing a legal full-roster lineup.
+
+For a complete acquisition sequence through Sunday, use `icelines fantasy
+week-plan`. The same private, no-store projection is available from the running
+web dashboard at `/fantasy/week-plan`; it is also embedded in the Fantasy Today
+TUI cockpit. All three surfaces consume the same source assembly and optimizer.
 
 ---
 

@@ -125,6 +125,35 @@ fn today_v2_lines(view: &FantasyTodayV2View) -> Vec<Line<'static>> {
         format!("Decision {}", summary.material_fingerprint),
         tui_meta_style(),
     ));
+    if let Some(plan) = &view.week_plan {
+        lines.push(Line::raw(""));
+        lines.push(Line::styled("WEEK PLAN", tui_header_style()));
+        lines.push(Line::raw(format!(
+            "{:+.2} points | {:+} starts | {} move(s) | {} held",
+            plan.primary_sequence.projected_value_delta,
+            plan.primary_sequence.incremental_usable_starts,
+            plan.primary_sequence.moves_used,
+            plan.primary_sequence.reserve_after
+        )));
+        if let Some(next) = plan.primary_sequence.moves.first() {
+            lines.push(Line::raw(format!(
+                "{} add {}{} [{}]",
+                next.local_date,
+                next.add_player,
+                next.drop_player
+                    .as_ref()
+                    .map(|drop| format!(", drop {drop}"))
+                    .unwrap_or_default(),
+                next.firmness
+            )));
+        } else {
+            lines.push(Line::raw("Hold the current roster."));
+        }
+        lines.push(Line::styled(
+            format!("Plan {}", plan.material_fingerprint),
+            tui_meta_style(),
+        ));
+    }
     lines
 }
 

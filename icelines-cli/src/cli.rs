@@ -11397,6 +11397,72 @@ pub enum FantasySubcommand {
         json: bool,
     },
 
+    /// Optimize a legal sequence of add/drop moves through Sunday.
+    #[command(name = "week-plan")]
+    WeekPlan {
+        /// Monday in YYYY-MM-DD; defaults to the active week.
+        #[arg(long)]
+        week: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 12)]
+        candidates: usize,
+        #[arg(long, default_value_t = 3)]
+        max_moves: u8,
+        #[arg(long, default_value_t = 20)]
+        beam_width: usize,
+        #[arg(long, default_value_t = 3)]
+        alternatives: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Capture the current week-plan projection in the private decision journal.
+    #[command(name = "decision-record")]
+    DecisionRecord {
+        /// Zero selects the primary sequence; 1 selects the first fallback.
+        #[arg(long, default_value_t = 0)]
+        chosen: usize,
+        #[arg(long)]
+        rationale: Option<String>,
+        #[arg(long)]
+        week: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        #[arg(long, default_value_t = 12)]
+        candidates: usize,
+        #[arg(long, default_value_t = 3)]
+        max_moves: u8,
+        #[arg(long, default_value_t = 20)]
+        beam_width: usize,
+        #[arg(long, default_value_t = 3)]
+        alternatives: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Review immutable fantasy decisions and their recorded outcomes.
+    #[command(name = "decision-review")]
+    DecisionReview {
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        /// Include private manager rationale in output.
+        #[arg(long)]
+        include_private: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Find unrostered skaters with rising league-scored and category rates.
     Sleepers {
         #[arg(long)]

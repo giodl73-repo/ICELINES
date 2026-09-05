@@ -2352,6 +2352,55 @@ async fn l1_fantasy_today_html_degrades_as_semantic_no_script_document() {
 }
 
 #[tokio::test]
+async fn l1_fantasy_week_plan_json_is_private_and_degrades_without_local_state() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    let response = router(WebState::new())
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/week-plan")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(response.headers()["cache-control"], "no-store");
+    let json = response_json(response, 64 * 1024).await;
+    assert_eq!(json["schema"], "fantasy_pickup_sequence.v1");
+    assert_eq!(json["state"], "blocked");
+    assert_eq!(json["recovery_command"], "icelines fantasy week-plan");
+    assert!(!home.path().join(".icelines").exists());
+}
+
+#[tokio::test]
+async fn l1_fantasy_week_plan_rejects_non_monday_with_canonical_recovery() {
+    let _guard = home_env_lock().await;
+    let home = HomeEnvFixture::new();
+    let response = router(WebState::new())
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/fantasy/week-plan?week=2026-09-05")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(response.headers()["cache-control"], "no-store");
+    let json = response_json(response, 64 * 1024).await;
+    assert_eq!(json["schema"], "fantasy_pickup_sequence.v1");
+    assert_eq!(json["state"], "invalid_request");
+    assert_eq!(
+        json["recovery_url"],
+        "/api/v1/fantasy/week-plan?week=2026-08-31"
+    );
+    assert!(!home.path().join(".icelines").exists());
+}
+
+#[tokio::test]
 async fn l1_fantasy_matchup_json_surfaces_missing_schedule_as_empty_state() {
     let _guard = home_env_lock().await;
     let home = HomeEnvFixture::new();

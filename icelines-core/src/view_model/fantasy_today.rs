@@ -181,6 +181,8 @@ pub struct FantasyTodayV2View {
     #[serde(flatten)]
     pub today: FantasyTodayView,
     pub decisions: super::fantasy_daily_decisions::FantasyDailyDecisionsView,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub week_plan: Option<super::fantasy_pickup_sequence::FantasyPickupSequenceView>,
 }
 
 /// Decision-critical fields rendered by every interactive surface.
@@ -273,7 +275,11 @@ pub fn build_fantasy_today_v2(
         },
     );
     today.schema = FANTASY_TODAY_V2_SCHEMA.to_owned();
-    FantasyTodayV2View { today, decisions }
+    FantasyTodayV2View {
+        today,
+        decisions,
+        week_plan: None,
+    }
 }
 
 pub fn build_fantasy_today(input: FantasyTodayInput) -> FantasyTodayView {

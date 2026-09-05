@@ -4,9 +4,9 @@ use crate::templates::{
 };
 use askama::Template;
 use axum::extract::{Query, State};
-use axum::http::StatusCode;
+use axum::http::{header, HeaderValue, StatusCode};
 use axum::response::{Html, IntoResponse, Response};
-use chrono::{NaiveDate, Utc};
+use chrono::{Datelike, Duration, NaiveDate, Utc};
 use icelines_core::model::{Position, Season};
 use icelines_core::season_stats::SeasonType;
 use icelines_core::timeframe::Timeframe;
@@ -49,6 +49,8 @@ pub struct FantasyWebQuery {
     pub drop_player: Option<String>,
     #[serde(default)]
     pub date: Option<String>,
+    #[serde(default)]
+    pub week: Option<String>,
     #[serde(default)]
     pub team: Option<String>,
 }
@@ -203,6 +205,141 @@ pub async fn get_fantasy_today_v2_json(
     }
 }
 
+pub async fn get_fantasy_week_plan_json(
+    State(state): State<WebState>,
+    Query(q): Query<FantasyWebQuery>,
+) -> Response {
+    if let Err((message, canonical_week)) = validate_week_shape(&q) {
+        return no_store(
+            (
+                StatusCode::BAD_REQUEST,
+                axum::Json(serde_json::json!({
+                    "schema": "fantasy_pickup_sequence.v1",
+                    "state": "invalid_request",
+                    "error": message,
+                    "recovery_url": format!("/api/v1/fantasy/week-plan?week={canonical_week}")
+                })),
+            )
+                .into_response(),
+        );
+    }
+    no_store(match load_fantasy_today_contract(&state, &q).await {
+        Ok(view) => match validate_requested_week(&q, &view) {
+            Ok(()) => axum::Json(view.week_plan).into_response(),
+            Err(message) => (
+                StatusCode::BAD_REQUEST,
+                axum::Json(serde_json::json!({
+                    "schema": "fantasy_pickup_sequence.v1",
+                    "state": "invalid_request",
+                    "error": message,
+                    "recovery_url": format!("/api/v1/fantasy/week-plan?week={}", view.today.context.week_start)
+                })),
+            )
+                .into_response(),
+        },
+        Err(message) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            axum::Json(serde_json::json!({
+                "schema": "fantasy_pickup_sequence.v1",
+                "state": "blocked",
+                "error": message,
+                "recovery_command": "icelines fantasy week-plan"
+            })),
+        )
+            .into_response(),
+    })
+}
+
+pub async fn get_fantasy_week_plan(
+    State(state): State<WebState>,
+    Query(q): Query<FantasyWebQuery>,
+) -> Response {
+    if let Err((message, canonical_week)) = validate_week_shape(&q) {
+        return no_store(
+            (
+                StatusCode::BAD_REQUEST,
+                Html(format!(
+                    "<!doctype html><html lang=\"en\"><main><h1>Invalid fantasy week</h1><p>{}</p><p><a href=\"/fantasy/week-plan?week={canonical_week}\">Open the containing week</a></p></main></html>",
+                    escape_html(&message)
+                )),
+            )
+                .into_response(),
+        );
+    }
+    no_store(match load_fantasy_today_contract(&state, &q).await {
+        Ok(view) => match validate_requested_week(&q, &view) {
+            Ok(()) => Html(render_fantasy_week_plan_html(
+                view.week_plan.as_ref().expect("assembled week plan"),
+            ))
+            .into_response(),
+            Err(message) => (
+                StatusCode::BAD_REQUEST,
+                Html(format!(
+                    "<!doctype html><html lang=\"en\"><main><h1>Invalid fantasy week</h1><p>{}</p><p><a href=\"/fantasy/week-plan?week={}\">Open the active week</a></p></main></html>",
+                    escape_html(&message),
+                    view.today.context.week_start
+                )),
+            )
+                .into_response(),
+        },
+        Err(message) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Html(format!(
+                "<!doctype html><html lang=\"en\"><main><h1>Week plan unavailable</h1><p>{}</p><p>Run <code>icelines fantasy week-plan</code>.</p></main></html>",
+                escape_html(&message)
+            )),
+        )
+            .into_response(),
+    })
+}
+
+fn validate_week_shape(q: &FantasyWebQuery) -> Result<(), (String, NaiveDate)> {
+    let Some(value) = q.week.as_deref() else {
+        return Ok(());
+    };
+    let requested = NaiveDate::parse_from_str(value, "%Y-%m-%d").map_err(|_| {
+        (
+            format!("week '{value}' must use YYYY-MM-DD"),
+            Utc::now().date_naive()
+                - Duration::days(Utc::now().weekday().num_days_from_monday().into()),
+        )
+    })?;
+    if requested.weekday() != chrono::Weekday::Mon {
+        let canonical =
+            requested - Duration::days(requested.weekday().num_days_from_monday().into());
+        return Err((format!("week '{value}' is not a Monday"), canonical));
+    }
+    Ok(())
+}
+
+fn validate_requested_week(q: &FantasyWebQuery, view: &FantasyTodayV2View) -> Result<(), String> {
+    let Some(value) = q.week.as_deref() else {
+        return Ok(());
+    };
+    let requested = NaiveDate::parse_from_str(value, "%Y-%m-%d")
+        .map_err(|_| format!("week '{value}' must use YYYY-MM-DD"))?;
+    if requested.weekday() != chrono::Weekday::Mon {
+        return Err(format!(
+            "week '{value}' is not a Monday; active week starts {}",
+            view.today.context.week_start
+        ));
+    }
+    if requested != view.today.context.week_start {
+        return Err(format!(
+            "only the active acquisition week {} is available",
+            view.today.context.week_start
+        ));
+    }
+    Ok(())
+}
+
+fn no_store(mut response: Response) -> Response {
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    response
+}
+
 pub async fn get_fantasy_today(
     State(state): State<WebState>,
     Query(q): Query<FantasyWebQuery>,
@@ -302,8 +439,37 @@ fn render_fantasy_today_html(v2: &FantasyTodayV2View) -> String {
         .take(3)
         .map(|message| format!("<li>{}</li>", escape_html(message)))
         .collect::<String>();
+    let week_plan = v2.week_plan.as_ref().map_or_else(
+        || "<p>Week plan unavailable.</p>".to_owned(),
+        |plan| {
+            let next = plan.primary_sequence.moves.first().map_or_else(
+                || "Hold the current roster.".to_owned(),
+                |row| {
+                    format!(
+                        "{}: add {}{} ({})",
+                        row.local_date,
+                        escape_html(&row.add_player),
+                        row.drop_player
+                            .as_ref()
+                            .map(|drop| format!(", drop {}", escape_html(drop)))
+                            .unwrap_or_default(),
+                        escape_html(&row.firmness)
+                    )
+                },
+            );
+            format!(
+                "<p>{:+.2} points; {:+} starts; {} move(s); {} held.</p><p>{}</p><p><a href=\"/fantasy/week-plan?week={}\">Open full week plan</a></p>",
+                plan.primary_sequence.projected_value_delta,
+                plan.primary_sequence.incremental_usable_starts,
+                plan.primary_sequence.moves_used,
+                plan.primary_sequence.reserve_after,
+                next,
+                plan.context.week_start
+            )
+        },
+    );
     format!(
-        "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Fantasy Today</title><style>body{{font:16px system-ui;max-width:72rem;margin:auto;padding:1rem}}section{{border:1px solid #888;border-radius:.5rem;padding:1rem;margin-block:1rem}}.state{{font-weight:700;text-transform:uppercase}}code{{overflow-wrap:anywhere}}@media(max-width:40rem){{body{{padding:.6rem}}}}</style><main><h1>Fantasy Today</h1><p>{} · {} · {} {} · <time>{}</time></p><p class=\"state\" aria-label=\"Cockpit readiness\">{}</p><section aria-labelledby=\"decision\"><h2 id=\"decision\">Do now</h2><p>{}</p><p>{}</p><p>Next deadline: <time>{}</time></p><h3>Next options</h3><ol>{}</ol><p><small>Decision fingerprint: <code>{}</code></small></p></section><section aria-labelledby=\"lineup\"><h2 id=\"lineup\">Lineup and budget</h2><p>{} usable starts; {} open slots; {} bench players have games.</p><p>{}/{} acquisitions used; {} safe for proactive use.</p></section><section aria-labelledby=\"readiness\"><h2 id=\"readiness\">Readiness</h2><ul>{}</ul></section></main></html>",
+        "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Fantasy Today</title><style>body{{font:16px system-ui;max-width:72rem;margin:auto;padding:1rem}}section{{border:1px solid #888;border-radius:.5rem;padding:1rem;margin-block:1rem}}.state{{font-weight:700;text-transform:uppercase}}code{{overflow-wrap:anywhere}}@media(max-width:40rem){{body{{padding:.6rem}}}}</style><main><h1>Fantasy Today</h1><p>{} · {} · {} {} · <time>{}</time></p><p class=\"state\" aria-label=\"Cockpit readiness\">{}</p><section aria-labelledby=\"decision\"><h2 id=\"decision\">Do now</h2><p>{}</p><p>{}</p><p>Next deadline: <time>{}</time></p><h3>Next options</h3><ol>{}</ol><p><small>Decision fingerprint: <code>{}</code></small></p></section><section aria-labelledby=\"lineup\"><h2 id=\"lineup\">Lineup and budget</h2><p>{} usable starts; {} open slots; {} bench players have games.</p><p>{}/{} acquisitions used; {} safe for proactive use.</p></section><section aria-labelledby=\"week-plan\"><h2 id=\"week-plan\">Week plan</h2>{}</section><section aria-labelledby=\"readiness\"><h2 id=\"readiness\">Readiness</h2><ul>{}</ul></section></main></html>",
         escape_html(&view.context.league_name),
         escape_html(&view.context.fantasy_team_name),
         escape_html(&view.context.stats_season),
@@ -321,7 +487,71 @@ fn render_fantasy_today_html(v2: &FantasyTodayV2View) -> String {
         view.acquisitions.used,
         view.acquisitions.limit,
         view.acquisitions.proactive_remaining,
+        week_plan,
         readiness
+    )
+}
+
+fn render_fantasy_week_plan_html(view: &icelines_core::FantasyPickupSequenceView) -> String {
+    let moves = if view.primary_sequence.moves.is_empty() {
+        "<li>Hold the current roster.</li>".to_owned()
+    } else {
+        view.primary_sequence
+            .moves
+            .iter()
+            .map(|row| {
+                format!(
+                    "<li><time>{}</time>: add <strong>{}</strong>{} <small>{:+.2}; {}</small></li>",
+                    row.local_date,
+                    escape_html(&row.add_player),
+                    row.drop_player
+                        .as_ref()
+                        .map(|drop| format!(", drop <strong>{}</strong>", escape_html(drop)))
+                        .unwrap_or_default(),
+                    row.marginal_active_value,
+                    escape_html(&row.firmness)
+                )
+            })
+            .collect::<String>()
+    };
+    let coverage = view
+        .primary_sequence
+        .daily_coverage
+        .iter()
+        .map(|row| {
+            format!(
+                "<tr><td><time>{}</time></td><td>{}</td><td>{}</td><td>{}</td></tr>",
+                row.date, row.usable_starts, row.benched_collisions, row.open_active_slots
+            )
+        })
+        .collect::<String>();
+    let alternatives = view
+        .alternatives
+        .iter()
+        .map(|row| {
+            format!(
+                "<li>{:+.2} points; {:+} starts; {} move(s)</li>",
+                row.projected_value_delta, row.incremental_usable_starts, row.moves_used
+            )
+        })
+        .collect::<String>();
+    format!(
+        "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Fantasy Week Plan</title><style>body{{font:16px system-ui;max-width:72rem;margin:auto;padding:1rem}}section{{border:1px solid #888;border-radius:.5rem;padding:1rem;margin-block:1rem}}table{{border-collapse:collapse;width:100%}}th,td{{padding:.4rem;text-align:left;border-bottom:1px solid #bbb}}code{{overflow-wrap:anywhere}}</style><main><h1>Fantasy Week Plan</h1><p>{} · {} · <time>{}</time> through <time>{}</time></p><section><h2>Primary sequence</h2><p>{:+.2} points; {:+} usable starts; {} acquisition(s) held.</p><ol>{}</ol><p>{}</p></section><section><h2>Daily coverage</h2><table><thead><tr><th>Date</th><th>Starts</th><th>Bench collisions</th><th>Open slots</th></tr></thead><tbody>{}</tbody></table></section><section><h2>Fallbacks</h2><ol>{}</ol></section><p><small>Bounded search: {} states, beam {}{} · <code>{}</code></small></p></main></html>",
+        escape_html(&view.context.league_name),
+        escape_html(&view.context.fantasy_team_name),
+        view.context.week_start,
+        view.context.week_end,
+        view.primary_sequence.projected_value_delta,
+        view.primary_sequence.incremental_usable_starts,
+        view.primary_sequence.reserve_after,
+        moves,
+        escape_html(&view.holdback_recommendation),
+        coverage,
+        alternatives,
+        view.evaluated_states,
+        view.beam_width,
+        if view.truncated { "; truncated" } else { "" },
+        escape_html(&view.material_fingerprint)
     )
 }
 

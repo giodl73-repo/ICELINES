@@ -31,6 +31,7 @@ pub mod fantasy_import;
 pub mod fantasy_league;
 pub mod fantasy_matchup;
 pub mod fantasy_matchup_strategy;
+pub mod fantasy_pickup_sequence;
 pub mod fantasy_platform_snapshot;
 pub mod fantasy_playoff_portfolio;
 pub mod fantasy_provider;

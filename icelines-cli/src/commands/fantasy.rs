@@ -54,16 +54,16 @@ use icelines_core::{
     FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy, FantasyMatchupStrategyInput,
     FantasyMatchupStrategyPlayerInput, FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView,
     FantasyMatchupSwingInput, FantasyMatchupTiePolicy, FantasyMorningCardInput,
-    FantasyObservationConfidence, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
-    FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput, FantasyPlayoffPortfolioInput,
-    FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput, FantasyRosterCardInput,
-    FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind, FantasySeasonSimConfig,
-    FantasySeasonSimPlayerInput, FantasySeasonSimView, FantasySimulationBuildInput,
-    FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
-    FantasySimulationScenarioRosterInput, FantasySimulationView, FantasySleeperBoardView,
-    FantasySleeperInput, FantasyStatusObservation, FantasyTodayContext, FantasyTodayEvidenceRow,
-    FantasyTodayInput, FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayV2View,
-    FantasyTodayView, FantasyTradeCardInput, FantasyTradeEvaluationView,
+    FantasyObservationConfidence, FantasyPickupSequenceView, FantasyPlatformSnapshot,
+    FantasyPlatformSnapshotView, FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput,
+    FantasyPlayoffPortfolioInput, FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput,
+    FantasyRosterCardInput, FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind,
+    FantasySeasonSimConfig, FantasySeasonSimPlayerInput, FantasySeasonSimView,
+    FantasySimulationBuildInput, FantasySimulationConfidence, FantasySimulationHorizon,
+    FantasySimulationRosterTeamInput, FantasySimulationScenarioRosterInput, FantasySimulationView,
+    FantasySleeperBoardView, FantasySleeperInput, FantasyStatusObservation, FantasyTodayContext,
+    FantasyTodayEvidenceRow, FantasyTodayInput, FantasyTodayReadinessRow, FantasyTodayState,
+    FantasyTodayV2View, FantasyTodayView, FantasyTradeCardInput, FantasyTradeEvaluationView,
     FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation, FantasyWeeklyMoveInput, RosterShape,
     RosterShapeStatus, RosterShapeValidationView, ViewContext, ViewWindow, CURRENT_SEASON,
     FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_TRADE_EVALUATION_SCHEMA,
@@ -75,7 +75,10 @@ use icelines_fetch::fantasy_import::{
     FantasyRosterImportOptions,
 };
 use icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view;
-use icelines_fetch::fantasy_today_service::{assemble_fantasy_today, FantasyTodayAssemblyRequest};
+use icelines_fetch::fantasy_today_service::{
+    assemble_fantasy_today, FantasyTodayAssemblyRequest, FantasyWeekPlanPolicy,
+};
+use icelines_fetch::fantasy_week_plan_service::assemble_fantasy_week_plan_from_sources;
 use icelines_fetch::nhl_api::{NhlApiClient, ScheduledGame};
 use icelines_fetch::schedule_remaining::{default_data_root, remaining_games_by_team_from_cache};
 use icelines_fetch::schema::RosterResponse;
@@ -6246,6 +6249,252 @@ pub async fn run_weekly_pickups(
         println!("{}", serde_json::to_string_pretty(&view)?);
     } else {
         print_weekly_pickups(&view, evaluation_date, sunday);
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn assemble_week_plan_default(
+    week: Option<&str>,
+    league: Option<String>,
+    team: Option<String>,
+    stats_season: String,
+    candidate_limit: usize,
+    max_moves: u8,
+    beam_width: usize,
+    alternatives: usize,
+) -> anyhow::Result<FantasyPickupSequenceView> {
+    let mut request = FantasyTodayAssemblyRequest::from_default_paths(
+        league,
+        team,
+        stats_season,
+        CURRENT_SEASON,
+        Utc::now(),
+    )?;
+    request.week_plan_policy = FantasyWeekPlanPolicy {
+        candidate_limit,
+        max_moves,
+        beam_width,
+        alternative_limit: alternatives,
+    };
+    let view = assemble_fantasy_week_plan_from_sources(request)?;
+    if let Some(value) = week {
+        let requested = NaiveDate::parse_from_str(value, "%Y-%m-%d")
+            .with_context(|| format!("invalid week '{value}'; expected YYYY-MM-DD"))?;
+        if requested.weekday() != chrono::Weekday::Mon {
+            bail!(
+                "--week must be a Monday; the active week starts {}",
+                view.context.week_start
+            );
+        }
+        if requested != view.context.week_start {
+            bail!(
+                "the active acquisition week starts {}; historical/future planning is not available",
+                view.context.week_start
+            );
+        }
+    }
+    Ok(view)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn run_week_plan(
+    week: Option<String>,
+    league_override: Option<String>,
+    team: Option<String>,
+    stats_season: String,
+    candidate_limit: usize,
+    max_moves: u8,
+    beam_width: usize,
+    alternatives: usize,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    let view = assemble_week_plan_default(
+        week.as_deref(),
+        league_override,
+        team,
+        stats_season,
+        candidate_limit,
+        max_moves,
+        beam_width,
+        alternatives,
+    )?;
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&view)?);
+    } else {
+        print_week_plan(&view);
+    }
+    Ok(())
+}
+
+fn print_week_plan(view: &FantasyPickupSequenceView) {
+    println!(
+        "WEEK PLAN — {} — {} through {}",
+        view.context.fantasy_team_name, view.context.week_start, view.context.week_end
+    );
+    println!(
+        "Budget: {} remaining; {} safe now — {}",
+        view.budget.acquisitions_remaining,
+        view.budget.proactive_acquisitions_remaining,
+        view.holdback_recommendation
+    );
+    println!(
+        "Primary: {:+.2} points, {:+} starts, {} move(s)",
+        view.primary_sequence.projected_value_delta,
+        view.primary_sequence.incremental_usable_starts,
+        view.primary_sequence.moves_used
+    );
+    if view.primary_sequence.moves.is_empty() {
+        println!("  Hold the current roster.");
+    }
+    for row in &view.primary_sequence.moves {
+        println!(
+            "  {}. {}: add {}{} ({:+.2}) [{}]",
+            row.ordinal,
+            row.local_date,
+            row.add_player,
+            row.drop_player
+                .as_ref()
+                .map(|drop| format!(", drop {drop}"))
+                .unwrap_or_default(),
+            row.marginal_active_value,
+            row.firmness
+        );
+    }
+    println!("Daily coverage:");
+    for row in &view.primary_sequence.daily_coverage {
+        println!(
+            "  {}  starts {:>2}  bench collisions {:>2}  open {:>2}",
+            row.date, row.usable_starts, row.benched_collisions, row.open_active_slots
+        );
+    }
+    for (index, row) in view.alternatives.iter().enumerate() {
+        println!(
+            "Fallback {}: {:+.2} points, {:+} starts, {} move(s)",
+            index + 1,
+            row.projected_value_delta,
+            row.incremental_usable_starts,
+            row.moves_used
+        );
+    }
+    for warning in &view.warnings {
+        println!("warning: {warning}");
+    }
+    println!("Recommendation ID: {}", view.primary_sequence.sequence_id);
+    println!("Fingerprint: {}", view.material_fingerprint);
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn run_decision_record(
+    chosen: usize,
+    rationale: Option<String>,
+    week: Option<String>,
+    league_override: Option<String>,
+    team: Option<String>,
+    stats_season: String,
+    candidate_limit: usize,
+    max_moves: u8,
+    beam_width: usize,
+    alternatives: usize,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    let view = assemble_week_plan_default(
+        week.as_deref(),
+        league_override,
+        team,
+        stats_season,
+        candidate_limit,
+        max_moves,
+        beam_width,
+        alternatives,
+    )?;
+    let selected = if chosen == 0 {
+        &view.primary_sequence
+    } else {
+        view.alternatives.get(chosen - 1).ok_or_else(|| {
+            anyhow::anyhow!(
+                "--chosen {chosen} is unavailable; this plan has {} fallback(s)",
+                view.alternatives.len()
+            )
+        })?
+    };
+    let db = FantasyDb::open()?;
+    let projection_json = serde_json::to_string(&view)?;
+    let recommendation_fingerprint = format!("{}:{chosen}", view.material_fingerprint);
+    let (id, appended) = db.record_decision(
+        &view.context.league_id,
+        &view.context.fantasy_team_id,
+        "week_plan",
+        &selected.sequence_id,
+        &recommendation_fingerprint,
+        view.context.evaluated_at,
+        chosen,
+        rationale.as_deref(),
+        &projection_json,
+    )?;
+    if json_output {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&json!({
+                "id": id,
+                "appended": appended,
+                "recommendation_id": selected.sequence_id,
+                "recommendation_fingerprint": recommendation_fingerprint,
+                "chosen_alternative": chosen,
+            }))?
+        );
+    } else if appended {
+        println!(
+            "Recorded decision {id}: choice {chosen}, recommendation {}.",
+            selected.sequence_id
+        );
+    } else {
+        println!("Decision {id} was already recorded; no row was changed.");
+    }
+    Ok(())
+}
+
+pub async fn run_decision_review(
+    league_override: Option<String>,
+    limit: usize,
+    include_private: bool,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open_existing_read_only()?;
+    let league = require_league(&db, &league_override)?;
+    let decisions = db.list_decisions(&league.id, limit, include_private)?;
+    let rows = decisions
+        .into_iter()
+        .map(|decision| {
+            let outcomes = db.list_decision_outcomes(&decision.id)?;
+            Ok(json!({
+                "decision": decision,
+                "outcomes": outcomes,
+            }))
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&rows)?);
+    } else {
+        println!("DECISION JOURNAL — {}", league.name);
+        if rows.is_empty() {
+            println!("No decisions recorded.");
+        }
+        for row in rows {
+            let decision = &row["decision"];
+            println!(
+                "{}  choice {}  {}  outcomes {}",
+                decision["recorded_at"].as_str().unwrap_or("unknown"),
+                decision["chosen_alternative"].as_u64().unwrap_or_default(),
+                decision["recommendation_id"].as_str().unwrap_or("unknown"),
+                row["outcomes"].as_array().map_or(0, Vec::len)
+            );
+            if include_private {
+                if let Some(rationale) = decision["manager_rationale"].as_str() {
+                    println!("  rationale: {rationale}");
+                }
+            }
+        }
     }
     Ok(())
 }

@@ -2292,6 +2292,11 @@ icelines fantasy weekly-budget
 icelines fantasy weekly-budget --at 2026-10-08T07:00:00-07:00 --json
 icelines fantasy weekly-pickups --date 2026-10-08 --top 20
 icelines fantasy weekly-pickups --candidates 75 --json
+icelines fantasy week-plan --week 2026-11-09
+icelines fantasy week-plan --week 2026-11-09 --max-moves 3 --beam-width 40 --json
+icelines fantasy decision-record --week 2026-11-09 --chosen 0 --rationale "protect one move"
+icelines fantasy decision-review
+icelines fantasy decision-review --include-private --json
 icelines fantasy sleepers --positions D --top 20
 icelines fantasy sleepers --positions LW,RW --json
 icelines fantasy acquisition-record --add "Darren Raddysh" --drop "Bench Defenseman"
@@ -2316,6 +2321,23 @@ retention value uses legal starts and active-lineup value, appears explicitly in
 the recommendation reasons, and is capped at +6/-4. Candidates outside that
 bounded playoff beam retain a neutral future-schedule component rather than a
 fabricated zero-game claim.
+
+`week-plan` extends the one-move board into a deterministic, bounded sequence.
+It re-runs legal C/LW/RW/D/Util/G assignment after every hypothetical move and
+every remaining day, enforces waivers and the saved Monday-Sunday acquisition
+reserve, and always evaluates holding. The output identifies its beam limit and
+whether it truncated search; projections are decision support, not guarantees.
+Planning reopens the migrated fantasy database read-only and does not record a
+choice. `decision-record` is the explicit mutation: it stores the exact
+versioned plan JSON and chosen primary/fallback once, idempotently. The manager
+rationale is private and omitted from `decision-review` unless
+`--include-private` is supplied. Outcome rows are append-only in migration 020;
+historical projections are never rewritten from current data.
+
+The same private projection is available from the running web dashboard at
+`/fantasy/week-plan` and `/api/v1/fantasy/week-plan`. Add `?week=YYYY-MM-DD`
+with an ISO Monday to create a bookmark. These responses are read-only,
+render without JavaScript, and send `Cache-Control: no-store`.
 
 ### Sleeper discovery
 

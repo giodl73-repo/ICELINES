@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use anyhow::Context as _;
-use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
+use chrono::{DateTime, Datelike, Duration, NaiveDate, TimeZone, Utc};
 use icelines_core::{
     apply_fantasy_pickup_reserve, build_fantasy_bench_coverage, build_fantasy_daily_lineup,
     build_fantasy_goalie_plan, build_fantasy_matchup_strategy, build_fantasy_morning_briefing,
@@ -19,10 +19,11 @@ use icelines_core::{
     FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput, FantasyInjuryPlanView,
     FantasyLineupPlayerInput, FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy,
     FantasyMatchupStrategyInput, FantasyMatchupStrategyPlayerInput,
-    FantasyMatchupStrategyTeamInput, FantasyPlatformSnapshot, FantasyPlayerAvailabilityStatus,
-    FantasyTodayContext, FantasyTodayEvidenceRow, FantasyTodayInput, FantasyTodayMatchupInput,
-    FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayV2View, FantasyWeeklyMoveInput,
-    Scheme,
+    FantasyMatchupStrategyTeamInput, FantasyPickupSequenceContext, FantasyPickupSequenceInput,
+    FantasyPickupSequencePlayerInput, FantasyPickupSequenceView, FantasyPickupTransitionInput,
+    FantasyPlatformSnapshot, FantasyPlayerAvailabilityStatus, FantasyTodayContext,
+    FantasyTodayEvidenceRow, FantasyTodayInput, FantasyTodayMatchupInput, FantasyTodayReadinessRow,
+    FantasyTodayState, FantasyTodayV2View, FantasyWeeklyMoveInput, Scheme,
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -58,6 +59,26 @@ pub struct FantasyTodayAssemblyRequest {
     pub status_max_age_minutes: i64,
     pub current_goalie_appearances: f64,
     pub candidate_policy: FantasyTodayCandidatePolicy,
+    pub week_plan_policy: FantasyWeekPlanPolicy,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FantasyWeekPlanPolicy {
+    pub candidate_limit: usize,
+    pub max_moves: u8,
+    pub beam_width: usize,
+    pub alternative_limit: usize,
+}
+
+impl Default for FantasyWeekPlanPolicy {
+    fn default() -> Self {
+        Self {
+            candidate_limit: 8,
+            max_moves: 2,
+            beam_width: 12,
+            alternative_limit: 3,
+        }
+    }
 }
 
 impl FantasyTodayAssemblyRequest {
@@ -90,6 +111,7 @@ impl FantasyTodayAssemblyRequest {
             status_max_age_minutes: 180,
             current_goalie_appearances: 0.0,
             candidate_policy: FantasyTodayCandidatePolicy::default(),
+            week_plan_policy: FantasyWeekPlanPolicy::default(),
         })
     }
 }
@@ -635,7 +657,7 @@ fn assemble_fantasy_today_inner(
         rules.timezone.clone(),
         injury_plan,
         Some(goalie_plan),
-        budget,
+        budget.clone(),
         None,
         None,
     );
@@ -874,6 +896,32 @@ fn assemble_fantasy_today_inner(
             });
         }
     }
+    let week_plan = build_week_plan(
+        &db,
+        &league,
+        &team,
+        &rules,
+        &budget,
+        &skaters,
+        &goalies,
+        &all_scores,
+        &eligibility,
+        &current_teams,
+        &schedule,
+        &observations,
+        &roster,
+        &competition,
+        week_start,
+        week_end,
+        local_date,
+        request.evaluated_at_utc,
+        request.status_max_age_minutes,
+        &request.stats_season,
+        request.season_type,
+        &request.week_plan_policy,
+        &readiness,
+        &evidence,
+    )?;
     let today = build_fantasy_today(FantasyTodayInput {
         context: FantasyTodayContext {
             league_id: league.id,
@@ -897,12 +945,272 @@ fn assemble_fantasy_today_inner(
         readiness,
         evidence: std::mem::take(&mut evidence),
     });
-    Ok(build_fantasy_today_v2(
+    let mut view = build_fantasy_today_v2(
         today,
         transaction_candidate,
         candidate_state,
         candidate_recovery_command,
-    ))
+    );
+    view.week_plan = Some(week_plan);
+    Ok(view)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_week_plan(
+    db: &crate::fantasy_db::FantasyDb,
+    league: &crate::fantasy_db::LeagueRow,
+    team: &crate::fantasy_db::TeamRow,
+    rules: &FantasyAssistantRules,
+    budget: &icelines_core::FantasyWeekBudgetView,
+    skaters: &[icelines_core::stats_repository::PlayerView<'_>],
+    goalies: &[icelines_core::stats_repository::PlayerView<'_>],
+    scores: &HashMap<String, f64>,
+    eligibility: &HashMap<String, Vec<icelines_core::model::Position>>,
+    current_teams: &HashMap<String, String>,
+    schedule: &[crate::nhl_api::ScheduledGame],
+    observations: &[icelines_core::FantasyStatusObservation],
+    roster: &[String],
+    competition: &icelines_core::FantasyCompetitionRules,
+    week_start: NaiveDate,
+    week_end: NaiveDate,
+    local_date: NaiveDate,
+    evaluated_at: DateTime<Utc>,
+    status_max_age_minutes: i64,
+    stats_season: &str,
+    season_type: SeasonType,
+    policy: &FantasyWeekPlanPolicy,
+    readiness: &[FantasyTodayReadinessRow],
+    evidence: &[FantasyTodayEvidenceRow],
+) -> anyhow::Result<FantasyPickupSequenceView> {
+    let timezone = rules
+        .timezone
+        .parse::<chrono_tz::Tz>()
+        .map_err(|_| anyhow::anyhow!("unsupported IANA timezone '{}'", rules.timezone))?;
+    let all_rostered = db
+        .list_teams(&league.id)?
+        .into_iter()
+        .map(|row| db.list_roster(&row.id))
+        .collect::<anyhow::Result<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .collect::<BTreeSet<_>>();
+    let mut pool = skaters
+        .iter()
+        .chain(goalies)
+        .map(|view| {
+            let key = view.identity.name_normalized.clone();
+            DailyCandidatePlayer {
+                key: key.clone(),
+                player: view.full_name().to_owned(),
+                team: current_teams
+                    .get(&key)
+                    .cloned()
+                    .unwrap_or_else(|| view.team_display().to_owned()),
+                positions: eligibility
+                    .get(&key)
+                    .cloned()
+                    .unwrap_or_else(|| vec![view.position()]),
+                quality: scores.get(&key).copied().unwrap_or_default(),
+                games_played: view.gp(),
+            }
+        })
+        .collect::<Vec<_>>();
+    pool.sort_by(|a, b| a.key.cmp(&b.key));
+    pool.dedup_by(|a, b| a.key == b.key);
+    let pool_by_key = pool
+        .iter()
+        .map(|player| (player.key.clone(), player))
+        .collect::<HashMap<_, _>>();
+    let modeled_roster = roster
+        .iter()
+        .filter(|key| pool_by_key.contains_key(*key))
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let mut available = pool
+        .iter()
+        .filter(|player| !all_rostered.contains(&player.key))
+        .collect::<Vec<_>>();
+    available.sort_by(|a, b| {
+        player_rate(b)
+            .total_cmp(&player_rate(a))
+            .then_with(|| a.key.cmp(&b.key))
+    });
+    available.truncate(policy.candidate_limit);
+    let included_keys = modeled_roster
+        .iter()
+        .cloned()
+        .chain(available.iter().map(|player| player.key.clone()))
+        .collect::<BTreeSet<_>>();
+    let mut usable_at = HashMap::new();
+    let mut players = Vec::new();
+    for key in &included_keys {
+        let player = pool_by_key[key];
+        let waiver = db.get_waiver(&league.id, key)?;
+        let available_at = waiver.map_or(evaluated_at, |row| row.clears_at);
+        usable_at.insert(key.clone(), available_at);
+        let status = resolve_fantasy_player_status(
+            key.clone(),
+            observations,
+            evaluated_at,
+            status_max_age_minutes,
+        )
+        .effective_status;
+        players.push(FantasyPickupSequencePlayerInput {
+            player_key: key.clone(),
+            nhl_player_id: None,
+            display_name: player.player.clone(),
+            nhl_team: player.team.clone(),
+            platform_positions: player.positions.clone(),
+            projected_per_game: Some(player_rate(player)),
+            game_dates: usable_game_dates(schedule, &player.team, available_at),
+            status,
+            initially_rostered: modeled_roster.contains(key),
+            droppable: true,
+            usable_at: available_at,
+            drop_lock_at: None,
+        });
+    }
+    let open_roster_slot = roster.len() < rules.standard_roster_capacity();
+    let mut transitions = Vec::new();
+    let mut ordinal = 0u32;
+    for offset in 0..=6 {
+        let date = week_start + Duration::days(offset);
+        if date < local_date {
+            continue;
+        }
+        let morning = timezone
+            .from_local_datetime(&date.and_hms_opt(7, 0, 0).expect("valid local morning"))
+            .single()
+            .ok_or_else(|| anyhow::anyhow!("07:00 local time is ambiguous on {date}"))?
+            .with_timezone(&Utc)
+            .max(evaluated_at);
+        for candidate in &available {
+            let effective_at = morning.max(usable_at[&candidate.key]);
+            if effective_at.with_timezone(&timezone).date_naive() != date {
+                continue;
+            }
+            let drops = if open_roster_slot {
+                std::iter::once(None)
+                    .chain(
+                        included_keys
+                            .iter()
+                            .filter(|key| *key != &candidate.key)
+                            .map(Some),
+                    )
+                    .collect::<Vec<_>>()
+            } else {
+                included_keys
+                    .iter()
+                    .filter(|key| *key != &candidate.key)
+                    .map(Some)
+                    .collect::<Vec<_>>()
+            };
+            for drop in drops {
+                if drop.is_some_and(|key| {
+                    team_locked_on(schedule, &pool_by_key[key].team, date, effective_at)
+                }) {
+                    continue;
+                }
+                ordinal = ordinal.saturating_add(1);
+                transitions.push(FantasyPickupTransitionInput {
+                    transition_id: format!(
+                        "{date}:{}:{}",
+                        candidate.key,
+                        drop.cloned().unwrap_or_else(|| "open".to_owned())
+                    ),
+                    ordinal,
+                    effective_at,
+                    local_date: date,
+                    add_player_key: candidate.key.clone(),
+                    drop_player_key: drop.cloned(),
+                    matchup_points_delta: 0.0,
+                    future_schedule_option_value: 0.0,
+                    waiver_reacquisition_cost: drop
+                        .map(|key| player_rate(pool_by_key[key]) * 0.10)
+                        .unwrap_or_default(),
+                    acquisition_budget_cost: if budget.acquisitions_remaining <= 1 {
+                        1.0
+                    } else {
+                        0.25
+                    },
+                    uncertainty_discount: 0.0,
+                    conditional_reason: None,
+                });
+            }
+        }
+    }
+    crate::fantasy_week_plan_service::assemble_fantasy_week_plan(FantasyPickupSequenceInput {
+        context: FantasyPickupSequenceContext {
+            league_id: league.id.clone(),
+            league_name: league.name.clone(),
+            fantasy_team_id: team.id.clone(),
+            fantasy_team_name: team.name.clone(),
+            stats_season: stats_season.to_owned(),
+            season_type,
+            competition_mode: competition.mode.label().to_owned(),
+            week_start,
+            week_end,
+            timezone: rules.timezone.clone(),
+            generated_at: Utc::now(),
+            evaluated_at,
+        },
+        rules: rules.clone(),
+        budget: budget.clone(),
+        players,
+        transitions,
+        max_moves: policy.max_moves,
+        beam_width: policy.beam_width,
+        alternative_limit: policy.alternative_limit,
+        readiness: readiness.to_vec(),
+        evidence: evidence.to_vec(),
+    })
+    .map_err(Into::into)
+}
+
+fn player_rate(player: &DailyCandidatePlayer) -> f64 {
+    if player.games_played == 0 {
+        0.0
+    } else {
+        player.quality / f64::from(player.games_played)
+    }
+}
+
+fn usable_game_dates(
+    schedule: &[crate::nhl_api::ScheduledGame],
+    team: &str,
+    usable_at: DateTime<Utc>,
+) -> BTreeSet<NaiveDate> {
+    schedule
+        .iter()
+        .filter(|game| {
+            game.game_type == 2 && (game.home_abbrev == team || game.away_abbrev == team)
+        })
+        .filter_map(|game| {
+            let start = DateTime::parse_from_rfc3339(&game.start_time_utc)
+                .ok()?
+                .with_timezone(&Utc);
+            (start > usable_at)
+                .then(|| NaiveDate::parse_from_str(&game.date, "%Y-%m-%d").ok())
+                .flatten()
+        })
+        .collect()
+}
+
+fn team_locked_on(
+    schedule: &[crate::nhl_api::ScheduledGame],
+    team: &str,
+    date: NaiveDate,
+    effective_at: DateTime<Utc>,
+) -> bool {
+    schedule
+        .iter()
+        .filter(|game| {
+            game.game_type == 2
+                && game.date == date.to_string()
+                && (game.home_abbrev == team || game.away_abbrev == team)
+        })
+        .filter_map(|game| DateTime::parse_from_rfc3339(&game.start_time_utc).ok())
+        .any(|start| start.with_timezone(&Utc) <= effective_at)
 }
 
 fn load_scheme(name: &str, schemes_root: &Path) -> anyhow::Result<Scheme> {
@@ -1823,6 +2131,7 @@ mod tests {
             status_max_age_minutes: 180,
             current_goalie_appearances: 0.0,
             candidate_policy: FantasyTodayCandidatePolicy::default(),
+            week_plan_policy: FantasyWeekPlanPolicy::default(),
         };
 
         assert!(matches!(
@@ -1863,6 +2172,7 @@ mod tests {
             status_max_age_minutes: 180,
             current_goalie_appearances: 0.0,
             candidate_policy: FantasyTodayCandidatePolicy::default(),
+            week_plan_policy: FantasyWeekPlanPolicy::default(),
         };
 
         let mut missing_league = request.clone();
