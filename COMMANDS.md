@@ -2449,6 +2449,8 @@ Get-Clipboard | icelines fantasy import-yahoo --file - --league "My League" --dr
 icelines fantasy import-yahoo --file rosters.csv --league "My League" --my-team "My Team"
 icelines fantasy import-yahoo --file rosters.csv --league "My League" --dry-run --replace
 icelines fantasy import-yahoo --file rosters.csv --league "My League" --replace
+icelines fantasy sync-yahoo --file current-rosters.csv --league "My League"
+icelines fantasy sync-yahoo --file current-rosters.csv --league "My League" --apply
 icelines fantasy roster-shape
 icelines fantasy roster-shape-set yahoo-standard --league "My League"
 icelines fantasy roster-shape-validate --team "My Team" --json
@@ -2595,7 +2597,8 @@ goalies remain a later Wave 14 input and are not fabricated.
 (`Player`, `Name`, `Player Name`, or `First Name` + `Last Name`) and a fantasy
 team column (`Fantasy Team`, `Team Name`, `Rostered By`, `Owner Team`, or
 `Manager Team`). Optional `Owner`, `NHL Team`, and `Eligible Positions` columns
-are diagnostic context only. Use `--dry-run` first to preview created/updated
+provide import evidence; compatible platform eligibility is persisted without
+replacing canonical NHL positions. Use `--dry-run` first to preview created/updated
 teams, imported/skipped players, unresolved names, duplicate ownership, and
 header problems; rerun without `--dry-run` to apply local FantasyDb membership.
 Yahoo stats are ignored and never become player/stat/photo truth.
@@ -2606,6 +2609,20 @@ Imports are additive by default. For a complete current export, preview with
 each included team's saved roster exactly match the CSV. Replacement is refused
 when any row is skipped, unresolved, duplicated, or invalid; accepted changes
 are committed atomically across the included rosters.
+
+`fantasy sync-yahoo` is the safer recurring-season form of replacement import.
+It is preview-only by default and lists exact additions, removals, and unchanged
+membership for every included team. Rerun the same snapshot with `--apply` to
+commit its atomic replacements. A roster snapshot cannot establish whether a
+change was a waiver claim, free-agent add, or trade, so synchronization never
+invents acquisition type or pickup-budget usage; record the actual transaction
+separately with `fantasy acquisition-record`.
+
+Provisional preseason players with explicit NHL-team and position evidence may
+be admitted with `--allow-provisional`. Until canonical stats arrive, weekly
+pickup models exclude and protect them rather than failing or recommending them
+as drops. Trade readiness treats missing historical value as advisory, and the
+trade finder protects unresolved players from outgoing packages.
 
 `fantasy roster-shape` lists the active league shape and available built-ins.
 `fantasy roster-shape-set <shape>` persists the per-league setup rule, and

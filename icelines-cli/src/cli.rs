@@ -8758,6 +8758,7 @@ mod tui_surface_tests {
                 "My Team",
                 "--dry-run",
                 "--replace",
+                "--allow-provisional",
                 "--json",
             ])
             .expect("fantasy import-yahoo should parse");
@@ -8769,6 +8770,7 @@ mod tui_surface_tests {
                     my_team,
                     dry_run,
                     replace,
+                    allow_provisional,
                     json,
                 }) => {
                     assert_eq!(file, std::path::PathBuf::from("-"));
@@ -8776,9 +8778,42 @@ mod tui_surface_tests {
                     assert_eq!(my_team.as_deref(), Some("My Team"));
                     assert!(dry_run);
                     assert!(replace);
+                    assert!(allow_provisional);
                     assert!(json);
                 }
                 other => panic!("expected fantasy import-yahoo, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_sync_yahoo_is_preview_first() {
+        with_large_stack(|| {
+            let preview = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "sync-yahoo",
+                "--file",
+                "rosters.csv",
+                "--league",
+                "Office Pool",
+                "--allow-provisional",
+            ])
+            .expect("fantasy sync-yahoo preview should parse");
+            match preview.command {
+                Commands::Fantasy(FantasySubcommand::SyncYahoo {
+                    file,
+                    league,
+                    apply,
+                    allow_provisional,
+                    ..
+                }) => {
+                    assert_eq!(file, std::path::PathBuf::from("rosters.csv"));
+                    assert_eq!(league, "Office Pool");
+                    assert!(!apply, "sync must be preview-first");
+                    assert!(allow_provisional);
+                }
+                other => panic!("expected fantasy sync-yahoo, got {other:?}"),
             }
         });
     }
@@ -10991,6 +11026,32 @@ pub enum FantasySubcommand {
         /// Replace each included team's saved roster instead of only adding rows.
         #[arg(long)]
         replace: bool,
+        /// Admit preseason players absent from the NHL stats pool when the CSV
+        /// supplies both NHL-team and eligible-position evidence.
+        #[arg(long)]
+        allow_provisional: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Preview or apply an exact Yahoo roster snapshot reconciliation.
+    #[command(name = "sync-yahoo")]
+    SyncYahoo {
+        /// Yahoo roster CSV export to reconcile, or `-` to read pasted CSV from stdin.
+        #[arg(long)]
+        file: PathBuf,
+        /// Existing fantasy league name (or a new name on first apply).
+        #[arg(long)]
+        league: String,
+        /// Mark this fantasy team as your roster after apply.
+        #[arg(long = "my-team")]
+        my_team: Option<String>,
+        /// Write the exact roster replacements. Without this flag the command is a preview.
+        #[arg(long)]
+        apply: bool,
+        /// Admit preseason players with explicit NHL-team and position evidence.
+        #[arg(long)]
+        allow_provisional: bool,
         #[arg(long)]
         json: bool,
     },
