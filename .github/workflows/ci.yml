@@ -36,37 +36,6 @@ on:
       - 'COMMANDS.md'
   pull_request:
     branches: [master]
-    paths:
-      - 'icelines-*/**'
-      - 'tests/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - '.github/workflows/ci.yml'
-      - '.github/workflows/release.yml'
-      - '.github/workflows/data-bundle.yml'
-      - 'scripts/test-slice.ps1'
-      - 'scripts/release-smoke.ps1'
-      - 'scripts/package-release.ps1'
-      - 'scripts/verify-release-artifact.ps1'
-      - 'scripts/ferris-artifact.py'
-      - 'scripts/window-browser-review.ps1'
-      - 'design/release-checklist.md'
-      - 'design/data/**'
-      - 'design/schemas/**'
-      - 'design/current-season-rollover.md'
-      - 'design/plans/**'
-      - 'design/waves/**'
-      - 'design/phases.md'
-      - 'design/ARCHITECTURE.md'
-      - 'design/specs/**'
-      - 'design/specs/data-bundles.md'
-      - 'docs/guides/04-data.md'
-      - 'docs/organization-window.md'
-      - 'examples/**'
-      - 'src/guides/04-data.source.md'
-      - 'CHANGELOG.md'
-      - 'README.md'
-      - 'COMMANDS.md'
 
 env:
   CARGO_TERM_COLOR: always
