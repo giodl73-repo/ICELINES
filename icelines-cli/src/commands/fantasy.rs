@@ -207,13 +207,13 @@ fn pools_views<'r>(
 
 /// Resolve a scheme name to a `Scheme` struct.
 fn resolve_scheme(name: &str) -> anyhow::Result<Scheme> {
-    Scheme::builtin_named(name).with_context(|| {
+    crate::commands::scheme::find_scheme(name).with_context(|| {
         let names = Scheme::all_builtins()
             .into_iter()
             .map(|scheme| scheme.name)
             .collect::<Vec<_>>()
             .join(", ");
-        format!("unknown scheme '{name}'. Try: {names}")
+        format!("unknown scheme '{name}'. Try: {names}, or install ~/.icelines/schemes/{name}.toml")
     })
 }
 
@@ -8848,6 +8848,34 @@ pub async fn run_serve(port: u16, league_override: Option<String>) -> anyhow::Re
 mod tests {
     use super::*;
     use icelines_core::{fixtures, identity::PlayerId};
+
+    #[test]
+    fn fantasy_resolves_installed_user_scheme() {
+        let _guard = crate::test_utils::home_env_lock();
+        let home = tempfile::tempdir().expect("tempdir");
+        std::env::set_var("HOME", home.path());
+        std::env::set_var("USERPROFILE", home.path());
+        let schemes = home.path().join(".icelines").join("schemes");
+        std::fs::create_dir_all(&schemes).expect("scheme directory");
+        std::fs::write(
+            schemes.join("league-exact.toml"),
+            r#"
+name = "league-exact"
+description = "exact private league"
+source = "yahoo"
+[skater]
+goals = 3.25
+[goalie]
+wins = 3.0
+"#,
+        )
+        .expect("write scheme");
+
+        let scheme = resolve_scheme("league-exact").expect("fantasy should load user scheme");
+        assert_eq!(scheme.name, "league-exact");
+        assert_eq!(scheme.skater.goals, 3.25);
+        assert_eq!(scheme.goalie.wins, 3.0);
+    }
 
     #[test]
     fn category_rule_spec_preserves_direction_aggregation_and_epsilon() {

@@ -169,7 +169,7 @@ fn find_builtin(name: &str) -> Option<Scheme> {
 
 /// Look up a scheme by name, preferring a user file when present so users can
 /// override a builtin (e.g., a tweaked `yahoo-standard.toml`).
-fn find_scheme(name: &str) -> Option<Scheme> {
+pub(crate) fn find_scheme(name: &str) -> Option<Scheme> {
     if let Some(s) = load_user_scheme(name) {
         return Some(s);
     }
