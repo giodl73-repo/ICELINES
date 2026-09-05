@@ -1290,6 +1290,30 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 })
                 .await?
             }
+            FantasySubcommand::BenchCoverage {
+                week,
+                weeks,
+                team,
+                league,
+                season,
+                stats_season,
+                off_night_max_games,
+                refresh,
+                json,
+            } => {
+                commands::fantasy::run_bench_coverage(
+                    week,
+                    weeks,
+                    team,
+                    league,
+                    season,
+                    stats_season,
+                    off_night_max_games,
+                    refresh,
+                    json,
+                )
+                .await?
+            }
             FantasySubcommand::PlayoffPortfolio {
                 rounds,
                 start,
@@ -1421,6 +1445,15 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     json,
                 )
                 .await?
+            }
+            FantasySubcommand::SnapshotYahoo {
+                file,
+                league,
+                apply,
+                json,
+            } => commands::fantasy::run_snapshot_yahoo(file, league, apply, json).await?,
+            FantasySubcommand::SnapshotShow { league, json } => {
+                commands::fantasy::run_snapshot_show(league, json).await?
             }
             FantasySubcommand::RosterShape { league, json } => {
                 commands::fantasy::run_roster_shape_show(league, json).await?

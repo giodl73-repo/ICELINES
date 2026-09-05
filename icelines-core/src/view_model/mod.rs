@@ -20,6 +20,7 @@ pub mod data_status;
 pub mod development_calibration;
 pub mod docs;
 pub mod fantasy_assistant;
+pub mod fantasy_bench_coverage;
 pub mod fantasy_category_matchup;
 pub mod fantasy_competition;
 pub mod fantasy_daily;
@@ -29,6 +30,7 @@ pub mod fantasy_import;
 pub mod fantasy_league;
 pub mod fantasy_matchup;
 pub mod fantasy_matchup_strategy;
+pub mod fantasy_platform_snapshot;
 pub mod fantasy_playoff_portfolio;
 pub mod fantasy_provider;
 pub mod fantasy_schedule;
@@ -219,6 +221,11 @@ pub use fantasy_assistant::{
     FANTASY_MORNING_BRIEFING_SCHEMA, FANTASY_SLEEPER_BOARD_SCHEMA, FANTASY_TAKEN_IMPORT_SCHEMA,
     FANTASY_WEEKLY_PICKUP_SCHEMA, FANTASY_WEEK_BUDGET_SCHEMA,
 };
+pub use fantasy_bench_coverage::{
+    build_fantasy_bench_coverage, FantasyBenchCoverageInput, FantasyBenchCoveragePairRow,
+    FantasyBenchCoveragePlayerInput, FantasyBenchCoveragePlayerRow, FantasyBenchCoverageView,
+    FANTASY_BENCH_COVERAGE_SCHEMA,
+};
 pub use fantasy_category_matchup::{
     build_fantasy_category_matchup, FantasyCategoryClassification, FantasyCategoryMatchupInput,
     FantasyCategoryMatchupRow, FantasyCategoryMatchupView, FantasyCategoryPlayerInput,
@@ -267,6 +274,11 @@ pub use fantasy_matchup_strategy::{
     FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy, FantasyMatchupStrategyInput,
     FantasyMatchupStrategyPlayerInput, FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView,
     FantasyMatchupSwingInput, FantasyMatchupTeamProjection, FANTASY_MATCHUP_STRATEGY_SCHEMA,
+};
+pub use fantasy_platform_snapshot::{
+    build_fantasy_platform_snapshot_view, FantasyPlatformMatchupSnapshot,
+    FantasyPlatformPlayerStatusRow, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
+    FantasyPlatformStandingDeltaRow, FantasyPlatformStandingRow, FANTASY_PLATFORM_SNAPSHOT_SCHEMA,
 };
 pub use fantasy_playoff_portfolio::{
     build_fantasy_playoff_portfolio, rank_fantasy_playoff_candidate_fits,

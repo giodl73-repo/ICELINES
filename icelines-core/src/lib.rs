@@ -128,6 +128,16 @@ pub use view_model::ahl_recall_readiness::{
     AhlRecallReadinessInput, AhlRecallReadinessPolicy, AHL_RECALL_READINESS_METHOD,
     AHL_RECALL_READINESS_POLICY_SCHEMA,
 };
+pub use view_model::fantasy_bench_coverage::{
+    build_fantasy_bench_coverage, FantasyBenchCoverageInput, FantasyBenchCoveragePairRow,
+    FantasyBenchCoveragePlayerInput, FantasyBenchCoveragePlayerRow, FantasyBenchCoverageView,
+    FANTASY_BENCH_COVERAGE_SCHEMA,
+};
+pub use view_model::fantasy_platform_snapshot::{
+    build_fantasy_platform_snapshot_view, FantasyPlatformMatchupSnapshot,
+    FantasyPlatformPlayerStatusRow, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
+    FantasyPlatformStandingDeltaRow, FantasyPlatformStandingRow, FANTASY_PLATFORM_SNAPSHOT_SCHEMA,
+};
 pub use view_model::identity_review_workboard::{
     build_identity_review_workboard, IdentityReviewContextInput, IdentityReviewDraftCoordinates,
     IdentityReviewFamilyCount, IdentityReviewProposalInput, IdentityReviewWorkboardInput,
