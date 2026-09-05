@@ -289,6 +289,7 @@ pub struct App {
     pub poach: crate::tui::screens::poach::PoachScreenState,
     pub fantasy_gaps: crate::tui::screens::fantasy::FantasyGapsScreenState,
     pub fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState,
+    pub fantasy_today: crate::tui::screens::fantasy::FantasyTodayScreenState,
     pub player_records: crate::tui::screens::player_records::PlayerRecordsScreenState,
     pub player_streaks: crate::tui::screens::player_streaks::PlayerStreaksScreenState,
 
@@ -439,6 +440,7 @@ impl App {
             poach: crate::tui::screens::poach::PoachScreenState::default(),
             fantasy_gaps: crate::tui::screens::fantasy::FantasyGapsScreenState::default(),
             fantasy_sim: crate::tui::screens::fantasy::FantasySimulationScreenState::default(),
+            fantasy_today: crate::tui::screens::fantasy::FantasyTodayScreenState::default(),
             player_records: Default::default(),
             player_streaks: Default::default(),
 
@@ -1717,7 +1719,9 @@ impl App {
                 }
             }
             Action::Refresh => {
-                if self.screen == Screen::Queries {
+                if self.screen == Screen::FantasyToday {
+                    self.refresh_fantasy_today();
+                } else if self.screen == Screen::Queries {
                     self.queries.fields = crate::tui::screens::queries::default_fields();
                     self.queries.sections = crate::tui::screens::queries::default_sections();
                     self.queries.field_idx = 0;
@@ -1930,6 +1934,9 @@ impl App {
         self.maybe_fetch_scores();
         self.maybe_fetch_schedule();
         self.maybe_fetch_playoffs();
+        if self.screen == Screen::FantasyToday {
+            self.refresh_fantasy_today();
+        }
         if let Some(experience_label) = self.apply_mdi_experience_for_workbench(id) {
             self.status = format!("Workbench · {label} · {experience_label}");
         } else {
@@ -3883,6 +3890,24 @@ impl App {
         self.maybe_fetch_scores();
         self.maybe_fetch_schedule();
         self.maybe_fetch_playoffs();
+    }
+
+    pub fn refresh_fantasy_today(&mut self) {
+        let loaded_at = chrono::Utc::now();
+        match crate::tui::screens::fantasy::load_today_contract(&self.active_season) {
+            Ok(view) => {
+                self.fantasy_today.view = Some(view);
+                self.fantasy_today.error = None;
+                self.fantasy_today.loaded_at = Some(loaded_at);
+                self.status = "Fantasy Today refreshed from local evidence.".to_owned();
+            }
+            Err(error) => {
+                self.fantasy_today.view = None;
+                self.fantasy_today.error = Some(error.clone());
+                self.fantasy_today.loaded_at = Some(loaded_at);
+                self.status = format!("Fantasy Today unavailable: {error}");
+            }
+        }
     }
 
     /// Reverse of `cycle_screen` — Shift-Tab.

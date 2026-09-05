@@ -261,6 +261,9 @@ async fn run_loop(
     // the loop below) is a blocking sync syscall that pins the OS
     // thread, so an async load via spawn_local would never run.
     app.boot_load();
+    if app.screen == Screen::FantasyToday {
+        app.refresh_fantasy_today();
+    }
 
     // Background transactions loader stays async — Transaction is Send,
     // it goes through `tokio::spawn`, and the poll path is keyed on

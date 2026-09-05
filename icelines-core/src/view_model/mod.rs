@@ -24,6 +24,7 @@ pub mod fantasy_bench_coverage;
 pub mod fantasy_category_matchup;
 pub mod fantasy_competition;
 pub mod fantasy_daily;
+pub mod fantasy_daily_decisions;
 pub mod fantasy_gap;
 pub mod fantasy_goalie_plan;
 pub mod fantasy_import;

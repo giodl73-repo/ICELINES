@@ -133,17 +133,22 @@ pub use view_model::fantasy_bench_coverage::{
     FantasyBenchCoveragePlayerInput, FantasyBenchCoveragePlayerRow, FantasyBenchCoverageView,
     FANTASY_BENCH_COVERAGE_SCHEMA,
 };
+pub use view_model::fantasy_daily_decisions::{
+    build_fantasy_daily_decisions, FantasyDailyDecisionRow, FantasyDailyDecisionsInput,
+    FantasyDailyDecisionsView, FantasyDailyTransactionCandidate, FANTASY_DAILY_DECISIONS_SCHEMA,
+};
 pub use view_model::fantasy_platform_snapshot::{
     build_fantasy_platform_snapshot_view, FantasyPlatformMatchupSnapshot,
     FantasyPlatformPlayerStatusRow, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
     FantasyPlatformStandingDeltaRow, FantasyPlatformStandingRow, FANTASY_PLATFORM_SNAPSHOT_SCHEMA,
 };
 pub use view_model::fantasy_today::{
-    build_fantasy_today, FantasyTodayAcquisitionSummary, FantasyTodayAction, FantasyTodayContext,
-    FantasyTodayEvidenceRow, FantasyTodayFirmness, FantasyTodayGoalieSummary, FantasyTodayInput,
-    FantasyTodayLineupSummary, FantasyTodayMatchupInput, FantasyTodayMatchupSummary,
-    FantasyTodayQuietNightSummary, FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayView,
-    FANTASY_TODAY_SCHEMA,
+    build_fantasy_today, build_fantasy_today_v2, FantasyTodayAcquisitionSummary,
+    FantasyTodayAction, FantasyTodayContext, FantasyTodayEvidenceRow, FantasyTodayFirmness,
+    FantasyTodayGoalieSummary, FantasyTodayInput, FantasyTodayLineupSummary,
+    FantasyTodayMatchupInput, FantasyTodayMatchupSummary, FantasyTodayQuietNightSummary,
+    FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayV2View, FantasyTodayView,
+    FANTASY_TODAY_SCHEMA, FANTASY_TODAY_V2_SCHEMA,
 };
 pub use view_model::identity_review_workboard::{
     build_identity_review_workboard, IdentityReviewContextInput, IdentityReviewDraftCoordinates,
