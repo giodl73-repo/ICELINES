@@ -8,9 +8,9 @@ use chrono::{DateTime, NaiveDate, Utc};
 use icelines_core::{
     model::Position, FantasyAcquisitionKind, FantasyAssistantRules, FantasyCompetitionMode,
     FantasyCompetitionRules, FantasyGoalieStartObservation, FantasyGoalieStartState,
-    FantasyObservationConfidence, FantasyPlayerAvailabilityStatus, FantasyStatusObservation,
-    FantasyWaiverWindow, RosterShape, RosterShapePlayerInput, RosterShapeValidationInput,
-    RosterShapeValidationView,
+    FantasyObservationConfidence, FantasyPlatformSnapshot, FantasyPlayerAvailabilityStatus,
+    FantasyStatusObservation, FantasyWaiverWindow, RosterShape, RosterShapePlayerInput,
+    RosterShapeValidationInput, RosterShapeValidationView,
 };
 use rusqlite::{Connection, OpenFlags, OptionalExtension};
 use std::collections::{BTreeMap, BTreeSet};
@@ -395,6 +395,23 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
             );",
     )
     .context("migration 018: create fl_goalie_start_observations table")?;
+
+    // Migration 019 — immutable observed fantasy-platform snapshots.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS fl_platform_snapshots (
+            id           TEXT PRIMARY KEY,
+            league_id    TEXT NOT NULL,
+            platform     TEXT NOT NULL,
+            captured_at  TEXT NOT NULL,
+            fetched_at   TEXT NOT NULL,
+            source_url   TEXT,
+            payload_json TEXT NOT NULL,
+            FOREIGN KEY(league_id) REFERENCES fl_leagues(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_fl_platform_snapshots_league_captured
+            ON fl_platform_snapshots(league_id, captured_at DESC, fetched_at DESC);",
+    )
+    .context("migration 019: create fl_platform_snapshots table")?;
 
     // Enable foreign-key enforcement (off by default in rusqlite).
     conn.execute_batch("PRAGMA foreign_keys = ON;")
@@ -1955,6 +1972,63 @@ impl FantasyDb {
             teams,
         })
     }
+
+    pub fn record_platform_snapshot(
+        &self,
+        league_id: &str,
+        snapshot: &FantasyPlatformSnapshot,
+    ) -> anyhow::Result<String> {
+        snapshot.validate().map_err(anyhow::Error::msg)?;
+        let id = uuid::Uuid::new_v4().to_string();
+        let payload = serde_json::to_string(snapshot).context("serialize platform snapshot")?;
+        self.conn
+            .execute(
+                "INSERT INTO fl_platform_snapshots
+                   (id, league_id, platform, captured_at, fetched_at, source_url, payload_json)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                rusqlite::params![
+                    id,
+                    league_id,
+                    snapshot.platform,
+                    snapshot.captured_at.to_rfc3339(),
+                    Utc::now().to_rfc3339(),
+                    snapshot.source_url,
+                    payload,
+                ],
+            )
+            .context("record fantasy platform snapshot")?;
+        Ok(id)
+    }
+
+    pub fn list_platform_snapshots(
+        &self,
+        league_id: &str,
+        limit: usize,
+    ) -> anyhow::Result<Vec<FantasyPlatformSnapshot>> {
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT payload_json
+             FROM fl_platform_snapshots
+             WHERE league_id = ?1
+             ORDER BY captured_at DESC, fetched_at DESC, id DESC
+             LIMIT ?2",
+        )?;
+        let snapshots = stmt
+            .query_map(rusqlite::params![league_id, limit as i64], |row| {
+                row.get::<_, String>(0)
+            })?
+            .map(|raw| {
+                let raw = raw?;
+                let snapshot: FantasyPlatformSnapshot =
+                    serde_json::from_str(&raw).context("parse stored platform snapshot")?;
+                snapshot.validate().map_err(anyhow::Error::msg)?;
+                Ok(snapshot)
+            })
+            .collect();
+        snapshots
+    }
 }
 
 fn sqlite_immutable_read_uri(db_path: &std::path::Path) -> String {
@@ -3067,6 +3141,43 @@ mod tests {
         let points = FantasyCompetitionRules::points();
         db.set_competition_rules(&league_id, &points).unwrap();
         assert_eq!(db.get_competition_rules(&league_id).unwrap(), points);
+    }
+
+    #[test]
+    fn l1_platform_snapshots_are_immutable_and_newest_first() {
+        use icelines_core::{FantasyPlatformStandingRow, FANTASY_PLATFORM_SNAPSHOT_SCHEMA};
+
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Observed League", "yahoo-standard")
+            .expect("create league");
+        let make = |timestamp: &str, rank| FantasyPlatformSnapshot {
+            schema: FANTASY_PLATFORM_SNAPSHOT_SCHEMA.to_owned(),
+            platform: "yahoo".to_owned(),
+            captured_at: DateTime::parse_from_rfc3339(timestamp)
+                .unwrap()
+                .with_timezone(&Utc),
+            source_url: None,
+            standings: vec![FantasyPlatformStandingRow {
+                rank,
+                team: "My Team".to_owned(),
+                wins: None,
+                losses: None,
+                ties: None,
+                points_for: None,
+            }],
+            matchup: None,
+            statuses: Vec::new(),
+        };
+        db.record_platform_snapshot(&league_id, &make("2026-10-01T12:00:00Z", 8))
+            .unwrap();
+        db.record_platform_snapshot(&league_id, &make("2026-10-08T12:00:00Z", 5))
+            .unwrap();
+
+        let rows = db.list_platform_snapshots(&league_id, 2).unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].standings[0].rank, 5);
+        assert_eq!(rows[1].standings[0].rank, 8);
     }
 
     #[test]

@@ -8628,6 +8628,62 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_fantasy_bench_coverage_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "bench-coverage",
+                "--week",
+                "2026-10-05",
+                "--weeks",
+                "3",
+                "--league",
+                "Ice League",
+                "--json",
+            ])
+            .expect("fantasy bench-coverage should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::BenchCoverage {
+                    week,
+                    weeks: 3,
+                    league: Some(league),
+                    json: true,
+                    ..
+                }) if week.to_string() == "2026-10-05" && league == "Ice League"
+            ));
+        });
+    }
+
+    #[test]
+    fn l0_fantasy_snapshot_yahoo_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "snapshot-yahoo",
+                "--file",
+                "snapshot.json",
+                "--league",
+                "Ice League",
+                "--apply",
+                "--json",
+            ])
+            .expect("fantasy snapshot-yahoo should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::SnapshotYahoo {
+                    file,
+                    league: Some(league),
+                    apply: true,
+                    json: true,
+                }) if file == PathBuf::from("snapshot.json") && league == "Ice League"
+            ));
+        });
+    }
+
+    #[test]
     fn l0_fantasy_playoff_portfolio_clap_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -10873,6 +10929,34 @@ pub enum FantasySubcommand {
         out: Option<PathBuf>,
     },
 
+    /// Show which baseline bench players cover which starters on exact dates.
+    #[command(name = "bench-coverage")]
+    BenchCoverage {
+        /// Date inside the first Monday-Sunday week to inspect.
+        #[arg(long)]
+        week: chrono::NaiveDate,
+        /// Consecutive Monday-Sunday weeks to inspect.
+        #[arg(long, default_value_t = 1)]
+        weeks: usize,
+        /// Team perspective; otherwise use the marked user team.
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// A quiet-night opportunity occurs when the NHL slate has at most this many games.
+        #[arg(long, default_value_t = 4)]
+        off_night_max_games: usize,
+        /// Ignore the locally cached schedule and reload all teams from the official NHL API.
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Rank the marked roster's legal usable starts across the final playoff weeks.
     #[command(name = "playoff-portfolio")]
     PlayoffPortfolio {
@@ -11052,6 +11136,30 @@ pub enum FantasySubcommand {
         /// Admit preseason players with explicit NHL-team and position evidence.
         #[arg(long)]
         allow_provisional: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Preview or store an observed Yahoo standings/matchup/status JSON snapshot.
+    #[command(name = "snapshot-yahoo")]
+    SnapshotYahoo {
+        /// `fantasy_platform_snapshot.v1` JSON file, or `-` for stdin.
+        #[arg(long)]
+        file: PathBuf,
+        #[arg(long)]
+        league: Option<String>,
+        /// Persist the immutable snapshot and included player statuses.
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Show the newest observed platform snapshot and changes from the prior one.
+    #[command(name = "snapshot-show")]
+    SnapshotShow {
+        #[arg(long)]
+        league: Option<String>,
         #[arg(long)]
         json: bool,
     },

@@ -244,6 +244,39 @@ icelines query leaders --rookie --sort ppg --top 15
 
 ---
 
+## In-season Yahoo workflow
+
+IceLines can store immutable observations from a private Yahoo league without
+embedding league-specific teams or credentials in this repository. Copy
+`examples/fantasy-yahoo-platform-snapshot.json`, replace the example standings,
+current matchup, goalie appearances, and player statuses, then preview it:
+
+```bash
+icelines fantasy snapshot-yahoo --file yahoo-week.json --league "My League"
+icelines fantasy snapshot-yahoo --file yahoo-week.json --league "My League" --apply
+icelines fantasy snapshot-show --league "My League"
+```
+
+Applying a snapshot records standings history, confirmed platform injury
+statuses, and the included weekly matchup. `matchup-plan`, `goalie-plan`, and
+`morning` then use matching saved matchup points or goalie appearances when a
+manual positive value was not supplied. The source JSON remains the explicit
+boundary for private platform observations; IceLines does not log in to Yahoo.
+
+To evaluate whether the bench actually creates starts rather than merely adding
+games, run the exact-date substitution planner:
+
+```bash
+icelines fantasy bench-coverage --week 2026-10-05 --weeks 3 --league "My League"
+```
+
+The report identifies each inferred baseline bench player, the starter and slot
+they can cover, usable dates, crowded-slate collisions, and starter dates that
+remain uncovered. Saved roster membership does not contain Yahoo's BN labels,
+so the baseline bench is inferred by optimizing a legal full-roster lineup.
+
+---
+
 ## Manage your roster
 
 ```bash

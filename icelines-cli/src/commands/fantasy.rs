@@ -20,12 +20,13 @@ use icelines_core::view_model::{
     FantasyImportView, FantasyMatchupOutcome, FantasyMatchupSideRow, FantasyMatchupWeekView,
 };
 use icelines_core::{
-    apply_fantasy_pickup_reserve, build_fantasy_category_matchup, build_fantasy_daily_lineup,
-    build_fantasy_draft_board, build_fantasy_draft_card, build_fantasy_draft_simulation,
-    build_fantasy_goalie_plan, build_fantasy_matchup_strategy, build_fantasy_morning_briefing,
-    build_fantasy_morning_card, build_fantasy_playoff_portfolio, build_fantasy_roster_card,
-    build_fantasy_schedule_view, build_fantasy_simulation_view, build_fantasy_sleeper_board,
-    build_fantasy_trade_card, build_fantasy_week_budget,
+    apply_fantasy_pickup_reserve, build_fantasy_bench_coverage, build_fantasy_category_matchup,
+    build_fantasy_daily_lineup, build_fantasy_draft_board, build_fantasy_draft_card,
+    build_fantasy_draft_simulation, build_fantasy_goalie_plan, build_fantasy_matchup_strategy,
+    build_fantasy_morning_briefing, build_fantasy_morning_card,
+    build_fantasy_platform_snapshot_view, build_fantasy_playoff_portfolio,
+    build_fantasy_roster_card, build_fantasy_schedule_view, build_fantasy_simulation_view,
+    build_fantasy_sleeper_board, build_fantasy_trade_card, build_fantasy_week_budget,
     build_fantasy_weekly_pickups_with_reserve_override, fantasy_acquisition_availability,
     goalie_scheme_stats_from_view, import_fantasy_platform_eligibility,
     import_fantasy_taken_players,
@@ -39,6 +40,7 @@ use icelines_core::{
     simulate_fantasy_season, skater_scheme_stats_from_view,
     stats_repository::{PlayerView, StatsRepository},
     FantasyAcquisitionInput, FantasyAcquisitionKind, FantasyActiveSlotKind, FantasyAssistantRules,
+    FantasyBenchCoverageInput, FantasyBenchCoveragePlayerInput, FantasyBenchCoverageView,
     FantasyCategoryAggregation, FantasyCategoryDirection, FantasyCategoryMatchupInput,
     FantasyCategoryMatchupView, FantasyCategoryPlayerInput, FantasyCategoryRateInput,
     FantasyCategoryRule, FantasyCategoryScope, FantasyCategorySnapshotInput,
@@ -52,13 +54,14 @@ use icelines_core::{
     FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy, FantasyMatchupStrategyInput,
     FantasyMatchupStrategyPlayerInput, FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView,
     FantasyMatchupSwingInput, FantasyMatchupTiePolicy, FantasyMorningCardInput,
-    FantasyObservationConfidence, FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput,
-    FantasyPlayoffPortfolioInput, FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput,
-    FantasyRosterCardInput, FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind,
-    FantasySeasonSimConfig, FantasySeasonSimPlayerInput, FantasySeasonSimView,
-    FantasySimulationBuildInput, FantasySimulationConfidence, FantasySimulationHorizon,
-    FantasySimulationRosterTeamInput, FantasySimulationScenarioRosterInput, FantasySimulationView,
-    FantasySleeperBoardView, FantasySleeperInput, FantasyStatusObservation, FantasyTradeCardInput,
+    FantasyObservationConfidence, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
+    FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput, FantasyPlayoffPortfolioInput,
+    FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput, FantasyRosterCardInput,
+    FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind, FantasySeasonSimConfig,
+    FantasySeasonSimPlayerInput, FantasySeasonSimView, FantasySimulationBuildInput,
+    FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
+    FantasySimulationScenarioRosterInput, FantasySimulationView, FantasySleeperBoardView,
+    FantasySleeperInput, FantasyStatusObservation, FantasyTradeCardInput,
     FantasyTradeEvaluationView, FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation,
     FantasyWeeklyMoveInput, RosterShape, RosterShapeStatus, RosterShapeValidationView, ViewContext,
     ViewWindow, CURRENT_SEASON, FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_TRADE_EVALUATION_SCHEMA,
@@ -86,6 +89,7 @@ const PENALTY_BOX_AVAILABILITY_HEADER: &str = "THE PENALTY BOX — AVAILABILITY 
 const INSIDER_MORNING_SKATE_HEADER: &str = "THE INSIDER — MORNING SKATE";
 const SCOREBOARD_FANTASY_STANDINGS_HEADER: &str = "THE SCOREBOARD — FANTASY STANDINGS";
 const BENCH_SCHEDULE_EDGE_HEADER: &str = "THE BENCH — THE GAUNTLET — FANTASY SCHEDULE EDGE";
+const BENCH_COVERAGE_HEADER: &str = "THE BENCH — SUBSTITUTION COVERAGE";
 const BENCH_PLAYOFF_PORTFOLIO_HEADER: &str = "THE BENCH — CUP CHASE — PLAYOFF SCHEDULE PORTFOLIO";
 const FACEOFF_MATCHUP_HEADER: &str = "THE FACEOFF CIRCLE — TALE OF THE TAPE — MATCHUP PLAN";
 const FACEOFF_CATEGORY_MATCHUP_HEADER: &str =
@@ -368,12 +372,14 @@ pub async fn run_competition_show(
     println!("Competition — {} · {}", league.name, rules.mode.label());
     if rules.mode == FantasyCompetitionMode::Points {
         println!("  Scoring scheme: {}", league.scheme);
-        return Ok(());
     }
     println!(
         "  Goalie minimum: {} appearance(s) · matchup ties: {:?}",
         rules.minimum_goalie_appearances, rules.matchup_tie_policy
     );
+    if rules.mode == FantasyCompetitionMode::Points {
+        return Ok(());
+    }
     for category in &rules.categories {
         println!(
             "  {:<28} {:<12} {:<8} tie ±{}",
@@ -1607,6 +1613,201 @@ pub async fn run_schedule_edge(args: ScheduleEdgeArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
+pub async fn run_bench_coverage(
+    week: NaiveDate,
+    weeks: usize,
+    team_override: Option<String>,
+    league_override: Option<String>,
+    season: u32,
+    stats_season: String,
+    off_night_max_games: usize,
+    refresh: bool,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    if !(1..=26).contains(&weeks) {
+        bail!("--weeks must be between 1 and 26");
+    }
+    if !(1..=16).contains(&off_night_max_games) {
+        bail!("--off-night-max-games must be between 1 and 16");
+    }
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    let team = if let Some(name) = team_override {
+        require_team(&db, &league.id, &name)?
+    } else {
+        db.get_user_team(&league.id)?.ok_or_else(|| {
+            anyhow::anyhow!(
+                "no user team marked; pass --team or run `icelines fantasy team-use <name>`"
+            )
+        })?
+    };
+    let roster = db.list_roster(&team.id)?;
+    if roster.is_empty() {
+        bail!("{} has no saved roster", team.name);
+    }
+    let rules = db
+        .get_assistant_rules(&league.id)?
+        .unwrap_or_else(FantasyAssistantRules::configured_2026);
+    let eligibility = db
+        .list_player_eligibility(&league.id)?
+        .into_iter()
+        .map(|row| (row.player_normalized, row.positions))
+        .collect::<HashMap<_, _>>();
+    let scheme = resolve_scheme(&league.scheme)?;
+    let (outcome, stats_window, _) =
+        crate::commands::players::load_repo_for_season(Some(&stats_season), None)?;
+    let (skaters, goalies) = pools_views(&outcome.repo, stats_window);
+    let views = skaters
+        .iter()
+        .chain(&goalies)
+        .map(|view| (view.identity.name_normalized.clone(), *view))
+        .collect::<HashMap<_, _>>();
+    let scores = score_team(
+        &skaters
+            .iter()
+            .chain(&goalies)
+            .map(|view| view.identity.name_normalized.clone())
+            .collect::<Vec<_>>(),
+        &skaters,
+        &goalies,
+        &scheme,
+    )
+    .into_iter()
+    .map(|(name, score)| (normalize_name(&name), f64::from(score)))
+    .collect::<HashMap<_, _>>();
+    let current_teams = load_current_player_team_map(Season(season)).unwrap_or_default();
+    let mut players = Vec::with_capacity(roster.len());
+    for key in &roster {
+        let view = views.get(key);
+        let positions = eligibility
+            .get(key)
+            .cloned()
+            .or_else(|| view.map(|view| vec![view.position()]))
+            .with_context(|| {
+                format!(
+                    "'{}' has no saved Yahoo eligibility or canonical position",
+                    key.replace('_', " ")
+                )
+            })?;
+        let nhl_team = current_teams
+            .get(key)
+            .cloned()
+            .or_else(|| view.map(|view| view.team_display().to_owned()))
+            .with_context(|| {
+                format!(
+                    "'{}' has no current NHL team evidence for season {season}",
+                    key.replace('_', " ")
+                )
+            })?;
+        let gp = view.map_or(0, |view| view.gp());
+        players.push(FantasyBenchCoveragePlayerInput {
+            player_key: key.clone(),
+            player: view
+                .map(|view| view.full_name().to_owned())
+                .unwrap_or_else(|| key.replace('_', " ")),
+            nhl_team,
+            positions,
+            projected_value_per_game: if gp == 0 {
+                0.0
+            } else {
+                scores.get(key).copied().unwrap_or_default() / f64::from(gp)
+            },
+        });
+    }
+    let start = week - Duration::days(week.weekday().num_days_from_monday() as i64);
+    let end = start + Duration::days(weeks as i64 * 7 - 1);
+    let games = load_fantasy_schedule(Season(season), refresh)
+        .await?
+        .into_iter()
+        .filter(|game| game.game_type == 2)
+        .map(|game| {
+            Ok(icelines_core::FantasyScheduleGameInput {
+                game_id: game.game_id,
+                date: NaiveDate::parse_from_str(&game.date, "%Y-%m-%d")
+                    .with_context(|| format!("invalid NHL schedule date '{}'", game.date))?,
+                away_team: game.away_abbrev,
+                home_team: game.home_abbrev,
+            })
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let view = build_fantasy_bench_coverage(FantasyBenchCoverageInput {
+        fantasy_team: team.name,
+        start,
+        end,
+        off_night_max_games,
+        rules,
+        players,
+        games,
+    })
+    .map_err(anyhow::Error::msg)?;
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&view)?);
+    } else {
+        print_bench_coverage(&view);
+    }
+    Ok(())
+}
+
+fn print_bench_coverage(view: &FantasyBenchCoverageView) {
+    println!("{BENCH_COVERAGE_HEADER}");
+    println!("{} · {} to {}", view.fantasy_team, view.start, view.end);
+    println!(
+        "{:<22} {:<4} {:>5} {:>6} {:>5} {:>6}  Covers",
+        "Baseline bench", "NHL", "Games", "Starts", "Quiet", "Bench"
+    );
+    for row in &view.rows {
+        let covers = if row.covers.is_empty() {
+            "—".to_owned()
+        } else {
+            row.covers
+                .iter()
+                .map(|pair| {
+                    format!(
+                        "{} {} ({})",
+                        pair.starter,
+                        pair.slot_kind.label(),
+                        pair.dates
+                            .iter()
+                            .map(ToString::to_string)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("; ")
+        };
+        println!(
+            "{:<22} {:<4} {:>5} {:>6} {:>5} {:>6}  {}",
+            row.player,
+            row.nhl_team,
+            row.scheduled_games,
+            row.usable_substitute_starts,
+            row.quiet_night_starts,
+            row.bench_collisions,
+            covers
+        );
+    }
+    if !view.uncovered_starter_dates.is_empty() {
+        println!();
+        println!("UNCOVERED STARTER OFF-DATES");
+        for (starter, dates) in &view.uncovered_starter_dates {
+            println!(
+                "  {}: {}",
+                starter,
+                dates
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+    }
+    for disclosure in &view.disclosures {
+        println!("note: {disclosure}");
+    }
+}
+
 /// Rank the marked roster by legal usable starts across the final fantasy playoff weeks.
 #[allow(clippy::too_many_arguments)]
 pub async fn run_playoff_portfolio(
@@ -2323,7 +2524,7 @@ pub async fn run_matchup_plan(
     if status_max_age_minutes < 0 {
         bail!("--status-max-age-minutes cannot be negative");
     }
-    let current_points = match (through, user_current, opponent_current) {
+    let explicit_current_points = match (through, user_current, opponent_current) {
         (None, None, None) => None,
         (Some(through_date), Some(user_points), Some(opponent_points)) => {
             Some(FantasyMatchupPointsSnapshotInput {
@@ -2341,7 +2542,7 @@ pub async fn run_matchup_plan(
         .as_ref()
         .map(read_category_snapshot)
         .transpose()?;
-    if current_points.is_some() && category_snapshot.is_some() {
+    if explicit_current_points.is_some() && category_snapshot.is_some() {
         bail!("points totals and --category-snapshot cannot be supplied together");
     }
     let strategy = match strategy.to_ascii_lowercase().as_str() {
@@ -2353,7 +2554,9 @@ pub async fn run_matchup_plan(
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
     let competition_rules = db.get_competition_rules(&league.id)?;
-    if competition_rules.mode == FantasyCompetitionMode::Categories && current_points.is_some() {
+    if competition_rules.mode == FantasyCompetitionMode::Categories
+        && explicit_current_points.is_some()
+    {
         bail!(
             "category matchup-to-date snapshots require per-category values; --user-current and --opponent-current are points-mode inputs"
         );
@@ -2399,6 +2602,50 @@ pub async fn run_matchup_plan(
     if opponent.id == user_team.id {
         bail!("matchup-plan opponent must differ from the marked user team");
     }
+    let mut used_saved_matchup_snapshot = false;
+    let current_points = if explicit_current_points.is_some()
+        || competition_rules.mode != FantasyCompetitionMode::Points
+    {
+        explicit_current_points
+    } else {
+        let snapshots = db.list_platform_snapshots(&league.id, 20)?;
+        let saved = snapshots.into_iter().find_map(|snapshot| {
+            let matchup = snapshot.matchup?;
+            if matchup.week_start != week_start {
+                return None;
+            }
+            let through_date = matchup.through?;
+            if matchup.team.eq_ignore_ascii_case(&user_team.name)
+                && matchup.opponent.eq_ignore_ascii_case(&opponent.name)
+            {
+                Some(FantasyMatchupPointsSnapshotInput {
+                    through_date,
+                    user_points: matchup.team_points,
+                    opponent_points: matchup.opponent_points,
+                    source: format!(
+                        "{} snapshot captured {}",
+                        snapshot.platform, snapshot.captured_at
+                    ),
+                })
+            } else if matchup.opponent.eq_ignore_ascii_case(&user_team.name)
+                && matchup.team.eq_ignore_ascii_case(&opponent.name)
+            {
+                Some(FantasyMatchupPointsSnapshotInput {
+                    through_date,
+                    user_points: matchup.opponent_points,
+                    opponent_points: matchup.team_points,
+                    source: format!(
+                        "{} snapshot captured {}",
+                        snapshot.platform, snapshot.captured_at
+                    ),
+                })
+            } else {
+                None
+            }
+        });
+        used_saved_matchup_snapshot = saved.is_some();
+        saved
+    };
     let user_roster = db.list_roster(&user_team.id)?;
     let opponent_roster = db.list_roster(&opponent.id)?;
     if user_roster.is_empty() || opponent_roster.is_empty() {
@@ -2527,6 +2774,12 @@ pub async fn run_matchup_plan(
         "remaining-game projection uses completed-season per-game rates".to_owned(),
         "starting-goalie confirmations are not yet applied".to_owned(),
     ];
+    if used_saved_matchup_snapshot {
+        warnings.push(
+            "matchup-to-date totals were loaded from the newest matching saved platform snapshot"
+                .to_owned(),
+        );
+    }
     if current_points.is_none() && category_snapshot.is_none() {
         warnings.push(
             "no matchup-to-date totals supplied; report remains a pre-week projection".to_owned(),
@@ -3284,6 +3537,226 @@ pub async fn run_sync_yahoo(
     Ok(())
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct FantasyPlatformSnapshotImportView {
+    schema: String,
+    league: String,
+    applied: bool,
+    snapshot_id: Option<String>,
+    statuses_recorded: usize,
+    matchup_schedule_added: bool,
+    unknown_teams: Vec<String>,
+    observed: FantasyPlatformSnapshotView,
+}
+
+pub async fn run_snapshot_yahoo(
+    file: PathBuf,
+    league_override: Option<String>,
+    apply: bool,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    let raw = if file.as_os_str() == "-" {
+        let mut input = String::new();
+        std::io::stdin()
+            .read_to_string(&mut input)
+            .context("read fantasy platform snapshot JSON from stdin")?;
+        input
+    } else {
+        std::fs::read_to_string(&file)
+            .with_context(|| format!("read fantasy platform snapshot {}", file.display()))?
+    };
+    let snapshot: FantasyPlatformSnapshot =
+        serde_json::from_str(&raw).context("parse fantasy platform snapshot JSON")?;
+    snapshot.validate().map_err(anyhow::Error::msg)?;
+    if !snapshot.platform.eq_ignore_ascii_case("yahoo") {
+        bail!(
+            "snapshot-yahoo requires platform 'yahoo', found '{}'",
+            snapshot.platform
+        );
+    }
+    let prior = db.list_platform_snapshots(&league.id, 1)?;
+    let observed = build_fantasy_platform_snapshot_view(snapshot.clone(), prior.first())
+        .map_err(anyhow::Error::msg)?;
+    let known_teams = db
+        .list_teams(&league.id)?
+        .into_iter()
+        .map(|team| team.name.to_ascii_lowercase())
+        .collect::<BTreeSet<_>>();
+    let mut supplied_teams = snapshot
+        .standings
+        .iter()
+        .map(|row| row.team.clone())
+        .collect::<Vec<_>>();
+    if let Some(matchup) = &snapshot.matchup {
+        supplied_teams.push(matchup.team.clone());
+        supplied_teams.push(matchup.opponent.clone());
+    }
+    let unknown_teams = supplied_teams
+        .into_iter()
+        .filter(|team| !known_teams.contains(&team.to_ascii_lowercase()))
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    if apply && !unknown_teams.is_empty() {
+        bail!(
+            "snapshot contains teams absent from '{}': {}; synchronize rosters first",
+            league.name,
+            unknown_teams.join(", ")
+        );
+    }
+
+    let mut snapshot_id = None;
+    let mut statuses_recorded = 0;
+    let mut matchup_schedule_added = false;
+    if apply {
+        snapshot_id = Some(db.record_platform_snapshot(&league.id, &snapshot)?);
+        for row in &snapshot.statuses {
+            db.record_status_observation(
+                &league.id,
+                &FantasyStatusObservation {
+                    player_key: normalize_name(&row.player),
+                    status: row.status,
+                    source: "yahoo-platform-snapshot".to_owned(),
+                    source_url: snapshot.source_url.clone(),
+                    observed_at: snapshot.captured_at,
+                    fetched_at: Utc::now(),
+                    confidence: FantasyObservationConfidence::Confirmed,
+                    detail: row.detail.clone(),
+                },
+            )?;
+            statuses_recorded += 1;
+        }
+        if let Some(matchup) = &snapshot.matchup {
+            if db.list_matchups(&league.id, matchup.week_start)?.is_empty() {
+                db.schedule_matchup(
+                    &league.id,
+                    matchup.week_start,
+                    &matchup.team,
+                    Some(&matchup.opponent),
+                )?;
+                matchup_schedule_added = true;
+            }
+        }
+    }
+    let view = FantasyPlatformSnapshotImportView {
+        schema: "fantasy_platform_snapshot_import.v1".to_owned(),
+        league: league.name,
+        applied: apply,
+        snapshot_id,
+        statuses_recorded,
+        matchup_schedule_added,
+        unknown_teams,
+        observed,
+    };
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&view)?);
+    } else {
+        print_platform_snapshot_import(&view);
+    }
+    Ok(())
+}
+
+pub async fn run_snapshot_show(
+    league_override: Option<String>,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    let db = FantasyDb::open()?;
+    let league = require_league(&db, &league_override)?;
+    let snapshots = db.list_platform_snapshots(&league.id, 2)?;
+    let current = snapshots
+        .first()
+        .cloned()
+        .with_context(|| format!("no observed platform snapshots saved for '{}'", league.name))?;
+    let view = build_fantasy_platform_snapshot_view(current, snapshots.get(1))
+        .map_err(anyhow::Error::msg)?;
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&view)?);
+    } else {
+        print_platform_snapshot(&league.name, &view);
+    }
+    Ok(())
+}
+
+fn print_platform_snapshot_import(view: &FantasyPlatformSnapshotImportView) {
+    println!(
+        "Yahoo snapshot — {} · {}",
+        view.league,
+        if view.applied { "APPLIED" } else { "PREVIEW" }
+    );
+    if !view.applied {
+        println!("Preview only: rerun with --apply to persist this evidence.");
+    }
+    if !view.unknown_teams.is_empty() {
+        println!("warning: unknown teams: {}", view.unknown_teams.join(", "));
+    }
+    print_platform_snapshot(&view.league, &view.observed);
+    if view.applied {
+        println!(
+            "Stored snapshot {} · {} statuses · matchup schedule {}",
+            view.snapshot_id.as_deref().unwrap_or("-"),
+            view.statuses_recorded,
+            if view.matchup_schedule_added {
+                "added"
+            } else {
+                "unchanged"
+            }
+        );
+    }
+}
+
+fn print_platform_snapshot(league: &str, view: &FantasyPlatformSnapshotView) {
+    println!(
+        "Observed standings — {} · {} at {}",
+        league, view.snapshot.platform, view.snapshot.captured_at
+    );
+    println!(
+        "{:<5} {:<28} {:>8} {:>10}",
+        "Rank", "Team", "Move", "Points"
+    );
+    for row in &view.standings {
+        println!(
+            "{:<5} {:<28} {:>+8} {:>10}",
+            row.rank,
+            row.team,
+            row.rank_change.unwrap_or_default(),
+            row.points_for
+                .map(|points| format!("{points:.1}"))
+                .unwrap_or_else(|| "—".to_owned())
+        );
+    }
+    if let Some(matchup) = &view.snapshot.matchup {
+        println!(
+            "Matchup {}: {} {:.1} — {:.1} {}{}",
+            matchup.week_start,
+            matchup.team,
+            matchup.team_points,
+            matchup.opponent_points,
+            matchup.opponent,
+            matchup
+                .through
+                .map(|date| format!(" through {date}"))
+                .unwrap_or_default()
+        );
+        if matchup.team_goalie_appearances.is_some()
+            || matchup.opponent_goalie_appearances.is_some()
+        {
+            println!(
+                "Goalie appearances: {} — {}",
+                matchup
+                    .team_goalie_appearances
+                    .map(|value| value.to_string())
+                    .unwrap_or_else(|| "—".to_owned()),
+                matchup
+                    .opponent_goalie_appearances
+                    .map(|value| value.to_string())
+                    .unwrap_or_else(|| "—".to_owned())
+            );
+        }
+    }
+}
+
 fn known_player_positions() -> anyhow::Result<BTreeMap<String, Vec<Position>>> {
     let (outcome, season) = load_pools()?;
     let (skaters, goalies) = pools_views(&outcome.repo, season);
@@ -3358,7 +3831,8 @@ pub async fn run_assistant_setup(
 ) -> anyhow::Result<()> {
     let db = FantasyDb::open()?;
     let league = require_league(&db, &league_override)?;
-    let rules = FantasyAssistantRules::configured_2026();
+    let existing = db.get_assistant_rules(&league.id)?;
+    let rules = assistant_setup_rules(existing.as_ref());
     db.set_assistant_rules(&league.id, &rules)?;
     if json {
         println!(
@@ -3374,6 +3848,15 @@ pub async fn run_assistant_setup(
         print_assistant_rules(&rules);
     }
     Ok(())
+}
+
+fn assistant_setup_rules(existing: Option<&FantasyAssistantRules>) -> FantasyAssistantRules {
+    let mut rules = FantasyAssistantRules::configured_2026();
+    if let Some(existing) = existing {
+        rules.playoff_start = existing.playoff_start;
+        rules.playoff_rounds = existing.playoff_rounds;
+    }
+    rules
 }
 
 pub async fn run_assistant_rules(
@@ -4164,6 +4647,44 @@ async fn build_goalie_plan_view_for_context(
     Ok(view)
 }
 
+fn resolve_goalie_appearances_from_snapshot(
+    db: &FantasyDb,
+    league_id: &str,
+    team_name: &str,
+    week_start: NaiveDate,
+    supplied: f64,
+) -> anyhow::Result<(f64, Option<String>)> {
+    if supplied > 0.0 {
+        return Ok((supplied, None));
+    }
+    let observed = db
+        .list_platform_snapshots(league_id, 20)?
+        .into_iter()
+        .find_map(|snapshot| {
+            let matchup = snapshot.matchup?;
+            if matchup.week_start != week_start {
+                return None;
+            }
+            let appearances = if matchup.team.eq_ignore_ascii_case(team_name) {
+                matchup.team_goalie_appearances
+            } else if matchup.opponent.eq_ignore_ascii_case(team_name) {
+                matchup.opponent_goalie_appearances
+            } else {
+                None
+            }?;
+            Some((
+                f64::from(appearances),
+                format!(
+                    "used {} goalie-appearance snapshot captured {}",
+                    snapshot.platform, snapshot.captured_at
+                ),
+            ))
+        });
+    Ok(observed
+        .map(|(appearances, evidence)| (appearances, Some(evidence)))
+        .unwrap_or((supplied, None)))
+}
+
 #[allow(clippy::too_many_arguments)]
 pub async fn run_goalie_plan(
     week: Option<String>,
@@ -4208,7 +4729,14 @@ pub async fn run_goalie_plan(
         .single()
         .ok_or_else(|| anyhow::anyhow!("ambiguous local noon on {anchor}"))?
         .with_timezone(&Utc);
-    let view = build_goalie_plan_view_for_context(
+    let (current_appearances, snapshot_evidence) = resolve_goalie_appearances_from_snapshot(
+        &db,
+        &league.id,
+        &team.name,
+        week_start,
+        current_appearances,
+    )?;
+    let mut view = build_goalie_plan_view_for_context(
         &db,
         &league,
         &team,
@@ -4224,6 +4752,9 @@ pub async fn run_goalie_plan(
         budget_at,
     )
     .await?;
+    if let Some(evidence) = snapshot_evidence {
+        view.warnings.push(evidence);
+    }
     if json {
         println!("{}", serde_json::to_string_pretty(&view)?);
     } else {
@@ -4662,7 +5193,14 @@ pub async fn run_morning(
             .with_timezone(&Utc),
     );
     let (goalie_week_start, goalie_week_end) = Timeframe::Week.range(plan.date);
-    let goalie_plan = build_goalie_plan_view_for_context(
+    let (current_goalie_appearances, snapshot_evidence) = resolve_goalie_appearances_from_snapshot(
+        &db,
+        &league.id,
+        &user_team.name,
+        goalie_week_start,
+        current_goalie_appearances,
+    )?;
+    let mut goalie_plan = build_goalie_plan_view_for_context(
         &db,
         &league,
         &user_team,
@@ -4678,6 +5216,9 @@ pub async fn run_morning(
         goalie_evaluation_at,
     )
     .await?;
+    if let Some(evidence) = snapshot_evidence {
+        goalie_plan.warnings.push(evidence);
+    }
     let (pickup_plan, _, _) = build_weekly_pickups_view(
         &db,
         &league,
@@ -8875,6 +9416,76 @@ wins = 3.0
         assert_eq!(scheme.name, "league-exact");
         assert_eq!(scheme.skater.goals, 3.25);
         assert_eq!(scheme.goalie.wins, 3.0);
+    }
+
+    #[test]
+    fn assistant_setup_preserves_existing_playoff_calendar() {
+        let mut existing = FantasyAssistantRules::configured_2026();
+        existing.playoff_start = Some(NaiveDate::from_ymd_opt(2027, 3, 15).unwrap());
+        existing.playoff_rounds = 3;
+        existing.weekly_acquisition_limit = 99;
+
+        let configured = assistant_setup_rules(Some(&existing));
+
+        assert_eq!(configured.playoff_start, existing.playoff_start);
+        assert_eq!(configured.playoff_rounds, 3);
+        assert_eq!(
+            configured.weekly_acquisition_limit,
+            FantasyAssistantRules::configured_2026().weekly_acquisition_limit,
+            "setup should refresh ordinary defaults while retaining the explicit calendar"
+        );
+    }
+
+    #[test]
+    fn assistant_setup_without_existing_rules_uses_defaults() {
+        assert_eq!(
+            assistant_setup_rules(None),
+            FantasyAssistantRules::configured_2026()
+        );
+    }
+
+    #[test]
+    fn goalie_appearances_use_matching_saved_platform_snapshot() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let db = FantasyDb::open_path(temp.path().join("fantasy.db")).expect("open temporary db");
+        let league_id = db
+            .create_league("Snapshot League", "yahoo-standard")
+            .expect("create league");
+        let week_start = NaiveDate::from_ymd_opt(2026, 10, 5).unwrap();
+        let snapshot = FantasyPlatformSnapshot {
+            schema: icelines_core::FANTASY_PLATFORM_SNAPSHOT_SCHEMA.to_owned(),
+            platform: "yahoo".to_owned(),
+            captured_at: DateTime::parse_from_rfc3339("2026-10-08T14:00:00Z")
+                .unwrap()
+                .with_timezone(&Utc),
+            source_url: None,
+            standings: Vec::new(),
+            matchup: Some(icelines_core::FantasyPlatformMatchupSnapshot {
+                week_start,
+                team: "My Team".to_owned(),
+                opponent: "Rival".to_owned(),
+                team_points: 42.5,
+                opponent_points: 39.0,
+                through: Some(NaiveDate::from_ymd_opt(2026, 10, 7).unwrap()),
+                team_goalie_appearances: Some(2),
+                opponent_goalie_appearances: Some(1),
+            }),
+            statuses: Vec::new(),
+        };
+        db.record_platform_snapshot(&league_id, &snapshot)
+            .expect("record snapshot");
+
+        let (appearances, evidence) =
+            resolve_goalie_appearances_from_snapshot(&db, &league_id, "My Team", week_start, 0.0)
+                .expect("resolve appearances");
+        assert_eq!(appearances, 2.0);
+        assert!(evidence.unwrap().contains("yahoo"));
+
+        let (manual, evidence) =
+            resolve_goalie_appearances_from_snapshot(&db, &league_id, "My Team", week_start, 3.0)
+                .expect("keep manual appearances");
+        assert_eq!(manual, 3.0);
+        assert!(evidence.is_none());
     }
 
     #[test]

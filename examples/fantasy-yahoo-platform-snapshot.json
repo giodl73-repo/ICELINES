@@ -1,0 +1,41 @@
+{
+  "schema": "fantasy_platform_snapshot.v1",
+  "platform": "yahoo",
+  "captured_at": "2026-10-08T14:00:00Z",
+  "source_url": "https://hockey.fantasysports.yahoo.com/",
+  "standings": [
+    {
+      "rank": 1,
+      "team": "Example Leaders",
+      "wins": 1,
+      "losses": 0,
+      "ties": 0,
+      "points_for": 315.5
+    },
+    {
+      "rank": 5,
+      "team": "My Team",
+      "wins": 1,
+      "losses": 0,
+      "ties": 0,
+      "points_for": 274.25
+    }
+  ],
+  "matchup": {
+    "week_start": "2026-10-05",
+    "team": "My Team",
+    "opponent": "Example Rival",
+    "team_points": 91.25,
+    "opponent_points": 86.75,
+    "through": "2026-10-07",
+    "team_goalie_appearances": 2,
+    "opponent_goalie_appearances": 1
+  },
+  "statuses": [
+    {
+      "player": "Example Player",
+      "status": "day_to_day",
+      "detail": "Observed on the Yahoo roster page"
+    }
+  ]
+}
