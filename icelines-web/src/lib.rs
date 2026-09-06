@@ -84,6 +84,10 @@ pub fn router(state: WebState) -> Router {
         // Player card — King.3.1. Name links on /leaders point here.
         .route("/player/:id", get(handlers::player::get_player))
         .route(
+            "/player/by-name/:name",
+            get(handlers::player::get_player_by_name),
+        )
+        .route(
             "/player/:id/awards",
             get(handlers::awards::get_player_awards),
         )

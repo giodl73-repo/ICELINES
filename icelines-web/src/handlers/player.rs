@@ -1,9 +1,9 @@
 use crate::state::WebState;
 use crate::templates::{CareerRow, PlayerTemplate};
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse, Response};
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use icelines_core::identity::PlayerId;
 use icelines_core::model::Season;
 use icelines_core::season_stats::SeasonType;
@@ -12,6 +12,101 @@ use icelines_core::{
     MetricCell, MetricValue, PlayerCardView, PlayerCareerSummary, PlayerPreNhlCareerRow,
     PlayerSeasonSummary,
 };
+use serde::Deserialize;
+
+#[derive(Debug, Default, Deserialize)]
+pub struct PlayerByNameQuery {
+    team: Option<String>,
+}
+
+/// Resolve a human-readable player name to the canonical NHL-id player card.
+///
+/// This bookmarkable adapter is intended for reports and other IceLines
+/// consumers that retain canonical player names but do not duplicate NHL IDs.
+/// Exact normalized names redirect immediately. Duplicate names require a team
+/// hint or render a choice page instead of silently selecting the wrong player.
+pub async fn get_player_by_name(
+    Path(name): Path<String>,
+    Query(query): Query<PlayerByNameQuery>,
+) -> Response {
+    let normalized_name = icelines_core::name::normalize_name(&name);
+    let mut candidates: Vec<_> = icelines_fetch::stats_loader::find_player_candidates(&name)
+        .into_iter()
+        .filter(|candidate| {
+            icelines_core::name::normalize_name(&candidate.full_name) == normalized_name
+        })
+        .collect();
+
+    if candidates.len() > 1 {
+        if let Some(team) = query.team.as_deref().map(normalize_team_hint) {
+            let team_matches: Vec<_> = candidates
+                .iter()
+                .filter(|candidate| candidate.last_team.as_deref() == Some(team.as_str()))
+                .collect();
+            if let [candidate] = team_matches.as_slice() {
+                return Redirect::temporary(&format!("/player/{}", candidate.pid)).into_response();
+            }
+        }
+    }
+
+    match candidates.as_slice() {
+        [candidate] => Redirect::temporary(&format!("/player/{}", candidate.pid)).into_response(),
+        [] => (
+            StatusCode::NOT_FOUND,
+            Html(format!(
+                "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Player not found</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><a href=\"#main\" class=\"skip-link\">Skip to content</a><main id=\"main\" tabindex=\"-1\"><h1>Player not found</h1><p>IceLines could not resolve <strong>{}</strong> to one canonical NHL player.</p><p><a href=\"/leaders\">Browse player leaders</a></p></main></body></html>",
+                html_escape(&name)
+            )),
+        )
+            .into_response(),
+        _ => {
+            candidates.sort_by(|left, right| {
+                left.full_name
+                    .cmp(&right.full_name)
+                    .then_with(|| left.pid.cmp(&right.pid))
+            });
+            let choices = candidates
+                .iter()
+                .map(|candidate| {
+                    let team = candidate.last_team.as_deref().unwrap_or("team unavailable");
+                    format!(
+                        "<li><a href=\"/player/{}\">{} — {}</a></li>",
+                        candidate.pid,
+                        html_escape(&candidate.full_name),
+                        html_escape(team)
+                    )
+                })
+                .collect::<String>();
+            (
+                StatusCode::MULTIPLE_CHOICES,
+                Html(format!(
+                    "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Choose player</title><link rel=\"stylesheet\" href=\"/static/style.css\"></head><body><a href=\"#main\" class=\"skip-link\">Skip to content</a><main id=\"main\" tabindex=\"-1\"><h1>Choose player</h1><p>More than one NHL player matches <strong>{}</strong>.</p><ul>{choices}</ul></main></body></html>",
+                    html_escape(&name)
+                )),
+            )
+                .into_response()
+        }
+    }
+}
+
+fn normalize_team_hint(team: &str) -> String {
+    match team.trim().to_ascii_uppercase().as_str() {
+        "LA" => "LAK".to_owned(),
+        "NJ" => "NJD".to_owned(),
+        "SJ" => "SJS".to_owned(),
+        "TB" => "TBL".to_owned(),
+        other => other.to_owned(),
+    }
+}
+
+fn html_escape(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
 
 /// Format a YYYYZZZZ season as "YYYY-YY" (e.g. 20242025 → "2024-25").
 fn pretty_season(s: Season) -> String {
