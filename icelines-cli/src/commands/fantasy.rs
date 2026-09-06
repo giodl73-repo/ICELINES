@@ -2898,16 +2898,19 @@ pub async fn run_matchup_plan(
         .collect::<HashMap<_, _>>();
     let schedule = load_fantasy_schedule(Season(CURRENT_SEASON), false).await?;
     let (team_dates, _, _) = draft_schedule_metrics(&schedule, 4);
-    let build_team = |team: &TeamRow, roster: &[String]| -> anyhow::Result<_> {
-        let mut players = Vec::with_capacity(roster.len());
-        for key in roster {
-            let player = pool.get(key).with_context(|| {
-                format!(
-                    "'{}' on {} is absent from the {stats_season} stats pool",
-                    key, team.name
-                )
-            })?;
-            players.push(FantasyMatchupStrategyPlayerInput {
+    let resolved_player_keys = pool.keys().cloned().collect::<BTreeSet<_>>();
+    let unresolved_matchup_players = unresolved_matchup_roster_players(
+        &user_team.name,
+        &user_roster,
+        &opponent.name,
+        &opponent_roster,
+        &resolved_player_keys,
+    );
+    let build_team = |team: &TeamRow, roster: &[String]| {
+        let players = roster
+            .iter()
+            .filter_map(|key| pool.get(key))
+            .map(|player| FantasyMatchupStrategyPlayerInput {
                 player_key: player.key.clone(),
                 player: player.player.clone(),
                 nhl_team: player.team.clone(),
@@ -2922,12 +2925,12 @@ pub async fn run_matchup_plan(
                     .get(&player.key)
                     .copied()
                     .unwrap_or(FantasyPlayerAvailabilityStatus::Healthy),
-            });
-        }
-        Ok(FantasyMatchupStrategyTeamInput {
+            })
+            .collect();
+        FantasyMatchupStrategyTeamInput {
             team: team.name.clone(),
             players,
-        })
+        }
     };
 
     let mut warnings = vec![
@@ -2953,6 +2956,13 @@ pub async fn run_matchup_plan(
     if status_refresh_count > 0 {
         warnings.push(format!(
             "{status_refresh_count} roster status(es) lack definitive fresh evidence; baseline availability is assumed and a pregame refresh is required"
+        ));
+    }
+    if !unresolved_matchup_players.is_empty() {
+        warnings.push(format!(
+            "{} roster player(s) are absent from the {stats_season} stats pool and are omitted from this descriptive projection: {}",
+            unresolved_matchup_players.len(),
+            unresolved_matchup_players.join(", ")
         ));
     }
     if !apply_status_evidence {
@@ -3128,8 +3138,8 @@ pub async fn run_matchup_plan(
         week_end,
         strategy,
         rules,
-        user: build_team(&user_team, &user_roster)?,
-        opponent: build_team(&opponent, &opponent_roster)?,
+        user: build_team(&user_team, &user_roster),
+        opponent: build_team(&opponent, &opponent_roster),
         current_points,
         largest_legal_swing,
         warnings,
@@ -3141,6 +3151,22 @@ pub async fn run_matchup_plan(
         print_matchup_plan(&view);
     }
     Ok(())
+}
+
+fn unresolved_matchup_roster_players(
+    user_team: &str,
+    user_roster: &[String],
+    opponent_team: &str,
+    opponent_roster: &[String],
+    resolved_player_keys: &BTreeSet<String>,
+) -> Vec<String> {
+    user_roster
+        .iter()
+        .map(|key| (user_team, key))
+        .chain(opponent_roster.iter().map(|key| (opponent_team, key)))
+        .filter(|(_, key)| !resolved_player_keys.contains(*key))
+        .map(|(team, key)| format!("{team}: {key}"))
+        .collect()
 }
 
 fn print_matchup_plan(view: &FantasyMatchupStrategyView) {
@@ -10389,6 +10415,18 @@ pub async fn run_serve(port: u16, league_override: Option<String>) -> anyhow::Re
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn matchup_projection_names_and_omits_unresolved_roster_players() {
+        let user = vec!["known veteran".to_owned(), "new rookie".to_owned()];
+        let opponent = vec!["known opponent".to_owned()];
+        let resolved = BTreeSet::from(["known veteran".to_owned(), "known opponent".to_owned()]);
+
+        assert_eq!(
+            unresolved_matchup_roster_players("My Team", &user, "Their Team", &opponent, &resolved,),
+            vec!["My Team: new rookie"]
+        );
+    }
 
     #[test]
     fn l0_fantasy_today_text_wraps_to_the_requested_width() {
