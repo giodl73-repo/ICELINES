@@ -11154,6 +11154,43 @@ pub enum FantasySubcommand {
         json: bool,
     },
 
+    /// Compare targeted add/drop replacements across exact legal lineups for several weeks.
+    #[command(name = "replacement-lookahead")]
+    ReplacementLookahead {
+        /// Date inside the first Monday-Sunday week to inspect.
+        #[arg(long)]
+        week: chrono::NaiveDate,
+        /// Consecutive Monday-Sunday weeks to inspect.
+        #[arg(long, default_value_t = 3)]
+        weeks: usize,
+        /// Current bench or injured players eligible to drop (comma-delimited or repeated).
+        #[arg(long, required = true, value_delimiter = ',')]
+        drop: Vec<String>,
+        /// Drop targets that are injury replacements (comma-delimited or repeated).
+        #[arg(long, value_delimiter = ',')]
+        injury: Vec<String>,
+        /// Team perspective; otherwise use the marked user team.
+        #[arg(long)]
+        team: Option<String>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long, default_value_t = icelines_core::CURRENT_SEASON)]
+        season: u32,
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// Maximum schedule-adjusted available players evaluated.
+        #[arg(long, default_value_t = 24)]
+        candidates: usize,
+        /// Maximum add/drop options returned.
+        #[arg(long, default_value_t = 10)]
+        top: usize,
+        /// A quiet-night opportunity occurs when the NHL slate has at most this many games.
+        #[arg(long, default_value_t = 4)]
+        off_night_max_games: usize,
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Rank the marked roster's legal usable starts across the final playoff weeks.
     #[command(name = "playoff-portfolio")]
     PlayoffPortfolio {

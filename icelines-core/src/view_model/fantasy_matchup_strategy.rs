@@ -84,6 +84,18 @@ pub struct FantasyMatchupDailyProjectionRow {
     pub benched_player_games: usize,
     pub bench_collision_value: f64,
     pub benched_players: Vec<String>,
+    #[serde(default)]
+    pub starting_players: Vec<FantasyMatchupDailyStartRow>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FantasyMatchupDailyStartRow {
+    pub slot_id: String,
+    pub player_key: String,
+    pub player: String,
+    pub nhl_team: String,
+    pub positions: Vec<Position>,
+    pub projected_points: f64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -320,6 +332,19 @@ fn project_team(
             benched_player_games: benched.len(),
             bench_collision_value,
             benched_players: benched.iter().map(|player| player.player.clone()).collect(),
+            starting_players: lineup
+                .active
+                .iter()
+                .filter(|row| row.has_game && row.status.expected_available())
+                .map(|row| FantasyMatchupDailyStartRow {
+                    slot_id: row.slot_id.clone(),
+                    player_key: row.player_key.clone(),
+                    player: row.player.clone(),
+                    nhl_team: row.nhl_team.clone(),
+                    positions: row.platform_positions.clone(),
+                    projected_points: canonical_zero(row.projected_value),
+                })
+                .collect(),
         });
         date += Duration::days(1);
     }
@@ -454,6 +479,13 @@ mod tests {
         assert_eq!(view.user.scheduled_player_games, 2);
         assert_eq!(view.user.benched_player_games, 1);
         assert_eq!(view.user.bench_collision_value, 6.0);
+        assert_eq!(view.user.daily[0].starting_players.len(), 1);
+        assert_eq!(view.user.daily[0].starting_players[0].player, "star");
+        assert_eq!(view.user.daily[0].starting_players[0].slot_id, "C1");
+        assert_eq!(
+            view.user.daily[0].starting_players[0].projected_points,
+            10.0
+        );
         assert_eq!(view.expected_margin, 2.0);
         assert!(view.modeled_win_probability > 0.5);
     }
