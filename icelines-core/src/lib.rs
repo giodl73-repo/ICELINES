@@ -159,6 +159,12 @@ pub use view_model::fantasy_platform_snapshot::{
     FantasyPlatformPlayerStatusRow, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
     FantasyPlatformStandingDeltaRow, FantasyPlatformStandingRow, FANTASY_PLATFORM_SNAPSHOT_SCHEMA,
 };
+pub use view_model::fantasy_readiness::{
+    build_fantasy_readiness, FantasyReadinessBuildInput, FantasyReadinessCheckInput,
+    FantasyReadinessCheckRow, FantasyReadinessRequirement, FantasyReadinessView,
+    FantasyReadinessWorkflow, FantasyReadinessWorkflowInput, FantasyReadinessWorkflowRow,
+    FANTASY_READINESS_SCHEMA,
+};
 pub use view_model::fantasy_today::{
     build_fantasy_today, build_fantasy_today_v2, FantasyTodayAcquisitionSummary,
     FantasyTodayAction, FantasyTodayContext, FantasyTodayEvidenceRow, FantasyTodayFirmness,

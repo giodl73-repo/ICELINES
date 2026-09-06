@@ -16,17 +16,20 @@ use icelines_core::view_model::{
     SourceState,
 };
 use icelines_core::{
-    build_fantasy_simulation_view, resolve_fantasy_scenario_roster_details, FantasyRosterGapInput,
-    FantasyRosterGapView, FantasySimulationBuildInput, FantasySimulationConfidence,
-    FantasySimulationHorizon, FantasySimulationRosterTeamInput,
-    FantasySimulationScenarioRosterInput, FantasySimulationView, FantasyTodayState,
-    FantasyTodayV2View, Scheme,
+    build_fantasy_simulation_view, resolve_fantasy_scenario_roster_details, FantasyReadinessView,
+    FantasyReadinessWorkflow, FantasyRosterGapInput, FantasyRosterGapView,
+    FantasySimulationBuildInput, FantasySimulationConfidence, FantasySimulationHorizon,
+    FantasySimulationRosterTeamInput, FantasySimulationScenarioRosterInput, FantasySimulationView,
+    FantasyTodayState, FantasyTodayV2View, Scheme,
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
 use icelines_fetch::fantasy_db::FantasyDb;
 use icelines_fetch::fantasy_decision_review_service::assemble_fantasy_decision_review;
 use icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view;
+use icelines_fetch::fantasy_readiness_service::{
+    assemble_fantasy_readiness, FantasyReadinessAssemblyRequest,
+};
 use icelines_fetch::fantasy_today_service::{assemble_fantasy_today, FantasyTodayAssemblyRequest};
 use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
 use serde::Deserialize;
@@ -56,6 +59,10 @@ pub struct FantasyWebQuery {
     pub season: Option<String>,
     #[serde(default)]
     pub team: Option<String>,
+    #[serde(default)]
+    pub workflow: Option<String>,
+    #[serde(default)]
+    pub stats_season: Option<String>,
 }
 
 pub async fn get_fantasy(
@@ -206,6 +213,144 @@ pub async fn get_fantasy_today_v2_json(
         )
             .into_response(),
     }
+}
+
+pub async fn get_fantasy_readiness_json(
+    State(state): State<WebState>,
+    Query(q): Query<FantasyWebQuery>,
+) -> Response {
+    no_store(match load_fantasy_readiness_contract(&state, &q).await {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(message) => (
+            StatusCode::BAD_REQUEST,
+            axum::Json(serde_json::json!({
+                "schema": icelines_core::FANTASY_READINESS_SCHEMA,
+                "state": "invalid_request",
+                "error": message,
+                "recovery_command": "icelines fantasy readiness"
+            })),
+        )
+            .into_response(),
+    })
+}
+
+pub async fn get_fantasy_readiness(
+    State(state): State<WebState>,
+    Query(q): Query<FantasyWebQuery>,
+) -> Response {
+    no_store(match load_fantasy_readiness_contract(&state, &q).await {
+        Ok(view) => Html(render_fantasy_readiness_html(&view)).into_response(),
+        Err(message) => (
+            StatusCode::BAD_REQUEST,
+            Html(format!(
+                "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><main><h1>Fantasy readiness unavailable</h1><p role=\"alert\">{}</p><p>Run <code>icelines fantasy readiness</code>.</p></main></html>",
+                escape_html(&message)
+            )),
+        )
+            .into_response(),
+    })
+}
+
+async fn load_fantasy_readiness_contract(
+    state: &WebState,
+    q: &FantasyWebQuery,
+) -> Result<FantasyReadinessView, String> {
+    let stats_season = match q.stats_season.as_deref() {
+        Some(value) if value.len() == 8 && value.chars().all(|ch| ch.is_ascii_digit()) => {
+            value.to_owned()
+        }
+        Some(value) => {
+            return Err(format!(
+                "stats season '{value}' must be an 8-digit NHL season ID (for example 20262027)"
+            ));
+        }
+        None => state.config.read().await.active_season.clone(),
+    };
+    let workflow = q
+        .workflow
+        .as_deref()
+        .map(parse_readiness_workflow)
+        .transpose()?;
+    let mut today = FantasyTodayAssemblyRequest::from_default_paths(
+        q.league.clone(),
+        q.team.clone(),
+        stats_season,
+        icelines_core::CURRENT_SEASON,
+        Utc::now(),
+    )
+    .map_err(|error| error.to_string())?;
+    today.local_date = q
+        .date
+        .as_deref()
+        .map(|value| {
+            NaiveDate::parse_from_str(value, "%Y-%m-%d")
+                .map_err(|error| format!("invalid date '{value}': {error}"))
+        })
+        .transpose()?;
+    tokio::task::spawn_blocking(move || {
+        assemble_fantasy_readiness(FantasyReadinessAssemblyRequest { today, workflow })
+    })
+    .await
+    .map_err(|error| format!("join local readiness assembler: {error}"))?
+}
+
+fn parse_readiness_workflow(value: &str) -> Result<FantasyReadinessWorkflow, String> {
+    match value.trim().to_ascii_lowercase().replace('-', "_").as_str() {
+        "draft" => Ok(FantasyReadinessWorkflow::Draft),
+        "today" => Ok(FantasyReadinessWorkflow::Today),
+        "matchup" => Ok(FantasyReadinessWorkflow::Matchup),
+        "week_plan" => Ok(FantasyReadinessWorkflow::WeekPlan),
+        "goalie" => Ok(FantasyReadinessWorkflow::Goalie),
+        "trade" => Ok(FantasyReadinessWorkflow::Trade),
+        "decision_review" => Ok(FantasyReadinessWorkflow::DecisionReview),
+        _ => Err(format!(
+            "unknown workflow '{value}'; expected draft, today, matchup, week-plan, goalie, trade, or decision-review"
+        )),
+    }
+}
+
+fn render_fantasy_readiness_html(view: &FantasyReadinessView) -> String {
+    let workflows = view
+        .workflows
+        .iter()
+        .map(|workflow| {
+            let checks = workflow
+                .checks
+                .iter()
+                .filter(|check| check.state != FantasyTodayState::Ready)
+                .map(|check| {
+                    format!(
+                        "<li><strong>{}</strong> — {:?}: {}{}</li>",
+                        escape_html(&check.check_id),
+                        check.state,
+                        escape_html(&check.message),
+                        check.recovery_command.as_ref().map(|command| format!(
+                            " <code>{}</code>", escape_html(command)
+                        )).unwrap_or_default()
+                    )
+                })
+                .collect::<String>();
+            format!(
+                "<section><h2>{}</h2><p><strong>{:?}</strong> · {}/{} checks ready</p><ul>{}</ul></section>",
+                escape_html(workflow.workflow.as_str()),
+                workflow.state,
+                workflow.ready_checks,
+                workflow.total_checks,
+                if checks.is_empty() { "<li>No recovery needed.</li>".to_owned() } else { checks }
+            )
+        })
+        .collect::<String>();
+    format!(
+        "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Fantasy data readiness</title><style>body{{font:16px system-ui;max-width:72rem;margin:auto;padding:1rem}}section{{border:1px solid #888;border-radius:.5rem;padding:1rem;margin-block:1rem}}code{{overflow-wrap:anywhere}}</style><main><h1>Fantasy data readiness</h1><p aria-label=\"Overall readiness\"><strong>{:?}</strong> · {} ready · {} provisional · {} blocked</p><p>{} · evaluated <time>{}</time></p>{}<p><small>Snapshot <code>{}</code></small></p></main></html>",
+        view.state,
+        view.ready_workflows,
+        view.provisional_workflows,
+        view.blocked_workflows,
+        escape_html(&view.stats_season),
+        view.evaluated_at.to_rfc3339(),
+        workflows,
+        escape_html(&view.material_fingerprint)
+    )
 }
 
 pub async fn get_fantasy_week_plan_json(
@@ -1318,5 +1463,18 @@ mod fantasy_today_surface_tests {
                 "no-store"
             );
         }
+    }
+
+    #[test]
+    fn readiness_workflow_parser_accepts_url_friendly_names() {
+        assert_eq!(
+            parse_readiness_workflow("week-plan").unwrap(),
+            FantasyReadinessWorkflow::WeekPlan
+        );
+        assert_eq!(
+            parse_readiness_workflow("decision-review").unwrap(),
+            FantasyReadinessWorkflow::DecisionReview
+        );
+        assert!(parse_readiness_workflow("waivers").is_err());
     }
 }

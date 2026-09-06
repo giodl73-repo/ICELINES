@@ -554,6 +554,14 @@ pub fn router(state: WebState) -> Router {
         .route("/fantasy", get(handlers::fantasy::get_fantasy))
         .route("/fantasy/today", get(handlers::fantasy::get_fantasy_today))
         .route(
+            "/fantasy/readiness",
+            get(handlers::fantasy::get_fantasy_readiness),
+        )
+        .route(
+            "/api/v1/fantasy/readiness",
+            get(handlers::fantasy::get_fantasy_readiness_json),
+        )
+        .route(
             "/fantasy/week-plan",
             get(handlers::fantasy::get_fantasy_week_plan),
         )

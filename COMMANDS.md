@@ -2396,6 +2396,9 @@ icelines fantasy today
 icelines fantasy today --json
 icelines fantasy morning-card --date 2026-10-08
 icelines fantasy morning-card --date 2026-10-08 --current-goalie-appearances 2 --json
+icelines fantasy readiness
+icelines fantasy readiness --workflow matchup
+icelines fantasy readiness --workflow week-plan --json
 ```
 
 `fantasy today` is the read-only, cached-only league-aware entry point. JSON
@@ -2407,6 +2410,17 @@ to `icelines fantasy pickups --top 5` for exhaustive lineup optimization.
 Web clients use `/api/v2/fantasy/today`; `/api/v1/fantasy/today` remains the v1
 compatibility projection. The command never refreshes sources or mutates a
 fantasy roster.
+
+`fantasy readiness` is the read-only preflight for every war-room workflow:
+draft, today, matchup, week plan, goalie, trade, and decision review. It reports
+each workflow as `ready`, `provisional`, or `blocked`, distinguishes required
+from optional evidence, and prints an exact local recovery command for every
+non-ready check. It only inspects existing local state and caches; it does not
+create a database, fetch data, or mutate a roster. JSON uses
+`fantasy_readiness.v1`. The same projection is available at
+`/fantasy/readiness` and `/api/v1/fantasy/readiness`; `workflow`, `league`,
+`team`, `stats_season`, and `date` remain sticky query parameters, and both web
+responses use `Cache-Control: no-store`.
 
 Supported statuses are healthy, DTD, GTD, out, IR, LTIR, suspended,
 personal, and unknown. Every observation retains source, optional URL, observed

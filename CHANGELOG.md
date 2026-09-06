@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Added a shared, read-only fantasy data-readiness dashboard. The typed
+  `fantasy_readiness.v1` contract grades draft, today, matchup, week-plan,
+  goalie, trade, and decision-review evidence as ready, provisional, or
+  blocked; every non-ready input includes an actionable recovery command.
+  CLI, Fantasy Today TUI, and no-store Web HTML/JSON consume the same local,
+  fingerprinted projection without fetching, creating storage, or changing a
+  fantasy roster.
 - Added the first complete fantasy decision-review loop. Typed, sourced
   execution/value/matchup/reserve observations append to immutable frozen
   decisions with idempotent fingerprints and linear corrections; a shared

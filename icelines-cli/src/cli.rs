@@ -8493,6 +8493,53 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_fantasy_readiness_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "readiness",
+                "--workflow",
+                "matchup",
+                "--league",
+                "Ice League",
+                "--team",
+                "My Team",
+                "--stats-season",
+                "20262027",
+                "--date",
+                "2026-10-08",
+                "--at",
+                "2026-10-08T14:00:00Z",
+                "--json",
+            ])
+            .expect("fantasy readiness should parse");
+
+            match cli.command {
+                Commands::Fantasy(FantasySubcommand::Readiness {
+                    workflow,
+                    league,
+                    team,
+                    stats_season,
+                    date,
+                    at,
+                    json,
+                    ..
+                }) => {
+                    assert_eq!(workflow, Some(FantasyReadinessWorkflowArg::Matchup));
+                    assert_eq!(league.as_deref(), Some("Ice League"));
+                    assert_eq!(team.as_deref(), Some("My Team"));
+                    assert_eq!(stats_season, "20262027");
+                    assert_eq!(date.as_deref(), Some("2026-10-08"));
+                    assert_eq!(at.as_deref(), Some("2026-10-08T14:00:00Z"));
+                    assert!(json);
+                }
+                other => panic!("expected fantasy readiness, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
     fn l0_fantasy_trade_card_clap_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -10821,6 +10868,17 @@ pub enum FantasyMatchupResultArg {
     Tie,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum FantasyReadinessWorkflowArg {
+    Draft,
+    Today,
+    Matchup,
+    WeekPlan,
+    Goalie,
+    Trade,
+    DecisionReview,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum FantasySubcommand {
     // League management
@@ -10849,6 +10907,33 @@ pub enum FantasySubcommand {
     CompetitionShow {
         #[arg(long)]
         league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Inspect whether local evidence is ready for each fantasy workflow.
+    Readiness {
+        #[arg(long, value_enum)]
+        workflow: Option<FantasyReadinessWorkflowArg>,
+        #[arg(long)]
+        league: Option<String>,
+        #[arg(long)]
+        team: Option<String>,
+        /// Completed stats season used for player-rate evidence.
+        #[arg(long, default_value = "20252026")]
+        stats_season: String,
+        /// Local evaluation date in YYYY-MM-DD.
+        #[arg(long)]
+        date: Option<String>,
+        /// RFC3339 evaluation time; defaults to now.
+        #[arg(long)]
+        at: Option<String>,
+        /// Maximum age of saved status evidence.
+        #[arg(long, default_value_t = 180)]
+        max_age_minutes: i64,
+        /// Goalie appearances already earned in the active matchup.
+        #[arg(long, default_value_t = 0.0)]
+        current_goalie_appearances: f64,
         #[arg(long)]
         json: bool,
     },

@@ -79,6 +79,9 @@ use icelines_fetch::fantasy_import::{
     FantasyRosterImportOptions,
 };
 use icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view;
+use icelines_fetch::fantasy_readiness_service::{
+    assemble_fantasy_readiness, FantasyReadinessAssemblyRequest,
+};
 use icelines_fetch::fantasy_today_service::{
     assemble_fantasy_today, FantasyTodayAssemblyRequest, FantasyWeekPlanPolicy,
 };
@@ -93,7 +96,7 @@ use serde_json::{json, Value};
 
 use crate::cli::{
     FantasyMatchupResultArg, FantasyOutcomeCompletenessArg, FantasyOutcomeLaneArg,
-    FantasyOutcomeSourceArg,
+    FantasyOutcomeSourceArg, FantasyReadinessWorkflowArg,
 };
 use crate::fantasy_db::{resolve_roster_shape, FantasyDb, LeagueRow, TeamRow};
 
@@ -102,6 +105,7 @@ const CREASE_GOALIE_PLAN_HEADER: &str = "THE CREASE — WHO GETS THE NET?";
 const PENALTY_BOX_AVAILABILITY_HEADER: &str = "THE PENALTY BOX — AVAILABILITY REPORT";
 const INSIDER_MORNING_SKATE_HEADER: &str = "THE INSIDER — MORNING SKATE";
 const FANTASY_TODAY_HEADER: &str = "FANTASY TODAY — SEASON COCKPIT";
+const FANTASY_READINESS_HEADER: &str = "FANTASY READINESS — EVIDENCE CONTROL";
 const SCOREBOARD_FANTASY_STANDINGS_HEADER: &str = "THE SCOREBOARD — FANTASY STANDINGS";
 const BENCH_SCHEDULE_EDGE_HEADER: &str = "THE BENCH — THE GAUNTLET — FANTASY SCHEDULE EDGE";
 const BENCH_COVERAGE_HEADER: &str = "THE BENCH — SUBSTITUTION COVERAGE";
@@ -5725,6 +5729,105 @@ fn run_today_shared(
         print_fantasy_today_v2(&view);
     }
     Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_readiness(
+    workflow: Option<FantasyReadinessWorkflowArg>,
+    league: Option<String>,
+    team: Option<String>,
+    stats_season: String,
+    date: Option<String>,
+    at: Option<String>,
+    max_age_minutes: i64,
+    current_goalie_appearances: f64,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    let evaluated_at = at
+        .as_deref()
+        .map(|value| {
+            DateTime::parse_from_rfc3339(value)
+                .map(|timestamp| timestamp.with_timezone(&Utc))
+                .with_context(|| format!("invalid RFC3339 timestamp '{value}'"))
+        })
+        .transpose()?
+        .unwrap_or_else(Utc::now);
+    let mut today = FantasyTodayAssemblyRequest::from_default_paths(
+        league,
+        team,
+        stats_season,
+        CURRENT_SEASON,
+        evaluated_at,
+    )?;
+    today.local_date = date
+        .as_deref()
+        .map(|value| {
+            NaiveDate::parse_from_str(value, "%Y-%m-%d")
+                .with_context(|| format!("invalid date '{value}'; expected YYYY-MM-DD"))
+        })
+        .transpose()?;
+    today.status_max_age_minutes = max_age_minutes;
+    today.current_goalie_appearances = current_goalie_appearances;
+    let view = assemble_fantasy_readiness(FantasyReadinessAssemblyRequest {
+        today,
+        workflow: workflow.map(readiness_workflow),
+    })
+    .map_err(anyhow::Error::msg)?;
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&view)?);
+    } else {
+        println!("{FANTASY_READINESS_HEADER}");
+        println!(
+            "{} · {} · {:?} · {}/{} workflow(s) ready",
+            view.league_name.as_deref().unwrap_or("No active league"),
+            view.fantasy_team_name
+                .as_deref()
+                .unwrap_or("No marked team"),
+            view.state,
+            view.ready_workflows,
+            view.workflows.len()
+        );
+        for row in &view.workflows {
+            println!(
+                "  {:<18} {:<12} {}/{} checks ready",
+                row.workflow.as_str(),
+                format!("{:?}", row.state).to_ascii_uppercase(),
+                row.ready_checks,
+                row.total_checks
+            );
+            for check in row
+                .checks
+                .iter()
+                .filter(|check| check.state != FantasyTodayState::Ready)
+            {
+                println!(
+                    "    {} [{:?}/{:?}]: {}",
+                    check.check_id, check.requirement, check.state, check.message
+                );
+                if let Some(command) = &check.recovery_command {
+                    println!("      next: {command}");
+                }
+            }
+        }
+        println!("Fingerprint: {}", view.material_fingerprint);
+    }
+    Ok(())
+}
+
+fn readiness_workflow(
+    value: FantasyReadinessWorkflowArg,
+) -> icelines_core::FantasyReadinessWorkflow {
+    match value {
+        FantasyReadinessWorkflowArg::Draft => icelines_core::FantasyReadinessWorkflow::Draft,
+        FantasyReadinessWorkflowArg::Today => icelines_core::FantasyReadinessWorkflow::Today,
+        FantasyReadinessWorkflowArg::Matchup => icelines_core::FantasyReadinessWorkflow::Matchup,
+        FantasyReadinessWorkflowArg::WeekPlan => icelines_core::FantasyReadinessWorkflow::WeekPlan,
+        FantasyReadinessWorkflowArg::Goalie => icelines_core::FantasyReadinessWorkflow::Goalie,
+        FantasyReadinessWorkflowArg::Trade => icelines_core::FantasyReadinessWorkflow::Trade,
+        FantasyReadinessWorkflowArg::DecisionReview => {
+            icelines_core::FantasyReadinessWorkflow::DecisionReview
+        }
+    }
 }
 
 fn print_fantasy_today_v2(view: &FantasyTodayV2View) {
