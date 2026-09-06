@@ -25,6 +25,7 @@ use icelines_core::{
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
 use icelines_fetch::fantasy_db::FantasyDb;
+use icelines_fetch::fantasy_decision_review_service::assemble_fantasy_decision_review;
 use icelines_fetch::fantasy_matchup::build_fantasy_matchup_week_view;
 use icelines_fetch::fantasy_today_service::{assemble_fantasy_today, FantasyTodayAssemblyRequest};
 use icelines_fetch::schedule_remaining::remaining_games_by_team_from_cache;
@@ -51,6 +52,8 @@ pub struct FantasyWebQuery {
     pub date: Option<String>,
     #[serde(default)]
     pub week: Option<String>,
+    #[serde(default)]
+    pub season: Option<String>,
     #[serde(default)]
     pub team: Option<String>,
 }
@@ -291,6 +294,128 @@ pub async fn get_fantasy_week_plan(
         )
             .into_response(),
     })
+}
+
+pub async fn get_fantasy_decision_review_json(
+    State(_state): State<WebState>,
+    Query(q): Query<FantasyWebQuery>,
+) -> Response {
+    no_store(match build_fantasy_decision_review_web(&q) {
+        Ok(view) => axum::Json(view).into_response(),
+        Err(message) => (
+            StatusCode::BAD_REQUEST,
+            axum::Json(serde_json::json!({
+                "schema": icelines_core::FANTASY_DECISION_REVIEW_SCHEMA,
+                "state": "invalid_request",
+                "error": message,
+                "recovery_command": "icelines fantasy decision-review"
+            })),
+        )
+            .into_response(),
+    })
+}
+
+pub async fn get_fantasy_decision_review(
+    State(_state): State<WebState>,
+    Query(q): Query<FantasyWebQuery>,
+) -> Response {
+    no_store(match build_fantasy_decision_review_web(&q) {
+        Ok(view) => Html(render_fantasy_decision_review_html(&view)).into_response(),
+        Err(message) => (
+            StatusCode::BAD_REQUEST,
+            Html(format!(
+                "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><main><h1>Decision review unavailable</h1><p>{}</p><p>Run <code>icelines fantasy decision-review</code>.</p></main></html>",
+                escape_html(&message)
+            )),
+        )
+            .into_response(),
+    })
+}
+
+fn build_fantasy_decision_review_web(
+    q: &FantasyWebQuery,
+) -> Result<icelines_core::FantasyDecisionReviewView, String> {
+    if q.week.is_some() && q.season.is_some() {
+        return Err("week and season filters cannot be combined".to_owned());
+    }
+    let week = q
+        .week
+        .as_deref()
+        .map(|value| {
+            let date = NaiveDate::parse_from_str(value, "%Y-%m-%d")
+                .map_err(|_| format!("week '{value}' must use YYYY-MM-DD"))?;
+            if date.weekday() != chrono::Weekday::Mon {
+                return Err(format!("week '{value}' must be a Monday"));
+            }
+            Ok(date)
+        })
+        .transpose()?;
+    let db = open_existing_fantasy_db()?;
+    let league = if let Some(name) = q.league.as_deref() {
+        db.list_leagues()
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .find(|league| league.name == name)
+            .ok_or_else(|| format!("fantasy league '{name}' not found"))?
+    } else {
+        db.get_active_league()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "no active fantasy league found".to_owned())?
+    };
+    assemble_fantasy_decision_review(
+        &db,
+        &league,
+        q.top.unwrap_or(20).clamp(1, 500),
+        week,
+        q.season.clone(),
+        false,
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn render_fantasy_decision_review_html(view: &icelines_core::FantasyDecisionReviewView) -> String {
+    let filter = view
+        .week
+        .map(|week| format!("Week {week}"))
+        .or_else(|| {
+            view.season
+                .as_ref()
+                .map(|season| format!("Season {season}"))
+        })
+        .unwrap_or_else(|| "Latest decisions".to_owned());
+    let items = if view.items.is_empty() {
+        "<article><h2>No decisions to review</h2><p>Run <code>icelines fantasy decision-record</code> after creating a week plan.</p></article>".to_owned()
+    } else {
+        view.items
+            .iter()
+            .map(|row| {
+                let error = row
+                    .active_points_error
+                    .map(|value| format!("{value:+.2}"))
+                    .unwrap_or_else(|| "unknown".to_owned());
+                format!(
+                    "<article><h2>{}</h2><p><strong>Process: {:?}</strong> · Result: {:?} · Projection: {:?}</p><p>Projected active value: {:+.2}; error: {}; outcome rows: {}.</p>{}</article>",
+                    escape_html(&row.week_start.map(|date| date.to_string()).unwrap_or_else(|| "Unknown week".to_owned())),
+                    row.process,
+                    row.result,
+                    row.projection,
+                    row.projected_active_points_delta.unwrap_or_default(),
+                    error,
+                    row.outcome_rows,
+                    if row.outcome_rows == 0 { "<p>Next: use <code>icelines fantasy decision-outcome-record</code>.</p>" } else { "" }
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("")
+    };
+    format!(
+        "<!doctype html><html lang=\"en\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Fantasy Decision Review</title><style>body{{font:16px system-ui;max-width:72rem;margin:auto;padding:1rem}}article{{border-block-start:1px solid #888;padding-block:1rem}}code{{overflow-wrap:anywhere}}@media(max-width:40rem){{body{{padding:.6rem}}}}</style><main><h1>Fantasy Decision Review</h1><p>{} · {} · {} decisions · {} observed.</p>{}</main></html>",
+        escape_html(&view.league_name),
+        escape_html(&filter),
+        view.summary.decisions,
+        view.summary.with_effective_outcomes,
+        items
+    )
 }
 
 fn validate_week_shape(q: &FantasyWebQuery) -> Result<(), (String, NaiveDate)> {
@@ -1156,6 +1281,8 @@ fn data_root() -> Option<std::path::PathBuf> {
 
 #[cfg(test)]
 mod fantasy_today_surface_tests {
+    use super::*;
+
     #[test]
     fn web_consumes_the_sealed_surface_projection() {
         let fixture: icelines_core::FantasyTodaySurfaceDecision =
@@ -1169,5 +1296,27 @@ mod fantasy_today_surface_tests {
         assert!(decision.contains("Fixture Rival"));
         assert_eq!(fixture.alternative_messages.len(), 2);
         assert_eq!(fixture.material_fingerprint.len(), 64);
+    }
+
+    #[test]
+    fn decision_review_rejects_conflicting_sticky_filters_before_io() {
+        let query = FantasyWebQuery {
+            week: Some("2026-11-09".to_owned()),
+            season: Some("20262027".to_owned()),
+            ..FantasyWebQuery::default()
+        };
+        let error = build_fantasy_decision_review_web(&query).unwrap_err();
+        assert!(error.contains("cannot be combined"));
+    }
+
+    #[test]
+    fn decision_review_no_store_wrapper_covers_error_and_success_responses() {
+        for status in [StatusCode::OK, StatusCode::BAD_REQUEST] {
+            let response = no_store(status.into_response());
+            assert_eq!(
+                response.headers().get(header::CACHE_CONTROL).unwrap(),
+                "no-store"
+            );
+        }
     }
 }

@@ -3894,6 +3894,8 @@ impl App {
 
     pub fn refresh_fantasy_today(&mut self) {
         let loaded_at = chrono::Utc::now();
+        self.fantasy_today.decision_review =
+            crate::tui::screens::fantasy::load_latest_decision_review().ok();
         match crate::tui::screens::fantasy::load_today_contract(&self.active_season) {
             Ok(view) => {
                 self.fantasy_today.view = Some(view);

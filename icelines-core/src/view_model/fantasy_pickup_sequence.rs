@@ -109,8 +109,14 @@ pub struct FantasyPickupSequenceMoveRow {
     pub local_date: NaiveDate,
     pub add_player_key: String,
     pub add_player: String,
+    /// Frozen platform eligibility used to distinguish goalie and skater moves
+    /// during later decision review. Older v1 rows decode as unknown.
+    #[serde(default)]
+    pub add_positions: Vec<Position>,
     pub drop_player_key: Option<String>,
     pub drop_player: Option<String>,
+    #[serde(default)]
+    pub drop_positions: Vec<Position>,
     pub marginal_active_value: f64,
     pub newly_usable_dates: Vec<NaiveDate>,
     pub covered_player_keys: Vec<String>,
@@ -643,8 +649,12 @@ fn build_sequence_row(
             local_date: transition.local_date,
             add_player_key: transition.add_player_key.clone(),
             add_player: add.display_name.clone(),
+            add_positions: add.platform_positions.clone(),
             drop_player_key: transition.drop_player_key.clone(),
             drop_player: drop.map(|player| player.display_name.clone()),
+            drop_positions: drop
+                .map(|player| player.platform_positions.clone())
+                .unwrap_or_default(),
             marginal_active_value: current.active_value - previous.active_value,
             newly_usable_dates,
             covered_player_keys,

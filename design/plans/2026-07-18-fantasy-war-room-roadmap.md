@@ -371,6 +371,11 @@ icelines fantasy roster-balance --team "Sample Multicategory"
 
 ## Wave 22 — Decision Journal and Retrospective
 
+**Status (2026-09-05):** Implemented through the reviewed
+[`Weekly Review and Calibration Loop`](2026-09-05-weekly-review-calibration.md):
+typed append-only outcomes, a shared versioned review projection, descriptive
+calibration, and CLI/TUI/Web consumers are available.
+
 ### User workflow
 
 ```powershell

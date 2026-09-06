@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Added the first complete fantasy decision-review loop. Typed, sourced
+  execution/value/matchup/reserve observations append to immutable frozen
+  decisions with idempotent fingerprints and linear corrections; a shared
+  `fantasy_decision_review.v1` projection now powers filtered CLI, TUI, and
+  no-store Web HTML/JSON review surfaces. Calibration stays descriptive,
+  separates decision cohorts, excludes provisional observations, and never
+  retunes planner weights automatically.
 - Added `fantasy draft-sim`, a reusable snake-draft planner that accepts league
   size, draft slot, rounds, taken-player and eligibility inputs, and optional
   Rank/ADP plus league-scored projection CSV data. It compares Balanced,

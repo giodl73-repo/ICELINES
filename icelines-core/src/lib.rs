@@ -137,6 +137,17 @@ pub use view_model::fantasy_daily_decisions::{
     build_fantasy_daily_decisions, FantasyDailyDecisionRow, FantasyDailyDecisionsInput,
     FantasyDailyDecisionsView, FantasyDailyTransactionCandidate, FANTASY_DAILY_DECISIONS_SCHEMA,
 };
+pub use view_model::fantasy_decision_review::{
+    build_fantasy_decision_review, validate_fantasy_decision_outcome_timing,
+    FantasyDecisionCalibrationRow, FantasyDecisionEffectiveOutcome, FantasyDecisionLane,
+    FantasyDecisionMatchupResult, FantasyDecisionOutcome, FantasyDecisionOutcomeCompleteness,
+    FantasyDecisionOutcomeLane, FantasyDecisionOutcomeSource, FantasyDecisionProcessAssessment,
+    FantasyDecisionProjectionAssessment, FantasyDecisionResultAssessment,
+    FantasyDecisionReviewBuildInput, FantasyDecisionReviewError, FantasyDecisionReviewItem,
+    FantasyDecisionReviewSummary, FantasyDecisionReviewView, FantasyDecisionStoredInput,
+    FantasyDecisionStoredOutcomeInput, DESCRIPTIVE_READY_MINIMUM, DISPLAY_ALIGNMENT_TOLERANCE,
+    FANTASY_DECISION_OUTCOME_SCHEMA, FANTASY_DECISION_REVIEW_SCHEMA,
+};
 pub use view_model::fantasy_pickup_sequence::{
     build_fantasy_pickup_sequence, FantasyPickupCoverageRow, FantasyPickupSequenceContext,
     FantasyPickupSequenceError, FantasyPickupSequenceInput, FantasyPickupSequenceMoveRow,

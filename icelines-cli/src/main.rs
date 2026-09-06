@@ -1637,13 +1637,63 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 )
                 .await?
             }
+            FantasySubcommand::DecisionOutcomeRecord {
+                decision,
+                lane,
+                completeness,
+                source,
+                source_observed_at,
+                executed,
+                active_points_delta,
+                usable_starts_delta,
+                matchup_result,
+                user_final_points,
+                opponent_final_points,
+                reserve_needed,
+                reserve_used,
+                notes,
+                corrects,
+                json,
+            } => {
+                commands::fantasy::run_decision_outcome_record(
+                    decision,
+                    lane,
+                    completeness,
+                    source,
+                    source_observed_at,
+                    executed,
+                    active_points_delta,
+                    usable_starts_delta,
+                    matchup_result,
+                    user_final_points,
+                    opponent_final_points,
+                    reserve_needed,
+                    reserve_used,
+                    notes,
+                    corrects,
+                    json,
+                )
+                .await?
+            }
             FantasySubcommand::DecisionReview {
                 league,
+                week,
+                season,
                 limit,
                 include_private,
                 json,
+                legacy_json,
             } => {
-                commands::fantasy::run_decision_review(league, limit, include_private, json).await?
+                commands::fantasy::run_decision_review(
+                    league,
+                    week,
+                    season,
+                    limit,
+                    include_private,
+                    json,
+                    legacy_json,
+                )
+                .await?
             }
             FantasySubcommand::Sleepers {
                 league,
